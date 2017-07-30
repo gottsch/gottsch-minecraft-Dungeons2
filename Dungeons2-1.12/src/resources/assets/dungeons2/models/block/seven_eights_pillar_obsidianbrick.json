@@ -1,0 +1,7 @@
+{
+	"parent": "Dungeons2:block/seven_eights_pillar",
+    "textures": {
+        "0": "Dungeons2:blocks/obsidianbrick",
+        "particle": "Dungeons2:blocks/obsidianbrick"
+    }
+}

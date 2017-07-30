@@ -1,0 +1,6 @@
+{
+    "parent": "Dungeons2:block/flute_thin_pillar",
+    "textures": {
+        "0": "blocks/cobblestone_mossy"
+    }
+}

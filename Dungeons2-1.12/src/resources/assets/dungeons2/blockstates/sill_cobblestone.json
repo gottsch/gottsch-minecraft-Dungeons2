@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "normal": {
+      "model": "Dungeons2:sill_cobblestone"
+    },
+    "facing=north": {
+      "model": "Dungeons2:sill_cobblestone"
+    },
+    "facing=south": {
+      "model": "Dungeons2:sill_cobblestone",
+      "y": 180,
+      "uvlock": true
+    },
+    "facing=west": {
+      "model": "Dungeons2:sill_cobblestone",
+      "y": 270,
+      "uvlock": true
+    },
+    "facing=east": {
+      "model": "Dungeons2:sill_cobblestone",
+      "y": 90,
+      "uvlock": true
+    },
+    "facing=up": {
+      "model": "Dungeons2:sill_cobblestone"
+    },
+    "facing=down": {
+      "model": "Dungeons2:sill_cobblestone"
+    }
+  }
+}

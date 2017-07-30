@@ -1,0 +1,17 @@
+[
+{
+  "modid": "dungeons2",
+  "name": "Dungeons2!",
+  "description": "",
+  "version": "1.1.0",
+  "mcversion": "1.11",
+  "url": "",
+  "updateUrl": "",
+   "authorList":["gottsch"],
+  "credits": "Authored by gottsch",
+  "logoFile": "dungeons.logo.png",
+  "screenshots": [],
+  "requiredMods": ["Forge"],
+  "dependencies": []
+}
+]

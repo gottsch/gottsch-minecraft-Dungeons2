@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "normal": {
+      "model": "Dungeons2:wall_sconce_cobblestone"
+    },
+    "facing=north": {
+      "model": "Dungeons2:wall_sconce_cobblestone"
+    },
+    "facing=south": {
+      "model": "Dungeons2:wall_sconce_cobblestone",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "Dungeons2:wall_sconce_cobblestone",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "Dungeons2:wall_sconce_cobblestone",
+      "y": 90
+    },
+    "facing=up": {
+      "model": "Dungeons2:wall_sconce_cobblestone"
+    },
+    "facing=down": {
+      "model": "Dungeons2:wall_sconce_cobblestone"
+    }
+  }
+}
