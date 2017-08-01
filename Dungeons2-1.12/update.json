@@ -1,12 +1,10 @@
 {
-    "homepage": "http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2598878-fastladder",
+    "homepage": "http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2792910-dungeons2",
     "promos": {
-    "1.12-latest": "1.0.6",
-    "1.12-recommended": "v1.0.6"
+    "1.12-latest": "1.1.0",
+    "1.12-recommended": "v1.1.0"
   },
     "1.12": {
-        "1.0.4": "-Updated to use the new GottschCore 1.0.0 instead of ModUtilsApi",
-        "1.0.5": "-Fixed issue with checkVersion() that cause game to crash.",
-        "1.0.6": "-Fixed incorrect mod version causing the update message to constantly display.\n-Updated to use GottschCore 1.1.0."
+        "1.1.0": "-Initial release"
     }
 }

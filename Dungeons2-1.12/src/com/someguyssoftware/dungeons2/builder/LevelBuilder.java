@@ -133,10 +133,10 @@ public class LevelBuilder {
 	}
 
 	/**
+	 * 
 	 * @param rand
-	 * @param room
+	 * @param roomIn
 	 * @param startPoint
-	 * @param xOffset
 	 * @param config
 	 * @return
 	 */
@@ -160,9 +160,9 @@ public class LevelBuilder {
 	}
 
 	/**
+	 * 
 	 * @param random
-	 * @param room
-	 * @param xOffset
+	 * @param roomIn
 	 * @param config
 	 * @return
 	 */
@@ -179,10 +179,8 @@ public class LevelBuilder {
 	}
 
 	/**
-	 * Randomize a set of Coords centered at (0,0,0), based on config values
+	 * 
 	 * @param random
-	 * @param xOffset
-	 * @param zOffset
 	 * @param config
 	 * @return
 	 */
@@ -211,6 +209,8 @@ public class LevelBuilder {
 	/**
 	 * 
 	 * @param rand
+	 * @param startPoint
+	 * @param anchors
 	 * @param rooms
 	 * @param config
 	 * @return
@@ -352,8 +352,6 @@ public class LevelBuilder {
 
 	/**
 	 * 
-	 * @param world
-	 * @param random
 	 * @param sourceLevel the originating level to join from. This level owns the shaft that is generated.
 	 * @param destLevel the destination level to join to.
 	 * @return
@@ -788,6 +786,7 @@ public class LevelBuilder {
 	 * from one node to another.
 	 * @param start
 	 * @param end
+	 * @param rooms
 	 * @param edges
 	 * @return
 	 */
@@ -998,6 +997,7 @@ public class LevelBuilder {
 
 	/**
 	 * @param rand
+	 * @param paths
 	 * @param rooms
 	 * @param config
 	 */

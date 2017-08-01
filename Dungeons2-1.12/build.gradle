@@ -51,7 +51,15 @@ sourceSets.main{
 }
 
 dependencies {
-	compile files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.0.jar')
+	compile files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.1.jar')
+	compile files(System.env.COMMON_LIBS + '/DelaunayTriangulator-1.0.3.jar')
+}
+
+jar {
+	// for PROD only
+	from ({configurations.compile.collect { zipTree(System.env.COMMON_LIBS + "/DelaunayTriangulator-1.0.3.jar") } })
+
+	// run with "-x deobfJar" to prevent duplicate entries error.
 }
 
 processResources
@@ -74,11 +82,11 @@ processResources
     }
 }
 
-task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
-    from javadoc.destinationDir
-    classifier = 'javadoc'
-}
+//task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
+//    from javadoc.destinationDir
+//    classifier = 'javadoc'
+//}
 
-artifacts {
-    archives packageJavadoc
-}
+//artifacts {
+//    archives packageJavadoc
+//}
