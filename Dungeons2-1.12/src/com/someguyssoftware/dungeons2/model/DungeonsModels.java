@@ -18,11 +18,11 @@ public class DungeonsModels {
 	@SubscribeEvent
 	public static void registerModels(ModelRegistryEvent event) {
 		// AUTIUM		
-		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.BASIC_STONE_FACADE));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicStoneFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicCobblestoneFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicMossyCobblestoneFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicStonebrickFacade));
-		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicMossyCobblestoneFacade));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicMossyStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicCrackedStonebrickFacade));					
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicChiseledStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicObsidianbrickFacade));
@@ -46,7 +46,7 @@ public class DungeonsModels {
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarStoneBlock));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarCobblestoneBlock));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarMossyCobblestoneBlock));
-		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarMossyStonebrickBlock));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarStonebrickBlock));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarMossyStonebrickBlock));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarCrackedStonebrickBlock));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.flutePillarObsidianbrickBlock));

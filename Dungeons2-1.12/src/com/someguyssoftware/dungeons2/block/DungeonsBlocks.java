@@ -33,14 +33,14 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	 *  blocks 
 	 */
 	// facade blocks
-	public static final Block BASIC_STONE_FACADE;
-	public static final Block basicCobblestoneFacade;
-	public static final Block basicMossyCobblestoneFacade;
-	public static final Block basicStonebrickFacade;
-	public static final Block basicMossyStonebrickFacade;
-	public static final Block basicCrackedStonebrickFacade;
-	public static final Block basicChiseledStonebrickFacade;
-	public static final Block basicObsidianbrickFacade;
+	public static Block basicStoneFacade;
+	public static Block basicCobblestoneFacade;
+	public static Block basicMossyCobblestoneFacade;
+	public static Block basicStonebrickFacade;
+	public static Block basicMossyStonebrickFacade;
+	public static Block basicCrackedStonebrickFacade;
+	public static Block basicChiseledStonebrickFacade;
+	public static Block basicObsidianbrickFacade;
 
 	// "T" Pillar
 	public static Block teePillarStoneFacade;
@@ -182,7 +182,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 
 	static {
 		// basic facade
-		BASIC_STONE_FACADE = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicStoneFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		basicStoneFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicStoneFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicCobblestoneFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicCobblestoneFacadeId, Material.ROCK).setHardness(2.0F).setResistance(10.0F);
 		basicMossyCobblestoneFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicMossyCobblestoneFacadeId, Material.ROCK).setHardness(2.0F).setResistance(10.0F);
 		basicStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -344,11 +344,11 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 			final IForgeRegistry<Block> registry = event.getRegistry();
 
 			final Block[] blocks = {
-					BASIC_STONE_FACADE,
+					basicStoneFacade,
 					basicCobblestoneFacade,
 					basicMossyCobblestoneFacade,
 					basicStonebrickFacade,
-					basicMossyCobblestoneFacade,
+					basicMossyStonebrickFacade,
 					basicCrackedStonebrickFacade,					
 					basicChiseledStonebrickFacade,
 					basicObsidianbrickFacade,
@@ -372,7 +372,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					flutePillarStoneBlock,
 					flutePillarCobblestoneBlock,
 					flutePillarMossyCobblestoneBlock,
-					flutePillarMossyStonebrickBlock,
+					flutePillarStonebrickBlock,
 					flutePillarMossyStonebrickBlock,
 					flutePillarCrackedStonebrickBlock,
 					flutePillarObsidianbrickBlock,
@@ -480,11 +480,11 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 			final IForgeRegistry<Item> registry = event.getRegistry();
 
 			final ItemBlock[] items = {					
-					new ItemBlock(BASIC_STONE_FACADE),
+					new ItemBlock(basicStoneFacade),
 					new ItemBlock(basicCobblestoneFacade),
 					new ItemBlock(basicMossyCobblestoneFacade),
 					new ItemBlock(basicStonebrickFacade),
-					new ItemBlock(basicMossyCobblestoneFacade),
+					new ItemBlock(basicMossyStonebrickFacade),
 					new ItemBlock(basicCrackedStonebrickFacade),					
 					new ItemBlock(basicChiseledStonebrickFacade),
 					new ItemBlock(basicObsidianbrickFacade),
@@ -508,7 +508,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					new ItemBlock(flutePillarStoneBlock),
 					new ItemBlock(flutePillarCobblestoneBlock),
 					new ItemBlock(flutePillarMossyCobblestoneBlock),
-					new ItemBlock(flutePillarMossyStonebrickBlock),
+					new ItemBlock(flutePillarStonebrickBlock),
 					new ItemBlock(flutePillarMossyStonebrickBlock),
 					new ItemBlock(flutePillarCrackedStonebrickBlock),
 					new ItemBlock(flutePillarObsidianbrickBlock),

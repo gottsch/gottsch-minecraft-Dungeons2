@@ -9,9 +9,13 @@ buildscript {
     }
 }
 
+// include shadow
+plugins {
+  //  must use gradle v3.0+ for this version of shadow (2.0.1).  Update gradle-wrapper.properties
+    id "com.github.johnrengelman.shadow" version "2.0.1"
+}
 
 apply plugin: 'net.minecraftforge.gradle.forge'
-//Only edit below this line, the above code adds and enables the nessasary things for Forge to be setup.
 
 ext {
     // Open the Git repository in the parent directory.
@@ -51,15 +55,9 @@ sourceSets.main{
 }
 
 dependencies {
-	compile files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.1.jar')
 	compile files(System.env.COMMON_LIBS + '/DelaunayTriangulator-1.0.3.jar')
-}
-
-jar {
-	// for PROD only
-	from ({configurations.compile.collect { zipTree(System.env.COMMON_LIBS + "/DelaunayTriangulator-1.0.3.jar") } })
-
-	// run with "-x deobfJar" to prevent duplicate entries error.
+	// use 'shadow' to include dependency in compile but to exclude for the shadow jar
+	shadow files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.1.jar')	
 }
 
 processResources
@@ -80,6 +78,18 @@ processResources
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
     }
+}
+
+shadowJar {
+    // move everything under "io.github" (which in the DelaunayTriangulator lib) to "com.someguyssoftware.dungeons2.triangulation"
+    relocate "io.github", "com.someguyssoftware.dungeons2.triangulation"
+	// Replace the default JAR
+    classifier '' 
+}
+
+reobf {
+	// Reobfuscate the shadowed JAR
+    shadowJar {} 
 }
 
 //task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
