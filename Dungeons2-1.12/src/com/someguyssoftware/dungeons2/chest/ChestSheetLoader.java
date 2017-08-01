@@ -32,7 +32,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.gottschcore.json.JSMin;
@@ -102,7 +102,7 @@ public class ChestSheetLoader {
 	 */
 	public static ChestSheet loadAll() throws Exception {
 		// get the path to the default style sheet
-		Path defaultSheetPath = Paths.get(GeneralConfig.dungeonsFolder, "chestSheet.json").toAbsolutePath();
+		Path defaultSheetPath = Paths.get(ModConfig.dungeonsFolder, "chestSheet.json").toAbsolutePath();
 
 		Dungeons2.log.debug("Sheets Folder:" + defaultSheetPath.toString());
 
@@ -115,7 +115,7 @@ public class ChestSheetLoader {
 		}
 
 		// load any additional style sheets
-		Files.newDirectoryStream(Paths.get(GeneralConfig.dungeonsFolder, BUILT_IN_CHEST_SHEET_SUB_FOLDER), path -> path.toString().endsWith(".json"))	
+		Files.newDirectoryStream(Paths.get(ModConfig.dungeonsFolder, BUILT_IN_CHEST_SHEET_SUB_FOLDER), path -> path.toString().endsWith(".json"))	
 		.forEach((path) -> {
 			try {
 				// load the sheet
@@ -247,7 +247,7 @@ public class ChestSheetLoader {
 		        JsonObject element = entry.getValue().getAsJsonObject();
 		        ChestItem item = new ChestItem(
 		        	entry.getKey(),
-		        	element.get("NAME").getAsString(),
+		        	element.get("name").getAsString(),
 		        	element.get("damage").getAsInt()
         		);
 		        map.put(entry.getKey(), item);

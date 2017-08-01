@@ -21,7 +21,6 @@ import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.config.BuildDirection;
 import com.someguyssoftware.dungeons2.config.BuildPattern;
 import com.someguyssoftware.dungeons2.config.BuildSize;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.config.PRESET_DUNGEON_CONFIGS;
 import com.someguyssoftware.dungeons2.config.PRESET_LEVEL_CONFIGS;
@@ -102,19 +101,19 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 		try {		
 			// add the directories if they don't exist
-			Path folder = Paths.get(GeneralConfig.dungeonsFolder, StyleSheetLoader.BUILT_IN_STYLE_SHEET_SUB_FOLDER);
+			Path folder = Paths.get(ModConfig.dungeonsFolder, StyleSheetLoader.BUILT_IN_STYLE_SHEET_SUB_FOLDER);
 			try {
 				Files.createDirectory(folder);
 			}
 			catch(FileAlreadyExistsException e) {;}
 			
-			folder = Paths.get(GeneralConfig.dungeonsFolder, ChestSheetLoader.BUILT_IN_CHEST_SHEET_SUB_FOLDER);
+			folder = Paths.get(ModConfig.dungeonsFolder, ChestSheetLoader.BUILT_IN_CHEST_SHEET_SUB_FOLDER);
 			try {
 				Files.createDirectory(folder);
 			}
 			catch(FileAlreadyExistsException e) {;}
 			
-			folder = Paths.get(GeneralConfig.dungeonsFolder, SpawnSheetLoader.BUILT_IN_SPAWN_SHEET_SUB_FOLDER);
+			folder = Paths.get(ModConfig.dungeonsFolder, SpawnSheetLoader.BUILT_IN_SPAWN_SHEET_SUB_FOLDER);
 			try {
 				Files.createDirectory(folder);
 			}

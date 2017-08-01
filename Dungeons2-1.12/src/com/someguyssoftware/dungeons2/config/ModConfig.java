@@ -14,6 +14,8 @@ import net.minecraftforge.common.config.Configuration;
  */
 public class ModConfig extends AbstractConfig {
 	// resources
+	public static String dungeonsFolder;
+	
 	@Deprecated
 	public static String styleSheetFile;
 	@Deprecated
@@ -224,7 +226,8 @@ public class ModConfig extends AbstractConfig {
 
         // resources
         config.setCategoryComment("02-resources", "Resource properties.");   
-//        dungeonsFolder = config.getString("dungeonsFolder", "02-resources", "mods/dungeons2/", "Where default Dungeons2 folder is located.");
+        dungeonsFolder = config.getString("dungeonsFolder", "02-resources", "mods/dungeons2/", "Where default Dungeons2 folder is located.");
+
         styleSheetFile = config.getString("styleSheetFile", "02-resources", "mods/dungeons2/styleSheet.json", "@Deprecated\nWhere the style sheet file is located.");
         chestSheetFile = config.getString("chestSheetFile", "02-resources", "mods/dungeons2/chestSheet.json", "@Deprecate\nWhere the chest sheet file is located.");
         spawnSheetFile = config.getString("spawnSheetFile", "02-resources", "mods/dungeons2/spawnSheet.json", "@Deprecated\nWhere the spawn sheet file is located.");

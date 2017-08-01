@@ -13,7 +13,7 @@ import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.config.DungeonsConfiguration;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;

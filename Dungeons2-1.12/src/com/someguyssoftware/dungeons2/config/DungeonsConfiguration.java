@@ -11,6 +11,7 @@ import java.io.File;
  * @author Mark Gottschling on Aug 12, 2015
  *
  */
+@Deprecated
 public class DungeonsConfiguration {
 	private static final String DUNGEONS_CONFIG_DIR = "dungeons2";
 	
@@ -24,8 +25,8 @@ public class DungeonsConfiguration {
 		configPath = (new StringBuilder()).append(configDir).append("/").append(DUNGEONS_CONFIG_DIR).append("/").toString();
 		
 		// create the file to the general treasure config file
-		File generalConfigFile = new File((new StringBuilder()).append(configPath).append("general.cfg").toString());
+		File ModConfigFile = new File((new StringBuilder()).append(configPath).append("general.cfg").toString());
 		// initialize the General config
-		GeneralConfig.initialize(generalConfigFile);
+		GeneralConfig.initialize(ModConfigFile);
 	}
 }

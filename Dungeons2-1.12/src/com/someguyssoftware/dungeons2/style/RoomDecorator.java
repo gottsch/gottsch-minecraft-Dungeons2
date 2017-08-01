@@ -15,7 +15,7 @@ import com.someguyssoftware.dungeons2.block.DungeonsBlocks;
 import com.someguyssoftware.dungeons2.chest.ChestContainer;
 import com.someguyssoftware.dungeons2.chest.ChestPopulator;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;

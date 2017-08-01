@@ -12,6 +12,7 @@ import net.minecraftforge.common.config.Configuration;
  * @author Mark Gottschling on Jul 27, 2016
  *
  */
+@Deprecated
 public class GeneralConfig {
 
 	// Configuration file
