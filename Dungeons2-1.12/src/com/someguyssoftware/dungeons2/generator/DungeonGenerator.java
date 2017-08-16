@@ -200,6 +200,7 @@ public class DungeonGenerator {
 				roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupportOn());
 				roomGen.generate(world, random, shaft, dungeon.getTheme(), styleSheet, level.getConfig());
 			}
+			levelCount++;
 		}
 		return true;
 	}

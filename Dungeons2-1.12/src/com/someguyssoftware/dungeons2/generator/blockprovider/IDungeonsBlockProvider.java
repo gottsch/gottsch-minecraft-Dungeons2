@@ -105,7 +105,22 @@ public interface IDungeonsBlockProvider {
 		int meta = 0;
 		// TODO could add additional checks here to ensure the string only contains 1 @ or that the value after @ is numeric
 		if (blockAndMeta.length > 1) meta = Integer.valueOf(blockAndMeta[1]);
-		blockState = Block.getBlockFromName(blockAndMeta[0]).getStateFromMeta(meta);
+		try {
+			blockState = Block.getBlockFromName(blockAndMeta[0]).getStateFromMeta(meta);
+		}
+		catch(Exception e) {
+			blockState = null;
+		}
+		
+		if (blockState == null) {
+			Dungeons2.log.warn(String.format("Unable to retrieve blockState; returning NULL_BLOCK:\n" +
+					"Arrangement: %s\n" +
+					"Style: %s\n" + 
+					"Block: %s\n" +
+					"blockAndMeta[0]: %s\n" +
+					"Meta: %d", arrangement, style.getName(), block, blockAndMeta[0], meta));
+			return NULL_BLOCK;
+		}
 
 		// rotate block to the direction of Arrangement if rotatable type
 		DesignElement elem = arrangement.getElement();

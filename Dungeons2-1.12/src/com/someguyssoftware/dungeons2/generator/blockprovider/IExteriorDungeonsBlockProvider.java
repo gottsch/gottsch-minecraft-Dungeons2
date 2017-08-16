@@ -265,7 +265,7 @@ public interface IExteriorDungeonsBlockProvider extends IDungeonsBlockProvider {
 			if ((xIndex == 2 || xIndex == 4
 					|| zIndex == 2 || zIndex == 4)
 					&& (yIndex > 2 && yIndex < 5)) {
-				Dungeons2.log.debug("Has Window");
+//				Dungeons2.log.debug("Has Window");
 				return true;
 			}
 		}

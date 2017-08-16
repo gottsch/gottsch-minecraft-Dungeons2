@@ -32,7 +32,7 @@ import net.minecraft.world.World;
  *
  */
 public class DungeonBuilderTopDown implements IDungeonBuilder {
-	private static final Logger logger = LogManager.getLogger(LevelBuilder.class);
+	private static final Logger logger = LogManager.getLogger(Dungeons2.LOGGER_NAME);
 
 	private static final int MIN_ENTRANCE_XZ = 5;
 	private static final int MAX_ENTRANCE_XZ = 9;
@@ -88,8 +88,10 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		//  2. get a valid surface location		
 		ICoords surfaceCoords = null;
 		if (levelBuilder.getConfig().isMinecraftConstraintsOn()) {
+//			Dungeons2.log.debug("Checking DryLand surface coord.");
 			surfaceCoords = WorldInfo.getDryLandSurfaceCoords(world, startPoint);
-			if (surfaceCoords == null) {
+//			Dungeons2.log.debug("DryLand coords: "  + surfaceCoords.toShortString());
+			if (surfaceCoords == null || surfaceCoords == EMPTY_DUNGEON) {
 				Dungeons2.log.debug(String.format("Not a valid dry land surface @ %s", startPoint.toShortString()));
 				return EMPTY_DUNGEON;
 			}
@@ -97,7 +99,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		else {
 			surfaceCoords = startPoint;
 		}
-		Dungeons2.log.info("SurfaceCoords: " + surfaceCoords.toShortString());
+//		Dungeons2.log.info("SurfaceCoords: " + surfaceCoords.toShortString());
 		
 		// 2b. Determine if surfaceCoords is within Dungeon constraints
 		if (surfaceCoords.getY() < config.getYBottom() ||
@@ -117,7 +119,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		
 		// 4. determine if the entrance room can be build at this spot
 		Room entranceRoom = buildEntranceRoom(world, rand, surfaceCoords);
-		Dungeons2.log.info("Entrance Room:" + entranceRoom);
+		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
 
 
 		// TODO this check could be moved into the entrance room build
@@ -137,15 +139,15 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		
 		// update the startPoint to be below the surface by surfaceBuffer amount
 		startPoint = surfaceCoords.add(0, -(levelConfig.getSurfaceBuffer() + levelConfig.getHeight().getMaxInt()), 0);
-		Dungeons2.log.info("startPoint:" + startPoint.toShortString());
+
 		/*
 		 *  determine the number of levels to attempt to build
 		 */
 		int numberOfLevels = RandomHelper.randomInt(rand, (int)config.getNumberOfLevels().getMin(), (int)config.getNumberOfLevels().getMax());
-		
+		Dungeons2.log.debug("number of levels:" + numberOfLevels);
 		// for every n in numberOfLevels
 		for (int levelIndex = 0; levelIndex < numberOfLevels; levelIndex++) {
-			logger.info("Building level (top-down): " + levelIndex);
+			logger.debug("Building level (top-down): " + levelIndex);
 			
 			// determine if any levels can be made below this one
 			if (startPoint.getY() - levelConfig.getHeight().getMax() < config.getYBottom()) {
@@ -162,12 +164,13 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// build start centered at startPoint
 				startRoom = levelBuilder.buildStartRoom(world, rand, startPoint, levelConfig);
 				if (startRoom == LevelBuilder.EMPTY_ROOM) {
-					logger.warn("Unable to generate Start Room.");
+					Dungeons2.log.warn("Unable to generate Start Room.");
 					return EMPTY_DUNGEON;					
 				}
 				// update to same direction as entrance
 				startRoom.setDirection(entranceRoom.getDirection());
-				Dungeons2.log.info("Top Level Start Room:" + startRoom);
+				Dungeons2.log.debug("Top Level Start Room:" + startRoom);
+				
 				// add to the planned rooms
 				plannedRooms.add(startRoom);
 				
@@ -181,7 +184,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			}
 			// if bottom level, manually setup an end room for boss/treasure
 			else if (levelIndex == numberOfLevels - 1 || isBottomLevel) {	
-				Dungeons2.log.info("BOTTOM LEVEL");
+				Dungeons2.log.debug("BOTTOM LEVEL");
 				// TODO start room same as else{}, so make a method out of it
 				// build the start room
 				startRoom = new Room(dungeon.getLevels().get(levelIndex-1).getEndRoom());
@@ -192,7 +195,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 //				Dungeons2.log.debug("Start Room (Bottom Level): " + startRoom);
 				Dungeons2.log.debug("StartPoint (Bottom Level): " + startPoint);
 				// update end room settings
-				startRoom.getCoords().setY(startPoint.getY());
+				startRoom.setCoords(startRoom.getCoords().resetY(startPoint.getY()));
 				startRoom.setDistance(startRoom.getCenter().getDistance(startPoint));
 				startRoom.setAnchor(true).setStart(true).setEnd(false);			
 				plannedRooms.add(startRoom);
@@ -202,7 +205,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				Dungeons2.log.debug("BossPoint (Bottom Level): " + endRoom.getCoords().toShortString());
 				plannedRooms.add(endRoom);
 			}
-			else {				
+			else {
+				Dungeons2.log.debug("Building Start Room for Level: " + levelIndex);
 				// 1. create start room from previous level end room
 				startRoom = new Room(dungeon.getLevels().get(levelIndex-1).getEndRoom());
 				if (startRoom == LevelBuilder.EMPTY_ROOM) {
@@ -210,10 +214,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 					return EMPTY_DUNGEON;
 				}
 				// update end room settings
-				startRoom.getCoords().setY(startPoint.getY());
+				startRoom.setCoords(startRoom.getCoords().resetY(startPoint.getY()));
 				startRoom.setDistance(startRoom.getCenter().getDistance(startPoint));
 				startRoom.setAnchor(true).setStart(true).setEnd(false);
 				plannedRooms.add(startRoom);
+				Dungeons2.log.debug("Level Start Room:" + startRoom);
 
 				// 2. create end room
 				endRoom = levelBuilder.buildPlannedRoom(world, rand, startPoint, plannedRooms, levelConfig);
@@ -233,7 +238,6 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			
 			// add level
 			if (level != LevelBuilder.EMPTY_LEVEL) {
-				Dungeons2.log.debug("Updating min/max values for the dungeon...");
 				// update the min/max values for the dungeon
 				if (dungeon.getMinX() == null || level.getMinX() < dungeon.getMinX()) dungeon.setMinX(level.getMinX());
 				if (dungeon.getMaxX() == null || level.getMaxX() > dungeon.getMaxX()) dungeon.setMaxX(level.getMaxX());
@@ -269,8 +273,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			
 			// update the start point to above the previous level
 			startPoint = endRoom.getCenter();
-			startPoint.setY(dungeon.getMinY() - (int)levelConfig.getHeight().getMax());
-			
+			startPoint = startPoint.resetY(dungeon.getMinY() - (int)levelConfig.getHeight().getMax());
 			// TEMP
 //			break;
 		}

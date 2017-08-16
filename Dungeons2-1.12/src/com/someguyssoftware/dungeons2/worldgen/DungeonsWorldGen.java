@@ -37,6 +37,7 @@ import com.someguyssoftware.dungeons2.style.Theme;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -171,14 +172,16 @@ public class DungeonsWorldGen implements IWorldGenerator {
         int zSpawn = zPos + random.nextInt(CHUNK_RADIUS);
         // the get first surface y (could be leaves, trunk, water, etc)
         int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
-        
+
         BlockPos pos = new BlockPos(xSpawn, ySpawn, zSpawn);
 
      	boolean isGenerated = false;
      	if (chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
      		// check if  the min distance between dungeons is met
      		if (lastDungeonBlockPos == null || lastDungeonBlockPos.distanceSq(pos) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
-	     		// clear count
+//     			Dungeons2.log.debug("Getting ySpawn @ " + xSpawn + " " + zSpawn);
+    			     			
+     			// clear count
 				chunksSinceLastDungeon = 0;
 
 				// 1. test if dungeon meets the probability criteria
@@ -208,12 +211,16 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
 				
 				// NOTE temp
-				pattern = BuildPattern.SQUARE;
-				levelSize = BuildSize.SMALL;
-				direction = BuildDirection.CENTER;
+//				pattern = BuildPattern.SQUARE;
+//				levelSize = BuildSize.SMALL;
+//				direction = BuildDirection.CENTER;
 				
 				// 5. determine a preset level config based on pattern and size
 				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
+				Dungeons2.log.debug(String.format("Using PRESET: pattern: %s, levelSize: %s, direction: %s",
+						pattern.name(), levelSize.name(), direction.name()));
+				Dungeons2.log.debug("Dungeon size:" + dungeonSize.name());
+				
 				// get the level builder
 				LevelBuilder levelBuilder = new LevelBuilder(levelConfig);
 				
@@ -235,6 +242,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 //								"\tUsing LevelConfig: %s\n" +
 //								"\tUsing LevelBuilder: %s\n" +
 //								"\tUsing DungeonConfig: %s", pos, levelConfig, levelBuilder, dungeonConfig));
+				
 				// 7. build the dungeon
 				Dungeon dungeon = builder.build(world, random, new Coords(pos), dungeonConfig);
 				/*

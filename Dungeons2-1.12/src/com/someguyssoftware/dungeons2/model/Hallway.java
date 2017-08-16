@@ -122,8 +122,8 @@ public class Hallway extends Room {
 		Room room2 = rooms.get(endPoint.getId());		
 
 		 // the start/end points y-vlaue isn't set, so update them.
-		startPoint.getCoords().setY(room1.getCoords().getY());
-		endPoint.getCoords().setY(room2.getCoords().getY());
+		startPoint.setCoords(startPoint.getCoords().resetY(room1.getCoords().getY()));
+		endPoint.setCoords(endPoint.getCoords().resetY(room2.getCoords().getY()));
 
 		// calculate what the dimensions should be
 		int height = Math.abs(

@@ -25,12 +25,12 @@ public class Arrangement {
 	/**
 	 * 
 	 * @param element
-	 * @param locatoin
+	 * @param location
 	 * @param direction
 	 */
-	public Arrangement(DesignElement element, Location locatoin, Direction direction) {
+	public Arrangement(DesignElement element, Location location, Direction direction) {
 		setElement(element);
-		setLocation(locatoin);
+		setLocation(location);
 		setDirection(direction);
 	}
 
@@ -74,5 +74,10 @@ public class Arrangement {
 	 */
 	public void setLocation(Location location) {
 		this.location = location;
+	}
+	
+	@Override
+	public String toString() {
+		return "Arrangement [element=" + element + ", direction=" + direction + ", location=" + location + "]";
 	}
 }

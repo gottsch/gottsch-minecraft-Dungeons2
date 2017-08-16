@@ -465,7 +465,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					wallSconceStonebrickFacade,
 					wallSconceMossyStonebrickFacade,
 					wallSconceCrackedStonebrickFacade,
-					wallSconceObsidianbrickFacade	
+					wallSconceObsidianbrickFacade,
+					grateBlock
 			};
 			registry.registerAll(blocks);			
 		}
@@ -601,7 +602,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					new ItemBlock(wallSconceStonebrickFacade),
 					new ItemBlock(wallSconceMossyStonebrickFacade),
 					new ItemBlock(wallSconceCrackedStonebrickFacade),
-					new ItemBlock(wallSconceObsidianbrickFacade)
+					new ItemBlock(wallSconceObsidianbrickFacade),
+					new ItemBlock(grateBlock)
 			};
 
 			for (final ItemBlock item : items) {

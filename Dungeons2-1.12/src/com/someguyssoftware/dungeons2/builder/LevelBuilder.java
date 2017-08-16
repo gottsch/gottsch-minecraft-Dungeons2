@@ -632,7 +632,7 @@ public class LevelBuilder {
 			if (rooms.get(i).getMinX() < mx) mx = rooms.get(i).getMinX();
 			if (rooms.get(i).getMinZ() < mz) mz = rooms.get(i).getMinZ();
 		}
-		Dungeons2.log.debug("Min X/Z values=" + mx + ", " + mz);
+//		Dungeons2.log.debug("Min X/Z values=" + mx + ", " + mz);
 		
 		// TODO move own method
 		// if dimensions are negative, offset all rooms by positive (Math.abs()) amount +1
@@ -1017,9 +1017,10 @@ public class LevelBuilder {
 			
 			// get the midpoint between room1 and room2
 			ICoords midpoint = room1.getCenter().add(room2.getCenter());
-			midpoint.setX(midpoint.getX()/2);
-			midpoint.setY(midpoint.getY()/2);
-			midpoint.setZ(midpoint.getZ()/2);
+			midpoint = new Coords(midpoint.getX()/2, midpoint.getY()/2, midpoint.getZ()/2);
+//			midpoint.resetX(midpoint.getX()/2);
+//			midpoint.resetY(midpoint.getY()/2);
+//			midpoint.resetZ(midpoint.getZ()/2);
 			
 			/*
 			 * a group of maps that relate the room's min/max values with the room
@@ -1600,7 +1601,7 @@ public class LevelBuilder {
 			}
 		}
 		else {
-			Dungeons2.log.debug("Room is below sea level @ " + room.getCenter());
+//			Dungeons2.log.debug("Room is below sea level @ " + room.getCenter());
 			if (percentSolid < 20.0f) {
 				Dungeons2.log.debug("Room has less than 20 % base @ " + room.getCenter());
 				/*
@@ -1774,7 +1775,7 @@ public class LevelBuilder {
 		
 		Room entranceRoom = new Room(startRoom);
 		entranceRoom.setAnchor(true).setType(Type.ENTRANCE);
-		entranceRoom.getCoords().setY(surfaceCoords.getY());
+		entranceRoom.setCoords(entranceRoom.getCoords().resetY(surfaceCoords.getY()));
 
 		return null;
 	}

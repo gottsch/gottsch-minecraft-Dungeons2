@@ -7,6 +7,7 @@ import java.io.File;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
 
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
@@ -17,6 +18,7 @@ import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
+import com.someguyssoftware.gottschcore.GottschCore;
 import com.someguyssoftware.gottschcore.annotation.Credits;
 import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
 import com.someguyssoftware.gottschcore.config.IConfig;
@@ -47,7 +49,7 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 	modid=Dungeons2.MODID,
 	name=Dungeons2.NAME,
 	version=Dungeons2.VERSION,
-	dependencies="required-after:gottschcore@[1.1.0,)",
+	dependencies="required-after:gottschcore@[1.1.1,)",
 	acceptedMinecraftVersions = "[1.12]",
 	updateJSON = Dungeons2.UPDATE_JSON_URL
 )
@@ -67,7 +69,7 @@ public class Dungeons2 extends AbstractMod {
 		public static BuildVersion latestVersion;
 
 		// logger
-		private static final String LOGGER_NAME = "Dungeons2";
+		public static final String LOGGER_NAME = "Dungeons2";
 		public static Logger log = LogManager.getLogger(LOGGER_NAME);
 		
 		@Instance(value=Dungeons2.MODID)
@@ -103,8 +105,16 @@ public class Dungeons2 extends AbstractMod {
 			// create and load the config file		
 			config = new ModConfig(this, event.getModConfigurationDirectory(), DUNGEONS_CONFIG_DIR, "general.cfg");
 			
-			// configure logging
-			addRollingFileAppenderToLogger(LOGGER_NAME, LOGGER_NAME + "Appender", config);
+			/*
+			 *  configure logging
+			 */
+//			addRollingFileAppenderToLogger(LOGGER_NAME, LOGGER_NAME + "Appender", config);
+			// create a rolling file appender
+			Appender appender = createRollingFileAppender(LOGGER_NAME + "Appender", config);
+			// add appender to mod logger
+			addAppenderToLogger(appender, LOGGER_NAME, config);
+			// add appender to the GottschCore logger
+			addAppenderToLogger(appender, GottschCore.instance.getName(), config);
 			
 	        // register the packet handlers
 	        network = NetworkRegistry.INSTANCE.newSimpleChannel(Dungeons2.MODID);
