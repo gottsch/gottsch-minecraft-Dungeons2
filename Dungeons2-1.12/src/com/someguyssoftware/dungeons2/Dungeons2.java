@@ -213,7 +213,7 @@ public class Dungeons2 extends AbstractMod {
 
 		@Override
 		public BuildVersion getMinecraftVersion() {
-			return Dungeons2.latestVersion;
+			return Dungeons2.MINECRAFT_VERSION;
 		}
 
 		@Override

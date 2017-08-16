@@ -600,7 +600,7 @@ public class LevelBuilder {
 		
 		// add randomly generated rooms
 		spawned = spawnRooms(rand, startPoint, config);
-		Dungeons2.log.info("Spawned.size=" + spawned.size());
+		Dungeons2.log.debug("Spawned.size=" + spawned.size());
 		
 		// process all predefined rooms and categorize
 		for (Room room : plannedRooms) {
@@ -1104,7 +1104,7 @@ public class LevelBuilder {
 //				Dungeons2.log.info(String.format("Vert line from [%d, %d] to [%d, %d[", x, innerMinZ, x, innerMaxZ));
 
 				if (wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-					Dungeons2.log.warn("Wayline's points are equal !!: " + wayline);
+					Dungeons2.log.debug("Wayline's points are equal !!: " + wayline);
 				}
 				stack.add(wayline);
 				waylines.addAll(resolveWaylineRoomIntersections(rooms, stack));
@@ -1210,7 +1210,7 @@ public class LevelBuilder {
 			for (Room room : rooms) {
 //				Dungeons2.log.info(String.format("Checking against room [%d]", room.getId()));
 				if (wayline == null) {
-					Dungeons2.log.info("Wayline is null on room:" + room.getId());
+					Dungeons2.log.debug("Wayline is null on room:" + room.getId());
 					break;
 					}
 				// construct a BB for line
@@ -1227,11 +1227,11 @@ public class LevelBuilder {
 				 */
 				// test intersection with room
 				if (wayline.getPoint1().getCoords().getDistance(wayline.getPoint2().getCoords()) > 0 && bb1.intersects(room.getXZBoundingBox())) {
-					Dungeons2.log.info(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
+					Dungeons2.log.debug(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
 //					wayline = resolveWaylineRoomIntersection(room, wayline, waylines);
 					waylines = resolveWaylineRoomIntersection(room, wayline);
 					if (waylines != null && waylines.size() > 0) {
-						Dungeons2.log.info("Adding new waylines to stack.");
+//						Dungeons2.log.debug("Adding new waylines to stack.");
 						stack.addAll(waylines);
 						wayline = null;
 					}
@@ -1336,14 +1336,14 @@ public class LevelBuilder {
 		// add the new wayline to the list
 		if (remainderWayline1 != null) {
 			if (remainderWayline1.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-				Dungeons2.log.warn("Remainder  Wayline1's points are equal !!: " + remainderWayline1);
+				Dungeons2.log.debug("Remainder  Wayline1's points are equal !!: " + remainderWayline1);
 			}
 			waylines.add(remainderWayline1);
 		}
 		
 		if (remainderWayline2 != null) {
 			if (remainderWayline2.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-				Dungeons2.log.warn("Remainder Wayline2's points are equal !!: " + remainderWayline2);
+				Dungeons2.log.debug("Remainder Wayline2's points are equal !!: " + remainderWayline2);
 			}
 			waylines.add(remainderWayline2);
 		}
@@ -1361,9 +1361,9 @@ public class LevelBuilder {
 		List<Wayline> waylines = new ArrayList<>();
 		
 		for (Room room : rooms) {
-			Dungeons2.log.info(String.format("Checking against room [%d]", room.getId()));
+			Dungeons2.log.debug(String.format("Checking against room [%d]", room.getId()));
 			if (wayline == null) {
-				Dungeons2.log.info("Wayline is null on room:" + room.getId());
+				Dungeons2.log.debug("Wayline is null on room:" + room.getId());
 				break;
 				}
 			// construct a BB for line
@@ -1373,7 +1373,7 @@ public class LevelBuilder {
 			
 			// test intersection with room
 			if (bb1.intersects(room.getBoundingBox())) {
-				Dungeons2.log.info(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
+				Dungeons2.log.debug(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
 				wayline = resolveWaylineRoomIntersection(room, wayline, waylines);
 			}
 		}
@@ -1399,9 +1399,9 @@ public class LevelBuilder {
 
 		
 		// create new waylines
-		Dungeons2.log.info("WP1: " + wayline.getPoint1());
-		Dungeons2.log.info("WP2: " + wayline.getPoint2());
-		Dungeons2.log.info("Room: " + room);
+//		Dungeons2.log.info("WP1: " + wayline.getPoint1());
+//		Dungeons2.log.info("WP2: " + wayline.getPoint2());
+//		Dungeons2.log.info("Room: " + room);
 		Waypoint p1 = wayline.getPoint1();
 		Waypoint p2 = wayline.getPoint2();
 		Waypoint terminatedPoint = null;
@@ -1411,32 +1411,32 @@ public class LevelBuilder {
 			// determine if a point terminates in room
 			if (wayline.getPoint1().getX() >= room.getMinX() && wayline.getPoint1().getX() <= room.getMaxX()) {
 				terminatedPoint = wayline.getPoint1();
-				Dungeons2.log.info("Terminating H point:"  + terminatedPoint);
+//				Dungeons2.log.info("Terminating H point:"  + terminatedPoint);
 				p1 = wayline.getPoint2();
 				p2 = wayline.getPoint1();
 			}
 			else if (wayline.getPoint2().getX() >= room.getMinX() && wayline.getPoint2().getX() <= room.getMaxX()) {
 				terminatedPoint = wayline.getPoint2();
-				Dungeons2.log.info("Terminating H Else point:"  + terminatedPoint);
+//				Dungeons2.log.info("Terminating H Else point:"  + terminatedPoint);
 				p1 = wayline.getPoint1();
 				p2 = wayline.getPoint2();
 			}
 			else {
-				Dungeons2.log.info("Skipped H termination point altogether somehow!");
+//				Dungeons2.log.info("Skipped H termination point altogether somehow!");
 				// no termination - line right through
 			}
 			
 //			if (pgood.getX() > pbad.getX()) {
 			if (p1.getX() < p2.getX() /*&& wayline.getPoint1() != terminatedPoint*/) {
 				newWayline = new Wayline(p1, new Waypoint(room.getId(), room.getMinX(), p1.getY(), p1.getZ()));
-				Dungeons2.log.info("Building wayline (R) from P1 -> Room.MinX");
+//				Dungeons2.log.info("Building wayline (R) from P1 -> Room.MinX");
 				if (terminatedPoint == null) {
 					remainderWayline = new Wayline(new Waypoint(room.getId(), room.getMaxX(), p2.getY(), p2.getZ()), p2);
 				}
 			}
 			else {				
 				newWayline = new Wayline(p1, new Waypoint(room.getId(), room.getMaxX(), p1.getY(), p1.getZ()));
-				Dungeons2.log.info("Building wayline (L) from P1 -> Room.MaxX");
+//				Dungeons2.log.info("Building wayline (L) from P1 -> Room.MaxX");
 				if (terminatedPoint == null) {
 					remainderWayline = new Wayline(new Waypoint(room.getId(), room.getMinX(), p2.getY(), p2.getZ()), p2);
 				}
@@ -1448,18 +1448,18 @@ public class LevelBuilder {
 			// determine if a point terminates in room
 			if (wayline.getPoint1().getZ() >= room.getMinZ() && wayline.getPoint1().getZ() <= room.getMaxZ()) {
 				terminatedPoint = wayline.getPoint1();
-				Dungeons2.log.info("Terminating V point:"  + terminatedPoint);
+//				Dungeons2.log.info("Terminating V point:"  + terminatedPoint);
 				p1 = wayline.getPoint2();
 				p2 = wayline.getPoint1();
 			}
 			else if (wayline.getPoint2().getZ() >= room.getMinZ() && wayline.getPoint2().getZ() <= room.getMaxZ()) {
 				terminatedPoint = wayline.getPoint2();
-				Dungeons2.log.info("Terminating V Else point:"  + terminatedPoint);
+//				Dungeons2.log.info("Terminating V Else point:"  + terminatedPoint);
 				p1 = wayline.getPoint1();
 				p2 = wayline.getPoint2();
 			}
 			else {
-				Dungeons2.log.info("Skipped V termination point altogether somehow!");
+//				Dungeons2.log.info("Skipped V termination point altogether somehow!");
 			}
 			
 			// up
@@ -1571,11 +1571,11 @@ public class LevelBuilder {
 
 		// get percentage of solid base blocks
 		double percentSolid = WorldInfo.getSolidBasePercent(world, room.getCoords(), room.getWidth(), room.getDepth());
-		Dungeons2.log.debug("Percent solid base:" + percentSolid);
+//		Dungeons2.log.debug("Percent solid base:" + percentSolid);
 		
 		// get the depth from the surface to top of the room
 		int surfaceRoomDepth = WorldInfo.getDifferenceWithSurface(world, room.getCenter());
-		Dungeons2.log.debug("The surface/room depth =" + surfaceRoomDepth);
+//		Dungeons2.log.debug("The surface/room depth =" + surfaceRoomDepth);
 		if (surfaceRoomDepth == WorldInfo.INVALID_SURFACE_POS) {
 			Dungeons2.log.debug("Unable to locate the surface position.");
 			return false;
@@ -1718,7 +1718,7 @@ public class LevelBuilder {
 		checkingRooms:
 		do {
 			plannedRoom = randomizeRoom(rand, plannedRoom, startPoint, config);
-			Dungeons2.log.info("New Planned Room:" + plannedRoom);
+			Dungeons2.log.debug("New Planned Room:" + plannedRoom);
 			endCheckIndex++;
 			if (endCheckIndex > 10) {
 				Dungeons2.log.warn("Unable to position Planned Room that meets positional criteria.");
@@ -1726,7 +1726,7 @@ public class LevelBuilder {
 			}
 			for (Room room : plannedRooms) {
 				if (room.getXZBoundingBox().intersects(plannedRoom.getXZBoundingBox())) {
-					Dungeons2.log.info("New Planned room intersects with planned list room.");
+					Dungeons2.log.debug("New Planned room intersects with planned list room.");
 					continue checkingRooms;
 				}
 			}
