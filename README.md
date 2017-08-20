@@ -7,4 +7,4 @@ You can never have enough DUNGEONS!!
 Dungeons2! is a new Minecraft mod that adds procedurally generated, customizable dungeons to your world.
 
  
-See the [wiki](Wiki) for additional information.
+See the [wiki](https://github.com/gottsch/gottsch-minecraft-Dungeons2/wiki/Home) for additional information.
