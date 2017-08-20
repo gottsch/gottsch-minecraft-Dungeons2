@@ -187,7 +187,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
         BlockPos pos = new BlockPos(xSpawn, ySpawn, zSpawn);
 
      	boolean isGenerated = false;
-     	if (!isGenerating && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
+     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
      		// check if  the min distance between dungeons is met
      		if (lastDungeonBlockPos == null || lastDungeonBlockPos.distanceSq(pos) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
 //     			Dungeons2.log.debug("Getting ySpawn @ " + xSpawn + " " + zSpawn);
@@ -218,7 +218,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
      			}
      			
 			    // set the generating flag
-			    this.isGenerating = true;
+			    this.setGenerating(true);
 			    
 			    // 3. get the sheets - NOTE see constructor
 
@@ -296,7 +296,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				}
 				
 				// set the generating flag
-			    this.isGenerating = false;
+			    this.setGenerating(false);
      		}
      	}
      	// save world data
@@ -362,6 +362,14 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	 */
 	public void setLastDungeonBlockPos(BlockPos lastDungeonBlockPos) {
 		this.lastDungeonBlockPos = lastDungeonBlockPos;
+	}
+
+	public synchronized boolean isGenerating() {
+		return isGenerating;
+	}
+
+	public synchronized void setGenerating(boolean isGenerating) {
+		this.isGenerating = isGenerating;
 	}
 
 }

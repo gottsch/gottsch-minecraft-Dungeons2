@@ -72,7 +72,7 @@ public class DungeonsGenSavedData extends WorldSavedData {
 			int maxY = infoTag.getInteger("maxY");
 			int maxZ = infoTag.getInteger("maxZ");			
 			int levels = infoTag.getInteger("levels");
-			String themeName = infoTag.getString("themName");
+			String themeName = infoTag.getString("themeName");
 			int bossX = infoTag.getInteger("bossChestX");
 			int bossY = infoTag.getInteger("bossChestY");
 			int bossZ = infoTag.getInteger("bossChestZ");
@@ -142,7 +142,7 @@ public class DungeonsGenSavedData extends WorldSavedData {
 					
 					infoTag.setInteger("levels", info.getLevels());
 					if (info.getThemeName() != null) {
-						infoTag.setString("themName", info.getThemeName());
+						infoTag.setString("themeName", info.getThemeName());
 					}
 					if (info.getBossChestCoords() != null) {
 						infoTag.setInteger("bossChestX", info.getBossChestCoords().getX());
