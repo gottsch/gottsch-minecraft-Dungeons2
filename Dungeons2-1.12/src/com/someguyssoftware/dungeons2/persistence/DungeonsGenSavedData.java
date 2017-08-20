@@ -4,8 +4,12 @@
 package com.someguyssoftware.dungeons2.persistence;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.model.DungeonInfo;
+import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
+import com.someguyssoftware.gottschcore.positional.Coords;
 
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.WorldSavedData;
@@ -50,6 +54,50 @@ public class DungeonsGenSavedData extends WorldSavedData {
 		int y = pos.getInteger("y");
 		int z = pos.getInteger("z");
 		Dungeons2.dungeonsWorldGen.setLastDungeonBlockPos(new BlockPos(x, y, z));
+		
+		NBTTagList registryTagList = tag.getTagList("registry", 10);
+		
+		// process each meta in the list
+		for (int i = 0; i < registryTagList.tagCount(); i++) {
+			NBTTagCompound infoTag = registryTagList.getCompoundTagAt(i);
+			
+			// retrieve data from NBT
+			int dx = infoTag.getInteger("x");
+			int dy = infoTag.getInteger("y");
+			int dz = infoTag.getInteger("z");
+			int minX = infoTag.getInteger("minX");
+			int minY = infoTag.getInteger("minY");
+			int minZ = infoTag.getInteger("minZ");
+			int maxX = infoTag.getInteger("maxX");
+			int maxY = infoTag.getInteger("maxY");
+			int maxZ = infoTag.getInteger("maxZ");			
+			int levels = infoTag.getInteger("levels");
+			String themeName = infoTag.getString("themName");
+			int bossX = infoTag.getInteger("bossChestX");
+			int bossY = infoTag.getInteger("bossChestY");
+			int bossZ = infoTag.getInteger("bossChestZ");
+			
+			try {		
+				// create a meta
+				DungeonInfo info = new DungeonInfo();
+				info.setCoords(new Coords(dx, dy, dz));
+				info.setMinX(minX);
+				info.setMinY(minY);
+				info.setMinZ(minZ);
+				info.setMaxX(maxX);
+				info.setMaxY(maxY);
+				info.setMaxZ(maxZ);
+				info.setLevels(levels);
+				info.setThemeName(themeName);
+				info.setBossChestCoords(new Coords(bossX, bossY, bossZ));
+			
+				// register the meta
+				DungeonRegistry.getInstance().register(info.getCoords().toShortString(), info);
+			}
+			catch(Exception e) {
+				Dungeons2.log.error(e);					
+			}
+		}
 	}
 
 	/*
@@ -73,6 +121,43 @@ public class DungeonsGenSavedData extends WorldSavedData {
 				pos.setInteger("z", Dungeons2.dungeonsWorldGen.getLastDungeonBlockPos().getZ());
 				tag.setTag("lastDungeonBlockPos", pos);			
 			}
+			
+			// write the Dungeon Registry to NBT
+			NBTTagList registryTagList = new NBTTagList();
+			for (DungeonInfo info : DungeonRegistry.getInstance().getEntries()) {
+				NBTTagCompound infoTag = new NBTTagCompound();
+
+				if (info != null) {
+					if (info.getCoords() != null) {
+						infoTag.setInteger("x", info.getCoords().getX());
+						infoTag.setInteger("y", info.getCoords().getY());
+						infoTag.setInteger("z", info.getCoords().getZ());
+					}
+					infoTag.setInteger("minX", info.getMinX());
+					infoTag.setInteger("minY", info.getMinY());
+					infoTag.setInteger("minZ", info.getMinZ());
+					infoTag.setInteger("maxX", info.getMaxX());
+					infoTag.setInteger("maxY", info.getMaxY());
+					infoTag.setInteger("maxZ", info.getMaxZ());
+					
+					infoTag.setInteger("levels", info.getLevels());
+					if (info.getThemeName() != null) {
+						infoTag.setString("themName", info.getThemeName());
+					}
+					if (info.getBossChestCoords() != null) {
+						infoTag.setInteger("bossChestX", info.getBossChestCoords().getX());
+						infoTag.setInteger("bossChestY", info.getBossChestCoords().getY());
+						infoTag.setInteger("bossChestZ", info.getBossChestCoords().getZ());
+					}
+
+				}
+				
+				// add the poi to the list
+				registryTagList.appendTag(infoTag);
+			}
+			
+			// add the poi regsitry to the main tag
+			tag.setTag("registry", registryTagList);	
 		}
 		catch(Exception e) {
 			e.printStackTrace();

@@ -13,6 +13,7 @@ import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
 import com.someguyssoftware.dungeons2.config.DungeonsConfiguration;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
@@ -62,7 +63,7 @@ public class Dungeons2 extends AbstractMod {
 		
 		public static final String MODID = "dungeons2";
 		public static final String NAME = "Dungeons2!";
-		public static final String VERSION = "1.1.0"; 
+		public static final String VERSION = "1.2.0"; 
 		public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12/update.json";
 		
 		// latest VERSION
@@ -158,10 +159,8 @@ public class Dungeons2 extends AbstractMod {
 	    		// add to world generators
 				Dungeons2.dungeonsWorldGen = new DungeonsWorldGen();
 	        	GameRegistry.registerWorldGenerator(Dungeons2.dungeonsWorldGen, 100);
-	        }		
-			
-			// register client renderers
-//			proxy.registerRenderers();
+	        }
+	        
 		}
 		
 	    @EventHandler

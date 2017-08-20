@@ -27,8 +27,10 @@ import com.someguyssoftware.dungeons2.config.PRESET_LEVEL_CONFIGS;
 import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
+import com.someguyssoftware.dungeons2.model.DungeonInfo;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.persistence.DungeonsGenSavedData;
+import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
@@ -37,7 +39,7 @@ import com.someguyssoftware.dungeons2.style.Theme;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -53,13 +55,16 @@ import net.minecraftforge.fml.common.IWorldGenerator;
  */
 public class DungeonsWorldGen implements IWorldGenerator {
 	// the number of blocks of half a chunk (radius) (a chunk is 16x16)
-	public static final int CHUNK_RADIUS = 16;	 // <-- should be 8, not 16
+	public static final int CHUNK_RADIUS = 8;
+		
 	/*
 	 *  values that control the frequency of dungeon generation
 	 *  persisted to game save data
 	 */	
 	private int chunksSinceLastDungeon = 0;
+	// TODO this should be Coords
 	private BlockPos lastDungeonBlockPos = null;
+	private boolean isGenerating = false;
 	
 	// biome white/black lists
 	private List<BiomeTypeHolder> biomeWhiteList;
@@ -168,15 +173,21 @@ public class DungeonsWorldGen implements IWorldGenerator {
         int xPos = chunkX * 16 + 8;
         int zPos = chunkZ * 16 + 8;
         
-        int xSpawn = xPos + random.nextInt(CHUNK_RADIUS);
-        int zSpawn = zPos + random.nextInt(CHUNK_RADIUS);
+        // TODO this is irrelevant - actually pushes off the center of the chunk
+//        int xSpawn = xPos + random.nextInt(CHUNK_RADIUS);
+//        int zSpawn = zPos + random.nextInt(CHUNK_RADIUS);
+        // spawn @ middle of chunk
+        int xSpawn = xPos;
+        int zSpawn = zPos;
+        
         // the get first surface y (could be leaves, trunk, water, etc)
         int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
 
+        // TODO this should be Coords
         BlockPos pos = new BlockPos(xSpawn, ySpawn, zSpawn);
 
      	boolean isGenerated = false;
-     	if (chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
+     	if (!isGenerating && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
      		// check if  the min distance between dungeons is met
      		if (lastDungeonBlockPos == null || lastDungeonBlockPos.distanceSq(pos) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
 //     			Dungeons2.log.debug("Getting ySpawn @ " + xSpawn + " " + zSpawn);
@@ -198,6 +209,16 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    	Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));
 			    	return;
 			    }
+			    
+     			// 2.5 check against all registered dungeons
+     			// TODO make this const
+     			if (isDungeonWithinDistance(world, new Coords(pos), 300)) {
+   					Dungeons2.log.debug("The distance to the nearest dungeon is less than the minimun required.");
+     				return;
+     			}
+     			
+			    // set the generating flag
+			    this.isGenerating = true;
 			    
 			    // 3. get the sheets - NOTE see constructor
 
@@ -264,10 +285,18 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				}
 				
 				if (isGenerated) {
+					// register the dungeon with the Dungeon Registry
+					DungeonInfo info = new DungeonInfo(dungeon);
+					DungeonRegistry.getInstance().register(new Coords(pos).toShortString(), info);
+
+					
 					// update the last dungeon position
 					lastDungeonBlockPos = pos;
 					Dungeons2.log.info("Dungeon generated @ " + new Coords(pos).toShortString());
 				}
+				
+				// set the generating flag
+			    this.isGenerating = false;
      		}
      	}
      	// save world data
@@ -278,6 +307,35 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		
 	}
 
+	/**
+	 * 
+	 * @param world
+	 * @param pos
+	 * @param minDistance
+	 * @return
+	 */
+	public boolean isDungeonWithinDistance(World world, ICoords coords, int minDistance) {
+		
+		double minDistanceSq = minDistance * minDistance;
+		
+		// get a list of dungeons
+		List<DungeonInfo> infos = DungeonRegistry.getInstance().getEntries();
+
+		if (infos == null || infos.size() == 0) {
+			Dungeons2.log.debug("Unable to locate the Dungeon Registry or the Registry doesn't contain any values");
+			return false;
+		}
+
+		for (DungeonInfo info : infos) {
+			// calculate the distance to the poi
+			double distance = coords.getDistanceSq(info.getCoords());
+			if (distance < minDistanceSq) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * @return the chunksSinceLastDungeon
 	 */
