@@ -41,6 +41,8 @@ import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -168,26 +170,71 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		
 	    // increment last dungeon chunk count
 	    chunksSinceLastDungeon++;
-	    
-		// get the x,z world coords, centered in the current chunk
-        int xPos = chunkX * 16 + 8;
-        int zPos = chunkZ * 16 + 8;
-        
-        // TODO this is irrelevant - actually pushes off the center of the chunk
-//        int xSpawn = xPos + random.nextInt(CHUNK_RADIUS);
-//        int zSpawn = zPos + random.nextInt(CHUNK_RADIUS);
-        // spawn @ middle of chunk
-        int xSpawn = xPos;
-        int zSpawn = zPos;
-        
-        // the get first surface y (could be leaves, trunk, water, etc)
-        int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
-
-        // TODO this should be Coords
-        BlockPos pos = new BlockPos(xSpawn, ySpawn, zSpawn);
 
      	boolean isGenerated = false;
-     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
+     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {     		
+     		/*
+     		 * get current chunk position
+     		 */
+     		
+     		// TODO just rename to x/zSpawn
+    		// get the x,z world coords, centered in the current chunk
+            int xPos = chunkX * 16 + 8;
+            int zPos = chunkZ * 16 + 8;
+            
+            // spawn @ middle of chunk
+            int xSpawn = xPos;
+            int zSpawn = zPos;
+            
+            // the get first surface y (could be leaves, trunk, water, etc)
+            int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
+
+            // TODO this should be Coords
+            BlockPos pos = new BlockPos(xSpawn, ySpawn, zSpawn);
+            ICoords coords = new Coords(xSpawn, ySpawn, zSpawn);
+     		
+            // ===================
+			// TODO get the nearest player's position
+            double closestDistSq = -1.0D;
+            ICoords closestCoords = null;
+			for (int i = 0; i < world.playerEntities.size(); ++i) {
+				EntityPlayer player = world.playerEntities.get(i);
+				ICoords playerCoords = new Coords(player.getPosition());
+				double dist = coords.getDistanceSq(playerCoords);
+
+				if (closestDistSq == -1.0D || dist < closestDistSq) {
+					closestDistSq = dist;
+					closestCoords = playerCoords;
+				}
+			}
+			
+			// determine if closest player is within generate threshold (80 blocks / 5 chunks)
+			if (closestDistSq > 6400) {
+				/*
+				 * move the spawn coords to 80 blocks away.
+				 * use scaling method instead of slope & pythagorean theorem to avoid calculating squares and square roots.
+				 * 
+				 */
+				// get dist ratio
+				double ratio = 6400 / closestDistSq;
+				
+				// get x, z delta (or distance in blocks along the axis)
+				ICoords delta = coords.delta(closestCoords);
+				
+				// reduce the x, z distances by (1 - pecent)
+				double redux = 1 - ratio;
+				double xRedux = delta.getX() * redux;
+				double zRedux = delta.getZ() * redux;
+				
+				xSpawn = xSpawn - ((int)xRedux);
+				zSpawn = zSpawn - ((int)zRedux);
+				ySpawn = world.getChunkFromChunkCoords(xSpawn, zSpawn).getHeightValue(8, 8);
+				
+				coords = new Coords (xSpawn, ySpawn, zSpawn);
+				pos = coords.toPos();
+			}
+			// ==========================
+            
      		// check if  the min distance between dungeons is met
      		if (lastDungeonBlockPos == null || lastDungeonBlockPos.distanceSq(pos) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
 //     			Dungeons2.log.debug("Getting ySpawn @ " + xSpawn + " " + zSpawn);
