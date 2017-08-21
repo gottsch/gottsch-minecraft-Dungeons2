@@ -55,7 +55,7 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 	updateJSON = Dungeons2.UPDATE_JSON_URL
 )
 
-@Credits(values={"FastLadder! was first developed by Mark Gottschling on December 27, 2016."})
+@Credits(values={"Dungeons2! was first developed by Mark Gottschling on July 1, 2016."})
 public class Dungeons2 extends AbstractMod {
 		// constants
 		private static final String VERSION_URL = "https://www.dropbox.com/s/fjcnqmbji9ujvbt/dungeons2-versions.json?dl=1";
