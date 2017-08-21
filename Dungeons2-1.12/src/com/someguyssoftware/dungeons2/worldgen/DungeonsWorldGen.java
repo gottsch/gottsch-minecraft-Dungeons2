@@ -58,14 +58,15 @@ import net.minecraftforge.fml.common.IWorldGenerator;
 public class DungeonsWorldGen implements IWorldGenerator {
 	// the number of blocks of half a chunk (radius) (a chunk is 16x16)
 	public static final int CHUNK_RADIUS = 8;
+
+	private static final double DEFAULT_GENERATION_PROXIMITY_SQAURED = 6400;
 		
 	/*
 	 *  values that control the frequency of dungeon generation
 	 *  persisted to game save data
 	 */	
 	private int chunksSinceLastDungeon = 0;
-	// TODO this should be Coords
-	private BlockPos lastDungeonBlockPos = null;
+	private ICoords lastDungeonCoords = null;
 	private boolean isGenerating = false;
 	
 	// biome white/black lists
@@ -172,75 +173,35 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	    chunksSinceLastDungeon++;
 
      	boolean isGenerated = false;
-     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {     		
+     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {     	
+ 			// clear count
+			chunksSinceLastDungeon = 0;
+			
      		/*
      		 * get current chunk position
      		 */
      		
      		// TODO just rename to x/zSpawn
     		// get the x,z world coords, centered in the current chunk
-            int xPos = chunkX * 16 + 8;
-            int zPos = chunkZ * 16 + 8;
+//            int xPos = 
+//            int zPos = 
             
             // spawn @ middle of chunk
-            int xSpawn = xPos;
-            int zSpawn = zPos;
+            int xSpawn = chunkX * 16 + 8;
+            int zSpawn = chunkZ * 16 + 8;
             
             // the get first surface y (could be leaves, trunk, water, etc)
             int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
 
-            // TODO this should be Coords
-            BlockPos pos = new BlockPos(xSpawn, ySpawn, zSpawn);
             ICoords coords = new Coords(xSpawn, ySpawn, zSpawn);
+     		Dungeons2.log.debug("Starting Coords:" + coords);
      		
-            // ===================
-			// TODO get the nearest player's position
-            double closestDistSq = -1.0D;
-            ICoords closestCoords = null;
-			for (int i = 0; i < world.playerEntities.size(); ++i) {
-				EntityPlayer player = world.playerEntities.get(i);
-				ICoords playerCoords = new Coords(player.getPosition());
-				double dist = coords.getDistanceSq(playerCoords);
-
-				if (closestDistSq == -1.0D || dist < closestDistSq) {
-					closestDistSq = dist;
-					closestCoords = playerCoords;
-				}
-			}
-			
-			// determine if closest player is within generate threshold (80 blocks / 5 chunks)
-			if (closestDistSq > 6400) {
-				/*
-				 * move the spawn coords to 80 blocks away.
-				 * use scaling method instead of slope & pythagorean theorem to avoid calculating squares and square roots.
-				 * 
-				 */
-				// get dist ratio
-				double ratio = 6400 / closestDistSq;
-				
-				// get x, z delta (or distance in blocks along the axis)
-				ICoords delta = coords.delta(closestCoords);
-				
-				// reduce the x, z distances by (1 - pecent)
-				double redux = 1 - ratio;
-				double xRedux = delta.getX() * redux;
-				double zRedux = delta.getZ() * redux;
-				
-				xSpawn = xSpawn - ((int)xRedux);
-				zSpawn = zSpawn - ((int)zRedux);
-				ySpawn = world.getChunkFromChunkCoords(xSpawn, zSpawn).getHeightValue(8, 8);
-				
-				coords = new Coords (xSpawn, ySpawn, zSpawn);
-				pos = coords.toPos();
-			}
-			// ==========================
+     		coords = getReduxCoords(world, coords);
+			Dungeons2.log.debug("New coords:" + coords.toShortString());
             
      		// check if  the min distance between dungeons is met
-     		if (lastDungeonBlockPos == null || lastDungeonBlockPos.distanceSq(pos) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
+     		if (lastDungeonCoords == null || lastDungeonCoords.getDistanceSq(coords) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
 //     			Dungeons2.log.debug("Getting ySpawn @ " + xSpawn + " " + zSpawn);
-    			     			
-     			// clear count
-				chunksSinceLastDungeon = 0;
 
 				// 1. test if dungeon meets the probability criteria
 				if (random.nextInt(100) > ModConfig.dungeonGenProbability) {
@@ -249,7 +210,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				}		
 
 				// 2. test if correct biome
-				Biome biome = world.getBiome(pos);
+				Biome biome = world.getBiome(coords.toPos());
 				Dungeons2.log.debug("Current biome:" + biome.getBiomeName());
 
 			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
@@ -258,8 +219,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    }
 			    
      			// 2.5 check against all registered dungeons
-     			// TODO make this const
-     			if (isDungeonWithinDistance(world, new Coords(pos), 300)) {
+     			if (isRegisteredDungeonWithinDistance(world, coords, ModConfig.minDistancePerDungeon)) {
    					Dungeons2.log.debug("The distance to the nearest dungeon is less than the minimun required.");
      				return;
      			}
@@ -271,7 +231,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 				// 4. select random theme, pattern, size and direction
 //				Dungeons2.log.debug("StyleSheet:" + styleSheet);
-				Dungeons2.log.debug("Themes.size: " + styleSheet.getThemes().size());
+//				Dungeons2.log.debug("Themes.size: " + styleSheet.getThemes().size());
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
     			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
 				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
@@ -312,7 +272,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 //								"\tUsing DungeonConfig: %s", pos, levelConfig, levelBuilder, dungeonConfig));
 				
 				// 7. build the dungeon
-				Dungeon dungeon = builder.build(world, random, new Coords(pos), dungeonConfig);
+				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
 				/*
 				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
 				 *  In future each level in a dungeon may have a different support setting
@@ -327,19 +287,19 @@ public class DungeonsWorldGen implements IWorldGenerator {
 					try {
 						isGenerated = generator.generate(world, random, dungeon, styleSheet, chestSheet, spawnSheet);
 					} catch (FileNotFoundException e) {
-						Dungeons2.log.error("Error generating dungeon @ " + new Coords(pos).toShortString(), e);
+						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
 					}
 				}
 				
 				if (isGenerated) {
 					// register the dungeon with the Dungeon Registry
-					DungeonInfo info = new DungeonInfo(dungeon);
-					DungeonRegistry.getInstance().register(new Coords(pos).toShortString(), info);
+					DungeonInfo info = new DungeonInfo(dungeon, pattern, dungeonSize, levelSize, direction);
+					DungeonRegistry.getInstance().register(coords.toShortString(), info);
 
 					
 					// update the last dungeon position
-					lastDungeonBlockPos = pos;
-					Dungeons2.log.info("Dungeon generated @ " + new Coords(pos).toShortString());
+					lastDungeonCoords = coords;
+					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
 				}
 				
 				// set the generating flag
@@ -357,11 +317,71 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	/**
 	 * 
 	 * @param world
+	 * @param coords
+	 * @return
+	 */
+	private ICoords getReduxCoords(World world, ICoords coords) {
+		/*
+		 * Get the closest player's distance from coords
+		 */
+        double closestDistSq = -1.0D;
+        ICoords closestCoords = null;
+		for (int i = 0; i < world.playerEntities.size(); ++i) {
+			EntityPlayer player = world.playerEntities.get(i);
+			ICoords playerCoords = new Coords(player.getPosition());
+			double dist = coords.getDistanceSq(playerCoords);
+			if (closestDistSq == -1.0D || dist < closestDistSq) {
+				closestDistSq = dist;
+				closestCoords = playerCoords;
+			}
+		}
+		
+		if (closestCoords != null) {
+			Dungeons2.log.debug(
+				String.format("The closest player is %s squared blocks away at pos %s", String.valueOf(closestDistSq), closestCoords.toShortString())
+			);
+		}
+		
+		// determine if closest player is within generate threshold (80 blocks / 5 chunks)
+		if (closestDistSq > DEFAULT_GENERATION_PROXIMITY_SQAURED) {
+			Dungeons2.log.debug("Closest player is outside of generation proximity. Moving to a closer position.");
+			/*
+			 * move the spawn coords to 80 blocks away.
+			 * use scaling method instead of slope & pythagorean theorem
+			 *  to avoid calculating squares and square roots.
+			 * 
+			 */
+			
+			// get dist ratio
+			double ratio = DEFAULT_GENERATION_PROXIMITY_SQAURED / closestDistSq;
+			Dungeons2.log.debug("Distance ratio: " + ratio);
+			
+			// get x, z delta (or distance in blocks along the axis)
+			ICoords delta = coords.delta(closestCoords);
+			Dungeons2.log.debug("Delta coords: " + delta.toShortString());
+			
+			// reduce the x, z distances by (1 - pecent)
+			double redux = 1 - ratio;
+			double xRedux = delta.getX() * redux;
+			double zRedux = delta.getZ() * redux;
+			Dungeons2.log.debug(String.format("Redux: %s, xdux: %s, zdux: %s", String.valueOf(redux), String.valueOf(xRedux), String.valueOf(zRedux)));
+										
+			int xSpawn = coords.getX() - ((int)xRedux);
+			int zSpawn = coords.getZ() - ((int)zRedux);
+			int ySpawn = world.getChunkFromChunkCoords(xSpawn, zSpawn).getHeightValue(8, 8);
+			coords = new Coords (xSpawn, ySpawn, zSpawn);	
+		}		
+		return coords;
+	}
+
+	/**
+	 * 
+	 * @param world
 	 * @param pos
 	 * @param minDistance
 	 * @return
 	 */
-	public boolean isDungeonWithinDistance(World world, ICoords coords, int minDistance) {
+	public boolean isRegisteredDungeonWithinDistance(World world, ICoords coords, int minDistance) {
 		
 		double minDistanceSq = minDistance * minDistance;
 		
@@ -398,17 +418,17 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	}
 
 	/**
-	 * @return the lastDungeonBlockPos
+	 * @return the lastDungeonCoords
 	 */
-	public BlockPos getLastDungeonBlockPos() {
-		return lastDungeonBlockPos;
+	public ICoords getLastDungeonCoords() {
+		return lastDungeonCoords;
 	}
 
 	/**
-	 * @param lastDungeonBlockPos the lastDungeonBlockPos to set
+	 * @param lastDungeonCoords the lastDungeonCoords to set
 	 */
-	public void setLastDungeonBlockPos(BlockPos lastDungeonBlockPos) {
-		this.lastDungeonBlockPos = lastDungeonBlockPos;
+	public void setLastDungeonCoords(ICoords lastDungeonBlockPos) {
+		this.lastDungeonCoords = lastDungeonBlockPos;
 	}
 
 	public synchronized boolean isGenerating() {

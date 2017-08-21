@@ -1,5 +1,8 @@
 package com.someguyssoftware.dungeons2.model;
 
+import com.someguyssoftware.dungeons2.config.BuildDirection;
+import com.someguyssoftware.dungeons2.config.BuildPattern;
+import com.someguyssoftware.dungeons2.config.BuildSize;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
@@ -15,6 +18,10 @@ public class DungeonInfo {
 	private int minZ, maxZ = 0;
 	private String themeName;
 	private ICoords bossChestCoords;
+	private BuildPattern pattern;
+	private BuildSize levelSize;
+	private BuildSize size;
+	private BuildDirection direction;
 	
 	/**
 	 * 
@@ -38,6 +45,21 @@ public class DungeonInfo {
 		// TODO get the boss chest coords somehow?		
 	}
 
+	/**
+	 * 
+	 * @param dungeon
+	 * @param pattern
+	 * @param levelSize
+	 * @param direction
+	 */
+	public DungeonInfo(Dungeon dungeon, BuildPattern pattern, BuildSize dungeonSize, BuildSize levelSize, BuildDirection direction) {
+		this(dungeon);
+		setPattern(pattern);
+		setSize(dungeonSize);
+		setLevelSize(levelSize);
+		setDirection(direction);
+	}
+	
 	public ICoords getCoords() {
 		return coords;
 	}
@@ -116,5 +138,37 @@ public class DungeonInfo {
 
 	public void setBossChestCoords(ICoords bossChestCoords) {
 		this.bossChestCoords = bossChestCoords;
+	}
+
+	public BuildPattern getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(BuildPattern pattern) {
+		this.pattern = pattern;
+	}
+
+	public BuildSize getLevelSize() {
+		return levelSize;
+	}
+
+	public void setLevelSize(BuildSize size) {
+		this.levelSize = size;
+	}
+
+	public BuildDirection getDirection() {
+		return direction;
+	}
+
+	public void setDirection(BuildDirection direction) {
+		this.direction = direction;
+	}
+
+	public BuildSize getSize() {
+		return size;
+	}
+
+	public void setSize(BuildSize size) {
+		this.size = size;
 	};
 }

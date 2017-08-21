@@ -4,6 +4,9 @@
 package com.someguyssoftware.dungeons2.persistence;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.config.BuildDirection;
+import com.someguyssoftware.dungeons2.config.BuildPattern;
+import com.someguyssoftware.dungeons2.config.BuildSize;
 import com.someguyssoftware.dungeons2.model.DungeonInfo;
 import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -53,7 +56,7 @@ public class DungeonsGenSavedData extends WorldSavedData {
 		int x = pos.getInteger("x");
 		int y = pos.getInteger("y");
 		int z = pos.getInteger("z");
-		Dungeons2.dungeonsWorldGen.setLastDungeonBlockPos(new BlockPos(x, y, z));
+		Dungeons2.dungeonsWorldGen.setLastDungeonCoords(new Coords(x, y, z));
 		
 		NBTTagList registryTagList = tag.getTagList("registry", 10);
 		
@@ -72,7 +75,11 @@ public class DungeonsGenSavedData extends WorldSavedData {
 			int maxY = infoTag.getInteger("maxY");
 			int maxZ = infoTag.getInteger("maxZ");			
 			int levels = infoTag.getInteger("levels");
-			String themeName = infoTag.getString("themeName");
+			String theme = infoTag.getString("theme");
+			String pattern = infoTag.getString("pattern");
+			String size = infoTag.getString("size");
+			String levelSize = infoTag.getString("levelSize");
+			String direction = infoTag.getString("direction");
 			int bossX = infoTag.getInteger("bossChestX");
 			int bossY = infoTag.getInteger("bossChestY");
 			int bossZ = infoTag.getInteger("bossChestZ");
@@ -88,7 +95,11 @@ public class DungeonsGenSavedData extends WorldSavedData {
 				info.setMaxY(maxY);
 				info.setMaxZ(maxZ);
 				info.setLevels(levels);
-				info.setThemeName(themeName);
+				info.setThemeName(theme);
+				if (!pattern.equals("")) info.setPattern(BuildPattern.valueOf(pattern));
+				if (!size.equals("")) info.setSize(BuildSize.valueOf(size));
+				if (!levelSize.equals("")) info.setLevelSize(BuildSize.valueOf(levelSize));
+				if (!direction.equals("")) info.setDirection(BuildDirection.valueOf(direction));
 				info.setBossChestCoords(new Coords(bossX, bossY, bossZ));
 			
 				// register the meta
@@ -115,10 +126,10 @@ public class DungeonsGenSavedData extends WorldSavedData {
 			tag.setTag("dungeonGenerator", dungeonGen);
 			
 			NBTTagCompound pos = new NBTTagCompound();		
-			if (Dungeons2.dungeonsWorldGen.getLastDungeonBlockPos() != null) {
-				pos.setInteger("x", Dungeons2.dungeonsWorldGen.getLastDungeonBlockPos().getX());
-				pos.setInteger("y", Dungeons2.dungeonsWorldGen.getLastDungeonBlockPos().getY());
-				pos.setInteger("z", Dungeons2.dungeonsWorldGen.getLastDungeonBlockPos().getZ());
+			if (Dungeons2.dungeonsWorldGen.getLastDungeonCoords() != null) {
+				pos.setInteger("x", Dungeons2.dungeonsWorldGen.getLastDungeonCoords().getX());
+				pos.setInteger("y", Dungeons2.dungeonsWorldGen.getLastDungeonCoords().getY());
+				pos.setInteger("z", Dungeons2.dungeonsWorldGen.getLastDungeonCoords().getZ());
 				tag.setTag("lastDungeonBlockPos", pos);			
 			}
 			
@@ -142,7 +153,19 @@ public class DungeonsGenSavedData extends WorldSavedData {
 					
 					infoTag.setInteger("levels", info.getLevels());
 					if (info.getThemeName() != null) {
-						infoTag.setString("themeName", info.getThemeName());
+						infoTag.setString("theme", info.getThemeName());
+					}
+					if (info.getPattern() != null) {
+						infoTag.setString("pattern", info.getPattern().name());
+					}
+					if (info.getSize() != null) {
+						infoTag.setString("size", info.getSize().name());
+					}
+					if (info.getLevelSize() != null) {
+						infoTag.setString("levelSize", info.getLevelSize().name());
+					}
+					if (info.getDirection() != null) {
+						infoTag.setString("direction", info.getDirection().name());
 					}
 					if (info.getBossChestCoords() != null) {
 						infoTag.setInteger("bossChestX", info.getBossChestCoords().getX());

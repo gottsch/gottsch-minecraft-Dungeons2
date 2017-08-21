@@ -71,20 +71,24 @@ public final class PRESET_LEVEL_CONFIGS {
 			// select the x,z size
 			switch(size) {
 			case SMALL:
-				xdist = 35;
+				// 25
+				xdist = 30;
 				zdist = 15;
 				break;
 			case MEDIUM:
-				xdist = 50;
+				// 35
+				xdist = 40;
 				zdist = 20;
 				break;
 			case LARGE:
-				xdist = 65;
-				zdist = 25;
+				//45
+				xdist = 50;
+				zdist = 30;
 				break;
 			case VAST:
-				xdist = 80;
-				zdist = 30;
+				// 55
+				xdist = 60;
+				zdist = 40;
 				break;
 			}	
 			break;
@@ -93,19 +97,19 @@ public final class PRESET_LEVEL_CONFIGS {
 			switch(size) {
 			case SMALL:
 				xdist = 15;
-				zdist = 35;
+				zdist = 30;
 				break;
 			case MEDIUM:
 				xdist = 20;
-				zdist = 50;
+				zdist = 40;
 				break;
 			case LARGE:
-				xdist = 25;
-				zdist = 65;
+				xdist = 30;
+				zdist = 50;
 				break;
 			case VAST:
-				xdist = 30;
-				zdist = 80;
+				xdist = 40;
+				zdist = 60;
 				break;
 			}	
 			break;
