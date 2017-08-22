@@ -3,8 +3,6 @@
  */
 package com.someguyssoftware.dungeons2;
 
-import java.io.File;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
@@ -12,9 +10,6 @@ import org.apache.logging.log4j.core.Appender;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
-import com.someguyssoftware.dungeons2.config.ModConfig;
-import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
-import com.someguyssoftware.dungeons2.config.DungeonsConfiguration;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
