@@ -92,6 +92,15 @@ reobf {
     shadowJar {} 
 }
 
+// make a copy of the build and remove the build number portion from the file name.
+copy {
+      from 'build/libs'
+      into 'build/libs'
+      include "${mod_name}-mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}.jar"
+      rename {filename -> "${mod_name}-mc${mc_version}-v${mod_version}.jar"}
+}
+
+
 //task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
 //    from javadoc.destinationDir
 //    classifier = 'javadoc'
