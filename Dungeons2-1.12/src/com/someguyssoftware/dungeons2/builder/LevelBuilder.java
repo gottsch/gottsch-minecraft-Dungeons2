@@ -250,7 +250,7 @@ public class LevelBuilder {
 							// increment the process count
 							processCount++;
 							if (processCount > 50) {
-								Dungeons2.log.info("Detected endless loop when positioning room ==> room REJECTED.");
+								Dungeons2.log.trace("Detected endless loop when positioning room ==> room REJECTED.");
 								room.setReject(true);
 								continue rooms;
 							}
@@ -319,7 +319,7 @@ public class LevelBuilder {
 										failSafeCount++;
 										if (failSafeCount >= 5) {
 											// stop processing this room (ie drop altogether)
-											Dungeons2.log.info("Unable to position room... rejecting room.");
+//											Dungeons2.log.info("Unable to position room... rejecting room.");
 											room.setReject(true);
 											continue rooms;
 										}
@@ -1083,7 +1083,7 @@ public class LevelBuilder {
 
 //				Dungeons2.log.info(String.format("Horz line from [%d, %d] to [%d, %d[", innerMinX, z, innerMaxX, z));
 				if (wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-					Dungeons2.log.warn("Wayline's points are equal !!: " + wayline);
+					Dungeons2.log.trace("Wayline's points are equal !!: " + wayline);
 				}
 				
 				stack.add(wayline);

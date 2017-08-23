@@ -369,6 +369,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			int xSpawn = coords.getX() - ((int)xRedux);
 			int zSpawn = coords.getZ() - ((int)zRedux);
 			int ySpawn = world.getChunkFromChunkCoords(xSpawn, zSpawn).getHeightValue(8, 8);
+			
+			
 			coords = new Coords (xSpawn, ySpawn, zSpawn);	
 		}		
 		return coords;
