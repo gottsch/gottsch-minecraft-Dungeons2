@@ -40,6 +40,9 @@ import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
+import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -152,7 +155,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	}
 	
 	/**
-	 * 
+	 * This executes for every block in the chunk.
 	 */
 	@Override
 	public void generate(Random random, int chunkX, int chunkZ, World world,
@@ -169,22 +172,20 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			return;
 		}
 		
+		// result of generation
+     	boolean isGenerated = false;
+     	
 	    // increment last dungeon chunk count
 	    chunksSinceLastDungeon++;
-
-     	boolean isGenerated = false;
-     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {     	
+	 
+     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
+     		Dungeons2.log.debug(String.format("Gen: pass first test: chunksSinceLast: %d, minChunks: %d", chunksSinceLastDungeon, ModConfig.minChunksPerDungeon));
  			// clear count
 			chunksSinceLastDungeon = 0;
 			
      		/*
      		 * get current chunk position
      		 */
-     		
-     		// TODO just rename to x/zSpawn
-    		// get the x,z world coords, centered in the current chunk
-//            int xPos = 
-//            int zPos = 
             
             // spawn @ middle of chunk
             int xSpawn = chunkX * 16 + 8;
@@ -199,9 +200,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
      		coords = getReduxCoords(world, coords);
 			Dungeons2.log.debug("New coords:" + coords.toShortString());
             
+			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
      		// check if  the min distance between dungeons is met
      		if (lastDungeonCoords == null || lastDungeonCoords.getDistanceSq(coords) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
-//     			Dungeons2.log.debug("Getting ySpawn @ " + xSpawn + " " + zSpawn);
 
 				// 1. test if dungeon meets the probability criteria
 				if (random.nextInt(100) > ModConfig.dungeonGenProbability) {
@@ -232,6 +233,11 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				// 4. select random theme, pattern, size and direction
 //				Dungeons2.log.debug("StyleSheet:" + styleSheet);
 //				Dungeons2.log.debug("Themes.size: " + styleSheet.getThemes().size());
+			    
+			    // TODO load the patterns and size into RandomProbabilityCollection with differing weights with small, square being more common
+			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
+//			    RandomProbabilityCollection<IRandomProbabilityItem>
+			    
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
     			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
 				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
@@ -354,22 +360,24 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			
 			// get dist ratio
 			double ratio = DEFAULT_GENERATION_PROXIMITY_SQAURED / closestDistSq;
-			Dungeons2.log.debug("Distance ratio: " + ratio);
+//			Dungeons2.log.debug("Distance ratio: " + ratio);
 			
 			// get x, z delta (or distance in blocks along the axis)
 			ICoords delta = coords.delta(closestCoords);
-			Dungeons2.log.debug("Delta coords: " + delta.toShortString());
+//			Dungeons2.log.debug("Delta coords: " + delta.toShortString());
 			
 			// reduce the x, z distances by (1 - pecent)
 			double redux = 1 - ratio;
 			double xRedux = delta.getX() * redux;
 			double zRedux = delta.getZ() * redux;
-			Dungeons2.log.debug(String.format("Redux: %s, xdux: %s, zdux: %s", String.valueOf(redux), String.valueOf(xRedux), String.valueOf(zRedux)));
+//			Dungeons2.log.debug(String.format("Redux: %s, xdux: %s, zdux: %s", String.valueOf(redux), String.valueOf(xRedux), String.valueOf(zRedux)));
 										
-			int xSpawn = coords.getX() - ((int)xRedux);
-			int zSpawn = coords.getZ() - ((int)zRedux);
-			int ySpawn = world.getChunkFromChunkCoords(xSpawn, zSpawn).getHeightValue(8, 8);
-			
+			int xSpawn = coords.getX() - ((int)Math.floor(xRedux));
+			int zSpawn = coords.getZ() - ((int)Math.floor(zRedux));
+//			Dungeons2.log.debug("redux xSpawn:" + xSpawn);
+//			Dungeons2.log.debug("redux zSpawn:" + zSpawn);
+			int ySpawn = WorldInfo.getHeightValue(world, new Coords(xSpawn, 255, zSpawn));
+//			Dungeons2.log.debug("redux ySpawn from WorldInfo:" + ySpawn);
 			
 			coords = new Coords (xSpawn, ySpawn, zSpawn);	
 		}		
@@ -398,6 +406,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		for (DungeonInfo info : infos) {
 			// calculate the distance to the poi
 			double distance = coords.getDistanceSq(info.getCoords());
+//		    Dungeons2.log.debug("Dungeon dist^2: " + distance);
 			if (distance < minDistanceSq) {
 				return true;
 			}

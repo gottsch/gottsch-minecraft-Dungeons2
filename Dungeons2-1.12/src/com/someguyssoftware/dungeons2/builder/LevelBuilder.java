@@ -1104,7 +1104,7 @@ public class LevelBuilder {
 //				Dungeons2.log.info(String.format("Vert line from [%d, %d] to [%d, %d[", x, innerMinZ, x, innerMaxZ));
 
 				if (wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-					Dungeons2.log.debug("Wayline's points are equal !!: " + wayline);
+					Dungeons2.log.trace("Wayline's points are equal !!: " + wayline);
 				}
 				stack.add(wayline);
 				waylines.addAll(resolveWaylineRoomIntersections(rooms, stack));
@@ -1210,7 +1210,7 @@ public class LevelBuilder {
 			for (Room room : rooms) {
 //				Dungeons2.log.info(String.format("Checking against room [%d]", room.getId()));
 				if (wayline == null) {
-					Dungeons2.log.debug("Wayline is null on room:" + room.getId());
+					Dungeons2.log.trace("Wayline is null on room:" + room.getId());
 					break;
 					}
 				// construct a BB for line
@@ -1227,7 +1227,7 @@ public class LevelBuilder {
 				 */
 				// test intersection with room
 				if (wayline.getPoint1().getCoords().getDistance(wayline.getPoint2().getCoords()) > 0 && bb1.intersects(room.getXZBoundingBox())) {
-					Dungeons2.log.debug(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
+					Dungeons2.log.trace(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
 //					wayline = resolveWaylineRoomIntersection(room, wayline, waylines);
 					waylines = resolveWaylineRoomIntersection(room, wayline);
 					if (waylines != null && waylines.size() > 0) {
@@ -1336,14 +1336,14 @@ public class LevelBuilder {
 		// add the new wayline to the list
 		if (remainderWayline1 != null) {
 			if (remainderWayline1.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-				Dungeons2.log.debug("Remainder  Wayline1's points are equal !!: " + remainderWayline1);
+				Dungeons2.log.trace("Remainder Wayline1's points are equal !!: " + remainderWayline1);
 			}
 			waylines.add(remainderWayline1);
 		}
 		
 		if (remainderWayline2 != null) {
 			if (remainderWayline2.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
-				Dungeons2.log.debug("Remainder Wayline2's points are equal !!: " + remainderWayline2);
+				Dungeons2.log.trace("Remainder Wayline2's points are equal !!: " + remainderWayline2);
 			}
 			waylines.add(remainderWayline2);
 		}
@@ -1361,7 +1361,7 @@ public class LevelBuilder {
 		List<Wayline> waylines = new ArrayList<>();
 		
 		for (Room room : rooms) {
-			Dungeons2.log.debug(String.format("Checking against room [%d]", room.getId()));
+			Dungeons2.log.trace(String.format("Checking against room [%d]", room.getId()));
 			if (wayline == null) {
 				Dungeons2.log.debug("Wayline is null on room:" + room.getId());
 				break;
@@ -1373,7 +1373,7 @@ public class LevelBuilder {
 			
 			// test intersection with room
 			if (bb1.intersects(room.getBoundingBox())) {
-				Dungeons2.log.debug(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
+				Dungeons2.log.trace(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
 				wayline = resolveWaylineRoomIntersection(room, wayline, waylines);
 			}
 		}
@@ -1583,7 +1583,7 @@ public class LevelBuilder {
 		
 		// check if the top y valueof the node is above sea level
 		if (room.getCoords().getY() + room.getHeight() > config.getSeaLevel()) {
-			Dungeons2.log.debug("Room is above sea level @ " + room.getCenter());
+			Dungeons2.log.trace("Room is above sea level @ " + room.getCenter());
 			/*
 			 *  if surfaceRoomDepth is greater than a [x] negative amount.
 			 *  negative implies the room is higher than the surface, ie the room is exposed.
