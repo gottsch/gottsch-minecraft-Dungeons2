@@ -64,7 +64,7 @@ public class LevelVisualizer {
 		}
 		Random random = new Random(test.seed);
 		
-		test.config.setNumberOfRooms(new Quantity(25, 35));
+		test.config.setNumberOfRooms(new Quantity(25, 50));
 		double factor = 3.2;
 		test.config.setWidth(new Quantity(7*factor, 15*factor));
 		test.config.setDepth(new Quantity(7*factor, 15*factor));
@@ -72,8 +72,8 @@ public class LevelVisualizer {
 		test.config.setDegrees(new Quantity(2, 4));
 		// epicenter style settings
 		// NOTE epicenter style needs to have a smaller distance, else you get a lot of long hallways
-		test.config.setXDistance(new Quantity(-75, 50));
-		test.config.setZDistance(new Quantity(-75, 50));
+		test.config.setXDistance(new Quantity(-(60*factor)*0.6, (60*factor)*1.4));
+		test.config.setZDistance(new Quantity(-5*factor, 5*factor));
 		int r = RandomHelper.randomInt(15, 25);
 //		test.config.setNumberOfRooms(new Quantity(r, r));
 //		test.config.setXDistance(new Quantity(-(r+10), (r*2.5)));
@@ -216,18 +216,18 @@ public class LevelVisualizer {
 			g2d.drawOval(500-5, 500-5, 10, 10);
 
 			// draw the paths first
-			g.setColor(Color.RED);
-			// draw all path edges
-			for (Edge e : level.getPaths()) {
-				if (e.v < rooms.size() && e.w < rooms.size()) {
-					Room room1 = rooms.get(e.v);
-					Room room2 = rooms.get(e.w);				
-					g.drawLine(room1.getCenter().getX(), room1.getCenter().getZ(), room2.getCenter().getX(), room2.getCenter().getZ());
-				}
-				else {
-					logger.info("Skipping edge v/w with index of :" + e.v + ", " + e.w);
-				}
-			}
+//			g.setColor(Color.RED);
+//			// draw all path edges
+//			for (Edge e : level.getPaths()) {
+//				if (e.v < rooms.size() && e.w < rooms.size()) {
+//					Room room1 = rooms.get(e.v);
+//					Room room2 = rooms.get(e.w);				
+//					g.drawLine(room1.getCenter().getX(), room1.getCenter().getZ(), room2.getCenter().getX(), room2.getCenter().getZ());
+//				}
+//				else {
+//					logger.info("Skipping edge v/w with index of :" + e.v + ", " + e.w);
+//				}
+//			}
 			
 			List<Room> rooms = level.getRooms();
 				for (Room room : rooms) {

@@ -88,9 +88,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		//  2. get a valid surface location		
 		ICoords surfaceCoords = null;
 		if (levelBuilder.getConfig().isMinecraftConstraintsOn()) {
-			Dungeons2.log.debug("Checking DryLand surface coord.");
 			surfaceCoords = WorldInfo.getDryLandSurfaceCoords(world, startPoint);
-			Dungeons2.log.debug("DryLand coords: "  + surfaceCoords.toShortString());
 			if (surfaceCoords == null || surfaceCoords == EMPTY_DUNGEON) {
 				Dungeons2.log.debug(String.format("Not a valid dry land surface @ %s", startPoint.toShortString()));
 				return EMPTY_DUNGEON;
@@ -120,12 +118,6 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		// 4. determine if the entrance room can be build at this spot
 		Room entranceRoom = buildEntranceRoom(world, rand, surfaceCoords);
 		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
-
-
-		// TODO this check could be moved into the entrance room build
-		Dungeons2.log.debug("getSolidPercent [>50]: " + WorldInfo.getSolidBasePercent(world, surfaceCoords, entranceRoom.getWidth(), entranceRoom.getDepth()));
-		Dungeons2.log.debug("getAirPercent: [>20]" + WorldInfo.getAirBasePercent(world, surfaceCoords.add(0,1,0), entranceRoom.getWidth(), entranceRoom.getDepth()));
-		Dungeons2.log.debug("getAirPercent: [>50]" + WorldInfo.getAirBasePercent(world, surfaceCoords.add(0,2,0), entranceRoom.getWidth(), entranceRoom.getDepth()));
 
 		/*
 		 *  TODO 1. room is centered on surfaceCoords, and thus the isValidAboveGroundBase() should be taking in coords

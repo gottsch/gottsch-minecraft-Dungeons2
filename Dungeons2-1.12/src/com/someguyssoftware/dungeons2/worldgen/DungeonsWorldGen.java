@@ -84,6 +84,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	private ChestSheet chestSheet;
 	private SpawnSheet spawnSheet;
 	
+	private static RandomProbabilityCollection<IRandomProbabilityItem> patterns = new RandomProbabilityCollection<>();
+	private static RandomProbabilityCollection<IRandomProbabilityItem> sizes = new RandomProbabilityCollection<>();
+	
 	/**
 	 * 
 	 * @param generator
@@ -110,6 +113,14 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		BiomeHelper.loadBiomeList(ModConfig.generalDungeonBiomeWhiteList, biomeWhiteList);
 		BiomeHelper.loadBiomeList(ModConfig.generalDungeonBiomeBlackList, biomeBlackList);
 		
+	    patterns.add(76, new RandomBuildPattern(BuildPattern.SQUARE));
+	    patterns.add(12, new RandomBuildPattern(BuildPattern.HORZ));
+	    patterns.add(12, new RandomBuildPattern(BuildPattern.VERT));
+	    
+	    sizes.add(50, new RandomBuildSize(BuildSize.SMALL));
+	    sizes.add(25, new RandomBuildSize(BuildSize.MEDIUM));
+	    sizes.add(15, new RandomBuildSize(BuildSize.LARGE));
+	    sizes.add(10, new RandomBuildSize(BuildSize.VAST));
 
 		try {		
 			// add the directories if they don't exist
@@ -195,12 +206,12 @@ public class DungeonsWorldGen implements IWorldGenerator {
             int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
 
             ICoords coords = new Coords(xSpawn, ySpawn, zSpawn);
-     		Dungeons2.log.debug("Starting Coords:" + coords);
+//     		Dungeons2.log.debug("Starting Coords:" + coords);
      		
      		coords = getReduxCoords(world, coords);
-			Dungeons2.log.debug("New coords:" + coords.toShortString());
+//			Dungeons2.log.debug("New coords:" + coords.toShortString());
             
-			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
+//			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
      		// check if  the min distance between dungeons is met
      		if (lastDungeonCoords == null || lastDungeonCoords.getDistanceSq(coords) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
 
@@ -212,7 +223,6 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 				// 2. test if correct biome
 				Biome biome = world.getBiome(coords.toPos());
-				Dungeons2.log.debug("Current biome:" + biome.getBiomeName());
 
 			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
 			    	Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));
@@ -236,24 +246,21 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    
 			    // TODO load the patterns and size into RandomProbabilityCollection with differing weights with small, square being more common
 			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
-//			    RandomProbabilityCollection<IRandomProbabilityItem>
+
 			    
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
-    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
-				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
-				BuildSize dungeonSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
+//    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
+	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
+//				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
+//				BuildSize dungeonSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
+	   			BuildSize levelSize = ((RandomBuildSize)sizes.next()).size;
+	   			BuildSize dungeonSize = ((RandomBuildSize)sizes.next()).size;
 				BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
-				
-				// NOTE temp
-//				pattern = BuildPattern.SQUARE;
-//				levelSize = BuildSize.SMALL;
-//				direction = BuildDirection.CENTER;
 				
 				// 5. determine a preset level config based on pattern and size
 				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
-				Dungeons2.log.debug(String.format("Using PRESET: pattern: %s, levelSize: %s, direction: %s",
-						pattern.name(), levelSize.name(), direction.name()));
-				Dungeons2.log.debug("Dungeon size:" + dungeonSize.name());
+				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
+						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
 				
 				// get the level builder
 				LevelBuilder levelBuilder = new LevelBuilder(levelConfig);
@@ -450,4 +457,29 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		this.isGenerating = isGenerating;
 	}
 
+	private class RandomBuildPattern implements IRandomProbabilityItem {
+		public BuildPattern pattern;
+		public int prob = 0;
+		
+		public RandomBuildPattern(BuildPattern bp) {
+			this.pattern = bp;
+		}
+		@Override
+		public int getProbability() {
+			return prob;
+		}		
+	}
+	
+	private class RandomBuildSize implements IRandomProbabilityItem {
+		public BuildSize size;
+		public int prob = 0;
+		
+		public RandomBuildSize(BuildSize bs) {
+			this.size = bs;
+		}
+		@Override
+		public int getProbability() {
+			return prob;
+		}		
+	}
 }
