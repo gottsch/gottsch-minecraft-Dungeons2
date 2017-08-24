@@ -862,4 +862,16 @@ public class Room {
 	public void setWallCapital(boolean capital) {
 		setHasWallCapital(capital);
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public ICoords getBottomCenter() {
+		int x = this.getCoords().getX()  + ((this.getWidth()-1) / 2);
+		int y = this.getCoords().getY();
+		int z = this.getCoords().getZ()  + ((this.getDepth()-1) / 2);
+		ICoords coords = new Coords(x, y, z);
+		return coords;	
+	}
 }

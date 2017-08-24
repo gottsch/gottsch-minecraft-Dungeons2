@@ -88,9 +88,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		//  2. get a valid surface location		
 		ICoords surfaceCoords = null;
 		if (levelBuilder.getConfig().isMinecraftConstraintsOn()) {
-//			Dungeons2.log.debug("Checking DryLand surface coord.");
 			surfaceCoords = WorldInfo.getDryLandSurfaceCoords(world, startPoint);
-//			Dungeons2.log.debug("DryLand coords: "  + surfaceCoords.toShortString());
 			if (surfaceCoords == null || surfaceCoords == EMPTY_DUNGEON) {
 				Dungeons2.log.debug(String.format("Not a valid dry land surface @ %s", startPoint.toShortString()));
 				return EMPTY_DUNGEON;
@@ -99,7 +97,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		else {
 			surfaceCoords = startPoint;
 		}
-//		Dungeons2.log.info("SurfaceCoords: " + surfaceCoords.toShortString());
+		Dungeons2.log.debug("SurfaceCoords: " + surfaceCoords.toShortString());
 		
 		// 2b. Determine if surfaceCoords is within Dungeon constraints
 		if (surfaceCoords.getY() < config.getYBottom() ||
@@ -121,11 +119,13 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		Room entranceRoom = buildEntranceRoom(world, rand, surfaceCoords);
 		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
 
-
-		// TODO this check could be moved into the entrance room build
+		/*
+		 *  TODO 1. room is centered on surfaceCoords, and thus the isValidAboveGroundBase() should be taking in coords
+		 *  adjusted to those of the room. ie entranceRoom.getCoords().
+		 */
 		if (levelConfig.isMinecraftConstraintsOn() &&
-				!WorldInfo.isValidAboveGroundBase(world, surfaceCoords,
-				entranceRoom.getWidth(), entranceRoom.getDepth(), 50, 20)) {
+				!WorldInfo.isValidAboveGroundBase(world, entranceRoom.getCoords().resetY(surfaceCoords.getY()),
+				entranceRoom.getWidth(), entranceRoom.getDepth(), 50, 20, 50)) {
 			if (Dungeons2.log.isDebugEnabled())
 			Dungeons2.log.debug(String.format("Surface area does not meet ground/air criteria @ %s", surfaceCoords));
 			return EMPTY_DUNGEON;		
@@ -160,11 +160,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			 * adding the buffer. If this value is greater than the surface than the current level is the topmost level.
 			 */
 			if (levelIndex == 0) {
-				Dungeons2.log.info("TOP LEVEL");
+				Dungeons2.log.debug("TOP LEVEL");
 				// build start centered at startPoint
 				startRoom = levelBuilder.buildStartRoom(world, rand, startPoint, levelConfig);
 				if (startRoom == LevelBuilder.EMPTY_ROOM) {
-					Dungeons2.log.warn("Unable to generate Start Room.");
+					Dungeons2.log.warn("Unable to generate Top level Start Room.");
 					return EMPTY_DUNGEON;					
 				}
 				// update to same direction as entrance
@@ -177,7 +177,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// build planned end room
 				endRoom = levelBuilder.buildEndRoom(world, rand, startPoint, plannedRooms, levelConfig);
 				if (endRoom == LevelBuilder.EMPTY_ROOM) {
-					logger.warn("Unable to generate End Room.");
+					logger.warn("Unable to generate Top level End Room.");
 					return EMPTY_DUNGEON;
 				}
 				plannedRooms.add(endRoom);
@@ -189,7 +189,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// build the start room
 				startRoom = new Room(dungeon.getLevels().get(levelIndex-1).getEndRoom());
 				if (startRoom == LevelBuilder.EMPTY_ROOM) {
-					logger.warn("Unable to generate Start Room");
+					logger.warn("Unable to generate Bottom level Start Room");
 					return EMPTY_DUNGEON;
 				}
 //				Dungeons2.log.debug("Start Room (Bottom Level): " + startRoom);
@@ -201,6 +201,10 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				plannedRooms.add(startRoom);
 				
 				endRoom = levelBuilder.buildBossRoom(world, rand, startPoint, plannedRooms, levelConfig);
+				if (endRoom == LevelBuilder.EMPTY_ROOM) {
+					logger.warn("Unable to generate Bottom level End Room.");
+					return EMPTY_DUNGEON;
+				}
 				Dungeons2.log.debug("Boss Room (Bottom Level): " + endRoom);
 				Dungeons2.log.debug("BossPoint (Bottom Level): " + endRoom.getCoords().toShortString());
 				plannedRooms.add(endRoom);
@@ -210,7 +214,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// 1. create start room from previous level end room
 				startRoom = new Room(dungeon.getLevels().get(levelIndex-1).getEndRoom());
 				if (startRoom == LevelBuilder.EMPTY_ROOM) {
-					logger.warn("Unable to generate Start Room");
+					logger.warn("Unable to generate level Start Room: " + levelIndex);
 					return EMPTY_DUNGEON;
 				}
 				// update end room settings
@@ -223,7 +227,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// 2. create end room
 				endRoom = levelBuilder.buildPlannedRoom(world, rand, startPoint, plannedRooms, levelConfig);
 				if (endRoom == LevelBuilder.EMPTY_ROOM) {
-					logger.warn("Unable to generate End Room.");
+					logger.warn("Unable to generate level End Room: " + levelIndex);
 					return EMPTY_DUNGEON;
 				}
 				endRoom.setDistance(endRoom.getCenter().getDistance(startPoint));
@@ -253,13 +257,13 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				if (levelIndex > 0) {
 					Dungeons2.log.debug("Joing levels " + (levelIndex-1) + " to " + levelIndex);
 					if (levelBuilder.join(level, dungeon.getLevels().get(levelIndex-1)) == LevelBuilder.EMPTY_SHAFT) {
-						Dungeons2.log.debug("Levels don't require joining " + levelIndex + " to " + (levelIndex-1));
+						Dungeons2.log.warn("Levels don't require joining " + levelIndex + " to " + (levelIndex-1));
 					}
 				}
 			}
 			else {
 				// TODO test if empty level and attempt to rebuild.
-				logger.warn("Unable to generate Level.");
+				logger.warn("Unable to generate Level: " + levelIndex);
 				break;
 			}
 			

@@ -57,7 +57,7 @@ sourceSets.main{
 dependencies {
 	compile files(System.env.COMMON_LIBS + '/DelaunayTriangulator-1.0.3.jar')
 	// use 'shadow' to include dependency in compile but to exclude for the shadow jar
-	shadow files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.1.jar')	
+	shadow files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.2.jar')	
 }
 
 processResources
@@ -91,6 +91,18 @@ reobf {
 	// Reobfuscate the shadowed JAR
     shadowJar {} 
 }
+
+// first delete the old build
+delete "${mod_name}-mc${mc_version}-v${mod_version}.jar"
+
+// make a copy of the build and remove the build number portion from the file name.
+copy {
+	from 'build/libs'
+	into 'build/libs'
+	include "${mod_name}-mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}.jar"
+	rename {filename -> "${mod_name}-mc${mc_version}-v${mod_version}.jar"}
+}
+
 
 //task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
 //    from javadoc.destinationDir

@@ -145,6 +145,7 @@ public class BossRoomDecorator extends RoomDecorator {
 					ChestContainer chest = containers.get(random.nextInt(containers.size()));
 					// populate the chest with items from the selected chest sheet container
 					chestPopulator.populate(random, inventory, chest);
+					// TODO update room floor map with chest
 				}
 			}
 		}

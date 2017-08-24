@@ -105,7 +105,7 @@ public class ChestPopulator {
 				col.add((int) ri.getWeight(), ri);
 			}
 			
-			// determine the number of items to add to the group
+			// determine the number of items to add from the group
 			int numberOfItems = RandomHelper.randomInt(
 					(int) (randomGroup.getQuantity().getMin() * randomGroup.getItemsFactor()),
 					(int) (randomGroup.getQuantity().getMax() * randomGroup.getItemsFactor()));
