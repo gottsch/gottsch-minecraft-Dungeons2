@@ -11,6 +11,7 @@ import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
 import com.someguyssoftware.dungeons2.builder.LevelBuilder;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
@@ -20,6 +21,7 @@ import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeons2printer.DungeonPrettyPrinter;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -161,6 +163,12 @@ public class BuildCommand extends CommandBase {
 //        		if (level != null && !level.getRooms().isEmpty()) {
         			Dungeons2.log.info(String.format("Dungeons2! dungeon generated @ %d %d %d", x, y, z));
         			player.sendMessage(new TextComponentString(String.format("Dungeons2! dungeon generated @ %d %d %d", x, y, z)));
+        			
+					if (ModConfig.enableDumps) {
+						DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
+						String s = printer.print(dungeon, ModConfig.dungeonsFolder + "dumps/");
+						Dungeons2.log.debug("\n" + s);
+					}
         		}
     		}
 		}

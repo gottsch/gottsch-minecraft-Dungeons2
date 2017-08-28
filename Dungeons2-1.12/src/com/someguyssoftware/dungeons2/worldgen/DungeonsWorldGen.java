@@ -36,6 +36,7 @@ import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeons2printer.DungeonPrettyPrinter;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -313,6 +314,14 @@ public class DungeonsWorldGen implements IWorldGenerator {
 					// update the last dungeon position
 					lastDungeonCoords = coords;
 					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
+					
+					// TODO if generated and config.dumps is on, generate a dungeon dump (text file of all properties or dungeon, levels, rooms, doors, etc)
+					// TODO is generated and config.dumps.json is on, generate a dungeon json file. (same as above but in json format)
+					if (ModConfig.enableDumps) {
+						DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
+						String s = printer.print(dungeon, ModConfig.dungeonsFolder + "dumps/");
+						Dungeons2.log.debug("\n" + s);
+					}
 				}
 				
 				// set the generating flag

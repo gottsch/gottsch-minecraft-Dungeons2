@@ -86,11 +86,11 @@ public class RoomGeneratorFactory {
 	 * 
 	 * @param hallway
 	 * @param rooms
-	 * @param hallways
+	 * @param hallways A list of hallways to check against for intersection.
 	 * @param useSupport
 	 * @return
 	 */
-	public IRoomGenerator createHallwayGenerator(Hallway hallway, List<Room> rooms, List<Room> hallways, Boolean useSupport) {
+	public IRoomGenerator createHallwayGenerator(Hallway hallway, List<Room> rooms, List<Hallway> hallways, Boolean useSupport) {
 		if (useSupport) {
 			return createSupportedHallwayGenerator(hallway, rooms, hallways);
 		}
@@ -183,7 +183,7 @@ public class RoomGeneratorFactory {
 	 * @param hallways 
 	 * @return
 	 */
-	public IRoomGenerator createStandardHallwayGenerator(Hallway hallway, List<Room> rooms, List<Room> hallways) {
+	public IRoomGenerator createStandardHallwayGenerator(Hallway hallway, List<Room> rooms, List<Hallway> hallways) {
 		HallwayGenerator gen = null;
 		gen = new HallwayGenerator(new StandardHallwayGenerationStrategy(new HallwayBlockProvider(), rooms, hallways));
 		return gen;
@@ -196,7 +196,7 @@ public class RoomGeneratorFactory {
 	 * @param hallways
 	 * @return
 	 */
-	public IRoomGenerator createSupportedHallwayGenerator(Hallway hallway, List<Room> rooms, List<Room> hallways) {
+	public IRoomGenerator createSupportedHallwayGenerator(Hallway hallway, List<Room> rooms, List<Hallway> hallways) {
 		HallwayGenerator gen = new HallwayGenerator(new SupportedHallwayGenerationStrategy(new HallwayBlockProvider(), rooms, hallways));
 		return gen;
 	}

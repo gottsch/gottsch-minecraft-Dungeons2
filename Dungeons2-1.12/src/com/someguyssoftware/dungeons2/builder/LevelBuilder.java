@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
@@ -21,6 +22,8 @@ import com.someguyssoftware.dungeons2.graph.Waypoint;
 import com.someguyssoftware.dungeons2.graph.mst.Edge;
 import com.someguyssoftware.dungeons2.graph.mst.EdgeWeightedGraph;
 import com.someguyssoftware.dungeons2.graph.mst.LazyPrimMST;
+import com.someguyssoftware.dungeons2.model.Door;
+import com.someguyssoftware.dungeons2.model.Hallway;
 import com.someguyssoftware.dungeons2.model.Level;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
@@ -29,6 +32,7 @@ import com.someguyssoftware.dungeons2.model.Shaft;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.enums.Rotate;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.positional.Intersect;
@@ -591,6 +595,11 @@ public class LevelBuilder {
 		List<Wayline> waylines = null;
 		
 		/*
+		 * resultant list of hallways derived from waylines
+		 */
+		List<Hallway> hallways = null;
+		
+		/*
 		 * return object containing all the rooms that meet build criteria and the locations of the special rooms.
 		 */
 		Level level = new Level();
@@ -682,6 +691,29 @@ public class LevelBuilder {
 			}
 		}
 		
+		/*
+		 * build the hallways
+		 */
+		// initialize hallways
+		hallways = new ArrayList<>();
+		
+		// process each wayline
+		for (Wayline line : waylines) {
+			// build a hallway (room) from a wayline
+			//Hallway hallway = Hallway.fromWayline(line, level.getRooms());
+			Hallway hallway = buildHallway(line, rooms);
+
+			// add the hallway to the list of generated hallways
+			hallways.add(hallway);
+			
+			// create doors for the rooms based on the hallway doors, but on the opposite side of the room (direction)
+			for (Door d : hallway.getDoors()) {
+				// create a new door instance and flip the direction
+				Door door = new Door(d.getCoords(), d.getRoom(), d.getHallway(), d.getDirection().rotate(Rotate.ROTATE_180));
+				d.getRoom().getDoors().add(door);
+			}
+		}
+		
 		// setup the level
 		Room room = rooms.get(0);
 		int minX = room.getMinX();
@@ -709,6 +741,7 @@ public class LevelBuilder {
 		level.setEdges(edges);
 		level.setPaths(paths);
 		level.setWaylines(waylines);
+		level.setHallways(hallways);
 		level.setMinX(minX);
 		level.setMaxX(maxX);
 		level.setMinY(minY);
@@ -780,7 +813,166 @@ public class LevelBuilder {
 		}
 		return paths;
 	}
+	
+	/**
+	 * 
+	 * @param wayline
+	 * @param rooms
+	 * @return
+	 */
+	public Hallway buildHallway(Wayline wayline, List<Room> rooms) {
+		int width = 3;
+		int depth = 3;
+		
+		// work with temp way points
+		Waypoint startPoint = null;
+		Waypoint endPoint = null;
+		ICoords startCoords = null;
+		boolean isElbowJoint = false;
+		
+		// HORIZONTAL (WEST <--> EAST)
+		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+			// determine which point is the "start point" - having the smallest coords
+			if (wayline.getPoint1().getX() < wayline.getPoint2().getX()) {
+				startPoint = wayline.getPoint1();
+				endPoint = wayline.getPoint2();
+			}
+			else {
+				startPoint = wayline.getPoint2();
+				endPoint = wayline.getPoint1();
+			}
 
+			// determine if this is a "elbow joint" wayline
+			if (!startPoint.isTerminated() || !endPoint.isTerminated()) {
+				isElbowJoint = true;
+			}
+			
+			/*
+			 * update start/end point depending on isTerminal
+			 * this makes the elbow joint 1 block longer so that they line up correctly
+			 */
+			if (isElbowJoint) {
+				if (!startPoint.isTerminated()) {
+					startPoint.setCoords(startPoint.getCoords().add(-1, 0, 0));
+				}
+				
+				if (!endPoint.isTerminated()) {
+					endPoint.setCoords(endPoint.getCoords().add(1, 0, 0));
+				}
+			}
+			// update the width
+			width = Math.abs(startPoint.getX() - endPoint.getX()) + 1;
+			
+			/*
+			 *  this is to maintain the actual hallway (air part) to still be along the wayline,
+			 *  since the hallway is 3 wide (2 walls and 1 air)
+			 */
+			startCoords = startPoint.getCoords();
+			startCoords = startCoords.add(0, 0, -1);
+			
+			// shift if non-terminal (ie an elbow joint)
+
+		}
+		// VERTICAL (NORTH <--> SOUTH)
+		else {
+			// determine which point is the "start point" - having the smallest coords
+			if (wayline.getPoint1().getZ() < wayline.getPoint2().getZ()) {
+				startPoint = wayline.getPoint1();
+				endPoint = wayline.getPoint2();
+			}
+			else {
+				startPoint = wayline.getPoint2();
+				endPoint = wayline.getPoint1();
+			}
+			
+			/*
+			 * update start/end point depending on isTerminal
+			 * this makes the elbow joint 1 block longer so that they line up correctly
+			 */		
+			if (isElbowJoint) {
+				if (!startPoint.isTerminated()) {
+					startPoint.setCoords(startPoint.getCoords().add(0, 0, -1));
+				}				
+				if (!endPoint.isTerminated()) {
+					endPoint.setCoords(endPoint.getCoords().add(0, 0, 1));
+				}
+			}
+			// update the depth
+			depth = Math.abs(startPoint.getZ( ) - endPoint.getZ()) + 1;
+			
+			// left-shift by one since horiztonal hallways are 3 depth
+			// this is to maintain the actual hallway (air part) to still be along the wayline.
+			startCoords = startPoint.getCoords();
+			startCoords = startCoords.add(-1, 0, 0);
+		}
+		
+		// get the rooms referenced by the waypoints
+		Room room1 = rooms.get(startPoint.getId());
+		Room room2 = rooms.get(endPoint.getId());		
+
+		 // the start/end points y-vlaue isn't set, so update them.
+		startPoint.setCoords(startPoint.getCoords().resetY(room1.getCoords().getY()));
+		endPoint.setCoords(endPoint.getCoords().resetY(room2.getCoords().getY()));
+
+		// calculate what the dimensions should be
+		int height = Math.abs(
+				Math.min(room1.getMinY(), room2.getMinY()) - 
+				Math.max(room1.getMinY(), room2.getMinY())
+				) + 1+ 3; // NOTE why 3? because a doorway is 2 + ceiling block
+		
+		// create a temp room out of the dimensions
+		Hallway hallway = (Hallway) new Hallway().setCoords(
+				new Coords(
+						startCoords.getX(),
+						startPoint.getCoords().getY(),
+						startCoords.getZ()))
+				.setWidth(width)
+				.setDepth(depth)
+				.setHeight(height)
+				.setType(Type.HALLWAY);
+		// update the alignment (Hallway specific property)
+		hallway.setAlignment(wayline.getAlignment());
+		
+		// store the start/end point as doorCoords iff they are terminated.
+		if (startPoint.isTerminated()) {
+			Direction d = calculateDirection(hallway, startPoint.getCoords(), room1);
+			hallway.getDoors().add(new Door(startPoint.getCoords(), room1, hallway, d));
+		}
+		if (endPoint.isTerminated()) {
+			Direction d = calculateDirection(hallway, endPoint.getCoords(), room2);
+			hallway.getDoors().add(new Door(endPoint.getCoords(), room2, hallway, d));
+		}
+		return hallway;
+	}
+
+	/**
+	 * Determines which side/direction the door is on.
+	 * @param hw
+	 * @param doorCoords
+	 * @param room
+	 */
+	public Direction calculateDirection(Hallway hw, ICoords coords, Room room) {
+		if (hw.getAlignment() == Alignment.HORIZONTAL) {
+			// test which side the door is on
+			if (coords.getX() == hw.getMinX()) {
+				return Direction.WEST;
+			}
+			if (coords.getX() == hw.getMaxX()) {
+				return Direction.EAST;
+			}
+		}
+		else {
+			if (coords.getZ() == hw.getMinZ()) {
+				return Direction.NORTH;
+			}
+			if (coords.getZ() == hw.getMaxZ()) {
+				return Direction.SOUTH;
+			}
+		}
+		return null;
+	}
+	
+	
 	/**
 	 * perform a breadth first search against the list of edges to determine if a path exists
 	 * from one node to another.

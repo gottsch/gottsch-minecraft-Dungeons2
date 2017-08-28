@@ -142,6 +142,7 @@ public class BossRoomDecorator extends RoomDecorator {
 				List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory);
 				Dungeons2.log.debug("Containers found:" + containers.size());
 				if (containers != null && !containers.isEmpty()) {
+					// TODO use RandomProbabilityCollection
 					ChestContainer chest = containers.get(random.nextInt(containers.size()));
 					// populate the chest with items from the selected chest sheet container
 					chestPopulator.populate(random, inventory, chest);

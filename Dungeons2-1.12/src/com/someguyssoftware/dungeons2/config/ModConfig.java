@@ -205,6 +205,8 @@ public class ModConfig extends AbstractConfig {
 	public static String bloodBlockId;
 	public static String mold1BlockId;
 
+	public static boolean enableDumps;
+
 	/**
 	 * 
 	 * @param mod
@@ -255,7 +257,10 @@ public class ModConfig extends AbstractConfig {
 
         // level builder settings
         decayMultiplier = config.getInt("decayMultiplier", "04-dungeon-gen", 5, 1, 10, "Number of times a block is checked to see if it meets the decay criteria.\nHigher number means more likely to be in a higher decayed state.");
-     
+
+        // dumps
+        enableDumps = config.getBoolean("enableDumps", "04-dungeon-gen", false, "Enable/disable the generation of dungeon dumps. These a debugging files.");
+        
         // ids
         config.setCategoryComment("99-ids", "ID properties.");
         tabId = config.getString("tabsId", "99-ids", "dungeons_tab", "");
@@ -418,7 +423,9 @@ public class ModConfig extends AbstractConfig {
         puddleBlockId = config.getString("puddleBlockId", "99-ids", "PUDDLE", "");
         bloodBlockId = config.getString("bloodBlockId", "99-ids", "blood", "");
         mold1BlockId = config.getString("mold1BlockId", "99-ids", "mold1", "");
+      
         ///////////////////////////////////////
+        
         
         // the the default values
        if(config.hasChanged()) {

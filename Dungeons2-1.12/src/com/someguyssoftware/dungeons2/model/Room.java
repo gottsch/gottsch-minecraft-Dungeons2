@@ -1,6 +1,8 @@
 package com.someguyssoftware.dungeons2.model;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -70,8 +72,8 @@ public class Room {
 	private boolean parapet;
 	private boolean merlon;
 	
-
 	private Multimap<DesignElement, ICoords> floorMap;
+	private List<Door> doors;
 	
 	/**
 	 * 
@@ -134,6 +136,14 @@ public class Room {
 			setDegrees(room.getDegrees());
 			setName(room.getName());
 			setObstacle(room.isObstacle());
+			
+			// Room and Door ref each other, so make sure to copy without cyclical looping
+			for (Door door : room.getDoors()) {
+				Door d = new Door();
+				d.setCoords(door.getCoords());
+				d.setRoom(this);
+				this.getDoors().add(d);
+			}
 			
 			// todo copy all the styling properties
 		}
@@ -861,6 +871,23 @@ public class Room {
 	 */
 	public void setWallCapital(boolean capital) {
 		setHasWallCapital(capital);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public List<Door> getDoors() {
+		if (doors == null) doors = new ArrayList<>(5);
+		return doors;
+	}
+
+	/**
+	 * 
+	 * @param doors
+	 */
+	public void setDoors(List<Door> doors) {
+		this.doors = doors;
 	}
 
 	/**
