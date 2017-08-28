@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.Appender;
 
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
+import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
@@ -58,7 +59,7 @@ public class Dungeons2 extends AbstractMod {
 		
 		public static final String MODID = "dungeons2";
 		public static final String NAME = "Dungeons2!";
-		public static final String VERSION = "1.2.0"; 
+		public static final String VERSION = "1.3.0"; 
 		public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12/update.json";
 		
 		// latest VERSION
@@ -165,6 +166,7 @@ public class Dungeons2 extends AbstractMod {
 	    	// add other commmands
 	    	event.registerServerCommand(new BuildCommand());
 	    	event.registerServerCommand(new ChestCommand());
+	    	event.registerServerCommand(new BuildEntranceCommand());
 	    }
 
 	    

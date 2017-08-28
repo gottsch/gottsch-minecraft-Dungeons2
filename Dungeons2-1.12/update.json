@@ -1,11 +1,12 @@
 {
     "homepage": "http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2792910-dungeons2",
     "promos": {
-    "1.12-latest": "1.2.0",
-    "1.12-recommended": "v1.2.0"
+    "1.12-latest": "1.3.0",
+    "1.12-recommended": "1.2.0"
   },
     "1.12": {
         "1.1.0": "-Initial release"
-        "1.2.0" "-see changelog @ https://gist.github.com/gottsch/3d0300abd4319fd3e1284520d37bfb0d"
+        "1.2.0" "-see changelog @ https://gist.github.com/gottsch/3d0300abd4319fd3e1284520d37bfb0d",
+        "1.3.0" "-see changelog @ "
     }
 }
