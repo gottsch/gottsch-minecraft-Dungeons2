@@ -21,6 +21,8 @@ import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionType;
+import net.minecraft.potion.PotionUtils;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.world.World;
@@ -30,7 +32,10 @@ import net.minecraft.world.World;
  *
  */
 public class ChestPopulator {
-
+	private static final String POTION_ITEM_NAME = "minecraft:potion";
+	private static final String SPLASH_POTION_ITEM_NAME = "minecraft:splash_potion";
+	private static final String LINGERING_POTION_ITEM_NAME = "minecraft:lingering_potion";
+	
 	private ChestSheet chestSheet;
 	private Multimap<String, ChestContainer> map;
 	
@@ -158,6 +163,47 @@ public class ChestPopulator {
 		
 	}
 	
+//	public static ItemStack toPotionStack(Random random, RandomItem randomItem, double chanceFactor, ChestSheet sheet) {
+//		ChestItem chestItem = sheet.getItems().get(randomItem.getRef());
+//		
+//		if (chestItem == null) {
+//			Dungeons2.log.warn("Unable to locate chest item in sheet: " + randomItem.getRef());
+//			return null;
+//		}
+////		Dungeons2.log.debug("Chest Item:" + chestItem.getName());
+//
+//		ItemStack stack = null;	
+//		
+//		try {		
+//			// calculate the probablility that the item will generate
+//			boolean checkProbability = true;
+//			if (randomItem.getChance() < 100.0) {
+//				double r = random.nextDouble() * 100.0;
+////				Dungeons2.log.debug("item random probability:" + r);
+//				// determine if selected item meet probability criteria
+//				double chance = randomItem.getChance() * chanceFactor;
+////				Dungeons2.log.debug("item random chance:" + chance);
+//				if (r > (chance)) {
+//					checkProbability = false;
+//				}
+//			}
+//	
+//			if (checkProbability) {
+//				// create the item
+//				stack = toPotion(chestItem);
+//				if (stack == null) {
+//					Dungeons2.log.warn("Unable to convert ChestItem to minecraft potion: ", chestItem.getName());
+//					return null;
+//				}
+////				Dungeons2.log.debug("Converted random item to (unlocalized NAME): " + item.getUnlocalizedName() + ":" + item);
+//			}		
+//		}
+//		catch(Exception e) {
+//			Dungeons2.log.error("Error generating potion from RandomItem:", e);
+//		}
+//		return stack;	
+//	}
+	
 	/**
 	 * Converts to a vanilla Minecraft ItemStack with any enchantments.
 	 * The resultant itemStack does NOT limit the stack size based on the item's stack limit.
@@ -175,7 +221,7 @@ public class ChestPopulator {
 		
 		Item item = null;
 		ItemStack stack = null;
-
+		
 		try {		
 			// calculate the probablility that the item will generate
 			boolean checkProbability = true;
@@ -190,7 +236,15 @@ public class ChestPopulator {
 				}
 			}
 	
-			if (checkProbability) {
+			if (checkProbability) {				
+				// check if poition, then build potion and return
+				if (chestItem.getName().equalsIgnoreCase(POTION_ITEM_NAME)
+						|| chestItem.getName().equalsIgnoreCase(SPLASH_POTION_ITEM_NAME)
+						|| chestItem.getName().equalsIgnoreCase(LINGERING_POTION_ITEM_NAME)) {
+					stack = toPotion(chestItem);
+					return stack;
+				}
+				
 				// create the item
 				item = toItem(chestItem.getName());
 				if (item == null) {
@@ -240,11 +294,29 @@ public class ChestPopulator {
 	
 	/**
 	 * 
+	 * @param chestItem
+	 * @return
+	 */
+	public static ItemStack toPotion(ChestItem chestItem) {
+		try {
+			Item item = ItemUtil.getItemFromName(chestItem.getName());
+			PotionType type = PotionType.getPotionTypeForName(chestItem.getId());
+			ItemStack stack = PotionUtils.addPotionToItemStack(new ItemStack(item), type);
+			return stack;
+		}
+		catch(Exception e) {
+			Dungeons2.log.error("toItem error:", e);
+			return null;
+		}
+	}
+
+	/**
+	 * 
 	 * @return
 	 */
 	public static Item toItem(String itemName) {
 		try {
-			Item item = ItemUtil.getItemFromName(itemName);
+			Item item = ItemUtil.getItemFromName(itemName);			
 			return item;
 		}
 		catch(Exception e) {
