@@ -12,6 +12,8 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
  * @author Mark Gottschling on Jul 18, 2016
+ * @version 2.0
+ * @since 1.0.0
  *
  */
 public class Level {
@@ -23,7 +25,12 @@ public class Level {
 	private List<Room> rooms;
 	private List<Edge> edges;
 	private List<Edge> paths;
+	@Deprecated
 	private List<Wayline> waylines;
+	/**
+	 * @since 2.0
+	 */
+	private List<Hallway> hallways;
 	private List<Shaft> shafts;
 	
 	private int minX, maxX;
@@ -75,6 +82,7 @@ public class Level {
 	 * @return the rooms
 	 */
 	public List<Room> getRooms() {
+		if (this.rooms == null) this.rooms = new ArrayList<>();
 		return rooms;
 	}
 
@@ -296,6 +304,17 @@ public class Level {
 	 */
 	public void setShafts(List<Shaft> shafts) {
 		this.shafts = shafts;
+	}
+
+	public List<Hallway> getHallways() {
+		if (hallways == null) {
+			this.hallways = new ArrayList<>();
+		}
+		return hallways;
+	}
+
+	public void setHallways(List<Hallway> hallways) {
+		this.hallways = hallways;
 	}
 	
 }

@@ -21,6 +21,8 @@ import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionType;
+import net.minecraft.potion.PotionUtils;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.world.World;
@@ -30,7 +32,10 @@ import net.minecraft.world.World;
  *
  */
 public class ChestPopulator {
-
+	private static final String POTION_ITEM_NAME = "minecraft:potion";
+	private static final String SPLASH_POTION_ITEM_NAME = "minecraft:splash_potion";
+	private static final String LINGERING_POTION_ITEM_NAME = "minecraft:lingering_potion";
+	
 	private ChestSheet chestSheet;
 	private Multimap<String, ChestContainer> map;
 	
@@ -175,7 +180,7 @@ public class ChestPopulator {
 		
 		Item item = null;
 		ItemStack stack = null;
-
+		
 		try {		
 			// calculate the probablility that the item will generate
 			boolean checkProbability = true;
@@ -190,7 +195,15 @@ public class ChestPopulator {
 				}
 			}
 	
-			if (checkProbability) {
+			if (checkProbability) {				
+				// check if poition, then build potion and return
+				if (chestItem.getName().equalsIgnoreCase(POTION_ITEM_NAME)
+						|| chestItem.getName().equalsIgnoreCase(SPLASH_POTION_ITEM_NAME)
+						|| chestItem.getName().equalsIgnoreCase(LINGERING_POTION_ITEM_NAME)) {
+					stack = toPotion(chestItem);
+					return stack;
+				}
+				
 				// create the item
 				item = toItem(chestItem.getName());
 				if (item == null) {
@@ -240,11 +253,29 @@ public class ChestPopulator {
 	
 	/**
 	 * 
+	 * @param chestItem
+	 * @return
+	 */
+	public static ItemStack toPotion(ChestItem chestItem) {
+		try {
+			Item item = ItemUtil.getItemFromName(chestItem.getName());
+			PotionType type = PotionType.getPotionTypeForName(chestItem.getType());
+			ItemStack stack = PotionUtils.addPotionToItemStack(new ItemStack(item), type);
+			return stack;
+		}
+		catch(Exception e) {
+			Dungeons2.log.error("toItem error:", e);
+			return null;
+		}
+	}
+
+	/**
+	 * 
 	 * @return
 	 */
 	public static Item toItem(String itemName) {
 		try {
-			Item item = ItemUtil.getItemFromName(itemName);
+			Item item = ItemUtil.getItemFromName(itemName);			
 			return item;
 		}
 		catch(Exception e) {

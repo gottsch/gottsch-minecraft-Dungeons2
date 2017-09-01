@@ -14,15 +14,31 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
  * @author Mark Gottschling on Aug 6, 2016
- *
+ * @version 2.0
+ * @since 1.0.0
  */
 public class Hallway extends Room {
 	Alignment alignment;
-	List<Door> doors;
+	
+//	List<Door> doors; // inherit from room
+	
+	/**
+	 * @since 2.0
+	 */
+	Hallway hallway;
+
+	public Hallway getHallway() {
+		return hallway;
+	}
+
+	public void setHallway(Hallway hallway) {
+		this.hallway = hallway;
+	}
 
 	public Hallway() {
 		super();
-		doors = new ArrayList<>(2);
+//		doors = new ArrayList<>(2);
+		setDoors(new ArrayList<>(2));
 	}
 	
 	/**
@@ -31,6 +47,7 @@ public class Hallway extends Room {
 	 * @param rooms
 	 * @return
 	 */
+	@Deprecated
 	public static Hallway fromWayline(Wayline wayline, List<Room> rooms) {
 		int width = 3;
 		int depth = 3;
@@ -169,18 +186,18 @@ public class Hallway extends Room {
 		this.alignment = alignment;
 	}
 
-	/**
-	 * @return the doors
-	 */
-	public List<Door> getDoors() {
-		return doors;
-	}
-
-	/**
-	 * @param doors the doors to set
-	 */
-	public void setDoors(List<Door> doors) {
-		this.doors = doors;
-	}
-	
+//	/**
+//	 * @return the doors
+//	 */
+//	public List<Door> getDoors() {
+//		return doors;
+//	}
+//
+//	/**
+//	 * @param doors the doors to set
+//	 */
+//	public void setDoors(List<Door> doors) {
+//		this.doors = doors;
+//	}
+//	
 }

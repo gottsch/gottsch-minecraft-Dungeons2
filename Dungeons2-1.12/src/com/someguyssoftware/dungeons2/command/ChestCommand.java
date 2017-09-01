@@ -33,12 +33,12 @@ public class ChestCommand extends CommandBase {
 
 	@Override
 	public String getName() {
-		return "dgnchest";
+		return "dgn2chest";
 	}
 
 	@Override
 	public String getUsage(ICommandSender var1) {
-		return "/dgnchest <x> <y> <z> : generates a dungeon chest at location (x,y,z)";
+		return "/dgn2chest <x> <y> <z> [category | -n <name>]: generates a dungeon chest at location (x,y,z)";
 	}
 
 	@Override
@@ -51,25 +51,17 @@ public class ChestCommand extends CommandBase {
 			y = Integer.parseInt(args[1]);
 			z = Integer.parseInt(args[2]);
 			
-			String pattern = "";
+			String category = "";
 			if (args.length > 3) {
-				pattern = args[3];
-			}
-			String size = "";
-			if (args.length >4) {
-				size = args[4];
+				category = args[3];
 			}
 			
-			// TODO set config
-			String terrainCheck = "0";
-			if (args.length > 5) {
-				terrainCheck = args[5];
-			}
+			if (category.equals("")) category = "common";
 			
 			if (player != null) {
     			World world = commandSender.getEntityWorld();
     			Dungeons2.log.debug("Starting to build Dungeons2! chest ...");
-    			
+
     			BlockPos pos = new BlockPos(x, y, z);
     			world.setBlockState(pos , Blocks.CHEST.getDefaultState());
     			TileEntityChest chest = (TileEntityChest) world.getTileEntity(pos);
@@ -78,13 +70,15 @@ public class ChestCommand extends CommandBase {
     				ChestSheet chestSheet = ChestSheetLoader.load(ModConfig.chestSheetFile);
     				ChestPopulator pop = new ChestPopulator(chestSheet);
 
-					List<ChestContainer> containers = (List<ChestContainer>) pop.getMap().get("common");
+					List<ChestContainer> containers = (List<ChestContainer>) pop.getMap().get(category);
 					Dungeons2.log.debug("Containers found:" + containers.size());
 					if (containers != null && !containers.isEmpty()) {
 						// add each container to the random prob collection
+						Dungeons2.log.info("Selected chest containers:" + containers);
 						RandomProbabilityCollection<ChestContainer> chestProbCol = new RandomProbabilityCollection<>(containers);
 						// select a container
-						ChestContainer container = (ChestContainer) chestProbCol.next();						
+						ChestContainer container = (ChestContainer) chestProbCol.next();		
+						Dungeons2.log.info("Chosen chest container:" + container);
 						pop.populate(new Random(), chest, container);
 					}
     			}

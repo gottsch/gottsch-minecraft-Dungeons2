@@ -8,7 +8,8 @@ import com.google.gson.annotations.Since;
 
 /**
  * @author Mark Gottschling on Jul 4, 2016
- *
+ * @version 2.0
+ * @since 1.0.0
  */
 public class ChestItem {
 	/*
@@ -21,6 +22,13 @@ public class ChestItem {
 	 */
 	@Since(1.0)
 	private String name;
+	
+	/**
+	 * @since 2.0
+	 */
+	@Since(2.0)
+	private String type;
+	
 	/*
 	 * A description of the ChestItem
 	 */
@@ -52,6 +60,19 @@ public class ChestItem {
 	 * @param damage
 	 */
 	public ChestItem(String id, String name, int damage) {
+		setId(id);
+		setName(name);
+		setDamage(damage);
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @param name
+	 * @param type
+	 * @param damage
+	 */
+	public ChestItem(String id, String name, String type, int damage) {
 		setId(id);
 		setName(name);
 		setDamage(damage);
@@ -96,12 +117,10 @@ public class ChestItem {
 		this.description = desc;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
-		return "ChestItem [id=" + id + ", NAME=" + name + ", description=" + description + ", damage=" + damage + "]";
+		return "ChestItem [id=" + id + ", name=" + name + ", type=" + type + ", description=" + description
+				+ ", damage=" + damage + "]";
 	}
 
 	/**
@@ -130,5 +149,13 @@ public class ChestItem {
 	 */
 	public void setDamage(int damage) {
 		this.damage = damage;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 }

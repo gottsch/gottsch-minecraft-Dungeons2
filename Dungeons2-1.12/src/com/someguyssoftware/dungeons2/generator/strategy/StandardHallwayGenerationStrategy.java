@@ -40,7 +40,7 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 	/*
 	 * a list of generated hallways
 	 */
-	private List<Room> hallways;
+	private List<Hallway> hallways;
 		
 //	/**
 //	 * 
@@ -56,7 +56,7 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 	 * @param rooms
 	 * @param hallways
 	 */
-	public StandardHallwayGenerationStrategy(IDungeonsBlockProvider blockProvider, List<Room> rooms, List<Room> hallways) {
+	public StandardHallwayGenerationStrategy(IDungeonsBlockProvider blockProvider, List<Room> rooms, List<Hallway> hallways) {
 		super(blockProvider);
 		//		setBlockProvider(blockProvider);
 		setRooms(rooms);
@@ -160,14 +160,14 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 	/**
 	 * @return the hallways
 	 */
-	public List<Room> getHallways() {
+	public List<Hallway> getHallways() {
 		return hallways;
 	}
 
 	/**
 	 * @param hallways the hallways to set
 	 */
-	public void setHallways(List<Room> hallways) {
+	public void setHallways(List<Hallway> hallways) {
 		this.hallways = hallways;
 	}
 

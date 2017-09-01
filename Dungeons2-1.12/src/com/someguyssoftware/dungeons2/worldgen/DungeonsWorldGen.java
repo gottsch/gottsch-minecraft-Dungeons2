@@ -4,11 +4,16 @@
 package com.someguyssoftware.dungeons2.worldgen;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Random;
 
@@ -30,6 +35,7 @@ import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.DungeonInfo;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.persistence.DungeonsGenSavedData;
+import com.someguyssoftware.dungeons2.printer.DungeonPrettyPrinter;
 import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
@@ -85,7 +91,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	private SpawnSheet spawnSheet;
 	
 	private static RandomProbabilityCollection<IRandomProbabilityItem> patterns = new RandomProbabilityCollection<>();
-	private static RandomProbabilityCollection<IRandomProbabilityItem> sizes = new RandomProbabilityCollection<>();
+	private static RandomProbabilityCollection<IRandomProbabilityItem> levelSizes = new RandomProbabilityCollection<>();
+	private static RandomProbabilityCollection<IRandomProbabilityItem> dungeonSizes = new RandomProbabilityCollection<>();
 	
 	/**
 	 * 
@@ -117,10 +124,15 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	    patterns.add(12, new RandomBuildPattern(BuildPattern.HORZ));
 	    patterns.add(12, new RandomBuildPattern(BuildPattern.VERT));
 	    
-	    sizes.add(50, new RandomBuildSize(BuildSize.SMALL));
-	    sizes.add(25, new RandomBuildSize(BuildSize.MEDIUM));
-	    sizes.add(15, new RandomBuildSize(BuildSize.LARGE));
-	    sizes.add(10, new RandomBuildSize(BuildSize.VAST));
+	    levelSizes.add(50, new RandomBuildSize(BuildSize.SMALL));
+	    levelSizes.add(25, new RandomBuildSize(BuildSize.MEDIUM));
+	    levelSizes.add(15, new RandomBuildSize(BuildSize.LARGE));
+	    levelSizes.add(10, new RandomBuildSize(BuildSize.VAST));
+	    
+	    dungeonSizes.add(30, new RandomBuildSize(BuildSize.SMALL));
+	    dungeonSizes.add(25, new RandomBuildSize(BuildSize.MEDIUM));
+	    dungeonSizes.add(25, new RandomBuildSize(BuildSize.LARGE));
+	    dungeonSizes.add(20, new RandomBuildSize(BuildSize.VAST));
 
 		try {		
 			// add the directories if they don't exist
@@ -253,8 +265,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
 //				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
 //				BuildSize dungeonSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
-	   			BuildSize levelSize = ((RandomBuildSize)sizes.next()).size;
-	   			BuildSize dungeonSize = ((RandomBuildSize)sizes.next()).size;
+	   			BuildSize levelSize = ((RandomBuildSize)levelSizes.next()).size;
+	   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
 				BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
 				
 				// 5. determine a preset level config based on pattern and size
@@ -313,6 +325,12 @@ public class DungeonsWorldGen implements IWorldGenerator {
 					// update the last dungeon position
 					lastDungeonCoords = coords;
 					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
+					
+					// TODO if generated and config.dumps is on, generate a dungeon dump (text file of all properties or dungeon, levels, rooms, doors, etc)
+					// TODO is generated and config.dumps.json is on, generate a dungeon json file. (same as above but in json format)
+					if (ModConfig.enableDumps) {
+						dump(dungeon);
+					}
 				}
 				
 				// set the generating flag
@@ -327,6 +345,33 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		
 	}
 
+	/**
+	 * Writes a human-readable version of the dungeon to disk.
+	 * @param dungeon
+	 */
+	public void dump(Dungeon dungeon ) {
+		DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyymmdd");
+		
+		String filename = String.format("dungeon-%s-%s.txt", 
+				formatter.format(new Date()), 
+				dungeon.getEntrance().getBottomCenter().toShortString().replaceAll(" ", "-"));
+		
+				//"dungeon-" + formatter.format(new Date()) + "-"
+//		+ dungeon.getEntrance().getBottomCenter().toShortString().replaceAll(" ", "-")
+//		+ "-" + ".txt";		
+
+		Path path = Paths.get(ModConfig.dungeonsFolder, "dumps").toAbsolutePath();
+		try {
+			Files.createDirectories(path);			
+		} catch (IOException e) {
+			Dungeons2.log.error("Couldn't create directories for dump files:", e);
+			return;
+		}
+		String s = printer.print(dungeon, Paths.get(path.toString(), filename).toString());
+//		Dungeons2.log.debug("\n" + s);
+	}
+	
 	/**
 	 * 
 	 * @param world

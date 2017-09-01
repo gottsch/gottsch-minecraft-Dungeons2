@@ -7,13 +7,19 @@ import com.someguyssoftware.gottschcore.enums.Alignment;
 
 /**
  * @author Mark Gottschling on Jul 22, 2016
- *
+ * @since 1.0.0
+ * @version 2.0
  */
 public class Wayline {
 	private Waypoint point1;
 	private Waypoint point2;
 	private Alignment alignment;
-	
+	/**
+	 * the other wayline in an L-Shaped wayline path.
+	 * @since 2.0
+	 */
+	private Wayline wayline;
+
 	/**
 	 * 
 	 */
@@ -44,6 +50,18 @@ public class Wayline {
 	public Wayline(Waypoint point1, Waypoint point2, Alignment alignment) {
 		this(point1, point2);
 		setAlignment(alignment);
+	}
+	
+	/**
+	 * 
+	 * @param point1
+	 * @param point2
+	 * @param alignment
+	 * @param line
+	 */
+	public Wayline(Waypoint point1, Waypoint point2, Alignment alignment, Wayline line) {
+		this(point1, point2, alignment);
+		setWayline(line);
 	}
 	
 	/**
@@ -91,5 +109,21 @@ public class Wayline {
 	 */
 	public void setAlignment(Alignment alignment) {
 		this.alignment = alignment;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Wayline getWayline() {
+		return wayline;
+	}
+
+	/**
+	 * 
+	 * @param wayline
+	 */
+	public void setWayline(Wayline wayline) {
+		this.wayline = wayline;
 	}
 }
