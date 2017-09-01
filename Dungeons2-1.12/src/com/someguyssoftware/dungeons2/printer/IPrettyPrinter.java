@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.someguyssoftware.dungeons2printer;
+package com.someguyssoftware.dungeons2.printer;
 
 import com.someguyssoftware.gottschcore.Quantity;
 
@@ -11,7 +11,7 @@ import com.someguyssoftware.gottschcore.Quantity;
  */
 public interface IPrettyPrinter {
 
-	default public String toString(Quantity q) {
+	default public String quantityToString(Quantity q) {
 		return q.getMin() + " <--> " + q.getMax();
 	}
 }
