@@ -1,11 +1,13 @@
-package com.someguyssoftware.dungeons2printer;
+package com.someguyssoftware.dungeons2.printer;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.Level;
 
@@ -31,13 +33,11 @@ public class DungeonPrettyPrinter {
 	 * @param dungeon
 	 * @param path
 	 */
-	public String print(Dungeon dungeon, String path) {
+	public String print(Dungeon dungeon, String filePath) {
 		String s = print(dungeon);
-		
-		// TODO generate a dump name
-		path += "dump.txt";
+		Path path = Paths.get(filePath).toAbsolutePath();
 		try {
-			Files.write(Paths.get(path), s.getBytes());
+			Files.write(path, s.getBytes());
 		} catch (IOException e) {
 			Dungeons2.log.error("Error writing Dungeon to dump file", e);
 		}
