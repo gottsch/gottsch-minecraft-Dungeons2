@@ -247,9 +247,12 @@ public class ChestSheetLoader {
 		        JsonObject element = entry.getValue().getAsJsonObject();
 		        ChestItem item = new ChestItem(
 		        	entry.getKey(),
-		        	element.get("name").getAsString(),
-		        	element.get("damage").getAsInt()
-        		);
+		        	element.get("name").getAsString()
+		        );
+		        if (element.get("damage") != null)
+	        		item.setDamage(element.get("damage").getAsInt());
+	        	if(element.get("type") != null)
+	        		item.setType(element.get("type").getAsString());
 		        map.put(entry.getKey(), item);
 		    }
 		    return map;

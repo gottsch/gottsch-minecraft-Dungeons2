@@ -163,47 +163,6 @@ public class ChestPopulator {
 		
 	}
 	
-//	public static ItemStack toPotionStack(Random random, RandomItem randomItem, double chanceFactor, ChestSheet sheet) {
-//		ChestItem chestItem = sheet.getItems().get(randomItem.getRef());
-//		
-//		if (chestItem == null) {
-//			Dungeons2.log.warn("Unable to locate chest item in sheet: " + randomItem.getRef());
-//			return null;
-//		}
-////		Dungeons2.log.debug("Chest Item:" + chestItem.getName());
-//
-//		ItemStack stack = null;	
-//		
-//		try {		
-//			// calculate the probablility that the item will generate
-//			boolean checkProbability = true;
-//			if (randomItem.getChance() < 100.0) {
-//				double r = random.nextDouble() * 100.0;
-////				Dungeons2.log.debug("item random probability:" + r);
-//				// determine if selected item meet probability criteria
-//				double chance = randomItem.getChance() * chanceFactor;
-////				Dungeons2.log.debug("item random chance:" + chance);
-//				if (r > (chance)) {
-//					checkProbability = false;
-//				}
-//			}
-//	
-//			if (checkProbability) {
-//				// create the item
-//				stack = toPotion(chestItem);
-//				if (stack == null) {
-//					Dungeons2.log.warn("Unable to convert ChestItem to minecraft potion: ", chestItem.getName());
-//					return null;
-//				}
-////				Dungeons2.log.debug("Converted random item to (unlocalized NAME): " + item.getUnlocalizedName() + ":" + item);
-//			}		
-//		}
-//		catch(Exception e) {
-//			Dungeons2.log.error("Error generating potion from RandomItem:", e);
-//		}
-//		return stack;	
-//	}
-	
 	/**
 	 * Converts to a vanilla Minecraft ItemStack with any enchantments.
 	 * The resultant itemStack does NOT limit the stack size based on the item's stack limit.
@@ -300,7 +259,7 @@ public class ChestPopulator {
 	public static ItemStack toPotion(ChestItem chestItem) {
 		try {
 			Item item = ItemUtil.getItemFromName(chestItem.getName());
-			PotionType type = PotionType.getPotionTypeForName(chestItem.getId());
+			PotionType type = PotionType.getPotionTypeForName(chestItem.getType());
 			ItemStack stack = PotionUtils.addPotionToItemStack(new ItemStack(item), type);
 			return stack;
 		}
