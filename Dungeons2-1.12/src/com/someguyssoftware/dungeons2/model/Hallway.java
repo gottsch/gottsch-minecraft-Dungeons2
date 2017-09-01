@@ -19,7 +19,21 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
  */
 public class Hallway extends Room {
 	Alignment alignment;
+	
 //	List<Door> doors; // inherit from room
+	
+	/**
+	 * @since 2.0
+	 */
+	Hallway hallway;
+
+	public Hallway getHallway() {
+		return hallway;
+	}
+
+	public void setHallway(Hallway hallway) {
+		this.hallway = hallway;
+	}
 
 	public Hallway() {
 		super();

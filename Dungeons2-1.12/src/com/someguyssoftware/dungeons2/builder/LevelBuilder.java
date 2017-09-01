@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Stack;
 import java.util.Vector;
@@ -502,41 +503,6 @@ public class LevelBuilder {
 		 * build the level
 		 */
 		return build(world, rand, startPoint, predefinedRooms, config);
-		
-		
-		// TODO special anchor rooms need to be processed first as they will not move position - ie all others move around them.
-		//		Dungeons2.log.info("Order\n========");
-		//		for (Room r :  spawned) {
-		//			Dungeons2.log.info(r.getDistance());
-		//		}
-
-//		// move apart any intersecting rooms (uses anti-grav method)
-//		rooms = applyDistanceBuffering(rand, startPoint, anchors, spawned, config);
-////		Collections.sort(rooms, Room.distanceComparator);  // why do we need to sort here?
-//
-//		// select rooms to use ie. filter out rooms that don't meet criteria
-//		rooms = selectValidRooms(rand, rooms, config);
-//
-//		// triangulate valid rooms
-//		edges = triangulate(rooms);
-//
-//		// get the mst
-//		paths = calculatePaths(rand, edges, rooms, config);
-//
-//		// calculate room waypoints - the coords that build a hallway (edge) between to rooms (vertice)
-//		waylines = calculateWaylines(rand, paths, rooms, config);
-//
-//		//		Collections.sort(rooms, Room.distanceComparator);
-//
-//		// setup the level
-//		level.setRooms(rooms);
-//		level.setStartRoom(startRoom);
-//		level.setEndRoom(endRoom);
-//		level.setEdges(edges);
-//		level.setPaths(paths);
-//		level.setWaylines(waylines);
-//		
-//		return level;
 	}
 
 	/**
@@ -688,6 +654,13 @@ public class LevelBuilder {
 			for (Wayline line : waylines) {
 				line.getPoint1().setCoords(line.getPoint1().getCoords().add(mx-1, 0, mz-1));
 				line.getPoint2().setCoords(line.getPoint2().getCoords().add(mx-1, 0, mz-1));
+				// NOTE this might be easier to accomplish if ALL waylines (joints included) were added to the list
+				// BUT still refererncing each other in joint. Then in buildHalls() create a list of ref'ed and check against it so that
+				// double halls aren't built.
+//				if (line.getWayline() != null) {
+//					line.getWayline().getPoint1().setCoords(line.getWayline().getPoint1().getCoords().add(mx-1, 0, mz-1));
+//					line.getWayline().getPoint2().setCoords(line.getWayline().getPoint2().getCoords().add(mx-1, 0, mz-1));					
+//				}
 			}
 		}
 		
@@ -697,20 +670,42 @@ public class LevelBuilder {
 		// initialize hallways
 		hallways = new ArrayList<>();
 		
+		// a list to hold waylines from an L-shaped (elbow join) set of waylines
+		List<Wayline> processedJoins = new ArrayList<>(10);
+		
 		// process each wayline
 		for (Wayline line : waylines) {
 			// build a hallway (room) from a wayline
 			//Hallway hallway = Hallway.fromWayline(line, level.getRooms());
 			Hallway hallway = buildHallway(line, rooms);
-
+			
 			// add the hallway to the list of generated hallways
 			hallways.add(hallway);
+
+			addDoorsToRoom(hallway);
 			
+			// TODO make this its own method
 			// create doors for the rooms based on the hallway doors, but on the opposite side of the room (direction)
-			for (Door d : hallway.getDoors()) {
-				// create a new door instance and flip the direction
-				Door door = new Door(d.getCoords(), d.getRoom(), d.getHallway(), d.getDirection().rotate(Rotate.ROTATE_180));
-				d.getRoom().getDoors().add(door);
+//			for (Door d : hallway.getDoors()) {
+//				// create a new door instance and flip the direction
+//				Door door = new Door(d.getCoords(), d.getRoom(), d.getHallway(), d.getDirection().rotate(Rotate.ROTATE_180));
+//				d.getRoom().getDoors().add(door);
+//			}
+			
+			// TODO how to cross-ref L-shaped hallways together from waylines... they both need to be built first ?
+			// if an L-shaped ie. multiple connected waylines.
+			if (line.getWayline() != null) {				
+				// check if second wayline is in process joins list
+				if (!processedJoins.contains(line.getWayline())) {
+					Hallway hallway2 = buildHallway(line.getWayline(), rooms);
+					hallway2.setHallway(hallway);
+					hallway.setHallway(hallway2);
+					addDoorsToRoom(hallway2);
+					hallways.add(hallway2);
+					
+					// add first wayline to processed joins
+					processedJoins.add(line);
+				}
 			}
 		}
 		
@@ -753,6 +748,18 @@ public class LevelBuilder {
 		return level;
 	}
 	
+	/**
+	 * 
+	 * @param hallway
+	 */
+	private void addDoorsToRoom(Hallway hallway) {
+		for (Door d : hallway.getDoors()) {
+			// create a new door instance and flip the direction
+			Door door = new Door(d.getCoords(), d.getRoom(), d.getHallway(), d.getDirection().rotate(Rotate.ROTATE_180));
+			d.getRoom().getDoors().add(door);
+		}
+	}
+
 	/**
 	 * 
 	 * @param rand
@@ -942,6 +949,8 @@ public class LevelBuilder {
 			Direction d = calculateDirection(hallway, endPoint.getCoords(), room2);
 			hallway.getDoors().add(new Door(endPoint.getCoords(), room2, hallway, d));
 		}
+		// TODO else { add and set Hallway property. ie this is an elbow join, and this hallway points to another hallway)
+		// can't here as it is needs to process the entire wayline first, then produces the hallway
 		return hallway;
 	}
 
@@ -1307,29 +1316,6 @@ public class LevelBuilder {
 			// or indicated something special
 			
 			/*
-			 * test the midpoint between the two rooms' centers.
-			 * if it falls between teh min and max, then the rooms are "close" enough
-			 */
-			// build horizontal line
-//			if (midpoint.getZ() > innerMinZ && midpoint.getZ() < innerMaxZ) {
-//				// in the "close" zone and can construct a horizontal hallway
-//				Wayline wayline = new Wayline(new Waypoint(minXMap.get(innerMinX).getId(), innerMinX, 0, midpoint.getZ()),
-//						new Waypoint(maxXMap.get(innerMaxX).getId(), innerMaxX, 0, midpoint.getZ()));
-//				waylines.add(wayline);
-//				Dungeons2.log.info(String.format("Horz mipoint  line from [%d, %d] to [%d, %d[", innerMinX, midpoint.getZ(), innerMaxX, midpoint.getZ()));
-//				continue;
-//			}
-//			
-//			// build vertical line
-//			if (midpoint.getX() > innerMinX && midpoint.getX() < innerMaxX) {
-//				Wayline wayline = new Wayline(new Waypoint(minZMap.get(innerMinZ).getId(), midpoint.getX(), 0, innerMinZ),
-//						new Waypoint(maxZMap.get(innerMaxZ).getId(), midpoint.getX(), 0, innerMaxZ));
-//				waylines.add(wayline);
-//				Dungeons2.log.info(String.format("Vert midpoint line from [%d, %d] to [%d, %d[", midpoint.getX(), innerMinZ, midpoint.getX(), innerMaxZ));
-//				continue;
-//			}
-			
-			/*
 			 *  build L-shaped line
 			 */
 			ICoords r1c = room1.getCenter();
@@ -1338,8 +1324,11 @@ public class LevelBuilder {
 			if (room2.getCenter().getX() > room1.getCenter().getX()) {
 				// room2 is to the right (positive-x) of room 1
 				/*
+				 * NOTE 8/31/2017 this comment only  concerning rooms where the Y-value is not the same - which
+				 * has not been implemented yet.
+				 * 
 				 * this part is incorrect or just doesn't contain enough data.  this is a L-shaped wayline and therefor
-				 * point2 doesn't connect to a room by default.  however every it is assigned the room2's ID.
+				 * point2 doesn't connect to a room by default.  however it is assigned the room2's ID.
 				 * this will cause incorrect calculations when attempting to generate hallsways as room2's Y value
 				 * will be looked at and  not any intermediate intersecting room's Y (the hallway doesn't need to "climb back"
 				 * up to room2's Y). needs to be flagged with a value to indicate that it is not terminal and therefor it can be
@@ -1358,11 +1347,12 @@ public class LevelBuilder {
 				Dungeons2.log.warn("Wayline's points are equal !!: " + wayline);
 			}
 			stack.add(wayline);
-			waylines.addAll(resolveWaylineRoomIntersections(rooms, stack));
-
-			// TODO build 3x3 room, give id and add to rooms list. how is it going to gen? all rooms have 
-			// already been generated.
-			
+			List<Wayline> segmented = resolveWaylineRoomIntersections(rooms, stack);
+			waylines.addAll(segmented);
+			// search the list for the non-terminated wayline
+			Optional<Wayline> arm1 = segmented.stream()
+				.filter(x -> !x.getPoint1().isTerminated() || !x.getPoint2().isTerminated()).findFirst();
+						
 			// room2 is down (postivie-z) of room 1
 			if (room2.getCenter().getZ() > room1.getCenter().getZ()) {
 				wayline = new Wayline(new Waypoint(room1.getId(), room2.getCenter().getX(), 0, r1c.getZ(), false),
@@ -1379,7 +1369,18 @@ public class LevelBuilder {
 			}
 			
 			stack.add(wayline);
-			waylines.addAll(resolveWaylineRoomIntersections(rooms, stack));
+			segmented = resolveWaylineRoomIntersections(rooms, stack);
+			waylines.addAll(segmented);
+			
+			// search the list for the non-terminated wayline
+			Optional<Wayline> arm2 = segmented.stream()
+					.filter(x -> !x.getPoint1().isTerminated() || !x.getPoint2().isTerminated()).findFirst();
+			
+			// if both parts of L-shaped (elbow join) wayline are found, then set to reference each other
+			if (arm1.isPresent() && arm2.isPresent() && arm1.get() != null && arm2.get() != null) {
+				arm1.get().setWayline(arm2.get());
+				arm2.get().setWayline(arm1.get());
+			}
 		}
 
 		return waylines;

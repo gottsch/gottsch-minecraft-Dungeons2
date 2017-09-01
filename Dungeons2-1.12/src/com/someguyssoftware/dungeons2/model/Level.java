@@ -307,6 +307,9 @@ public class Level {
 	}
 
 	public List<Hallway> getHallways() {
+		if (hallways == null) {
+			this.hallways = new ArrayList<>();
+		}
 		return hallways;
 	}
 

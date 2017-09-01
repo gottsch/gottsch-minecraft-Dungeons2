@@ -5,6 +5,7 @@ package com.someguyssoftware.dungeons2.model;
 
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.random.RandomHelper;
 
 /**
  * @author Mark Gottschling on Aug 30, 2016
@@ -12,6 +13,10 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
  * @since 1.0.0
  */
 public class Door {	
+	/**
+	 * @since 2.0
+	 */
+	private int id;
 	private ICoords coords;
 	private Room room;
 	/**
@@ -26,7 +31,9 @@ public class Door {
 	/**
 	 * 
 	 */
-	public Door() {}
+	public Door() {
+		setId(RandomHelper.randomInt(5001, 9999));
+	}
 	
 	/**
 	 * 
@@ -34,6 +41,7 @@ public class Door {
 	 * @param room
 	 */
 	public Door(ICoords coords, Room room) {
+		setId(RandomHelper.randomInt(5001, 9999));
 		this.coords = coords;
 		this.room = room;
 	}
@@ -47,12 +55,29 @@ public class Door {
 	 * @since 2.0
 	 */
 	public Door(ICoords coords, Room room, Hallway hallway, Direction direction) {
+		setId(RandomHelper.randomInt(5001, 9999));
 		this.coords = coords;
 		this.room = room;
 		this.hallway = hallway;
 		this.direction = direction;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public int getId() {
+		return id;
+	}
+
+	/**
+	 * 
+	 * @param id
+	 */
+	public void setId(int id) {
+		this.id = id;
+	}
+	
 	/**
 	 * @return the coords
 	 */
