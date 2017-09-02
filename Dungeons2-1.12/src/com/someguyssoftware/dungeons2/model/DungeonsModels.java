@@ -140,6 +140,8 @@ public class DungeonsModels {
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.wallSconceMossyStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.wallSconceCrackedStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.wallSconceObsidianbrickFacade));
+		// grate
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.grateBlock));
 	}
 	
 	/**
