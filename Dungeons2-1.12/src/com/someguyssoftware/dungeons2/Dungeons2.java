@@ -59,7 +59,7 @@ public class Dungeons2 extends AbstractMod {
 		
 		public static final String MODID = "dungeons2";
 		public static final String NAME = "Dungeons2!";
-		public static final String VERSION = "1.3.0"; 
+		public static final String VERSION = "1.3.1"; 
 		public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12/update.json";
 		
 		// latest VERSION
