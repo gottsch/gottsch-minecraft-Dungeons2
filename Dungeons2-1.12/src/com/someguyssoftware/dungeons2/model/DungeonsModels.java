@@ -26,6 +26,9 @@ public class DungeonsModels {
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicCrackedStonebrickFacade));					
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicChiseledStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicObsidianbrickFacade));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicWhiteConcreteFacade));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicSilverConcreteFacade));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicGrayConcreteFacade));
 		// tee
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.teePillarStoneFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.teePillarCobblestoneFacade));
@@ -75,7 +78,8 @@ public class DungeonsModels {
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.crownMoldingStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.crownMoldingMossyStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.crownMoldingCrackedStonebrickFacade));
-		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.crownMoldingObsidianbrickFacade));				
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.crownMoldingObsidianbrickFacade));
+		
 		// seven-eights
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.sevenEightsPillarStoneFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.sevenEightsPillarCobblestoneFacade));

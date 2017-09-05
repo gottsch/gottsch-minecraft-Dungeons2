@@ -1,0 +1,8 @@
+{
+    "parent": "Dungeons2:block/basic_facade",
+    "textures": {
+        "bottom": "blocks/concrete_silver",
+        "top": "blocks/concrete_silver",
+        "side": "blocks/concrete_silver"
+    }
+}

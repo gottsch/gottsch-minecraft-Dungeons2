@@ -41,6 +41,10 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block basicCrackedStonebrickFacade;
 	public static Block basicChiseledStonebrickFacade;
 	public static Block basicObsidianbrickFacade;
+	
+	public static Block basicWhiteConcreteFacade;
+	public static Block basicSilverConcreteFacade;
+	public static Block basicGrayConcreteFacade;
 
 	// "T" Pillar
 	public static Block teePillarStoneFacade;
@@ -158,7 +162,10 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block crownMoldingMossyStonebrickFacade;
 	public static Block crownMoldingCrackedStonebrickFacade;
 	public static Block crownMoldingObsidianbrickFacade;
-
+	public static Block crownMoldingWhiteConcreteFacade;
+	public static Block crownMoldingSilverConcreteFacade;
+	public static Block crownMoldingGrayConcreteFacade;
+	
 	// wall sconce 
 	public static Block wallSconceStoneFacade;
 	public static Block wallSconceCobblestoneFacade;
@@ -190,6 +197,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		basicCrackedStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicCrackedStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicChiseledStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicChiseledStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicObsidianbrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicObsidianbrickFacadeId, Material.ROCK).setHardness(50F).setResistance(2000F);
+		basicWhiteConcreteFacade = new BasicFacadeBlock(Dungeons2.MODID, "basic_facade_white_concrete", Material.ROCK).setHardness(50F).setResistance(2000F);
+		basicSilverConcreteFacade = new BasicFacadeBlock(Dungeons2.MODID, "basic_facade_silver_concrete", Material.ROCK).setHardness(50F).setResistance(2000F);
+		basicGrayConcreteFacade = new BasicFacadeBlock(Dungeons2.MODID, "basic_facade_gray_concrete", Material.ROCK).setHardness(50F).setResistance(2000F);
 
 		// t pillar
 		teePillarStoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -352,6 +362,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					basicCrackedStonebrickFacade,					
 					basicChiseledStonebrickFacade,
 					basicObsidianbrickFacade,
+					basicWhiteConcreteFacade,
+					basicSilverConcreteFacade,
+					basicGrayConcreteFacade,
 					// tee
 					teePillarStoneFacade,
 					teePillarCobblestoneFacade,
@@ -489,6 +502,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					new ItemBlock(basicCrackedStonebrickFacade),					
 					new ItemBlock(basicChiseledStonebrickFacade),
 					new ItemBlock(basicObsidianbrickFacade),
+					new ItemBlock(basicWhiteConcreteFacade),
+					new ItemBlock(basicSilverConcreteFacade),
+					new ItemBlock(basicGrayConcreteFacade),
 					// tee
 					new ItemBlock(teePillarStoneFacade),
 					new ItemBlock(teePillarCobblestoneFacade),
