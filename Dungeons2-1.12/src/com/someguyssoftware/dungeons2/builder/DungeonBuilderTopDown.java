@@ -11,13 +11,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.model.AboveRoom;
+import com.someguyssoftware.dungeons2.model.Building;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
+import com.someguyssoftware.dungeons2.model.Floor;
+import com.someguyssoftware.dungeons2.model.FloorConfig;
 import com.someguyssoftware.dungeons2.model.Level;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
+import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -120,7 +125,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
 
 		/*
-		 *  TODO 1. room is centered on surfaceCoords, and thus the isValidAboveGroundBase() should be taking in coords
+		 *  room is centered on surfaceCoords, and thus the isValidAboveGroundBase() should be taking in coords
 		 *  adjusted to those of the room. ie entranceRoom.getCoords().
 		 */
 		if (levelConfig.isMinecraftConstraintsOn() &&
@@ -310,6 +315,117 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		return dungeon;
 	}
 
+	/**
+	 * 
+	 * @param world
+	 * @param rand
+	 * @param startCoords
+	 * @return
+	 */
+	public Building buildEntrance(World world, Random rand, ICoords startCoords) {
+		/*
+		 * the building to construct
+		 */
+		Building entrance = new Building();
+		// TODO buid from BuildingBuilder;
+		
+		FloorConfig floorConfig = new FloorConfig();
+		floorConfig.setNumberOfRooms(new Quantity(1, 5)); // TODO get from PRESETs
+		
+		/*
+		 * the number of potential rooms in the entrance
+		 */
+		int numOfPotentialRooms = RandomHelper.randomInt(1, 5);
+		
+		/*
+		 * the number of potential floors in the entrance
+		 */
+		int numOfPotentialFloors = RandomHelper.randomInt(1, 5);
+
+		/*
+		 * the number of actual floors
+		 */
+		int numOfFloors = 1;
+		
+		// TODO should hash be part of config
+		/*
+		 * array to hold the number of floors each room will have
+		 */
+		int[] roomFloorsHash = new int[numOfPotentialRooms];
+		
+		// initialize roomLevels
+		for (int i = 0; i < numOfPotentialRooms; i++) {
+			roomFloorsHash[i] = RandomHelper.randomInt(0, numOfPotentialFloors) + 1;
+			if (roomFloorsHash[i] > numOfFloors) numOfFloors = roomFloorsHash[i];
+		}
+		
+		// build the floors
+		for (int i = 0; i < numOfFloors; i++) {
+			entrance.getFloors().add(new Floor());
+		}
+		
+		/*
+		 * the main room of the building
+		 */
+		AboveRoom mainRoom = new AboveRoom().setAnchor(true);
+		
+		/*
+		 *  adjust the minimum dimension sizes for entrance room.
+		 *  entrances will always be odd numbered (ex length=7/width=5)
+		 */
+		int xz = RandomHelper.randomInt(rand, MIN_ENTRANCE_XZ, 11);
+		if (xz % 2 == 0) xz++;
+		mainRoom.getDimensions().setWidth(xz);
+		mainRoom.getDimensions().setDepth(xz);
+		if (numOfPotentialFloors == 1) {
+			mainRoom.getDimensions().setHeight(RandomHelper.randomInt(rand, MIN_ENTRANCE_Y, MAX_ENTRANCE_Y));
+		}
+		else {
+			mainRoom.getDimensions().setHeight(RandomHelper.randomInt(rand, 5, 7));
+		}
+		
+		// set the starting room coords such that the start point is in the middle of the room
+		mainRoom.setCoords(
+				new Coords(startCoords.getX()-((mainRoom.getDimensions().getWidth()-1)/2),
+						startCoords.getY(),
+						startCoords.getZ()-((mainRoom.getDimensions().getDepth()-1)/2)));
+
+		floorConfig.setXDistance(new Quantity(1, mainRoom.getDimensions().getWidth()));
+		floorConfig.setZDistance(new Quantity(1, mainRoom.getDimensions().getDepth()));
+		
+//		mainRoom.setDistance(0.0);
+		// randomize a direction
+//		mainRoom.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+		
+		// add the main room to the room list for the floor		
+		entrance.getFloors().get(0).getRooms().add(0, mainRoom);
+		
+		for (int f = 1; f <= numOfFloors; f++) {
+			for (int r = 1; r <= numOfPotentialRooms - 1; r++) {
+				// esacpe if main room on first floor
+				if (f ==1 && r == 1) continue;
+				
+				// construct room
+				
+				// place room relative to mainRoom
+				
+				if (f == 1) {
+					// determine surface coords of center
+					// update y coords
+					// for each room on level 1, need to determine the center coords Y (surface) and whether it meets constraints. if good add to list.	
+				}
+				else if (r <= roomFloorsHash[r]) {
+					// add additional room on top of previous floor room
+				}
+				
+				// add room to the room list for the floor
+				
+			}
+		}
+		
+		return entrance;
+	}
+	
 	/**
 	 * 
 	 * @param world
