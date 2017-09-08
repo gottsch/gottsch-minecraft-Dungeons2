@@ -20,6 +20,7 @@ import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
+import com.someguyssoftware.dungeons2.printer.IRoomPrettyPrinter;
 import com.someguyssoftware.dungeons2.printer.RoomPrettyPrinter;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
@@ -103,7 +104,7 @@ public class BuildEntranceCommand extends CommandBase {
     			roomGen.generate(world, random, entranceRoom, gen.getDefaultStyleSheet().getThemes().get(0), gen.getDefaultStyleSheet(), entranceLevelConfig);
     			roomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), entranceRoom, entranceLevelConfig);
 
-    			RoomPrettyPrinter printer = new RoomPrettyPrinter();
+    			IRoomPrettyPrinter printer = new RoomPrettyPrinter();
     			if (entranceRoom != null) {
     				String s = printer.print(entranceRoom);
     				Dungeons2.log.info(s);
