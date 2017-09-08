@@ -72,7 +72,7 @@ public class DungeonPrettyPrinter {
 			.append("\n");
 			
 			// entrance room
-			RoomPrettyPrinter roomPrinter = new RoomPrettyPrinter();
+			IRoomPrettyPrinter roomPrinter = new RoomPrettyPrinter();
 			String room = roomPrinter.print(dungeon.getEntrance(), "Entrance Room");
 			sb.append(room).append("\n");
 			

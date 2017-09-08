@@ -8,13 +8,14 @@ import java.util.Arrays;
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.model.Door;
 import com.someguyssoftware.dungeons2.model.Room;
+import com.someguyssoftware.dungeons2.model.Room.Type;
 
 /**
  * 
  * @author Mark Gottschling on August 25, 2017
  *
  */
-public class RoomPrettyPrinter {
+public class RoomPrettyPrinter implements IRoomPrettyPrinter {
 	private static final String div;
 	private static final String sub;
 	
@@ -38,20 +39,18 @@ public class RoomPrettyPrinter {
 	 */
 	public RoomPrettyPrinter() {	}
 	
-	/**
-	 * 
-	 * @param room
-	 * @return
+	/* (non-Javadoc)
+	 * @see com.someguyssoftware.dungeons2.printer.IRoomPrettyPrinter#print(com.someguyssoftware.dungeons2.model.Room)
 	 */
+	@Override
 	public String print(Room room) {
 		return print(room, "Room");
 	}
 	
-	/**
-	 * 
-	 * @param room
-	 * @return
+	/* (non-Javadoc)
+	 * @see com.someguyssoftware.dungeons2.printer.IRoomPrettyPrinter#print(com.someguyssoftware.dungeons2.model.Room, java.lang.String)
 	 */
+	@Override
 	public String print(Room room, String title) {
 
 		StringBuilder sb = new StringBuilder();
@@ -60,26 +59,19 @@ public class RoomPrettyPrinter {
 			sb
 			.append(div)
 			.append(String.format(heading, title))
-			.append(div)
-			.append(String.format(heading, "[Properties]"))
-			.append(String.format(format, "ID", room.getId()))
-			.append(String.format(format, "Name", room.getName()));
-			if (room.getCoords() != null)
-				sb.append(String.format(format, "Location", room.getBottomCenter().toShortString()));
+			.append(div);
+			printProperties(sb, room);
 			
-			sb.append(String.format(format, "Type", room.getType()))			
-			.append(String.format(format, "Direction", room.getDirection()))
-			.append(String.format(format, "Degrees", room.getDegrees()))
-			.append(String.format(format, "Is Anchor", room.isAnchor()))
-			.append(String.format(format, "Is Obstacle", room.isObstacle()))
-			.append(String.format(format, "Is Rejected", room.isReject()));
-			
-			if (room.getLayout() != null)
-				sb.append(String.format(format, "Layout", room.getLayout().getName()));
-			
-			sb.append(String.format(format, "X Dimensions", String.format("%s <--> %s", room.getMinX(), room.getMaxX())))
-			.append(String.format(format, "Y Dimensions", String.format("%s <--> %s", room.getMinY(), room.getMaxY())))
-			.append(String.format(format, "Z Dimensions", String.format("%s <--> %s", room.getMinZ(), room.getMaxZ())));
+			if (room.getType() == Type.ENTRANCE) {
+				sb.append(String.format(format, "Has Coffer", room.hasCoffer()))
+				.append(String.format(format, "Has Column", room.hasColumn()))
+				.append(String.format(format, "Has Cornice", room.hasCornice()))
+				.append(String.format(format, "Has Crenellation", room.hasCrenellation()))
+				
+				.append(String.format(format, "Has Merlon", room.hasMerlon()))
+				.append(String.format(format, "Has Parapet", room.hasParapet()))
+				.append(String.format(format, "Has Plinth", room.hasPlinth()));
+			}
 			
 			if (room.getDoors() != null) {
 				sb.append(String.format(format, "# of Doors", room.getDoors().size()));
@@ -112,5 +104,36 @@ public class RoomPrettyPrinter {
 			return e.getMessage();
 		}
 		return sb.toString();
+	}
+	
+	/**
+	 * 
+	 * @param sb
+	 */
+	public void printProperties(StringBuilder sb, Room room) {
+		sb.append(String.format(heading, "[Properties]"))
+		.append(String.format(format, "ID", room.getId()))
+		.append(String.format(format, "Name", room.getName()));
+		if (room.getCoords() != null)
+			sb.append(String.format(format, "Location", room.getBottomCenter().toShortString()));
+		
+		sb.append(String.format(format, "Type", room.getType()))			
+		.append(String.format(format, "Direction", room.getDirection()))
+		.append(String.format(format, "Degrees", room.getDegrees()))
+		.append(String.format(format, "Is Anchor", room.isAnchor()))
+		.append(String.format(format, "Is Obstacle", room.isObstacle()))
+		.append(String.format(format, "Is Rejected", room.isReject()));
+		
+		if (room.getLayout() != null)
+			sb.append(String.format(format, "Layout", room.getLayout().getName()));
+		
+		sb.append(String.format(format, "X Dimensions", String.format("%s <--> %s", room.getMinX(), room.getMaxX())))
+		.append(String.format(format, "Y Dimensions", String.format("%s <--> %s", room.getMinY(), room.getMaxY())))
+		.append(String.format(format, "Z Dimensions", String.format("%s <--> %s", room.getMinZ(), room.getMaxZ())))
+		
+		.append(String.format(format, "Has Crown", room.hasCrown()))
+		.append(String.format(format, "Has Trim", room.hasTrim()))
+		.append(String.format(format, "Has WallBase", room.hasWallBase()))
+		.append(String.format(format, "Has WallCapital", room.hasWallCapital()));
 	}
 }

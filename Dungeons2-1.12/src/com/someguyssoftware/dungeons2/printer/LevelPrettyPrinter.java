@@ -44,7 +44,7 @@ public class LevelPrettyPrinter implements IPrettyPrinter {
 	 * @return
 	 */
 	public String print(Level level, String title) {
-		RoomPrettyPrinter roomPrinter = new RoomPrettyPrinter();
+		IRoomPrettyPrinter roomPrinter = new RoomPrettyPrinter();
 		HallwayPrettyPrinter hallwayPrinter = new HallwayPrettyPrinter();
 		
 		StringBuilder sb = new StringBuilder();
