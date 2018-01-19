@@ -1,0 +1,6 @@
+{
+	"parent": "Dungeons2:block/half_pillar",
+    "textures": {
+        "0": "Dungeons2:blocks/obsidianbrick"
+    }
+}

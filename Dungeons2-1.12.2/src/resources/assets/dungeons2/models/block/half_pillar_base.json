@@ -1,0 +1,91 @@
+{
+    "__comment": "Model generated using MrCrayfish's Model Creator (http://mrcrayfish.com/modelcreator/)",
+    "parent": "block/block",
+    "textures": {
+        "particle": "#0"
+    },
+    "elements": [
+        {
+            "name": "Base",
+            "from": [ 0.0, 0.0, 0.0 ], 
+            "to": [ 16.0, 8.0, 16.0 ], 
+            "faces": {
+                "north": { "texture": "#0", "uv": [ 0.0, 0.0, 16.0, 8.0 ], "cullface": "north" },
+                "east": { "texture": "#0", "uv": [ 0.0, 8.0, 16.0, 16.0 ] },
+                "south": { "texture": "#0", "uv": [ 0.0, 0.0, 16.0, 8.0 ] },
+                "west": { "texture": "#0", "uv": [ 0.0, 8.0, 16.0, 16.0 ] },
+                "up": { "texture": "#0", "uv": [ 0.0, 0.0, 16.0, 16.0 ] },
+                "down": { "texture": "#0", "uv": [ 0.0, 0.0, 16.0, 14.0 ] }
+            }
+        },
+        {
+            "name": "Pillar",
+            "from": [ 4.0, 8.0, 4.0 ], 
+            "to": [ 12.0, 16.0, 12.0 ], 
+            "faces": {
+                "north": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 8.0 ] },
+                "east": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 8.0 ] },
+                "south": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 8.0 ] },
+                "west": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 8.0 ] },
+                "up": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 8.0 ] },
+                "down": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 8.0 ], "cullface": "down" }
+            }
+        },
+        {
+            "name": "Wedge1",
+            "from": [ 4.001, 9.0, 0.0 ], 
+            "to": [ 11.999, 13.0, 2.0 ], 
+            "rotation": { "origin": [ 8.0, 6.0, 0.0 ], "axis": "x", "angle": 45.0 },
+            "faces": {
+                "north": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ] },
+                "east": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "south": { "texture": "#-1", "uv": [ 0.0, 0.0, 8.0, 4.0 ], "cullface": "south" },
+                "west": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "up": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 2.0 ], "cullface": "up" },
+                "down": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 2.0 ], "cullface": "down" }
+            }
+        },
+        {
+            "name": "Wedge2",
+            "from": [ 4.001, 3.0, 12.0 ], 
+            "to": [ 11.999, 7.0, 14.0 ], 
+            "rotation": { "origin": [ 8.0, 6.0, 9.0 ], "axis": "x", "angle": -45.0 },
+            "faces": {
+                "north": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ], "cullface": "north" },
+                "east": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "south": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ] },
+                "west": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "up": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 2.0 ], "cullface": "up" },
+                "down": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 2.0 ], "cullface": "down" }
+            }
+        },
+        {
+            "name": "Wedge3",
+            "from": [ 1.0, 8.0, 4.001 ], 
+            "to": [ 3.0, 12.0, 11.999 ], 
+            "rotation": { "origin": [ 1.0, 7.0, 8.0 ], "axis": "z", "angle": -45.0 },
+            "faces": {
+                "north": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "east": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ], "cullface": "east" },
+                "south": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "west": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ] },
+                "up": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 8.0 ], "cullface": "up" },
+                "down": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 8.0 ], "cullface": "down" }
+            }
+        },
+        {
+            "name": "Wedge4",
+            "from": [ 12.0, 9.0, 4.001 ], 
+            "to": [ 14.0, 13.0, 11.999 ], 
+            "rotation": { "origin": [ 16.0, 9.0, 8.0 ], "axis": "z", "angle": 45.0 },
+            "faces": {
+                "north": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "east": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ] },
+                "south": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 4.0 ] },
+                "west": { "texture": "#0", "uv": [ 0.0, 0.0, 8.0, 4.0 ], "cullface": "west" },
+                "up": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 8.0 ], "cullface": "up" },
+                "down": { "texture": "#0", "uv": [ 0.0, 0.0, 2.0, 8.0 ], "cullface": "down" }
+            }
+        }
+    ]
+}

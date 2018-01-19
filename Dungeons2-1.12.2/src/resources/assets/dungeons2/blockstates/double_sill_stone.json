@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "normal": {
+      "model": "Dungeons2:double_sill_stone"
+    },
+    "facing=north": {
+      "model": "Dungeons2:double_sill_stone"
+    },
+    "facing=south": {
+      "model": "Dungeons2:double_sill_stone",
+      "y": 180,
+      "uvlock": true
+    },
+    "facing=west": {
+      "model": "Dungeons2:double_sill_stone",
+      "y": 270,
+      "uvlock": true
+    },
+    "facing=east": {
+      "model": "Dungeons2:double_sill_stone",
+      "y": 90,
+      "uvlock": true
+    },
+    "facing=up": {
+      "model": "Dungeons2:double_sill_stone"
+    },
+    "facing=down": {
+      "model": "Dungeons2:double_sill_stone"
+    }
+  }
+}

@@ -1,0 +1,3154 @@
+{
+  "items": {
+    "bread": {
+      "name": "minecraft:bread",
+      "damage": 0
+    },
+    "wool": {
+      "name": "minecraft:wool",
+      "damage": 0
+    },
+    "torch": {
+      "name": "minecraft:torch",
+      "damage": 0
+    },
+    "leather": {
+      "name": "minecraft:leather",
+      "damage": 0
+    },
+    "rabbit_hide": {
+      "name": "minecraft:rabbit_hide",
+      "damage": 0
+    },
+    "gold_nugget": {
+      "name": "minecraft:gold_nugget",
+      "damage": 0
+    },
+    "arrow": {
+      "name": "minecraft:arrow",
+      "damage": 0
+    },
+    "dye0": {
+      "name": "minecraft:dye",
+      "damage": 0
+    },
+    "bone": {
+      "name": "minecraft:bone",
+      "damage": 0
+    },
+    "spider_eye": {
+      "name": "minecraft:spider_eye",
+      "damage": 0
+    },
+    "rotten_flesh": {
+      "name": "minecraft:rotten_flesh",
+      "damage": 0
+    },
+    "string": {
+      "name": "minecraft:string",
+      "damage": 0
+    },
+    "wheat": {
+      "name": "minecraft:wheat",
+      "damage": 0
+    },
+    "wheat_seeds": {
+      "name": "minecraft:wheat_seeds",
+      "damage": 0
+    },
+    "sugar": {
+      "name": "minecraft:sugar",
+      "damage": 0
+    },
+    "brown_mushroom": {
+      "name": "minecraft:brown_mushroom",
+      "damage": 0
+    },
+    "red_mushroom": {
+      "name": "minecraft:red_mushroom",
+      "damage": 0
+    },
+    "apple": {
+      "name": "minecraft:apple",
+      "damage": 0
+    },
+    "carrot": {
+      "name": "minecraft:carrot",
+      "damage": 0
+    },
+    "porkchop": {
+      "name": "minecraft:porkchop",
+      "damage": 0
+    },
+    "rabbit": {
+      "name": "minecraft:rabbit",
+      "damage": 0
+    },
+    "egg": {
+      "name": "minecraft:egg",
+      "damage": 0
+    },
+    "chicken": {
+      "name": "minecraft:chicken",
+      "damage": 0
+    },
+    "fish0": {
+      "name": "minecraft:fish",
+      "damage": 0
+    },
+    "fish1": {
+      "name": "minecraft:fish",
+      "damage": 1
+    },
+    "beef": {
+      "name": "minecraft:beef",
+      "damage": 0
+    },
+    "cookie": {
+      "name": "minecraft:cookie",
+      "damage": 0
+    },
+    "pumpkin": {
+      "name": "minecraft:pumpkin",
+      "damage": 0
+    },
+    "pumpkin_seeds": {
+      "name": "minecraft:pumpkin_seeds",
+      "damage": 0
+    },
+    "melon": {
+      "name": "minecraft:melon",
+      "damage": 0
+    },
+    "melon_seeds": {
+      "name": "minecraft:melon_seeds",
+      "damage": 0
+    },
+    "mutton": {
+      "name": "minecraft:mutton",
+      "damage": 0
+    },
+    "cocoa": {
+      "name": "minecraft:cocoa",
+      "damage": 0
+    },
+    "spectral_arrow": {
+      "name": "minecraft:spectral_arrow",
+      "damage": 0
+    },
+    "paper": {
+      "name": "minecraft:paper",
+      "damage": 0
+    },
+    "reeds": {
+      "name": "minecraft:reeds",
+      "damage": 0
+    },
+    "book": {
+      "name": "minecraft:book",
+      "damage": 0
+    },
+    "bowl": {
+      "name": "minecraft:bowl",
+      "damage": 0
+    },
+    "redstone": {
+      "name": "minecraft:redstone",
+      "damage": 0
+    },
+    "redstone_torch": {
+      "name": "minecraft:redstone_torch",
+      "damage": 0
+    },
+    "coal": {
+      "name": "minecraft:coal",
+      "damage": 0
+    },
+    "shield": {
+      "name": "minecraft:shield",
+      "damage": 0
+    },
+    "bow": {
+      "name": "minecraft:bow",
+      "damage": 0
+    },
+    "clay": {
+      "name": "minecraft:clay",
+      "damage": 0
+    },
+    "bucket": {
+      "name": "minecraft:bucket",
+      "damage": 0
+    },
+    "slime_ball": {
+      "name": "minecraft:slime_ball",
+      "damage": 0
+    },
+    "lead": {
+      "name": "minecraft:lead",
+      "damage": 0
+    },
+    "fermented_spider_eye": {
+      "name": "minecraft:fermented_spider_eye",
+      "damage": 0
+    },
+    "leather_chestplate": {
+      "name": "minecraft:leather_chestplate",
+      "damage": 0
+    },
+    "leather_leggings": {
+      "name": "minecraft:leather_leggings",
+      "damage": 0
+    },
+    "leather_arms": {
+      "name": "minecraft:leather_arms",
+      "damage": 0
+    },
+    "leather_helmet": {
+      "name": "minecraft:leather_helmet",
+      "damage": 0
+    },
+    "leather_boots": {
+      "name": "minecraft:leather_boots",
+      "damage": 0
+    },
+    "stone_pickaxe": {
+      "name": "minecraft:stone_pickaxe",
+      "damage": 0
+    },
+    "stone_axe": {
+      "name": "minecraft:stone_axe",
+      "damage": 0
+    },
+    "stone_sword": {
+      "name": "minecraft:stone_sword",
+      "damage": 0
+    },
+    "gold_sword": {
+      "name": "minecraft:gold_sword",
+      "damage": 0
+    },
+    "iron_pickaxe": {
+      "name": "minecraft:iron_pickaxe",
+      "damage": 0
+    },
+    "iron_axe": {
+      "name": "minecraft:iron_axe",
+      "damage": 0
+    },
+    "iron_chestplate": {
+      "name": "minecraft:iron_chestplate",
+      "damage": 0
+    },
+    "iron_leggings": {
+      "name": "minecraft:iron_leggings",
+      "damage": 0
+    },
+    "iron_arms": {
+      "name": "minecraft:iron_arms",
+      "damage": 0
+    },
+    "iron_helmet": {
+      "name": "minecraft:iron_helmet",
+      "damage": 0
+    },
+    "iron_boots": {
+      "name": "minecraft:iron_boots",
+      "damage": 0
+    },
+    "iron_sword": {
+      "name": "minecraft:iron_sword",
+      "damage": 0
+    },
+    "iron_ingot": {
+      "name": "minecraft:iron_ingot",
+      "damage": 0
+    },
+    "iron_block": {
+      "name": "minecraft:iron_block",
+      "damage": 0
+    },
+    "tnt": {
+      "name": "minecraft:tnt",
+      "damage": 0
+    },
+    "blaze_powder": {
+      "name": "minecraft:blaze_powder",
+      "damage": 0
+    },
+    "magma_cream": {
+      "name": "minecraft:magma_cream",
+      "damage": 0
+    },
+    "clock": {
+      "name": "minecraft:clock",
+      "damage": 0
+    },
+    "compass": {
+      "name": "minecraft:compass",
+      "damage": 0
+    },
+    "glowstone": {
+      "name": "minecraft:glowstone",
+      "damage": 0
+    },
+    "ender_pearl": {
+      "name": "minecraft:ender_pearl",
+      "damage": 0
+    },
+    "ender_eye": {
+      "name": "minecraft:ender_pearl",
+      "damage": 0
+    },
+    "blaze_rod": {
+      "name": "minecraft:blaze_rod",
+      "damage": 0
+    },
+    "ghast_tear": {
+      "name": "minecraft:ghast_tear",
+      "damage": 0
+    },
+    "diamond": {
+      "name": "minecraft:diamond",
+      "damage": 0
+    },
+    "prismarine_crystals": {
+      "name": "minecraft:prismarine_crystals",
+      "damage": 0
+    },
+    "prismarine_shard": {
+      "name": "minecraft:prismarine_shard",
+      "damage": 0
+    },
+    "sea_lantern": {
+      "name": "minecraft:sea_lantern",
+      "damage": 0
+    },
+    "nether_star": {
+      "name": "minecraft:nether_star",
+      "damage": 0
+    },
+    "firework_charge": {
+      "name": "minecraft:firework_charge",
+      "damage": 0
+    },
+    "rabbit_foot": {
+      "name": "minecraft:rabbit_foot",
+      "damage": 0
+    },
+    "potato": {
+      "name": "minecraft:potato",
+      "damage": 0
+    },
+    "cake": {
+      "name": "minecraft:cake",
+      "damage": 0
+    },
+    "pumpkin_pie": {
+      "name": "minecraft:pumpkin_pie",
+      "damage": 0
+    },
+    "speckled_melon": {
+      "name": "minecraft:speckled_melon",
+      "damage": 0
+    },
+    "beetroot": {
+      "name": "minecraft:beetroot",
+      "damage": 0
+    },
+    "beetroot_seeds": {
+      "name": "minecraft:beetroot_seeds",
+      "damage": 0
+    },
+    "diamond_chestplate": {
+      "name": "minecraft:diamond_chestplate",
+      "damage": 0
+    },
+    "diamond_leggings": {
+      "name": "minecraft:diamond_leggings",
+      "damage": 0
+    },
+    "diamond_arms": {
+      "name": "minecraft:diamond_arms",
+      "damage": 0
+    },
+    "diamond_helmet": {
+      "name": "minecraft:diamond_helmet",
+      "damage": 0
+    },
+    "diamond_boots": {
+      "name": "minecraft:diamond_boots",
+      "damage": 0
+    },
+    "diamond_block": {
+      "name": "minecraft:diamond_block",
+      "damage": 0
+    },
+    "iron_horse_armor": {
+      "name": "minecraft:iron_horse_armor",
+      "damage": 0
+    },
+    "gold_horse_armor": {
+      "name": "minecraft:gold_horse_armor",
+      "damage": 0
+    },
+    "end_crystal": {
+      "name": "minecraft:end_crystal",
+      "damage": 0
+    },
+    "chorus_fruit_popped": {
+      "name": "minecraft:chorus_fruit_popped",
+      "damage": 0
+    },
+    "diamond_pickaxe": {
+      "name": "minecraft:diamond_pickaxe",
+      "damage": 0
+    },
+    "diamond_sword": {
+      "name": "minecraft:diamond_sword",
+      "damage": 0
+    },
+    "shulker_box": {
+      "name": "minecraft:shulker_box",
+      "damage": 0
+    },
+    "shulker_shell": {
+      "name": "minecraft:shulker_shell",
+      "damage": 0
+    },
+    "dragon_breath": {
+      "name": "minecraft:dragon_breath",
+      "damage": 0
+    },
+    "elytra": {
+      "name": "minecraft:elytra",
+      "damage": 0
+    },
+    "saddle": {
+      "name": "minecraft:saddle",
+      "damage": 0
+    },
+    "emerald": {
+      "name": "minecraft:emerald",
+      "damage": 0
+    },
+    "golden_apple": {
+      "name": "minecraft:golden_apple",
+      "damage": 0
+    },
+    "golden_carrot": {
+      "name": "minecraft:golden_carrot",
+      "damage": 0
+    },
+    "diamond_horse_armor": {
+      "name": "minecraft:diamond_horse_armor",
+      "damage": 0
+    },
+    "totem_of_undying": {
+      "name": "minecraft:totem_of_undying",
+      "damage": 0
+    },
+    "experience_bottle": {
+      "name": "minecraft:experience_bottle",
+      "damage": 0
+    },
+    "record_13": {
+      "name": "minecraft:record_13",
+      "damage": 0
+    },
+    "record_cat": {
+      "name": "minecraft:record_cat",
+      "damage": 0
+    },
+    "record_blocks": {
+      "name": "minecraft:record_blocks",
+      "damage": 0
+    },
+    "record_chirp": {
+      "name": "minecraft:record_chirp",
+      "damage": 0
+    },
+    "record_far": {
+      "name": "minecraft:record_far",
+      "damage": 0
+    },
+    "record_mall": {
+      "name": "minecraft:record_mall",
+      "damage": 0
+    },
+    "record_mellohi": {
+      "name": "minecraft:record_mellohi",
+      "damage": 0
+    },
+    "record_stal": {
+      "name": "minecraft:record_stal",
+      "damage": 0
+    },
+    "record_strad": {
+      "name": "minecraft:record_strad",
+      "damage": 0
+    },
+    "record_ward": {
+      "name": "minecraft:record_ward",
+      "damage": 0
+    },
+    "record_11": {
+      "name": "minecraft:record_11",
+      "damage": 0
+    },
+    "record_wait": {
+      "name": "minecraft:record_wait",
+      "damage": 0
+    },
+    "lapis_ore": {
+      "name": "minecraft:lapis_ore",
+      "damage": 0
+    },
+    "dye4": {
+      "name": "minecraft:dye4",
+      "damage": 4
+    },
+    "night_vision": {
+      "name": "minecraft:potion",
+      "type": "night_vision",
+      "damage": 0
+    },
+    "night_vision2": {
+      "name": "minecraft:potion",
+      "type" : "long_night_vision",
+      "damage": 0
+    },
+    "invisibility": {
+      "name": "minecraft:potion",
+      "type": "invisibility"
+    },
+    "invisibility2": {
+      "name": "minecraft:potion",
+      "type": "long_invisibility"
+    },
+    "leaping": {
+      "name": "minecraft:potion",
+      "type": "leaping"
+    },
+    "leaping2": {
+      "name": "minecraft:potion",
+      "type": "long_leaping"
+    },
+    "leaping3": {
+      "name": "minecraft:potion",
+      "type": "strong_leaping"
+    },
+    "fire_resistance": {
+      "name": "minecraft:potion",
+      "type": "fire_resistance"
+    },
+    "fire_resistance2": {
+      "name": "minecraft:potion",
+      "type": "long_fire_resistance"
+    },
+    "swiftness": {
+      "name": "minecraft:potion",
+      "type": "swiftness"
+    },
+    "swiftness2": {
+      "name": "minecraft:potion",
+      "type": "long_swiftness"
+    },
+    "swiftness3": {
+      "name": "minecraft:potion",
+      "type": "strong_swiftness"
+    },
+    "slowness": {
+      "name": "minecraft:potion",
+      "type": "slowness"
+    },
+    "slowness2": {
+      "name": "minecraft:potion",
+      "type": "long_slowness"
+    },
+    "water_breathing": {
+      "name": "minecraft:potion",
+      "type": "water_breathing"
+    },
+    "water_breathing2": {
+      "name": "minecraft:potion",
+      "type": "long_water_breathing"
+    },
+    "healing": {
+      "name": "minecraft:potion",
+      "type": "healing"
+    },
+    "healing2": {
+      "name": "minecraft:potion",
+      "type": "strong_healing"
+    },
+    "harming": {
+      "name": "minecraft:potion",
+      "type": "harming"
+    },
+    "harming2": {
+      "name": "minecraft:potion",
+      "type": "strong_harming"
+    },
+    "poison": {
+      "name": "minecraft:potion",
+      "type": "poison"
+    },
+    "poison2": {
+      "name": "minecraft:potion",
+      "type": "long_poison"
+    },
+    "poison3": {
+      "name": "minecraft:potion",
+      "type": "strong_poison"
+    },
+    "regeneration": {
+      "name": "minecraft:potion",
+      "type": "regeneration"
+    },
+    "regeneration2": {
+      "name": "minecraft:potion",
+      "type": "long_regeneration"
+    },
+    "regeneration3": {
+      "name": "minecraft:potion",
+      "type": "strong_regeneration"
+    },
+    "strength": {
+      "name": "minecraft:potion",
+      "type": "strength"
+    },
+    "strength2": {
+      "name": "minecraft:potion",
+      "type": "long_strength"
+    },
+    "strength3": {
+      "name": "minecraft:potion",
+      "type": "strong_strength"
+    },
+    "weakness": {
+      "name": "minecraft:potion",
+      "type": "weakness"
+    },
+    "weakness2": {
+      "name": "minecraft:potion",
+      "type": "long_weakness"
+    },
+    "luck": {
+      "name": "minecraft:potion",
+      "type": "luck"
+    }
+  },
+  "groups": {
+    "common_items": {
+      "name": "common_items",
+      "items": [
+        {
+          "ref": "bread",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 2.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "wool",
+          "chance": 50.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 51.0
+        },
+        {
+          "ref": "torch",
+          "chance": 80.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 52.0
+        },
+        {
+          "ref": "leather",
+          "chance": 35.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 53.0
+        },
+        {
+          "ref": "rabbit_hide",
+          "chance": 35.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 61.0
+        },
+        {
+          "ref": "gold_nugget",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 55.0
+        },
+        {
+          "ref": "iron_ingot",
+          "chance": 50.0,
+          "weight": 30.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 62.0
+        },
+        {
+          "ref": "arrow",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 5.0,
+            "max": 10.0
+          },
+          "order": 56.0
+        },
+        {
+          "ref": "dye0",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 54.0
+        },
+        {
+          "ref": "bone",
+          "chance": 70.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 57.0
+        },
+        {
+          "ref": "spider_eye",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 58.0
+        },
+        {
+          "ref": "rotten_flesh",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 59.0
+        },
+        {
+          "ref": "string",
+          "chance": 35.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 60.0
+        }
+      ]
+    },
+    "common_armor": {
+      "name": "common_armor",
+      "items": [
+        {
+          "ref": "leather_chestplate",
+          "chance": 15.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 300.0
+        },
+        {
+          "ref": "leather_leggings",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 300.0
+        },
+        {
+          "ref": "leather_arms",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 300.0
+        },
+        {
+          "ref": "leather_helmet",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 300.0
+        },
+        {
+          "ref": "leather_boots",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 300.0
+        }
+      ]
+    },
+    "common_tools": {
+      "name": "common_tools",
+      "items": [
+        {
+          "ref": "stone_sword",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 102.0
+        },
+        {
+          "ref": "stone_pickaxe",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "stone_axe",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 101.0
+        }
+      ]
+    },
+    "common_food": {
+      "name": "common_food",
+      "items": [
+        {
+          "ref": "apple",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "wheat",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 2.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "wheat_seeds",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "sugar",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "brown_mushroom",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "red_mushroom",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "carrot",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "porkchop",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "rabbit",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "egg",
+          "chance": 80.0,
+          "weight": 80.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "chicken",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "fish0",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "fish1",
+          "chance": 35.0,
+          "weight": 30.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "beef",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "cookie",
+          "chance": 15.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "pumpkin",
+          "chance": 15.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "pumpkin_seeds",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "melon",
+          "chance": 10.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "melon_seeds",
+          "chance": 10.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "mutton",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "cocoa",
+          "chance": 10.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        }
+      ]
+    },
+    "common_potions": {
+      "name": "common_potions",
+      "items": [
+        {
+          "ref": "night_vision",
+          "chance": 50.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "invisibility",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "strength",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "weakness",
+          "chance": 50.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "leaping",
+          "chance": 30.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        }
+      ]
+    },
+    "uncommon_items": {
+      "name": "uncommon_items",
+      "items": [
+        {
+          "ref": "spectral_arrow",
+          "chance": 15.0,
+          "weight": 15.0,
+          "num": {
+            "min": 2.0,
+            "max": 6.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "iron_ingot",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 2.0,
+            "max": 7.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "paper",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "reeds",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "book",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "bowl",
+          "chance": 30.0,
+          "weight": 30.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "redstone",
+          "chance": 30.0,
+          "weight": 30.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "redstone_torch",
+          "chance": 40.0,
+          "weight": 40.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "coal",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "bow",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "clay",
+          "chance": 15.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "bucket",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "slime_ball",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "lead",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "fermented_spider_eye",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        }
+      ]
+    },
+    "uncommon_armor": {
+      "name": "uncommon_armor",
+      "items": [
+        {
+          "ref": "iron_chestplate",
+          "chance": 12.5,
+          "weight": 12.5,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 122.0
+        },
+        {
+          "ref": "iron_leggings",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 123.0
+        },
+        {
+          "ref": "iron_boots",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 124.0
+        },
+        {
+          "ref": "iron_helmet",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 125.0
+        },
+        {
+          "ref": "shield",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 122.0
+        }
+      ]
+    },
+    "uncommon_tools": {
+      "name": "uncommon_tools",
+      "items": [
+        {
+          "ref": "iron_sword",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 121.0
+        },
+        {
+          "ref": "iron_pickaxe",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 121.0
+        },
+        {
+          "ref": "iron_axe",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 121.0
+        },
+        {
+          "ref": "gold_sword",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 121.0
+        }
+      ]
+    },
+    "uncommon_potions": {
+      "name": "uncommon_potions",
+      "items": [
+        {
+          "ref": "night_vision2",
+          "chance": 50.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "invisibility2",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "strength2",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "weakness2",
+          "chance": 50.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "leaping2",
+          "chance": 30.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "swiftness",
+          "chance": 50.0,
+          "weight": 60.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 10.0
+        },
+        {
+          "ref": "water_breathing",
+          "chance": 50.0,
+          "weight": 60.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 10.0
+        }
+      ]
+    },
+    "rare_items": {
+      "name": "rare_items",
+      "items": [
+        {
+          "ref": "tnt",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "blaze_powder",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 2.0,
+            "max": 5.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "magma_cream",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 2.0,
+            "max": 5.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "clock",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "compass",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "diamond_block",
+          "chance": 35.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "glowstone",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "ender_pearl",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "ender_eye",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "blaze_rod",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "ghast_tear",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "experience_bottle",
+          "chance": 75.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "diamond",
+          "chance": 65.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "prismarine_crystals",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "prismarine_shard",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "sea_lantern",
+          "chance": 20.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "nether_star",
+          "chance": 15.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 25.0
+        },
+        {
+          "ref": "firework_charge",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 25.0
+        }
+      ]
+    },
+    "rare_armor": {
+      "name": "rare_armor",
+      "items": [
+        {
+          "ref": "diamond_chestplate",
+          "chance": 35.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0
+        },
+        {
+          "ref": "diamond_leggings",
+          "chance": 40.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0
+        },
+        {
+          "ref": "diamond_helmet",
+          "chance": 60.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0
+        },
+        {
+          "ref": "diamond_boots",
+          "chance": 60.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0
+        },
+        {
+          "ref": "iron_chestplate",
+          "chance": 50.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 2.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_leggings",
+          "chance": 50.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 2.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_helmet",
+          "chance": 50.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 2.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_boots",
+          "chance": 50.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 2.0
+            }
+          }
+        },
+        {
+          "ref": "iron_horse_armor",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0
+        },
+        {
+          "ref": "gold_horse_armor",
+          "chance": 35.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 35.0
+        }
+      ]
+    },
+    "rare_tools": {
+      "name": "rare_tools",
+      "items": [
+        {
+          "ref": "diamond_pickaxe",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 45.0
+        },
+        {
+          "ref": "diamond_sword",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 45.0
+        },
+        {
+          "ref": "iron_sword",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 2.0
+            }
+          },
+          "order": 55
+        }
+      ]
+    },
+    "rare_food": {
+      "name": "rare_food",
+      "items": [
+        {
+          "ref": "rabbit_foot",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "potato",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "cake",
+          "chance": 65.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "pumpkin_pie",
+          "chance": 65.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "speckled_melon",
+          "chance": 75.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "beetroot",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "beetroot_seeds",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 50.0
+        }
+      ]
+    },
+    "rare_potions": {
+      "name": "rare_potions",
+      "items": [
+        {
+          "ref": "leaping3",
+          "chance": 60.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "swiftness3",
+          "chance": 60.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "fire_resistance2",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50
+        },
+        {
+          "ref": "healing2",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50
+        },
+        {
+          "ref": "harming2",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50
+        },
+        {
+          "ref": "regeneration3",
+          "chance": 70.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50
+        },
+        {
+          "ref": "strength3",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50
+        },
+        {
+          "ref": "luck",
+          "chance": 40.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50
+        }
+      ]
+    },
+    "epic_items": {
+      "name": "epic_items",
+      "items": [
+        {
+          "ref": "shulker_box",
+          "chance": 30.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "shulker_shell",
+          "chance": 35.0,
+          "weight": 20.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "dragon_breath",
+          "chance": 30.0,
+          "weight": 15.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "elytra",
+          "chance": 15.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "totem_of_undying",
+          "chance": 15.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "experience_bottle",
+          "chance": 75.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "emerald",
+          "chance": 45.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "end_crystal",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "chorus_fruit_popped",
+          "chance": 35.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 0.0
+        }
+      ]
+    },
+    "epic_records": {
+      "name": "epic_records",
+      "items": [
+        {
+          "ref": "record_13",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_cat",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_blocks",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_chirp",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_far",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_mall",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_mellohi",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_stal",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_strad",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_ward",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_11",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        },
+        {
+          "ref": "record_wait",
+          "chance": 25.0,
+          "weight": 10.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 4.0
+        }
+      ]
+    },
+    "epic_food": {
+      "name": "epic_food",
+      "items": [
+        {
+          "ref": "golden_apple",
+          "chance": 25.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 1.0
+        },
+        {
+          "ref": "golden_carrot",
+          "chance": 35.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 1.0
+        }
+      ]
+    },
+    "epic_armor": {
+      "name": "epic_armor",
+      "items": [
+        {
+          "ref": "diamond_chestplate",
+          "chance": 35.0,
+          "weight": 18.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "diamond_leggings",
+          "chance": 35.0,
+          "weight": 22.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "diamond_helmet",
+          "chance": 45.0,
+          "weight": 22.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "diamond_boots",
+          "chance": 45.0,
+          "weight": 22.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0,
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_chestplate",
+          "chance": 55.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 1.0,
+          "enchants": {
+            "num": {
+              "min": 2.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_leggings",
+          "chance": 55.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 1.0,
+          "enchants": {
+            "num": {
+              "min": 2.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_helmet",
+          "chance": 65.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 1.0,
+          "enchants": {
+            "num": {
+              "min": 2.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "iron_boots",
+          "chance": 65.0,
+          "weight": 35.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 1.0,
+          "enchants": {
+            "num": {
+              "min": 2.0,
+              "max": 3.0
+            },
+            "enchanments": []
+          }
+        },
+        {
+          "ref": "diamond_horse_armor",
+          "chance": 25.0,
+          "weight": 25.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        }
+      ]
+    },
+    "epic_tools": {
+      "name": "epic_tools",
+      "items": [
+        {
+          "ref": "diamond_sword",
+          "chance": 35.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "enchants": {
+            "num": {
+              "min": 1.0,
+              "max": 2.0
+            }
+          },
+          "order": 45.0
+        },
+        {
+          "ref": "iron_sword",
+          "chance": 50.0,
+          "weight": 50.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "enchants": {
+            "num": {
+              "min": 2.0,
+              "max": 3.0
+            }
+          },
+          "order": 55
+        }
+      ]
+    }
+  },
+  "containers": {
+    "common_chest": {
+      "name": "common_chest",
+      "category": "common",
+      "randomGroups": [
+        {
+          "ref": "common_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "common_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 130.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 140.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 50.0
+    },
+    "common_chest2": {
+      "name": "common_chest2",
+      "category": "common",
+      "randomGroups": [
+        {
+          "ref": "common_items",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.2,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_food",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.2,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "common_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 140.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 50.0
+    },
+    "common_chest3": {
+      "name": "common_chest3",
+      "category": "common",
+      "randomGroups": [
+        {
+          "ref": "common_items",
+          "itemsFactor": 3.0,
+          "chanceFactor": 1.3,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_food",
+          "itemsFactor": 3.0,
+          "chanceFactor": 1.3,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "common_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 140.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 50.0
+    },
+    "uncommon_chest": {
+      "name": "uncommon_chest",
+      "category": "uncommon",
+      "randomGroups": [
+        {
+          "ref": "uncommon_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 2.0,
+            "max": 4.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "common_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 140.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 45.0
+    },
+    "uncommon_chest2": {
+      "name": "uncommon_chest2",
+      "category": "uncommon",
+      "randomGroups": [
+        {
+          "ref": "uncommon_items",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.2,
+          "num": {
+            "min": 2.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_tools",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.2,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_armor",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.2,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "common_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 2.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 140.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 35.0
+    },
+    "uncommon_chest3": {
+      "name": "uncommon_chest3",
+      "category": "uncommon",
+      "randomGroups": [
+        {
+          "ref": "uncommon_items",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_tools",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_armor",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.3,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "common_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 110.0
+        },
+        {
+          "ref": "common_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 120.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 120.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 25.0
+    },
+    "rare_chest": {
+      "name": "rare_chest",
+      "category": "rare",
+      "randomGroups": [
+        {
+          "ref": "rare_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 2.0,
+            "max": 6.0
+          },
+          "order": 10.0
+        },
+        {
+          "ref": "rare_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 11.0
+        },
+        {
+          "ref": "rare_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 2.0,
+            "max": 4.0
+          },
+          "order": 12.0
+        },
+        {
+          "ref": "rare_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 13.0
+        },
+        {
+          "ref": "rare_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 14.0
+        },
+        {
+          "ref": "uncommon_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 2.0,
+            "max": 5.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "uncommon_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 50.0
+        },
+        {
+          "ref": "common_items",
+          "itemsFactor": 2.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 100.0
+        },
+        {
+          "ref": "common_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 2.0
+          },
+          "order": 100.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 50.0
+    },
+    "epic_chest": {
+      "name": "epic_chest",
+      "category": "epic",
+      "randomGroups": [
+        {
+          "ref": "epic_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 3.0,
+            "max": 5.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "epic_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 2.0,
+            "max": 2.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "epic_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 2.0,
+            "max": 3.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "epic_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "epic_records",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 0.0
+        },
+        {
+          "ref": "rare_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 10.0
+        },
+        {
+          "ref": "rare_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.3,
+          "num": {
+            "min": 2.0,
+            "max": 4.0
+          },
+          "order": 10.0
+        },
+        {
+          "ref": "rare_items",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.1,
+          "num": {
+            "min": 2.0,
+            "max": 4.0
+          },
+          "order": 10.0
+        },
+        {
+          "ref": "rare_armor",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 11.0
+        },
+        {
+          "ref": "rare_food",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 2.0,
+            "max": 4.0
+          },
+          "order": 12.0
+        },
+        {
+          "ref": "rare_tools",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 1.0
+          },
+          "order": 13.0
+        },
+        {
+          "ref": "rare_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.0,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 13.0
+        },
+        {
+          "ref": "uncommon_potions",
+          "itemsFactor": 1.0,
+          "chanceFactor": 1.5,
+          "num": {
+            "min": 1.0,
+            "max": 3.0
+          },
+          "order": 13.0
+        }
+      ],
+      "randomItems": [],
+      "chance": 0.0,
+      "weight": 50.0
+    }
+  }
+}

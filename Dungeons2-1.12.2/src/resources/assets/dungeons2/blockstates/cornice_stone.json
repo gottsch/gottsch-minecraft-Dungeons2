@@ -1,0 +1,40 @@
+{
+    "variants": {
+		"normal": { "model": "Dungeons2:cornice_stone" },
+        
+        "facing=north,shape=straight":  { "model": "Dungeons2:cornice_stone" },
+        "facing=south,shape=straight":  { "model": "Dungeons2:cornice_stone", "y": 180, "uvlock": true },        
+        "facing=west,shape=straight": { "model": "Dungeons2:cornice_stone", "y": 270, "uvlock": true },
+        "facing=east,shape=straight": { "model": "Dungeons2:cornice_stone", "y": 90, "uvlock": true },
+        "facing=up,shape=straight":  { "model": "Dungeons2:cornice_stone" },
+        "facing=down,shape=straight":  { "model": "Dungeons2:cornice_stone" },
+        
+        "facing=north,shape=inner_left":  { "model": "Dungeons2:cornice_inner_stone" },
+        "facing=south,shape=inner_left":  { "model": "Dungeons2:cornice_inner_stone", "y":180, "uvlock":true },
+        "facing=west,shape=inner_left": { "model": "Dungeons2:cornice_inner_stone", "y": 270, "uvlock": true },
+        "facing=east,shape=inner_left": { "model": "Dungeons2:cornice_inner_stone", "y": 90, "uvlock": true },
+        "facing=up,shape=inner_left":  { "model": "Dungeons2:cornice_inner_stone" },
+        "facing=down,shape=inner_left":  { "model": "Dungeons2:cornice_inner_stone" },
+        
+        "facing=north,shape=inner_right":  { "model": "Dungeons2:cornice_inner_stone", "y":90, "uvlock":true },
+        "facing=south,shape=inner_right":  { "model": "Dungeons2:cornice_inner_stone", "y":270, "uvlock":true },
+        "facing=west,shape=inner_right":  { "model": "Dungeons2:cornice_inner_stone" },
+        "facing=east,shape=inner_right":  { "model": "Dungeons2:cornice_inner_stone", "y":180, "uvlock":true },
+        "facing=up,shape=inner_right":  { "model": "Dungeons2:cornice_inner_stone" },
+        "facing=down,shape=inner_right":  { "model": "Dungeons2:cornice_inner_stone" },
+
+        "facing=north,shape=outer_left":  { "model": "Dungeons2:cornice_outer_stone" },
+        "facing=south,shape=outer_left":  { "model": "Dungeons2:cornice_outer_stone", "y":180, "uvlock":true },
+        "facing=west,shape=outer_left": { "model": "Dungeons2:cornice_outer_stone", "y": 270, "uvlock": true },
+        "facing=east,shape=outer_left": { "model": "Dungeons2:cornice_outer_stone", "y": 90, "uvlock": true },
+        "facing=up,shape=outer_left":  { "model": "Dungeons2:cornice_outer_stone" },
+        "facing=down,shape=outer_left":  { "model": "Dungeons2:cornice_outer_stone" },
+        
+        "facing=north,shape=outer_right":  { "model": "Dungeons2:cornice_outer_stone", "y":270, "uvlock":true },
+        "facing=south,shape=outer_right":  { "model": "Dungeons2:cornice_outer_stone", "y":90, "uvlock":true },
+        "facing=west,shape=outer_right":  { "model": "Dungeons2:cornice_outer_stone", "y":180, "uvlock": true },
+        "facing=east,shape=outer_right":  { "model": "Dungeons2:cornice_outer_stone"},
+        "facing=up,shape=outer_right":  { "model": "Dungeons2:cornice_outer_stone"},
+        "facing=down,shape=outer_right":  { "model": "Dungeons2:cornice_outer_stone"}
+    }
+}

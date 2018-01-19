@@ -1,0 +1,6 @@
+{
+	"parent": "Dungeons2:block/half_pillar_base",
+    "textures": {
+        "0": "blocks/stonebrick_mossy"
+    }
+}

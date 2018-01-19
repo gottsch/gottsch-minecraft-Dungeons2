@@ -1,0 +1,11 @@
+{
+    "variants": {
+		"normal": { "model": "Dungeons2:basic_facade_obsidianbrick" },
+        "facing=north": { "model": "Dungeons2:basic_facade_obsidianbrick" },
+        "facing=south": { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 180, "uvlock": true },
+        "facing=west":  { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 270, "uvlock": true },
+        "facing=east":  { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 90, "uvlock": true },
+        "facing=up": { "model": "Dungeons2:basic_facade_obsidianbrick" },
+        "facing=down": { "model": "Dungeons2:basic_facade_obsidianbrick" }
+    }
+}
