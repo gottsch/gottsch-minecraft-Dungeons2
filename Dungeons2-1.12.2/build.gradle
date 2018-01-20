@@ -54,11 +54,12 @@ sourceSets.main{
 		srcDirs 'src/resources'//set the resources folder as the /resources subfolder
 	}
 }
+def gottschcore_path="../../gottsch-minecraft-GottschCore/GottschCore${mc_version}/build/libs/GottschCore-mc${mc_version}-f${forge_version}-v${gottschcore_version}.jar"
 
 dependencies {
 	compile files('../../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')
 	// use 'shadow' to include dependency in compile but to exclude for the shadow jar
-	shadow files('../../gottsch-minecraft-GottschCore/GottschCore1.12/build/libs/GottschCore-mc1.12-v1.1.2.jar')	
+	shadow files(gottschcore_path)	
 }
 
 processResources
