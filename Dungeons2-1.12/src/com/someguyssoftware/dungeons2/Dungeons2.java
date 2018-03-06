@@ -46,7 +46,7 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 	modid=Dungeons2.MODID,
 	name=Dungeons2.NAME,
 	version=Dungeons2.VERSION,
-	dependencies="required-after:gottschcore@[1.1.2,)",
+	dependencies="required-after:gottschcore@[1.2.0,)",
 	acceptedMinecraftVersions = "[1.12]",
 	updateJSON = Dungeons2.UPDATE_JSON_URL
 )
@@ -59,7 +59,7 @@ public class Dungeons2 extends AbstractMod {
 		
 		public static final String MODID = "dungeons2";
 		public static final String NAME = "Dungeons2!";
-		public static final String VERSION = "1.3.1"; 
+		public static final String VERSION = "1.3.2"; 
 		public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12/update.json";
 		
 		// latest VERSION

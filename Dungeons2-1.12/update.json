@@ -1,13 +1,15 @@
 {
     "homepage": "http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2792910-dungeons2",
     "promos": {
-    "1.12-latest": "1.3.1",
-    "1.12-recommended": "1.3.1"
+    "1.12-latest": "1.3.2",
+    "1.12-recommended": "1.3.2"
   },
     "1.12": {
         "1.1.0": "-Initial release",
-        "1.2.0" "-see changelog @ https://gist.github.com/gottsch/3d0300abd4319fd3e1284520d37bfb0d",
-        "1.3.0" "-see changelog @ https://gist.github.com/gottsch/02a0357590f571c8b61401b6c62ae6d0"
-        "1.3.1" "-Fixed the grate block when held in hand not rendering properly."
+        "1.2.0": "-see changelog @ https://gist.github.com/gottsch/3d0300abd4319fd3e1284520d37bfb0d",
+        "1.3.0": "-see changelog @ https://gist.github.com/gottsch/02a0357590f571c8b61401b6c62ae6d0",
+        "1.3.1": "-Fixed the grate block when held in hand not rendering properly.",
+        "1.3.2": "-Uses GottschCore 1.2.0.\nFixed update.json file.",
+        "1.3.3": "ATTEMPTING TO FIX GEN ISSUES"
     }
 }
