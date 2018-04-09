@@ -1,0 +1,211 @@
+{
+	"styles": {
+		"slab-trim": {
+			"block": "minecraft:stone_slab@5",
+			"category": "default",
+			"decay": 15.0,
+			"decayBlocks": [
+				"minecraft:stone_slab@3",
+				"minecraft:air@0"
+			]
+		},
+		"slab-crown": {
+			"block": "minecraft:stone_slab@13",
+			"category": "default",
+			"decay": 15.0,
+			"decayBlocks": [
+				"minecraft:stone_slab@11",
+				"minecraft:air@0"
+			]
+		},
+		"facade-trim": {
+			"block": "dungeons2:basic_facade_stonebrick@0",
+			"category": "default",
+			"decay": 15.0,
+			"decayBlocks": [
+				"dungeons2:basic_facade_stonebrick_mossy@0",
+				"dungeons2:basic_facade_stonebrick_cracked@0",
+				"dungeons2:basic_facade_cobblestone_mossy@0",
+				"minecraft:air@0"
+			]
+		},
+		"facade-crown": {
+			"block": "dungeons2:basic_facade_stonebrick@0",
+			"category": "default",
+			"decay": 15.0,
+			"decayBlocks": [
+				"dungeons2:basic_facade_stonebrick_mossy@0",
+				"dungeons2:basic_facade_stonebrick_cracked@0",
+				"dungeons2:basic_facade_cobblestone_mossy@0",
+				"minecraft:air@0"
+			]
+		},
+		"stairs-crown": {
+			"block": "minecraft:stone_brick_stairs@4",
+			"category": "default",
+			"decay": 15.0,
+			"decayBlocks": [
+				"minecraft:stone_brick_stairs@4",
+				"minecraft:stone_stairs@4",
+				"minecraft:air@0"
+			]
+		},
+		"t-pilaster": {
+			"block": "dungeons2:tee_pillar_stonebrick@0",
+			"category": "default",
+			"decay": 20.0,
+			"decayBlocks": [
+				"dungeons2:tee_pillar_stonebrick_mossy@0",
+				"dungeons2:tee_pillar_stonebrick_cracked@0",
+				"dungeons2:tee_pillar_cobblestone_mossy@0",
+				"minecraft:air@0"
+			]
+		},
+		"thin-t-pilaster": {
+			"block": "dungeons2:tee_thin_pillar_stonebrick@0",
+			"category": "default",
+			"decay": 20.0,
+			"decayBlocks": [
+				"dungeons2:tee_thin_pillar_stonebrick_mossy@0",
+				"dungeons2:tee_thin_pillar_stonebrick_cracked@0",
+				"dungeons2:tee_thin_pillar_cobblestone_mossy@0",
+				"minecraft:air@0"
+			]
+		}	
+	},
+	"layouts": {
+		"room3": {
+			"ref": "room1",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"CROWN": {
+					"alias": "crown-2"
+				},
+				"TRIM": {
+					"alias": "trim-2"
+				}
+			}
+		},
+		"room4": {
+			"ref": "room2",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"CROWN": {
+					"alias": "crown-2"
+				},
+				"TRIM": {
+					"alias": "trim-2"
+				}
+			}
+		},
+		"room5": {
+			"ref": "room1",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"CROWN": {
+					"alias": "crown-3"
+				},
+				"TRIM": {
+					"alias": "trim-3"
+				}
+			}
+		},
+		"room6": {
+			"ref": "room2",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"CROWN": {
+					"alias": "crown-3"
+				},
+				"TRIM": {
+					"alias": "trim-3"
+				}
+			}
+		},
+		"room7": {
+			"ref": "base",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"CROWN": {
+					"alias": "crown-4"
+				}
+			}
+		},
+		"room8": {
+			"ref": "base",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"PILASTER_CAPITAL": {
+					"alias": "pilaster-capital-3"
+				},
+				"PILASTER_BASE": {
+					"alias": "pilaster-base-3"
+				},
+				"PILASTER": {
+					"alias": "pilaster-3"
+				}
+			}
+		},
+		"room9": {
+			"ref": "room1",
+			"category": "room",
+			"useAll": false,
+			"frames": {
+				"PILASTER_CAPITAL": {
+					"alias": "pilaster-capital-4"
+				},
+				"PILASTER_BASE": {
+					"alias": "pilaster-base-4"
+				},
+				"PILASTER": {
+					"alias": "pilaster-4"
+				}
+			}
+		}		
+	},
+	"themes": {
+		"standard": {
+			"aliases": {
+				"crown-2": {
+					"style": "slab-crown"
+				},
+				"trim-2": {
+					"style": "slab-trim"
+				},
+				"crown-3": {
+					"style": "facade-crown"
+				},
+				"trim-3": {
+					"style": "facade-trim"
+				},	
+				"crown-4": {
+					"style": "stairs-crown"
+				},
+				"pilaster-base-3": {
+					"style": "default-pillar-base"
+				},
+				"pilaster-capital-3": {
+					"style": "default-pillar-base"
+				},
+				"pilaster-3": {
+					"style": "t-pilaster"
+				},
+				"pilaster-base-4": {
+					"style": "default-pillar-base"
+				},
+				"pilaster-capital-4": {
+					"style": "default-pillar-base"
+				},
+				"pilaster-4": {
+					"style": "thin-t-pilaster"
+				}				
+			}
+		}
+	}
+}

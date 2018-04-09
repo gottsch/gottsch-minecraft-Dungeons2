@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "normal": {
+      "model": "Dungeons2:sill_stonebrick_mossy"
+    },
+    "facing=north": {
+      "model": "Dungeons2:sill_stonebrick_mossy"
+    },
+    "facing=south": {
+      "model": "Dungeons2:sill_stonebrick_mossy",
+      "y": 180,
+      "uvlock": true
+    },
+    "facing=west": {
+      "model": "Dungeons2:sill_stonebrick_mossy",
+      "y": 270,
+      "uvlock": true
+    },
+    "facing=east": {
+      "model": "Dungeons2:sill_stonebrick_mossy",
+      "y": 90,
+      "uvlock": true
+    },
+    "facing=up": {
+      "model": "Dungeons2:sill_stonebrick_mossy"
+    },
+    "facing=down": {
+      "model": "Dungeons2:sill_stonebrick_mossy"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+Dungeons2! for Minecraft 1.11 Changelog
+====================================
+
+Version 1.1.0
+------------------------------
+-additions:
+	-ability to load multiple sheets (style, chest, spawn). Just place additional sheets under sub-folder: stylesheets/chestsheets/spawnsheets
+	-styles were added for new trim, base and pilaster combinations
+	-style added for barred windows in entrance.
+	-new DesignElements: WALL_BASE, WALL_CAPITAL, FLOOR_ALT
+	-new CheckeredFloorRoomBlockProvider
+	-a Library room was added to the level generation.
+-updates:
+	-RotatorHelper updated to include BlockSlab, TeePillarFacadeBlock
+	-fixed Entrance generation: ceilings and windows work properly
+	-LevelBuilder updated to perform extra checks during triangulation to ensure proper level generation.
+	-RoomGeneratorFactory now registers all Supported rooms in the registry and selects them in a random fashion.
+	-Fixed copy constructor of Room so the properties are correctly copied.
+	-update IDungeonBlockProvider to process the addtional DesignElements.
+	-changed the factor of extra edges in LevelBuilder from 0.15 to 0.25.
+	-update ChestPopulator to use the ChestItem.getName() instead of RandomItem.getRef(), as the latter doesn't contain the modid
+	but is a reference to an internal storage of an item.
+
+Version 1.0.0
+------------------------------
+-initial release

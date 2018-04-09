@@ -1,0 +1,6 @@
+{
+    "parent": "Dungeons2:block/coffer",
+    "textures": {
+        "0": "blocks/cobblestone_mossy"
+    }
+}

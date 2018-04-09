@@ -1,0 +1,6 @@
+{
+     "parent": "Dungeons2:block/cornice_inner",
+    "textures": {
+        "0": "blocks/stonebrick_mossy"
+    }
+}

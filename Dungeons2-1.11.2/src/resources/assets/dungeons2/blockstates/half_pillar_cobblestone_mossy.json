@@ -1,0 +1,29 @@
+{
+    "variants": {
+        "base=up": {
+            "model": "Dungeons2:half_pillar_cobblestone_mossy"
+        },
+        "base=down": {
+            "model": "Dungeons2:half_pillar_cobblestone_mossy",
+            "x": 180, "uvlock": true
+        },
+        "base=north": {
+            "model": "Dungeons2:half_pillar_cobblestone_mossy",
+            "x": 90, "uvlock": true
+        },
+        "base=south": {
+            "model": "Dungeons2:half_pillar_cobblestone_mossy",
+            "x": 270, "uvlock": true
+        },
+        "base=west": {
+            "model": "Dungeons2:half_pillar_cobblestone_mossy",
+            "x": 90, "uvlock": true,
+            "y": 270, "uvlock": true
+        },
+        "base=east": {
+            "model": "Dungeons2:half_pillar_cobblestone_mossy",
+            "x": 90, "uvlock": true,
+            "y": 90, "uvlock": true
+        }
+    }
+}

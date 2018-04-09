@@ -1,0 +1,7 @@
+{
+	"parent": "Dungeons2:block/seven_eights_pillar",
+    "textures": {
+        "0": "blocks/stonebrick_cracked",
+        "particle": "blocks/stonebrick_cracked"
+    }
+}

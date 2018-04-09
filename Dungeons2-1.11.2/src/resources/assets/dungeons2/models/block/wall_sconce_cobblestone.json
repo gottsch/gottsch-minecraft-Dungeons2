@@ -1,0 +1,6 @@
+{
+    "parent": "Dungeons2:block/wall_sconce",
+    "textures": {
+        "0": "blocks/cobblestone"
+    }
+}

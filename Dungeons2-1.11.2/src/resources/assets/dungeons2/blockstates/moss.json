@@ -1,0 +1,27 @@
+{
+	"variants": {
+		"base=up": {
+			"model": "Dungeons2:moss",
+			"x": 270
+		},
+		"base=down": {
+			"model": "Dungeons2:moss",
+			"x": 90
+		},
+		"base=north": {
+			"model": "Dungeons2:moss"
+		},
+		"base=south": {
+			"model": "Dungeons2:moss",
+			"y": 180
+		},
+		"base=west": {
+			"model": "Dungeons2:moss",
+			"y": 270
+		},
+		"base=east": {
+			"model": "Dungeons2:moss",
+			"y": 90
+		}
+	}
+}
