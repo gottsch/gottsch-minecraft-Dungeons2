@@ -46,7 +46,7 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 	modid=Dungeons2.MODID,
 	name=Dungeons2.NAME,
 	version=Dungeons2.VERSION,
-	dependencies="required-after:gottschcore@[1.2.0,)",
+	dependencies="required-after:gottschcore@[1.3.5,)",
 	acceptedMinecraftVersions = "[1.12.2]",
 	updateJSON = Dungeons2.UPDATE_JSON_URL
 )
