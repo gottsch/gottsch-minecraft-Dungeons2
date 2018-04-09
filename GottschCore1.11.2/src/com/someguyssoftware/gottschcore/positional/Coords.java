@@ -5,13 +5,15 @@ package com.someguyssoftware.gottschcore.positional;
 
 import javax.annotation.concurrent.Immutable;
 
-import net.minecraft.util.EnumFacing;
+import com.someguyssoftware.gottschcore.GottschCore;
+
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 
 /**
  * For Forge 1.8+
  * @author Mark Gottschling on May 15, 2015
- * @Version 2.0
+ * @version 2.0
  */
 @Immutable
 public class Coords implements ICoords {
@@ -47,9 +49,10 @@ public class Coords implements ICoords {
 		this(pos.getX(), pos.getY(), pos.getZ());
 	}
 	
-    /**
-     * Offset this Coords n blocks up
-     */
+	/**
+	 * Offset this Coords n blocks up
+	 * @param n the amount to offset by
+	 */
 	@Override
     public ICoords up(int n) {
     	return new Coords(this.getX(), this.getY() + n, this.getZ());
@@ -97,6 +100,9 @@ public class Coords implements ICoords {
     
 	/**
 	 * Calculate squared distance to the given coordinates
+	 * @param toX
+	 * @param toY
+	 * @param toZ
 	 * @since 1.0
 	 */
     @Override
@@ -218,7 +224,6 @@ public class Coords implements ICoords {
 
 	/**
 	 * Rotate 90 degrees.
-	 * @param depth
 	 * @param width
 	 * @return new instance
 	 */
@@ -243,7 +248,6 @@ public class Coords implements ICoords {
 	/**
 	 * 
 	 * @param depth
-	 * @param width
 	 * @return new instance
 	 */
 	@Override
@@ -287,19 +291,52 @@ public class Coords implements ICoords {
 		}
 	}	
 	
+	/**
+	 * 
+	 * @param nbt
+	 * @return
+	 */
+	@Override
+	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+		try {
+			nbt.setInteger("x", getX());
+			nbt.setInteger("y", getY());
+			nbt.setInteger("z", getZ());
+		}
+		catch(Exception e) {
+			GottschCore.logger.error("Unable to write state to NBT:", e);
+		}		
+		return nbt;
+	}
+	
 	@Override
 	public int getX() {
 		return x;
 	}
 
 	@Override
+	public ICoords resetX(int x) {
+    	return new Coords(x, this.getY(), this.getZ());
+	}
+	
+	@Override
 	public int getY() {
 		return y;
+	}
+	
+	@Override
+	public ICoords resetY(int y) {
+    	return new Coords(this.getX(), y, this.getZ());
 	}
 
 	@Override
 	public int getZ() {
 		return z;
+	}
+	
+	@Override
+	public ICoords resetZ(int z) {
+    	return new Coords(this.getX(), this.getY(), z);
 	}
 
 	/* (non-Javadoc)

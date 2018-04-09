@@ -12,14 +12,16 @@ import net.minecraft.world.World;
 
 /**
  * For Forge 1.8+
- * Wrapper class for Block/BlockState.
+ * Wrapper class for Block/BlockState. Immutable.
+ * TODO remove all the redundant getBlockState() calls and use this.getState()
  * @author Mark Gottschling on May 6, 2017
  *
  */
 public class Cube {
-	private World world;
-	private ICoords coords;
-	private IBlockState state;
+
+//	private final World world;
+	private final ICoords coords;
+	private final IBlockState state;
 	
 	/**
 	 * 
@@ -27,21 +29,27 @@ public class Cube {
 	 * @param coords
 	 */
 	public Cube(World world, ICoords coords) {
-		this.world = world;
+//		this.world = world;
 		this.coords = coords;
 		this.state = world.getBlockState(coords.toPos());
 	}
 	
-	public IBlockState getState() {return null;}
+	/**
+	 * 
+	 * @return
+	 */
+	public IBlockState getState() {
+		return state;
+	}
 	
 	/**
 	 * 
-	 * @param world
 	 * @return
 	 */
 	public Block toBlock() {
-		IBlockState blockState = this.world.getBlockState(this.coords.toPos());
-		if (blockState != null) return blockState.getBlock();
+//		IBlockState blockState = this.world.getBlockState(this.coords.toPos());
+		if (state != null) return state.getBlock();
+//		if (blockState != null) return blockState.getBlock();
 		return null;
 	}
 	
@@ -62,14 +70,14 @@ public class Cube {
 	 * @return
 	 */
 	public boolean hasState() {
-		IBlockState blockState = world.getBlockState(coords.toPos());
-		if (blockState == null) return false;
+//		IBlockState blockState = world.getBlockState(coords.toPos());
+//		if (blockState == null) return false;
+		if (state == null) return false;
 		return true;
 	}
 	
 	/**
 	 * 
-	 * @param world
 	 * @param block
 	 * @return
 	 */
@@ -80,13 +88,20 @@ public class Cube {
 
 	/**
 	 * 
-	 * @param world
 	 * @param material
 	 * @return
 	 */
 	public boolean equalsMaterial(Material material) {		
 		if (state.getMaterial() == material) return true;
 		return false;	
+	}
+	
+	/**
+	 * Wrapper for Block.isAir()
+	 * @return
+	 */
+	public boolean isAir() {
+		return state.getMaterial() == Material.AIR;
 	}
 	
 	/**
@@ -107,11 +122,10 @@ public class Cube {
 	
 	/**
 	 * Wrapper to Block.isBurning()
-	 * @param world
 	 * @return
 	 */
-	public boolean isBurning() {
-		return toBlock().isBurning(this.world, this.coords.toPos());
+	public boolean isBurning(World world) {
+		return toBlock().isBurning(world, this.coords.toPos());
 	}
 	
 	/**
@@ -121,10 +135,16 @@ public class Cube {
 		return coords;
 	}
 
-	/**
-	 * @param coords the coords to set
-	 */
-	public void setCoords(ICoords coords) {
-		this.coords = coords;
+	// removed in order to make immutable.
+//	/**
+//	 * @param coords the coords to set
+//	 */
+//	public Cube setCoords(ICoords coords) {
+//		return new Cube(this.world, coords);
+//	}
+	
+	@Override
+	public String toString() {
+		return "Cube [coords=" + coords.toShortString() + ", state=" + state + "]";
 	}
 }

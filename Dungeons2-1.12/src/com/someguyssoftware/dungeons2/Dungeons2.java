@@ -176,7 +176,6 @@ public class Dungeons2 extends AbstractMod {
 			super.postInit(event);
 		}
 
-
 		@Override
 		public IConfig getConfig() {
 			return config;

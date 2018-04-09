@@ -4,6 +4,7 @@
 package com.someguyssoftware.gottschcore;
 
 /**
+ * A class to hold a minimum and maximum value for a value range.
  * @author Mark Gottschling on Jul 18, 2016
  *
  */

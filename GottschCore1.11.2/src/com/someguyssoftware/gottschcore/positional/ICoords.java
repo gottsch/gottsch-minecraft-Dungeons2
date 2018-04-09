@@ -1,9 +1,10 @@
 package com.someguyssoftware.gottschcore.positional;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * This class is a wrapper for Minecraft positional classes and calculations. Ex. BlockPos in 1.8+, or for (x, y, z) in <1.8
+ * This class is a wrapper for Minecraft positional classes and calculations. Ex. BlockPos in 1.8+, or for (x, y, z) in &lt;1.8
  * @author Mark Gottschling on May 5, 2017
  *
  */
@@ -110,10 +111,92 @@ public interface ICoords {
 	 * @return
 	 */
 	ICoords up(int n);
+	
+	/**
+	 * 
+	 * @param n
+	 * @return
+	 */
 	ICoords down(int n);
+	
+	/**
+	 * 
+	 * @param n
+	 * @return
+	 */
 	ICoords north(int n);
+	
+	/**
+	 * 
+	 * @param n
+	 * @return
+	 */
 	ICoords south(int n);
+	
+	/**
+	 * 
+	 * @param n
+	 * @return
+	 */
 	ICoords east(int n);
+	
+	/**
+	 * 
+	 * @param n
+	 * @return
+	 */
 	ICoords west(int n);
+
+	/**
+	 * 
+	 * @param y
+	 * @return
+	 */
+	ICoords resetY(int y);
+
+	/**
+	 * 
+	 * @param z
+	 * @return
+	 */
+	ICoords resetZ(int z);
+
+	/**
+	 * 
+	 * @param x
+	 * @return
+	 */
+	ICoords resetX(int x);
+
+	/**
+	 * 
+	 * @param parentNBT
+	 */
+	public static ICoords readFromNBT(NBTTagCompound nbt) {
+		Integer x = null;
+		Integer y = null;
+		Integer z = null;
+		ICoords coords = null;
+		if (nbt.hasKey("x")) {
+			x = nbt.getInteger("x");
+		}
+		if (nbt.hasKey("y")) {
+			y = nbt.getInteger("y");
+		}
+		if (nbt.hasKey("z")) {
+			z = nbt.getInteger("z");
+		}
+		if (x != null && y != null && z != null) {
+			coords = new Coords(x, y, z);
+		}
+		return coords;
+	}
+
+	/**
+	 * 
+	 * @param nbt
+	 * @return
+	 */
+	NBTTagCompound writeToNBT(NBTTagCompound nbt);
 
 }

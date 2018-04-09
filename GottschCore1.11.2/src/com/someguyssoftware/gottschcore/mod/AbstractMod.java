@@ -3,13 +3,13 @@
  */
 package com.someguyssoftware.gottschcore.mod;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.RollingFileAppender;
 import org.apache.logging.log4j.core.appender.rolling.SizeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.AppenderRef;
-import org.apache.logging.log4j.core.config.BaseConfiguration;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -97,85 +97,155 @@ public abstract class AbstractMod implements IMod {
 	public void setModLatestVersion(BuildVersion latestVersion) {
 		AbstractMod.latestVersion = latestVersion;
 	}
-	
-	/**
-	 * 
-	 * @param logName
-	 * @param loggerConfig
-	 * @return
+		/**
+	 * Add rolling file appender to the current logging system.
 	 */
-	public Appender createAppender(String logName, ILoggerConfig loggerConfig) {
+	public void addRollingFileAppenderToLogger(String loggerName, String appenderName, ILoggerConfig modConfig) {
 		// get config properties
-		String loggerFolder = loggerConfig.getLoggerFolder();
+		String loggerLevel = modConfig.getLoggerLevel();
+		String loggerFolder = modConfig.getLoggerFolder();
 		
-		// ensure the folder ends with a forward-slash
 		if (!loggerFolder.endsWith("/")) {
 			loggerFolder += "/";
-		}		
-		
+		}
+
 		final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         final Configuration config = loggerContext.getConfiguration();
-
-        // create a size-based trigger policy for 500K
-        SizeBasedTriggeringPolicy policy = SizeBasedTriggeringPolicy.createPolicy(loggerConfig.getLoggerSize());
+        
+        // create a sized-based trigger policy, using config setting for size.
+        SizeBasedTriggeringPolicy policy = SizeBasedTriggeringPolicy.createPolicy(modConfig.getLoggerSize());
         // create the pattern for log statements
-        PatternLayout layout = PatternLayout.createLayout("%d [%t] %p %c | %F:%L | %m%n", null, null, null, "true");
+        PatternLayout layout = PatternLayout
+        		.newBuilder()
+        		.withPattern("%d [%t] %p %c | %F:%L | %m%n")
+        		.withAlwaysWriteExceptions(true)
+        		.build();
         
-        // create a rolling file appender for Dungeon logger (which is used by the Dungeon mod)
-        Appender appender = RollingFileAppender.createAppender(
-        	loggerFolder + loggerConfig.getLoggerFilename() + ".log",
-        	loggerFolder + loggerConfig.getLoggerFilename() + "-%d{yyyy-MM-dd-HH_mm_ss}.log",
-        	"true",
-        	logName,
-        	"true",
-            "true",
-            policy,
-            null,
-            layout,
-            null,
-            "true",
-            "false",
-            null,
-            config);
-        
+        // create a rolling file appender for SGS_Treasure logger (which is used by the Treasure mod)
+        Appender appender = RollingFileAppender
+        		.newBuilder()
+        		.withFileName(loggerFolder + modConfig.getLoggerFilename() + ".log")
+        		.withFilePattern(loggerFolder + modConfig.getLoggerFilename() + "-%d{yyyy-MM-dd-HH_mm_ss}.log")
+        		.withAppend(true)
+        		.withName(appenderName)
+        		.withBufferedIo(true)
+        		.withImmediateFlush(true)
+        		.withPolicy(policy)
+//        		.withStrategy(strategy)
+        		.withLayout(layout)
+//        		.withFilter(filter)
+        		.withIgnoreExceptions(true)
+        		.withAdvertise(false)
+        		.setConfiguration(config)
+        		.build();
+
         // start the appender
         appender.start();
         
         // add appenders to config
-        ((BaseConfiguration) config).addAppender(appender);
+        config.addAppender(appender);
         
+        // create appender references
+        AppenderRef appenderReference = AppenderRef.createAppenderRef(appenderName, null, null);
+        
+        // create logger config
+        AppenderRef[] refs = new AppenderRef[] {appenderReference};
+
+		Level level = Level.getLevel(loggerLevel.toUpperCase());
+		
+        // set the logger name "FastLadder" to use the rolling file appender
+        LoggerConfig loggerConfig = LoggerConfig.createLogger("false", level, loggerName, "true", refs, null, config, null );
+        
+        // add appenders to logger config
+        loggerConfig.addAppender(appender, null, null);
+
+        // add loggers to base configuration
+        config.addLogger(loggerName, loggerConfig);
+        
+        // update existing loggers
+        loggerContext.updateLoggers();	
+	}
+	
+	/**
+	 * Add rolling file appender to the current logging system.
+	 */
+	public Appender createRollingFileAppender(String appenderName, ILoggerConfig modConfig) {
+		// get config properties
+//		String loggerLevel = modConfig.getLoggerLevel();
+		String loggerFolder = modConfig.getLoggerFolder();
+		
+		if (!loggerFolder.endsWith("/")) {
+			loggerFolder += "/";
+		}
+
+		final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
+        final Configuration config = loggerContext.getConfiguration();
+        
+        // create a sized-based trigger policy, using config setting for size.
+        SizeBasedTriggeringPolicy policy = SizeBasedTriggeringPolicy.createPolicy(modConfig.getLoggerSize());
+        // create the pattern for log statements
+        PatternLayout layout = PatternLayout
+        		.newBuilder()
+        		.withPattern("%d [%t] %p %c | %F:%L | %m%n")
+        		.withAlwaysWriteExceptions(true)
+        		.build();
+        
+        // create a rolling file appender for SGS_Treasure logger (which is used by the Treasure mod)
+        Appender appender = RollingFileAppender
+        		.newBuilder()
+        		.withFileName(loggerFolder + modConfig.getLoggerFilename() + ".log")
+        		.withFilePattern(loggerFolder + modConfig.getLoggerFilename() + "-%d{yyyy-MM-dd-HH_mm_ss}.log")
+        		.withAppend(true)
+        		.withName(appenderName)
+        		.withBufferedIo(true)
+        		.withImmediateFlush(true)
+        		.withPolicy(policy)
+//        		.withStrategy(strategy)
+        		.withLayout(layout)
+//        		.withFilter(filter)
+        		.withIgnoreExceptions(true)
+        		.withAdvertise(false)
+        		.setConfiguration(config)
+        		.build();
+
+        // start the appender
+        appender.start();
+        
+        // add appenders to config
+        config.addAppender(appender);
+
         return appender;
 	}
 	
 	/**
 	 * 
-	 * @param logName
+	 * @param loggerName
 	 * @param appender
-	 * @param appenderRefName
-	 * @param modLoggerConfig
+	 * @param modConfig
 	 */
-	public void addAppenderToLogger(String logName, Appender appender,
-			String appenderRefName, ILoggerConfig modLoggerConfig) {
+	public void addAppenderToLogger(Appender appender, String loggerName, ILoggerConfig modConfig) {
+		// get config properties
+		String loggerLevel = modConfig.getLoggerLevel();
 		
 		final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         final Configuration config = loggerContext.getConfiguration();
         
-		String loggerLevel = modLoggerConfig.getLoggerLevel();
-		
+		Level level = Level.getLevel(loggerLevel.toUpperCase());
+		        
         // create appender references
-        AppenderRef appenderReference = AppenderRef.createAppenderRef(appenderRefName, null, null);
+        AppenderRef appenderReference = AppenderRef.createAppenderRef(appender.getName(), null, null);
         
         // create logger config
-        AppenderRef[] refs = new AppenderRef[] {appenderReference};		
+        AppenderRef[] refs = new AppenderRef[] {appenderReference};
         
-        // set the logger name to use the rolling file appender
-        LoggerConfig loggerConfig = LoggerConfig.createLogger("false", loggerLevel, logName, "true", refs, null, config, null );
-
+        // set the logger name "FastLadder" to use the rolling file appender
+        LoggerConfig loggerConfig = LoggerConfig.createLogger("false", level, loggerName, "true", refs, null, config, null );
+        
         // add appenders to logger config
         loggerConfig.addAppender(appender, null, null);
-        
-        // add loggers to base configuratoin
-        ((BaseConfiguration) config).addLogger(logName, loggerConfig);
+
+        // add loggers to base configuration
+        config.addLogger(loggerName, loggerConfig);
         
         // update existing loggers
         loggerContext.updateLoggers();	

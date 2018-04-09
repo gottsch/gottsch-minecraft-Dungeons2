@@ -3,58 +3,57 @@
  */
 package com.someguyssoftware.gottschcore.proxy;
 
-import java.util.function.Function;
-
 import javax.annotation.Nullable;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemBlock;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import com.someguyssoftware.gottschcore.config.IConfig;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
 /**
- * @author Mark Gottschling on Jul 9, 2016
+ * 
+ * @author Mark Gottschling on Jul 13, 2017
  *
  */
 public interface IProxy {
 
 	/**
 	 * 
+	 * @param event
 	 */
-	public void doRegistrations();
-	
-	public void registerRenderers();
-	public void registerBlocks();
-	public void registerItems();
-	public void registerTileEntities();
+	public void preInit(final FMLPreInitializationEvent event);
 	
 	/**
-	 * Register a Block with the default ItemBlock class.
-	 *
-	 * @param block The Block instance
-	 * @param <T> The Block type
-	 * @return The Block instance
+	 * 
+	 * @param event
 	 */
-	public default <T extends Block> T registerBlock(T block) {
-		return registerBlock(block, ItemBlock::new);
-	}
+	public void init(FMLInitializationEvent event);
+	
+	/**
+	 * 
+	 * @param event
+	 */
+	public void postInit(final FMLPostInitializationEvent event);
+	
+	/**
+	 * Get the client player.
+	 *
+	 * @return The client player
+	 */
+	@Nullable
+	EntityPlayer getClientPlayer();
 
 	/**
-	 * Register a Block with a custom ItemBlock class.
+	 * Get the client {@link World}.
 	 *
-	 * @param <T> The Block type
-	 * @param block The Block instance
-	 * @param itemFactory A function that creates the ItemBlock instance, or null if no ItemBlock should be created
-	 * @return The Block instance
+	 * @return The client World
 	 */
-	public default <T extends Block> T registerBlock(T block, @Nullable Function<T, ItemBlock> itemFactory) {
-		// register the block
-		GameRegistry.register(block);
+	@Nullable
+	World getClientWorld();
 
-		if (itemFactory != null) {
-			final ItemBlock itemBlock = itemFactory.apply(block);
-			GameRegistry.register(itemBlock.setRegistryName(block.getRegistryName()));
-		}
-		return block;
-	}
-
+	
+	public void registerRenderers(IConfig config);
 }
