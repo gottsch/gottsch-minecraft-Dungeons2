@@ -11,16 +11,18 @@ import java.util.Random;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.IRandomProbabilityItem;
-import com.someguyssoftware.mod.RandomProbabilityCollection;
-import com.someguyssoftware.mod.inventory.util.InventoryUtil;
-import com.someguyssoftware.mod.item.util.ItemUtil;
-import com.someguyssoftware.mod.util.WorldUtil;
+import com.someguyssoftware.gottschcore.inventory.InventoryUtil;
+import com.someguyssoftware.gottschcore.item.util.ItemUtil;
+import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
+import com.someguyssoftware.gottschcore.random.RandomHelper;
+import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionType;
+import net.minecraft.potion.PotionUtils;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.world.World;
@@ -30,7 +32,10 @@ import net.minecraft.world.World;
  *
  */
 public class ChestPopulator {
-
+	private static final String POTION_ITEM_NAME = "minecraft:potion";
+	private static final String SPLASH_POTION_ITEM_NAME = "minecraft:splash_potion";
+	private static final String LINGERING_POTION_ITEM_NAME = "minecraft:lingering_potion";
+	
 	private ChestSheet chestSheet;
 	private Multimap<String, ChestContainer> map;
 	
@@ -72,7 +77,7 @@ public class ChestPopulator {
 	 * @return
 	 */
 	public TileEntityChest getChestTileEntity(World world, ICoords chestCoords) {
-		TileEntity te = world.getTileEntity(chestCoords.toBlockPos());
+		TileEntity te = world.getTileEntity(chestCoords.toPos());
 		if (te == null) {
 			Dungeons2.log.warn("Unable to locate Chest TileEntity @: " + chestCoords.toShortString());
 			return null;
@@ -98,15 +103,15 @@ public class ChestPopulator {
 			// get the group
 			ChestItemGroup group = getChestSheet().getGroups().get(randomGroup.getRef());
 			
-			// TODO need a Double version of this
+			// TODO need a Double VERSION of this
 			RandomProbabilityCollection<IRandomProbabilityItem> col = new RandomProbabilityCollection<>();
 			for (RandomItem ri : group.getItems()) {
 //				Dungeons2.log.debug(String.format("Processing item %s from group %s", ri.getRef(), group.getName()));
 				col.add((int) ri.getWeight(), ri);
 			}
 			
-			// determine the number of items to add to the group
-			int numberOfItems = WorldUtil.randomInt(
+			// determine the number of items to add from the group
+			int numberOfItems = RandomHelper.randomInt(
 					(int) (randomGroup.getQuantity().getMin() * randomGroup.getItemsFactor()),
 					(int) (randomGroup.getQuantity().getMax() * randomGroup.getItemsFactor()));
 			
@@ -175,7 +180,7 @@ public class ChestPopulator {
 		
 		Item item = null;
 		ItemStack stack = null;
-
+		
 		try {		
 			// calculate the probablility that the item will generate
 			boolean checkProbability = true;
@@ -190,17 +195,25 @@ public class ChestPopulator {
 				}
 			}
 	
-			if (checkProbability) {
+			if (checkProbability) {				
+				// check if poition, then build potion and return
+				if (chestItem.getName().equalsIgnoreCase(POTION_ITEM_NAME)
+						|| chestItem.getName().equalsIgnoreCase(SPLASH_POTION_ITEM_NAME)
+						|| chestItem.getName().equalsIgnoreCase(LINGERING_POTION_ITEM_NAME)) {
+					stack = toPotion(chestItem);
+					return stack;
+				}
+				
 				// create the item
 				item = toItem(chestItem.getName());
 				if (item == null) {
 					Dungeons2.log.warn("Unable to convert ChestItem to minecraft item: ", chestItem.getName());
 					return null;
 				}
-//				Dungeons2.log.debug("Converted random item to (unlocalized name): " + item.getUnlocalizedName() + ":" + item);
+//				Dungeons2.log.debug("Converted random item to (unlocalized NAME): " + item.getUnlocalizedName() + ":" + item);
 				
 				// calculate the number items to generate
-				int size = WorldUtil.randomInt(random, randomItem.getQuantity().getMinInt(), randomItem.getQuantity().getMaxInt());
+				int size = RandomHelper.randomInt(random, randomItem.getQuantity().getMinInt(), randomItem.getQuantity().getMaxInt());
 				// get the damage value. If greater than 0, create an item stack can call the proper method. (for things like dyes (lapis) and potions that have
 				// multiple items per)
 				if (chestItem.getDamage() > 0) {
@@ -214,7 +227,7 @@ public class ChestPopulator {
 				
 				int enchants = 0;
 				if (randomItem.getEnchants().getQuantity().getMaxInt() > 0) {
-					enchants = WorldUtil.randomInt(random,
+					enchants = RandomHelper.randomInt(random,
 							randomItem.getEnchants().getQuantity().getMinInt(),
 							randomItem.getEnchants().getQuantity().getMaxInt());
 	//				Dungeons2.log.debug("Adding enchantments");
@@ -227,7 +240,7 @@ public class ChestPopulator {
 				if (randomItem.getEnchants().getEnchantments() != null &&
 						randomItem.getEnchants().getEnchantments().size() > 0) {
 					for (ChestItemEnchantment e : randomItem.getEnchants().getEnchantments()) {
-						// TODO create method to add enchantment based on name to the ItemUtil
+						// TODO create method to add enchantment based on NAME to the ItemUtil
 					}
 				}
 			}		
@@ -240,11 +253,29 @@ public class ChestPopulator {
 	
 	/**
 	 * 
+	 * @param chestItem
+	 * @return
+	 */
+	public static ItemStack toPotion(ChestItem chestItem) {
+		try {
+			Item item = ItemUtil.getItemFromName(chestItem.getName());
+			PotionType type = PotionType.getPotionTypeForName(chestItem.getType());
+			ItemStack stack = PotionUtils.addPotionToItemStack(new ItemStack(item), type);
+			return stack;
+		}
+		catch(Exception e) {
+			Dungeons2.log.error("toItem error:", e);
+			return null;
+		}
+	}
+
+	/**
+	 * 
 	 * @return
 	 */
 	public static Item toItem(String itemName) {
 		try {
-			Item item = ItemUtil.getItemFromName(itemName);
+			Item item = ItemUtil.getItemFromName(itemName);			
 			return item;
 		}
 		catch(Exception e) {

@@ -32,9 +32,10 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
-import com.someguyssoftware.mod.json.JSMin;
+import com.someguyssoftware.gottschcore.json.JSMin;
 
 /**
  * 
@@ -101,7 +102,7 @@ public class ChestSheetLoader {
 	 */
 	public static ChestSheet loadAll() throws Exception {
 		// get the path to the default style sheet
-		Path defaultSheetPath = Paths.get(GeneralConfig.dungeonsFolder, "chestSheet.json").toAbsolutePath();
+		Path defaultSheetPath = Paths.get(ModConfig.dungeonsFolder, "chestSheet.json").toAbsolutePath();
 
 		Dungeons2.log.debug("Sheets Folder:" + defaultSheetPath.toString());
 
@@ -114,7 +115,7 @@ public class ChestSheetLoader {
 		}
 
 		// load any additional style sheets
-		Files.newDirectoryStream(Paths.get(GeneralConfig.dungeonsFolder, BUILT_IN_CHEST_SHEET_SUB_FOLDER), path -> path.toString().endsWith(".json"))	
+		Files.newDirectoryStream(Paths.get(ModConfig.dungeonsFolder, BUILT_IN_CHEST_SHEET_SUB_FOLDER), path -> path.toString().endsWith(".json"))	
 		.forEach((path) -> {
 			try {
 				// load the sheet
@@ -161,10 +162,6 @@ public class ChestSheetLoader {
 		Reader reader = new InputStreamReader(in);
 		JsonReader jsonReader = new JsonReader(reader);
 		
-//		InputStream is = new FileInputStream(path.toString());
-//	>>	Reader reader = new FileReader(path.toString());
-//		JsonReader jsonReader = new JsonReader(reader);
-		
 		GsonBuilder gsonBuilder = new GsonBuilder();
 		Type chestItemsType = new TypeToken<Map<String, ChestItem>>() {}.getType();
 		gsonBuilder.registerTypeAdapter(chestItemsType, new ChestItemDeserializer());		
@@ -195,7 +192,7 @@ public class ChestSheetLoader {
 	 * @return
 	 */
 	public static boolean hasChestSheet(String filePath) {
-		Path path = Paths.get(GeneralConfig.chestSheetFile).toAbsolutePath();
+		Path path = Paths.get(ModConfig.chestSheetFile).toAbsolutePath();
 		if (Files.exists(path)) {
 			return true;
 		}
@@ -250,9 +247,12 @@ public class ChestSheetLoader {
 		        JsonObject element = entry.getValue().getAsJsonObject();
 		        ChestItem item = new ChestItem(
 		        	entry.getKey(),
-		        	element.get("name").getAsString(),
-		        	element.get("damage").getAsInt()
-        		);
+		        	element.get("name").getAsString()
+		        );
+		        if (element.get("damage") != null)
+	        		item.setDamage(element.get("damage").getAsInt());
+	        	if(element.get("type") != null)
+	        		item.setType(element.get("type").getAsString());
 		        map.put(entry.getKey(), item);
 		    }
 		    return map;

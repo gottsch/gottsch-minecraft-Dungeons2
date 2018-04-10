@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.annotations.Since;
-import com.someguyssoftware.mod.IRandomProbabilityItem;
+import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
 
 /**
  * @author Mark Gottschling on Jul 4, 2016
@@ -37,14 +37,14 @@ public class ChestContainer implements IRandomProbabilityItem {
 	}
 
 	/**
-	 * @return the name
+	 * @return the NAME
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * @param name the name to set
+	 * @param NAME the NAME to set
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -69,7 +69,7 @@ public class ChestContainer implements IRandomProbabilityItem {
 	 */
 	@Override
 	public String toString() {
-		return "ChestContainer [name=" + name + ", randomItems=" + randomItems + "]";
+		return "ChestContainer [NAME=" + name + ", randomItems=" + randomItems + "]";
 	}
 
 	/**

@@ -6,12 +6,12 @@ package com.someguyssoftware.dungeons2.command;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.builder.DungeonBuilderBottomUp;
 import com.someguyssoftware.dungeons2.builder.DungeonBuilderTopDown;
 import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
 import com.someguyssoftware.dungeons2.builder.LevelBuilder;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
@@ -21,9 +21,9 @@ import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.Coords;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.Quantity;
+import com.someguyssoftware.gottschcore.Quantity;
+import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -40,12 +40,12 @@ import net.minecraft.world.World;
 public class BuildCommand extends CommandBase {
 
 	@Override
-	public String getCommandName() {
+	public String getName() {
 		return "dgn2build";
 	}
 
 	@Override
-	public String getCommandUsage(ICommandSender var1) {
+	public String getUsage(ICommandSender var1) {
 		return "/dgn2build <x> <y> <z> [pattern] [size] [terrianCheck] : generates the dungeon structure at location (x,y,z)";
 	}
 
@@ -161,12 +161,23 @@ public class BuildCommand extends CommandBase {
     			if (dungeon!= null && dungeon.getLevels() != null && dungeon.getLevels().size() > 0) {
 //        		if (level != null && !level.getRooms().isEmpty()) {
         			Dungeons2.log.info(String.format("Dungeons2! dungeon generated @ %d %d %d", x, y, z));
-        			player.addChatMessage(new TextComponentString(String.format("Dungeons2! dungeon generated @ %d %d %d", x, y, z)));
+        			player.sendMessage(new TextComponentString(String.format("Dungeons2! dungeon generated @ %d %d %d", x, y, z)));
+        			
+					if (ModConfig.enableDumps) {
+						try {
+							Dungeons2.dungeonsWorldGen.dump(dungeon);
+						}
+						catch(Exception e ) {
+//						DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
+//						String s = printer.print(dungeon, ModConfig.dungeonsFolder + "dumps/");
+//						Dungeons2.log.debug("\n" + s);
+						}
+					}
         		}
     		}
 		}
 		catch(Exception e) {
-			player.addChatMessage(new TextComponentString("Error:  " + e.getMessage()));
+			player.sendMessage(new TextComponentString("Error:  " + e.getMessage()));
 			Dungeons2.log.error("Error generating Dungeons2! dungeon:", e);
 			e.printStackTrace();
 		}

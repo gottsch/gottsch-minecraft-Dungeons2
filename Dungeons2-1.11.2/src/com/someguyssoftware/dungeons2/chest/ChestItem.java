@@ -8,7 +8,8 @@ import com.google.gson.annotations.Since;
 
 /**
  * @author Mark Gottschling on Jul 4, 2016
- *
+ * @version 2.0
+ * @since 1.0.0
  */
 public class ChestItem {
 	/*
@@ -17,10 +18,17 @@ public class ChestItem {
 	@Since(1.0)
 	private String id;
 	/*
-	 * Minecraft ChestItem name
+	 * Minecraft ChestItem NAME
 	 */
 	@Since(1.0)
 	private String name;
+	
+	/**
+	 * @since 2.0
+	 */
+	@Since(2.0)
+	private String type;
+	
 	/*
 	 * A description of the ChestItem
 	 */
@@ -38,7 +46,7 @@ public class ChestItem {
 	/**
 	 * 
 	 * @param id
-	 * @param name
+	 * @param NAME
 	 */
 	public ChestItem(String id, String name) {
 		setId(id);
@@ -48,7 +56,7 @@ public class ChestItem {
 	/**
 	 * 
 	 * @param id
-	 * @param name
+	 * @param NAME
 	 * @param damage
 	 */
 	public ChestItem(String id, String name, int damage) {
@@ -61,6 +69,19 @@ public class ChestItem {
 	 * 
 	 * @param id
 	 * @param name
+	 * @param type
+	 * @param damage
+	 */
+	public ChestItem(String id, String name, String type, int damage) {
+		setId(id);
+		setName(name);
+		setDamage(damage);
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @param NAME
 	 * @param description
 	 */
 	public ChestItem (String id, String name, String desc) {
@@ -69,14 +90,14 @@ public class ChestItem {
 	}
 
 	/**
-	 * @return the name
+	 * @return the NAME
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * @param name the name to set
+	 * @param NAME the NAME to set
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -96,12 +117,10 @@ public class ChestItem {
 		this.description = desc;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
-		return "ChestItem [id=" + id + ", name=" + name + ", description=" + description + ", damage=" + damage + "]";
+		return "ChestItem [id=" + id + ", name=" + name + ", type=" + type + ", description=" + description
+				+ ", damage=" + damage + "]";
 	}
 
 	/**
@@ -130,5 +149,13 @@ public class ChestItem {
 	 */
 	public void setDamage(int damage) {
 		this.damage = damage;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 }
