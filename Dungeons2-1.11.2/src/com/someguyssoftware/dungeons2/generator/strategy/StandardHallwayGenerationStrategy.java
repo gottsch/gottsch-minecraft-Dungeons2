@@ -19,8 +19,8 @@ import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.DesignElement;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.Coords;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -40,7 +40,7 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 	/*
 	 * a list of generated hallways
 	 */
-	private List<Room> hallways;
+	private List<Hallway> hallways;
 		
 //	/**
 //	 * 
@@ -56,7 +56,7 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 	 * @param rooms
 	 * @param hallways
 	 */
-	public StandardHallwayGenerationStrategy(IDungeonsBlockProvider blockProvider, List<Room> rooms, List<Room> hallways) {
+	public StandardHallwayGenerationStrategy(IDungeonsBlockProvider blockProvider, List<Room> rooms, List<Hallway> hallways) {
 		super(blockProvider);
 		//		setBlockProvider(blockProvider);
 		setRooms(rooms);
@@ -103,7 +103,7 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 					blockState = getBlockProvider().getBlockState(random, worldCoords, room, arrangement, theme, styleSheet, config);
 					if (blockState == IDungeonsBlockProvider.NULL_BLOCK) continue;
 					
-					AxisAlignedBB box = new AxisAlignedBB(worldCoords.toBlockPos());
+					AxisAlignedBB box = new AxisAlignedBB(worldCoords.toPos());
 					boolean buildBlock = true;
 					if (arrangement.getElement() != DesignElement.AIR) {
 						// get the bounding boxes of the rooms the doors are connected to
@@ -146,7 +146,7 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 
 					// update the world with the blockState
 					if (blockState != null && buildBlock && blockState != IDungeonsBlockProvider.NULL_BLOCK) {
-						world.setBlockState(worldCoords.toBlockPos(), blockState, 3);
+						world.setBlockState(worldCoords.toPos(), blockState, 3);
 					}
 				}				
 			}
@@ -160,14 +160,14 @@ public class StandardHallwayGenerationStrategy extends AbstractRoomGenerationStr
 	/**
 	 * @return the hallways
 	 */
-	public List<Room> getHallways() {
+	public List<Hallway> getHallways() {
 		return hallways;
 	}
 
 	/**
 	 * @param hallways the hallways to set
 	 */
-	public void setHallways(List<Room> hallways) {
+	public void setHallways(List<Hallway> hallways) {
 		this.hallways = hallways;
 	}
 

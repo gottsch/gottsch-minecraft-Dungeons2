@@ -45,18 +45,18 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 	modid=Dungeons2.MODID,
 	name=Dungeons2.NAME,
 	version=Dungeons2.VERSION,
-	dependencies="required-after:gottschcore@[1.3.5,)",
-	acceptedMinecraftVersions = "[1.0.0]"
+	dependencies="required-after:gottschcore@[1.2.0,)",
+	acceptedMinecraftVersions = "[1.11.2]"
 )
 @Credits(values ={"Dungeons2! was first developed by Mark Gottschling on July 1, 2016."})
 public class Dungeons2 extends AbstractMod {
 		// constants
 		private static final String VERSION_URL = "https://www.dropbox.com/s/fjcnqmbji9ujvbt/dungeons2-versions.json?dl=1";
-		private static final BuildVersion MINECRAFT_VERSION = new BuildVersion(1, 11, 0);
+		private static final BuildVersion MINECRAFT_VERSION = new BuildVersion(1, 11, 2);
 		
 		public static final String MODID = "dungeons2";
 		public static final String NAME = "Dungeons2!";
-		public static final String VERSION = "1.1.0"; 
+		public static final String VERSION = "1.3.3"; 
 		
 		// latest version
 		public static BuildVersion latestVersion;

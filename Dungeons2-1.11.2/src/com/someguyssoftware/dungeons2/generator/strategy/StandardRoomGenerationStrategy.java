@@ -16,8 +16,8 @@ import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.DesignElement;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.Coords;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.world.World;
@@ -81,7 +81,7 @@ public class StandardRoomGenerationStrategy extends AbstractRoomGenerationStrate
 
 					// update the world with the blockState
 					if (blockState != null && blockState != IDungeonsBlockProvider.NULL_BLOCK) {
-						world.setBlockState(worldCoords.toBlockPos(), blockState, 3);
+						world.setBlockState(worldCoords.toPos(), blockState, 3);
 					}
 				}				
 			}

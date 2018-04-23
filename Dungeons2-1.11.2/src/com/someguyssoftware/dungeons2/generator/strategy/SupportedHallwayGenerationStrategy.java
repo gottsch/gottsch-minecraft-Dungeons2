@@ -22,8 +22,8 @@ import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.DesignElement;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.Coords;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -43,7 +43,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 	/*
 	 * a list of generated hallways
 	 */
-	private List<Room> hallways;
+	private List<Hallway> hallways;
 	
 	/**
 	 * 
@@ -51,7 +51,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 	 * @param rooms
 	 * @param hallways
 	 */
-	public SupportedHallwayGenerationStrategy(IDungeonsBlockProvider blockProvider, List<Room> rooms, List<Room> hallways) {
+	public SupportedHallwayGenerationStrategy(IDungeonsBlockProvider blockProvider, List<Room> rooms, List<Hallway> hallways) {
 		super(blockProvider);
 		//		setBlockProvider(blockProvider);
 		setRooms(rooms);
@@ -107,7 +107,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 						if (blockState == Blocks.AIR.getDefaultState()) {
 //							Dungeons2.log.debug("Updating hallway with AIR @ " + worldCoords.toShortString());
 							// update the world
-							world.setBlockState(worldCoords.toBlockPos(), blockState, 3);
+							world.setBlockState(worldCoords.toPos(), blockState, 3);
 							// add the design element to the blueprint (if floor level)
 							if (worldCoords.getY() == room.getMinY() + 1) blueprint.put(arrangement.getElement(), worldCoords);
 						}
@@ -124,7 +124,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 //							Dungeons2.log.debug("Pass 1 Support amount:" + amount);
 							if (amount >= 100) {
 								supportedBlock = new SupportedBlock(blockState, 100);			
-								world.setBlockState(worldCoords.toBlockPos(), blockState, 3);
+								world.setBlockState(worldCoords.toPos(), blockState, 3);
 							}
 							else {
 								supportedBlock = new SupportedBlock(blockState, amount);
@@ -166,7 +166,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 						
 						// if the block is air, update the world
 						if (blockState == Blocks.AIR) {
-								world.setBlockState(worldCoords.toBlockPos(), blockState, 3);
+								world.setBlockState(worldCoords.toPos(), blockState, 3);
 						}
 						// else calculate the support
 						else {
@@ -184,7 +184,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 								
 								// if amount is now greated than threshold, update the world
 								if (supportedBlock.getAmount() >= 100) {
-									world.setBlockState(worldCoords.toBlockPos(), blockState, 3);
+									world.setBlockState(worldCoords.toPos(), blockState, 3);
 									if (worldCoords.getY() == room.getMinY() + 1) blueprint.put(arrangement.getElement(), worldCoords);
 								}
 							}
@@ -196,7 +196,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 			// generate the post processing blocks
 			postProcess(world, random, postProcessMap, room.getLayout(), theme, styleSheet, config);	
 			
-			// TODO should we override postProcess for Supported that is a Supported version?
+			// TODO should we override postProcess for Supported that is a Supported VERSION?
 		}
 	}
 
@@ -209,7 +209,7 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 	 */
 	public boolean isBlockBuildable(ICoords worldCoords, Hallway hallway, List<Room> intersectRooms) {
 		// NOTE we already know at this point that the design element is not AIR				
-		AxisAlignedBB box = new AxisAlignedBB(worldCoords.toBlockPos());
+		AxisAlignedBB box = new AxisAlignedBB(worldCoords.toPos());
 		boolean buildBlock = true;						
 
 		// get the bounding boxes of the rooms the doors are connected to
@@ -267,14 +267,14 @@ public class SupportedHallwayGenerationStrategy extends AbstractRoomGenerationSt
 	/**
 	 * @return the hallways
 	 */
-	public List<Room> getHallways() {
+	public List<Hallway> getHallways() {
 		return hallways;
 	}
 
 	/**
 	 * @param hallways the hallways to set
 	 */
-	public void setHallways(List<Room> hallways) {
+	public void setHallways(List<Hallway> hallways) {
 		this.hallways = hallways;
 	}
 }

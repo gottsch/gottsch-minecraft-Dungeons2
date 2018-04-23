@@ -11,10 +11,12 @@ import java.util.stream.Collectors;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.block.DecorationBlock;
+import com.someguyssoftware.dungeons2.block.DungeonsBlocks;
 import com.someguyssoftware.dungeons2.chest.ChestContainer;
 import com.someguyssoftware.dungeons2.chest.ChestPopulator;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
@@ -23,10 +25,10 @@ import com.someguyssoftware.dungeons2.rotate.RotatorHelper;
 import com.someguyssoftware.dungeons2.spawner.SpawnGroup;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnerPopulator;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.RandomProbabilityCollection;
-import com.someguyssoftware.mod.enums.Direction;
-import com.someguyssoftware.mod.util.WorldUtil;
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.random.RandomHelper;
+import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDirt;
@@ -141,7 +143,7 @@ public class RoomDecorator implements IRoomDecorator {
 		/*
 		 * chest
 		 */
-		if (GeneralConfig.enableChests) {
+		if (ModConfig.enableChests) {
 		ICoords chestCoords = addChest(world, random, provider, room, floorZone, config);
 			if (chestCoords != null) {
 				if (Dungeons2.log.isDebugEnabled()) {
@@ -152,8 +154,8 @@ public class RoomDecorator implements IRoomDecorator {
 //				Dungeons2.log.debug("Checking for chest tile entity...");
 				if (inventory == null) {
 					Dungeons2.log.debug("Manually adding chest tile entity.");
-					world.setTileEntity(chestCoords.toBlockPos(), new TileEntityChest());
-					inventory = (TileEntityChest) world.getTileEntity(chestCoords.toBlockPos());
+					world.setTileEntity(chestCoords.toPos(), new TileEntityChest());
+					inventory = (TileEntityChest) world.getTileEntity(chestCoords.toPos());
 				}
 				if (inventory != null) {
 					String chestCategory = config.getChestCategories().get(random.nextInt(config.getChestCategories().size()));
@@ -173,7 +175,7 @@ public class RoomDecorator implements IRoomDecorator {
 				}
 				else {
 					Dungeons2.log.debug("Chest tile entity not found... removing chest block.");
-					world.setBlockState(chestCoords.toBlockPos(), Blocks.AIR.getDefaultState());
+					world.setBlockState(chestCoords.toPos(), Blocks.AIR.getDefaultState());
 				}
 			}
 		}
@@ -181,12 +183,12 @@ public class RoomDecorator implements IRoomDecorator {
 		/*
 		 * determine if the rroom should get a spawner and what kind (boss, one-time, vanilla) etc
 		 */
-		if (GeneralConfig.enableSpawners) {
+		if (ModConfig.enableSpawners) {
 			ICoords spawnerCoords = addSpawner(world, random, provider, room, floorZone, config);
 			if (spawnerCoords != null) {
 				Dungeons2.log.debug("Adding spawner @ " + spawnerCoords.toShortString());
 				// get the spawner tile entity
-				TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(spawnerCoords.toBlockPos());
+				TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(spawnerCoords.toPos());
 				if (spawner != null) {
 					List<SpawnGroup> groups = new ArrayList<>(spawnerPopulator.getSpawnSheet().getGroups().values());
 					RandomProbabilityCollection<SpawnGroup> spawnerProbCol = new RandomProbabilityCollection<>(groups);
@@ -214,8 +216,8 @@ public class RoomDecorator implements IRoomDecorator {
 			List<Entry<DesignElement, ICoords>> airZone, LevelConfig config) {
 
 		// for the number of webs to attempt to generate
-		double freq = WorldUtil.randomDouble(random, config.getAnywhereDecorationFrequency().getMin(), config.getAnywhereDecorationFrequency().getMax());
-		for (int i = 0; i < scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, config.getNumberOfAnywhereDecorations().getMinInt(), config.getNumberOfAnywhereDecorations().getMaxInt()), config); i++) {
+		double freq = RandomHelper.randomDouble(random, config.getAnywhereDecorationFrequency().getMin(), config.getAnywhereDecorationFrequency().getMax());
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfAnywhereDecorations().getMinInt(), config.getNumberOfAnywhereDecorations().getMaxInt()), config); i++) {
 			double n = random.nextDouble() * 100;
 			int b = random.nextInt(5);
 			Block block = null;
@@ -276,7 +278,7 @@ public class RoomDecorator implements IRoomDecorator {
 					}
 					// update the world
 					if (blockState != null) {
-						world.setBlockState(coords.toBlockPos(), blockState, 3);	
+						world.setBlockState(coords.toPos(), blockState, 3);	
 						// remove location from airZone
 						airZone.remove(entry);
 					}
@@ -290,8 +292,8 @@ public class RoomDecorator implements IRoomDecorator {
 			List<Entry<DesignElement, ICoords>> zone, LevelConfig config) {
 
 		// for the number of blood items to attempt to generate
-		double freq = WorldUtil.randomDouble(random, config.getBloodFrequency().getMin(), config.getBloodFrequency().getMax());
-		for (int i = 0; i < scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, config.getNumberOfBlood().getMinInt(), config.getNumberOfBlood().getMaxInt()), config); i++) {
+		double freq = RandomHelper.randomDouble(random, config.getBloodFrequency().getMin(), config.getBloodFrequency().getMax());
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfBlood().getMinInt(), config.getNumberOfBlood().getMaxInt()), config); i++) {
 			double n = random.nextDouble() * 100;
 //			Block block = Dungeons2.blood;
 			Block block = null;
@@ -330,7 +332,7 @@ public class RoomDecorator implements IRoomDecorator {
 					}
 					// update the world
 					if (blockState != null) {
-						world.setBlockState(coords.toBlockPos(), blockState, 3);	
+						world.setBlockState(coords.toPos(), blockState, 3);	
 						// remove location from airZone
 						zone.remove(entry);
 					}
@@ -351,8 +353,8 @@ public class RoomDecorator implements IRoomDecorator {
 			Room room, List<Entry<DesignElement, ICoords>> zone, LevelConfig config) {
 
 		// for the number of webs to attempt to generate
-		double freq = WorldUtil.randomDouble(random, config.getWebFrequency().getMin(), config.getWebFrequency().getMax());
-		for (int i = 0; i < scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, config.getNumberOfWebs().getMinInt(), config.getNumberOfWebs().getMaxInt()), config); i++) {
+		double freq = RandomHelper.randomDouble(random, config.getWebFrequency().getMin(), config.getWebFrequency().getMax());
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfWebs().getMinInt(), config.getNumberOfWebs().getMaxInt()), config); i++) {
 			double n = random.nextDouble() * 100;
 			if (n < freq && zone.size() > 0) {
 				// select ANY surface air spot
@@ -363,7 +365,7 @@ public class RoomDecorator implements IRoomDecorator {
 				// check if the adjoining block exists
 				if (hasSupport(world, webCoords, elem, provider.getLocation(webCoords, room, room.getLayout()))) {
 					// update the world
-					world.setBlockState(webCoords.toBlockPos(), Blocks.WEB.getDefaultState(), 3);	
+					world.setBlockState(webCoords.toPos(), Blocks.WEB.getDefaultState(), 3);	
 					// remove location from airZone
 					zone.remove(entry);
 				}
@@ -383,9 +385,9 @@ public class RoomDecorator implements IRoomDecorator {
 	protected void addVines(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> zone, LevelConfig config) {
 
-		double freq = WorldUtil.randomDouble(random, config.getVineFrequency().getMin(), config.getVineFrequency().getMax());
+		double freq = RandomHelper.randomDouble(random, config.getVineFrequency().getMin(), config.getVineFrequency().getMax());
 		//Dungeons2.log.debug("Vine Freq:" + freq);
-		for (int i = 0; i < scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, config.getNumberOfVines().getMinInt(), config.getNumberOfVines().getMaxInt()), config); i++) {
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfVines().getMinInt(), config.getNumberOfVines().getMaxInt()), config); i++) {
 			double n = random.nextDouble() * 100;
 			//Dungeons2.log.debug("Vine n:" + n);
 			if (n < freq && zone.size() > 0) {
@@ -399,7 +401,7 @@ public class RoomDecorator implements IRoomDecorator {
 					// rotate vines
 					IBlockState blockState = RotatorHelper.rotateBlock(Blocks.VINE.getDefaultState(), d);				
 					// update the world
-					world.setBlockState(vineCoords.toBlockPos(), blockState, 3);
+					world.setBlockState(vineCoords.toPos(), blockState, 3);
 					// remove location from wallZone
 					zone.remove(wallZoneIndex);		
 				}			
@@ -419,9 +421,9 @@ public class RoomDecorator implements IRoomDecorator {
 	protected void addGrass(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> floorZone, LevelConfig config) {
 
-		double freq = WorldUtil.randomDouble(random, config.getWebFrequency().getMin(), config.getWebFrequency().getMax());
+		double freq = RandomHelper.randomDouble(random, config.getWebFrequency().getMin(), config.getWebFrequency().getMax());
 		//Dungeons2.log.debug("Grass Freq:" + freq);
-		for (int i = 0; i < scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, config.getNumberOfWebs().getMinInt(), config.getNumberOfWebs().getMaxInt()), config); i++) {
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfWebs().getMinInt(), config.getNumberOfWebs().getMaxInt()), config); i++) {
 			double n = random.nextDouble() * 100;
 			//Dungeons2.log.debug("Grass n:" + n);			
 			if (n < freq && floorZone.size() > 0) {
@@ -459,9 +461,9 @@ public class RoomDecorator implements IRoomDecorator {
 				//Dungeons2.log.debug("Grass Coords:" + grassCoords.toShortString());				
 				if (hasSupport(world, grassCoords, elem, provider.getLocation(grassCoords, room, room.getLayout()))) {
 					// update the block below with dirt
-					world.setBlockState(grassCoords.toBlockPos().add(0, -1, 0), groundBlockState, 3);
+					world.setBlockState(grassCoords.toPos().add(0, -1, 0), groundBlockState, 3);
 					// update the world
-					world.setBlockState(grassCoords.toBlockPos(), plantBlockState, 3);	
+					world.setBlockState(grassCoords.toPos(), plantBlockState, 3);	
 					// remove location from airZone
 					floorZone.remove(elem);
 				}
@@ -481,9 +483,9 @@ public class RoomDecorator implements IRoomDecorator {
 	protected void addPuddles(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> zone, LevelConfig config) {
 
-		double freq = WorldUtil.randomDouble(random, config.getPuddleFrequency().getMin(), config.getPuddleFrequency().getMax());
+		double freq = RandomHelper.randomDouble(random, config.getPuddleFrequency().getMin(), config.getPuddleFrequency().getMax());
 		//Dungeons2.log.debug("Grass Freq:" + freq);
-		for (int i = 0; i < scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, config.getNumberOfPuddles().getMinInt(), config.getNumberOfPuddles().getMaxInt()), config); i++) {
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfPuddles().getMinInt(), config.getNumberOfPuddles().getMaxInt()), config); i++) {
 			double n = random.nextDouble() * 100;
 			if (n < freq && zone.size() > 0) {
 				// select ANY floor air spot
@@ -493,7 +495,7 @@ public class RoomDecorator implements IRoomDecorator {
 				//Dungeons2.log.debug("Grass Coords:" + grassCoords.toShortString());				
 				if (hasSupport(world, coords, elem, provider.getLocation(coords, room, room.getLayout()))) {
 					// update the world
-					world.setBlockState(coords.toBlockPos(), Dungeons2.puddle.getDefaultState().withProperty(DecorationBlock.BASE, EnumFacing.UP), 3);
+					world.setBlockState(coords.toPos(), DungeonsBlocks.PUDDLE.getDefaultState().withProperty(DecorationBlock.BASE, EnumFacing.UP), 3);
 					// remove location from airZone
 					zone.remove(elem);
 				}
@@ -515,7 +517,7 @@ public class RoomDecorator implements IRoomDecorator {
 
 		ICoords chestCoords = null;
 		// determine if room should get a chest
-		double freq = WorldUtil.randomDouble(random, config.getChestFrequency().getMin(), config.getChestFrequency().getMax());
+		double freq = RandomHelper.randomDouble(random, config.getChestFrequency().getMin(), config.getChestFrequency().getMax());
 		if (random.nextDouble() * 100 < freq && floorZone.size() > 0) {
 			int floorIndex = random.nextInt(floorZone.size());
 			DesignElement elem = floorZone.get(floorIndex).getKey();
@@ -525,7 +527,7 @@ public class RoomDecorator implements IRoomDecorator {
 			if (hasSupport(world, chestCoords, elem, location)) {	
 				EnumFacing facing = orientChest(location);			
 				// place a chest
-				world.setBlockState(chestCoords.toBlockPos(), Blocks.CHEST.getDefaultState().withProperty(BlockHorizontal.FACING,  facing), 3);
+				world.setBlockState(chestCoords.toPos(), Blocks.CHEST.getDefaultState().withProperty(BlockHorizontal.FACING,  facing), 3);
 				// remove from list
 				floorZone.remove(floorIndex);
 			}
@@ -552,7 +554,7 @@ public class RoomDecorator implements IRoomDecorator {
 		ICoords spawnerCoords = null;
 
 		// determine if room should get a chest
-		double freq = WorldUtil.randomDouble(random, config.getSpawnerFrequency().getMin(), config.getSpawnerFrequency().getMax());
+		double freq = RandomHelper.randomDouble(random, config.getSpawnerFrequency().getMin(), config.getSpawnerFrequency().getMax());
 		if (random.nextDouble() * 100 < freq && floorZone.size() > 0) {
 			int floorIndex = random.nextInt(floorZone.size());
 			DesignElement elem = floorZone.get(floorIndex).getKey();
@@ -562,8 +564,8 @@ public class RoomDecorator implements IRoomDecorator {
 			if (hasSupport(world, spawnerCoords, elem, location)) {				
 				// TODO how will boss room be handled... check it here or have an extended BossRoomDecorator ?
 				// TODO select the spawner type from SpawnerProvider
-				world.setBlockState(spawnerCoords.toBlockPos(), Blocks.MOB_SPAWNER.getDefaultState());				
-//				TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(spawnerCoords.toBlockPos());
+				world.setBlockState(spawnerCoords.toPos(), Blocks.MOB_SPAWNER.getDefaultState());				
+//				TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(spawnerCoords.toPos());
 				// TODO select mob type from SpawnerProvider
 //				spawner.getSpawnerBaseLogic().setEntityName("Zombie");
 

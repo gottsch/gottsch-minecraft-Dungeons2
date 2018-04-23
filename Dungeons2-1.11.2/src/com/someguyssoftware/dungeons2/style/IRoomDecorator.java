@@ -11,9 +11,9 @@ import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.Quantity;
-import com.someguyssoftware.mod.util.WorldUtil;
+import com.someguyssoftware.gottschcore.Quantity;
+import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.random.RandomHelper;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -56,8 +56,8 @@ public interface IRoomDecorator {
 			final Quantity frequency, final Quantity number, final LevelConfig config) {
 		
 		IBlockState state = null;
-		double freq = WorldUtil.randomDouble(random, frequency.getMin(), frequency.getMax());
-		int scaledNum = scaleNumForSizeOfRoom(room, WorldUtil.randomInt(random, number.getMinInt(), number.getMaxInt()), config);
+		double freq = RandomHelper.randomDouble(random, frequency.getMin(), frequency.getMax());
+		int scaledNum = scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, number.getMinInt(), number.getMaxInt()), config);
 		
 		for (int i = 0; i < scaledNum; i++) {
 			double n = random.nextDouble() * 100;
@@ -73,7 +73,7 @@ public interface IRoomDecorator {
 					if (states.length==1) state = states[0];
 					else state = states[random.nextInt(states.length)];					
 					// update the world
-					world.setBlockState(coords.toBlockPos(), state, 3);	
+					world.setBlockState(coords.toPos(), state, 3);	
 					// remove location from airZone
 					zone.remove(entry);
 				}
@@ -90,7 +90,7 @@ public interface IRoomDecorator {
 	 * @return
 	 */
 	default public boolean hasSupport(World world, ICoords coords, DesignElement elem, Location location) {
-		BlockPos pos = coords.toBlockPos();
+		BlockPos pos = coords.toPos();
 		IBlockState blockState = null;
 		Block block = null;
 		if (elem == DesignElement.FLOOR_AIR) {

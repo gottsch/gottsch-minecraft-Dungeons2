@@ -3,8 +3,9 @@
  */
 package com.someguyssoftware.dungeons2.rotate;
 
-import com.someguyssoftware.mod.enums.Direction;
-import com.someguyssoftware.mod.enums.Rotate;
+
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.enums.Rotate;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLever;

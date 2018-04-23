@@ -6,7 +6,7 @@ package com.someguyssoftware.dungeons2.generator;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.DesignElement;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;

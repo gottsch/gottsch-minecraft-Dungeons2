@@ -4,10 +4,8 @@
 package com.someguyssoftware.dungeons2.generator.blockprovider;
 
 import com.someguyssoftware.dungeons2.model.Room;
-import com.someguyssoftware.dungeons2.style.DesignElement;
 import com.someguyssoftware.dungeons2.style.Layout;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.enums.Direction;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
  * Creates a room where the pillars are generated in a single ring around the inner edge of the room.

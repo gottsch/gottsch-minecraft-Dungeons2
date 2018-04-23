@@ -63,7 +63,7 @@ public class SpawnerPopulator {
 	public void populate(Random random, TileEntityMobSpawner spawner, SpawnGroup group) {
 		String mob = group.getMobs().get(random.nextInt(group.getMobs().size()));		
 //		spawner.getSpawnerBaseLogic().setEntityName(mob);
-		spawner.getSpawnerBaseLogic().func_190894_a(new ResourceLocation(mob));
+		spawner.getSpawnerBaseLogic().setEntityId(new ResourceLocation(mob));
 		Dungeons2.log.debug("Adding mob to spawner:" + mob);		
 	}
 	

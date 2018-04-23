@@ -5,10 +5,10 @@ package com.someguyssoftware.dungeons2.generator;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.model.Room;
-import com.someguyssoftware.mod.Coords;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.enums.Direction;
-import com.someguyssoftware.mod.enums.Rotate;
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.enums.Rotate;
+import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.world.World;
 

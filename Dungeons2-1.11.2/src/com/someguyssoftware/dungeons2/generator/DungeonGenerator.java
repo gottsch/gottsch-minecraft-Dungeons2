@@ -179,17 +179,16 @@ public class DungeonGenerator {
 
 			}
 			// create a list of generated hallways
-			List<Room> hallways = new ArrayList<>();
+			List<Hallway> generatedHallways = new ArrayList<>();
 			// generate the hallways
-			for (Wayline wayline : level.getWaylines()) {
-				// build a hallway (room) from a wayline
-				Hallway hallway = Hallway.fromWayline(wayline, level.getRooms());
+			for (Hallway hallway : level.getHallways()) {
 				// assign a layout
 				layoutAssigner.assign(random, hallway);
-				roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), hallways, level.getConfig().isSupportOn());
+				// NOTE passing hallways here is a list of hallways (excluding the current one, to check if they intersect
+				roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), generatedHallways, level.getConfig().isSupportOn());
 				roomGen.generate(world, random, hallway, dungeon.getTheme(), styleSheet, level.getConfig());
 				// add the hallway to the list of generated hallways
-				hallways.add(hallway);
+				generatedHallways.add(hallway);
 			}
 			
 			// generate the shafts
@@ -200,6 +199,7 @@ public class DungeonGenerator {
 				roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupportOn());
 				roomGen.generate(world, random, shaft, dungeon.getTheme(), styleSheet, level.getConfig());
 			}
+			levelCount++;
 		}
 		return true;
 	}

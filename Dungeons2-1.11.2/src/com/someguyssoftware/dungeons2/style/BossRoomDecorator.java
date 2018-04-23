@@ -17,7 +17,7 @@ import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.BlockCarpet;
 import net.minecraft.block.BlockHorizontal;
@@ -77,7 +77,7 @@ public class BossRoomDecorator extends RoomDecorator {
 				// check if the adjoining block exists
 				if (hasSupport(world, coords, elem, provider.getLocation(coords, room, room.getLayout()))) {
 					// update the world
-					world.setBlockState(coords.toBlockPos(), carpet, 3);	
+					world.setBlockState(coords.toPos(), carpet, 3);	
 				}
 			}
 		}		
@@ -92,11 +92,11 @@ public class BossRoomDecorator extends RoomDecorator {
 			Location location = provider.getLocation(coords, room, room.getLayout());
 			EnumFacing facing = location.getFacing();
 			if (location != null) {
-				EntityHanging entityhanging = new EntityPainting(world, coords.toBlockPos(), facing);
+				EntityHanging entityhanging = new EntityPainting(world, coords.toPos(), facing);
 		        if (entityhanging != null && entityhanging.onValidSurface()) {
 		            if (!world.isRemote) {
 		                entityhanging.playPlaceSound();
-		                world.spawnEntityInWorld(entityhanging);
+		                world.spawnEntity(entityhanging);
 		            }
 		        }
 			}
@@ -117,7 +117,7 @@ public class BossRoomDecorator extends RoomDecorator {
 		if (hasSupport(world, chestCoords, elem, location)) {	
 			EnumFacing facing = orientChest(location);			
 			// place a chest
-			world.setBlockState(chestCoords.toBlockPos(), Blocks.CHEST.getDefaultState().withProperty(BlockHorizontal.FACING,  facing), 3);
+			world.setBlockState(chestCoords.toPos(), Blocks.CHEST.getDefaultState().withProperty(BlockHorizontal.FACING,  facing), 3);
 			// remove from list
 			floorZone.remove(floorEntry);
 		}
@@ -142,9 +142,11 @@ public class BossRoomDecorator extends RoomDecorator {
 				List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory);
 				Dungeons2.log.debug("Containers found:" + containers.size());
 				if (containers != null && !containers.isEmpty()) {
+					// TODO use RandomProbabilityCollection
 					ChestContainer chest = containers.get(random.nextInt(containers.size()));
 					// populate the chest with items from the selected chest sheet container
 					chestPopulator.populate(random, inventory, chest);
+					// TODO update room floor map with chest
 				}
 			}
 		}

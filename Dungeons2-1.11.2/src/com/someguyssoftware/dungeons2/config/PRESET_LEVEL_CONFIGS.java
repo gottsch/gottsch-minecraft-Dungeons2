@@ -4,67 +4,18 @@
 package com.someguyssoftware.dungeons2.config;
 
 import com.someguyssoftware.dungeons2.model.LevelConfig;
-import com.someguyssoftware.mod.Quantity;
+import com.someguyssoftware.gottschcore.Quantity;
+
 
 /**
  * @author Mark Gottschling on Oct 5, 2016
  *
  */
 public final class PRESET_LEVEL_CONFIGS {
-//	
-//
-//	// ORIGINAL PRESETS: SQUARE, HORZ/VERT RECTANGLES
-//	public static final LevelConfig SMALL_CENTERED_SQUARE = new LevelConfig();
-//	public static final LevelConfig SMALL_CENTERED_HORZ = new LevelConfig();
-//	public static final LevelConfig SMALL_CENTERED_VERT = new LevelConfig();	
-//	
-//	// NOTE not final but also private so only way to access is via getConfig()
-//	private static LevelConfig SMALL_WEST_SQUARE ;
-//	private static LevelConfig SMALL_EAST_SQUARE;
-//	private static LevelConfig SMALL_NORTH_SQUARE;
-//	private static LevelConfig SMALL_SOUTH_SQUARE;
 	
-//	static {		
-//		init();		
-//	}
+	private static double DIRECTIONAL_LOW_OFFSET = 0.4;
+	private static double DIRECTIONAL_HIGH_OFFSET = 1.6;
 	
-	/**
-	 * 
-	 */
-	private static void init() {
-//		final int surfaceBuffer = 10;
-//		final Quantity smallNumRooms = new Quantity(10.0, 20.0);
-//		final Quantity smallCenteredSquareDist = new Quantity(-25, 25);
-//		
-//		SMALL_CENTERED_SQUARE.setNumberOfRooms(smallNumRooms);
-//		SMALL_CENTERED_SQUARE.setXDistance(smallCenteredSquareDist);
-//		SMALL_CENTERED_SQUARE.setZDistance(smallCenteredSquareDist);
-//		SMALL_CENTERED_SQUARE.setSurfaceBuffer(surfaceBuffer);		
-//		
-//		SMALL_CENTERED_HORZ.setNumberOfRooms(smallNumRooms);
-//		SMALL_CENTERED_HORZ.setXDistance(new Quantity(-35, 35));
-//		SMALL_CENTERED_HORZ.setZDistance(new Quantity(-15, 15));
-//		SMALL_CENTERED_HORZ.setSurfaceBuffer(surfaceBuffer);
-//		
-//		SMALL_CENTERED_VERT.setNumberOfRooms(smallNumRooms);
-//		SMALL_CENTERED_VERT.setXDistance(new Quantity(-15, 15));
-//		SMALL_CENTERED_VERT.setZDistance(new Quantity(-35, 35));
-//		SMALL_CENTERED_VERT.setSurfaceBuffer(surfaceBuffer);
-//		
-//		SMALL_NORTH_SQUARE = new LevelConfig(SMALL_CENTERED_SQUARE);
-//		SMALL_NORTH_SQUARE.setZDistance(new Quantity(0, 50));
-//		
-//		SMALL_SOUTH_SQUARE = new LevelConfig(SMALL_CENTERED_SQUARE);
-//		SMALL_SOUTH_SQUARE.setZDistance(new Quantity(-50, 0));
-//		
-//		SMALL_EAST_SQUARE = new LevelConfig(SMALL_CENTERED_SQUARE);
-//		SMALL_EAST_SQUARE.setXDistance(new Quantity(-50, 0));
-//		
-//		SMALL_WEST_SQUARE = new LevelConfig(SMALL_CENTERED_SQUARE);
-//		SMALL_WEST_SQUARE.setXDistance(new Quantity(0, 50));
-		
-
-	}
 	
 	/**
 	 * 
@@ -82,7 +33,7 @@ public final class PRESET_LEVEL_CONFIGS {
 		LevelConfig config = new LevelConfig();
 		
 		// apply mod config settings
-		config.setDecayMultiplier(GeneralConfig.decayMultiplier);
+		config.setDecayMultiplier(ModConfig.decayMultiplier);
 		
 		// select the room size
 		switch(size) {
@@ -124,20 +75,24 @@ public final class PRESET_LEVEL_CONFIGS {
 			// select the x,z size
 			switch(size) {
 			case SMALL:
-				xdist = 35;
-				zdist = 15;
+				// 25
+				xdist = 30;
+				zdist = 5;
 				break;
 			case MEDIUM:
-				xdist = 50;
-				zdist = 20;
+				// 35
+				xdist = 40;
+				zdist = 5;
 				break;
 			case LARGE:
-				xdist = 65;
-				zdist = 25;
+				//45
+				xdist = 50;
+				zdist = 5;
 				break;
 			case VAST:
-				xdist = 80;
-				zdist = 30;
+				// 55
+				xdist = 60;
+				zdist = 5;
 				break;
 			}	
 			break;
@@ -145,20 +100,20 @@ public final class PRESET_LEVEL_CONFIGS {
 			// select the x,z size
 			switch(size) {
 			case SMALL:
-				xdist = 15;
-				zdist = 35;
+				xdist = 5;
+				zdist = 30;
 				break;
 			case MEDIUM:
-				xdist = 20;
-				zdist = 50;
+				xdist = 5;
+				zdist = 40;
 				break;
 			case LARGE:
-				xdist = 25;
-				zdist = 65;
+				xdist = 5;
+				zdist = 50;
 				break;
 			case VAST:
-				xdist = 30;
-				zdist = 80;
+				xdist = 5;
+				zdist = 60;
 				break;
 			}	
 			break;
@@ -171,18 +126,18 @@ public final class PRESET_LEVEL_CONFIGS {
 			break;
 		case NORTH:
 			xDistQuantity = new Quantity(-xdist, xdist);
-			zDistQuantity = new Quantity(0, 2*zdist);
+			zDistQuantity = new Quantity(-(DIRECTIONAL_LOW_OFFSET * zdist), DIRECTIONAL_HIGH_OFFSET * zdist);
 			break;
 		case SOUTH:
 			xDistQuantity = new Quantity(-xdist, xdist);
-			zDistQuantity = new Quantity(-(2*zdist), 0);
+			zDistQuantity = new Quantity(-(DIRECTIONAL_HIGH_OFFSET * zdist), DIRECTIONAL_LOW_OFFSET * zdist);
 			break;
 		case EAST:
-			xDistQuantity = new Quantity(-(2*xdist), 0);
+			xDistQuantity = new Quantity(-(DIRECTIONAL_HIGH_OFFSET * xdist), DIRECTIONAL_LOW_OFFSET * xdist);
 			zDistQuantity = new Quantity(-zdist, zdist);
 			break;
 		case WEST:
-			xDistQuantity = new Quantity(0, 2*xdist);
+			xDistQuantity = new Quantity(-(DIRECTIONAL_LOW_OFFSET * xdist), DIRECTIONAL_HIGH_OFFSET * xdist);
 			zDistQuantity = new Quantity(-zdist, zdist);
 			break;
 		}

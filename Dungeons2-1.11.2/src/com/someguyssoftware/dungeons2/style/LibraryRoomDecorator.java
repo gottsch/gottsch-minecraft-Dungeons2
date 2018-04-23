@@ -4,12 +4,9 @@
 package com.someguyssoftware.dungeons2.style;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
@@ -17,9 +14,8 @@ import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProv
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
-import javafx.util.Pair;
 import net.minecraft.block.BlockCarpet;
 import net.minecraft.block.BlockLog;
 import net.minecraft.block.state.IBlockState;
@@ -68,7 +64,7 @@ public class LibraryRoomDecorator extends RoomDecorator {
 		EnumDyeColor dye = EnumDyeColor.values()[random.nextInt(EnumDyeColor.values().length)];
 
 		for (ICoords coords : floorZone) {
-			BlockPos floorPos = coords.toBlockPos().down();
+			BlockPos floorPos = coords.toPos().down();
 
 			// get the x,z indexes
 			int xIndex = coords.getX() - room.getCoords().getX();
@@ -82,10 +78,10 @@ public class LibraryRoomDecorator extends RoomDecorator {
 					// check if wall AND the 4th block
 					if (((coords.getX() == room.getMinX() + 1 || coords.getX() == room.getMaxX() -1) && Math.abs(zIndex) % 4 == 0)
 							|| ((coords.getZ() == room.getMinZ() + 1 || coords.getZ() == room.getMaxZ() -1) && Math.abs(xIndex) % 4 == 0)) {
-						world.setBlockState(coords.toBlockPos(), Blocks.LOG.getDefaultState().withProperty(BlockLog.LOG_AXIS, BlockLog.EnumAxis.Y));
+						world.setBlockState(coords.toPos(), Blocks.LOG.getDefaultState().withProperty(BlockLog.LOG_AXIS, BlockLog.EnumAxis.Y));
 					}
 					else {
-						world.setBlockState(coords.toBlockPos(), Blocks.BOOKSHELF.getDefaultState(), 3);
+						world.setBlockState(coords.toPos(), Blocks.BOOKSHELF.getDefaultState(), 3);
 					}
 					removeFloorZones.add(coords);	
 				}
@@ -96,7 +92,7 @@ public class LibraryRoomDecorator extends RoomDecorator {
 				if (random.nextInt(100) < CARPET_PERCENT_CHANCE) {
 					if (world.getBlockState(floorPos).isSideSolid(world, floorPos, EnumFacing.UP)) {
 						// update the world
-						world.setBlockState(coords.toBlockPos(), carpet, 3);	
+						world.setBlockState(coords.toPos(), carpet, 3);	
 					}
 				}
 			}
@@ -116,11 +112,11 @@ public class LibraryRoomDecorator extends RoomDecorator {
 				
 				if (((coords.getX() == room.getMinX() + 1 || coords.getX() == room.getMaxX() -1) && Math.abs(zIndex) % 4 == 0)
 						|| ((coords.getZ() == room.getMinZ() + 1 || coords.getZ() == room.getMaxZ() -1) && Math.abs(xIndex) % 4 == 0)) {
-					world.setBlockState(coords.toBlockPos(), Blocks.LOG.getDefaultState().withProperty(BlockLog.LOG_AXIS, BlockLog.EnumAxis.Y));					
+					world.setBlockState(coords.toPos(), Blocks.LOG.getDefaultState().withProperty(BlockLog.LOG_AXIS, BlockLog.EnumAxis.Y));					
 				}
 				else {
 					// update the world
-					world.setBlockState(coords.toBlockPos(), Blocks.BOOKSHELF.getDefaultState(), 3);
+					world.setBlockState(coords.toPos(), Blocks.BOOKSHELF.getDefaultState(), 3);
 				}
 				// add the zone to the remove list
 				removeWallZones.add(coords);

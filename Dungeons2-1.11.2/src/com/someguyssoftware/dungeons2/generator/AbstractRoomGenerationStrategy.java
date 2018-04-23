@@ -15,7 +15,7 @@ import com.someguyssoftware.dungeons2.style.Layout;
 import com.someguyssoftware.dungeons2.style.Style;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.BlockPos;
@@ -74,7 +74,7 @@ public abstract class AbstractRoomGenerationStrategy implements IRoomGenerationS
 			 * this is checking for a "backing" block for the post processed block
 			 * because the pp block  can not exist without a block for support
 			 */
-			BlockPos pos = keyCoords.toBlockPos();
+			BlockPos pos = keyCoords.toPos();
 			IBlockState state1 = world.getBlockState(pos.east());
 			IBlockState state2 = world.getBlockState(pos.west());
 			IBlockState state3 = world.getBlockState(pos.north());
@@ -96,7 +96,7 @@ public abstract class AbstractRoomGenerationStrategy implements IRoomGenerationS
 			blockState = getBlockProvider().getBlockState(a, style, decayIndex);			
 			// update the world with the blockState
 			if (blockState != null && blockState != IDungeonsBlockProvider.NULL_BLOCK) {
-				world.setBlockState(keyCoords.toBlockPos(), blockState, 3);
+				world.setBlockState(keyCoords.toPos(), blockState, 3);
 			}
 		}		
 	}

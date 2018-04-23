@@ -5,19 +5,19 @@ package com.someguyssoftware.dungeons2.rotate;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.block.BasicFacadeBlock;
-import com.someguyssoftware.dungeons2.block.CardinalDirectionBlock;
-import com.someguyssoftware.dungeons2.block.CardinalDirectionFacadeBlock;
 import com.someguyssoftware.dungeons2.block.CorniceFacadeBlock;
 import com.someguyssoftware.dungeons2.block.CrownMoldingFacadeBlock;
 import com.someguyssoftware.dungeons2.block.FlutePillarBlock;
 import com.someguyssoftware.dungeons2.block.FlutePillarFacadeBlock;
-import com.someguyssoftware.dungeons2.block.RelativeDirectionBlock;
-import com.someguyssoftware.dungeons2.block.RelativeDirectionFacadeBlock;
 import com.someguyssoftware.dungeons2.block.SevenEightsPillarFacadeBlock;
 import com.someguyssoftware.dungeons2.block.TeePillarFacadeBlock;
 import com.someguyssoftware.dungeons2.block.TeeThinPillarFacadeBlock;
-import com.someguyssoftware.mod.enums.Direction;
-import com.someguyssoftware.mod.enums.Rotate;
+import com.someguyssoftware.gottschcore.block.CardinalDirectionBlock;
+import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
+import com.someguyssoftware.gottschcore.block.RelativeDirectionBlock;
+import com.someguyssoftware.gottschcore.block.RelativeDirectionFacadeBlock;
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.enums.Rotate;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLever;

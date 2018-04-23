@@ -7,7 +7,7 @@ import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.DesignElement;
 import com.someguyssoftware.dungeons2.style.Layout;
-import com.someguyssoftware.mod.ICoords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
  * @author Mark Gottschling on Aug 28, 2016
@@ -265,7 +265,7 @@ public interface IExteriorDungeonsBlockProvider extends IDungeonsBlockProvider {
 			if ((xIndex == 2 || xIndex == 4
 					|| zIndex == 2 || zIndex == 4)
 					&& (yIndex > 2 && yIndex < 5)) {
-				Dungeons2.log.debug("Has Window");
+//				Dungeons2.log.debug("Has Window");
 				return true;
 			}
 		}

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.block.CardinalDirectionFacadeBlock;
 import com.someguyssoftware.dungeons2.block.NullBlock;
 import com.someguyssoftware.dungeons2.generator.Arrangement;
 import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
@@ -22,9 +21,10 @@ import com.someguyssoftware.dungeons2.style.Layout;
 import com.someguyssoftware.dungeons2.style.Style;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.enums.Direction;
-import com.someguyssoftware.mod.enums.Rotate;
+import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.enums.Rotate;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -105,7 +105,22 @@ public interface IDungeonsBlockProvider {
 		int meta = 0;
 		// TODO could add additional checks here to ensure the string only contains 1 @ or that the value after @ is numeric
 		if (blockAndMeta.length > 1) meta = Integer.valueOf(blockAndMeta[1]);
-		blockState = Block.getBlockFromName(blockAndMeta[0]).getStateFromMeta(meta);
+		try {
+			blockState = Block.getBlockFromName(blockAndMeta[0]).getStateFromMeta(meta);
+		}
+		catch(Exception e) {
+			blockState = null;
+		}
+		
+		if (blockState == null) {
+			Dungeons2.log.warn(String.format("Unable to retrieve blockState; returning NULL_BLOCK:\n" +
+					"Arrangement: %s\n" +
+					"Style: %s\n" + 
+					"Block: %s\n" +
+					"blockAndMeta[0]: %s\n" +
+					"Meta: %d", arrangement, style.getName(), block, blockAndMeta[0], meta));
+			return NULL_BLOCK;
+		}
 
 		// rotate block to the direction of Arrangement if rotatable type
 		DesignElement elem = arrangement.getElement();
@@ -429,7 +444,7 @@ public interface IDungeonsBlockProvider {
 			return Style.NO_STYLE;
 		}
 		
-		// get the style by the alias or style name
+		// get the style by the alias or style NAME
 		if (theme != null && frame.getAlias() != null && frame.getAlias().length() > 0) {
 //			Dungeons2.log.debug(String.format("theme: %s\nAlias:%s", theme.getName(), frame.getAlias()));
 			// TODO need to catch error here is style == null or theme.getAliases == null or the alias from the theme doesn't exist

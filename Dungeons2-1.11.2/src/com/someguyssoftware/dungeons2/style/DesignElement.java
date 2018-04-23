@@ -7,7 +7,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.someguyssoftware.mod.enums.IEnum;
+import com.someguyssoftware.gottschcore.enums.IEnum;
+
 
 /**
  * TODO the entire DesignElement enum has scope-creeped and become very messy.

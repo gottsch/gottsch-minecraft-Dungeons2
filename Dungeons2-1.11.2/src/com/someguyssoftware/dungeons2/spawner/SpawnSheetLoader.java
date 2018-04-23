@@ -23,8 +23,9 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.config.GeneralConfig;
-import com.someguyssoftware.mod.json.JSMin;
+import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.gottschcore.json.JSMin;
 
 /**
  * 
@@ -83,7 +84,7 @@ public class SpawnSheetLoader {
 	 */
 	public static SpawnSheet loadAll() throws Exception {
 		// get the path to the default style sheet
-		Path defaultSheetPath = Paths.get(GeneralConfig.dungeonsFolder, "spawnSheet.json").toAbsolutePath();
+		Path defaultSheetPath = Paths.get(ModConfig.dungeonsFolder, "spawnSheet.json").toAbsolutePath();
 		Dungeons2.log.debug("Sheets Folder:" + defaultSheetPath.toString());
 
 		// load the default sheet
@@ -95,7 +96,7 @@ public class SpawnSheetLoader {
 		}
 
 		// load any additional spawn sheets
-		Files.newDirectoryStream(Paths.get(GeneralConfig.dungeonsFolder, BUILT_IN_SPAWN_SHEET_SUB_FOLDER), path -> path.toString().endsWith(".json"))	
+		Files.newDirectoryStream(Paths.get(ModConfig.dungeonsFolder, BUILT_IN_SPAWN_SHEET_SUB_FOLDER), path -> path.toString().endsWith(".json"))	
 		.forEach((path) -> {
 			try {
 				// load the sheet
@@ -168,7 +169,7 @@ public class SpawnSheetLoader {
 	 * @return
 	 */
 	public static boolean hasSpawnSheet(String filePath) {
-		Path path = Paths.get(GeneralConfig.spawnSheetFile).toAbsolutePath();
+		Path path = Paths.get(ModConfig.spawnSheetFile).toAbsolutePath();
 		if (Files.exists(path)) {
 			return true;
 		}

@@ -4,29 +4,13 @@
 package com.someguyssoftware.dungeons2.config;
 
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
-import com.someguyssoftware.mod.Quantity;
+import com.someguyssoftware.gottschcore.Quantity;
 
 /**
  * @author Mark Gottschling on Oct 5, 2016
  *
  */
 public final class PRESET_DUNGEON_CONFIGS {
-//	public static final DungeonConfig SMALL_SUPPORTED = new DungeonConfig();
-//	public static final DungeonConfig MEDIUM_SUPPORTED = new DungeonConfig();
-//	public static final DungeonConfig LARGE_SUPPORTED = new DungeonConfig();
-//	public static final DungeonConfig VAST_SUPPORTED = new DungeonConfig();
-	
-//	static {
-//		SMALL_SUPPORTED.setNumberOfLevels(new Quantity(2, 5));
-//		SMALL_SUPPORTED.setSurfaceBuffer(10);
-//		SMALL_SUPPORTED.setUseSupport(true);
-//		SMALL_SUPPORTED.setYBottom(5);
-//		
-//		MEDIUM_SUPPORTED.setNumberOfLevels(new Quantity(3, 6));
-//		MEDIUM_SUPPORTED.setSurfaceBuffer(8); // TODO is this used here or in Level Config ?? It's being used from LevelConfig but should be from here.
-//		MEDIUM_SUPPORTED.setUseSupport(true);
-//		MEDIUM_SUPPORTED.setYBottom(4);
-//	}
 	
 	/**
 	 * 
@@ -54,7 +38,7 @@ public final class PRESET_DUNGEON_CONFIGS {
 		
 		// NOTE useSupported is ON by default
 		// check mod config
-		if (!GeneralConfig.supportOn) config.setUseSupport(false);
+		if (!ModConfig.supportOn) config.setUseSupport(false);
 		
 		return config;
 	}

@@ -3,8 +3,9 @@
  */
 package com.someguyssoftware.dungeons2.generator;
 
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.enums.Direction;
+
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -33,11 +34,11 @@ public abstract class AbstractRoomGenerator implements IRoomGenerator {
 		
 		do {
 			touching = 0;
-			world.setBlockState(coords.add(x, 1, z).toBlockPos(), Blocks.AIR.getDefaultState(), 3);
-			world.setBlockState(coords.add(x, 2, z).toBlockPos(), Blocks.AIR.getDefaultState(), 3);
+			world.setBlockState(coords.add(x, 1, z).toPos(), Blocks.AIR.getDefaultState(), 3);
+			world.setBlockState(coords.add(x, 2, z).toPos(), Blocks.AIR.getDefaultState(), 3);
 
 			// check in all four directions and add 1 to value
-			BlockPos pos = coords.add(x, 1, z).toBlockPos();
+			BlockPos pos = coords.add(x, 1, z).toPos();
 			if (world.getBlockState(pos.north()) == Blocks.AIR.getDefaultState()) touching++;
 			if (world.getBlockState(pos.south()) == Blocks.AIR.getDefaultState()) touching++;
 			if (world.getBlockState(pos.east()) == Blocks.AIR.getDefaultState()) touching++;

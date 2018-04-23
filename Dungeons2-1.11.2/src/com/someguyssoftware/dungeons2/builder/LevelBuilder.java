@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
@@ -267,7 +266,7 @@ public class LevelBuilder {
 								// test if intersect
 								int failSafeCount = 0;
 
-								while (roomBB.intersects(bufferedBB)) {
+								while (roomBB.intersectsWith(bufferedBB)) {
 									// TODO need to ensure that an endless loop doesn't occur of a room toggling back and forth
 
 //									Dungeons2.log.info("Room intersects with processed room:" + roomBB + "; " + bufferedBB);
@@ -319,7 +318,7 @@ public class LevelBuilder {
 									//									Dungeons2.log.info("New Room:" +  room);
 
 									// check again if still intersect
-									if (roomBB.intersects(bufferedBB)) {
+									if (roomBB.intersectsWith(bufferedBB)) {
 										//										Dungeons2.log.info("Still intersects! Moving again ...");
 										failSafeCount++;
 										if (failSafeCount >= 5) {
@@ -1419,7 +1418,7 @@ public class LevelBuilder {
 				 * In the meantime and for good measure in general, add a failsafe
 				 */
 				// test intersection with room
-				if (wayline.getPoint1().getCoords().getDistance(wayline.getPoint2().getCoords()) > 0 && bb1.intersects(room.getXZBoundingBox())) {
+				if (wayline.getPoint1().getCoords().getDistance(wayline.getPoint2().getCoords()) > 0 && bb1.intersectsWith(room.getXZBoundingBox())) {
 					Dungeons2.log.trace(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
 //					wayline = resolveWaylineRoomIntersection(room, wayline, waylines);
 					waylines = resolveWaylineRoomIntersection(room, wayline);
@@ -1565,7 +1564,7 @@ public class LevelBuilder {
 					wayline.getPoint2().getX(), 1, wayline.getPoint2().getZ());
 			
 			// test intersection with room
-			if (bb1.intersects(room.getBoundingBox())) {
+			if (bb1.intersectsWith(room.getBoundingBox())) {
 				Dungeons2.log.trace(String.format("Room [%d] intersection with wayline %s", room.getId(), wayline));
 				wayline = resolveWaylineRoomIntersection(room, wayline, waylines);
 			}
@@ -1918,7 +1917,7 @@ public class LevelBuilder {
 				return EMPTY_ROOM;
 			}
 			for (Room room : plannedRooms) {
-				if (room.getXZBoundingBox().intersects(plannedRoom.getXZBoundingBox())) {
+				if (room.getXZBoundingBox().intersectsWith(plannedRoom.getXZBoundingBox())) {
 					Dungeons2.log.debug("New Planned room intersects with planned list room.");
 					continue checkingRooms;
 				}

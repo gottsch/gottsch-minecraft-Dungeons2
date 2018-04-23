@@ -9,11 +9,9 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Formatter;
 import java.util.List;
 import java.util.Random;
 
@@ -50,13 +48,11 @@ import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
 import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.chunk.IChunkGenerator;
 import net.minecraft.world.chunk.IChunkProvider;
-import net.minecraft.world.gen.IChunkGenerator;
 import net.minecraftforge.fml.common.IWorldGenerator;
 
 /**
@@ -181,7 +177,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	 * This executes for every block in the chunk.
 	 */
 	@Override
-	public void generate(Random random, int chunkX, int chunkZ, World world,
+	public void generate(Random random, int chunkX, int chunkZ, World world, 
 			IChunkGenerator chunkGenerator, IChunkProvider chunkProvider) {
 		
 		if (generator == null) return;
@@ -529,4 +525,5 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			return prob;
 		}		
 	}
+
 }

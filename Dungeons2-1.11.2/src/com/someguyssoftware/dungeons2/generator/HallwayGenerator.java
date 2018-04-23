@@ -12,9 +12,9 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
-import com.someguyssoftware.mod.ICoords;
-import com.someguyssoftware.mod.enums.Alignment;
-import com.someguyssoftware.mod.enums.Direction;
+import com.someguyssoftware.gottschcore.enums.Alignment;
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -140,14 +140,14 @@ public class HallwayGenerator extends AbstractRoomGenerator {
 			touching = 0;
 
 			// carve "regular" doorway
-			world.setBlockState(coords.add(x, 1, z).toBlockPos(), Blocks.AIR.getDefaultState(), 3);
-			world.setBlockState(coords.add(x, 2, z).toBlockPos(), Blocks.AIR.getDefaultState(), 3);
+			world.setBlockState(coords.add(x, 1, z).toPos(), Blocks.AIR.getDefaultState(), 3);
+			world.setBlockState(coords.add(x, 2, z).toPos(), Blocks.AIR.getDefaultState(), 3);
 			// carve double-side doorway
-			world.setBlockState(coords.add(dx, 1, dz).toBlockPos(), Blocks.AIR.getDefaultState(), 3);
-			world.setBlockState(coords.add(dx, 2, dz).toBlockPos(), Blocks.AIR.getDefaultState(), 3);
+			world.setBlockState(coords.add(dx, 1, dz).toPos(), Blocks.AIR.getDefaultState(), 3);
+			world.setBlockState(coords.add(dx, 2, dz).toPos(), Blocks.AIR.getDefaultState(), 3);
 
 			// check in all four directions and add 1 to value
-			BlockPos pos = coords.add(dx, 1, dz).toBlockPos();
+			BlockPos pos = coords.add(dx, 1, dz).toPos();
 			if (world.getBlockState(pos.north()) == Blocks.AIR.getDefaultState()) touching++;
 			if (world.getBlockState(pos.south()) == Blocks.AIR.getDefaultState()) touching++;
 			if (world.getBlockState(pos.east()) == Blocks.AIR.getDefaultState()) touching++;
