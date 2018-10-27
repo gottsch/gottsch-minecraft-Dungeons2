@@ -3,7 +3,7 @@
  */
 package com.someguyssoftware.dungeons2.config;
 
-import com.someguyssoftware.dungeons2.model.DungeonConfig;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 
 /**

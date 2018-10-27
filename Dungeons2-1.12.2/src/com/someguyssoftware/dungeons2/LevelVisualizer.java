@@ -72,8 +72,8 @@ public class LevelVisualizer {
 		test.config.setDegrees(new Quantity(2, 4));
 		// epicenter style settings
 		// NOTE epicenter style needs to have a smaller distance, else you get a lot of long hallways
-		test.config.setXDistance(new Quantity(-(60*factor)*0.6, (60*factor)*1.4));
-		test.config.setZDistance(new Quantity(-5*factor, 5*factor));
+		test.config.setXDistance(new Quantity(-(30*factor), (30*factor)));
+		test.config.setZDistance(new Quantity(-30*factor, 30*factor));
 		int r = RandomHelper.randomInt(15, 25);
 //		test.config.setNumberOfRooms(new Quantity(r, r));
 //		test.config.setXDistance(new Quantity(-(r+10), (r*2.5)));

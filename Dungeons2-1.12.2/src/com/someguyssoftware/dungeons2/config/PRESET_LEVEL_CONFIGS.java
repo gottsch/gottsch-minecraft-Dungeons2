@@ -3,8 +3,7 @@
  */
 package com.someguyssoftware.dungeons2.config;
 
-import com.someguyssoftware.dungeons2.model.LevelConfig;
-import com.someguyssoftware.dungeons2.rotate.DirectionalRotator;
+import com.someguyssoftware.dungeonsengine.config.LevelConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 
 
@@ -52,6 +51,7 @@ public final class PRESET_LEVEL_CONFIGS {
 			break;
 		}	
 		
+		// TODO remove - don't matter anymore
 		// select the pattern
 		switch(pattern) {
 		case SQUARE:
@@ -120,6 +120,7 @@ public final class PRESET_LEVEL_CONFIGS {
 			break;
 		}
 		
+		// TODO not currently used
 		switch(direction) {
 		case CENTER:
 			xDistQuantity = new Quantity(-xdist, xdist);

@@ -18,30 +18,34 @@ import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.builder.DungeonBuilderTopDown;
-import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
-import com.someguyssoftware.dungeons2.builder.LevelBuilder;
-import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.config.BuildDirection;
 import com.someguyssoftware.dungeons2.config.BuildPattern;
 import com.someguyssoftware.dungeons2.config.BuildSize;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.config.PRESET_DUNGEON_CONFIGS;
 import com.someguyssoftware.dungeons2.config.PRESET_LEVEL_CONFIGS;
-import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
-import com.someguyssoftware.dungeons2.model.Dungeon;
-import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.DungeonInfo;
-import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.persistence.DungeonsGenSavedData;
-import com.someguyssoftware.dungeons2.printer.DungeonPrettyPrinter;
 import com.someguyssoftware.dungeons2.registry.DungeonRegistry;
-import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
-import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
-import com.someguyssoftware.dungeons2.style.StyleSheet;
-import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
-import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.builder.DungeonBuilder;
+import com.someguyssoftware.dungeonsengine.builder.IDungeonBuilder;
+import com.someguyssoftware.dungeonsengine.builder.IRoomBuilder;
+import com.someguyssoftware.dungeonsengine.builder.LevelBuilder;
+import com.someguyssoftware.dungeonsengine.builder.RoomBuilder;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheet;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheetLoader;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfig;
+import com.someguyssoftware.dungeonsengine.config.IDungeonsEngineConfig;
+import com.someguyssoftware.dungeonsengine.config.LevelConfig;
+import com.someguyssoftware.dungeonsengine.generator.DungeonGenerator;
+import com.someguyssoftware.dungeonsengine.model.Dungeon;
+import com.someguyssoftware.dungeonsengine.model.IRoom;
+import com.someguyssoftware.dungeonsengine.printer.DungeonPrettyPrinter;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnSheet;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnSheetLoader;
+import com.someguyssoftware.dungeonsengine.style.StyleSheet;
+import com.someguyssoftware.dungeonsengine.style.StyleSheetLoader;
+import com.someguyssoftware.dungeonsengine.style.Theme;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -52,6 +56,7 @@ import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -101,7 +106,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	public DungeonsWorldGen() {
 		// setup the dungeon generator
 		try {
-			generator = new DungeonGenerator();
+			generator = new DungeonGenerator((IDungeonsEngineConfig) Dungeons2.instance.getConfig());
 			init();
 		} catch (Exception e) {
 			Dungeons2.log.error("Unable to instantiate DungeonGenerator:", e);
@@ -155,18 +160,18 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			catch(FileAlreadyExistsException e) {;}
 			
 			// load the sheets
-			styleSheet = StyleSheetLoader.loadAll();
+			styleSheet = StyleSheetLoader.loadAll(ModConfig.dungeonsFolder);
 			if (styleSheet == null || styleSheet.getStyles() == null || styleSheet.getStyles().size() == 0) {
 				Dungeons2.log.debug("Stylesheet empty, loading default style sheet...");
 				styleSheet = StyleSheetLoader.load();
 			}
-			this.chestSheet = ChestSheetLoader.loadAll();
+			this.chestSheet = ChestSheetLoader.loadAll(ModConfig.dungeonsFolder);
 			Dungeons2.log.debug("Returned Loaded chestSheet:" + this.chestSheet);
 			if (this.chestSheet == null || this.chestSheet.getItems() == null || this.chestSheet.getItems().size() == 0) {
 				Dungeons2.log.debug("Chestsheet empty, loading default chest sheet...");
 				this.chestSheet = ChestSheetLoader.load();
 			}			
-			this.spawnSheet = SpawnSheetLoader.loadAll();
+			this.spawnSheet = SpawnSheetLoader.loadAll(ModConfig.dungeonsFolder);
 			if (this.spawnSheet == null || this.spawnSheet.getGroups() == null || this.spawnSheet.getGroups().size() == 0) {
 				Dungeons2.log.debug("Spawnsheet empty, loading default spawn sheet...");
 				spawnSheet = SpawnSheetLoader.load();
@@ -217,13 +222,18 @@ public class DungeonsWorldGen implements IWorldGenerator {
             // the get first surface y (could be leaves, trunk, water, etc)
             int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
 
-            ICoords coords = new Coords(xSpawn, ySpawn, zSpawn);
+            ICoords spawnCoords = new Coords(xSpawn, ySpawn, zSpawn);
 //     		Dungeons2.log.debug("Starting Coords:" + coords);
      		
-     		coords = getReduxCoords(world, coords);
+            // get the closest player coords
+            ICoords closestPlayerCoords = getClosestPlayerCoords(world, spawnCoords);
+            
+            // get the spawn reduction coords
+     		ICoords coords = getReduxCoords2(world, spawnCoords, closestPlayerCoords);
+     		
 //			Dungeons2.log.debug("New coords:" + coords.toShortString());
             
-//			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
+			Dungeons2.log.debug("Last Dungeon dist^2 -> {}", lastDungeonCoords.getDistanceSq(coords));
      		// check if  the min distance between dungeons is met
      		if (lastDungeonCoords == null || lastDungeonCoords.getDistanceSq(coords) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
 
@@ -252,6 +262,22 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    // set the generating flag
 			    this.setGenerating(true);
 			    
+			    // create the max size dungeon field
+			    AxisAlignedBB dungeonField = getField(spawnCoords, closestPlayerCoords, coords);
+			    Dungeons2.log.debug("dungeon field -> {}", dungeonField);
+			    // TODO move ino dungeon builder
+			    // create the room spawn field
+			    AxisAlignedBB roomField = new AxisAlignedBB(coords.toPos()).expand(40, 0, 40).expand(-40, 0,  -40);
+			    Dungeons2.log.debug("room field -> {}", roomField);
+			    // create the end room field
+				int w = (int) Math.abs(roomField.maxX - roomField.minX);
+				int d = (int) Math.abs(roomField.maxZ - roomField.minZ);
+//				AxisAlignedBB endField = new AxisAlignedBB(
+//						new BlockPos(Math.max(roomField.minX-(w/3), dungeonField.minX), 0,
+//								Math.max(roomField.minZ-(d/3), dungeonField.minZ)),
+//						new BlockPos(Math.min(roomField.maxX+(w/3), dungeonField.maxX), 0, 
+//								Math.min(roomField.maxZ+(d/3), dungeonField.maxZ)));
+				
 			    // 3. get the sheets - NOTE see constructor
 
 				// 4. select random theme, pattern, size and direction
@@ -276,11 +302,30 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
 						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
 				
-				// get the level builder
-				LevelBuilder levelBuilder = new LevelBuilder(levelConfig);
+				// TODO move into dungeon builder
+				// TODO calculate the dungeon/level FIELD, room FIELD and end room FIELD
+				//  add room builders
+				IRoomBuilder roomBuilder = new RoomBuilder(random, roomField, coords, levelConfig);		
+//				IRoomBuilder endRoomBuilder = new RoomBuilder(random, endField, coords, levelConfig);	
+//				
+//				List<IRoom> plannedRooms = new ArrayList<>();
+//				IRoom startRoom = roomBuilder.buildStartRoom();
+//				plannedRooms.add(startRoom);
+//				IRoom endRoom =endRoomBuilder.buildEndRoom(plannedRooms);
 				
+				// get the level builder
+				LevelBuilder levelBuilder = new LevelBuilder(world, random, levelConfig)
+//				.withStartPoint(coords)
+//				.withConfig(levelConfig)
+				.withField(dungeonField);
+//				.withStartRoom(startRoom)
+//				.withEndRoom(endRoom);
+				levelBuilder.setRoomBuilder(roomBuilder);
+				
+				// TODO so dungeon builder needs levelBuilder(s), but provides the startPoint and field on build()
 				// 6. create a dungeon builder using the defined level builder(s)
-				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);				
+				IDungeonBuilder builder = new DungeonBuilder(Dungeons2.instance);	
+				
 				// TODO select a dungeon config - check config if support or no support
 				// TODO propogate support value to levelConfig(s)
 				// NOTE for future, dungeon config should probably have an array of levelConfig so each level can have it's own config
@@ -346,6 +391,53 @@ public class DungeonsWorldGen implements IWorldGenerator {
     	}
 		
 	}
+
+	/**
+	 * 
+	 * @param chunkCoords the coords of the currently generating chunk
+	 * @param playerCoords the player's coords
+	 * @param spawnCoords the spawn coords to generate the dungeon (mid-point)
+	 * @return
+	 */
+	private AxisAlignedBB getField(ICoords chunkCoords, ICoords playerCoords, ICoords spawnCoords) {
+		int fieldSize = Math.max(Math.abs(chunkCoords.getX() - playerCoords.getX()), 
+				Math.abs(chunkCoords.getZ() - playerCoords.getZ()));
+
+		AxisAlignedBB field = new AxisAlignedBB(
+				new BlockPos(spawnCoords.getX()-(fieldSize/2), 
+						spawnCoords.getY(),
+						spawnCoords.getZ()-(fieldSize/2)),
+				new BlockPos(spawnCoords.getX()+(fieldSize/2), 
+						spawnCoords.getY(),
+						spawnCoords.getZ()+(fieldSize/2)));
+		
+		return field;
+	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param coords
+	 * @return
+	 */
+	private ICoords getClosestPlayerCoords(World world, ICoords coords) {
+		/*
+		 * Get the closest player's distance from coords
+		 */
+        double closestDistSq = -1.0D;
+        ICoords closestCoords = null;
+		for (int i = 0; i < world.playerEntities.size(); ++i) {
+			EntityPlayer player = world.playerEntities.get(i);
+			ICoords playerCoords = new Coords(player.getPosition());
+			double dist = coords.getDistanceSq(playerCoords);
+			if (closestDistSq == -1.0D || dist < closestDistSq) {
+				closestDistSq = dist;
+				closestCoords = playerCoords;
+			}
+		}
+		return closestCoords;
+	}
+	
 
 	/**
 	 * Writes a human-readable version of the dungeon to disk.
@@ -437,6 +529,43 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		}		
 		return coords;
 	}
+	
+	/**
+	 * 
+	 * @param world
+	 * @param coords
+	 * @return
+	 */
+	private ICoords getReduxCoords2(World world, ICoords coords, ICoords closestCoords) {
+		Dungeons2.log.debug("original spawn coords -> {}", coords.toShortString());
+		
+		if (closestCoords != null) {
+			if (Dungeons2.log.isDebugEnabled()) {
+				// calculate the distance
+				double dist = coords.getDistanceSq(closestCoords);
+				Dungeons2.log.debug(
+					String.format("The closest player is %s squared blocks away at pos %s", String.valueOf(dist), closestCoords.toShortString())
+				);
+			}
+		}
+
+		// get x, z delta (or distance in blocks along the axis)
+		ICoords delta = coords.delta(closestCoords);
+		Dungeons2.log.debug("delta coords -> {}", delta.toShortString());
+	
+		int xNewSpawn = (int)(delta.getX() / 2);
+		int zNewSpawn = (int)(delta.getZ() /2);
+		Dungeons2.log.debug("redux xSpawn -> {}", xNewSpawn);
+		Dungeons2.log.debug("redux zSpawn -> {}", zNewSpawn);
+		int ySpawn = WorldInfo.getHeightValue(world, new Coords(xNewSpawn, 255, zNewSpawn));
+		Dungeons2.log.debug("redux ySpawn from WorldInfo -> {}", ySpawn);
+		
+		ICoords newSpawn = closestCoords.add(new Coords(xNewSpawn, ySpawn, zNewSpawn));
+		Dungeons2.log.debug("new spawn coords -> {}", newSpawn);
+
+		return newSpawn;
+	}
+	
 
 	/**
 	 * 

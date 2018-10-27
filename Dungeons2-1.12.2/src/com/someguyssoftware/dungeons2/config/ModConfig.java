@@ -2,6 +2,7 @@ package com.someguyssoftware.dungeons2.config;
 
 import java.io.File;
 
+import com.someguyssoftware.dungeonsengine.config.IDungeonsEngineConfig;
 import com.someguyssoftware.gottschcore.config.AbstractConfig;
 import com.someguyssoftware.gottschcore.mod.IMod;
 
@@ -12,7 +13,7 @@ import net.minecraftforge.common.config.Configuration;
  * @author Mark Gottschling on Jul 29, 2017
  *
  */
-public class ModConfig extends AbstractConfig {
+public class ModConfig extends AbstractConfig implements IDungeonsEngineConfig{
 	// resources
 	public static String dungeonsFolder;
 	
@@ -433,5 +434,25 @@ public class ModConfig extends AbstractConfig {
        }
        
 		return config;		
+	}
+
+	@Override
+	public boolean isEnableChests() {
+		return enableChests;
+	}
+
+	@Override
+	public void setEnableChests(boolean enable) {
+		ModConfig.enableChests = enable;		
+	}
+
+	@Override
+	public boolean isEnableSpawners() {
+		return enableSpawners;
+	}
+
+	@Override
+	public void setEnableSpawners(boolean enable) {
+		ModConfig.enableSpawners = enable;
 	}
 }

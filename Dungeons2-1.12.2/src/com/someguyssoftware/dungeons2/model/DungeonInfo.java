@@ -3,6 +3,7 @@ package com.someguyssoftware.dungeons2.model;
 import com.someguyssoftware.dungeons2.config.BuildDirection;
 import com.someguyssoftware.dungeons2.config.BuildPattern;
 import com.someguyssoftware.dungeons2.config.BuildSize;
+import com.someguyssoftware.dungeonsengine.model.Dungeon;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
