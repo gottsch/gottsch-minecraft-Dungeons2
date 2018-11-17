@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.chest.ChestContainer;
-import com.someguyssoftware.dungeons2.chest.ChestPopulator;
-import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeonsengine.chest.ChestContainer;
+import com.someguyssoftware.dungeonsengine.chest.ChestPopulator;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheet;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheetLoader;
 import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 
 import net.minecraft.command.CommandBase;

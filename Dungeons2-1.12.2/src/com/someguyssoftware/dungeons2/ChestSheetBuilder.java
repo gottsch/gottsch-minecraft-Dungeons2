@@ -15,14 +15,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.someguyssoftware.dungeons2.chest.ChestContainer;
-import com.someguyssoftware.dungeons2.chest.ChestItem;
-import com.someguyssoftware.dungeons2.chest.ChestItemEnchantment;
-import com.someguyssoftware.dungeons2.chest.ChestItemGroup;
-import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.chest.Enchants;
-import com.someguyssoftware.dungeons2.chest.RandomGroup;
-import com.someguyssoftware.dungeons2.chest.RandomItem;
+import com.someguyssoftware.dungeonsengine.chest.ChestContainer;
+import com.someguyssoftware.dungeonsengine.chest.ChestItem;
+import com.someguyssoftware.dungeonsengine.chest.ChestItemEnchantment;
+import com.someguyssoftware.dungeonsengine.chest.ChestItemGroup;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheet;
+import com.someguyssoftware.dungeonsengine.chest.Enchants;
+import com.someguyssoftware.dungeonsengine.chest.RandomGroup;
+import com.someguyssoftware.dungeonsengine.chest.RandomItem;
 import com.someguyssoftware.gottschcore.Quantity;
 
 

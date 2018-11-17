@@ -7,14 +7,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 
-import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
-import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
-import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheetLoader;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnSheetLoader;
+import com.someguyssoftware.dungeonsengine.style.StyleSheetLoader;
 import com.someguyssoftware.gottschcore.GottschCore;
 import com.someguyssoftware.gottschcore.annotation.Credits;
 import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
@@ -46,11 +46,10 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 	modid=Dungeons2.MODID,
 	name=Dungeons2.NAME,
 	version=Dungeons2.VERSION,
-	dependencies="required-after:gottschcore@[1.3.5,)",
+	dependencies="required-after:gottschcore@[1.5.1,)",
 	acceptedMinecraftVersions = "[1.12.2]",
 	updateJSON = Dungeons2.UPDATE_JSON_URL
 )
-
 @Credits(values={"Dungeons2! was first developed by Mark Gottschling on July 1, 2016."})
 public class Dungeons2 extends AbstractMod {
 		// constants
@@ -59,7 +58,7 @@ public class Dungeons2 extends AbstractMod {
 		
 		public static final String MODID = "dungeons2";
 		public static final String NAME = "Dungeons2!";
-		public static final String VERSION = "1.3.3"; 
+		public static final String VERSION = "1.3.5"; 
 		public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12.2/update.json";
 		
 		// latest VERSION
@@ -112,7 +111,7 @@ public class Dungeons2 extends AbstractMod {
 			addAppenderToLogger(appender, LOGGER_NAME, config);
 			// add appender to the GottschCore logger
 			addAppenderToLogger(appender, GottschCore.instance.getName(), config);
-			
+		
 	        // register the packet handlers
 	        network = NetworkRegistry.INSTANCE.newSimpleChannel(Dungeons2.MODID);
     

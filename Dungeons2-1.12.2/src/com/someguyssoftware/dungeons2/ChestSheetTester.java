@@ -16,12 +16,10 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import com.someguyssoftware.dungeons2.chest.ChestItem;
-import com.someguyssoftware.dungeons2.chest.ChestSheet;
+import com.someguyssoftware.dungeonsengine.chest.ChestItem;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheet;
 
 /**
  * 

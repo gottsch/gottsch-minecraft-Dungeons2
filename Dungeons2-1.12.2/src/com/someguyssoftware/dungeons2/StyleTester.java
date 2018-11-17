@@ -3,14 +3,10 @@
  */
 package com.someguyssoftware.dungeons2;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,14 +25,12 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import com.someguyssoftware.dungeons2.chest.ChestItem;
-import com.someguyssoftware.dungeons2.style.Alias;
-import com.someguyssoftware.dungeons2.style.DesignElement;
-import com.someguyssoftware.dungeons2.style.Frame;
-import com.someguyssoftware.dungeons2.style.Layout;
-import com.someguyssoftware.dungeons2.style.Style;
-import com.someguyssoftware.dungeons2.style.StyleSheet;
-import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.style.Alias;
+import com.someguyssoftware.dungeonsengine.style.Frame;
+import com.someguyssoftware.dungeonsengine.style.Layout;
+import com.someguyssoftware.dungeonsengine.style.Style;
+import com.someguyssoftware.dungeonsengine.style.StyleSheet;
+import com.someguyssoftware.dungeonsengine.style.Theme;
 
 /**
  * @author Mark Gottschling on Jul 30, 2016

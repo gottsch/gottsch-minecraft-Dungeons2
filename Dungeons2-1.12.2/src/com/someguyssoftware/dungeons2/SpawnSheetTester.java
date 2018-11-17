@@ -13,8 +13,8 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
-import com.someguyssoftware.dungeons2.spawner.SpawnGroup;
-import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnGroup;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnSheet;
 import com.someguyssoftware.gottschcore.Quantity;
 
 /**

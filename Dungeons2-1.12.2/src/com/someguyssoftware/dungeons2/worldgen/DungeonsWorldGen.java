@@ -39,6 +39,7 @@ import com.someguyssoftware.dungeonsengine.config.IDungeonsEngineConfig;
 import com.someguyssoftware.dungeonsengine.config.LevelConfig;
 import com.someguyssoftware.dungeonsengine.generator.DungeonGenerator;
 import com.someguyssoftware.dungeonsengine.model.Dungeon;
+import com.someguyssoftware.dungeonsengine.model.IDungeon;
 import com.someguyssoftware.dungeonsengine.model.IRoom;
 import com.someguyssoftware.dungeonsengine.printer.DungeonPrettyPrinter;
 import com.someguyssoftware.dungeonsengine.spawner.SpawnSheet;
@@ -305,7 +306,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				// TODO move into dungeon builder
 				// TODO calculate the dungeon/level FIELD, room FIELD and end room FIELD
 				//  add room builders
-				IRoomBuilder roomBuilder = new RoomBuilder(random, roomField, coords, levelConfig);		
+				IRoomBuilder roomBuilder = new RoomBuilder(roomField);		
 //				IRoomBuilder endRoomBuilder = new RoomBuilder(random, endField, coords, levelConfig);	
 //				
 //				List<IRoom> plannedRooms = new ArrayList<>();
@@ -313,8 +314,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
 //				plannedRooms.add(startRoom);
 //				IRoom endRoom =endRoomBuilder.buildEndRoom(plannedRooms);
 				
+				// TODO fix - need level field or dungeon field
 				// get the level builder
-				LevelBuilder levelBuilder = new LevelBuilder(world, random, levelConfig)
+				LevelBuilder levelBuilder = new LevelBuilder(world, random, roomField, coords, levelConfig)
 //				.withStartPoint(coords)
 //				.withConfig(levelConfig)
 				.withField(dungeonField);
@@ -343,8 +345,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
 //								"\tUsing LevelBuilder: %s\n" +
 //								"\tUsing DungeonConfig: %s", pos, levelConfig, levelBuilder, dungeonConfig));
 				
+				// TODO fix to dungeon field
 				// 7. build the dungeon
-				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
+				IDungeon dungeon = builder.build(world, random, roomField, coords, dungeonConfig);
 				/*
 				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
 				 *  In future each level in a dungeon may have a different support setting
@@ -443,7 +446,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	 * Writes a human-readable version of the dungeon to disk.
 	 * @param dungeon
 	 */
-	public void dump(Dungeon dungeon ) {
+	public void dump(IDungeon dungeon ) {
 		DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyymmdd");
 		

@@ -4,6 +4,7 @@ import com.someguyssoftware.dungeons2.config.BuildDirection;
 import com.someguyssoftware.dungeons2.config.BuildPattern;
 import com.someguyssoftware.dungeons2.config.BuildSize;
 import com.someguyssoftware.dungeonsengine.model.Dungeon;
+import com.someguyssoftware.dungeonsengine.model.IDungeon;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
@@ -33,16 +34,16 @@ public class DungeonInfo {
 	 * 
 	 * @param dungeon
 	 */
-	public DungeonInfo(Dungeon dungeon) {
+	public DungeonInfo(IDungeon dungeon) {
 		this.setCoords(dungeon.getEntrance().getBottomCenter());
 		this.setLevels(dungeon.getLevels().size());
 		this.setThemeName(dungeon.getTheme().getName());
-		this.setMinX(dungeon.getMinX());
-		this.setMaxX(dungeon.getMaxX());
-		this.setMinY(dungeon.getMinY());
-		this.setMaxY(dungeon.getMaxY());
-		this.setMinZ(dungeon.getMinZ());
-		this.setMaxZ(dungeon.getMaxZ());
+//		this.setMinX(dungeon.getMinX());
+//		this.setMaxX(dungeon.getMaxX());
+//		this.setMinY(dungeon.getMinY());
+//		this.setMaxY(dungeon.getMaxY());
+//		this.setMinZ(dungeon.getMinZ());
+//		this.setMaxZ(dungeon.getMaxZ());
 		// TODO get the boss chest coords somehow?		
 	}
 
@@ -53,7 +54,7 @@ public class DungeonInfo {
 	 * @param levelSize
 	 * @param direction
 	 */
-	public DungeonInfo(Dungeon dungeon, BuildPattern pattern, BuildSize dungeonSize, BuildSize levelSize, BuildDirection direction) {
+	public DungeonInfo(IDungeon dungeon, BuildPattern pattern, BuildSize dungeonSize, BuildSize levelSize, BuildDirection direction) {
 		this(dungeon);
 		setPattern(pattern);
 		setSize(dungeonSize);

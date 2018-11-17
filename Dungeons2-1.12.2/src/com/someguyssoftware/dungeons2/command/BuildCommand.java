@@ -3,25 +3,30 @@
  */
 package com.someguyssoftware.dungeons2.command;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.builder.DungeonBuilderTopDown;
-import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
-import com.someguyssoftware.dungeons2.builder.LevelBuilder;
-import com.someguyssoftware.dungeons2.chest.ChestSheet;
-import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.config.ModConfig;
-import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
-import com.someguyssoftware.dungeons2.model.Dungeon;
-import com.someguyssoftware.dungeons2.model.DungeonConfig;
-import com.someguyssoftware.dungeons2.model.LevelConfig;
-import com.someguyssoftware.dungeons2.printer.DungeonPrettyPrinter;
-import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
-import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
-import com.someguyssoftware.dungeons2.style.StyleSheet;
-import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
-import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.builder.DungeonBuilder;
+import com.someguyssoftware.dungeonsengine.builder.IDungeonBuilder;
+import com.someguyssoftware.dungeonsengine.builder.IRoomBuilder;
+import com.someguyssoftware.dungeonsengine.builder.LevelBuilder;
+import com.someguyssoftware.dungeonsengine.builder.RoomBuilder;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheet;
+import com.someguyssoftware.dungeonsengine.chest.ChestSheetLoader;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfig;
+import com.someguyssoftware.dungeonsengine.config.IDungeonsEngineConfig;
+import com.someguyssoftware.dungeonsengine.config.LevelConfig;
+import com.someguyssoftware.dungeonsengine.generator.DungeonGenerator;
+import com.someguyssoftware.dungeonsengine.model.IDungeon;
+import com.someguyssoftware.dungeonsengine.model.IRoom;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnSheet;
+import com.someguyssoftware.dungeonsengine.spawner.SpawnSheetLoader;
+import com.someguyssoftware.dungeonsengine.style.StyleSheet;
+import com.someguyssoftware.dungeonsengine.style.StyleSheetLoader;
+import com.someguyssoftware.dungeonsengine.style.Theme;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -30,6 +35,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
@@ -78,78 +84,62 @@ public class BuildCommand extends CommandBase {
 			if (player != null) {
     			World world = commandSender.getEntityWorld();
     			Dungeons2.log.debug("Starting to build Dungeons2! dungeon ...");
-    			
-    			// initialize a dungeons generator
-//	    		DungeonsGenerator gen = new DungeonsGenerator();
-    			LevelConfig config = new LevelConfig();
-    			config.setMinecraftConstraintsOn(false);
-//    			config.setSupportOn(false);
-    			config.setNumberOfRooms(new Quantity(9, 9));
-    			config.setWidth(new Quantity(5, 15));
-    			config.setDepth(new Quantity(5, 15));
-    			config.setHeight(new Quantity(5, 8));
-    			config.setYVariance(new Quantity(0, 0));
-    			// epicenter style settings
-    			// NOTE epicenter style needs to have a smaller distance, else you get a lot of long hallways
-    			config.setXDistance(new Quantity(-25, 25));
-    			config.setZDistance(new Quantity(-25, 25));
-//    			config.setXOffset(new Quantity(30, 30));
-//    			config.setZOffset(new Quantity(30, 30));
-//    			
+    			Random random = new Random();
     			ICoords startPoint = new Coords(x, y, z);
     			
-//    			LevelBuilder builder = new LevelBuilder();
-//    			Level level = builder.build(server.getEntityWorld(), new Random(), startPoint, config);
-//    			Dungeon dungeon = new Dungeon();
-//    			dungeon.getLevels().add(level);
+    			// build a level
+    			LevelConfig config = new LevelConfig();
+    			config.setNumberOfRooms(new Quantity(25, 50)); // VAST = 25-50
+    			double factor = 3.2;
+    			config.setWidth(new Quantity(5, 15));
+    			config.setDepth(new Quantity(5, 15));
+    			config.setHeight(new Quantity(5, 10));
+    			config.setDegrees(new Quantity(2, 4));
+    			config.setXDistance(new Quantity(-(30*factor), (30*factor)));
+    			config.setZDistance(new Quantity(-30*factor, 30*factor));
+    			config.setYVariance(new Quantity(0, 0));
+    			config.setMinecraftConstraintsOn(false);
+    			config.setSupportOn(false);	
     			
-    			LevelBuilder levelBuilder = new LevelBuilder(config);
+    			AxisAlignedBB dungeonField = new AxisAlignedBB(startPoint.add(-100,  0, -100).toPos(), startPoint.add(100, 0, 100).toPos());
+    			AxisAlignedBB roomField = new AxisAlignedBB(startPoint.add(-50, 0, -50).toPos(), startPoint.add(50, 0, 50).toPos());
+    			
     			// select the dungeon config to use
     			DungeonConfig dConfig = new DungeonConfig();
     			dConfig.setNumberOfLevels(new Quantity(2, 3));
 //    			dConfig.setUseSupport(false);
     			dConfig.setUseSupport(true);
     			
-    			// use a bottom-up dungeonBuilder
-//    			DungeonBuilderBottomUp dungeonBuilder = new DungeonBuilderBottomUp();    			
-//    			dungeonBuilder.setLevelBuilder(levelBuilder);
-    			
-    			// use a top-down dungeonBuilder
-    			IDungeonBuilder dungeonBuilder = new DungeonBuilderTopDown();
+    			List<IRoom> plannedRooms = new ArrayList<>();
+    			IRoomBuilder roomBuilder = new RoomBuilder(roomField);
+    			IRoom startRoom = roomBuilder.buildStartRoom(random, startPoint, config);
+    			plannedRooms.add(startRoom);
+     			IRoom endRoom = roomBuilder.buildEndRoom(random, roomField, startPoint, config, plannedRooms);//.setAnchor(false);
+
+     			LevelBuilder levelBuilder = new LevelBuilder(server.getWorld(0), random, dungeonField, startPoint);
+       			levelBuilder = (LevelBuilder) levelBuilder
+        				.withStartRoom(startRoom)
+        				.withEndRoom(endRoom);
+    			IDungeonBuilder dungeonBuilder = new DungeonBuilder(Dungeons2.instance);
     			dungeonBuilder.setLevelBuilder(levelBuilder);
     			
+    			// TODO this is all that should be needed at this point... not necessary to set up the level builder, room builder etc
+    			// that should be  init in dungeon builder if it doesn't exist.
     			// build the dungeon
-      			Dungeon dungeon = dungeonBuilder.build(null, new Random(), startPoint, dConfig);
-    			if (dungeon == DungeonBuilderTopDown.EMPTY_DUNGEON) {
+      			IDungeon dungeon = dungeonBuilder.build(server.getWorld(0), new Random(), dungeonField, startPoint, dConfig);
+    			if (dungeon == DungeonBuilder.EMPTY_DUNGEON) {
     				Dungeons2.log.warn("Empty Dungeon");
     				return;
     			}
-    			
-    			// TODO move all the gson create/load into a separate class/method
-//    			GsonBuilder gsonBuilder = new GsonBuilder();
-//    			gsonBuilder.excludeFieldsWithoutExposeAnnotation();
-//    			gsonBuilder.setPrettyPrinting();
-//    			Gson gson = gsonBuilder.create();
-//    			JsonReader jsonReader = null;
-//    			// TEMP
-//    			InputStream is = getClass().getResourceAsStream("/resources/test.json");
-//    			Reader reader = new InputStreamReader(is);
-//    			jsonReader = new JsonReader(reader);
-//    			StyleSheet styleSheet = gson.fromJson(reader, StyleSheet.class);
     			StyleSheet styleSheet = StyleSheetLoader.load();
     			ChestSheet chestSheet = ChestSheetLoader.load();
     			SpawnSheet spawnSheet = SpawnSheetLoader.load();
-//    			Dungeons2.log.debug("stylesheet:" + styleSheet);
-//    			Dungeons2.log.debug("themes size:" + styleSheet.getThemes().size());
-    			// TODO load the styleSheet here and pass it and the selected Theme in.
-    			Random random = new Random();
-    			// TODO what is theme is null
     			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
 
     			Dungeons2.log.debug("theme:" + theme);
     			// assign theme to dungeon
     			dungeon.setTheme(theme);
-    			DungeonGenerator gen = new DungeonGenerator();
+    			DungeonGenerator gen = new DungeonGenerator((IDungeonsEngineConfig) Dungeons2.instance.getConfig());
     			gen.generate(world, random, dungeon, styleSheet, chestSheet, spawnSheet);
     			
 //				if (terrainCheck.equals("1") || terrainCheck.equalsIgnoreCase("true")) {
