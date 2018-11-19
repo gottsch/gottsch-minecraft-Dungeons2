@@ -12,8 +12,11 @@ import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeonsengine.builder.DungeonBuilder;
 import com.someguyssoftware.dungeonsengine.builder.IDungeonBuilder;
 import com.someguyssoftware.dungeonsengine.builder.IRoomBuilder;
+import com.someguyssoftware.dungeonsengine.builder.ISurfaceRoomBuilder;
 import com.someguyssoftware.dungeonsengine.builder.LevelBuilder;
 import com.someguyssoftware.dungeonsengine.builder.RoomBuilder;
+import com.someguyssoftware.dungeonsengine.builder.SurfaceLevelBuilder;
+import com.someguyssoftware.dungeonsengine.builder.SurfaceRoomBuilder;
 import com.someguyssoftware.dungeonsengine.chest.ChestSheet;
 import com.someguyssoftware.dungeonsengine.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeonsengine.config.DungeonConfig;
@@ -21,6 +24,7 @@ import com.someguyssoftware.dungeonsengine.config.IDungeonsEngineConfig;
 import com.someguyssoftware.dungeonsengine.config.LevelConfig;
 import com.someguyssoftware.dungeonsengine.generator.DungeonGenerator;
 import com.someguyssoftware.dungeonsengine.model.IDungeon;
+import com.someguyssoftware.dungeonsengine.model.ILevel;
 import com.someguyssoftware.dungeonsengine.model.IRoom;
 import com.someguyssoftware.dungeonsengine.spawner.SpawnSheet;
 import com.someguyssoftware.dungeonsengine.spawner.SpawnSheetLoader;
@@ -116,12 +120,40 @@ public class BuildCommand extends CommandBase {
     			plannedRooms.add(startRoom);
      			IRoom endRoom = roomBuilder.buildEndRoom(random, roomField, startPoint, config, plannedRooms);//.setAnchor(false);
 
+     			/*
+     			 * create the main level builder
+     			 */
      			LevelBuilder levelBuilder = new LevelBuilder(server.getWorld(0), random, dungeonField, startPoint);
        			levelBuilder = (LevelBuilder) levelBuilder
         				.withStartRoom(startRoom)
         				.withEndRoom(endRoom);
-    			IDungeonBuilder dungeonBuilder = new DungeonBuilder(Dungeons2.instance);
-    			dungeonBuilder.setLevelBuilder(levelBuilder);
+       			
+       			/*
+       			 * create the surface level builder
+       			 */
+       			LevelConfig surfaceConfig = config.copy();
+       			surfaceConfig.setNumberOfRooms(new Quantity(1, 1));
+       			ISurfaceRoomBuilder sfRoomBuilder = new SurfaceRoomBuilder(server.getWorld(0), roomField);
+       			SurfaceLevelBuilder sfBuilder = new SurfaceLevelBuilder(null, random, dungeonField, startPoint);
+       			sfBuilder.setConfig(config);
+       			sfBuilder.setRoomBuilder((IRoomBuilder) sfRoomBuilder);
+       			IRoom entranceRoom = sfRoomBuilder.buildEntranceRoom(random, startPoint, config);
+       			ILevel sfLevel = sfBuilder
+       					.withStartRoom(entranceRoom)
+       					.build();		
+       			Dungeons2.log.debug(sfLevel);
+       			Dungeons2.log.debug(sfLevel.getField());
+       			Dungeons2.log.debug(sfLevel);
+       			
+       			/*
+       			 * create the dungeon builder
+       			 */
+    			IDungeonBuilder dungeonBuilder = new DungeonBuilder(Dungeons2.instance, sfBuilder, levelBuilder, dConfig);
+    			
+    			/*
+    			 * add the level builders
+    			 */
+//    			dungeonBuilder.setLevelBuilder(levelBuilder);
     			
     			// TODO this is all that should be needed at this point... not necessary to set up the level builder, room builder etc
     			// that should be  init in dungeon builder if it doesn't exist.
