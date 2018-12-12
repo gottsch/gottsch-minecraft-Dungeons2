@@ -190,6 +190,10 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	public void generate(Random random, int chunkX, int chunkZ, World world,
 			IChunkGenerator chunkGenerator, IChunkProvider chunkProvider) {
 		
+		// TEMP
+		int exit = 1;
+		if (exit == 1) return;
+		
 		if (generator == null) return;
 		
 		// test for which overworld dimension
@@ -359,11 +363,12 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	   			
 				if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
 					// 9. generate the dungeon
-					try {
-						isGenerated = generator.generate(world, random, dungeon, styleSheet, chestSheet, spawnSheet);
-					} catch (FileNotFoundException e) {
-						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
-					}
+					// TEMP comment out
+//					try {
+//						isGenerated = generator.generate(world, random, dungeon, styleSheet, chestSheet, spawnSheet);
+//					} catch (FileNotFoundException e) {
+//						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
+//					}
 				}
 				
 				if (isGenerated) {
@@ -465,7 +470,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			Dungeons2.log.error("Couldn't create directories for dump files:", e);
 			return;
 		}
-		String s = printer.print(dungeon, Paths.get(path.toString(), filename).toString());
+		String s = printer.print(dungeon, Paths.get(path.toString(), filename));
 //		Dungeons2.log.debug("\n" + s);
 	}
 	

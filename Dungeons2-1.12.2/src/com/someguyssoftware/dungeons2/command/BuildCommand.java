@@ -26,6 +26,7 @@ import com.someguyssoftware.dungeonsengine.generator.DungeonGenerator;
 import com.someguyssoftware.dungeonsengine.model.IDungeon;
 import com.someguyssoftware.dungeonsengine.model.ILevel;
 import com.someguyssoftware.dungeonsengine.model.IRoom;
+import com.someguyssoftware.dungeonsengine.printer.DungeonPrettyPrinter;
 import com.someguyssoftware.dungeonsengine.spawner.SpawnSheet;
 import com.someguyssoftware.dungeonsengine.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeonsengine.style.StyleSheet;
@@ -123,10 +124,12 @@ public class BuildCommand extends CommandBase {
      			/*
      			 * create the main level builder
      			 */
+     			// TODO constructor needs to take a config
      			LevelBuilder levelBuilder = new LevelBuilder(server.getWorld(0), random, dungeonField, startPoint);
        			levelBuilder = (LevelBuilder) levelBuilder
         				.withStartRoom(startRoom)
         				.withEndRoom(endRoom);
+       			levelBuilder.setConfig(config);
        			
        			/*
        			 * create the surface level builder
@@ -187,13 +190,16 @@ public class BuildCommand extends CommandBase {
         			player.sendMessage(new TextComponentString(String.format("Dungeons2! dungeon generated @ %d %d %d", x, y, z)));
         			
 					if (ModConfig.enableDumps) {
+						Dungeons2.log.info("Dungeon dumps enabled.");
 						try {
+							Dungeons2.log.info("Dumping dungeon...");
 							Dungeons2.dungeonsWorldGen.dump(dungeon);
 						}
 						catch(Exception e ) {
-//						DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
-//						String s = printer.print(dungeon, ModConfig.dungeonsFolder + "dumps/");
-//						Dungeons2.log.debug("\n" + s);
+							Dungeons2.log.info("Dungeon dump failed... try plan B...");
+						DungeonPrettyPrinter printer  =new DungeonPrettyPrinter();
+						String s = printer.print(dungeon, ModConfig.dungeonsFolder + "dumps/");
+						Dungeons2.log.debug("\n" + s);
 						}
 					}
         		}

@@ -57,11 +57,17 @@ sourceSets.main{
 def gottschcore_path="../../gottsch-minecraft-GottschCore/GottschCore${mc_version}/build/libs/GottschCore-mc${mc_version}-f${forge_version}-v${gottschcore_version}.jar"
 def engine_path="../../gottsch-minecraft-DungeonsEngine/DungeonsEngine-${mc_version}/build/libs/DungeonsEngine-mc${mc_version}-f${forge_version}-v${engine_version}.jar"
 def triangulator_path="../../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar"
+def engine_path_source="../../gottsch-minecraft-DungeonsEngine/DungeonsEngine-${mc_version}"
+
 
 dependencies {
-	compile files(engine_path)	
+	// compile files(engine_path)	// <-- include the DungeonsEngine.jar library
+
 	compile files(triangulator_path)
+	// compile and include the dungeons engine files
+	//compile project(':engine')
 	// use 'shadow' to include dependency in compile but to exclude for the shadow jar
+	shadow files(engine_path)
 	shadow files(gottschcore_path)	
 }
 
@@ -90,6 +96,22 @@ shadowJar {
     relocate "io.github", "com.someguyssoftware.dungeons2.triangulation"
 	// Replace the default JAR
     classifier '' 
+    
+    // exclude files in the META-INF
+    // NOTE this isn't working.
+    sourceSets {
+        main {
+            java {
+                exclude '**/META-INF/**'
+            }
+        }
+     }
+     
+     // add engine files from .jar (instead of using the shadow jar method, so that we can remove META-INF files)
+     from (zipTree("../../gottsch-minecraft-DungeonsEngine/DungeonsEngine-${mc_version}/build/libs/DungeonsEngine-mc${mc_version}-f${forge_version}-v${engine_version}.jar")) {
+		exclude '**/META-INF/**'
+		exclude 'META-INF/**'
+	}
 }
 
 reobf {
@@ -97,23 +119,4 @@ reobf {
     shadowJar {} 
 }
 
-// first delete the old build
-//delete "${mod_name}-mc${mc_version}-v${mod_version}.jar"
 
-// make a copy of the build and remove the build number portion from the file name.
-//copy {
-//	from 'build/libs'
-//	into 'build/libs'
-//	include "${mod_name}-mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}.jar"
-//	rename {filename -> "${mod_name}-mc${mc_version}-v${mod_version}.jar"}
-//}
-
-
-//task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
-//    from javadoc.destinationDir
-//    classifier = 'javadoc'
-//}
-
-//artifacts {
-//    archives packageJavadoc
-//}

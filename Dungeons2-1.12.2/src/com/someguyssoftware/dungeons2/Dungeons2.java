@@ -7,12 +7,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 
+import com.someguyssoftware.dungeons2.block.BasicFacadeBlock;
+import com.someguyssoftware.dungeons2.block.CorniceFacadeBlock;
+import com.someguyssoftware.dungeons2.block.CrownMoldingFacadeBlock;
+import com.someguyssoftware.dungeons2.block.FlutePillarBlock;
+import com.someguyssoftware.dungeons2.block.FlutePillarFacadeBlock;
+import com.someguyssoftware.dungeons2.block.SevenEightsPillarFacadeBlock;
+import com.someguyssoftware.dungeons2.block.TeePillarFacadeBlock;
+import com.someguyssoftware.dungeons2.block.TeeThinPillarFacadeBlock;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
 import com.someguyssoftware.dungeonsengine.chest.ChestSheetLoader;
+import com.someguyssoftware.dungeonsengine.rotate.RotatorHelper;
+import com.someguyssoftware.dungeonsengine.rotate.RotatorRegistry;
 import com.someguyssoftware.dungeonsengine.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeonsengine.style.StyleSheetLoader;
 import com.someguyssoftware.gottschcore.GottschCore;
@@ -111,6 +121,8 @@ public class Dungeons2 extends AbstractMod {
 			addAppenderToLogger(appender, LOGGER_NAME, config);
 			// add appender to the GottschCore logger
 			addAppenderToLogger(appender, GottschCore.instance.getName(), config);
+			// add the appender to the DungeonsEngine logger
+			addAppenderToLogger(appender, "DungeonsEngine", config);
 		
 	        // register the packet handlers
 	        network = NetworkRegistry.INSTANCE.newSimpleChannel(Dungeons2.MODID);
@@ -154,6 +166,18 @@ public class Dungeons2 extends AbstractMod {
 	    		// add to world generators
 				Dungeons2.dungeonsWorldGen = new DungeonsWorldGen();
 	        	GameRegistry.registerWorldGenerator(Dungeons2.dungeonsWorldGen, 100);
+	        	
+	        	// register block rotators
+	    		RotatorRegistry registry = RotatorRegistry.getInstance();
+	    		registry.registerBlockRotator(BasicFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+	    		registry.registerBlockRotator(FlutePillarFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);	
+	    		registry.registerBlockRotator(CrownMoldingFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+	    		registry.registerBlockRotator(CorniceFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+	    		registry.registerBlockRotator(TeeThinPillarFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+	    		registry.registerBlockRotator(TeePillarFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+//	    		registry.registerBlockRotator(FlutePillarBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+	    		registry.registerBlockRotator(FlutePillarFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
+	    		registry.registerBlockRotator(SevenEightsPillarFacadeBlock.class, RotatorHelper.cardinalDirectionBlockRotator, Dungeons2.instance);
 	        }
 	        
 		}
