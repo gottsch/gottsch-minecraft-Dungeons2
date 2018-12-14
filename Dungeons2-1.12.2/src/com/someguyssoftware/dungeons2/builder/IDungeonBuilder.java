@@ -10,6 +10,7 @@ import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.world.World;
 
 /**
@@ -47,5 +48,7 @@ public interface IDungeonBuilder {
 	 * @return
 	 */
 	Room buildEntranceRoom(World world, Random rand, ICoords startPoint);
+
+	DungeonBuilderTopDown withField(AxisAlignedBB field);
 
 }

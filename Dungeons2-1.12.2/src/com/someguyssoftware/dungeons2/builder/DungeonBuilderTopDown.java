@@ -24,6 +24,10 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 /**
@@ -41,6 +45,9 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	
 	private LevelBuilder levelBuilder;
 	
+	private transient AxisAlignedBB field;
+	private transient ICoords startPoint;
+	
 	/**
 	 * 
 	 */
@@ -56,11 +63,27 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		this.levelBuilder = builder;
 	}
 	
+	/**
+	 * 
+	 * @param field
+	 * @return
+	 */
+	@Override
+	public DungeonBuilderTopDown withField(AxisAlignedBB field) {
+		this.field = field;
+		return this;
+	}
+	
+	public DungeonBuilderTopDown withStartPoint(ICoords startPoint) {
+		this.startPoint = startPoint;
+		return this;
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeons2.builder.IDungeonBuilder#build(net.minecraft.world.World, java.util.Random, com.someguyssoftware.mod.ICoords, com.someguyssoftware.dungeons2.model.DungeonConfig)
 	 */
 	@Override
-	public Dungeon build(World world, Random rand, ICoords startPoint, DungeonConfig config) {
+	public Dungeon build(World world, Random rand, ICoords spawnCoords, DungeonConfig config) {
 		/*
 		 * A dungeon object that contains all levels and the entrance of the dungeon.
 		 */
@@ -75,6 +98,58 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 * 
 		 */
 		LevelConfig levelConfig = getLevelBuilder().getConfig();		
+
+		/*
+		 * Calculate dungeon field
+		 */
+		AxisAlignedBB dungeonField = null;
+		if (this.getField() == null) {		
+			// get the closest player
+			ICoords closestCoords = null;
+			closestCoords = getClosestPlayer(world, spawnCoords);
+			if (closestCoords == null) {
+				Dungeons2.log.warn("Unable to locate closest player.");
+				return EMPTY_DUNGEON;
+			}
+			Dungeons2.log.debug("closestCoords -> {}", closestCoords.toShortString());
+			
+			// get the field based on the player position and spawn
+			dungeonField = getDungeonField(spawnCoords, closestCoords);
+			if (dungeonField == null) {
+				Dungeons2.log.warn("Unable to calculate dungeon field from spawn pos-> {}, and player pos -> {}", 
+						spawnCoords.toShortString(), closestCoords.toShortString());				
+				return EMPTY_DUNGEON;
+			}
+		}
+		else dungeonField = this.getField();
+		
+		Dungeons2.log.debug("dungeon field -> {}", dungeonField);
+		Dungeons2.log.debug("dungeonField.center -> {}", dungeonField.getCenter());
+		
+		// TODO gottchcore Coords(IVec3)
+		/*
+		 * Calculate room field (based on size... don't know the size anymore :( )
+		 */
+		AxisAlignedBB roomField = getRoomField(dungeonField);
+		Dungeons2.log.debug("roomField -> {}", roomField);
+		
+		/*
+		 * Select startPoint in room field
+		 */
+		ICoords startPoint = null;
+		if (this.startPoint == null) {
+			startPoint = getLevelBuilder().randomizeCoords(rand, roomField, getLevelBuilder().getConfig());
+			// get a valid Y value
+			startPoint = startPoint.resetY(WorldInfo.getHeightValue(world, startPoint));
+		}
+		else startPoint = this.startPoint;
+		Dungeons2.log.debug("startPoint -> {}", startPoint);
+		
+		/*
+		 * Setup level builder
+		 */
+		if (levelBuilder.getField() == null) levelBuilder.setField(dungeonField);
+		if (levelBuilder.getRoomField() == null) levelBuilder.setRoomField(roomField);
 		
 		/*
 		 * Perform all the minecraft world contraint checks
@@ -162,7 +237,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			if (levelIndex == 0) {
 				Dungeons2.log.debug("TOP LEVEL");
 				// build start centered at startPoint
-				startRoom = levelBuilder.buildStartRoom(world, rand, startPoint, levelConfig);
+				startRoom = levelBuilder.buildStartRoom(world, rand, roomField, startPoint, levelConfig);
 				if (startRoom == LevelBuilder.EMPTY_ROOM) {
 					Dungeons2.log.warn("Unable to generate Top level Start Room.");
 					return EMPTY_DUNGEON;					
@@ -174,8 +249,9 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// add to the planned rooms
 				plannedRooms.add(startRoom);
 				
+				// TODO this is probably wrong... dungeonbuilder shouldn't keep providing the room builder to the level
 				// build planned end room
-				endRoom = levelBuilder.buildEndRoom(world, rand, startPoint, plannedRooms, levelConfig);
+				endRoom = levelBuilder.buildEndRoom(world, rand, roomField, startPoint, plannedRooms, levelConfig);
 				if (endRoom == LevelBuilder.EMPTY_ROOM) {
 					logger.warn("Unable to generate Top level End Room.");
 					return EMPTY_DUNGEON;
@@ -224,8 +300,9 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				plannedRooms.add(startRoom);
 				Dungeons2.log.debug("Level Start Room:" + startRoom);
 
+				// TODO again, DungeonBuilder shouldn't keep providing fields to the level builder on each call.
 				// 2. create end room
-				endRoom = levelBuilder.buildPlannedRoom(world, rand, startPoint, plannedRooms, levelConfig);
+				endRoom = levelBuilder.buildPlannedRoom(world, rand, roomField, startPoint, plannedRooms, levelConfig);
 				if (endRoom == LevelBuilder.EMPTY_ROOM) {
 					logger.warn("Unable to generate level End Room: " + levelIndex);
 					return EMPTY_DUNGEON;
@@ -312,6 +389,93 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 
 	/**
 	 * 
+	 * @param dungeonField
+	 * @return
+	 */
+	private AxisAlignedBB getRoomField(AxisAlignedBB dungeonField) {
+		AxisAlignedBB roomField = new AxisAlignedBB(new BlockPos(dungeonField.getCenter())).grow(30);
+		return roomField;
+	}
+
+	/**
+	 * 
+	 * @param spawnCoords
+	 * @param closestCoords
+	 * @return
+	 */
+	private AxisAlignedBB getDungeonField(ICoords spawnCoords, ICoords closestCoords) {
+		AxisAlignedBB dungeonField = null;
+		
+		// TODO ensure a minimum size is met
+		ICoords deltaCoords = spawnCoords.delta(closestCoords);
+		Dungeons2.log.debug("spawnCoords -> {}", spawnCoords);
+		Dungeons2.log.debug("deltaCoords -> {}", deltaCoords.toShortString());
+		
+		int dist = Math.max(Math.abs(deltaCoords.getX()), Math.abs(deltaCoords.getZ()));
+		Dungeons2.log.debug("dist from player to spawn -> {}", dist);
+
+		dungeonField = new AxisAlignedBB(closestCoords.toPos());
+		// TODO 1. dungeon field size if wrong
+		EnumFacing fieldFacing = null;
+		if (Math.abs(deltaCoords.getX()) >= Math.abs(deltaCoords.getZ())) {
+			Dungeons2.log.debug("deltaX -> {} >= deltaZ -> {}", Math.abs(deltaCoords.getX()), Math.abs(deltaCoords.getZ()));
+			// WEST/EAST
+			if (deltaCoords.getX() < 0 ) {
+				// west
+				Dungeons2.log.debug("field facing west");
+				fieldFacing = EnumFacing.WEST;
+				dungeonField = dungeonField.expand(-(dist), 0, 0).grow(0, 0, dist);
+			}
+			else {
+				// east
+				Dungeons2.log.debug("field facing east");
+				fieldFacing = EnumFacing.EAST;
+				dungeonField = dungeonField.expand(dist, 0, 0).grow(0, 0, dist);
+			}
+		}
+		else {			
+			Dungeons2.log.debug("deltaX -> {} < deltaZ -> {}", Math.abs(deltaCoords.getX()), Math.abs(deltaCoords.getZ()));
+			// NORTH/SOUTH
+			if (deltaCoords.getZ() < 0)  {
+				// north
+				Dungeons2.log.debug("field facing north");
+				fieldFacing = EnumFacing.NORTH;
+				dungeonField = dungeonField.expand(0, 0, -(dist)).grow(dist, 0, 0);
+			}
+			else {
+				// south
+				Dungeons2.log.debug("field facing south");
+				fieldFacing = EnumFacing.SOUTH;
+				dungeonField = dungeonField.expand(0, 0, dist).grow(dist, 0, 0);
+			}
+		}
+		return dungeonField;
+	}
+
+	/**
+	 * TODO move to GottschCore WorldInfo
+	 * @param world
+	 * @param spawnCoords
+	 * @return
+	 */
+	private ICoords getClosestPlayer(World world, ICoords spawnCoords) {
+        double closestDistSq = -1.0D;
+        ICoords closestCoords = null;
+		for (int i = 0; i < world.playerEntities.size(); ++i) {
+			EntityPlayer player = world.playerEntities.get(i);
+			ICoords playerCoords = new Coords(player.getPosition());
+			double dist = spawnCoords.getDistanceSq(playerCoords);
+			if (closestDistSq == -1.0D || dist < closestDistSq) {
+				closestDistSq = dist;
+				closestCoords = playerCoords;
+			}
+		}
+		return closestCoords;
+	}
+	
+
+	/**
+	 * 
 	 * @param world
 	 * @param rand
 	 * @param startPoint
@@ -361,5 +525,19 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	@Override
 	public void setLevelBuilder(LevelBuilder levelBuilder) {
 		this.levelBuilder = levelBuilder;
+	}
+
+	/**
+	 * @return the field
+	 */
+	protected AxisAlignedBB getField() {
+		return field;
+	}
+
+	/**
+	 * @param field the field to set
+	 */
+	protected void setField(AxisAlignedBB field) {
+		this.field = field;
 	}
 }

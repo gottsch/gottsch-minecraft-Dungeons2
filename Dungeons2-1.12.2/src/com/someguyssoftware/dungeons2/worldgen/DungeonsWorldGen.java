@@ -220,7 +220,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
             ICoords coords = new Coords(xSpawn, ySpawn, zSpawn);
 //     		Dungeons2.log.debug("Starting Coords:" + coords);
      		
-     		coords = getReduxCoords(world, coords);
+            // TODO remove redux... dungeon generator will be responsible for determining field based on 
+            // the spawn point            
+//     		coords = getReduxCoords(world, coords);
 //			Dungeons2.log.debug("New coords:" + coords.toShortString());
             
 //			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
@@ -243,6 +245,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    	return;
 			    }
 			    
+			    // TODO this distance is affected by fields as the coords does not necessarily refer to where the dungeon actually spawns
      			// 2.5 check against all registered dungeons
      			if (isRegisteredDungeonWithinDistance(world, coords, ModConfig.minDistancePerDungeon)) {
    					Dungeons2.log.debug("The distance to the nearest dungeon is less than the minimun required.");
@@ -271,11 +274,13 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
 				BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
 				
+				// TODO this should be inside of DungeonConfig
 				// 5. determine a preset level config based on pattern and size
 				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
 				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
 						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
 				
+				// TODO this should be inside dungeon builder
 				// get the level builder
 				LevelBuilder levelBuilder = new LevelBuilder(levelConfig);
 				
@@ -321,9 +326,10 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				if (isGenerated) {
 					// register the dungeon with the Dungeon Registry
 					DungeonInfo info = new DungeonInfo(dungeon, pattern, dungeonSize, levelSize, direction);
+					// update the coords to the actual entrance (changed due to usage of field)
+					coords = info.getCoords();
 					DungeonRegistry.getInstance().register(coords.toShortString(), info);
 
-					
 					// update the last dungeon position
 					lastDungeonCoords = coords;
 					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
