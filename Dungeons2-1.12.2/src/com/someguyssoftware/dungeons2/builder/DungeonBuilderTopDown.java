@@ -28,7 +28,11 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.chunk.Chunk;
 
 /**
  * This class is responsible for building an entire dungeon.
@@ -103,15 +107,17 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 * Calculate dungeon field
 		 */
 		AxisAlignedBB dungeonField = null;
-		if (this.getField() == null) {		
+		ICoords closestCoords = null;
+		if (this.getField() == null) {
 			// get the closest player
-			ICoords closestCoords = null;
-			closestCoords = getClosestPlayer(world, spawnCoords);
+//			ICoords closestCoords = null;
+			closestCoords = WorldInfo.getClosestPlayerCoords(world, spawnCoords);
 			if (closestCoords == null) {
-				Dungeons2.log.warn("Unable to locate closest player.");
-				return EMPTY_DUNGEON;
+				Dungeons2.log.warn("Unable to locate closest player - using World spawn point");
+				closestCoords = new Coords(world.getSpawnPoint());
+//				return EMPTY_DUNGEON;
 			}
-			Dungeons2.log.debug("closestCoords -> {}", closestCoords.toShortString());
+//			Dungeons2.log.debug("closestCoords -> {}", closestCoords.toShortString());
 			
 			// get the field based on the player position and spawn
 			dungeonField = getDungeonField(spawnCoords, closestCoords);
@@ -123,15 +129,18 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		}
 		else dungeonField = this.getField();
 		
-		Dungeons2.log.debug("dungeon field -> {}", dungeonField);
-		Dungeons2.log.debug("dungeonField.center -> {}", dungeonField.getCenter());
+//		Dungeons2.log.debug("dungeon field -> {}", dungeonField);
+//		// NOTE AxisAlignedBB.getCenter() is @ClientSide ... ugh
+//		if (world.isRemote) {
+//			Dungeons2.log.debug("dungeonField.center -> {}", dungeonField.getCenter());
+//		}
 		
 		// TODO gottchcore Coords(IVec3)
 		/*
 		 * Calculate room field (based on size... don't know the size anymore :( )
 		 */
 		AxisAlignedBB roomField = getRoomField(dungeonField);
-		Dungeons2.log.debug("roomField -> {}", roomField);
+//		Dungeons2.log.debug("roomField -> {}", roomField);
 		
 		/*
 		 * Select startPoint in room field
@@ -139,11 +148,17 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		ICoords startPoint = null;
 		if (this.startPoint == null) {
 			startPoint = getLevelBuilder().randomizeCoords(rand, roomField, getLevelBuilder().getConfig());
+			// check if the start point is in a loaded chunk
+			ChunkPos startChunk = startPoint.toChunkPos();
+			if (!world.isChunkGeneratedAt(startChunk.x, startChunk.z)) {
+				Dungeons2.log.debug("startPoint is not in a loaded chunk -> {}", startChunk);
+				return EMPTY_DUNGEON;
+			}
 			// get a valid Y value
 			startPoint = startPoint.resetY(WorldInfo.getHeightValue(world, startPoint));
 		}
 		else startPoint = this.startPoint;
-		Dungeons2.log.debug("startPoint -> {}", startPoint);
+//		Dungeons2.log.debug("startPoint -> {}; {}", startPoint, Dungeons2.toChunk(startPoint));
 		
 		/*
 		 * Setup level builder
@@ -172,8 +187,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		else {
 			surfaceCoords = startPoint;
 		}
-		Dungeons2.log.debug("SurfaceCoords: " + surfaceCoords.toShortString());
-		
+//		Dungeons2.log.debug("SurfaceCoords -> {} {}", surfaceCoords.toShortString(), Dungeons2.toChunk(surfaceCoords));
 		// 2b. Determine if surfaceCoords is within Dungeon constraints
 		if (surfaceCoords.getY() < config.getYBottom() ||
 				surfaceCoords.getY() > config.getYTop()) {
@@ -198,14 +212,23 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 *  TODO 1. room is centered on surfaceCoords, and thus the isValidAboveGroundBase() should be taking in coords
 		 *  adjusted to those of the room. ie entranceRoom.getCoords().
 		 */
+//		Dungeons2.log.debug("ischunkgen -> {}", world.isChunkGeneratedAt(surfaceChunk.getX(), surfaceChunk.getZ()));
+//		if (!world.isChunkGeneratedAt(surfaceChunk.getX(), surfaceChunk.getZ())) {
+		if (!levelBuilder.isRoomInLoadedChunks(world, entranceRoom)) {
+			Dungeons2.log.debug("entrance room is NOT in valid chunks -> {} {}", surfaceCoords, surfaceCoords.toChunkPos());
+			return EMPTY_DUNGEON;
+		}
+	
+//		Dungeons2.log.debug("chunk EXISTS at entrance pos -> {},", surfaceChunk.toShortString());
 		if (levelConfig.isMinecraftConstraintsOn() &&
 				!WorldInfo.isValidAboveGroundBase(world, entranceRoom.getCoords().resetY(surfaceCoords.getY()),
 				entranceRoom.getWidth(), entranceRoom.getDepth(), 50, 20, 50)) {
 			if (Dungeons2.log.isDebugEnabled())
-			Dungeons2.log.debug(String.format("Surface area does not meet ground/air criteria @ %s", surfaceCoords));
+				Dungeons2.log.debug(String.format("Surface area does not meet ground/air criteria @ %s", surfaceCoords));
 			return EMPTY_DUNGEON;		
 		}
-		// add entrance to dungeon
+//		Dungeons2.log.debug("after entrance room base check...");
+		 // add entrance to dungeon
 		dungeon.setEntrance(entranceRoom);
 		
 		Room startRoom = null;
@@ -276,7 +299,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				startRoom.setAnchor(true).setStart(true).setEnd(false);			
 				plannedRooms.add(startRoom);
 				
-				endRoom = levelBuilder.buildBossRoom(world, rand, startPoint, plannedRooms, levelConfig);
+				endRoom = levelBuilder.buildBossRoom(world, rand, roomField, startPoint, plannedRooms, levelConfig);
 				if (endRoom == LevelBuilder.EMPTY_ROOM) {
 					logger.warn("Unable to generate Bottom level End Room.");
 					return EMPTY_DUNGEON;
@@ -357,6 +380,10 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			startPoint = startPoint.resetY(dungeon.getMinY() - (int)levelConfig.getHeight().getMax());
 			// TEMP
 //			break;
+			
+			// reset level builder stat properties
+			getLevelBuilder().setRoomLossToDistanceBuffering(0);
+			getLevelBuilder().setRoomLossToValidation(0);
 		}
 		
 		Dungeons2.log.debug("Testing for empty dungeon...");
@@ -393,7 +420,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	 * @return
 	 */
 	private AxisAlignedBB getRoomField(AxisAlignedBB dungeonField) {
-		AxisAlignedBB roomField = new AxisAlignedBB(new BlockPos(dungeonField.getCenter())).grow(30);
+		/*
+		 * AxisAlignedBB.getCenter() is @ClientSide so must calculate the center
+		 */
+		Vec3d center = new Vec3d(dungeonField.minX + (dungeonField.maxX - dungeonField.minX) * 0.5D, dungeonField.minY + (dungeonField.maxY - dungeonField.minY) * 0.5D, dungeonField.minZ + (dungeonField.maxZ - dungeonField.minZ) * 0.5D);
+		AxisAlignedBB roomField = new AxisAlignedBB(new BlockPos(center)).grow(30);
 		return roomField;
 	}
 
@@ -406,16 +437,22 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	private AxisAlignedBB getDungeonField(ICoords spawnCoords, ICoords closestCoords) {
 		AxisAlignedBB dungeonField = null;
 		
-		// TODO ensure a minimum size is met
+		
 		ICoords deltaCoords = spawnCoords.delta(closestCoords);
 		Dungeons2.log.debug("spawnCoords -> {}", spawnCoords);
 		Dungeons2.log.debug("deltaCoords -> {}", deltaCoords.toShortString());
-		
-		int dist = Math.max(Math.abs(deltaCoords.getX()), Math.abs(deltaCoords.getZ()));
+		// get max. distance of the axises, ensuring a min/max size is met
+		int dist = Math.max(
+				Math.min(
+						Math.max(
+								Math.abs(deltaCoords.getX()), 
+								Math.abs(deltaCoords.getZ())),
+						256), // 256 = MAX_FIELD_RADIUS
+				25);  // 25 = MIN_FIELD_RADIUS
 		Dungeons2.log.debug("dist from player to spawn -> {}", dist);
 
 		dungeonField = new AxisAlignedBB(closestCoords.toPos());
-		// TODO 1. dungeon field size if wrong
+
 		EnumFacing fieldFacing = null;
 		if (Math.abs(deltaCoords.getX()) >= Math.abs(deltaCoords.getZ())) {
 			Dungeons2.log.debug("deltaX -> {} >= deltaZ -> {}", Math.abs(deltaCoords.getX()), Math.abs(deltaCoords.getZ()));
@@ -450,29 +487,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			}
 		}
 		return dungeonField;
-	}
-
-	/**
-	 * TODO move to GottschCore WorldInfo
-	 * @param world
-	 * @param spawnCoords
-	 * @return
-	 */
-	private ICoords getClosestPlayer(World world, ICoords spawnCoords) {
-        double closestDistSq = -1.0D;
-        ICoords closestCoords = null;
-		for (int i = 0; i < world.playerEntities.size(); ++i) {
-			EntityPlayer player = world.playerEntities.get(i);
-			ICoords playerCoords = new Coords(player.getPosition());
-			double dist = spawnCoords.getDistanceSq(playerCoords);
-			if (closestDistSq == -1.0D || dist < closestDistSq) {
-				closestDistSq = dist;
-				closestCoords = playerCoords;
-			}
-		}
-		return closestCoords;
-	}
-	
+	}	
 
 	/**
 	 * 

@@ -215,9 +215,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
             int zSpawn = chunkZ * 16 + 8;
             
             // the get first surface y (could be leaves, trunk, water, etc)
-            int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
+ //>>           int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
 
-            ICoords coords = new Coords(xSpawn, ySpawn, zSpawn);
+            ICoords coords = new Coords(xSpawn, 64, zSpawn);
 //     		Dungeons2.log.debug("Starting Coords:" + coords);
      		
             // TODO remove redux... dungeon generator will be responsible for determining field based on 
@@ -304,7 +304,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
 //								"\tUsing DungeonConfig: %s", pos, levelConfig, levelBuilder, dungeonConfig));
 				
 				// 7. build the dungeon
+				Dungeons2.log.debug("Starting BUILD process...");
 				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
+				Dungeons2.log.debug("BUILD process complete.");
 				/*
 				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
 				 *  In future each level in a dungeon may have a different support setting
@@ -317,7 +319,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
 					// 9. generate the dungeon
 					try {
+						Dungeons2.log.debug("Start GENERATE process...");
 						isGenerated = generator.generate(world, random, dungeon, styleSheet, chestSheet, spawnSheet);
+						Dungeons2.log.debug("GENERATE process complete.");
 					} catch (FileNotFoundException e) {
 						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
 					}

@@ -45,7 +45,9 @@ import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 
 
@@ -308,7 +310,7 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
-	protected List<Room> applyDistanceBuffering(Random rand, ICoords startPoint, List<Room> anchors, List<Room> rooms, LevelConfig config) {
+	protected List<Room> applyDistanceBuffering(Random rand, ICoords startPoint, final List<Room> anchors, final List<Room> rooms, LevelConfig config) {
 		List<Room> bufferedRooms = new ArrayList<>();
 		/*
 		 * a count of the number times a single room is processed against the list of buffered rooms
@@ -685,6 +687,7 @@ public class LevelBuilder {
 		Collections.sort(spawned, Room.distanceComparator);
 				
 		// move apart any intersecting rooms (uses anti-grav method)
+		Dungeons2.log.debug("Before Apply Distance Buffering Rooms.size -> {}", spawned.size());
 		rooms = applyDistanceBuffering(rand, startPoint, anchors, spawned, config);
 		Dungeons2.log.debug("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
 //		System.out.println("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
@@ -1806,7 +1809,8 @@ public class LevelBuilder {
 	protected List<Room> selectValidRooms(World world, Random rand, List<Room> rooms, LevelConfig config) {
 		List<Room> met = new ArrayList<>();
 		int roomId = 0;
-
+		AxisAlignedBB lbb = getField(); // <-- should be passed in.
+		
 		for (Room room : rooms) {
 			if (room.isObstacle()) {
 				continue;
@@ -1822,7 +1826,7 @@ public class LevelBuilder {
 			boolean isValid = false;
 
 			// check if the room is inside the level bounding box
-			AxisAlignedBB lbb = getField();
+//			AxisAlignedBB lbb = getField();
 			AxisAlignedBB rbb = room.getXZBoundingBox();
 			if (rbb.minX > lbb.minX
 					|| rbb.maxX < lbb.maxX) {
@@ -1837,18 +1841,21 @@ public class LevelBuilder {
 			// TODO move to method
 			// check if the chunk is loaded
 			if (isValid && getConfig().isMinecraftConstraintsOn()) {
-				Chunk chunk = world.getChunkFromBlockCoords(room.getCenter().toPos());
-				if (chunk.isLoaded()) {
+				isValid = false;
+				
+				if (isRoomInLoadedChunks(world, room)) {
 					isValid = true;
+//					Dungeons2.log.debug("room[{}] is VALID at chuck(s) -> {} {}", room.getId(), room.getXZCenter(), Dungeons2.toChunk(room.getXZCenter()));
 				}
 				else {
-					Dungeons2.log.debug("Removing room for residing in unloaded chunk -> {}", room);
+//					Dungeons2.log.debug("room[{}] is NOT valid at chuck(s) -> {}", room.getId(), room.getXZCenter());
+					Dungeons2.log.debug("Removing room for residing in unloaded chunk -> {}", room.getId());
 					incrementLossToValidation(1);
 				}
+
 			}
 			
 			// check if room meets all criteria/constraints for generation
-//			isValid = meetsRoomConstraints(world, room, config);
 			if (isValid) {
 				isValid = meetsRoomConstraints(world, room, config);
 			}
@@ -1868,6 +1875,27 @@ public class LevelBuilder {
 	}
 
 	/**
+	 * 
+	 * @param world
+	 * @param room
+	 * @return
+	 */
+	public boolean isRoomInLoadedChunks(World world, Room room) {
+		boolean isValid = false;
+		// check each corner
+		ChunkPos[] cp = room.getCornersInChunkPos();
+		
+		if (
+				world.isChunkGeneratedAt(cp[0].x, cp[0].z) &&
+				world.isChunkGeneratedAt(cp[1].x, cp[1].z) &&
+				world.isChunkGeneratedAt(cp[2].x, cp[2].z) &&
+				world.isChunkGeneratedAt(cp[3].x, cp[3].z)				
+				) isValid = true;			
+		
+		return isValid;
+	}
+	
+	/**
 	 * Ensure the room meets are criteria to be built.
 	 * @param world 
 	 * @param room
@@ -1880,8 +1908,7 @@ public class LevelBuilder {
 		// ensure that the room is above the bottom
 		if (room.getCoords().getY() <= config.getYRange().getMinInt()) {
 			if (Dungeons2.log.isDebugEnabled()) {
-				Dungeons2.log.debug(
-					String.format("Room bottom [%d] is below min y constraint [%d]", room.getCoords().getY(), config.getYRange().getMinInt()));
+				Dungeons2.log.debug("Room bottom [{}] is below min y constraint [{}]", room.getCoords().getY(), config.getYRange().getMinInt());
 			}
 			return false;
 		}
@@ -1895,6 +1922,7 @@ public class LevelBuilder {
 			return false;
 		}
 
+		// NOTE these next 3 calls a) take ~1 second to complete and b) cause cascading worldgen lag because they access the world in non-loaded chunks.
 		// get percentage of solid base blocks
 		double percentSolid = WorldInfo.getSolidBasePercent(world, room.getCoords(), room.getWidth(), room.getDepth());
 //		Dungeons2.log.debug("Percent solid base:" + percentSolid);
@@ -1909,13 +1937,13 @@ public class LevelBuilder {
 		
 		// check if the top y valueof the node is above sea level
 		if (room.getCoords().getY() + room.getHeight() > config.getSeaLevel()) {
-			Dungeons2.log.trace("Room is above sea level @ " + room.getCenter());
+			Dungeons2.log.trace("Room is above sea level -> {}", room.getCenter());
 			/*
 			 *  if surfaceRoomDepth is greater than a [x] negative amount.
 			 *  negative implies the room is higher than the surface, ie the room is exposed.
 			 */
 			if (surfaceRoomDepth < -3) { // TODO make -3 a constant or a config value
-				Dungeons2.log.debug("Room rejected due to exposure @ " + room.getCenter());
+				Dungeons2.log.debug("Room rejected due to exposure -> {}", room.getCenter());
 				return false;
 			}			
 			else if (percentSolid < 50.0f) {
@@ -2018,6 +2046,7 @@ public class LevelBuilder {
 		// randomize a direction
 		startRoom.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
 		// test if the room meets conditions to be placed in the minecraft world
+		// TEMP remove
 		if (!meetsRoomConstraints(world, startRoom, config)) {
 			Dungeons2.log.debug("Start Room failed room constraints @ " + startRoom.getCenter());
 			if (Dungeons2.log.isWarnEnabled()) {
@@ -2025,6 +2054,7 @@ public class LevelBuilder {
 			}
 			return EMPTY_ROOM;
 		}
+		
 		return startRoom;
 	}
 	
@@ -2156,7 +2186,7 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
-	protected Room buildBossRoom(World world, Random rand,
+	protected Room buildBossRoom(World world, Random rand, AxisAlignedBB field,
 			ICoords startPoint, List<Room> predefinedRooms, LevelConfig config) {
 		final int BOSS_ROOM_MIN_XZ = 10;
 		final int BOSS_ROOM_MIN_Y = 10;
