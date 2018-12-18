@@ -244,7 +244,7 @@ public class ModConfig extends AbstractConfig {
         enableChests = config.getBoolean("enableChests", "04-dungeon-gen", true, "Enable/disable the generation of chests in dungeons.");
         
         // props
-        minChunksPerDungeon = config.getInt("minChunksPerDungeon", "04-dungeon-gen", 50, 25, 32000, "");
+        minChunksPerDungeon = config.getInt("minChunksPerDungeon", "04-dungeon-gen", 300, 25, 32000, "");
         minDistancePerDungeon = config.getInt("minDistancePerDungeon", "04-dungeon-gen", 600, 300, 32000, "Minimum block distance between 2 consecutive dungeon spawns.");
         dungeonGenProbability = config.getInt("dungeonGenProbability", "04-dungeon-gen", 45, 0, 100, "");
         

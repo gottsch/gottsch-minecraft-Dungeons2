@@ -54,6 +54,7 @@ public class DungeonInfo {
 	 */
 	public DungeonInfo(Dungeon dungeon, BuildPattern pattern, BuildSize dungeonSize, BuildSize levelSize, BuildDirection direction) {
 		this(dungeon);
+		setCoords(dungeon.getEntrance().getBottomCenter());
 		setPattern(pattern);
 		setSize(dungeonSize);
 		setLevelSize(levelSize);

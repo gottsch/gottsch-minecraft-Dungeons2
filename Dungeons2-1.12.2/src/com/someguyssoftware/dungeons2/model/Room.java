@@ -17,6 +17,7 @@ import com.someguyssoftware.gottschcore.random.RandomHelper;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 
 /**
@@ -155,6 +156,19 @@ public class Room {
 	 */
 	public Room copy() {
 		return new Room(this);
+	}
+	
+	/**
+	 * TODO update after GottschCore is updated for Coords
+	 * @return
+	 */
+	public ChunkPos[] getCornersInChunkPos() {
+		ChunkPos[] chunkPos = new ChunkPos[4];
+		chunkPos[0] = new ChunkPos(new BlockPos(this.getMinX(), 0, this.getMinZ()));
+		chunkPos[1] = new ChunkPos(new BlockPos(this.getMinX(), 0, this.getMaxZ()));
+		chunkPos[2] = new ChunkPos(new BlockPos(this.getMaxX(), 0, this.getMinZ()));
+		chunkPos[3] = new ChunkPos(new BlockPos(this.getMaxX(), 0, this.getMaxZ()));
+		return chunkPos;
 	}
 	
 	// TODO this is probably wrong needs to -1 ??

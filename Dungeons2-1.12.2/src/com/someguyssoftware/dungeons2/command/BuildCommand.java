@@ -30,6 +30,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
@@ -83,8 +84,8 @@ public class BuildCommand extends CommandBase {
 //	    		DungeonsGenerator gen = new DungeonsGenerator();
     			LevelConfig config = new LevelConfig();
     			config.setMinecraftConstraintsOn(false);
-//    			config.setSupportOn(false);
-    			config.setNumberOfRooms(new Quantity(9, 9));
+    			config.setSupportOn(false);
+    			config.setNumberOfRooms(new Quantity(10, 25));
     			config.setWidth(new Quantity(5, 15));
     			config.setDepth(new Quantity(5, 15));
     			config.setHeight(new Quantity(5, 8));
@@ -106,20 +107,26 @@ public class BuildCommand extends CommandBase {
     			LevelBuilder levelBuilder = new LevelBuilder(config);
     			// select the dungeon config to use
     			DungeonConfig dConfig = new DungeonConfig();
-    			dConfig.setNumberOfLevels(new Quantity(2, 3));
-//    			dConfig.setUseSupport(false);
-    			dConfig.setUseSupport(true);
+    			dConfig.setNumberOfLevels(new Quantity(2, 5));
+    			dConfig.setUseSupport(false);
+//    			dConfig.setUseSupport(true);
     			
     			// use a bottom-up dungeonBuilder
 //    			DungeonBuilderBottomUp dungeonBuilder = new DungeonBuilderBottomUp();    			
 //    			dungeonBuilder.setLevelBuilder(levelBuilder);
     			
+    			// create field
+    			AxisAlignedBB dungeonField = new AxisAlignedBB(startPoint.toPos()).grow(80);
+    			
     			// use a top-down dungeonBuilder
     			IDungeonBuilder dungeonBuilder = new DungeonBuilderTopDown();
-    			dungeonBuilder.setLevelBuilder(levelBuilder);
+    			dungeonBuilder
+    			.withField(dungeonField)
+    			.withStartPoint(startPoint)
+    			.setLevelBuilder(levelBuilder);    			
     			
     			// build the dungeon
-      			Dungeon dungeon = dungeonBuilder.build(null, new Random(), startPoint, dConfig);
+      			Dungeon dungeon = dungeonBuilder.build(world, new Random(), startPoint, dConfig);
     			if (dungeon == DungeonBuilderTopDown.EMPTY_DUNGEON) {
     				Dungeons2.log.warn("Empty Dungeon");
     				return;
