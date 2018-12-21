@@ -8,6 +8,13 @@ import java.util.List;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import com.someguyssoftware.dungeons2.Dungeons2;
+
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.biome.Biome;
+import net.minecraftforge.common.BiomeDictionary;
+import net.minecraftforge.common.BiomeDictionary.Type;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 /**
  * @author Mark Gottschling on Dec 20, 2018
@@ -29,32 +36,61 @@ public class DungeonConfigManager {
 		// map the configs to the table
 		for (IDungeonConfig c : configs) {
 			if (c.getBiomeWhiteList().contains("*") || (c.getBiomeWhiteList().isEmpty() && c.getBiomeBlackList().isEmpty())) {
-				if (!DUNGEON_CONFIG_TABLE.contains("*", c.getSize())) {
-					DUNGEON_CONFIG_TABLE.put("*", c.getSize(), new ArrayList<>());
+				List<Biome> biomes = (List<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
+				for (Biome biome : biomes) {
+					// exclude nether and end biome
+					if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
+						if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
+							DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
+						}
+						DUNGEON_CONFIG_TABLE.get(biome.getBiomeName(), c.getSize()).add(c);
+					}
 				}
-				DUNGEON_CONFIG_TABLE.get("*", c.getSize()).add(c);
 			}
 			else {
 				if (!c.getBiomeWhiteList().isEmpty()) {
-					for (String biome : c.getBiomeWhiteList()) {
-						String b = biome.trim().toUpperCase();
-						if (!DUNGEON_CONFIG_TABLE.contains(b, c.getSize())) {
-							DUNGEON_CONFIG_TABLE.put(b, c.getSize(), new ArrayList<>());
+					// register configs
+					for (String b : c.getBiomeWhiteList()) {
+						String biomeName = b.trim().toLowerCase();
+						Biome biome = ForgeRegistries.BIOMES.getValue(new ResourceLocation(biomeName));
+						Dungeons2.log.debug("wl.cname -> {}, biome -> {}, size -> {}", c.getName(), biome.getBiomeName(), c.getSize());
+						if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
+							if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
+								DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
+							}
+							DUNGEON_CONFIG_TABLE.get(biome.getBiomeName(), c.getSize()).add(c);
 						}
-						DUNGEON_CONFIG_TABLE.get(b, c.getSize()).add(c);
 					}
 				}
 				else if (!c.getBiomeBlackList().isEmpty()) {
-					for (String biome : c.getBiomeBlackList()) {
-						String b = biome.trim().toUpperCase();
-						if (!DUNGEON_CONFIG_TABLE.contains(b, c.getSize())) {
-							DUNGEON_CONFIG_TABLE.put(b, c.getSize(), new ArrayList<>());
+					// register configs
+					List<Biome> biomes = (List<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
+					for (Biome biome : biomes) {
+						Dungeons2.log.debug("bl.cname -> {}, biome -> {}, size -> {}", c.getName(), biome.getBiomeName(), c.getSize());
+						if (!c.getBiomeBlackList().contains(biome.getBiomeName().toLowerCase()) &&
+								!BiomeDictionary.hasType(biome, Type.END) &&
+								!BiomeDictionary.hasType(biome, Type.NETHER)) {
+							if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
+								DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
+							}
+							DUNGEON_CONFIG_TABLE.get(biome.getBiomeName(), c.getSize()).add(c);
 						}
-						DUNGEON_CONFIG_TABLE.get(b, c.getSize()).add(c);
 					}
 				}				
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * @param biomeName
+	 * @return
+	 */
+	public List<IDungeonConfig> getByBiome(String biomeName) {
+		List<IDungeonConfig> list = new ArrayList<>();
+		for (List<IDungeonConfig> l :DUNGEON_CONFIG_TABLE.row(biomeName).values()) {
+			list.addAll(l);
+		}
+		return list;
+	}
 }

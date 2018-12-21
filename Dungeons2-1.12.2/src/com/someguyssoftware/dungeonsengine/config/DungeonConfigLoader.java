@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -30,8 +31,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.style.Style;
+import com.someguyssoftware.dungeons2.style.StyleSheetLoader.StyleDeserializer;
 import com.someguyssoftware.gottschcore.json.JSMin;
 
 /**
@@ -109,12 +113,18 @@ public class DungeonConfigLoader {
 		Reader reader = new InputStreamReader(in);
 		JsonReader jsonReader = new JsonReader(reader);
 		
+		Type levelConfigType = new TypeToken<LevelConfig>() {}.getType();
+		
 		// create a gson builder
-		GsonBuilder gsonBuilder = new GsonBuilder();		
+		GsonBuilder gsonBuilder = new GsonBuilder();	
+		gsonBuilder.registerTypeAdapter(levelConfigType, );
+//		gsonBuilder.re
 		Gson gson = gsonBuilder.create();	
 		IDungeonConfig config = null;
 		try {
 			config = gson.fromJson(jsonReader, DungeonConfig.class);
+			config.getBiomeWhiteList().replaceAll(String::toUpperCase);
+			config.getBiomeBlackList().replaceAll(String::toUpperCase);
 			Dungeons2.log.debug("Loaded dungeon config:" + config);
 		}
 		catch(JsonIOException | JsonSyntaxException e) {

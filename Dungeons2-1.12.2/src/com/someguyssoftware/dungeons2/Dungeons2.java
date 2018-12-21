@@ -15,6 +15,7 @@ import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.gottschcore.GottschCore;
 import com.someguyssoftware.gottschcore.annotation.Credits;
 import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
@@ -89,7 +90,8 @@ public class Dungeons2 extends AbstractMod {
 	 */
 	private static final String DUNGEONS_CONFIG_DIR = "dungeons2";
 	private static ModConfig config;
-
+	public static DungeonConfigManager dgnCfgMgr; // TODO move to DungeonWorldGen ?
+	
 	/**
 	 * 
 	 */
@@ -158,6 +160,9 @@ public class Dungeons2 extends AbstractMod {
 			// add to world generators
 			Dungeons2.dungeonsWorldGen = new DungeonsWorldGen();
 			GameRegistry.registerWorldGenerator(Dungeons2.dungeonsWorldGen, 100);
+			
+			// add dungeon config managers
+			Dungeons2.dgnCfgMgr = new DungeonConfigManager();
 		}
 
 	}

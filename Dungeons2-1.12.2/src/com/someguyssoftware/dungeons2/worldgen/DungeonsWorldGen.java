@@ -42,6 +42,7 @@ import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -134,7 +135,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	    dungeonSizes.add(25, new RandomBuildSize(BuildSize.LARGE));
 	    dungeonSizes.add(20, new RandomBuildSize(BuildSize.VAST));
 
-		try {		
+		try {	
+			// TODO this should be static in own classes
 			// add the directories if they don't exist
 			Path folder = Paths.get(ModConfig.dungeonsFolder, StyleSheetLoader.BUILT_IN_STYLE_SHEET_SUB_FOLDER);
 			try {
@@ -263,7 +265,11 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    
 			    // TODO load the patterns and size into RandomProbabilityCollection with differing weights with small, square being more common
 			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
-
+			    // get the dungeons for this biome
+			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(biome.getBiomeName());
+			    // select one
+			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
+			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
 			    
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
 //    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];

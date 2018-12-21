@@ -3,6 +3,7 @@
  */
 package com.someguyssoftware.dungeons2.command;
 
+import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
@@ -22,6 +23,7 @@ import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -33,6 +35,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.Biome;
 
 /**
  * 
@@ -79,6 +82,7 @@ public class BuildCommand extends CommandBase {
 			if (player != null) {
     			World world = commandSender.getEntityWorld();
     			Dungeons2.log.debug("Starting to build Dungeons2! dungeon ...");
+    			Random random = new Random();
     			
     			// initialize a dungeons generator
 //	    		DungeonsGenerator gen = new DungeonsGenerator();
@@ -99,6 +103,12 @@ public class BuildCommand extends CommandBase {
 //    			
     			ICoords startPoint = new Coords(x, y, z);
     			
+    			Biome biome = world.getBiome(startPoint.toPos());
+			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(biome.getBiomeName());
+			    // select one
+			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
+			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
+			    
 //    			LevelBuilder builder = new LevelBuilder();
 //    			Level level = builder.build(server.getEntityWorld(), new Random(), startPoint, config);
 //    			Dungeon dungeon = new Dungeon();
@@ -126,7 +136,7 @@ public class BuildCommand extends CommandBase {
     			.setLevelBuilder(levelBuilder);    			
     			
     			// build the dungeon
-      			Dungeon dungeon = dungeonBuilder.build(world, new Random(), startPoint, dConfig);
+      			Dungeon dungeon = dungeonBuilder.build(world, random, startPoint, dConfig);
     			if (dungeon == DungeonBuilderTopDown.EMPTY_DUNGEON) {
     				Dungeons2.log.warn("Empty Dungeon");
     				return;
@@ -149,7 +159,6 @@ public class BuildCommand extends CommandBase {
 //    			Dungeons2.log.debug("stylesheet:" + styleSheet);
 //    			Dungeons2.log.debug("themes size:" + styleSheet.getThemes().size());
     			// TODO load the styleSheet here and pass it and the selected Theme in.
-    			Random random = new Random();
     			// TODO what is theme is null
     			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
 

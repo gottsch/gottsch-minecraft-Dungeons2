@@ -42,5 +42,10 @@ public interface IDungeonConfig {
 		
 		double getFieldFactor();
 		void setFieldFactor(double fieldFactor);
+		
+		String getVersion();
+		void setVersion(String version);
+		ILevelConfig getSurfaceConfig();
+		void setSurfaceConfig(ILevelConfig surfaceConfig);
 
 }

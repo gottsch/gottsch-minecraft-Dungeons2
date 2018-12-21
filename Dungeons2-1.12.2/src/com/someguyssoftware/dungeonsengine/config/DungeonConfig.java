@@ -3,6 +3,8 @@
  */
 package com.someguyssoftware.dungeonsengine.config;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.someguyssoftware.gottschcore.Quantity;
@@ -66,6 +68,9 @@ public class DungeonConfig implements IDungeonConfig {
 	 * 
 	 */
 	public DungeonConfig() {
+		this.biomeWhiteList = new ArrayList<>();
+		this.biomeBlackList = new ArrayList<>();
+		this.size = DungeonSize.MEDIUM;
 	}
 
 	
@@ -236,6 +241,7 @@ public class DungeonConfig implements IDungeonConfig {
 	/**
 	 * @return the surfaceConfig
 	 */
+	@Override
 	public ILevelConfig getSurfaceConfig() {
 		return surfaceConfig;
 	}
@@ -243,6 +249,7 @@ public class DungeonConfig implements IDungeonConfig {
 	/**
 	 * @param surfaceConfig the surfaceConfig to set
 	 */
+	@Override
 	public void setSurfaceConfig(ILevelConfig surfaceConfig) {
 		this.surfaceConfig = surfaceConfig;
 	}
@@ -251,7 +258,8 @@ public class DungeonConfig implements IDungeonConfig {
 	/**
 	 * @return the version
 	 */
-	protected String getVersion() {
+	@Override
+	public String getVersion() {
 		return version;
 	}
 
@@ -259,7 +267,19 @@ public class DungeonConfig implements IDungeonConfig {
 	/**
 	 * @param version the version to set
 	 */
-	protected void setVersion(String version) {
+	@Override
+	public void setVersion(String version) {
 		this.version = version;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "DungeonConfig [name=" + name + ", version=" + version + ", size=" + size + ", numLevels=" + numLevels + ", bottomLimit=" + bottomLimit + ", topLimit=" + topLimit + ", surfaceBuffer="
+				+ surfaceBuffer + ", biomeWhiteList=" + biomeWhiteList + ", biomeBlackList=" + biomeBlackList + ", fieldFactor=" + fieldFactor + ", levelConfigs=" + Arrays.toString(levelConfigs)
+				+ ", surfaceConfig=" + surfaceConfig + "]";
 	}
 }
