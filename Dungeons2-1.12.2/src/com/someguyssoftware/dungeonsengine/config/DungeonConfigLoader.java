@@ -36,6 +36,7 @@ import com.google.gson.stream.JsonReader;
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.style.Style;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader.StyleDeserializer;
+import com.someguyssoftware.dungeonsengine.json.GenericDeserializer;
 import com.someguyssoftware.gottschcore.json.JSMin;
 
 /**
@@ -113,13 +114,11 @@ public class DungeonConfigLoader {
 		Reader reader = new InputStreamReader(in);
 		JsonReader jsonReader = new JsonReader(reader);
 		
-		Type levelConfigType = new TypeToken<LevelConfig>() {}.getType();
-		
 		// create a gson builder
-		GsonBuilder gsonBuilder = new GsonBuilder();	
-		gsonBuilder.registerTypeAdapter(levelConfigType, );
-//		gsonBuilder.re
-		Gson gson = gsonBuilder.create();	
+		GsonBuilder builder = new GsonBuilder();	
+		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
+
+		Gson gson = builder.create();	
 		IDungeonConfig config = null;
 		try {
 			config = gson.fromJson(jsonReader, DungeonConfig.class);
