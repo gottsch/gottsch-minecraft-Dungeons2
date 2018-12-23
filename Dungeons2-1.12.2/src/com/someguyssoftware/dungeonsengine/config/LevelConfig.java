@@ -123,6 +123,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the numRooms
 	 */
+	@Override
 	public Quantity getNumRooms() {
 		return numRooms;
 	}
@@ -130,6 +131,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @param numRooms the numRooms to set
 	 */
+	@Override
 	public void setNumRooms(Quantity numRooms) {
 		this.numRooms = numRooms;
 	}
@@ -185,6 +187,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the degrees
 	 */
+	@Override
 	public Quantity getDegrees() {
 		return degrees;
 	}
@@ -192,6 +195,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @param degrees the degrees to set
 	 */
+	@Override
 	public void setDegrees(Quantity degrees) {
 		this.degrees = degrees;
 	}

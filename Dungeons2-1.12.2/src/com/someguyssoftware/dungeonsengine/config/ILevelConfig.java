@@ -16,5 +16,9 @@ public interface ILevelConfig {
 	void setWidth(Quantity width);
 	Quantity getDepth();
 	void setDepth(Quantity depth);
+	Quantity getDegrees();
+	void setDegrees(Quantity degrees);
+	Quantity getNumRooms();
+	void setNumRooms(Quantity numRooms);
 
 }

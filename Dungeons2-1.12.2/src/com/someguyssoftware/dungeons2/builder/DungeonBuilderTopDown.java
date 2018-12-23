@@ -237,10 +237,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 */
 		int numberOfLevels = RandomHelper.randomInt(rand, (int)config.getNumLevels().getMin(), (int)config.getNumLevels().getMax());
 		Dungeons2.log.debug("number of levels:" + numberOfLevels);
+		ILevelConfig levelConfig = null;
 		// for every n in numLevels
 		for (int levelIndex = 0; levelIndex < numberOfLevels; levelIndex++) {
 			logger.debug("Building level -> {}" + levelIndex);
-			ILevelConfig levelConfig = null;
+			ILevelConfig prevLevelConfig = levelConfig;
 			// get the level config
 			if (levelIndex <= config.getLevelConfigs().length-1) {
 				levelConfig = config.getLevelConfigs()[levelIndex];
@@ -248,6 +249,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			else {
 				// get the last defined level config
 				levelConfig = config.getLevelConfigs()[config.getLevelConfigs().length-1];
+			}
+			
+			if (levelConfig != prevLevelConfig) {
+				// config has changed
+				roomField = getLevelBuilder().getRoomField(dungeonField, levelConfig.getFieldFactor());				
 			}
 			
 			// determine if any levels can be made below this one
@@ -259,7 +265,28 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				Dungeons2.log.debug("TOP LEVEL");
 				// build start centered at startPoint
 				startRoom = levelBuilder.buildStartRoom(world, rand, roomField, startPoint, levelConfig);
-
+				if (startRoom == LevelBuilder.EMPTY_ROOM) {
+					Dungeons2.log.warn("Unable to generate Top level Start Room.");
+					return EMPTY_DUNGEON;					
+				}
+				// update to same direction as entrance
+				startRoom.setDirection(entranceRoom.getDirection());
+				Dungeons2.log.debug("Top Level Start Room:" + startRoom);
+				
+				// add to the planned rooms
+				plannedRooms.add(startRoom);
+				
+				// build planned end room
+				endRoom = levelBuilder.buildEndRoom(world, rand, roomField, startPoint, plannedRooms, levelConfig);
+				if (endRoom == LevelBuilder.EMPTY_ROOM) {
+					logger.warn("Unable to generate Top level End Room.");
+					return EMPTY_DUNGEON;
+				}
+				plannedRooms.add(endRoom);
+			}
+			else if (levelIndex == numberOfLevels - 1 || isBottomLevel) {	
+				Dungeons2.log.debug("BOTTOM LEVEL");
+				
 			}
 		}
 		

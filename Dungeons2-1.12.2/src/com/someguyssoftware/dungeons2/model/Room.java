@@ -159,6 +159,18 @@ public class Room {
 	}
 	
 	/**
+	 * 
+	 * @param coords
+	 * @return
+	 */
+	public void centerOn(ICoords coords) {
+		setCoords(
+				new Coords(coords.getX()-(getWidth()/2),
+						coords.getY(),
+						coords.getZ()-(getDepth()/2)));
+	}
+	
+	/**
 	 * TODO update after GottschCore is updated for Coords
 	 * @return
 	 */
