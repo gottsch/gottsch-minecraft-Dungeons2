@@ -56,7 +56,7 @@ import net.minecraft.world.chunk.Chunk;
 
 /**
  * @author Mark Gottschling on Jul 9, 2016
- *
+ * @version 2.0
  */
 public class LevelBuilder {
 	/**
@@ -96,6 +96,14 @@ public class LevelBuilder {
 
 	public static final Shaft EMPTY_SHAFT = new Shaft();
 
+	private static final int MIN_START_ROOM_SIZE = 7;
+
+	/**
+	 * @since 2.0
+	 */
+	private IDungeonBuilder dungeonBuilder; 
+	
+	@Deprecated
 	private LevelConfig config;
 	
 	private AxisAlignedBB field;
@@ -1949,6 +1957,86 @@ public class LevelBuilder {
 	 * @param room
 	 * @return
 	 */
+	protected boolean validateRoomConstraints(World world, Room room, ILevelConfig config) {
+		if (room == null || room.isReject()) return false;
+		if (!getDungeonBuilder().getConfig().isMinecraftConstraintsOn()) return true; // <-- TODO oh no, that is from IDungeonConfig
+		
+		// ensure that the room is above the bottom
+		if (room.getCoords().getY() <= config.getYRange().getMinInt()) {
+			if (Dungeons2.log.isDebugEnabled()) {
+				Dungeons2.log.debug("Room bottom [{}] is below min y constraint [{}]", room.getCoords().getY(), config.getYRange().getMinInt());
+			}
+			return false;
+		}
+
+		// ensure the room is below the y max threshold
+		if (room.getCoords().getY() + room.getHeight() > config.getYRange().getMaxInt()) {
+			if (Dungeons2.log.isDebugEnabled()) {
+				Dungeons2.log.debug(
+					String.format("Room top [%d] is above max y constraint [%d]", (room.getCoords().getY() + room.getHeight()), config.getYRange().getMaxInt()));
+			}
+			return false;
+		}
+
+		// NOTE these next 3 calls a) take ~1 second to complete and b) cause cascading worldgen lag because they access the world in non-loaded chunks.
+		// get percentage of solid base blocks
+		double percentSolid = WorldInfo.getSolidBasePercent(world, room.getCoords(), room.getWidth(), room.getDepth());
+//		Dungeons2.log.debug("Percent solid base:" + percentSolid);
+		
+		// get the depth from the surface to top of the room
+		int surfaceRoomDepth = WorldInfo.getDifferenceWithSurface(world, room.getCenter());
+//		Dungeons2.log.debug("The surface/room depth =" + surfaceRoomDepth);
+		if (surfaceRoomDepth == WorldInfo.INVALID_SURFACE_POS) {
+			Dungeons2.log.debug("Unable to locate the surface position.");
+			return false;
+		}
+		
+		// check if the top y valueof the node is above sea level
+		if (room.getCoords().getY() + room.getHeight() > config.getSeaLevel()) {
+			Dungeons2.log.trace("Room is above sea level -> {}", room.getCenter());
+			/*
+			 *  if surfaceRoomDepth is greater than a [x] negative amount.
+			 *  negative implies the room is higher than the surface, ie the room is exposed.
+			 */
+			if (surfaceRoomDepth < -3) { // TODO make -3 a constant or a config value
+				Dungeons2.log.debug("Room rejected due to exposure -> {}", room.getCenter());
+				return false;
+			}			
+			else if (percentSolid < 50.0f) {
+				Dungeons2.log.debug("Room has less than 50 % base @ " + room.getCenter());
+				/*
+				 * there is less than 50% solid base
+				 */
+				return false;
+			}
+		}
+		else {
+//			Dungeons2.log.debug("Room is below sea level @ " + room.getCenter());
+			if (percentSolid < 20.0f) {
+				Dungeons2.log.debug("Room has less than 20 % base @ " + room.getCenter());
+				/*
+				 * 0-20% = mostly likely suspended over a chasm/pit/ravine
+				 */
+				return false;
+			}
+			else if (percentSolid < 50.0f) {
+				Dungeons2.log.debug("Room has less than 50 % base @ " + room.getCenter());
+				/*
+				 * 21-40 = overrhanging a chasm/pit/ravine
+				 */
+				return false;
+			}
+		}		
+		return true;
+	}
+	
+	/**
+	 * Ensure the room meets are criteria to be built.
+	 * @param world 
+	 * @param room
+	 * @return
+	 */
+	@Deprecated
 	protected boolean meetsRoomConstraints(World world, Room room, LevelConfig config) {
 		if (room == null || room.isReject()) return false;
 		if (!config.isMinecraftConstraintsOn()) return true;
@@ -2079,7 +2167,7 @@ public class LevelBuilder {
 		startRoom = randomizeDimensions(rand, startRoom, config);
 		// ensure min dimensions are met for start room
 		startRoom.setWidth(Math.max(MIN_START_ROOM_SIZE, startRoom.getWidth()));
-		startRoom.setDepth(Math.max(7,  startRoom.getDepth()));
+		startRoom.setDepth(Math.max(MIN_START_ROOM_SIZE,  startRoom.getDepth()));
 		// ensure that start room's dimensions are odd in length
 		if (startRoom.getWidth() % 2 == 0) startRoom.setWidth(startRoom.getWidth()+1);
 		if (startRoom.getDepth() % 2 == 0) startRoom.setDepth(startRoom.getDepth()+1);
@@ -2403,6 +2491,22 @@ public class LevelBuilder {
 	 */
 	protected void setRoomLossToValidation(int roomLossToValidation) {
 		this.roomLossToValidation = roomLossToValidation;
+	}
+
+	/**
+	 * @since 2.0
+	 * @return
+	 */
+	public IDungeonBuilder getDungeonBuilder() {
+		return dungeonBuilder;
+	}
+
+	/**
+	 * @since 2.0
+	 * @param dungeonBuilder
+	 */
+	public void setDungeonBuilder(IDungeonBuilder dungeonBuilder) {
+		this.dungeonBuilder = dungeonBuilder;
 	}
 	
 }

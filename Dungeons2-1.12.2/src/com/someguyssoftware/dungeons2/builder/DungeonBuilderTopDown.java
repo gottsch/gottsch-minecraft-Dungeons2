@@ -57,6 +57,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	
 	private transient AxisAlignedBB field;
 	private transient ICoords startPoint;
+	private transient IDungeonConfig config;
 	
 	/**
 	 * 
@@ -89,6 +90,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		return this;
 	}
 	
+	public DungeonBuilderTopDown withConfig(IDungeonConfig config) {
+		this.config = config;
+		return this;
+	}
+	
 	/**
 	 * New(er) version that uses the new dungeonsEngine IDungeonConfig
 	 */
@@ -97,6 +103,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		List<Room> plannedRooms = new ArrayList<>();
 		ILevelConfig defaultLevelConfig = config.getLevelConfigs()[0];
 
+		this.config = config;
+		
 		/*
 		 * Calculate dungeon field
 		 */
@@ -726,5 +734,13 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	 */
 	protected void setField(AxisAlignedBB field) {
 		this.field = field;
+	}
+
+	/**
+	 * @since 2.0
+	 */
+	@Override
+	public IDungeonConfig getConfig() {
+		return config;
 	}
 }
