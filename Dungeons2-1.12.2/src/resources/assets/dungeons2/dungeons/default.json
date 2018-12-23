@@ -5,15 +5,50 @@
 	"biomeBlackList": [""],
 	"size": "LARGE",
 	"numLevels": {
-		"min": "1",
-		"max": "8"
+		"min": 1,
+		"max": 8
 	},
 	"bottomLimit": 5,
 	"topLimit": 235,
 	"surfaceBuffer": 7,
 	"fieldFactor": 0.6,
 	"levelConfigs": [
-		{}
+		{
+			"fieldFactor": 0.9,
+			"numRooms": {
+				"min":	10,
+				"max": 18	
+				},
+			"width": {
+				"min":	5,
+				"max": 12			
+			},
+			"depth": {
+				"min":	5,
+				"max": 12	
+			},
+			"height": {
+				"min":	5,
+				"max": 9				
+			},
+			"degrees": {
+				"min":	2,
+				"max": 4	
+			},
+			"decayMultiplier": 5,
+			"spawnerFrequency": {
+				"min":	5,
+				"max": 10				
+			},
+			"chestFrequency": {
+				"min":	5,
+				"max": 10				
+			},
+			"support": true,
+			"chestCategories": [
+				""
+			]
+		}
 	],
 	"surfaceConfig": null
 }

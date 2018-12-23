@@ -47,5 +47,8 @@ public interface IDungeonConfig {
 		void setVersion(String version);
 		ILevelConfig getSurfaceConfig();
 		void setSurfaceConfig(ILevelConfig surfaceConfig);
+		
+		boolean isMinecraftConstraints();
+		void setMinecraftConstraints(boolean minecraftConstraints);
 
 }

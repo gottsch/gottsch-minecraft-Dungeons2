@@ -10,6 +10,8 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static com.someguyssoftware.gottschcore.world.WorldInfo.*;
+
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
@@ -18,6 +20,8 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
+import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -46,6 +50,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	private static final int MAX_ENTRANCE_XZ = 9;
 	private static final int MIN_ENTRANCE_Y= 7;
 	private static final int MAX_ENTRANCE_Y = 13;
+
+	private static final int TOP_LEVEL = 0;
 	
 	private LevelBuilder levelBuilder;
 	
@@ -83,6 +89,176 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		return this;
 	}
 	
+	/**
+	 * New(er) version that uses the new dungeonsEngine IDungeonConfig
+	 */
+	public Dungeon build(World world, Random rand, ICoords spawnCoords, IDungeonConfig config) {
+		Dungeon dungeon = new Dungeon();
+		List<Room> plannedRooms = new ArrayList<>();
+		ILevelConfig defaultLevelConfig = config.getLevelConfigs()[0];
+
+		/*
+		 * Calculate dungeon field
+		 */
+		AxisAlignedBB dungeonField = null;
+		ICoords closestCoords = null;
+		if (this.getField() == null) {
+			// get the closest player
+			closestCoords = WorldInfo.getClosestPlayerCoords(world, spawnCoords);
+			if (closestCoords == null) {
+				Dungeons2.log.warn("Unable to locate closest player - using World spawn point");
+				closestCoords = new Coords(world.getSpawnPoint());
+			}
+			// get the field based on the player position and spawn
+			dungeonField = getDungeonField(spawnCoords, closestCoords);
+			if (dungeonField == null) {
+				Dungeons2.log.warn("Unable to calculate dungeon field from spawn pos-> {}, and player pos -> {}", 
+						spawnCoords.toShortString(), closestCoords.toShortString());				
+				return EMPTY_DUNGEON;
+			}
+		}
+		else dungeonField = this.getField();
+		
+		// resize field
+		if (config.getFieldFactor() < 1.0D) {
+			int shrinkAmount = (int) ((dungeonField.maxX - dungeonField.minX) * (1.0 - config.getFieldFactor()) / 2);
+			dungeonField = dungeonField.shrink(shrinkAmount);
+			Dungeons2.log.debug("Dungeon shrunk by -> {}, to new size -> {}", shrinkAmount, dungeonField);
+		}
+
+		/*
+		 * Calculate room field
+		 */
+		AxisAlignedBB roomField =getLevelBuilder().getRoomField(dungeonField, defaultLevelConfig.getFieldFactor());
+		
+		/*
+		 * Select startPoint in room field
+		 */
+		ICoords startPoint = null;
+		if (this.startPoint == null) {
+			startPoint = getLevelBuilder().randomizeCoords(rand, roomField);
+			// check if the start point is in a loaded chunk
+			ChunkPos startChunk = startPoint.toChunkPos();
+			if (!world.isChunkGeneratedAt(startChunk.x, startChunk.z)) {
+				Dungeons2.log.debug("startPoint is not in a loaded chunk -> {}", startChunk);
+				return EMPTY_DUNGEON;
+			}
+			// get a valid Y value
+			startPoint = startPoint.resetY(WorldInfo.getHeightValue(world, startPoint));
+		}
+		else startPoint = this.startPoint;
+		
+		/*
+		 * Setup level builder
+		 */
+		if (levelBuilder.getField() == null) levelBuilder.setField(dungeonField);
+		if (levelBuilder.getRoomField() == null) levelBuilder.setRoomField(roomField);
+		
+		/*
+		 * Perform all the minecraft world contraint checks
+		 */
+		// TODO somehow wrap all these checks into one function. a lot of these variables could be member properties
+		
+		// 1. determine if valid coords
+		if (config.isMinecraftConstraints() && !WorldInfo.isValidY(startPoint)) {
+			Dungeons2.log.debug(String.format("[%d] is not a valid y value.", startPoint.getY()));
+			return EMPTY_DUNGEON;
+		}
+		
+		//  2. get a valid surface location		
+		ICoords surfaceCoords = null;
+		if (config.isMinecraftConstraints()) {
+			surfaceCoords = WorldInfo.getDryLandSurfaceCoords(world, startPoint);
+			if (surfaceCoords == null || surfaceCoords == EMPTY_COORDS) {
+				Dungeons2.log.debug(String.format("Not a valid dry land surface @ %s", startPoint.toShortString()));
+				return EMPTY_DUNGEON;
+			}
+		}
+		else {
+			surfaceCoords = startPoint;
+		}
+		
+		// 2b. Determine if surfaceCoords is within Dungeon constraints
+		if (surfaceCoords.getY() < config.getBottomLimit() ||
+				surfaceCoords.getY() > config.getTopLimit()) {
+			Dungeons2.log.debug(String.format("Start position is outside Y constraints: Start %s, yBottom: %d, yTop: %d",
+					surfaceCoords.toShortString(), config.getBottomLimit(), config.getTopLimit()));
+			return EMPTY_DUNGEON;			
+		}		
+		
+		// 3. determine if startPoint is deep enough to support at least one level
+		if (config.isMinecraftConstraints()) {
+			if (surfaceCoords.getY() - config.getSurfaceBuffer() - defaultLevelConfig.getHeight().getMax() < config.getBottomLimit()) {
+				Dungeons2.log.debug(String.format("Start position is not deep enough to generate a dungeon @ %s", surfaceCoords.toShortString()));
+				return EMPTY_DUNGEON;	
+			}
+		}
+		
+		// TODO 4,5,6 can go into a new method and return boolean or Room?
+		// 4. determine if the entrance room can be build at this spot
+		Room entranceRoom = buildEntranceRoom(world, rand, surfaceCoords);
+		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
+		
+		// 5. ensure the entrance is in a loaded chunk
+		if (!levelBuilder.isRoomInLoadedChunks(world, entranceRoom)) {
+			Dungeons2.log.debug("entrance room is NOT in valid chunks -> {} {}", surfaceCoords, surfaceCoords.toChunkPos());
+			return EMPTY_DUNGEON;
+		}
+	
+		// 6. ensure that the entrance has a valid base
+		if (config.isMinecraftConstraints() &&
+				!WorldInfo.isValidAboveGroundBase(world, entranceRoom.getCoords().resetY(surfaceCoords.getY()),
+				entranceRoom.getWidth(), entranceRoom.getDepth(), 50, 20, 50)) {
+			if (Dungeons2.log.isDebugEnabled())
+				Dungeons2.log.debug(String.format("Surface area does not meet ground/air criteria @ %s", surfaceCoords));
+			return EMPTY_DUNGEON;		
+		}
+		 // add entrance to dungeon
+		dungeon.setEntrance(entranceRoom);
+		///////////// end of minecraft constraint checks / positioning
+		
+		// update the startPoint to be below the surface by surfaceBuffer amount
+		startPoint = surfaceCoords.add(0, -(config.getSurfaceBuffer() + defaultLevelConfig.getHeight().getMaxInt()), 0);
+
+		Room startRoom = null;
+		Room endRoom = null;
+		boolean isBottomLevel = false;
+		
+		/*
+		 *  determine the number of levels to attempt to build
+		 */
+		int numberOfLevels = RandomHelper.randomInt(rand, (int)config.getNumLevels().getMin(), (int)config.getNumLevels().getMax());
+		Dungeons2.log.debug("number of levels:" + numberOfLevels);
+		// for every n in numLevels
+		for (int levelIndex = 0; levelIndex < numberOfLevels; levelIndex++) {
+			logger.debug("Building level -> {}" + levelIndex);
+			ILevelConfig levelConfig = null;
+			// get the level config
+			if (levelIndex <= config.getLevelConfigs().length-1) {
+				levelConfig = config.getLevelConfigs()[levelIndex];
+			}
+			else {
+				// get the last defined level config
+				levelConfig = config.getLevelConfigs()[config.getLevelConfigs().length-1];
+			}
+			
+			// determine if any levels can be made below this one
+			if (startPoint.getY() - levelConfig.getHeight().getMax() < config.getBottomLimit()) {
+				isBottomLevel = true;
+			}
+			
+			if (levelIndex == TOP_LEVEL) {
+				Dungeons2.log.debug("TOP LEVEL");
+				// build start centered at startPoint
+				startRoom = levelBuilder.buildStartRoom(world, rand, roomField, startPoint, levelConfig);
+
+			}
+		}
+		
+		// return the dungeon
+		return dungeon;
+	}
+
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeons2.builder.IDungeonBuilder#build(net.minecraft.world.World, java.util.Random, com.someguyssoftware.mod.ICoords, com.someguyssoftware.dungeons2.model.DungeonConfig)
 	 */
@@ -110,15 +286,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		ICoords closestCoords = null;
 		if (this.getField() == null) {
 			// get the closest player
-//			ICoords closestCoords = null;
 			closestCoords = WorldInfo.getClosestPlayerCoords(world, spawnCoords);
 			if (closestCoords == null) {
 				Dungeons2.log.warn("Unable to locate closest player - using World spawn point");
 				closestCoords = new Coords(world.getSpawnPoint());
-//				return EMPTY_DUNGEON;
 			}
-//			Dungeons2.log.debug("closestCoords -> {}", closestCoords.toShortString());
-			
 			// get the field based on the player position and spawn
 			dungeonField = getDungeonField(spawnCoords, closestCoords);
 			if (dungeonField == null) {
@@ -179,7 +351,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		ICoords surfaceCoords = null;
 		if (levelBuilder.getConfig().isMinecraftConstraintsOn()) {
 			surfaceCoords = WorldInfo.getDryLandSurfaceCoords(world, startPoint);
-			if (surfaceCoords == null || surfaceCoords == EMPTY_DUNGEON) {
+			if (surfaceCoords == null || surfaceCoords == EMPTY_COORDS) {
 				Dungeons2.log.debug(String.format("Not a valid dry land surface @ %s", startPoint.toShortString()));
 				return EMPTY_DUNGEON;
 			}

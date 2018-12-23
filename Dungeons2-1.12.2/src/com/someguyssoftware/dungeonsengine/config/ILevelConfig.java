@@ -1,5 +1,7 @@
 package com.someguyssoftware.dungeonsengine.config;
 
+import com.someguyssoftware.gottschcore.Quantity;
+
 public interface ILevelConfig {
 
 	boolean isSupport();
@@ -7,5 +9,12 @@ public interface ILevelConfig {
 
 	double getFieldFactor();
 	void setFieldFactor(double fieldFactor);
+	
+	Quantity getHeight();
+	void setHeight(Quantity height);
+	Quantity getWidth();
+	void setWidth(Quantity width);
+	Quantity getDepth();
+	void setDepth(Quantity depth);
 
 }

@@ -67,6 +67,11 @@ public class DungeonConfig implements IDungeonConfig {
 	/**
 	 * 
 	 */
+	private boolean minecraftConstraints;
+	
+	/**
+	 * 
+	 */
 	public DungeonConfig() {
 		this.biomeWhiteList = new ArrayList<>();
 		this.biomeBlackList = new ArrayList<>();
@@ -281,5 +286,22 @@ public class DungeonConfig implements IDungeonConfig {
 		return "DungeonConfig [name=" + name + ", version=" + version + ", size=" + size + ", numLevels=" + numLevels + ", bottomLimit=" + bottomLimit + ", topLimit=" + topLimit + ", surfaceBuffer="
 				+ surfaceBuffer + ", biomeWhiteList=" + biomeWhiteList + ", biomeBlackList=" + biomeBlackList + ", fieldFactor=" + fieldFactor + ", levelConfigs=" + Arrays.toString(levelConfigs)
 				+ ", surfaceConfig=" + surfaceConfig + "]";
+	}
+
+
+	/**
+	 * @return the minecraftConstraints
+	 */
+	@Override
+	public boolean isMinecraftConstraints() {
+		return minecraftConstraints;
+	}
+
+	/**
+	 * @param minecraftConstraints the minecraftConstraints to set
+	 */
+	@Override
+	public void setMinecraftConstraints(boolean minecraftConstraints) {
+		this.minecraftConstraints = minecraftConstraints;
 	}
 }

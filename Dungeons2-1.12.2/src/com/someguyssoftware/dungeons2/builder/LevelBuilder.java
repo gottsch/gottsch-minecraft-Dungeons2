@@ -30,6 +30,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 import com.someguyssoftware.gottschcore.enums.Direction;
@@ -45,7 +46,9 @@ import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
@@ -123,6 +126,28 @@ public class LevelBuilder {
 		this.config = config;
 	}
 
+	/**
+	 * 
+	 * @param dungeonField
+	 * @return
+	 */
+	public AxisAlignedBB getRoomField(AxisAlignedBB dungeonField, double factor) {
+		/*
+		 * AxisAlignedBB.getCenter() is @ClientSide so must calculate the center
+		 */
+		Vec3d center = new Vec3d(dungeonField.minX + (dungeonField.maxX - dungeonField.minX) * 0.5D, dungeonField.minY + (dungeonField.maxY - dungeonField.minY) * 0.5D, dungeonField.minZ + (dungeonField.maxZ - dungeonField.minZ) * 0.5D);
+		AxisAlignedBB roomField = new AxisAlignedBB(new BlockPos(center)).grow(30);
+		
+		// resize field
+		if (factor < 1.0D) {
+			int shrinkAmount = (int) ((roomField.maxX - roomField.minX) * (1.0 - factor) / 2);
+			roomField = roomField.shrink(shrinkAmount);
+			Dungeons2.log.debug("Room field shrunk by -> {}, to new size -> {}", shrinkAmount, roomField);
+		}
+		
+		return roomField;
+	}
+	
 	/**
 	 * 
 	 * @param random
@@ -286,6 +311,13 @@ public class LevelBuilder {
 		return new Coords((int)field.minX, (int)field.minY, (int)field.minZ).add(x, y, z);
 	}
 	
+	protected ICoords randomizeCoords(Random random, AxisAlignedBB field) {
+		int x = RandomHelper.randomInt(random, 0, (int) (field.maxX - field.minX));
+		int y = RandomHelper.randomInt(random, 0, (int) (field.maxY - field.minY));
+		int z = RandomHelper.randomInt(random, 0, (int) (field.maxZ - field.minZ));
+		return new Coords((int)field.minX, (int)field.minY, (int)field.minZ).add(x, y, z);
+	}
+	
 	/**
 	 * 
 	 * @param rand
@@ -293,6 +325,22 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	protected Room randomizeDimensions(Random rand, Room roomIn, ILevelConfig config) {
+		Room room = new Room(roomIn);
+		room.setWidth(Math.max(Room.MIN_WIDTH, RandomHelper.randomInt(rand, config.getWidth().getMinInt(), config.getWidth().getMaxInt())));
+		room.setDepth(Math.max(Room.MIN_DEPTH, RandomHelper.randomInt(rand, config.getDepth().getMinInt(), config.getDepth().getMaxInt())));
+		room.setHeight(Math.max(Room.MIN_HEIGHT, RandomHelper.randomInt(rand, config.getHeight().getMinInt(), config.getHeight().getMaxInt())));		
+		return room;
+	}
+	
+	/**
+	 * 
+	 * @param rand
+	 * @param roomIn
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
 	protected Room randomizeDimensions(Random rand, Room roomIn, LevelConfig config) {
 		Room room = new Room(roomIn);
 		room.setWidth(Math.max(Room.MIN_WIDTH, RandomHelper.randomInt(rand, config.getWidth().getMinInt(), config.getWidth().getMaxInt())));
@@ -2023,6 +2071,50 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	protected Room buildStartRoom(World world, Random rand, AxisAlignedBB field, ICoords startPoint, ILevelConfig config) {
+		/*
+		 * the start of the level
+		 */
+		Room startRoom = new Room().setStart(true).setAnchor(true).setType(Type.LADDER);
+		startRoom = randomizeDimensions(rand, startRoom, config);
+		// ensure min dimensions are met for start room
+		startRoom.setWidth(Math.max(MIN_START_ROOM_SIZE, startRoom.getWidth()));
+		startRoom.setDepth(Math.max(7,  startRoom.getDepth()));
+		// ensure that start room's dimensions are odd in length
+		if (startRoom.getWidth() % 2 == 0) startRoom.setWidth(startRoom.getWidth()+1);
+		if (startRoom.getDepth() % 2 == 0) startRoom.setDepth(startRoom.getDepth()+1);
+		
+		// set the starting room coords to be in the middle of the start point
+		startRoom.setCoords(
+				new Coords(startPoint.getX()-(startRoom.getWidth()/2),
+						startPoint.getY(),
+						startPoint.getZ()-(startRoom.getDepth()/2)));
+		//startRoom.setDistance(startRoom.getCoords().getDistanceSq(startPoint));
+		startRoom.setDistance(0.0);
+		// randomize a direction
+		startRoom.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+		// test if the room meets conditions to be placed in the minecraft world
+		// TEMP remove
+		if (!meetsRoomConstraints(world, startRoom, config)) {
+			Dungeons2.log.debug("Start Room failed room constraints @ " + startRoom.getCenter());
+			if (Dungeons2.log.isWarnEnabled()) {
+				Dungeons2.log.warn(String.format("Start Room has invalid Minecraft world room conditions: %s", startRoom.toString()));
+			}
+			return EMPTY_ROOM;
+		}
+		
+		return startRoom;
+	}
+	
+	/**
+	 * Builds a room at the centered on the startPoint.
+	 * @param world
+	 * @param rand
+	 * @param startPoint
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
 	protected Room buildStartRoom(World world, Random rand, AxisAlignedBB field, ICoords startPoint, LevelConfig config) {
 		/*
 		 * the start of the level

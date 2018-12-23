@@ -13,7 +13,7 @@ import com.someguyssoftware.gottschcore.Quantity;
  */
 public class LevelConfig implements ILevelConfig {
 	/*
-	 * 
+	 * Adjusts the size of the room field.
 	 */
 	private double fieldFactor;
 	
@@ -137,6 +137,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the width
 	 */
+	@Override
 	public Quantity getWidth() {
 		return width;
 	}
@@ -144,6 +145,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @param width the width to set
 	 */
+	@Override
 	public void setWidth(Quantity width) {
 		this.width = width;
 	}
@@ -151,6 +153,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the depth
 	 */
+	@Override
 	public Quantity getDepth() {
 		return depth;
 	}
@@ -158,6 +161,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @param depth the depth to set
 	 */
+	@Override
 	public void setDepth(Quantity depth) {
 		this.depth = depth;
 	}
@@ -165,6 +169,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the height
 	 */
+	@Override
 	public Quantity getHeight() {
 		return height;
 	}
@@ -172,6 +177,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @param height the height to set
 	 */
+	@Override
 	public void setHeight(Quantity height) {
 		this.height = height;
 	}
