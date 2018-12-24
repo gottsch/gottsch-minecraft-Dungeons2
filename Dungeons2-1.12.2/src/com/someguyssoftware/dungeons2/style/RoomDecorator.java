@@ -25,6 +25,7 @@ import com.someguyssoftware.dungeons2.rotate.RotatorHelper;
 import com.someguyssoftware.dungeons2.spawner.SpawnGroup;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnerPopulator;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
@@ -69,10 +70,136 @@ public class RoomDecorator implements IRoomDecorator {
 		//		this.chestSheet = chestSheet;
 	}
 
+	@Override
+	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {
+		List<Entry<DesignElement, ICoords>> surfaceAirZone = room.getFloorMap().entries().stream().filter(x -> x.getKey().getFamily() == DesignElement.SURFACE_AIR)
+				.collect(Collectors.toList());			
+		if (surfaceAirZone == null || surfaceAirZone.size() == 0) return;
+
+		List<Entry<DesignElement, ICoords>> wallZone = null;
+		List<Entry<DesignElement, ICoords>> floorZone = null;
+
+		// decorate enabled
+		if (config.isDecorations()) {
+			// TODO these methods could be reduced to more generic methods
+			
+			/*
+			 * webs
+			 */
+			addBlock(world, random, provider, room, surfaceAirZone, 
+					new IBlockState[] {Blocks.WEB.getDefaultState()}, config.getWebFrequency(), config.getNumberOfWebs(), config);
+
+			/*
+			 * all-over decorations: moss, lichen, lichen2, mold
+			 */
+//			addAnywhereDecoration(world, random, provider, room, surfaceAirZone, config);
+
+			// get the walls only (from the air zone)
+			wallZone = surfaceAirZone.stream().filter(f -> f.getKey() == DesignElement.WALL_AIR).collect(Collectors.toList());
+
+			/*
+			 * vines
+			 */
+			addVines(world, random, provider, room, wallZone, config);
+
+			/*
+			 * wall blood
+			 */
+//			addBlood(world, random, provider, room, wallZone, config);
+			
+			// get the floor only (from the air zone)
+			floorZone = surfaceAirZone.stream().filter(f -> f.getKey() == DesignElement.FLOOR_AIR).collect(Collectors.toList());
+
+			/*
+			 * grass
+			 */
+			addGrass(world, random, provider, room, floorZone, config);
+
+			// TODO change addGrass to addDirtSupportBlock() which will pass into grasses, mushrooms
+			/*
+			 * floor blood
+			 */
+//			addBlood(world, random, provider, room, floorZone, config);
+			
+			/*
+			 * puddles
+			 */
+//			addPuddles(world, random, provider, room, floorZone, config);
+			
+			/*
+			 * add water (above the ceiling block so that there are drips coming down... maybe should be above puddles?
+			 */
+			
+			// TODO add roots
+
+			// TODO add debris
+
+		}
+
+		/*
+		 * chest
+		 */
+		if (ModConfig.enableChests) {
+		ICoords chestCoords = addChest(world, random, provider, room, floorZone, config);
+			if (chestCoords != null) {
+				if (Dungeons2.log.isDebugEnabled()) {
+					Dungeons2.log.debug("Added chest block @ " + chestCoords.toShortString());
+				}
+				// get the chest inventory
+				IInventory inventory = this.chestPopulator.getChestTileEntity(world, chestCoords);
+//				Dungeons2.log.debug("Checking for chest tile entity...");
+				if (inventory == null) {
+					Dungeons2.log.debug("Manually adding chest tile entity.");
+					world.setTileEntity(chestCoords.toPos(), new TileEntityChest());
+					inventory = (TileEntityChest) world.getTileEntity(chestCoords.toPos());
+				}
+				if (inventory != null) {
+					String chestCategory = config.getChestCategories().get(random.nextInt(config.getChestCategories().size()));
+//					Dungeons2.log.debug("Chest category:" + chestCategory);
+					// get chests by category and choose one
+					List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory);
+//					Dungeons2.log.debug("Containers found:" + containers.size());
+					if (containers != null && !containers.isEmpty()) {
+						// add each container to the random prob collection
+						RandomProbabilityCollection<ChestContainer> chestProbCol = new RandomProbabilityCollection<>(containers);
+						// select a container
+						ChestContainer chest = (ChestContainer) chestProbCol.next();
+	//					ChestContainer chest = containers.get(random.nextInt(containers.size()));
+						// populate the chest with items from the selected chest sheet container
+						chestPopulator.populate(random, inventory, chest);
+					}
+				}
+				else {
+					Dungeons2.log.debug("Chest tile entity not found... removing chest block.");
+					world.setBlockState(chestCoords.toPos(), Blocks.AIR.getDefaultState());
+				}
+			}
+		}
+
+		/*
+		 * determine if the rroom should get a spawner and what kind (boss, one-time, vanilla) etc
+		 */
+		if (ModConfig.enableSpawners) {
+			ICoords spawnerCoords = addSpawner(world, random, provider, room, floorZone, config);
+			if (spawnerCoords != null) {
+				Dungeons2.log.debug("Adding spawner @ " + spawnerCoords.toShortString());
+				// get the spawner tile entity
+				TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(spawnerCoords.toPos());
+				if (spawner != null) {
+					List<SpawnGroup> groups = new ArrayList<>(spawnerPopulator.getSpawnSheet().getGroups().values());
+					RandomProbabilityCollection<SpawnGroup> spawnerProbCol = new RandomProbabilityCollection<>(groups);
+					SpawnGroup spawnGroup = (SpawnGroup) spawnerProbCol.next();
+					spawnerPopulator.populate(random, spawner, spawnGroup);
+				}				
+			}
+		}
+	}
+
 	// TODO load the chest sheet into categories ???
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeons2.style.IRoomDecorator#decorate(net.minecraft.world.World, java.util.Random, com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider, com.someguyssoftware.dungeons2.model.Room, com.someguyssoftware.dungeons2.model.LevelConfig)
 	 */
+	@Deprecated
 	@Override
 	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, LevelConfig config) {
 		List<Entry<DesignElement, ICoords>> surfaceAirZone = room.getFloorMap().entries().stream().filter(x -> x.getKey().getFamily() == DesignElement.SURFACE_AIR)
@@ -373,6 +500,33 @@ public class RoomDecorator implements IRoomDecorator {
 		}		
 	}
 
+	protected void addVines(World world, Random random, IDungeonsBlockProvider provider,
+			Room room, List<Entry<DesignElement, ICoords>> zone, ILevelConfig config) {
+
+		double freq = RandomHelper.randomDouble(random, config.getVineFrequency().getMin(), config.getVineFrequency().getMax());
+		//Dungeons2.log.debug("Vine Freq:" + freq);
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfVines().getMinInt(), config.getNumberOfVines().getMaxInt()), config); i++) {
+			double n = random.nextDouble() * 100;
+			//Dungeons2.log.debug("Vine n:" + n);
+			if (n < freq && zone.size() > 0) {
+				int wallZoneIndex = random.nextInt(zone.size());
+				DesignElement elem = zone.get(wallZoneIndex).getKey();
+				ICoords vineCoords = zone.get(wallZoneIndex).getValue();
+				if (hasSupport(world, vineCoords, elem, provider.getLocation(vineCoords, room, room.getLayout()))) {
+					// orient vines
+					Location location = provider.getLocation(vineCoords, room, room.getLayout());
+					Direction d = provider.getDirection(vineCoords, room, DesignElement.WALL_AIR, location);
+					// rotate vines
+					IBlockState blockState = RotatorHelper.rotateBlock(Blocks.VINE.getDefaultState(), d);				
+					// update the world
+					world.setBlockState(vineCoords.toPos(), blockState, 3);
+					// remove location from wallZone
+					zone.remove(wallZoneIndex);		
+				}			
+			}
+		}
+	}
+	
 	/**
 	 * 
 	 * @param world
@@ -382,6 +536,7 @@ public class RoomDecorator implements IRoomDecorator {
 	 * @param zone
 	 * @param config
 	 */
+	@Deprecated
 	protected void addVines(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> zone, LevelConfig config) {
 
@@ -409,6 +564,59 @@ public class RoomDecorator implements IRoomDecorator {
 		}
 	}
 
+	protected void addGrass(World world, Random random, IDungeonsBlockProvider provider,
+			Room room, List<Entry<DesignElement, ICoords>> floorZone, ILevelConfig config) {
+
+		double freq = RandomHelper.randomDouble(random, config.getWebFrequency().getMin(), config.getWebFrequency().getMax());
+		//Dungeons2.log.debug("Grass Freq:" + freq);
+		for (int i = 0; i < scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, config.getNumberOfWebs().getMinInt(), config.getNumberOfWebs().getMaxInt()), config); i++) {
+			double n = random.nextDouble() * 100;
+			//Dungeons2.log.debug("Grass n:" + n);			
+			if (n < freq && floorZone.size() > 0) {
+				
+				// select a grass/mushroom
+				int b = random.nextInt(5);
+				IBlockState plantBlockState = null;
+				IBlockState groundBlockState = null;
+				switch (b) {
+				case 0:
+					plantBlockState = Blocks.TALLGRASS.getDefaultState().withProperty(GRASSTYPE, BlockTallGrass.EnumType.GRASS);
+					break;
+				case 1:
+					plantBlockState = Blocks.TALLGRASS.getDefaultState().withProperty(GRASSTYPE, BlockTallGrass.EnumType.DEAD_BUSH);
+					break;
+				case 2:
+					plantBlockState = Blocks.TALLGRASS.getDefaultState().withProperty(GRASSTYPE, BlockTallGrass.EnumType.FERN);
+					break;
+				case 3:
+					plantBlockState = Blocks.BROWN_MUSHROOM.getDefaultState();
+					break;
+				case 4:
+					plantBlockState = Blocks.RED_MUSHROOM.getDefaultState();
+					break;
+				default:
+					plantBlockState = Blocks.TALLGRASS.getDefaultState().withProperty(GRASSTYPE, BlockTallGrass.EnumType.GRASS);
+				}
+				if (b < 3) groundBlockState = Blocks.DIRT.getDefaultState();
+				else groundBlockState = Blocks.DIRT.getDefaultState().withProperty(BlockDirt.VARIANT, DirtType.PODZOL);
+				
+				// select ANY surface air spot
+				int floorZoneIndex = random.nextInt(floorZone.size());
+				DesignElement elem = floorZone.get(floorZoneIndex).getKey();
+				ICoords grassCoords = floorZone.get(floorZoneIndex).getValue();
+				//Dungeons2.log.debug("Grass Coords:" + grassCoords.toShortString());				
+				if (hasSupport(world, grassCoords, elem, provider.getLocation(grassCoords, room, room.getLayout()))) {
+					// update the block below with dirt
+					world.setBlockState(grassCoords.toPos().add(0, -1, 0), groundBlockState, 3);
+					// update the world
+					world.setBlockState(grassCoords.toPos(), plantBlockState, 3);	
+					// remove location from airZone
+					floorZone.remove(elem);
+				}
+			}
+		}	
+	}
+	
 	/**
 	 * 
 	 * @param world
@@ -418,6 +626,7 @@ public class RoomDecorator implements IRoomDecorator {
 	 * @param floorZone
 	 * @param config
 	 */
+	@Deprecated
 	protected void addGrass(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> floorZone, LevelConfig config) {
 
@@ -503,6 +712,33 @@ public class RoomDecorator implements IRoomDecorator {
 		}	
 	}
 
+	protected ICoords addChest(World world, Random random, IDungeonsBlockProvider provider,
+			Room room, List<Entry<DesignElement, ICoords>> floorZone, ILevelConfig config) {
+
+		ICoords chestCoords = null;
+		// determine if room should get a chest
+		double freq = RandomHelper.randomDouble(random, config.getChestFrequency().getMin(), config.getChestFrequency().getMax());
+		if (random.nextDouble() * 100 < freq && floorZone.size() > 0) {
+			int floorIndex = random.nextInt(floorZone.size());
+			DesignElement elem = floorZone.get(floorIndex).getKey();
+			chestCoords = floorZone.get(floorIndex).getValue();
+			// determine location in room
+			Location location = provider.getLocation(chestCoords, room, room.getLayout());
+			if (hasSupport(world, chestCoords, elem, location)) {	
+				EnumFacing facing = orientChest(location);			
+				// place a chest
+				world.setBlockState(chestCoords.toPos(), Blocks.CHEST.getDefaultState().withProperty(BlockHorizontal.FACING,  facing), 3);
+				// remove from list
+				floorZone.remove(floorIndex);
+			}
+			else {
+				chestCoords = null;
+			}
+		}
+		// return coords
+		return chestCoords;
+	}
+	
 	/**
 	 * 
 	 * @param world
@@ -512,6 +748,7 @@ public class RoomDecorator implements IRoomDecorator {
 	 * @param floorZone
 	 * @param config
 	 */
+	@Deprecated
 	protected ICoords addChest(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> floorZone, LevelConfig config) {
 
@@ -539,6 +776,33 @@ public class RoomDecorator implements IRoomDecorator {
 		return chestCoords;
 	}
 
+	protected ICoords addSpawner(World world, Random random, IDungeonsBlockProvider provider,
+			Room room, List<Entry<DesignElement, ICoords>> floorZone, ILevelConfig config) {
+		ICoords spawnerCoords = null;
+
+		// determine if room should get a chest
+		double freq = RandomHelper.randomDouble(random, config.getSpawnerFrequency().getMin(), config.getSpawnerFrequency().getMax());
+		if (random.nextDouble() * 100 < freq && floorZone.size() > 0) {
+			int floorIndex = random.nextInt(floorZone.size());
+			DesignElement elem = floorZone.get(floorIndex).getKey();
+			spawnerCoords = floorZone.get(floorIndex).getValue();
+			// determine location in room
+			Location location = provider.getLocation(spawnerCoords, room, room.getLayout());
+			if (hasSupport(world, spawnerCoords, elem, location)) {				
+				// TODO how will boss room be handled... check it here or have an extended BossRoomDecorator ?
+				// TODO select the spawner type from SpawnerProvider
+				world.setBlockState(spawnerCoords.toPos(), Blocks.MOB_SPAWNER.getDefaultState());				
+//				TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(spawnerCoords.toPos());
+				// TODO select mob type from SpawnerProvider
+//				spawner.getSpawnerBaseLogic().setEntityName("Zombie");
+
+				// remove from list
+				floorZone.remove(floorIndex);
+			}
+		}
+		return spawnerCoords;
+	}
+	
 	/**
 	 * 
 	 * @param world
@@ -549,6 +813,7 @@ public class RoomDecorator implements IRoomDecorator {
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	protected ICoords addSpawner(World world, Random random, IDungeonsBlockProvider provider,
 			Room room, List<Entry<DesignElement, ICoords>> floorZone, LevelConfig config) {
 		ICoords spawnerCoords = null;

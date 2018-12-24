@@ -51,11 +51,21 @@ public class LevelConfig implements ILevelConfig {
 	
 	private List<String> chestCategories;
 	
+	private Quantity numberOfWebs;
+	private Quantity webFrequency;
+	
+	private Quantity numberOfVines;
+	private Quantity vineFrequency;
+	
 	/*
 	 * 
 	 */
 	private boolean support;
 	
+	/*
+	 * 
+	 */
+	private boolean decorations;
 	
 	/**
 	 * 
@@ -84,6 +94,7 @@ public class LevelConfig implements ILevelConfig {
 	 * 
 	 * @return
 	 */
+	@Override
 	public LevelConfig copy() {
 		return new LevelConfig(this);
 	}
@@ -203,6 +214,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the decayMultiplier
 	 */
+	@Override
 	public int getDecayMultiplier() {
 		return decayMultiplier;
 	}
@@ -210,6 +222,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @param decayMultiplier the decayMultiplier to set
 	 */
+	@Override
 	public void setDecayMultiplier(int decayMultiplier) {
 		this.decayMultiplier = decayMultiplier;
 	}
@@ -217,6 +230,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the spawnerFrequency
 	 */
+	@Override
 	public Quantity getSpawnerFrequency() {
 		return spawnerFrequency;
 	}
@@ -231,6 +245,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the chestFrequency
 	 */
+	@Override
 	public Quantity getChestFrequency() {
 		return chestFrequency;
 	}
@@ -245,6 +260,7 @@ public class LevelConfig implements ILevelConfig {
 	/**
 	 * @return the chestCategories
 	 */
+	@Override
 	public List<String> getChestCategories() {
 		return chestCategories;
 	}
@@ -254,6 +270,81 @@ public class LevelConfig implements ILevelConfig {
 	 */
 	public void setChestCategories(List<String> chestCategories) {
 		this.chestCategories = chestCategories;
+	}
+
+	/**
+	 * @return the numberOfWebs
+	 */
+	@Override
+	public Quantity getNumberOfWebs() {
+		return numberOfWebs;
+	}
+
+	/**
+	 * @param numberOfWebs the numberOfWebs to set
+	 */
+	public void setNumberOfWebs(Quantity numberOfWebs) {
+		this.numberOfWebs = numberOfWebs;
+	}
+
+	/**
+	 * @return the webFrequency
+	 */
+	@Override
+	public Quantity getWebFrequency() {
+		return webFrequency;
+	}
+
+	/**
+	 * @param webFrequency the webFrequency to set
+	 */
+	public void setWebFrequency(Quantity webFrequency) {
+		this.webFrequency = webFrequency;
+	}
+
+	/**
+	 * @return the numberOfVines
+	 */
+	@Override
+	public Quantity getNumberOfVines() {
+		return numberOfVines;
+	}
+
+	/**
+	 * @param numberOfVines the numberOfVines to set
+	 */
+	public void setNumberOfVines(Quantity numberOfVines) {
+		this.numberOfVines = numberOfVines;
+	}
+
+	/**
+	 * @return the vineFrequency
+	 */
+	@Override
+	public Quantity getVineFrequency() {
+		return vineFrequency;
+	}
+
+	/**
+	 * @param vineFrequency the vineFrequency to set
+	 */
+	public void setVineFrequency(Quantity vineFrequency) {
+		this.vineFrequency = vineFrequency;
+	}
+
+	/**
+	 * @return the decorations
+	 */
+	@Override
+	public boolean isDecorations() {
+		return decorations;
+	}
+
+	/**
+	 * @param decorations the decorations to set
+	 */
+	public void setDecorations(boolean decorations) {
+		this.decorations = decorations;
 	}
 
 }

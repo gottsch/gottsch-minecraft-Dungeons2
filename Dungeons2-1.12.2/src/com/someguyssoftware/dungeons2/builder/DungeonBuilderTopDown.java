@@ -286,10 +286,65 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			}
 			else if (levelIndex == numberOfLevels - 1 || isBottomLevel) {	
 				Dungeons2.log.debug("BOTTOM LEVEL");
+				// build the start room
+				startRoom = new Room(dungeon.getLevels().get(levelIndex-1).getEndRoom());
+				if (startRoom == LevelBuilder.EMPTY_ROOM) {
+					logger.warn("Unable to generate Bottom level Start Room");
+					return EMPTY_DUNGEON;
+				}
+				Dungeons2.log.debug("StartPoint (Bottom Level): " + startPoint);
+				// update end room settings
+				startRoom.setCoords(startRoom.getCoords().resetY(startPoint.getY()));
+				startRoom.setDistance(startRoom.getCenter().getDistance(startPoint));
+				startRoom.setAnchor(true).setStart(true).setEnd(false);			
+				plannedRooms.add(startRoom);
+				
+				endRoom = levelBuilder.buildBossRoom(world, rand, roomField, startPoint, plannedRooms, levelConfig);
+				if (endRoom == LevelBuilder.EMPTY_ROOM) {
+					logger.warn("Unable to generate Bottom level End Room.");
+					return EMPTY_DUNGEON;
+				}
+				Dungeons2.log.debug("Boss Room (Bottom Level): " + endRoom);
+				Dungeons2.log.debug("BossPoint (Bottom Level): " + endRoom.getCoords().toShortString());
+				plannedRooms.add(endRoom);
+			}
+			else {
+				Dungeons2.log.debug("Building Start Room for Level: " + levelIndex);
+				// 1. create start room from previous level end room
+				startRoom = new Room(dungeon.getLevels().get(levelIndex-1).getEndRoom());
+				if (startRoom == LevelBuilder.EMPTY_ROOM) {
+					logger.warn("Unable to generate level Start Room: " + levelIndex);
+					return EMPTY_DUNGEON;
+				}
+				// update end room settings
+				startRoom.setCoords(startRoom.getCoords().resetY(startPoint.getY()));
+				startRoom.setDistance(startRoom.getCenter().getDistance(startPoint));
+				startRoom.setAnchor(true).setStart(true).setEnd(false);
+				plannedRooms.add(startRoom);
+				Dungeons2.log.debug("Level Start Room:" + startRoom);
+
+				// 2. create end room
+				endRoom = levelBuilder.buildPlannedRoom(world, rand, roomField, startPoint, plannedRooms, levelConfig);
+				if (endRoom == LevelBuilder.EMPTY_ROOM) {
+					logger.warn("Unable to generate level End Room: " + levelIndex);
+					return EMPTY_DUNGEON;
+				}
+				endRoom.setDistance(endRoom.getCenter().getDistance(startPoint));
+				endRoom.setAnchor(true).setStart(false).setEnd(true).setType(Type.LADDER);
+				plannedRooms.add(endRoom);		
+			}
+			
+			// build a level
+			Level level = levelBuilder.build(world, rand, startPoint, plannedRooms, levelConfig);
+			Dungeons2.log.debug(String.format("Built level[%d]: %s", levelIndex, level));
+			
+			// add level
+			if (level != LevelBuilder.EMPTY_LEVEL) {
 				
 			}
 		}
 		
+
 		// return the dungeon
 		return dungeon;
 	}
@@ -752,7 +807,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	/**
 	 * @return the field
 	 */
-	protected AxisAlignedBB getField() {
+	@Override
+	public AxisAlignedBB getField() {
 		return field;
 	}
 

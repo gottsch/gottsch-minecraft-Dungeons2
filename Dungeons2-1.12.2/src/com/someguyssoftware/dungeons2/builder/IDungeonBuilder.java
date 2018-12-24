@@ -51,7 +51,8 @@ public interface IDungeonBuilder {
 	Room buildEntranceRoom(World world, Random rand, ICoords startPoint);
 
 	DungeonBuilderTopDown withField(AxisAlignedBB field);
-
+	AxisAlignedBB getField();
+	
 	IDungeonConfig getConfig();
 	
 	

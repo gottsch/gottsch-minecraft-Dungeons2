@@ -1,5 +1,7 @@
 package com.someguyssoftware.dungeonsengine.config;
 
+import java.util.List;
+
 import com.someguyssoftware.gottschcore.Quantity;
 
 public interface ILevelConfig {
@@ -20,5 +22,16 @@ public interface ILevelConfig {
 	void setDegrees(Quantity degrees);
 	Quantity getNumRooms();
 	void setNumRooms(Quantity numRooms);
+	LevelConfig copy();
+	int getDecayMultiplier();
+	void setDecayMultiplier(int decayMultiplier);
+	Quantity getSpawnerFrequency();
+	Quantity getChestFrequency();
+	List<String> getChestCategories();
+	Quantity getNumberOfWebs();
+	Quantity getWebFrequency();
+	Quantity getNumberOfVines();
+	Quantity getVineFrequency();
+	boolean isDecorations();
 
 }

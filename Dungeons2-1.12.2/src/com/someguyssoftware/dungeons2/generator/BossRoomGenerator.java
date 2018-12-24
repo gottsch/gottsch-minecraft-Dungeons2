@@ -10,6 +10,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
 
@@ -30,6 +31,15 @@ public class BossRoomGenerator extends AbstractRoomGenerator {
 		setGenerationStrategy(generator);
 	}
 	
+	@Override
+	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
+			ILevelConfig config) {
+		
+		// generate the room structure
+		getGenerationStrategy().generate(world, random, room, theme, styleSheet, config);
+	}
+	
+	@Deprecated
 	@Override
 	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
 			LevelConfig config) {

@@ -11,11 +11,13 @@ import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.Hallway;
 import com.someguyssoftware.dungeons2.model.Level;
-import com.someguyssoftware.dungeons2.model.LevelConfig;
+//import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.printer.DungeonPrettyPrinter;
 import com.someguyssoftware.dungeons2.printer.RoomPrettyPrinter;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
+import com.someguyssoftware.dungeonsengine.config.LevelConfig;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -37,7 +39,8 @@ public class PrinterTester {
 		DungeonConfig dc = new DungeonConfig();
 		Dungeon d = new Dungeon(dc);
 		
-		LevelConfig lc = new LevelConfig();
+//		LevelConfig lc = new LevelConfig();
+		ILevelConfig lc = new LevelConfig();
 		Level l = new Level();
 		l.setConfig(lc);
 		

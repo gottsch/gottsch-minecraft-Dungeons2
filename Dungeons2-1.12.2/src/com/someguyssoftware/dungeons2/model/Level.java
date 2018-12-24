@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.someguyssoftware.dungeons2.graph.Wayline;
 import com.someguyssoftware.dungeons2.graph.mst.Edge;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
@@ -37,7 +38,7 @@ public class Level {
 	private int minY, maxY;
 	private int minZ, maxZ;
 
-	private LevelConfig config;
+	private ILevelConfig config;
 
 	/**
 	 * 
@@ -278,14 +279,14 @@ public class Level {
 	/**
 	 * @return the config
 	 */
-	public LevelConfig getConfig() {
+	public ILevelConfig getConfig() {
 		return config;
 	}
 
 	/**
 	 * @param config the config to set
 	 */
-	public void setConfig(LevelConfig config) {
+	public void setConfig(ILevelConfig config) {
 		this.config = config;
 	}
 
