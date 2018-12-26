@@ -108,7 +108,7 @@ public class LevelBuilder {
 	private LevelConfig config;
 	
 	private AxisAlignedBB field;
-	private AxisAlignedBB roomField;
+	private AxisAlignedBB roomBoundary;
 	
 	/*
 	 * the number of rooms lost as a result of distance buffering
@@ -137,26 +137,24 @@ public class LevelBuilder {
 
 	/**
 	 * 
-	 * @param dungeonField
+	 * @param dungeonBoundary
 	 * @return
 	 */
-	public AxisAlignedBB getRoomField(AxisAlignedBB dungeonField, double factor) {
+	public AxisAlignedBB getRoomBoundary(AxisAlignedBB dungeonBoundary, double factor) {
 		/*
 		 * AxisAlignedBB.getCenter() is @ClientSide so must calculate the center
 		 */
-		Vec3d center = new Vec3d(dungeonField.minX + (dungeonField.maxX - dungeonField.minX) * 0.5D, 
-				dungeonField.minY + (dungeonField.maxY - dungeonField.minY) * 0.5D, 
-				dungeonField.minZ + (dungeonField.maxZ - dungeonField.minZ) * 0.5D);
-		AxisAlignedBB roomField = new AxisAlignedBB(new BlockPos(center)).grow(30);
+		Vec3d center = new Vec3d(dungeonBoundary.minX + (dungeonBoundary.maxX - dungeonBoundary.minX) * 0.5D, dungeonBoundary.minY + (dungeonBoundary.maxY - dungeonBoundary.minY) * 0.5D, dungeonBoundary.minZ + (dungeonBoundary.maxZ - dungeonBoundary.minZ) * 0.5D);
+		AxisAlignedBB roomBoundary = new AxisAlignedBB(new BlockPos(center)).grow(30);
 		
 		// resize field
 		if (factor < 1.0D) {
-			int shrinkAmount = (int) ((roomField.maxX - roomField.minX) * (1.0 - factor) / 2);
-			roomField = roomField.grow(-shrinkAmount, 0, -shrinkAmount);
-			Dungeons2.log.debug("Room field shrunk by -> {}, to new size -> {}", shrinkAmount, roomField);
+			int shrinkAmount = (int) ((roomBoundary.maxX - roomBoundary.minX) * (1.0 - factor) / 2);
+			roomBoundary = roomBoundary.shrink(shrinkAmount);
+			Dungeons2.log.debug("Room field shrunk by -> {}, to new size -> {}", shrinkAmount, roomBoundary);
 		}
 		
-		return roomField;
+		return roomBoundary;
 	}
 	
 	/**
@@ -705,7 +703,7 @@ public class LevelBuilder {
 		/*
 		 * the start of the level
 		 */
-		Room startRoom = buildStartRoom(world, rand, getField(), startPoint, config);
+		Room startRoom = buildStartRoom(world, rand, getBoundary(), startPoint, config);
 		if (startRoom == EMPTY_ROOM) {
 			if (Dungeons2.log.isWarnEnabled()) {
 				Dungeons2.log.warn(String.format("Start Room has invalid Minecraft world room conditions: %s", startRoom.toString()));
@@ -718,7 +716,7 @@ public class LevelBuilder {
 		 * the end room of the level.
 		 * only one way into the end room - only if boss/treasure room
 		 */
-		Room endRoom = buildEndRoom(world, rand, getField(), startPoint, predefinedRooms, config);
+		Room endRoom = buildEndRoom(world, rand, getBoundary(), startPoint, predefinedRooms, config);
 		if (endRoom == EMPTY_ROOM) {
 			return EMPTY_LEVEL;
 		}
@@ -774,7 +772,7 @@ public class LevelBuilder {
 		Room endRoom = null;
 		Level level = new Level();	
 		
-		spawned = spawnRooms(rand, getRoomField(), startPoint, config);		
+		spawned = spawnRooms(rand, getRoomBoundary(), startPoint, config);		
 		Dungeons2.log.debug("Spawned.size=" + spawned.size());
 		
 		// TODO new method
@@ -980,7 +978,7 @@ public class LevelBuilder {
 		
 		// add randomly generated rooms
 //		spawned = spawnRooms(rand,  startPoint, config);
-		spawned = spawnRooms(rand, getRoomField(), startPoint, config);
+		spawned = spawnRooms(rand, getRoomBoundary(), startPoint, config);
 		
 		Dungeons2.log.debug("Spawned.size=" + spawned.size());
 		
@@ -2168,8 +2166,7 @@ public class LevelBuilder {
 	protected List<Room> selectValidRooms(World world, Random rand, List<Room> rooms, ILevelConfig config) {
 		List<Room> met = new ArrayList<>();
 		int roomId = 0;
-		AxisAlignedBB lbb = getDungeonBuilder().getField();
-		Dungeons2.log.debug("Dungeon field lbb -> {}", lbb);
+		AxisAlignedBB lbb = getDungeonBuilder().getBoundary();
 		
 		for (Room room : rooms) {
 			if (room.isObstacle()) continue;
@@ -2242,7 +2239,7 @@ public class LevelBuilder {
 	protected List<Room> selectValidRooms(World world, Random rand, List<Room> rooms, LevelConfig config) {
 		List<Room> met = new ArrayList<>();
 		int roomId = 0;
-		AxisAlignedBB lbb = getField(); // <-- should be passed in.
+		AxisAlignedBB lbb = getBoundary(); // <-- should be passed in.
 		
 		for (Room room : rooms) {
 			if (room.isObstacle()) {
@@ -2922,29 +2919,29 @@ public class LevelBuilder {
 	/**
 	 * @return the field
 	 */
-	protected AxisAlignedBB getField() {
+	protected AxisAlignedBB getBoundary() {
 		return field;
 	}
 
 	/**
 	 * @param field the field to set
 	 */
-	protected void setField(AxisAlignedBB field) {
+	protected void setBoundary(AxisAlignedBB field) {
 		this.field = field;
 	}
 
 	/**
-	 * @return the roomField
+	 * @return the roomBoundary
 	 */
-	protected AxisAlignedBB getRoomField() {
-		return roomField;
+	protected AxisAlignedBB getRoomBoundary() {
+		return roomBoundary;
 	}
 
 	/**
-	 * @param roomField the roomField to set
+	 * @param roomBoundary the roomBoundary to set
 	 */
-	protected void setRoomField(AxisAlignedBB roomField) {
-		this.roomField = roomField;
+	protected void setRoomBoundary(AxisAlignedBB roomBoundary) {
+		this.roomBoundary = roomBoundary;
 	}
 	
 	/**

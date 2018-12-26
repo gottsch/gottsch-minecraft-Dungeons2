@@ -82,7 +82,7 @@ public class LevelConfig implements ILevelConfig {
 		this.setDecayMultiplier(c.getDecayMultiplier());
 		this.setDegrees(c.getDegrees());
 		this.setDepth(c.getDepth());
-		this.setFieldFactor(c.getFieldFactor());
+		this.setBoundaryFactor(c.getBoundaryFactor());
 		this.setHeight(c.getHeight());
 		this.setNumRooms(c.getNumRooms());
 		this.setSpawnerFrequency(c.getSpawnerFrequency());
@@ -119,7 +119,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @return the fieldFactor
 	 */
 	@Override
-	public double getFieldFactor() {
+	public double getBoundaryFactor() {
 		return fieldFactor;
 	}
 
@@ -127,7 +127,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @param fieldFactor the fieldFactor to set
 	 */
 	@Override
-	public void setFieldFactor(double fieldFactor) {
+	public void setBoundaryFactor(double fieldFactor) {
 		this.fieldFactor = fieldFactor;
 	}
 

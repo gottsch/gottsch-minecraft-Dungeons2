@@ -40,8 +40,8 @@ public interface IDungeonConfig {
 		List<String> getBiomeBlackList();
 		void setBiomeBlackList(List<String> biomeBlackList);
 		
-		double getFieldFactor();
-		void setFieldFactor(double fieldFactor);
+		double getBoundaryFactor();
+		void setBoundaryFactor(double factor);
 		
 		String getVersion();
 		void setVersion(String version);

@@ -9,8 +9,8 @@ public interface ILevelConfig {
 	boolean isSupport();
 	void setSupport(boolean support);
 
-	double getFieldFactor();
-	void setFieldFactor(double fieldFactor);
+	double getBoundaryFactor();
+	void setBoundaryFactor(double factor);
 	
 	Quantity getHeight();
 	void setHeight(Quantity height);

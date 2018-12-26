@@ -230,7 +230,7 @@ public class DungeonConfig implements IDungeonConfig {
 	 * @return the fieldFactor
 	 */
 	@Override
-	public double getFieldFactor() {
+	public double getBoundaryFactor() {
 		return fieldFactor;
 	}
 
@@ -239,7 +239,7 @@ public class DungeonConfig implements IDungeonConfig {
 	 * @param fieldFactor the fieldFactor to set
 	 */
 	@Override
-	public void setFieldFactor(double fieldFactor) {
+	public void setBoundaryFactor(double fieldFactor) {
 		this.fieldFactor = fieldFactor;
 	}
 

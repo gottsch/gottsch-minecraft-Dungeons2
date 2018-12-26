@@ -50,8 +50,8 @@ public interface IDungeonBuilder {
 	 */
 	Room buildEntranceRoom(World world, Random rand, ICoords startPoint);
 
-	DungeonBuilderTopDown withField(AxisAlignedBB field);
-	AxisAlignedBB getField();
+	DungeonBuilderTopDown withBoundary(AxisAlignedBB field);
+	AxisAlignedBB getBoundary();
 	
 	IDungeonConfig getConfig();
 

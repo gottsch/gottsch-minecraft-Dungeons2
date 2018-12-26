@@ -131,7 +131,7 @@ public class BuildCommand extends CommandBase {
     			// use a top-down dungeonBuilder
     			IDungeonBuilder dungeonBuilder = new DungeonBuilderTopDown();
     			dungeonBuilder
-    			.withField(dungeonField)
+    			.withBoundary(dungeonField)
     			.withStartPoint(startPoint)
     			.setLevelBuilder(levelBuilder);    			
     			
