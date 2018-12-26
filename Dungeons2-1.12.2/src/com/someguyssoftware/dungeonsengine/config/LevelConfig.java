@@ -13,9 +13,11 @@ import com.someguyssoftware.gottschcore.Quantity;
  */
 public class LevelConfig implements ILevelConfig {
 	/*
-	 * Adjusts the size of the room field.
+	 * Adjusts the size of the level boundary.
 	 */
-	private double fieldFactor;
+	private double boundaryFactor;
+	
+	private double spawnBoundaryFactor;
 	
 	/*
 	 * min/max # of rooms in a level
@@ -120,7 +122,7 @@ public class LevelConfig implements ILevelConfig {
 	 */
 	@Override
 	public double getBoundaryFactor() {
-		return fieldFactor;
+		return boundaryFactor;
 	}
 
 	/**
@@ -128,7 +130,7 @@ public class LevelConfig implements ILevelConfig {
 	 */
 	@Override
 	public void setBoundaryFactor(double fieldFactor) {
-		this.fieldFactor = fieldFactor;
+		this.boundaryFactor = fieldFactor;
 	}
 
 	/**
@@ -349,12 +351,22 @@ public class LevelConfig implements ILevelConfig {
 
 	@Override
 	public String toString() {
-		return "LevelConfig [fieldFactor=" + fieldFactor + ", numRooms=" + numRooms + ", width=" + width + ", depth="
+		return "LevelConfig [fieldFactor=" + boundaryFactor + ", numRooms=" + numRooms + ", width=" + width + ", depth="
 				+ depth + ", height=" + height + ", degrees=" + degrees + ", decayMultiplier=" + decayMultiplier
 				+ ", spawnerFrequency=" + spawnerFrequency + ", chestFrequency=" + chestFrequency + ", chestCategories="
 				+ chestCategories + ", numberOfWebs=" + numberOfWebs + ", webFrequency=" + webFrequency
 				+ ", numberOfVines=" + numberOfVines + ", vineFrequency=" + vineFrequency + ", support=" + support
 				+ ", decorations=" + decorations + "]";
+	}
+
+	@Override
+	public double getSpawnBoundaryFactor() {
+		return spawnBoundaryFactor;
+	}
+
+	@Override
+	public void setSpawnBoundaryFactor(double spawnBoundaryFactor) {
+		this.spawnBoundaryFactor = spawnBoundaryFactor;
 	}
 
 }

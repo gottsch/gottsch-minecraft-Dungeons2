@@ -96,7 +96,7 @@ public interface ISpace {
 	/**
 	 * @param direction the direction to set
 	 */
-//	ISpace setDirection(Direction direction);
+	ISpace setDirection(Direction direction);
 	
 	/**
 	 * 
@@ -234,7 +234,7 @@ public interface ISpace {
 	}
 	
 	/**
-	 * Returns a new IRoom with the force applied at the angle on the XZ plane.
+	 * Returns a new ISpace with the force applied at the angle on the XZ plane.
 	 * @param angle
 	 * @param force
 	 * @return

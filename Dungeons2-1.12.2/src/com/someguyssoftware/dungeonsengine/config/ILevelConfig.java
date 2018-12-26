@@ -12,6 +12,9 @@ public interface ILevelConfig {
 	double getBoundaryFactor();
 	void setBoundaryFactor(double factor);
 	
+	double getSpawnBoundaryFactor();
+	void setSpawnBoundaryFactor(double spawnBoundaryFactor);
+	
 	Quantity getHeight();
 	void setHeight(Quantity height);
 	Quantity getWidth();
@@ -33,5 +36,5 @@ public interface ILevelConfig {
 	Quantity getNumberOfVines();
 	Quantity getVineFrequency();
 	boolean isDecorations();
-
+	
 }

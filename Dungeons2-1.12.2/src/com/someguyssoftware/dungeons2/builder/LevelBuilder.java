@@ -136,25 +136,26 @@ public class LevelBuilder {
 	}
 
 	/**
-	 * 
-	 * @param dungeonBoundary
+	 * TODO this doesn't belong in LevelBuilder but should be part of Boundary class
+	 * @param boundary
 	 * @return
 	 */
-	public AxisAlignedBB getRoomBoundary(AxisAlignedBB dungeonBoundary, double factor) {
+	public AxisAlignedBB resizeBoundary(final AxisAlignedBB boundary, final double factor) {
 		/*
 		 * AxisAlignedBB.getCenter() is @ClientSide so must calculate the center
 		 */
-		Vec3d center = new Vec3d(dungeonBoundary.minX + (dungeonBoundary.maxX - dungeonBoundary.minX) * 0.5D, dungeonBoundary.minY + (dungeonBoundary.maxY - dungeonBoundary.minY) * 0.5D, dungeonBoundary.minZ + (dungeonBoundary.maxZ - dungeonBoundary.minZ) * 0.5D);
-		AxisAlignedBB roomBoundary = new AxisAlignedBB(new BlockPos(center)).grow(30);
-		
+//		Vec3d center = new Vec3d(boundary.minX + (boundary.maxX - boundary.minX) * 0.5D, boundary.minY + (boundary.maxY - boundary.minY) * 0.5D, boundary.minZ + (boundary.maxZ - boundary.minZ) * 0.5D);
+//		AxisAlignedBB newBoundary = new AxisAlignedBB(new BlockPos(center)).grow(30);
+//		
 		// resize field
 		if (factor < 1.0D) {
-			int shrinkAmount = (int) ((roomBoundary.maxX - roomBoundary.minX) * (1.0 - factor) / 2);
-			roomBoundary = roomBoundary.shrink(shrinkAmount);
-			Dungeons2.log.debug("Room field shrunk by -> {}, to new size -> {}", shrinkAmount, roomBoundary);
+			int shrinkAmount = (int) ((boundary.maxX - boundary.minX) * (1.0 - factor) / 2);
+			AxisAlignedBB newBoundary = boundary.shrink(shrinkAmount);
+			Dungeons2.log.debug("boundary shrunk by -> {}, to new size -> {}", shrinkAmount, newBoundary);
+			return newBoundary;
 		}
-		
-		return roomBoundary;
+		else return boundary;
+
 	}
 	
 	/**
@@ -771,6 +772,8 @@ public class LevelBuilder {
 		Room startRoom = null;
 		Room endRoom = null;
 		Level level = new Level();	
+		
+		// NOTE at this point the level boundary and spawn boundarys should already be set.
 		
 		spawned = spawnRooms(rand, getRoomBoundary(), startPoint, config);		
 		Dungeons2.log.debug("Spawned.size=" + spawned.size());
@@ -2166,7 +2169,8 @@ public class LevelBuilder {
 	protected List<Room> selectValidRooms(World world, Random rand, List<Room> rooms, ILevelConfig config) {
 		List<Room> met = new ArrayList<>();
 		int roomId = 0;
-		AxisAlignedBB lbb = getDungeonBuilder().getBoundary();
+		AxisAlignedBB dbb = getDungeonBuilder().getBoundary();
+		AxisAlignedBB lbb = getBoundary(); // getDungeonBuilder().getBoundary();
 		
 		for (Room room : rooms) {
 			if (room.isObstacle()) continue;
@@ -2187,8 +2191,18 @@ public class LevelBuilder {
 				isValid = true;
 			}
 			else {
-				Dungeons2.log.debug("Removing room for being outside field bounds -> {}", room);
-				System.out.println("Removing room for being outside field bounds -> " +  room);
+				Dungeons2.log.debug("Removing room for being outside level bounds -> {}", room);
+				System.out.println("Removing room for being outside level bounds -> " +  room);
+				incrementLossToValidation(1);
+			}
+			
+			if (isValid && (rbb.minX > dbb.minX
+					|| rbb.maxX < dbb.maxX)) {
+				isValid = true;
+			}
+			else {
+				Dungeons2.log.debug("Removing room for being outside dungeon bounds -> {}", room);
+				System.out.println("Removing room for being outside dungeon bounds -> " +  room);
 				incrementLossToValidation(1);
 			}
 			

@@ -3,14 +3,14 @@
  */
 package com.someguyssoftware.dungeons2.builder;
 
+import static com.someguyssoftware.gottschcore.world.WorldInfo.EMPTY_COORDS;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static com.someguyssoftware.gottschcore.world.WorldInfo.*;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.model.Dungeon;
@@ -28,15 +28,12 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.chunk.Chunk;
 
 /**
  * This class is responsible for building an entire dungeon.
@@ -142,7 +139,10 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		/*
 		 * Calculate room boundary
 		 */
-		AxisAlignedBB roomBoundary =getLevelBuilder().getRoomBoundary(dungeonBoundary, defaultLevelConfig.getBoundaryFactor());
+		AxisAlignedBB lb = getLevelBuilder()
+				.resizeBoundary(dungeonBoundary, defaultLevelConfig.getBoundaryFactor());
+		AxisAlignedBB roomBoundary =getLevelBuilder()
+				.resizeBoundary(lb, defaultLevelConfig.getBoundaryFactor());
 		
 		/*
 		 * Select startPoint in room boundary
@@ -257,10 +257,15 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				levelConfig = config.getLevelConfigs()[config.getLevelConfigs().length-1];
 			}
 			
-			// update the roomBoundary if the level config has changed			
+			// update the level/roomBoundary if the level config has changed			
 			if (levelConfig != prevLevelConfig) {
 				// config has changed
-				roomBoundary = getLevelBuilder().getRoomBoundary(dungeonBoundary, levelConfig.getBoundaryFactor());				
+				AxisAlignedBB levelBoundary = getLevelBuilder().resizeBoundary(dungeonBoundary, levelConfig.getBoundaryFactor());
+				getLevelBuilder().setBoundary(levelBoundary);
+				Dungeons2.log.debug("new level boundary ->{} (factor -> {}", levelBoundary, levelConfig.getBoundaryFactor());
+				roomBoundary = getLevelBuilder().resizeBoundary(levelBoundary, levelConfig.getBoundaryFactor());	
+				getLevelBuilder().setRoomBoundary(roomBoundary);
+				Dungeons2.log.debug("new spawn boundary ->{} (factor -> {}", roomBoundary, levelConfig.getSpawnBoundaryFactor());
 			}
 			
 			// determine if any levels can be made below this one
