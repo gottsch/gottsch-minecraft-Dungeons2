@@ -52,7 +52,7 @@ public class DungeonConfig implements IDungeonConfig {
 	/*
 	 * 
 	 */
-	private double fieldFactor;
+	private double boundaryFactor;
 	
 	/*
 	 * 
@@ -231,7 +231,7 @@ public class DungeonConfig implements IDungeonConfig {
 	 */
 	@Override
 	public double getBoundaryFactor() {
-		return fieldFactor;
+		return boundaryFactor;
 	}
 
 
@@ -239,8 +239,8 @@ public class DungeonConfig implements IDungeonConfig {
 	 * @param fieldFactor the fieldFactor to set
 	 */
 	@Override
-	public void setBoundaryFactor(double fieldFactor) {
-		this.fieldFactor = fieldFactor;
+	public void setBoundaryFactor(double factor) {
+		this.boundaryFactor = factor;
 	}
 
 	/**
@@ -284,7 +284,7 @@ public class DungeonConfig implements IDungeonConfig {
 	@Override
 	public String toString() {
 		return "DungeonConfig [name=" + name + ", version=" + version + ", size=" + size + ", numLevels=" + numLevels + ", bottomLimit=" + bottomLimit + ", topLimit=" + topLimit + ", surfaceBuffer="
-				+ surfaceBuffer + ", biomeWhiteList=" + biomeWhiteList + ", biomeBlackList=" + biomeBlackList + ", fieldFactor=" + fieldFactor + ", levelConfigs=" + Arrays.toString(levelConfigs)
+				+ surfaceBuffer + ", biomeWhiteList=" + biomeWhiteList + ", biomeBlackList=" + biomeBlackList + ", boundaryFactor=" + boundaryFactor + ", levelConfigs=" + Arrays.toString(levelConfigs)
 				+ ", surfaceConfig=" + surfaceConfig + "]";
 	}
 

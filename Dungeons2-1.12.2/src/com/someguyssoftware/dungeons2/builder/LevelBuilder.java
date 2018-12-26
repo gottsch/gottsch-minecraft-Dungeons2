@@ -2201,8 +2201,8 @@ public class LevelBuilder {
 				isValid = true;
 			}
 			else {
-				Dungeons2.log.debug("Removing room for being outside dungeon bounds -> {}", room);
-				System.out.println("Removing room for being outside dungeon bounds -> " +  room);
+				Dungeons2.log.debug("Removing room for being outside dungeon bounds -> {}", room.getId());
+				System.out.println("Removing room for being outside dungeon bounds -> " +  room.getId());
 				incrementLossToValidation(1);
 			}
 			

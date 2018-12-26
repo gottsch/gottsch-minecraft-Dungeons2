@@ -127,22 +127,27 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		}
 		else dungeonBoundary = this.getBoundary();		
 
+		// TODO something wrong here, dungeon boundary is not loading from config
 		Dungeons2.log.debug("Dungeon boundary -> {}", dungeonBoundary);
-		
+		Dungeons2.log.debug("Dungeon boundary factor -> {}", config.getBoundaryFactor());
 		// resize boundary
-		if (config.getBoundaryFactor() < 1.0D) {
+		if (config.getBoundaryFactor() > 0D && config.getBoundaryFactor() < 1.0D) {
 			int shrinkAmount = (int) ((dungeonBoundary.maxX - dungeonBoundary.minX) * (1.0 - config.getBoundaryFactor()) / 2);
 			dungeonBoundary = dungeonBoundary.grow(-shrinkAmount, 0, -shrinkAmount);
-			Dungeons2.log.debug("Dungeon shrunk by -> {}, to new size -> {}", shrinkAmount, dungeonBoundary);
+			Dungeons2.log.debug("Dungeon shrunk by factor -> {} [{}], to new size -> {}", config.getBoundaryFactor(), shrinkAmount, dungeonBoundary);
+			// update the boundary of this
+			this.boundary = dungeonBoundary;
 		}
 
 		/*
-		 * Calculate room boundary
+		 * Calculate spawn boundary
 		 */
 		AxisAlignedBB lb = getLevelBuilder()
 				.resizeBoundary(dungeonBoundary, defaultLevelConfig.getBoundaryFactor());
+		Dungeons2.log.debug("init level boundary -> {}, factor -> {}", lb, defaultLevelConfig.getBoundaryFactor());
 		AxisAlignedBB roomBoundary =getLevelBuilder()
-				.resizeBoundary(lb, defaultLevelConfig.getBoundaryFactor());
+				.resizeBoundary(lb, defaultLevelConfig.getSpawnBoundaryFactor());
+		Dungeons2.log.debug("init spawn boundary -> {}, factor -> {}", roomBoundary, defaultLevelConfig.getSpawnBoundaryFactor());
 		
 		/*
 		 * Select startPoint in room boundary
@@ -246,7 +251,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		ILevelConfig levelConfig = null;
 		// for every n in numLevels
 		for (int levelIndex = 0; levelIndex < numberOfLevels; levelIndex++) {
-			logger.debug("Building level -> {}" + levelIndex);
+			logger.debug("Building level -> {}", levelIndex);
 			ILevelConfig prevLevelConfig = levelConfig;
 			// get the level config
 			if (levelIndex <= config.getLevelConfigs().length-1) {
@@ -263,7 +268,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				AxisAlignedBB levelBoundary = getLevelBuilder().resizeBoundary(dungeonBoundary, levelConfig.getBoundaryFactor());
 				getLevelBuilder().setBoundary(levelBoundary);
 				Dungeons2.log.debug("new level boundary ->{} (factor -> {}", levelBoundary, levelConfig.getBoundaryFactor());
-				roomBoundary = getLevelBuilder().resizeBoundary(levelBoundary, levelConfig.getBoundaryFactor());	
+				roomBoundary = getLevelBuilder().resizeBoundary(levelBoundary, levelConfig.getSpawnBoundaryFactor());	
 				getLevelBuilder().setRoomBoundary(roomBoundary);
 				Dungeons2.log.debug("new spawn boundary ->{} (factor -> {}", roomBoundary, levelConfig.getSpawnBoundaryFactor());
 			}

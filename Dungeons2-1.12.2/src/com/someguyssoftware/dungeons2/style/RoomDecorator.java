@@ -72,11 +72,11 @@ public class RoomDecorator implements IRoomDecorator {
 
 	@Override
 	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {
-		Dungeons2.log.debug("floorMap in decorate -> {}", room.getFloorMap());
+//		Dungeons2.log.debug("floorMap in decorate -> {}", room.getFloorMap());
 		List<Entry<DesignElement, ICoords>> surfaceAirZone = room.getFloorMap().entries().stream().filter(x -> x.getKey().getFamily() == DesignElement.SURFACE_AIR)
 				.collect(Collectors.toList());			
 		
-		Dungeons2.log.debug("SurfaceAirZone.size() -> {}", surfaceAirZone.size());
+//		Dungeons2.log.debug("SurfaceAirZone.size() -> {}", surfaceAirZone.size());
 		
 		if (surfaceAirZone == null || surfaceAirZone.size() == 0) return;
 
@@ -726,8 +726,8 @@ public class RoomDecorator implements IRoomDecorator {
 		ICoords chestCoords = null;
 		// determine if room should get a chest
 		double freq = RandomHelper.randomDouble(random, config.getChestFrequency().getMin(), config.getChestFrequency().getMax());
-		Dungeons2.log.debug("Chest floorZone.size -> {}", floorZone.size());
-		Dungeons2.log.debug("Chest freq -> {}", freq);
+//		Dungeons2.log.debug("Chest floorZone.size -> {}", floorZone.size());
+//		Dungeons2.log.debug("Chest freq -> {}", freq);
 		if (RandomHelper.checkProbability(random, freq) && floorZone.size() > 0) {
 			int floorIndex = random.nextInt(floorZone.size());
 			DesignElement elem = floorZone.get(floorIndex).getKey();
