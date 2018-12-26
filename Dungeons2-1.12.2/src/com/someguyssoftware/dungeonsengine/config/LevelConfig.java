@@ -347,4 +347,14 @@ public class LevelConfig implements ILevelConfig {
 		this.decorations = decorations;
 	}
 
+	@Override
+	public String toString() {
+		return "LevelConfig [fieldFactor=" + fieldFactor + ", numRooms=" + numRooms + ", width=" + width + ", depth="
+				+ depth + ", height=" + height + ", degrees=" + degrees + ", decayMultiplier=" + decayMultiplier
+				+ ", spawnerFrequency=" + spawnerFrequency + ", chestFrequency=" + chestFrequency + ", chestCategories="
+				+ chestCategories + ", numberOfWebs=" + numberOfWebs + ", webFrequency=" + webFrequency
+				+ ", numberOfVines=" + numberOfVines + ", vineFrequency=" + vineFrequency + ", support=" + support
+				+ ", decorations=" + decorations + "]";
+	}
+
 }

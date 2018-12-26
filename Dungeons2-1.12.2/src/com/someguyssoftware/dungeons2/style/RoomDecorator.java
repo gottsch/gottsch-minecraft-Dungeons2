@@ -72,13 +72,22 @@ public class RoomDecorator implements IRoomDecorator {
 
 	@Override
 	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {
+		Dungeons2.log.debug("floorMap in decorate -> {}", room.getFloorMap());
 		List<Entry<DesignElement, ICoords>> surfaceAirZone = room.getFloorMap().entries().stream().filter(x -> x.getKey().getFamily() == DesignElement.SURFACE_AIR)
 				.collect(Collectors.toList());			
+		
+		Dungeons2.log.debug("SurfaceAirZone.size() -> {}", surfaceAirZone.size());
+		
 		if (surfaceAirZone == null || surfaceAirZone.size() == 0) return;
 
 		List<Entry<DesignElement, ICoords>> wallZone = null;
 		List<Entry<DesignElement, ICoords>> floorZone = null;
 
+		if (config.isDecorations() || ModConfig.enableChests) {
+			// get the floor only (from the air zone)
+			floorZone = surfaceAirZone.stream().filter(f -> f.getKey() == DesignElement.FLOOR_AIR).collect(Collectors.toList());
+		}
+		
 		// decorate enabled
 		if (config.isDecorations()) {
 			// TODO these methods could be reduced to more generic methods
@@ -106,9 +115,6 @@ public class RoomDecorator implements IRoomDecorator {
 			 * wall blood
 			 */
 //			addBlood(world, random, provider, room, wallZone, config);
-			
-			// get the floor only (from the air zone)
-			floorZone = surfaceAirZone.stream().filter(f -> f.getKey() == DesignElement.FLOOR_AIR).collect(Collectors.toList());
 
 			/*
 			 * grass
@@ -139,6 +145,7 @@ public class RoomDecorator implements IRoomDecorator {
 		/*
 		 * chest
 		 */
+		// TODO this should be part of ILevelConfig
 		if (ModConfig.enableChests) {
 		ICoords chestCoords = addChest(world, random, provider, room, floorZone, config);
 			if (chestCoords != null) {
@@ -718,7 +725,9 @@ public class RoomDecorator implements IRoomDecorator {
 		ICoords chestCoords = null;
 		// determine if room should get a chest
 		double freq = RandomHelper.randomDouble(random, config.getChestFrequency().getMin(), config.getChestFrequency().getMax());
-		if (random.nextDouble() * 100 < freq && floorZone.size() > 0) {
+		Dungeons2.log.debug("Chest floorZone.size -> {}", floorZone.size());
+		Dungeons2.log.debug("Chest freq -> {}", freq);
+		if (RandomHelper.checkProbability(random, freq) && floorZone.size() > 0) {
 			int floorIndex = random.nextInt(floorZone.size());
 			DesignElement elem = floorZone.get(floorIndex).getKey();
 			chestCoords = floorZone.get(floorIndex).getValue();

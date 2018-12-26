@@ -54,6 +54,8 @@ public interface IDungeonBuilder {
 	AxisAlignedBB getField();
 	
 	IDungeonConfig getConfig();
+
+	Dungeon build(World world, Random rand, ICoords spawnCoords, IDungeonConfig config);
 	
 	
 

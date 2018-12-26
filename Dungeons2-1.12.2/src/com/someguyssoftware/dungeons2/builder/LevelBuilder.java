@@ -144,13 +144,15 @@ public class LevelBuilder {
 		/*
 		 * AxisAlignedBB.getCenter() is @ClientSide so must calculate the center
 		 */
-		Vec3d center = new Vec3d(dungeonField.minX + (dungeonField.maxX - dungeonField.minX) * 0.5D, dungeonField.minY + (dungeonField.maxY - dungeonField.minY) * 0.5D, dungeonField.minZ + (dungeonField.maxZ - dungeonField.minZ) * 0.5D);
+		Vec3d center = new Vec3d(dungeonField.minX + (dungeonField.maxX - dungeonField.minX) * 0.5D, 
+				dungeonField.minY + (dungeonField.maxY - dungeonField.minY) * 0.5D, 
+				dungeonField.minZ + (dungeonField.maxZ - dungeonField.minZ) * 0.5D);
 		AxisAlignedBB roomField = new AxisAlignedBB(new BlockPos(center)).grow(30);
 		
 		// resize field
 		if (factor < 1.0D) {
 			int shrinkAmount = (int) ((roomField.maxX - roomField.minX) * (1.0 - factor) / 2);
-			roomField = roomField.shrink(shrinkAmount);
+			roomField = roomField.grow(-shrinkAmount, 0, -shrinkAmount);
 			Dungeons2.log.debug("Room field shrunk by -> {}, to new size -> {}", shrinkAmount, roomField);
 		}
 		
@@ -2167,6 +2169,7 @@ public class LevelBuilder {
 		List<Room> met = new ArrayList<>();
 		int roomId = 0;
 		AxisAlignedBB lbb = getDungeonBuilder().getField();
+		Dungeons2.log.debug("Dungeon field lbb -> {}", lbb);
 		
 		for (Room room : rooms) {
 			if (room.isObstacle()) continue;

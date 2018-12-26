@@ -98,6 +98,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	/**
 	 * New(er) version that uses the new dungeonsEngine IDungeonConfig
 	 */
+	@Override
 	public Dungeon build(World world, Random rand, ICoords spawnCoords, IDungeonConfig config) {
 		Dungeon dungeon = new Dungeon();
 		List<Room> plannedRooms = new ArrayList<>();
@@ -124,13 +125,17 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 						spawnCoords.toShortString(), closestCoords.toShortString());				
 				return EMPTY_DUNGEON;
 			}
+			// update the field property to the dungeon field
+			this.field = dungeonField;
 		}
-		else dungeonField = this.getField();
+		else dungeonField = this.getField();		
+
+		Dungeons2.log.debug("Dungeon field -> {}", dungeonField);
 		
 		// resize field
 		if (config.getFieldFactor() < 1.0D) {
 			int shrinkAmount = (int) ((dungeonField.maxX - dungeonField.minX) * (1.0 - config.getFieldFactor()) / 2);
-			dungeonField = dungeonField.shrink(shrinkAmount);
+			dungeonField = dungeonField.grow(-shrinkAmount, 0, -shrinkAmount);
 			Dungeons2.log.debug("Dungeon shrunk by -> {}, to new size -> {}", shrinkAmount, dungeonField);
 		}
 
@@ -159,8 +164,9 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		/*
 		 * Setup level builder
 		 */
-		if (levelBuilder.getField() == null) levelBuilder.setField(dungeonField);
-		if (levelBuilder.getRoomField() == null) levelBuilder.setRoomField(roomField);
+		if (this.levelBuilder.getField() == null) levelBuilder.setField(dungeonField);
+		if (this.levelBuilder.getRoomField() == null) levelBuilder.setRoomField(roomField);
+		levelBuilder.setDungeonBuilder(this);
 		
 		/*
 		 * Perform all the minecraft world contraint checks
@@ -250,7 +256,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 				// get the last defined level config
 				levelConfig = config.getLevelConfigs()[config.getLevelConfigs().length-1];
 			}
-			
+			// ensure the level builder has a reference to the dungeon builder
 			if (levelConfig != prevLevelConfig) {
 				// config has changed
 				roomField = getLevelBuilder().getRoomField(dungeonField, levelConfig.getFieldFactor());				
@@ -338,12 +344,75 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			Level level = levelBuilder.build(world, rand, startPoint, plannedRooms, levelConfig);
 			Dungeons2.log.debug(String.format("Built level[%d]: %s", levelIndex, level));
 			
+			// ensure the level has it's config
+			level.setConfig(levelConfig);
+			
 			// add level
 			if (level != LevelBuilder.EMPTY_LEVEL) {
+				// update the min/max values for the dungeon
+				if (dungeon.getMinX() == null || level.getMinX() < dungeon.getMinX()) dungeon.setMinX(level.getMinX());
+				if (dungeon.getMaxX() == null || level.getMaxX() > dungeon.getMaxX()) dungeon.setMaxX(level.getMaxX());
+				if (dungeon.getMinY() == null || level.getMinY() < dungeon.getMinY()) dungeon.setMinY(level.getMinY());
+				if (dungeon.getMaxY() == null || level.getMaxY() > dungeon.getMaxY()) dungeon.setMaxY(level.getMaxY());
+				if (dungeon.getMinZ() == null || level.getMinZ() < dungeon.getMinZ()) dungeon.setMinZ(level.getMinZ());
+				if (dungeon.getMaxZ() == null || level.getMaxZ() > dungeon.getMaxZ()) dungeon.setMaxZ(level.getMaxZ());
+
+				// add the level to the dungeon
+				dungeon.getLevels().add(level);
 				
+				// build and add the shaft to the level
+				if (levelIndex > 0) {
+					Dungeons2.log.debug("Joing levels " + (levelIndex-1) + " to " + levelIndex);
+					if (levelBuilder.join(level, dungeon.getLevels().get(levelIndex-1)) == LevelBuilder.EMPTY_SHAFT) {
+						Dungeons2.log.warn("Levels don't require joining " + levelIndex + " to " + (levelIndex-1));
+					}
+				}
 			}
+			else {				
+				logger.warn("Unable to generate Level: " + levelIndex);
+				return EMPTY_DUNGEON;
+				// TODO attempt to rebuild level (3x tries)
+//				break;
+			}
+			
+			// clear planned rooms
+			plannedRooms.clear();
+					
+			if (isBottomLevel) {
+				Dungeons2.log.debug("At bottom level... break...");
+				break;
+			}
+			
+			// update the start point to above the previous level
+			startPoint = endRoom.getCenter();
+			startPoint = startPoint.resetY(dungeon.getMinY() - (int)levelConfig.getHeight().getMax());
+			// TEMP
+//			break;
+			
+			// reset level builder stat properties
+			getLevelBuilder().setRoomLossToDistanceBuffering(0);
+			getLevelBuilder().setRoomLossToValidation(0);
 		}
 		
+		Dungeons2.log.debug("Testing for empty dungeon...");
+		if (dungeon == EMPTY_DUNGEON  || dungeon.getLevels().size() == 0) {
+			logger.warn("Unable to build dungeon. 0 levels were built.");
+			return EMPTY_DUNGEON;
+		}
+		
+		Dungeons2.log.debug("Joining shaft from entrance to start room...");
+		Dungeons2.log.debug("Start Room:" + dungeon.getLevels().get(0).getStartRoom());
+		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
+		// join the top start room with the entrance room
+		Shaft shaft = levelBuilder.join(dungeon.getLevels().get(0).getStartRoom(), entranceRoom);
+		if (shaft == LevelBuilder.EMPTY_SHAFT) {
+			Dungeons2.log.debug("Didn't join start room to entrance room");
+		}
+		
+		Dungeons2.log.debug("Adding shaft to shaft list...");
+		Dungeons2.log.debug("Dungeon level[0]:" + dungeon.getLevels().get(0));
+		// add shaft to the top level
+		dungeon.getLevels().get(0).getShafts().add(shaft);
 
 		// return the dungeon
 		return dungeon;

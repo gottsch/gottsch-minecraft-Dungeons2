@@ -311,7 +311,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				
 				// 7. build the dungeon
 				Dungeons2.log.debug("Starting BUILD process...");
-				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
+//				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
+				Dungeon dungeon = builder.build(world, random, coords, dc);
 				Dungeons2.log.debug("BUILD process complete.");
 				/*
 				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.

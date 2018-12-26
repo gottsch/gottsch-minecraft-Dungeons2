@@ -11,10 +11,10 @@
 	"bottomLimit": 5,
 	"topLimit": 235,
 	"surfaceBuffer": 7,
-	"fieldFactor": 0.6,
+	"fieldFactor": 1.0,
 	"levelConfigs": [
 		{
-			"fieldFactor": 0.9,
+			"fieldFactor": 0.5,
 			"numRooms": {
 				"min":	10,
 				"max": 18	
@@ -44,7 +44,24 @@
 				"min":	5,
 				"max": 10				
 			},
+			"webFrequency": {
+				"min":	10,
+				"max": 20				
+			},
+			"numberOfWebs": {
+				"min":	10,
+				"max": 10		
+			},
+			"vineFrequency": {
+				"min":	10,
+				"max": 20				
+			},
+			"numberOfVines": {
+				"min":	10,
+				"max": 10		
+			},			
 			"support": true,
+			"decorations": true,
 			"chestCategories": [
 				""
 			]

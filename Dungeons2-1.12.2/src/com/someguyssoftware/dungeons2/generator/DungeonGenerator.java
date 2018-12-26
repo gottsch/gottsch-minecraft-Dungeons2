@@ -135,7 +135,7 @@ public class DungeonGenerator {
 		// generate all the rooms
 		for (Level level : dungeon.getLevels()) {
 			Dungeons2.log.debug("Level: " + levelCount);
-//			Dungeons2.log.debug("Is Level Support On? " + level.getConfig().isSupportOn());
+			Dungeons2.log.debug("Is Level Support On? " + level.getConfig().isSupport());
 			// build the rooms for the level
 			for (Room room : level.getRooms()) {
 				// assign a layout to the room
@@ -149,6 +149,7 @@ public class DungeonGenerator {
 				
 				// generate the room into the world
 				roomGen.generate(world, random, room, dungeon.getTheme(), styleSheet, level.getConfig());
+				Dungeons2.log.debug("Room.floorMap after generate -> {}", room.getFloorMap());
 				
 				// TODO need a decorator factory
 				if (room.getType() == Type.BOSS) {
@@ -220,6 +221,10 @@ public class DungeonGenerator {
 		
 		Room entranceRoom = dungeon.getEntrance();
 		// create and setup a config for entrance
+		Dungeons2.log.debug("Dungeon -> {}", dungeon);
+		Dungeons2.log.debug("Levels -> {}", dungeon.getLevels());
+		Dungeons2.log.debug("Levels.size -> {}", dungeon.getLevels().size());
+		Dungeons2.log.debug("Levels[0].config -> {}", dungeon.getLevels().get(0).getConfig());
 		ILevelConfig entranceLevelConfig = dungeon.getLevels().get(0).getConfig().copy();
 		entranceLevelConfig.setDecayMultiplier(Math.min(5, entranceLevelConfig.getDecayMultiplier())); // increase the decay multiplier to a minimum of 5
 		// assign a layout to the entrance room

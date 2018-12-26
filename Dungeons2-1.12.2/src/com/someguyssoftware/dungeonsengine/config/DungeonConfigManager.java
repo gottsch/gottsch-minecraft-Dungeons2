@@ -5,6 +5,7 @@ package com.someguyssoftware.dungeonsengine.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
@@ -36,7 +37,7 @@ public class DungeonConfigManager {
 		// map the configs to the table
 		for (IDungeonConfig c : configs) {
 			if (c.getBiomeWhiteList().contains("*") || (c.getBiomeWhiteList().isEmpty() && c.getBiomeBlackList().isEmpty())) {
-				List<Biome> biomes = (List<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
+				Set<Biome> biomes = (Set<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
 				for (Biome biome : biomes) {
 					// exclude nether and end biome
 					if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
