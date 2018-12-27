@@ -1,7 +1,9 @@
 package com.someguyssoftware.dungeonsengine.model;
 
 import java.util.Comparator;
+import java.util.List;
 
+import com.someguyssoftware.dungeonsengine.enums.SpaceTag;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.BBox;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -17,6 +19,8 @@ public interface ISpace {
 	public static final int MIN_DEPTH = 5;
 	public static final int MIN_WIDTH = 5;
 	public static final int MIN_HEIGHT = 4;
+	public static final int MIN_SPECIAL_WIDTH = 7;
+	public static final int MIN_SPECIAL_DEPTH = 7;
 	
 	/**
 	 * 
@@ -34,7 +38,7 @@ public interface ISpace {
 	 * 
 	 * @param id
 	 */
-	void setId(int id);
+	ISpace setId(int id);
 	
 	/**
 	 * 
@@ -46,7 +50,7 @@ public interface ISpace {
 	 * 
 	 * @param name
 	 */
-	void setName(String name);
+	ISpace setName(String name);
 	
 	/**
 	 * @return the coords
@@ -291,5 +295,11 @@ public interface ISpace {
 
 	boolean isObstacle();
 
-	void setObstacle(boolean obstacle);
+	ISpace setObstacle(boolean obstacle);
+
+	void centerOn(ICoords coords);
+
+	List<SpaceTag> getTags();
+
+	void setTags(List<SpaceTag> tags);
 }

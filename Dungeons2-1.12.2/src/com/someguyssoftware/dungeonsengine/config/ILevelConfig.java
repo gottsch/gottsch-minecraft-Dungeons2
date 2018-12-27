@@ -6,14 +6,14 @@ import com.someguyssoftware.gottschcore.Quantity;
 
 public interface ILevelConfig {
 
-	boolean isSupport();
-	void setSupport(boolean support);
+	Boolean isSupport();
+	void setSupport(Boolean support);
 
-	double getBoundaryFactor();
-	void setBoundaryFactor(double factor);
+	Double getBoundaryFactor();
+	void setBoundaryFactor(Double factor);
 	
-	double getSpawnBoundaryFactor();
-	void setSpawnBoundaryFactor(double spawnBoundaryFactor);
+	Double getSpawnBoundaryFactor();
+	void setSpawnBoundaryFactor(Double spawnBoundaryFactor);
 	
 	Quantity getHeight();
 	void setHeight(Quantity height);
@@ -25,9 +25,9 @@ public interface ILevelConfig {
 	void setDegrees(Quantity degrees);
 	Quantity getNumRooms();
 	void setNumRooms(Quantity numRooms);
-	LevelConfig copy();
-	int getDecayMultiplier();
-	void setDecayMultiplier(int decayMultiplier);
+	ILevelConfig copy();
+	Integer getDecayMultiplier();
+	void setDecayMultiplier(Integer decayMultiplier);
 	Quantity getSpawnerFrequency();
 	Quantity getChestFrequency();
 	List<String> getChestCategories();
@@ -35,8 +35,13 @@ public interface ILevelConfig {
 	Quantity getWebFrequency();
 	Quantity getNumberOfVines();
 	Quantity getVineFrequency();
-	boolean isDecorations();
+	
+	Boolean isDecorations();
+	void setDecorations(Boolean decorations);
+	
 	String getTheme();
 	void setTheme(String theme);
+	
+	ILevelConfig apply(ILevelConfig config);
 	
 }

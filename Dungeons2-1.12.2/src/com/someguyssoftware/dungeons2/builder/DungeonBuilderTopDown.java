@@ -20,6 +20,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.enums.Direction;
@@ -99,7 +100,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 	public Dungeon build(World world, Random rand, ICoords spawnCoords, IDungeonConfig config) {
 		Dungeon dungeon = new Dungeon();
 		List<Room> plannedRooms = new ArrayList<>();
-		ILevelConfig defaultLevelConfig = config.getLevelConfigs()[0];
+		ILevelConfig defaultLevelConfig = config.getLevelConfigs()[0]
+				.apply(DungeonConfigManager.defaultConfig.getLevelConfigs()[0]);
 
 		this.config = config;
 		
@@ -256,11 +258,14 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			// get the level config
 			if (levelIndex <= config.getLevelConfigs().length-1) {
 				levelConfig = config.getLevelConfigs()[levelIndex];
+				// apply the previous level's config to this config
+				levelConfig.apply(prevLevelConfig);
 			}
 			else {
 				// get the last defined level config
-				levelConfig = config.getLevelConfigs()[config.getLevelConfigs().length-1];
+				levelConfig = prevLevelConfig; //config.getLevelConfigs()[config.getLevelConfigs().length-1];
 			}
+			Dungeons2.log.debug("using config -> {}", levelConfig);
 			
 			// update the level/roomBoundary if the level config has changed			
 			if (levelConfig != prevLevelConfig) {

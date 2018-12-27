@@ -16,29 +16,29 @@ import com.someguyssoftware.gottschcore.Quantity;
 public class DungeonConfig implements IDungeonConfig {
 	
 	private String name;
-	private String version;
+	private String version = "1.0.0";
 	
-	private DungeonSize size;
+	private DungeonSize size = DungeonSize.MEDIUM;
 		
 	/*
 	 * min/max # of levels in a dungeon
 	 */
-	private Quantity numLevels;
+	private Quantity numLevels = new Quantity(4, 7);
 	
 	/*
 	 * min/max y value for the bottom of the dungeon
 	 */
-	private int bottomLimit;
+	private int bottomLimit = 5;
 	
 	/*
 	 * min/max value for the top of the dungeon
 	 */
-	private int topLimit;
+	private int topLimit = 235;
 	
 	/*
 	 * 
 	 */
-	private Integer surfaceBuffer;
+	private Integer surfaceBuffer = 7;
 	
 	/*
 	 * 
@@ -52,12 +52,12 @@ public class DungeonConfig implements IDungeonConfig {
 	/*
 	 * 
 	 */
-	private double boundaryFactor;
+	private double boundaryFactor = 1.0;
 	
 	/*
 	 * 
 	 */
-	private ILevelConfig[] levelConfigs;
+	private ILevelConfig[] levelConfigs = {new LevelConfig()};
 	
 	/*
 	 * 
@@ -67,7 +67,7 @@ public class DungeonConfig implements IDungeonConfig {
 	/**
 	 * 
 	 */
-	private boolean minecraftConstraints;
+	private boolean minecraftConstraints = true;
 	
 	/**
 	 * 
@@ -75,9 +75,7 @@ public class DungeonConfig implements IDungeonConfig {
 	public DungeonConfig() {
 		this.biomeWhiteList = new ArrayList<>();
 		this.biomeBlackList = new ArrayList<>();
-		this.size = DungeonSize.MEDIUM;
 	}
-
 	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.config.IDungeonConfig#getNumLevels()

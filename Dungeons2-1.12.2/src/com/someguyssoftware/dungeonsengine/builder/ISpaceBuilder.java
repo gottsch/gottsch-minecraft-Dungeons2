@@ -4,29 +4,26 @@ import java.util.List;
 
 import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.ISpace;
-import com.someguyssoftware.dungeonsengine.model.Space;
-import com.someguyssoftware.gottschcore.positional.BBox;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 public interface ISpaceBuilder {
-	public static final ISpace EMPTY_SPACE = new Space();
+	
+	public Boundary getBoundary();
+	public void setBoundary(Boundary boundary);
 	
 	/*
-	 * build a generic room
+	 * build a generic space
 	 */
-	ISpace buildSpace(ICoords startPoint, ISpace roomIn);
+	ISpace buildSpace(ICoords startPoint, ISpace spaceIn);
 	
 	/*
-	 * build a 'planned' room, using existing rooms to determine where and if it can be placed within the boundary
+	 * build a 'planned' space, using existing spaces to determine where and if it can be placed within the boundary
 	 */
 	ISpace buildPlannedSpace(ICoords startPoint, List<ISpace> predefinedSpaces);
 	
 	ISpace buildStartSpace(ICoords startPoint);
 	
 	ISpace buildEndSpace(ICoords startPoint, List<ISpace> predefinedSpaces);
-	
-	Boundary getBoundary();
-	void setBoundary(Boundary boundary);
 	
 	/**
 	 * 

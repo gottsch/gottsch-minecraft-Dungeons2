@@ -10,13 +10,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
-import com.someguyssoftware.dungeonsengine.config.LevelConfig;
+import com.someguyssoftware.dungeonsengine.enums.SpaceTag;
 import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.ISpace;
 import com.someguyssoftware.dungeonsengine.model.Space;
-import com.someguyssoftware.dungeonsengine.model.Space.Type;
 import com.someguyssoftware.gottschcore.enums.Direction;
-import com.someguyssoftware.gottschcore.positional.BBox;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
@@ -28,6 +26,7 @@ import com.someguyssoftware.gottschcore.random.RandomHelper;
 public class SpaceBuilder implements ISpaceBuilder {
 	public static Logger logger = LogManager.getLogger("DungeonsEngine");
 	
+	public static final ISpace EMPTY_SPACE = new Space();	
 	public static final ICoords EMPTY_COORDS = new Coords(0, 0, 0);
 	
 	private ILevelConfig config;
@@ -47,16 +46,16 @@ public class SpaceBuilder implements ISpaceBuilder {
 	/**
 	 * 
 	 * @param rand
-	 * @param roomIn
+	 * @param spaceIn
 	 * @param config
 	 * @return
 	 */
-	protected ISpace randomizeDimensions(ISpace roomIn) {
-		ISpace room = roomIn.copy();
-		room.setWidth(Math.max(ISpace.MIN_WIDTH, RandomHelper.randomInt(random, config.getWidth().getMinInt(), config.getWidth().getMaxInt())));
-		room.setDepth(Math.max(ISpace.MIN_DEPTH, RandomHelper.randomInt(random, config.getDepth().getMinInt(), config.getDepth().getMaxInt())));
-		room.setHeight(Math.max(ISpace.MIN_HEIGHT, RandomHelper.randomInt(random, config.getHeight().getMinInt(), config.getHeight().getMaxInt())));		
-		return room;
+	public ISpace randomizeDimensions(ISpace spaceIn) {
+		ISpace space = spaceIn.copy();
+		space.setWidth(Math.max(ISpace.MIN_WIDTH, RandomHelper.randomInt(random, config.getWidth().getMinInt(), config.getWidth().getMaxInt())));
+		space.setDepth(Math.max(ISpace.MIN_DEPTH, RandomHelper.randomInt(random, config.getDepth().getMinInt(), config.getDepth().getMaxInt())));
+		space.setHeight(Math.max(ISpace.MIN_HEIGHT, RandomHelper.randomInt(random, config.getHeight().getMinInt(), config.getHeight().getMaxInt())));		
+		return space;
 	}
 
 	/**
@@ -66,7 +65,7 @@ public class SpaceBuilder implements ISpaceBuilder {
 	 * @param config
 	 * @return
 	 */
-	protected ICoords randomizeCoords() {
+	public ICoords randomizeCoords() {
 		int x = RandomHelper.randomInt(random, 0, (int) (boundary.getMaxCoords().getX() - boundary.getMinCoords().getX()));
 //		int y = RandomHelper.randomInt(random, config.getYVariance().getMinInt(), config.getYVariance().getMaxInt());
 		int z = RandomHelper.randomInt(random, 0, (int) (boundary.getMaxCoords().getZ() - boundary.getMinCoords().getZ()));
@@ -81,7 +80,7 @@ public class SpaceBuilder implements ISpaceBuilder {
 	 * @param roomIn
 	 * @return
 	 */
-	protected ISpace randomizeSpaceCoords(ISpace roomIn) {
+	public ISpace randomizeCoords(ISpace roomIn) {
 //		Space room = new Space(roomIn);
 		ISpace room = roomIn.copy();
 		// generate a ranom set of coords
@@ -100,22 +99,22 @@ public class SpaceBuilder implements ISpaceBuilder {
 	
 	public ISpace buildSpace(ICoords startPoint, ISpace roomIn) {
 		// randomize dimensions
-		ISpace room = randomizeDimensions(roomIn);
-		if (room == EMPTY_SPACE) return room;
+		ISpace space = randomizeDimensions(roomIn);
+		if (space == EMPTY_SPACE) return space;
 		
-		// randomize the rooms
-		room = randomizeSpaceCoords(room);
-		if (room == EMPTY_SPACE) return room;
+		// randomize the coords
+		space = randomizeCoords(space);
+		if (space == EMPTY_SPACE) return space;
 		
 		// set the degrees (number of edges)
-		room.setDegrees(RandomHelper.randomInt(random, 
+		space.setDegrees(RandomHelper.randomInt(random, 
 				config.getDegrees().getMinInt(), 
 				config.getDegrees().getMaxInt()));
 		
 		// randomize a direction
-		room.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+		space.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
 
-		return room;
+		return space;
 	}
 	
 	/* (non-Javadoc)
@@ -129,17 +128,19 @@ public class SpaceBuilder implements ISpaceBuilder {
 		ISpace startSpace = new Space().setStart(true).setAnchor(true);
 		startSpace = randomizeDimensions(startSpace);
 		// ensure min dimensions are met for start room
-		startSpace.setWidth(Math.max(7, startSpace.getWidth()));
-		startSpace.setDepth(Math.max(7,  startSpace.getDepth()));
+		startSpace.setWidth(Math.max(ISpace.MIN_SPECIAL_WIDTH, startSpace.getWidth()));
+		startSpace.setDepth(Math.max(ISpace.MIN_SPECIAL_DEPTH, startSpace.getDepth()));
+		
 		// ensure that start room's dimensions are odd in length
 		if (startSpace.getWidth() % 2 == 0) startSpace.setWidth(startSpace.getWidth()+1);
 		if (startSpace.getDepth() % 2 == 0) startSpace.setDepth(startSpace.getDepth()+1);
 		
 		// set the starting room coords to be in the middle of the start point
-		startSpace.setCoords(
-				new Coords(startPoint.getX()-(startSpace.getWidth()/2),
-						startPoint.getY(),
-						startPoint.getZ()-(startSpace.getDepth()/2)));
+//		startSpace.setCoords(
+//				new Coords(startPoint.getX()-(startSpace.getWidth()/2),
+//						startPoint.getY(),
+//						startPoint.getZ()-(startSpace.getDepth()/2)));
+		startSpace.centerOn(startPoint);
 		
 		// randomize a direction
 		startSpace.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
@@ -158,8 +159,9 @@ public class SpaceBuilder implements ISpaceBuilder {
 		// build the end room
 		ISpace endSpace  = buildPlannedSpace(startPoint, predefinedSpaces).setEnd(true).setAnchor(true);
 		// ensure min dimensions are met for start room
-		endSpace.setWidth(Math.max(7, endSpace.getWidth()));
-		endSpace.setDepth(Math.max(7,  endSpace.getDepth()));
+		endSpace.setWidth(Math.max(ISpace.MIN_SPECIAL_WIDTH, endSpace.getWidth()));
+		endSpace.setDepth(Math.max(ISpace.MIN_SPECIAL_DEPTH, endSpace.getDepth()));
+		
 		// ensure that the room's dimensions are odd in length
 		if (endSpace.getWidth() % 2 == 0) endSpace.setWidth(endSpace.getWidth()+1);
 		if (endSpace.getDepth() % 2 == 0) endSpace.setDepth(endSpace.getDepth()+1);
@@ -175,14 +177,15 @@ public class SpaceBuilder implements ISpaceBuilder {
 		final int SPACE_MIN_XZ = 10;
 		final int SPACE_MIN_Y = 10;
 		
-		ISpace room = buildEndSpace(startPoint, predefinedSpaces)
-				//.setType(Type.BOSS)
-				.setDegrees(1);	
+		ISpace space = buildEndSpace(startPoint, predefinedSpaces)
+				.setDegrees(1);
+				space.getTags().add(SpaceTag.TREASURE);
+		
 		// ensure min dimensions are met for start room
-		room.setWidth(Math.max(SPACE_MIN_XZ, room.getWidth()));
-		room.setDepth(Math.max(SPACE_MIN_XZ, room.getDepth()));
-		room.setHeight(Math.max(Math.min(SPACE_MIN_Y, config.getHeight().getMaxInt()),  room.getHeight()));
-		return room;
+		space.setWidth(Math.max(SPACE_MIN_XZ, space.getWidth()));
+		space.setDepth(Math.max(SPACE_MIN_XZ, space.getDepth()));
+		space.setHeight(Math.max(Math.min(SPACE_MIN_Y, config.getHeight().getMaxInt()),  space.getHeight()));
+		return space;
 	}
 	
 	/* (non-Javadoc)

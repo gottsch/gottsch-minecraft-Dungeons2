@@ -1,28 +1,53 @@
 [{
 	"name": "desert-small",
-	"version": "1.0.0",
 	"biomeWhiteList": ["desert"],
-	"biomeBlackList": [""],
 	"size": "SMALL",
 	"numLevels": {
 		"min": 2,
-		"max": 5
+		"max": 4
 	},
-	"bottomLimit": 5,
-	"topLimit": 235,
-	"surfaceBuffer": 7,
-	"boundaryFactor": 1.0,
+	"boundaryFactor": 0.8,
 	"levelConfigs": [
+		{
+			"boundaryFactor": 1.0,
+			"spawnBoundaryFactor": 0.4,
+			"numRooms": {
+				"min":	6,
+				"max": 12
+				},
+			"width": {
+				"min":	5,
+				"max": 10	
+			},
+			"depth": {
+				"min":	5,
+				"max": 10
+			},
+			"height": {
+				"min":	5,
+				"max": 8
+			},
+			"decayMultiplier": 3,
+			"numberOfWebs": {
+				"min":	10,
+				"max": 20		
+			},
+			"numberOfVines": {
+				"min":	0,
+				"max": 0
+			},
+			"theme": "desert"
+		},
 		{
 			"boundaryFactor": 1.0,
 			"spawnBoundaryFactor": 0.5,
 			"numRooms": {
-				"min":	8,
+				"min":	6,
 				"max": 15
 				},
 			"width": {
 				"min":	5,
-				"max": 12	
+				"max": 12
 			},
 			"depth": {
 				"min":	5,
@@ -32,42 +57,17 @@
 				"min":	5,
 				"max": 10
 			},
-			"degrees": {
-				"min":	2,
-				"max": 4	
-			},
 			"decayMultiplier": 3,
-			"spawnerFrequency": {
-				"min":	5,
-				"max": 10				
-			},
-			"chestFrequency": {
-				"min":	5,
-				"max": 10				
-			},
-			"webFrequency": {
-				"min":	10,
-				"max": 20				
-			},
 			"numberOfWebs": {
 				"min":	10,
-				"max": 10		
-			},
-			"vineFrequency": {
-				"min":	10,
-				"max": 20				
+				"max": 20		
 			},
 			"numberOfVines": {
-				"min":	10,
-				"max": 10		
-			},			
-			"support": true,
-			"decorations": true,
-			"chestCategories": [
-				"COMMON", "UNCOMMON", "RARE"
-			],
+				"min":	0,
+				"max": 0		
+			},
 			"theme": "desert"
-		}
+		}		
 	],
 	"surfaceConfig": null
 }]
