@@ -2,6 +2,7 @@ package com.someguyssoftware.dungeonsengine.builder;
 
 import java.util.List;
 
+import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.ISpace;
 import com.someguyssoftware.dungeonsengine.model.Space;
 import com.someguyssoftware.gottschcore.positional.BBox;
@@ -24,8 +25,8 @@ public interface ISpaceBuilder {
 	
 	ISpace buildEndSpace(ICoords startPoint, List<ISpace> predefinedSpaces);
 	
-	BBox getBoundary();
-	void setBoundary(BBox boundary);
+	Boundary getBoundary();
+	void setBoundary(Boundary boundary);
 	
 	/**
 	 * 

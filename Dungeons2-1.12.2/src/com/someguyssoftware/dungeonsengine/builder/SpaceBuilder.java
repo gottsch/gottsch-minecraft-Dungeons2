@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.dungeonsengine.config.LevelConfig;
+import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.ISpace;
 import com.someguyssoftware.dungeonsengine.model.Space;
 import com.someguyssoftware.dungeonsengine.model.Space.Type;
@@ -31,16 +32,16 @@ public class SpaceBuilder implements ISpaceBuilder {
 	
 	private ILevelConfig config;
 	private Random random;
-	private BBox boundary;
+	private Boundary boundary;
 	
 	/**
 	 * 
 	 * @param boundary
 	 */
-	public SpaceBuilder(Random random, BBox boundary, ILevelConfig config) {
+	public SpaceBuilder(Random random, Boundary boundary, ILevelConfig config) {
 		this.random = random;
 		this.config = config;
-		this.boundary = BoundaryUtil.resize(boundary, config.getSpawnBoundaryFactor());
+		this.boundary = config.getSpawnBoundaryFactor() < 1.0D ? boundary.shrink(config.getSpawnBoundaryFactor()) : boundary;
 	}
 	
 	/**
@@ -221,7 +222,7 @@ public class SpaceBuilder implements ISpaceBuilder {
 	 * @return the field
 	 */
 	@Override
-	public BBox getBoundary() {
+	public Boundary getBoundary() {
 		return boundary;
 	}
 
@@ -229,7 +230,7 @@ public class SpaceBuilder implements ISpaceBuilder {
 	 * @param field the field to set
 	 */
 	@Override
-	public void setBoundary(BBox field) {
+	public void setBoundary(Boundary field) {
 		this.boundary = field;
 	}
 

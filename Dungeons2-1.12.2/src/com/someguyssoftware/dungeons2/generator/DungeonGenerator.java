@@ -31,6 +31,7 @@ import com.someguyssoftware.dungeons2.style.LibraryRoomDecorator;
 import com.someguyssoftware.dungeons2.style.RoomDecorator;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
+import com.someguyssoftware.dungeons2.style.Theme;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
@@ -134,8 +135,17 @@ public class DungeonGenerator {
 		int libraryCount = 0;
 		// generate all the rooms
 		for (Level level : dungeon.getLevels()) {
-			Dungeons2.log.debug("Level: " + levelCount);
-			Dungeons2.log.debug("Is Level Support On? " + level.getConfig().isSupport());
+			Dungeons2.log.debug("Level -> {} ", levelCount);
+			Dungeons2.log.debug("Is Level Support On -> {}", level.getConfig().isSupport());
+			Theme levelTheme = null;
+			if (level.getConfig().getTheme() != null && !level.getConfig().getTheme().equals("")) {
+				// TODO select the theme - themes need to be mapped.
+				levelTheme = styleSheet.getThemes().get(level.getConfig().getTheme());
+			}
+			else {
+				levelTheme = dungeon.getTheme();
+			}
+			
 			// build the rooms for the level
 			for (Room room : level.getRooms()) {
 				// assign a layout to the room
@@ -148,11 +158,12 @@ public class DungeonGenerator {
 //				}
 				
 				// generate the room into the world
-				roomGen.generate(world, random, room, dungeon.getTheme(), styleSheet, level.getConfig());
-				Dungeons2.log.debug("Room.floorMap after generate -> {}", room.getFloorMap());
+				roomGen.generate(world, random, room, levelTheme, styleSheet, level.getConfig());
+//				Dungeons2.log.debug("Room.floorMap after generate -> {}", room.getFloorMap());
 				
 				// TODO need a decorator factory
 				if (room.getType() == Type.BOSS) {
+					Dungeons2.log.debug("Boss Room @ {}", room.getCoords());
 					bossRoomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
 				}
 				
@@ -188,7 +199,7 @@ public class DungeonGenerator {
 				layoutAssigner.assign(random, hallway);
 				// NOTE passing hallways here is a list of hallways (excluding the current one, to check if they intersect
 				roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), generatedHallways, level.getConfig().isSupport());
-				roomGen.generate(world, random, hallway, dungeon.getTheme(), styleSheet, level.getConfig());
+				roomGen.generate(world, random, hallway, levelTheme, styleSheet, level.getConfig());
 				// add the hallway to the list of generated hallways
 				generatedHallways.add(hallway);
 			}
@@ -199,7 +210,7 @@ public class DungeonGenerator {
 				// assign the layout
 				shaft.setLayout(shaft.getParent().getLayout());
 				roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupport());
-				roomGen.generate(world, random, shaft, dungeon.getTheme(), styleSheet, level.getConfig());
+				roomGen.generate(world, random, shaft, levelTheme, styleSheet, level.getConfig());
 			}
 			levelCount++;
 		}

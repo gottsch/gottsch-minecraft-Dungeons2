@@ -39,16 +39,46 @@ public class Boundary {
 	}
 	
 	/**
+	 * 
+	 * @param factor
+	 * @return
+	 */
+	public Boundary grow(final int factor) {
+		int amount = (int) ((this.bbox.getMaxCoords().getX() - this.bbox.getMinCoords().getX()) * (1.0 - factor) / 2);
+		BBox bbox = this.bbox.grow(amount, 0, amount);
+		return new Boundary(bbox);
+	}
+	
+	/**
+	 * 
+	 * @param factor
+	 * @return
+	 */
+	public Boundary shrink(final double factor) {
+		int amount = (int) ((this.bbox.getMaxCoords().getX() - this.bbox.getMinCoords().getX()) * (1.0 - factor) / 2);
+		BBox bbox = this.bbox.grow(-amount, 0, -amount);
+		return new Boundary(bbox);
+	}
+	
+	public ICoords getMaxCoords() {
+		return this.bbox.getMaxCoords();
+	}
+	
+	public ICoords getMinCoords() {
+		return this.bbox.getMinCoords();
+	}
+	
+	/**
 	 * @return the bbox
 	 */
-	protected BBox getBbox() {
+	public BBox getBbox() {
 		return bbox;
 	}
 
 	/**
 	 * @param bbox the bbox to set
 	 */
-	protected void setBbox(BBox bbox) {
+	public void setBbox(BBox bbox) {
 		this.bbox = bbox;
 	}
 

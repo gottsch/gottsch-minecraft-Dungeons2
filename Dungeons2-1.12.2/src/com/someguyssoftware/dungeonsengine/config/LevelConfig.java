@@ -53,11 +53,14 @@ public class LevelConfig implements ILevelConfig {
 	
 	private List<String> chestCategories;
 	
+	// TODO rework these to be more generic - some sort of matrix
 	private Quantity numberOfWebs;
 	private Quantity webFrequency;
 	
 	private Quantity numberOfVines;
 	private Quantity vineFrequency;
+	
+	private String theme;
 	
 	/*
 	 * 
@@ -367,6 +370,22 @@ public class LevelConfig implements ILevelConfig {
 	@Override
 	public void setSpawnBoundaryFactor(double spawnBoundaryFactor) {
 		this.spawnBoundaryFactor = spawnBoundaryFactor;
+	}
+
+	/**
+	 * @return the theme
+	 */
+	@Override
+	public String getTheme() {
+		return theme;
+	}
+
+	/**
+	 * @param theme the theme to set
+	 */
+	@Override
+	public void setTheme(String theme) {
+		this.theme = theme;
 	}
 
 }

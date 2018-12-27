@@ -36,5 +36,7 @@ public interface ILevelConfig {
 	Quantity getNumberOfVines();
 	Quantity getVineFrequency();
 	boolean isDecorations();
+	String getTheme();
+	void setTheme(String theme);
 	
 }

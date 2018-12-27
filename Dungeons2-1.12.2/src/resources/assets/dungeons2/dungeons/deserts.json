@@ -1,7 +1,7 @@
-{
-	"name": "small",
+[{
+	"name": "desert-small",
 	"version": "1.0.0",
-	"biomeWhiteList": ["*"],
+	"biomeWhiteList": ["desert"],
 	"biomeBlackList": [""],
 	"size": "SMALL",
 	"numLevels": {
@@ -17,8 +17,8 @@
 			"boundaryFactor": 1.0,
 			"spawnBoundaryFactor": 0.5,
 			"numRooms": {
-				"min":	10,
-				"max": 20	
+				"min":	8,
+				"max": 15
 				},
 			"width": {
 				"min":	5,
@@ -30,13 +30,13 @@
 			},
 			"height": {
 				"min":	5,
-				"max": 8	
+				"max": 10
 			},
 			"degrees": {
 				"min":	2,
 				"max": 4	
 			},
-			"decayMultiplier": 5,
+			"decayMultiplier": 3,
 			"spawnerFrequency": {
 				"min":	5,
 				"max": 10				
@@ -65,8 +65,9 @@
 			"decorations": true,
 			"chestCategories": [
 				"COMMON", "UNCOMMON", "RARE"
-			]
+			],
+			"theme": "desert"
 		}
 	],
 	"surfaceConfig": null
-}
+}]

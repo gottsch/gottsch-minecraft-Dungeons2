@@ -34,8 +34,6 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.style.Style;
-import com.someguyssoftware.dungeons2.style.StyleSheetLoader.StyleDeserializer;
 import com.someguyssoftware.dungeonsengine.json.GenericDeserializer;
 import com.someguyssoftware.gottschcore.json.JSMin;
 
@@ -83,10 +81,10 @@ public class DungeonConfigLoader {
 		try {
 			Files.walk(path).filter(Files::isRegularFile).forEach(
 					f -> {
-						IDungeonConfig dungeonConfig = null;
+						List<IDungeonConfig> dungeonConfig = null;
 						try {
 							dungeonConfig = load(f);
-							configs.add(dungeonConfig);
+							configs.addAll(dungeonConfig);
 						} catch (Exception e) {
 							Dungeons2.log.error("Unable to load dungeon config json file.", e);
 						}
@@ -104,7 +102,7 @@ public class DungeonConfigLoader {
 	 * @return
 	 * @throws Exception
 	 */
-	public static IDungeonConfig load(Path path) throws Exception {
+	public static List<IDungeonConfig> load(Path path) throws Exception {
 		InputStream is = new FileInputStream(path.toString());
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		JSMin minifier = new JSMin(is, out);
@@ -119,12 +117,19 @@ public class DungeonConfigLoader {
 		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
 
 		Gson gson = builder.create();	
-		IDungeonConfig config = null;
+		List<IDungeonConfig> config = null;
 		try {
-			config = gson.fromJson(jsonReader, DungeonConfig.class);
-			config.getBiomeWhiteList().replaceAll(String::toUpperCase);
-			config.getBiomeBlackList().replaceAll(String::toUpperCase);
-			Dungeons2.log.debug("Loaded dungeon config:" + config);
+			Type listType = new TypeToken<List<IDungeonConfig>>() {}.getType();
+			config = gson.fromJson(jsonReader, /*DungeonConfig.class*/listType);
+			for (IDungeonConfig c : config) {
+				c.getBiomeWhiteList().replaceAll(String::toUpperCase);
+				c.getBiomeBlackList().replaceAll(String::toUpperCase);
+				for (ILevelConfig lc : c.getLevelConfigs()) {
+					lc.getChestCategories().replaceAll(String::toUpperCase);
+				}
+				Dungeons2.log.debug("Loaded dungeon config:" + config);
+				
+			}
 		}
 		catch(JsonIOException | JsonSyntaxException e) {
 			throw new Exception("Unable to load dungeon config.", e);

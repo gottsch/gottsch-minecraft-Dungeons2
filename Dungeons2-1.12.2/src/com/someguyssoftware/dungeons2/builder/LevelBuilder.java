@@ -2186,8 +2186,8 @@ public class LevelBuilder {
 
 			// check if the room is inside the level bounding box
 			AxisAlignedBB rbb = room.getXZBoundingBox();
-			if (rbb.minX > lbb.minX
-					|| rbb.maxX < lbb.maxX) {
+			if ((rbb.minX >= lbb.minX && rbb.maxX <= lbb.maxX) &&
+					(rbb.minZ >= lbb.minZ && rbb.maxZ <= lbb.maxZ)) {
 				isValid = true;
 			}
 			else {
@@ -2196,8 +2196,9 @@ public class LevelBuilder {
 				incrementLossToValidation(1);
 			}
 			
-			if (isValid && (rbb.minX > dbb.minX
-					|| rbb.maxX < dbb.maxX)) {
+			if (isValid &&
+					(rbb.minX >= dbb.minX && rbb.maxX <= dbb.maxX) &&
+					(rbb.minZ >= dbb.minZ && rbb.maxZ <= dbb.maxZ)) {
 				isValid = true;
 			}
 			else {

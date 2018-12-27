@@ -272,6 +272,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
 			    
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
+	   			
 //    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
 	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
 //				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
