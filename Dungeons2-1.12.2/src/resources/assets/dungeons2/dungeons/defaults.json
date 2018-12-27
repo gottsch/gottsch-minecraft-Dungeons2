@@ -1,5 +1,13 @@
 [
 	{
+		"_comments": [
+		"*******",
+		"** Note that default values will populate every dungeon and level, removing the need to populate every",
+		"** property. If the property doesn't require a new value, simply exclude it from",
+		"** the definition. I have added every property to the default definitions only to display",
+		"** the properties and default values.",
+		"*******"
+		],
 		"name": "default",
 		"version": "1.0.0",
 		"biomeWhiteList": ["*"],
@@ -13,6 +21,7 @@
 		"topLimit": 235,
 		"surfaceBuffer": 7,
 		"boundaryFactor": 1.0,
+		"minecraftConstraints": true,
 		"levelConfigs": [
 			{
 				"boundaryFactor": 1.0,
@@ -64,32 +73,23 @@
 				},			
 				"support": true,
 				"decorations": true,
+				"theme": "",
 				"chestCategories": [
 					"COMMON", "UNCOMMON", "RARE"
-				],
-				"theme": ""
+				]
 			}
 		],
 		"surfaceConfig": null
 	},
 	{
 		"name": "small",
-		"version": "1.0.0",
-		"biomeWhiteList": ["*"],
-		"biomeBlackList": [""],
 		"size": "SMALL",
 		"numLevels": {
 			"min": 2,
 			"max": 5
 		},
-		"bottomLimit": 5,
-		"topLimit": 235,
-		"surfaceBuffer": 7,
-		"boundaryFactor": 1.0,
 		"levelConfigs": [
 			{
-				"boundaryFactor": 1.0,
-				"spawnBoundaryFactor": 0.5,
 				"numRooms": {
 					"min":	10,
 					"max": 20	
@@ -105,63 +105,20 @@
 				"height": {
 					"min":	5,
 					"max": 8	
-				},
-				"degrees": {
-					"min":	2,
-					"max": 4	
-				},
-				"decayMultiplier": 5,
-				"spawnerFrequency": {
-					"min":	5,
-					"max": 10				
-				},
-				"chestFrequency": {
-					"min":	5,
-					"max": 10				
-				},
-				"webFrequency": {
-					"min":	10,
-					"max": 20				
-				},
-				"numberOfWebs": {
-					"min":	10,
-					"max": 10		
-				},
-				"vineFrequency": {
-					"min":	10,
-					"max": 20				
-				},
-				"numberOfVines": {
-					"min":	10,
-					"max": 10		
-				},			
-				"support": true,
-				"decorations": true,
-				"chestCategories": [
-					"COMMON", "UNCOMMON", "RARE"
-				]
+				}
 			}
 		],
 		"surfaceConfig": null
 	},
 	{
 		"name": "large",
-		"version": "1.0.0",
-		"biomeWhiteList": ["*"],
-		"biomeBlackList": [""],
 		"size": "LARGE",
 		"numLevels": {
 			"min": 6,
 			"max": 9
 		},
-		"bottomLimit": 5,
-		"topLimit": 235,
-		"surfaceBuffer": 7,
-		"boundaryFactor": 1.0,
 		"levelConfigs": [
 			{
-				"boundaryFactor": 1.0,
-				"spawnBoundaryFactor": 0.5,
 				"numRooms": {
 					"min":	20,
 					"max": 40	
@@ -177,63 +134,20 @@
 				"height": {
 					"min":	5,
 					"max": 9
-				},
-				"degrees": {
-					"min":	2,
-					"max": 4	
-				},
-				"decayMultiplier": 5,
-				"spawnerFrequency": {
-					"min":	5,
-					"max": 10				
-				},
-				"chestFrequency": {
-					"min":	5,
-					"max": 10				
-				},
-				"webFrequency": {
-					"min":	10,
-					"max": 20				
-				},
-				"numberOfWebs": {
-					"min":	10,
-					"max": 10		
-				},
-				"vineFrequency": {
-					"min":	10,
-					"max": 20				
-				},
-				"numberOfVines": {
-					"min":	10,
-					"max": 10		
-				},			
-				"support": true,
-				"decorations": true,
-				"chestCategories": [
-					"COMMON", "UNCOMMON", "RARE"
-				]
+				}
 			}
 		],
 		"surfaceConfig": null
 	},
 	{
 		"name": "vast",
-		"version": "1.0.0",
-		"biomeWhiteList": ["*"],
-		"biomeBlackList": [""],
 		"size": "VAST",
 		"numLevels": {
 			"min": 8,
 			"max": 11
 		},
-		"bottomLimit": 5,
-		"topLimit": 235,
-		"surfaceBuffer": 7,
-		"boundaryFactor": 1.0,
 		"levelConfigs": [
 			{
-				"boundaryFactor": 1.0,
-				"spawnBoundaryFactor": 0.5,
 				"numRooms": {
 					"min":	20,
 					"max": 40	
@@ -249,41 +163,7 @@
 				"height": {
 					"min":	5,
 					"max": 9
-				},
-				"degrees": {
-					"min":	2,
-					"max": 4	
-				},
-				"decayMultiplier": 5,
-				"spawnerFrequency": {
-					"min":	5,
-					"max": 10				
-				},
-				"chestFrequency": {
-					"min":	5,
-					"max": 10				
-				},
-				"webFrequency": {
-					"min":	10,
-					"max": 20				
-				},
-				"numberOfWebs": {
-					"min":	10,
-					"max": 10		
-				},
-				"vineFrequency": {
-					"min":	10,
-					"max": 20				
-				},
-				"numberOfVines": {
-					"min":	10,
-					"max": 10		
-				},			
-				"support": true,
-				"decorations": true,
-				"chestCategories": [
-					"COMMON", "UNCOMMON", "RARE"
-				]
+				}
 			}
 		],
 		"surfaceConfig": null

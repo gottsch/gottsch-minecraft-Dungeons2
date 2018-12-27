@@ -15,62 +15,62 @@ public class LevelConfig implements ILevelConfig {
 	/*
 	 * Adjusts the size of the level boundary.
 	 */
-	private double boundaryFactor;
+	private Double boundaryFactor;// = 1.0D;
 	
-	private double spawnBoundaryFactor;
+	private Double spawnBoundaryFactor;// = 0.5D;
 	
 	/*
 	 * min/max # of rooms in a level
 	 */
-	private Quantity numRooms;
+	private Quantity numRooms;// = new Quantity(15, 30);
 	
 	/*
 	 * min/max dimensions of a room
 	 */
-	private Quantity width;
-	private Quantity depth;
-	private Quantity height;
+	private Quantity width;// = new Quantity(5, 15);
+	private Quantity depth;// = new Quantity(5, 15);
+	private Quantity height = new Quantity(5, 15);
 	
 	/*
 	 * min/max number of edges or hallways that each room can have
 	 */
-	private Quantity degrees;
+	private Quantity degrees;// = new Quantity(2, 4);
 	
 	/**
 	 * Number of times to perform decay eval on block
 	 */
-	private int decayMultiplier;
+	private Integer decayMultiplier;// = 5;
 	
 	/*
 	 * 
 	 */
-	private Quantity spawnerFrequency;
+	private Quantity spawnerFrequency;// = new Quantity(5,10);
 	
 	/*
 	 * Chest properties
 	 */
-	private Quantity chestFrequency;
+	private Quantity chestFrequency;// = new Quantity(5, 10);
 	
-	private List<String> chestCategories;
+	private List<String> chestCategories;// = Arrays.asList("COMMON", "UNCOMMON", "RARE");
 	
 	// TODO rework these to be more generic - some sort of matrix
-	private Quantity numberOfWebs;
-	private Quantity webFrequency;
+	private Quantity numberOfWebs;// = new Quantity(10, 10);
+	private Quantity webFrequency;// = new Quantity(10, 20);
 	
-	private Quantity numberOfVines;
-	private Quantity vineFrequency;
+	private Quantity numberOfVines;// = new Quantity(10, 10);
+	private Quantity vineFrequency;// = new Quantity(10, 20);
 	
 	private String theme;
 	
 	/*
 	 * 
 	 */
-	private boolean support;
+	private Boolean support;// = true;
 	
 	/*
 	 * 
 	 */
-	private boolean decorations;
+	private Boolean decorations;// = true;
 	
 	/**
 	 * 
@@ -93,6 +93,15 @@ public class LevelConfig implements ILevelConfig {
 		this.setSpawnerFrequency(c.getSpawnerFrequency());
 		this.setSupport(c.isSupport());
 		this.setWidth(c.getWidth());
+		
+		this.setNumberOfVines(c.getNumberOfVines());
+		this.setVineFrequency(c.getVineFrequency());
+		this.setNumberOfWebs(c.getNumberOfWebs());
+		this.setWebFrequency(c.getWebFrequency());
+
+		this.setTheme(c.getTheme());
+		this.setSupport(c.isSupport());
+		this.setDecorations(c.isDecorations());
 	}
 	
 	/**
@@ -100,15 +109,43 @@ public class LevelConfig implements ILevelConfig {
 	 * @return
 	 */
 	@Override
-	public LevelConfig copy() {
+	public ILevelConfig copy() {
 		return new LevelConfig(this);
+	}
+	
+	@Override
+	public ILevelConfig apply(ILevelConfig config) {
+		if (getBoundaryFactor() == null) {
+			setBoundaryFactor(config.getBoundaryFactor());
+		}
+		
+		if (getChestCategories() == null || getChestCategories().equals("")) {
+			setChestCategories(config.getChestCategories());
+		}
+		
+		if (getChestFrequency() == null) setChestFrequency(config.getChestFrequency());
+		if (getDecayMultiplier() == null) setDecayMultiplier(config.getDecayMultiplier());
+		if (getDegrees() == null) setDegrees(config.getDegrees());
+		if (getDepth() == null) setDepth(config.getDepth());
+		if (getHeight() == null) setHeight(config.getHeight());
+		if (getNumberOfVines() == null) setNumberOfVines(config.getNumberOfVines());
+		if (getNumberOfWebs() == null) setNumberOfWebs(config.getNumberOfWebs());
+		if (getNumRooms() == null) setNumRooms(config.getNumRooms());
+		if (getSpawnBoundaryFactor() == null) setSpawnBoundaryFactor(config.getSpawnBoundaryFactor());
+		if (getSpawnerFrequency() == null) setSpawnerFrequency(config.getSpawnerFrequency());
+		if (getTheme() == null || getTheme().equals("")) setTheme(config.getTheme());
+		if (getVineFrequency() == null) setVineFrequency(config.getVineFrequency());
+		if (getWebFrequency() == null) setWebFrequency(config.getWebFrequency());
+		if (getWidth() == null) setWidth(config.getWidth());
+		
+		return this;
 	}
 	
 	/**
 	 * @return the support
 	 */
 	@Override
-	public boolean isSupport() {
+	public Boolean isSupport() {
 		return support;
 	}
 
@@ -116,7 +153,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @param support the support to set
 	 */
 	@Override
-	public void setSupport(boolean support) {
+	public void setSupport(Boolean support) {
 		this.support = support;
 	}
 
@@ -124,7 +161,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @return the fieldFactor
 	 */
 	@Override
-	public double getBoundaryFactor() {
+	public Double getBoundaryFactor() {
 		return boundaryFactor;
 	}
 
@@ -132,7 +169,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @param fieldFactor the fieldFactor to set
 	 */
 	@Override
-	public void setBoundaryFactor(double fieldFactor) {
+	public void setBoundaryFactor(Double fieldFactor) {
 		this.boundaryFactor = fieldFactor;
 	}
 
@@ -220,7 +257,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @return the decayMultiplier
 	 */
 	@Override
-	public int getDecayMultiplier() {
+	public Integer getDecayMultiplier() {
 		return decayMultiplier;
 	}
 
@@ -228,7 +265,7 @@ public class LevelConfig implements ILevelConfig {
 	 * @param decayMultiplier the decayMultiplier to set
 	 */
 	@Override
-	public void setDecayMultiplier(int decayMultiplier) {
+	public void setDecayMultiplier(Integer decayMultiplier) {
 		this.decayMultiplier = decayMultiplier;
 	}
 
@@ -341,14 +378,14 @@ public class LevelConfig implements ILevelConfig {
 	 * @return the decorations
 	 */
 	@Override
-	public boolean isDecorations() {
+	public Boolean isDecorations() {
 		return decorations;
 	}
 
 	/**
 	 * @param decorations the decorations to set
 	 */
-	public void setDecorations(boolean decorations) {
+	public void setDecorations(Boolean decorations) {
 		this.decorations = decorations;
 	}
 
@@ -363,12 +400,12 @@ public class LevelConfig implements ILevelConfig {
 	}
 
 	@Override
-	public double getSpawnBoundaryFactor() {
+	public Double getSpawnBoundaryFactor() {
 		return spawnBoundaryFactor;
 	}
 
 	@Override
-	public void setSpawnBoundaryFactor(double spawnBoundaryFactor) {
+	public void setSpawnBoundaryFactor(Double spawnBoundaryFactor) {
 		this.spawnBoundaryFactor = spawnBoundaryFactor;
 	}
 

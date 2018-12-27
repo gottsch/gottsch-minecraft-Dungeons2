@@ -28,10 +28,20 @@ public class DungeonConfigManager {
 	 */
 	public static Table<String, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
 
+	public static IDungeonConfig defaultConfig;
+	
 	/**
 	 * 
 	 */
 	public DungeonConfigManager() {
+		// load the default config
+		try {
+			defaultConfig = DungeonConfigLoader.loadDefault();
+		} catch (Exception e) {
+			Dungeons2.log.error(e);
+			// TODO manually set values ?
+		}
+		
 		// load all the configs
 		List<IDungeonConfig> configs = DungeonConfigLoader.loadAll();
 		// map the configs to the table

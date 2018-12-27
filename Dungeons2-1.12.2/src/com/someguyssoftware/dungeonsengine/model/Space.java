@@ -3,7 +3,14 @@
  */
 package com.someguyssoftware.dungeonsengine.model;
 
+import static com.someguyssoftware.dungeonsengine.enums.SpaceTag.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.someguyssoftware.dungeonsengine.enums.SpaceTag;
 import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
@@ -12,38 +19,71 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
  */
 public class Space implements ISpace {
 
+	private int id;
+	private String name;
+	private ICoords coords;
+
+	private int depth;
+	private int width;
+	private int height;
+	
+	private Direction direction;	
+	List<SpaceTag> tags;
+	
+	// graphing
+	private int degrees;
+	
 	/**
 	 * 
 	 */
-	public Space() {
-		// TODO Auto-generated constructor stub
-	}
+	public Space() {}
 
+	/**
+	 * 
+	 * @param space
+	 */
+	public Space(ISpace space) {
+		if (space != null) {
+			setId(space.getId());
+
+		}
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#copy()
 	 */
 	@Override
 	public ISpace copy() {
-		// TODO Auto-generated method stub
-		return null;
+		return new Space(this);
 	}
 
+	/**
+	 * 
+	 * @param coords
+	 */
+	@Override
+	public void centerOn(ICoords coords) {
+		setCoords(
+				new Coords(coords.getX()-(getWidth()/2),
+						coords.getY(),
+						coords.getZ()-(getDepth()/2)));
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getId()
 	 */
 	@Override
 	public int getId() {
-		// TODO Auto-generated method stub
-		return 0;
+		return id;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setId(int)
 	 */
 	@Override
-	public void setId(int id) {
-		// TODO Auto-generated method stub
-
+	public ISpace setId(int id) {
+		this.id = id;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -51,17 +91,16 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return name;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setName(java.lang.String)
 	 */
 	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-
+	public ISpace setName(String name) {
+		this.name = name;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -69,8 +108,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ICoords getCoords() {
-		// TODO Auto-generated method stub
-		return null;
+		return coords;
 	}
 
 	/* (non-Javadoc)
@@ -78,8 +116,8 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setCoords(ICoords coords) {
-		// TODO Auto-generated method stub
-		return null;
+		this.coords = coords;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -87,8 +125,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public int getDepth() {
-		// TODO Auto-generated method stub
-		return 0;
+		return depth;
 	}
 
 	/* (non-Javadoc)
@@ -96,8 +133,8 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setDepth(int depth) {
-		// TODO Auto-generated method stub
-		return null;
+		this.depth = depth;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -105,8 +142,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public int getWidth() {
-		// TODO Auto-generated method stub
-		return 0;
+		return width;
 	}
 
 	/* (non-Javadoc)
@@ -114,8 +150,8 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setWidth(int width) {
-		// TODO Auto-generated method stub
-		return null;
+		this.width = width;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -123,8 +159,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public int getHeight() {
-		// TODO Auto-generated method stub
-		return 0;
+		return height;
 	}
 
 	/* (non-Javadoc)
@@ -132,8 +167,8 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setHeight(int height) {
-		// TODO Auto-generated method stub
-		return null;
+		this.height = height;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -141,13 +176,13 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public Direction getDirection() {
-		// TODO Auto-generated method stub
-		return null;
+		return direction;
 	}	
 
 	@Override
 	public ISpace setDirection(Direction direction) {
-		return null;
+		this.direction = direction;
+		return this;
 	}
 
 
@@ -156,8 +191,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public int getDegrees() {
-		// TODO Auto-generated method stub
-		return 0;
+		return degrees;
 	}
 
 	/* (non-Javadoc)
@@ -165,8 +199,8 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setDegrees(int degrees) {
-		// TODO Auto-generated method stub
-		return null;
+		this.degrees = degrees;
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -174,7 +208,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public boolean isAnchor() {
-		// TODO Auto-generated method stub
+		if (getTags().contains(ANCHOR)) return true;
 		return false;
 	}
 
@@ -183,8 +217,12 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setAnchor(boolean anchor) {
-		// TODO Auto-generated method stub
-		return null;
+		if (anchor)
+			if (!getTags().contains(ANCHOR)) getTags().add(ANCHOR);
+		else {
+			if (getTags().contains(ANCHOR)) getTags().remove(ANCHOR);
+		}
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -192,7 +230,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public boolean isStart() {
-		// TODO Auto-generated method stub
+		if (getTags().contains(START)) return true;
 		return false;
 	}
 
@@ -201,8 +239,12 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setStart(boolean start) {
-		// TODO Auto-generated method stub
-		return null;
+		if (start)
+			if (!getTags().contains(START)) getTags().add(START);
+		else {
+			if (getTags().contains(START)) getTags().remove(START);
+		}
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -210,7 +252,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public boolean isEnd() {
-		// TODO Auto-generated method stub
+		if (getTags().contains(END)) return true;
 		return false;
 	}
 
@@ -219,8 +261,12 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public ISpace setEnd(boolean end) {
-		// TODO Auto-generated method stub
-		return null;
+		if (end)
+			if (!getTags().contains(END)) getTags().add(END);
+		else {
+			if (getTags().contains(END)) getTags().remove(END);
+		}
+		return this;
 	}
 
 	/* (non-Javadoc)
@@ -228,7 +274,7 @@ public class Space implements ISpace {
 	 */
 	@Override
 	public boolean isObstacle() {
-		// TODO Auto-generated method stub
+		if (getTags().contains(OBSTACLE)) return true;
 		return false;
 	}
 
@@ -236,48 +282,69 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setObstacle(boolean)
 	 */
 	@Override
-	public void setObstacle(boolean obstacle) {
-		// TODO Auto-generated method stub
-
+	public ISpace setObstacle(boolean obstacle) {
+		if (obstacle)
+			if (!getTags().contains(OBSTACLE)) getTags().add(SpaceTag.OBSTACLE);
+		else {
+			if (getTags().contains(OBSTACLE)) getTags().remove(OBSTACLE);
+		}
+		return this;
 	}
 
-	// TODO move to own file or part of IRoom
-	public enum Type {
-		GENERAL("general"),
-		LADDER("ladder"),
-		ENTRANCE("entrance"),
-		EXIT("exit"),
-		TREASURE("treasure"),
-		BOSS("boss"),
-		HALLWAY("hallway");
+//	// TODO move to own file or part of IRoom
+//	public enum Type {
+//		GENERAL("general"),
+//		LADDER("ladder"),
+//		ENTRANCE("entrance"),
+//		EXIT("exit"),
+//		TREASURE("treasure"),
+//		BOSS("boss"),
+//		HALLWAY("hallway");
+//
+//		private String name;
+//		
+//		/**
+//		 * @param arg0
+//		 * @param arg1
+//		 */
+//		Type(String name) {
+//			this.name = name;
+//		}
+//
+//		/**
+//		 * @return the NAME
+//		 */
+//		public String getName() {
+//			return name;
+//		}
+//
+//		/**
+//		 * @param NAME the NAME to set
+//		 */
+//		public void setName(String name) {
+//			this.name = name;
+//		}
+//	}
+//	
+//	public void setType(Type type) {
+//		
+//	}
 
-		private String name;
-		
-		/**
-		 * @param arg0
-		 * @param arg1
-		 */
-		Type(String name) {
-			this.name = name;
-		}
-
-		/**
-		 * @return the NAME
-		 */
-		public String getName() {
-			return name;
-		}
-
-		/**
-		 * @param NAME the NAME to set
-		 */
-		public void setName(String name) {
-			this.name = name;
-		}
+	/**
+	 * @return the tags
+	 */
+	@Override
+	public List<SpaceTag> getTags() {
+		if (tags == null) tags = new ArrayList<>();
+		return tags;
 	}
-	
-	public void setType(Type type) {
-		
+
+	/**
+	 * @param tags the tags to set
+	 */
+	@Override
+	public void setTags(List<SpaceTag> tags) {
+		this.tags = tags;
 	}
 	
 	

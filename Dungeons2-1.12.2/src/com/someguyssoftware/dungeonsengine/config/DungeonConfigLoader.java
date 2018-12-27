@@ -43,9 +43,10 @@ import com.someguyssoftware.gottschcore.json.JSMin;
  */
 public class DungeonConfigLoader {
 	private static final String DUNGEON_CONFIGS_RESOURCE_PATH = "/assets/dungeons2/dungeons/";
+	private static final String DEFAULT_CONFIG_FILE = "default.json";
 	private static final String DUNGEON_CONFIGS_FS_PATH = "dungeons";
 	private static final List<IDungeonConfig>EMPTY_CONFIG_LIST = new ArrayList<>(0);
-
+		
 	static {
 		// create folder
 		createFolder();
@@ -58,7 +59,6 @@ public class DungeonConfigLoader {
 	 * 
 	 */
 	public DungeonConfigLoader() {
-		// TODO Auto-generated constructor stub
 	}
 
 	/**
@@ -94,6 +94,50 @@ public class DungeonConfigLoader {
 		}
 		
 		return configs;
+	}
+	
+	/**
+	 * Load defaul dungeon/level config from resource path (mod jar file)
+	 * @return
+	 * @throws Exception
+	 */
+	public static IDungeonConfig loadDefault() throws Exception {
+		IDungeonConfig config = null;
+		
+		// read json sheet in and minify it
+		InputStream is = Dungeons2.instance.getClass().getResourceAsStream(DUNGEON_CONFIGS_RESOURCE_PATH + DEFAULT_CONFIG_FILE);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		JSMin minifier = new JSMin(is, out);
+		minifier.jsmin();
+
+		// out minified json into a json reader
+		ByteArrayInputStream in  = new ByteArrayInputStream(out.toByteArray());
+		Reader reader = new InputStreamReader(in);
+		JsonReader jsonReader = new JsonReader(reader);
+
+		// create a gson builder
+		GsonBuilder builder = new GsonBuilder();
+		
+		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
+
+		Gson gson = builder.create();	
+		
+		// read minified json into gson and generate objects
+		try {
+			config = gson.fromJson(jsonReader, DungeonConfig.class);
+		}
+		catch(JsonIOException | JsonSyntaxException e) {
+			throw new Exception("Unable to load default dungeon config.");
+		}
+		finally {
+			// close objects
+			try {
+				jsonReader.close();
+			} catch (IOException e) {
+				Dungeons2.log.warn("Unable to close JSON Reader when reading built-in style sheet.");
+			}
+		}
+		return config;		
 	}
 	
 	/**
