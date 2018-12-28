@@ -9,37 +9,37 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 public interface ILevel {
 
 	/**
-	 * @return the startSpace
+	 * @return the start
 	 */
-	ISpace getStartSpace();
+	IVoid getStart();
 
 	/**
 	 * @param startSpace the startSpace to set
 	 */
-	void setStartSpace(ISpace startSpace);
+	void setStart(IVoid start);
 
 	/**
-	 * @return the endSpace
+	 * @return the end
 	 */
-	ISpace getEndSpace();
+	IVoid getEnd();
 
 	/**
-	 * @param endSpace the endSpace to set
+	 * @param end the end to set
 	 */
-	void setEndSpace(ISpace space);
+	void setEnd(IVoid end);
 
 	/**
-	 * @return the Spaces
+	 * @return the voids
 	 */
-	List<ISpace> getSpaces();
+	List<IVoid> getVoids();
 
 	/**
-	 * @param spaces the spaces list to set
+	 * @param voids the void list to set
 	 */
-	void setSpaces(List<ISpace> spaces);
+	void setVoids(List<IVoid> voids);
 
 	/**
-	 * 
+	 * The smallest bounding box which encapsulates all the voids.
 	 * @return
 	 */
 	BBox getBoundingBox();

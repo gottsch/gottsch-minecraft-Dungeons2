@@ -17,7 +17,7 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
  * @author Mark Gottschling on Dec 25, 2018
  *
  */
-public class Space implements ISpace {
+public class Void implements IVoid {
 
 	private int id;
 	private String name;
@@ -36,13 +36,13 @@ public class Space implements ISpace {
 	/**
 	 * 
 	 */
-	public Space() {}
+	public Void() {}
 
 	/**
 	 * 
 	 * @param space
 	 */
-	public Space(ISpace space) {
+	public Void(IVoid space) {
 		if (space != null) {
 			setId(space.getId());
 
@@ -53,8 +53,8 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#copy()
 	 */
 	@Override
-	public ISpace copy() {
-		return new Space(this);
+	public IVoid copy() {
+		return new Void(this);
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setId(int)
 	 */
 	@Override
-	public ISpace setId(int id) {
+	public IVoid setId(int id) {
 		this.id = id;
 		return this;
 	}
@@ -98,7 +98,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setName(java.lang.String)
 	 */
 	@Override
-	public ISpace setName(String name) {
+	public IVoid setName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -115,7 +115,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setCoords(com.someguyssoftware.gottschcore.positional.ICoords)
 	 */
 	@Override
-	public ISpace setCoords(ICoords coords) {
+	public IVoid setCoords(ICoords coords) {
 		this.coords = coords;
 		return this;
 	}
@@ -132,7 +132,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setDepth(int)
 	 */
 	@Override
-	public ISpace setDepth(int depth) {
+	public IVoid setDepth(int depth) {
 		this.depth = depth;
 		return this;
 	}
@@ -149,7 +149,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setWidth(int)
 	 */
 	@Override
-	public ISpace setWidth(int width) {
+	public IVoid setWidth(int width) {
 		this.width = width;
 		return this;
 	}
@@ -166,7 +166,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setHeight(int)
 	 */
 	@Override
-	public ISpace setHeight(int height) {
+	public IVoid setHeight(int height) {
 		this.height = height;
 		return this;
 	}
@@ -180,7 +180,7 @@ public class Space implements ISpace {
 	}	
 
 	@Override
-	public ISpace setDirection(Direction direction) {
+	public IVoid setDirection(Direction direction) {
 		this.direction = direction;
 		return this;
 	}
@@ -198,7 +198,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setDegrees(int)
 	 */
 	@Override
-	public ISpace setDegrees(int degrees) {
+	public IVoid setDegrees(int degrees) {
 		this.degrees = degrees;
 		return this;
 	}
@@ -216,7 +216,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setAnchor(boolean)
 	 */
 	@Override
-	public ISpace setAnchor(boolean anchor) {
+	public IVoid setAnchor(boolean anchor) {
 		if (anchor)
 			if (!getTags().contains(ANCHOR)) getTags().add(ANCHOR);
 		else {
@@ -238,7 +238,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setStart(boolean)
 	 */
 	@Override
-	public ISpace setStart(boolean start) {
+	public IVoid setStart(boolean start) {
 		if (start)
 			if (!getTags().contains(START)) getTags().add(START);
 		else {
@@ -260,7 +260,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setEnd(boolean)
 	 */
 	@Override
-	public ISpace setEnd(boolean end) {
+	public IVoid setEnd(boolean end) {
 		if (end)
 			if (!getTags().contains(END)) getTags().add(END);
 		else {
@@ -282,7 +282,7 @@ public class Space implements ISpace {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setObstacle(boolean)
 	 */
 	@Override
-	public ISpace setObstacle(boolean obstacle) {
+	public IVoid setObstacle(boolean obstacle) {
 		if (obstacle)
 			if (!getTags().contains(OBSTACLE)) getTags().add(SpaceTag.OBSTACLE);
 		else {

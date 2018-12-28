@@ -3,10 +3,10 @@ package com.someguyssoftware.dungeonsengine.builder;
 import java.util.List;
 
 import com.someguyssoftware.dungeonsengine.model.Boundary;
-import com.someguyssoftware.dungeonsengine.model.ISpace;
+import com.someguyssoftware.dungeonsengine.model.IVoid;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
-public interface ISpaceBuilder {
+public interface IVoidBuilder {
 	
 	public Boundary getBoundary();
 	public void setBoundary(Boundary boundary);
@@ -14,16 +14,16 @@ public interface ISpaceBuilder {
 	/*
 	 * build a generic space
 	 */
-	ISpace buildSpace(ICoords startPoint, ISpace spaceIn);
+	IVoid buildSpace(ICoords startPoint, IVoid spaceIn);
 	
 	/*
 	 * build a 'planned' space, using existing spaces to determine where and if it can be placed within the boundary
 	 */
-	ISpace buildPlannedSpace(ICoords startPoint, List<ISpace> predefinedSpaces);
+	IVoid buildPlannedSpace(ICoords startPoint, List<IVoid> predefinedSpaces);
 	
-	ISpace buildStartSpace(ICoords startPoint);
+	IVoid buildStartSpace(ICoords startPoint);
 	
-	ISpace buildEndSpace(ICoords startPoint, List<ISpace> predefinedSpaces);
+	IVoid buildEndSpace(ICoords startPoint, List<IVoid> predefinedSpaces);
 	
 	/**
 	 * 
@@ -33,6 +33,6 @@ public interface ISpaceBuilder {
 	 * @param predefinedSpaces
 	 * @return
 	 */
-	ISpace buildTreasureSpace(ICoords startPoint, List<ISpace> predefinedSpaces);
+	IVoid buildTreasureSpace(ICoords startPoint, List<IVoid> predefinedSpaces);
 	
 }

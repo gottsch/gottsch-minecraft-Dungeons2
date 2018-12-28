@@ -15,7 +15,7 @@ import com.someguyssoftware.gottschcore.positional.Intersect;
  * @author Mark Gottschling on Dec 18, 2018
  *
  */
-public interface ISpace {
+public interface IVoid {
 	public static final int MIN_DEPTH = 5;
 	public static final int MIN_WIDTH = 5;
 	public static final int MIN_HEIGHT = 4;
@@ -26,7 +26,7 @@ public interface ISpace {
 	 * 
 	 * @return
 	 */
-	ISpace copy();
+	IVoid copy();
 	
 	/**
 	 * 
@@ -38,7 +38,7 @@ public interface ISpace {
 	 * 
 	 * @param id
 	 */
-	ISpace setId(int id);
+	IVoid setId(int id);
 	
 	/**
 	 * 
@@ -50,7 +50,7 @@ public interface ISpace {
 	 * 
 	 * @param name
 	 */
-	ISpace setName(String name);
+	IVoid setName(String name);
 	
 	/**
 	 * @return the coords
@@ -60,7 +60,7 @@ public interface ISpace {
 	/**
 	 * @param coords the coords to set
 	 */
-	ISpace setCoords(ICoords coords);	
+	IVoid setCoords(ICoords coords);	
 
 	/**
 	 * @return the depth
@@ -70,7 +70,7 @@ public interface ISpace {
 	/**
 	 * @param depth the depth to set
 	 */
-	ISpace setDepth(int depth);
+	IVoid setDepth(int depth);
 
 	/**
 	 * @return the width
@@ -80,7 +80,7 @@ public interface ISpace {
 	/**
 	 * @param width the width to set
 	 */
-	ISpace setWidth(int width);
+	IVoid setWidth(int width);
 
 	/**
 	 * @return the height
@@ -90,7 +90,7 @@ public interface ISpace {
 	/**
 	 * @param height the height to set
 	 */
-	ISpace setHeight(int height);
+	IVoid setHeight(int height);
 
 	/**
 	 * @return the direction
@@ -100,7 +100,7 @@ public interface ISpace {
 	/**
 	 * @param direction the direction to set
 	 */
-	ISpace setDirection(Direction direction);
+	IVoid setDirection(Direction direction);
 	
 	/**
 	 * 
@@ -113,7 +113,7 @@ public interface ISpace {
 	 * @param degrees
 	 * @return
 	 */
-	ISpace setDegrees(int degrees);
+	IVoid setDegrees(int degrees);
 	
 	/**
 	 * 
@@ -233,7 +233,7 @@ public interface ISpace {
 	 * @param room
 	 * @return
 	 */
-	default public Intersect getIntersect(ISpace room) {
+	default public Intersect getIntersect(IVoid room) {
 		return Intersect.getIntersect(this.getBoundingBox(), room.getBoundingBox());
 	}
 	
@@ -243,11 +243,11 @@ public interface ISpace {
 	 * @param force
 	 * @return
 	 */
-	default public ISpace addXZForce(double angle, double force) {
+	default public IVoid addXZForce(double angle, double force) {
 		double xForce = Math.sin(angle) * force;
         double zForce = Math.cos(angle) * force;
 
-        ISpace room = copy();
+        IVoid room = copy();
         room.setCoords(room.getCoords().add((int)xForce, 0, (int)zForce));
         return room;
 	}
@@ -255,9 +255,9 @@ public interface ISpace {
 	/**
 	 * Comparator to sort by Id
 	 */
-	public static Comparator<ISpace> idComparator = new Comparator<ISpace>() {
+	public static Comparator<IVoid> idComparator = new Comparator<IVoid>() {
 		@Override
-		public int compare(ISpace p1, ISpace p2) {
+		public int compare(IVoid p1, IVoid p2) {
 			if (p1.getId() > p2.getId()) {
 				// greater than
 				return 1;
@@ -283,19 +283,19 @@ public interface ISpace {
 
 	boolean isAnchor();
 
-	ISpace setAnchor(boolean anchor);
+	IVoid setAnchor(boolean anchor);
 
 	boolean isStart();
 
-	ISpace setStart(boolean start);
+	IVoid setStart(boolean start);
 
 	boolean isEnd();
 
-	ISpace setEnd(boolean end);
+	IVoid setEnd(boolean end);
 
 	boolean isObstacle();
 
-	ISpace setObstacle(boolean obstacle);
+	IVoid setObstacle(boolean obstacle);
 
 	void centerOn(ICoords coords);
 
