@@ -239,7 +239,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 				// 2. test if correct biome
 				Biome biome = world.getBiome(coords.toPos());
-
+				Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
 			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
 			    	if (world.isRemote) {
 			    		Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));

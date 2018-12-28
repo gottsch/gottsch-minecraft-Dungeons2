@@ -42,7 +42,8 @@ import com.someguyssoftware.gottschcore.json.JSMin;
  *
  */
 public class DungeonConfigLoader {
-	private static final String DUNGEON_CONFIGS_RESOURCE_PATH = "/assets/dungeons2/dungeons/";
+	private static final String DUNGEON_CONFIGS_RESOURCE_DEFAULT_PATH = "/assets/dungeons2/dungeons/";
+	private static final String DUNGEON_CONFIGS_RESOURCE_BUILTIN_PATH = "/assets/dungeons2/dungeons/builtin/";
 	private static final String DEFAULT_CONFIG_FILE = "default.json";
 	private static final String DUNGEON_CONFIGS_FS_PATH = "dungeons";
 	private static final List<IDungeonConfig>EMPTY_CONFIG_LIST = new ArrayList<>(0);
@@ -86,7 +87,7 @@ public class DungeonConfigLoader {
 							dungeonConfig = load(f);
 							configs.addAll(dungeonConfig);
 						} catch (Exception e) {
-							Dungeons2.log.error("Unable to load dungeon config json file.", e);
+							Dungeons2.log.error("Unable to load dungeon config json file -> " + f.toString(), e);
 						}
 					});
 		} catch (Exception e) {
@@ -105,7 +106,7 @@ public class DungeonConfigLoader {
 		IDungeonConfig config = null;
 		
 		// read json sheet in and minify it
-		InputStream is = Dungeons2.instance.getClass().getResourceAsStream(DUNGEON_CONFIGS_RESOURCE_PATH + DEFAULT_CONFIG_FILE);
+		InputStream is = Dungeons2.instance.getClass().getResourceAsStream(DUNGEON_CONFIGS_RESOURCE_DEFAULT_PATH + DEFAULT_CONFIG_FILE);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		JSMin minifier = new JSMin(is, out);
 		minifier.jsmin();
@@ -127,7 +128,7 @@ public class DungeonConfigLoader {
 			config = gson.fromJson(jsonReader, DungeonConfig.class);
 		}
 		catch(JsonIOException | JsonSyntaxException e) {
-			throw new Exception("Unable to load default dungeon config.");
+			throw new Exception("Unable to load default dungeon config.", e);
 		}
 		finally {
 			// close objects
@@ -158,6 +159,7 @@ public class DungeonConfigLoader {
 		
 		// create a gson builder
 		GsonBuilder builder = new GsonBuilder();	
+		builder.registerTypeAdapter(IDungeonConfig.class, new GenericDeserializer(DungeonConfig.class));
 		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
 
 		Gson gson = builder.create();	
@@ -166,10 +168,11 @@ public class DungeonConfigLoader {
 			Type listType = new TypeToken<List<IDungeonConfig>>() {}.getType();
 			config = gson.fromJson(jsonReader, /*DungeonConfig.class*/listType);
 			for (IDungeonConfig c : config) {
-				c.getBiomeWhiteList().replaceAll(String::toUpperCase);
-				c.getBiomeBlackList().replaceAll(String::toUpperCase);
+				Dungeons2.log.debug("loaded dungeon config -> {}", c);
+				if (c.getBiomeWhiteList() != null) c.getBiomeWhiteList().replaceAll(String::toUpperCase);
+				if (c.getBiomeBlackList() != null) c.getBiomeBlackList().replaceAll(String::toUpperCase);
 				for (ILevelConfig lc : c.getLevelConfigs()) {
-					lc.getChestCategories().replaceAll(String::toUpperCase);
+					if (lc.getChestCategories() != null) lc.getChestCategories().replaceAll(String::toUpperCase);
 				}
 				Dungeons2.log.debug("Loaded dungeon config:" + config);
 				
@@ -214,12 +217,12 @@ public class DungeonConfigLoader {
 		Stream<Path> walk = null;
 		Path folder = null;
 		
-		FileSystem fs = getResourceAsFileSystem(DUNGEON_CONFIGS_RESOURCE_PATH);
+		FileSystem fs = getResourceAsFileSystem(DUNGEON_CONFIGS_RESOURCE_BUILTIN_PATH);
 		if (fs == null) return;
 		
 		try {
 			// get the base path of the resource 
-			Path resourceBasePath = fs.getPath(DUNGEON_CONFIGS_RESOURCE_PATH);
+			Path resourceBasePath = fs.getPath(DUNGEON_CONFIGS_RESOURCE_BUILTIN_PATH);
 			Dungeons2.log.debug("resource base path -> {}", resourceBasePath.toString());
 						
 			boolean isFirst = true;
