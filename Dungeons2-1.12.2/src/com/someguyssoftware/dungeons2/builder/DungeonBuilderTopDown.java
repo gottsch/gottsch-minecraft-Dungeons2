@@ -250,16 +250,17 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 */
 		int numberOfLevels = RandomHelper.randomInt(rand, (int)config.getNumLevels().getMin(), (int)config.getNumLevels().getMax());
 		Dungeons2.log.debug("number of levels:" + numberOfLevels);
+		ILevelConfig prevLevelConfig = DungeonConfigManager.defaultConfig.getLevelConfigs()[0];
 		ILevelConfig levelConfig = null;
 		// for every n in numLevels
 		for (int levelIndex = 0; levelIndex < numberOfLevels; levelIndex++) {
 			logger.debug("Building level -> {}", levelIndex);
-			ILevelConfig prevLevelConfig = levelConfig;
+			prevLevelConfig = levelConfig;
 			// get the level config
 			if (levelIndex <= config.getLevelConfigs().length-1) {
 				levelConfig = config.getLevelConfigs()[levelIndex];
 				// apply the previous level's config to this config
-				levelConfig.apply(prevLevelConfig);
+				if (prevLevelConfig != null) levelConfig.apply(prevLevelConfig);
 			}
 			else {
 				// get the last defined level config

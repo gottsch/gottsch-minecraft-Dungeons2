@@ -196,4 +196,11 @@ public class Dungeon {
 	public void setConfig(DungeonConfig config) {
 		this.config = config;
 	}
+
+	@Override
+	public String toString() {
+		return "Dungeon [entrance=" + entrance + ", levels=" + levels + ", shafts=" + shafts + ", minX=" + minX
+				+ ", maxX=" + maxX + ", minY=" + minY + ", maxY=" + maxY + ", minZ=" + minZ + ", maxZ=" + maxZ
+				+ ", theme=" + theme + ", config=" + config + "]";
+	}
 }

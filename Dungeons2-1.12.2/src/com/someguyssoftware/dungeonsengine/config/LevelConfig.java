@@ -5,6 +5,7 @@ package com.someguyssoftware.dungeonsengine.config;
 
 import java.util.List;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.Quantity;
 
 /**
@@ -115,6 +116,11 @@ public class LevelConfig implements ILevelConfig {
 	
 	@Override
 	public ILevelConfig apply(ILevelConfig config) {
+		if (config == null) {
+			Dungeons2.log.debug("apply configIn is null.");
+			return this;
+		}
+		
 		if (getBoundaryFactor() == null) {
 			setBoundaryFactor(config.getBoundaryFactor());
 		}
@@ -125,6 +131,7 @@ public class LevelConfig implements ILevelConfig {
 		
 		if (getChestFrequency() == null) setChestFrequency(config.getChestFrequency());
 		if (getDecayMultiplier() == null) setDecayMultiplier(config.getDecayMultiplier());
+		if (isDecorations() == null) setDecorations(config.isDecorations());
 		if (getDegrees() == null) setDegrees(config.getDegrees());
 		if (getDepth() == null) setDepth(config.getDepth());
 		if (getHeight() == null) setHeight(config.getHeight());
@@ -133,6 +140,7 @@ public class LevelConfig implements ILevelConfig {
 		if (getNumRooms() == null) setNumRooms(config.getNumRooms());
 		if (getSpawnBoundaryFactor() == null) setSpawnBoundaryFactor(config.getSpawnBoundaryFactor());
 		if (getSpawnerFrequency() == null) setSpawnerFrequency(config.getSpawnerFrequency());
+		if (isSupport() == null) setSupport(config.isSupport());
 		if (getTheme() == null || getTheme().equals("")) setTheme(config.getTheme());
 		if (getVineFrequency() == null) setVineFrequency(config.getVineFrequency());
 		if (getWebFrequency() == null) setWebFrequency(config.getWebFrequency());
