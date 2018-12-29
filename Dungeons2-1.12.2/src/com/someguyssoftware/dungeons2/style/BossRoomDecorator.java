@@ -46,6 +46,9 @@ public class BossRoomDecorator extends RoomDecorator {
 		this.chestPopulator = new ChestPopulator(chestSheet);
 	}
 
+	/**
+	 * 
+	 */
 	@Override
 	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, LevelConfig config) {
 		List<Entry<DesignElement, ICoords>> surfaceAirZone = room.getFloorMap().entries().stream().filter(x -> x.getKey().getFamily() == DesignElement.SURFACE_AIR)
@@ -59,14 +62,7 @@ public class BossRoomDecorator extends RoomDecorator {
 		floorZone = surfaceAirZone.stream().filter(f -> f.getKey() == DesignElement.FLOOR_AIR).collect(Collectors.toList());
 		
 		// decorate with carpet		
-//		int index = 0;
-//		for (EnumDyeColor dye : EnumDyeColor.values()) {
-//			Blocks.CARPET.getDefaultState().withProperty(BlockCarpet.COLOR, dye);
-//			index++;
-//		}
 		EnumDyeColor dye = EnumDyeColor.values()[random.nextInt(EnumDyeColor.values().length)];
-//		IBlockState[] carpets = new IBlockState[] {Blocks.CARPET.getDefaultState().withProperty(BlockCarpet.COLOR, dye)};
-//		addBlock(world, random, provider, room, surfaceAirZone, carpets, config.getWebFrequency(), config.getNumberOfWebs(), config);
 
 		// cover floor with carpet
 		IBlockState carpet = Blocks.CARPET.getDefaultState().withProperty(BlockCarpet.COLOR, dye);
@@ -148,6 +144,9 @@ public class BossRoomDecorator extends RoomDecorator {
 					chestPopulator.populate(random, inventory, chest);
 					// TODO update room floor map with chest
 				}
+			}
+			else {
+				Dungeons2.log.debug("Chest does not have iinventory.");
 			}
 		}
 		
