@@ -321,8 +321,7 @@ public class Level {
 	@Override
 	public String toString() {
 		return "Level [id=" + id + ", name=" + name + ", startPoint=" + startPoint + ", startRoom=" + startRoom
-				+ ", endRoom=" + endRoom + ", rooms=" + rooms + ", edges=" + edges + ", paths=" + paths + ", waylines="
-				+ waylines + ", hallways=" + hallways + ", shafts=" + shafts + ", minX=" + minX + ", maxX=" + maxX
+				+ ", endRoom=" + endRoom + ", rooms=" + rooms.size() + ", minX=" + minX + ", maxX=" + maxX
 				+ ", minY=" + minY + ", maxY=" + maxY + ", minZ=" + minZ + ", maxZ=" + maxZ + ", config=" + config
 				+ "]";
 	}

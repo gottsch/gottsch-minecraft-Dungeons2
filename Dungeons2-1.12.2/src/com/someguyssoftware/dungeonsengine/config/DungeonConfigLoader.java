@@ -72,7 +72,7 @@ public class DungeonConfigLoader {
 		List<IDungeonConfig> configs = new ArrayList<>(5);
 		
 		// load all the files under the folder
-		Path path = Paths.get(Dungeons2.instance.getConfig().getModsFolder(), 
+		Path path = Paths.get("mods", 
 				Dungeons2.MODID, DUNGEON_CONFIGS_FS_PATH).toAbsolutePath();
 				
 		// check if path/folder exists
@@ -198,7 +198,7 @@ public class DungeonConfigLoader {
 	 * 
 	 */
 	private static void createFolder() {
-		Path modsPath = Paths.get(Dungeons2.instance.getConfig().getModsFolder()); 
+		Path modsPath = Paths.get("mods"); 
 		Path folder = Paths.get(modsPath.toString(), Dungeons2.MODID, DUNGEON_CONFIGS_FS_PATH).toAbsolutePath();
 		
 	    if(Files.notExists(folder)){
@@ -236,7 +236,7 @@ public class DungeonConfigLoader {
 				// check the first file, which is actually the given directory itself
 				if (isFirst) {
 					folder = Paths.get(
-							Dungeons2.instance.getConfig().getModsFolder(), 
+							"mods", 
 							Dungeons2.MODID, 
 							DUNGEON_CONFIGS_FS_PATH)
 							.toAbsolutePath();

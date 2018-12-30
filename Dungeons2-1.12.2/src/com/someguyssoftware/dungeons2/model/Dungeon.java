@@ -199,7 +199,7 @@ public class Dungeon {
 
 	@Override
 	public String toString() {
-		return "Dungeon [entrance=" + entrance + ", levels=" + levels + ", shafts=" + shafts + ", minX=" + minX
+		return "Dungeon [entrance=" + entrance + ", levels.size=" + levels.size() + ", shafts=" + shafts + ", minX=" + minX
 				+ ", maxX=" + maxX + ", minY=" + minY + ", maxY=" + maxY + ", minZ=" + minZ + ", maxZ=" + maxZ
 				+ ", theme=" + theme + ", config=" + config + "]";
 	}

@@ -149,13 +149,13 @@ public class LevelBuilder {
 //		
 		// resize field
 		if (factor < 1.0D) {
-			int shrinkAmount = (int) ((boundary.maxX - boundary.minX) * (1.0 - factor) / 2);
-			AxisAlignedBB newBoundary = boundary.shrink(shrinkAmount);
-			Dungeons2.log.debug("boundary shrunk by -> {}, to new size -> {}", shrinkAmount, newBoundary);
+			int xAmount = (int) (((boundary.maxX - boundary.minX) * (1.0 - factor)) / 2);
+			int zAmount = (int) (((boundary.maxZ - boundary.minZ) * (1.0 - factor)) / 2);
+			AxisAlignedBB newBoundary = boundary.grow(-xAmount, 0, -zAmount);
+			Dungeons2.log.debug("boundary shrunk by -> {} {}, to new size -> {}", xAmount, zAmount, newBoundary);
 			return newBoundary;
 		}
 		else return boundary;
-
 	}
 	
 	/**

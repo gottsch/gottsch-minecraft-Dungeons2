@@ -134,9 +134,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		Dungeons2.log.debug("Dungeon boundary factor -> {}", config.getBoundaryFactor());
 		// resize boundary
 		if (config.getBoundaryFactor() > 0D && config.getBoundaryFactor() < 1.0D) {
-			int shrinkAmount = (int) ((dungeonBoundary.maxX - dungeonBoundary.minX) * (1.0 - config.getBoundaryFactor()) / 2);
-			dungeonBoundary = dungeonBoundary.grow(-shrinkAmount, 0, -shrinkAmount);
-			Dungeons2.log.debug("Dungeon shrunk by factor -> {} [{}], to new size -> {}", config.getBoundaryFactor(), shrinkAmount, dungeonBoundary);
+			// TODO this is wrong! this is assuming the boundary is a square, which it is not it, is a rectangle with one side 2x the other side
+			int xAmount = (int) (((dungeonBoundary.maxX - dungeonBoundary.minX) * (1.0 - config.getBoundaryFactor())) / 2);
+			int zAmount = (int) (((dungeonBoundary.maxZ - dungeonBoundary.minZ) * (1.0 - config.getBoundaryFactor())) / 2);
+			dungeonBoundary = dungeonBoundary.grow(-xAmount, 0, -zAmount);
+			Dungeons2.log.debug("Dungeon shrunk by factor -> {} [{} {}], to new size -> {}", config.getBoundaryFactor(), xAmount, zAmount, dungeonBoundary);
 			// update the boundary of this
 			this.boundary = dungeonBoundary;
 		}
@@ -144,10 +146,11 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		/*
 		 * Calculate spawn boundary
 		 */
+		// TODO resizeBoundary is wrong! 1) it is always using the x-axis and i don't think it is dividing
 		AxisAlignedBB lb = getLevelBuilder()
 				.resizeBoundary(dungeonBoundary, defaultLevelConfig.getBoundaryFactor());
 		Dungeons2.log.debug("init level boundary -> {}, factor -> {}", lb, defaultLevelConfig.getBoundaryFactor());
-		AxisAlignedBB roomBoundary =getLevelBuilder()
+		AxisAlignedBB roomBoundary = getLevelBuilder()
 				.resizeBoundary(lb, defaultLevelConfig.getSpawnBoundaryFactor());
 		Dungeons2.log.debug("init spawn boundary -> {}, factor -> {}", roomBoundary, defaultLevelConfig.getSpawnBoundaryFactor());
 		
@@ -359,7 +362,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			
 			// build a level
 			Level level = levelBuilder.build(world, rand, startPoint, plannedRooms, levelConfig);
-			Dungeons2.log.debug(String.format("Built level[%d]: %s", levelIndex, level));
+//			Dungeons2.log.debug(String.format("Built level[%d]: %s", levelIndex, level));
 			
 			// ensure the level has it's config
 			level.setConfig(levelConfig);
@@ -488,7 +491,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 * Calculate room boundary (based on size... don't know the size anymore :( )
 		 */
 		AxisAlignedBB roomBoundary = getRoomBoundary(dungeonBoundary);
-//		Dungeons2.log.debug("roomField -> {}", roomField);
+		Dungeons2.log.debug("roomBoundary -> {}", roomBoundary);
 		
 		/*
 		 * Select startPoint in room boundary

@@ -19,6 +19,8 @@
 		},
 		"levelConfigs": [
 			{
+				"boundaryFactor": 1.0,
+				"spawnBoundaryFactor": 0.2,			
 				"numRooms": {
 					"min":	10,
 					"max": 20	

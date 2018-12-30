@@ -22,12 +22,9 @@ import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
 import com.someguyssoftware.gottschcore.config.IConfig;
 import com.someguyssoftware.gottschcore.mod.AbstractMod;
 import com.someguyssoftware.gottschcore.mod.IMod;
-import com.someguyssoftware.gottschcore.positional.Coords;
-import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.proxy.IProxy;
 import com.someguyssoftware.gottschcore.version.BuildVersion;
 
-import net.minecraft.util.math.ChunkPos;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -63,7 +60,7 @@ public class Dungeons2 extends AbstractMod {
 
 	public static final String MODID = "dungeons2";
 	public static final String NAME = "Dungeons2!";
-	public static final String VERSION = "1.5.0"; 
+	public static final String VERSION = "1.6.0"; 
 	public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12.2/update.json";
 
 	// latest VERSION

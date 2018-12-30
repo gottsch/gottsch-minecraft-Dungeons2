@@ -41,6 +41,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block basicCrackedStonebrickFacade;
 	public static Block basicChiseledStonebrickFacade;
 	public static Block basicObsidianbrickFacade;
+	
+	public static Block basicSmoothSandstoneFacade;
 
 	// "T" Pillar
 	public static Block teePillarStoneFacade;
@@ -50,6 +52,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block teePillarMossyStonebrickFacade;
 	public static Block teePillarCrackedStonebrickFacade;
 	public static Block teePillarObsidianbrickFacade;
+	
+	public static Block teePillarSmoothSandstoneFacade;
 
 	// thin "T" Pillar	
 	public static Block teeThinPillarStoneFacade;
@@ -60,6 +64,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block teeThinPillarCrackedStonebrickFacade;
 	public static Block teeThinPillarObsidianbrickFacade;
 
+	public static Block teeThinPillarSmoothSandstoneFacade;
+	
 	// cornice
 	public static Block corniceStoneFacade;
 	public static Block corniceCobblestoneFacade;
@@ -69,6 +75,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block corniceCrackedStonebrickFacade;
 	public static Block corniceObsidianbrickFacade;
 
+	public static Block corniceSmoothSandstoneFacade;
+	
 	// flute pillar
 	public static Block flutePillarStoneBlock;
 	public static Block flutePillarCobblestoneBlock;
@@ -78,6 +86,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block flutePillarCrackedStonebrickBlock;
 	public static Block flutePillarObsidianbrickBlock;
 
+	public static Block flutePillarSmoothSandstoneBlock;
+	
 	// flute thin pillar
 	public static Block fluteThinPillarStoneFacade;
 	public static Block fluteThinPillarCobblestoneFacade;
@@ -87,6 +97,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block fluteThinPillarCrackedStonebrickFacade;
 	public static Block fluteThinPillarObsidianbrickFacade;
 
+	public static Block fluteThinPillarSandstoneFacade;
+	
 	// seven eights
 	public static Block sevenEightsPillarStoneFacade;
 	public static Block sevenEightsPillarCobblestoneFacade;
@@ -96,6 +108,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block sevenEightsPillarCrackedStonebrickFacade;
 	public static Block sevenEightsPillarObsidianbrickFacade;
 
+	public static Block sevenEightsPillarSmoothSandstoneFacade;
+	
 	// sills
 	public static Block sillStoneBlock;
 	public static Block sillCobblestoneBlock;
@@ -105,6 +119,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block sillCrackedStonebrickBlock;
 	public static Block sillObsidianbrickBlock;
 
+	public static Block sillSmoothSandstoneBlock;
+	
 	// double sills
 	public static Block doubleSillStoneBlock;
 	public static Block doubleSillCobblestoneBlock;
@@ -114,6 +130,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block doubleSillCrackedStonebrickBlock;	
 	public static Block doubleSillObsidianbrickBlock;
 
+	public static Block doubleSillSmoothSandstoneBlock;
+	
 	// half pillar base
 	public static Block halfPillarBaseStoneBlock;
 	public static Block halfPillarBaseCobblestoneBlock;
@@ -123,6 +141,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block halfPillarBaseCrackedStonebrickBlock;
 	public static Block halfPillarBaseObsidianbrickBlock;
 
+	public static Block halfPillarBaseSmoothSandstoneBlock;
+	
 	// half pillar
 	public static Block halfPillarStoneBlock;
 	public static Block halfPillarCobblestoneBlock;
@@ -132,6 +152,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block halfPillarCrackedStonebrickBlock;
 	public static Block halfPillarObsidianbrickBlock;
 
+	public static Block halfPillarSmoothSandstoneBlock;
+	
 	// coffer middle
 	public static Block cofferMiddleStoneBlock;
 	public static Block cofferMiddleCobblestoneBlock;
@@ -141,6 +163,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block cofferMiddleCrackedStonebrickBlock;
 	public static Block cofferMiddleObsidianbrickBlock;
 
+	public static Block cofferMiddleSmoothSandstoneBlock;
+	
 	// coffer
 	public static Block cofferStoneBlock;
 	public static Block cofferCobblestoneBlock;
@@ -150,6 +174,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block cofferCrackedStonebrickBlock;
 	public static Block cofferObsidianbrickBlock;
 
+	public static Block cofferSmoothSandstoneBlock;
+	
 	// crown molding
 	public static Block crownMoldingStoneFacade;
 	public static Block crownMoldingCobblestoneFacade;
@@ -159,6 +185,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block crownMoldingCrackedStonebrickFacade;
 	public static Block crownMoldingObsidianbrickFacade;
 
+	public static Block crownMoldingSmoothSandstoneFacade;
+	
 	// wall sconce 
 	public static Block wallSconceStoneFacade;
 	public static Block wallSconceCobblestoneFacade;
@@ -168,6 +196,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block wallSconceCrackedStonebrickFacade;
 	public static Block wallSconceObsidianbrickFacade;
 
+	public static Block wallSconceSmoothSandstoneFacade;
+	
 	// grate
 	public static Block grateBlock;
 
