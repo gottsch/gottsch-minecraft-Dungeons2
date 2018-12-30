@@ -2,7 +2,7 @@
 	"styles": {
 		"desert-default": {
 			"block": "minecraft:sandstone@3",
-			"category": "default",
+			"category": "desert",
 			"decay": 7.0,
 			"decayBlocks": [
 				"minecraft:sandstone@0",
@@ -11,9 +11,9 @@
 			]
 		},
 		"default-column": {
-			"block": "dungeons2:sandstone@0",
-			"category": "default",
-			"decay": 15.0,
+			"block": "dungeons2:sandstone@3",
+			"category": "desert",
+			"decay": 7.0,
 			"decayBlocks": [
 				"dungeons2:basic_facade_stonebrick_mossy@0",
 				"dungeons2:basic_facade_stonebrick_cracked@0",
