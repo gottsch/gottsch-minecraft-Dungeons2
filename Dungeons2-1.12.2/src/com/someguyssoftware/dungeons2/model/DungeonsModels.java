@@ -26,6 +26,7 @@ public class DungeonsModels {
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicCrackedStonebrickFacade));					
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicChiseledStonebrickFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicObsidianbrickFacade));
+		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.basicSmoothSandstoneFacade));
 		// tee
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.teePillarStoneFacade));
 		registerItemModel(Item.getItemFromBlock(DungeonsBlocks.teePillarCobblestoneFacade));

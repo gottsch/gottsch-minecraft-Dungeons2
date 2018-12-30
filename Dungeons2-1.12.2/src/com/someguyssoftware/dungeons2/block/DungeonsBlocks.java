@@ -220,6 +220,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		basicCrackedStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicCrackedStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicChiseledStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicChiseledStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicObsidianbrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicObsidianbrickFacadeId, Material.ROCK).setHardness(50F).setResistance(2000F);
+		basicSmoothSandstoneFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.BASIC_SMOOTH_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(50F).setResistance(2000F);
 
 		// t pillar
 		teePillarStoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -382,6 +383,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					basicCrackedStonebrickFacade,					
 					basicChiseledStonebrickFacade,
 					basicObsidianbrickFacade,
+					basicSmoothSandstoneFacade,
 					// tee
 					teePillarStoneFacade,
 					teePillarCobblestoneFacade,
@@ -519,6 +521,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 					new ItemBlock(basicCrackedStonebrickFacade),					
 					new ItemBlock(basicChiseledStonebrickFacade),
 					new ItemBlock(basicObsidianbrickFacade),
+					new ItemBlock(basicSmoothSandstoneFacade),
 					// tee
 					new ItemBlock(teePillarStoneFacade),
 					new ItemBlock(teePillarCobblestoneFacade),

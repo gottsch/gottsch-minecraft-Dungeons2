@@ -13,6 +13,8 @@ import net.minecraftforge.common.config.Configuration;
  *
  */
 public class ModConfig extends AbstractConfig {
+	public static final String BASIC_SMOOTH_SANDSTONE_FACADE_ID = "basic_facade_smooth_sandstone";
+
 	// resources
 	public static String dungeonsFolder;
 	
