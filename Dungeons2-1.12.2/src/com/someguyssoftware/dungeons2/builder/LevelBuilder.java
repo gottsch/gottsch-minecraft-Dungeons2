@@ -793,7 +793,7 @@ public class LevelBuilder {
 		Collections.sort(spawned, Room.distanceComparator);
 				
 		// move apart any intersecting rooms (uses anti-grav method)
-		Dungeons2.log.debug("Before Apply Distance Buffering Rooms.size -> {}", spawned.size());
+		Dungeons2.log.debug("Before Apply Distance Buffering Rooms.size -> {}", anchors.size() + spawned.size());
 		rooms = applyDistanceBuffering(rand, startPoint, anchors, spawned);
 		Dungeons2.log.debug("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
 //		System.out.println("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
@@ -2237,7 +2237,11 @@ public class LevelBuilder {
 				// assign a new id to room
 				room.setId(roomId++);
 				// add room
-				met.add(room);			
+				met.add(room);		
+			}
+			else {
+				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
+				incrementLossToValidation(1);
 			}
 		}
 		return met;

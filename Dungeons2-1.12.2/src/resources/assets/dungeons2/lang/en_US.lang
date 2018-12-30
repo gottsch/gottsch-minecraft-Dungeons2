@@ -9,6 +9,7 @@ tile.dungeons2:basic_facade_stonebrick_mossy.name=Basic Mossy Stonebrick Facade
 tile.dungeons2:basic_facade_stonebrick_cracked.name=Basic Cracked Stonebrick Facade
 tile.dungeons2:basic_facade_stonebrick_chiseled.name=Basic Chiseled Stonebrick Facade
 tile.dungeons2:basic_facade_obsidianbrick.name=Basic Obsidanbrick Facade
+tile.dungeons2:basic_facade_sandstone_smooth.name=Smooth Sandstone Facade
 
 #cornice
 tile.dungeons2:cornice_stone.name=Stone Cornice 
