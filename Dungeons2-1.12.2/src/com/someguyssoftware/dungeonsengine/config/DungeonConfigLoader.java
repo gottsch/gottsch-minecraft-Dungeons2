@@ -170,13 +170,13 @@ public class DungeonConfigLoader {
 			Type listType = new TypeToken<List<IDungeonConfig>>() {}.getType();
 			config = gson.fromJson(jsonReader, /*DungeonConfig.class*/listType);
 			for (IDungeonConfig c : config) {
-				Dungeons2.log.debug("loaded dungeon config -> {}", c);
+//				Dungeons2.log.debug("loaded dungeon config -> {}", c);
 				if (c.getBiomeWhiteList() != null) c.getBiomeWhiteList().replaceAll(String::toUpperCase);
 				if (c.getBiomeBlackList() != null) c.getBiomeBlackList().replaceAll(String::toUpperCase);
 				for (ILevelConfig lc : c.getLevelConfigs()) {
 					if (lc.getChestCategories() != null) lc.getChestCategories().replaceAll(String::toUpperCase);
 				}
-				Dungeons2.log.debug("Loaded dungeon config:" + config);
+//				Dungeons2.log.debug("Loaded dungeon config:" + config);
 				
 			}
 		}
@@ -225,14 +225,14 @@ public class DungeonConfigLoader {
 		try {
 			// get the base path of the resource 
 			Path resourceBasePath = fs.getPath(DUNGEON_CONFIGS_RESOURCE_BUILTIN_PATH);
-			Dungeons2.log.debug("resource base path -> {}", resourceBasePath.toString());
+//			Dungeons2.log.debug("resource base path -> {}", resourceBasePath.toString());
 						
 			boolean isFirst = true;
 			// proces all the files in the folder			
 			walk = Files.walk(resourceBasePath, 1);
 			for (Iterator<Path> it = walk.iterator(); it.hasNext();) {
 				Path resourceFilePath = it.next();
-				Dungeons2.log.debug("dungeon config file -> {}", resourceFilePath.toString());
+//				Dungeons2.log.debug("dungeon config file -> {}", resourceFilePath.toString());
 				// check the first file, which is actually the given directory itself
 				if (isFirst) {
 					folder = Paths.get(

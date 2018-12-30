@@ -64,7 +64,7 @@ public class DungeonConfigManager {
 					for (String b : c.getBiomeWhiteList()) {
 						String biomeName = b.trim().toLowerCase();
 						Biome biome = ForgeRegistries.BIOMES.getValue(new ResourceLocation(biomeName));
-						Dungeons2.log.debug("wl.cname -> {}, biome -> {}, size -> {}", c.getName(), biome.getBiomeName(), c.getSize());
+//						Dungeons2.log.debug("wl.cname -> {}, biome -> {}, size -> {}", c.getName(), biome.getBiomeName(), c.getSize());
 						if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
 							if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
 								DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
