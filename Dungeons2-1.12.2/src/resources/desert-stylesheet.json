@@ -10,24 +10,22 @@
 				"minecraft:air@0"
 			]
 		},
-		"default-column": {
-			"block": "dungeons2:sandstone@3",
+		"desert-default-column": {
+			"block": "dungeons2:basic_facade_smooth_sandstone@0",
 			"category": "desert",
 			"decay": 7.0,
 			"decayBlocks": [
-				"dungeons2:basic_facade_stonebrick_mossy@0",
-				"dungeons2:basic_facade_stonebrick_cracked@0",
-				"dungeons2:basic_facade_cobblestone_mossy@0",
+				"dungeons2:basic_facade_smooth_sandstone@0",
+				"dungeons2:basic_facade_sandstone@0",
 				"minecraft:air@0"
 			]
 		},
-		"default-trim": {
-			"block": "minecraft:stone_brick_stairs@0",
+		"desert-default-trim": {
+			"block": "minecraft:sandstone_stairs@3",
 			"category": "default",
-			"decay": 15.0,
+			"decay": 7.0,
 			"decayBlocks": [
-				"minecraft:stone_brick_stairs@0",
-				"minecraft:stone_brick_stairs@0",
+				"minecraft:sandstone_stairs@0",
 				"minecraft:air@0"
 			]
 		},
