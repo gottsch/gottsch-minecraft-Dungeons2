@@ -1,5 +1,5 @@
 {
-    "parent": "Dungeons2:block/cornice_smooth_sandstone",
+    "parent": "Dungeons2:block/crown_molding_smooth_sandstone",
     "display": {
         "thirdperson": {
             "rotation": [ 10, -45, 170 ],

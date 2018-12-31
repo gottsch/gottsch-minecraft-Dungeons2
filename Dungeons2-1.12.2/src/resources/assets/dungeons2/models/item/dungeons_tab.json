@@ -1,7 +1,7 @@
 {
     "parent": "builtin/generated",
     "textures": {
-    	"layer0": "Dungeons2:items/dungeons_blocks_tab"
+    	"layer0": "Dungeons2:items/dungeons_tab"
     },
     "display": {
         "thirdperson": {
