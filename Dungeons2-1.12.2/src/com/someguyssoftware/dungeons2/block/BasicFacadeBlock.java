@@ -27,6 +27,7 @@ public class BasicFacadeBlock extends CardinalDirectionFacadeBlock {
 		super(modID, name, material);
 		setSoundType(SoundType.STONE);
 		setCreativeTab(Dungeons2.DUNGEONS_TAB);
+//		setCreativeTab(CreativeTabs.BUILDING_BLOCKS);
 		setBoundingBox(
 				new AxisAlignedBB(0F, 0F, 0.5F, 1F, 1F, 1F), 	// N (starts at half)
 				new AxisAlignedBB(0F, 0F, 0F, 0.5F, 1F, 1F),  	// E (starts at zero)
