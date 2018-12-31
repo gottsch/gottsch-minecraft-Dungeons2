@@ -9,25 +9,27 @@ tile.dungeons2:basic_facade_stonebrick_mossy.name=Basic Mossy Stonebrick Facade
 tile.dungeons2:basic_facade_stonebrick_cracked.name=Basic Cracked Stonebrick Facade
 tile.dungeons2:basic_facade_stonebrick_chiseled.name=Basic Chiseled Stonebrick Facade
 tile.dungeons2:basic_facade_obsidianbrick.name=Basic Obsidanbrick Facade
-tile.dungeons2:basic_facade_sandstone_smooth.name=Smooth Sandstone Facade
+tile.dungeons2:basic_facade_smooth_sandstone.name=Smooth Sandstone Facade
 
 #cornice
-tile.dungeons2:cornice_stone.name=Stone Cornice 
-tile.dungeons2:cornice_cobblestone.name=Cobblestone Cornice 
-tile.dungeons2:cornice_cobblestone_mossy.name=Mossy Cobblestone Cornice 
-tile.dungeons2:cornice_stonebrick.name=Stonebrick Cornice 
-tile.dungeons2:cornice_stonebrick_mossy.name=Mossy Stonebrick Cornice 
-tile.dungeons2:cornice_stonebrick_cracked.name=Cracked Stonebrick Cornice 
-tile.dungeons2:cornice_obsidianbrick.name=Obsidanbrick Cornice 
+tile.dungeons2:cornice_stone.name=Stone Cornice
+tile.dungeons2:cornice_cobblestone.name=Cobblestone Cornice
+tile.dungeons2:cornice_cobblestone_mossy.name=Mossy Cobblestone Cornice
+tile.dungeons2:cornice_stonebrick.name=Stonebrick Cornice
+tile.dungeons2:cornice_stonebrick_mossy.name=Mossy Stonebrick Cornice
+tile.dungeons2:cornice_stonebrick_cracked.name=Cracked Stonebrick Cornice
+tile.dungeons2:cornice_obsidianbrick.name=Obsidanbrick Cornice
+tile.dungeons2:cornice_smooth_sandstone.name=Smooth Sandstone Cornice 
 
 # seven-eights
-tile.dungeons2:seven_eights_pillar_stone.name=Stone Seven-Eights Pillar 
-tile.dungeons2:seven_eights_pillar_cobblestone.name=Cobblestone Seven-Eights Pillar 
-tile.dungeons2:seven_eights_pillar_cobblestone_mossy.name=Mossy Cobblestone Seven-Eights Pillar 
-tile.dungeons2:seven_eights_pillar_stonebrick.name=Stonebrick Seven-Eights Pillar 
-tile.dungeons2:seven_eights_pillar_stonebrick_mossy.name=Mossy Stonebrick Seven-Eights Pillar 
-tile.dungeons2:seven_eights_pillar_stonebrick_cracked.name=Cracked Stonebrick Seven-Eights Pillar 
-tile.dungeons2:seven_eights_pillar_obsidianbrick.name=Obsidanbrick Seven-Eights Pillar 
+tile.dungeons2:seven_eights_pillar_stone.name=Stone Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_cobblestone.name=Cobblestone Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_cobblestone_mossy.name=Mossy Cobblestone Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_stonebrick.name=Stonebrick Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_stonebrick_mossy.name=Mossy Stonebrick Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_stonebrick_cracked.name=Cracked Stonebrick Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_obsidianbrick.name=Obsidanbrick Seven-Eights Pillar
+tile.dungeons2:seven_eights_pillar_smooth_sandstone.name=Smooth Sandstone Seven-Eights Pillar
 
 #sill
 tile.dungeons2:sill_stone.name=Stone Sill
@@ -37,6 +39,7 @@ tile.dungeons2:sill_stonebrick.name=Stonebrick Sill
 tile.dungeons2:sill_stonebrick_mossy.name=Mossy Stonebrick Sill
 tile.dungeons2:sill_stonebrick_cracked.name=Cracked Stonebrick Sill
 tile.dungeons2:sill_obsidianbrick.name=Obsidanbrick Sill
+tile.dungeons2:sill_smooth_sandstone.name=Smooth Sandstone Sill
 
 # double sill
 tile.dungeons2:double_sill_stone.name=Stone Double Sill
@@ -46,6 +49,7 @@ tile.dungeons2:double_sill_stonebrick.name=Stonebrick Double Sill
 tile.dungeons2:double_sill_stonebrick_mossy.name=Mossy Stonebrick Double Sill
 tile.dungeons2:double_sill_stonebrick_cracked.name=Cracked Stonebrick Double Sill
 tile.dungeons2:double_sill_obsidianbrick.name=Obsidanbrick Double Sill
+tile.dungeons2:double_sill_smooth_sandstone.name=Smooth Sandstone Double Sill
 
 # "T" pillar
 tile.dungeons2:tee_pillar_stone.name=Stone "T" Pillar
@@ -55,6 +59,7 @@ tile.dungeons2:tee_pillar_stonebrick.name=Stonebrick "T" Pillar
 tile.dungeons2:tee_pillar_stonebrick_mossy.name=Mossy Stonebrick "T" Pillar
 tile.dungeons2:tee_pillar_stonebrick_cracked.name=Cracked Stonebrick "T" Pillar
 tile.dungeons2:tee_pillar_obsidianbrick.name=Obsidanbrick "T" Pillar
+tile.dungeons2:tee_pillar_smooth_sandstone.name=Smooth Sandstone "T" Pillar
 
 # thin "T" pillar
 tile.dungeons2:tee_thin_pillar_stone.name=Stone Thin "T" Pillar
@@ -64,6 +69,7 @@ tile.dungeons2:tee_thin_pillar_stonebrick.name=Stonebrick Thin "T" Pillar
 tile.dungeons2:tee_thin_pillar_stonebrick_mossy.name=Mossy Stonebrick Thin "T" Pillar
 tile.dungeons2:tee_thin_pillar_stonebrick_cracked.name=Cracked Stonebrick Thin "T" Pillar
 tile.dungeons2:tee_thin_pillar_obsidianbrick.name=Obsidanbrick Thin "T" Pillar
+tile.dungeons2:tee_thin_pillar_smooth_sandstone.name=Smooth Sandstone Thin "T" Pillar
 
 # flute pillar
 tile.dungeons2:flute_pillar_stone.name=Stone Fluted Pillar
@@ -73,6 +79,7 @@ tile.dungeons2:flute_pillar_stonebrick.name=Stonebrick Fluted Pillar
 tile.dungeons2:flute_pillar_stonebrick_mossy.name=Mossy Stonebrick Fluted Pillar
 tile.dungeons2:flute_pillar_stonebrick_cracked.name=Cracked Stonebrick Fluted Pillar
 tile.dungeons2:flute_pillar_obsidianbrick.name=Obsidanbrick Fluted Pillar
+tile.dungeons2:flute_pillar_smooth_sandstone.name=Smooth Sandstone Fluted Pillar
 
 # thin flute
 tile.dungeons2:flute_thin_pillar_stone.name=Stone Fluted Facade
@@ -82,15 +89,17 @@ tile.dungeons2:flute_thin_pillar_stonebrick.name=Stonebrick Fluted Facade
 tile.dungeons2:flute_thin_pillar_stonebrick_mossy.name=Mossy Stonebrick Fluted Facade
 tile.dungeons2:flute_thin_pillar_stonebrick_cracked.name=Cracked Stonebrick Fluted Facade
 tile.dungeons2:flute_thin_pillar_obsidianbrick.name=Obsidanbrick Fluted Facade
+tile.dungeons2:flute_thin_pillar_smooth_sandstone.name=Smooth Sandstone Fluted Facade
 
 # half pillar
-tile.dungeons2:half_pillar_stone.name=Stone Middle Pillar 
+tile.dungeons2:half_pillar_stone.name=Stone Middle Pillar
 tile.dungeons2:half_pillar_cobblestone.name=Cobblestone Middle Pillar 
 tile.dungeons2:half_pillar_cobblestone_mossy.name=Mossy Cobblestone Middle Pillar 
 tile.dungeons2:half_pillar_stonebrick.name=Stonebrick Middle Pillar 
 tile.dungeons2:half_pillar_stonebrick_mossy.name=Mossy Stonebrick Middle Pillar 
 tile.dungeons2:half_pillar_stonebrick_cracked.name=Cracked Stonebrick Middle Pillar 
 tile.dungeons2:half_pillar_obsidianbrick.name=Obsidanbrick Middle Pillar 
+tile.dungeons2:half_pillar_smooth_sandstone.name=Smooth Sandstone Middle Pillar
 
 # half pillar base
 tile.dungeons2:half_pillar_base_stone.name=Stone Middle Pillar Base 
@@ -100,6 +109,7 @@ tile.dungeons2:half_pillar_base_stonebrick.name=Stonebrick Middle Pillar Base
 tile.dungeons2:half_pillar_base_stonebrick_mossy.name=Mossy Stonebrick Middle Pillar Base
 tile.dungeons2:half_pillar_base_stonebrick_cracked.name=Cracked Stonebrick Middle Pillar Base
 tile.dungeons2:half_pillar_base_obsidianbrick.name=Obsidanbrick Middle Pillar Base
+tile.dungeons2:half_pillar_base_smooth_sandstone.name=Smooth Sandstone Middle Pillar Base
 
 # crown molding
 tile.dungeons2:crown_molding_stone.name=Stone Crown Molding
@@ -109,6 +119,7 @@ tile.dungeons2:crown_molding_stonebrick.name=Stonebrick Crown Molding
 tile.dungeons2:crown_molding_stonebrick_mossy.name=Mossy Stonebrick Crown Molding
 tile.dungeons2:crown_molding_stonebrick_cracked.name=Cracked Stonebrick Crown Molding
 tile.dungeons2:crown_molding_obsidianbrick.name=Obsidanbrick Crown Molding
+tile.dungeons2:crown_molding_smooth_sandstone.name=Smooth Sandstone Crown Molding
 
 # fancy cube
 tile.dungeons2:fancy_cube_stone.name=Stone Relief Block
@@ -118,6 +129,7 @@ tile.dungeons2:fancy_cube_stonebrick.name=Stonebrick Relief Block
 tile.dungeons2:fancy_cube_stonebrick_mossy.name=Mossy Stonebrick Relief Block
 tile.dungeons2:fancy_cube_stonebrick_cracked.name=Cracked Stonebrick Relief Block
 tile.dungeons2:fancy_cube_obsidianbrick.name=Obsidanbrick Relief Block
+tile.dungeons2:fancy_cube_smooth_sandstone.name=Smooth Sandstone Relief Block
 
 # coffer
 tile.dungeons2:coffer_stone.name=Stone Coffer
@@ -127,6 +139,7 @@ tile.dungeons2:coffer_stonebrick.name=Stonebrick Coffer
 tile.dungeons2:coffer_stonebrick_mossy.name=Mossy Stonebrick Coffer
 tile.dungeons2:coffer_stonebrick_cracked.name=Cracked Stonebrick Coffer
 tile.dungeons2:coffer_obsidianbrick.name=Obsidanbrick Coffer
+tile.dungeons2:coffer_smooth_sandstone.name=Smooth Sandstone Coffer
 
 # coffer middle
 tile.dungeons2:coffer_middle_stone.name=Stone Middle Coffer
@@ -136,6 +149,7 @@ tile.dungeons2:coffer_middle_stonebrick.name=Stonebrick Middle Coffer
 tile.dungeons2:coffer_middle_stonebrick_mossy.name=Mossy Stonebrick Middle Coffer
 tile.dungeons2:coffer_middle_stonebrick_cracked.name=Cracked Stonebrick Middle Coffer
 tile.dungeons2:coffer_middle_obsidianbrick.name=Obsidanbrick Middle Coffer
+tile.dungeons2:coffer_middle_smooth_sandstone.name=Smooth Sandstone Middle Coffer
 
 #grate
 tile.dungeons2:grate.name=Grate
@@ -148,6 +162,7 @@ tile.dungeons2:wall_sconce_stonebrick.name=Stonebrick Wall Sconce
 tile.dungeons2:wall_sconce_stonebrick_mossy.name=Mossy Stonebrick Wall Sconce
 tile.dungeons2:wall_sconce_stonebrick_cracked.name=Cracked Stonebrick Wall Sconce
 tile.dungeons2:wall_sconce_obsidianbrick.name=Obsidianbrick Wall Sconce
+tile.dungeons2:wall_sconce_smooth_sandstone.name=Smooth Sandstone Wall Sconce
 
 #decorations
 tile.dungeons2:moss.name=Moss

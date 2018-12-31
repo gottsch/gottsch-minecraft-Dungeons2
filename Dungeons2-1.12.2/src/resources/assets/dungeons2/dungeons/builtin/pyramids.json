@@ -1,0 +1,195 @@
+[
+	{
+		"_comments": [
+		"*******",
+		"** Pyramids is a style of dungeon where each successive level increases in size.",
+		"*******"
+		],
+		"name": "small-pyramid",		
+		"version": "1.0.0",
+		"biomeWhiteList": ["*"],
+		"biomeBlackList": [""],
+		"size": "SMALL",
+		"numLevels": {
+			"min": 2,
+			"max": 4
+		},
+		"levelConfigs": [
+			{
+				"boundaryFactor": 5.0,
+				"spawnBoundaryFactor": 0.1,			
+				"numRooms": {
+					"min":	5,
+					"max": 8	
+					},
+				"width": {
+					"min":	5,
+					"max": 8
+				},
+				"depth": {
+					"min":	5,
+					"max": 8
+				},
+				"height": {
+					"min":	5,
+					"max": 8	
+				}
+			},
+			{
+				"spawnBoundaryFactor": 0.2,	
+				"numRooms": {
+					"min":	7,
+					"max": 10	
+					},
+				"width": {
+					"min":	5,
+					"max": 9
+				},
+				"depth": {
+					"min":	5,
+					"max": 9
+				},
+				"height": {
+					"min":	5,
+					"max": 9
+				}
+			},
+			{
+				"spawnBoundaryFactor": 0.3,	
+				"numRooms": {
+					"min":	9,
+					"max": 15
+					},
+				"width": {
+					"min":	5,
+					"max": 10
+				},
+				"depth": {
+					"min":	5,
+					"max": 10
+				},
+				"height": {
+					"min":	5,
+					"max": 10
+				}
+			},
+			{
+				"spawnBoundaryFactor": 0.4,	
+				"numRooms": {
+					"min":	11,
+					"max": 20	
+					},
+				"width": {
+					"min":	5,
+					"max": 12
+				},
+				"depth": {
+					"min":	5,
+					"max": 12
+				},
+				"height": {
+					"min":	5,
+					"max": 10
+				}
+			}			
+			
+		],
+		"surfaceConfig": null
+	},
+		{
+		"name": "medium-pyramid",
+		"version": "1.0.0",
+		"biomeWhiteList": ["*"],
+		"biomeBlackList": [""],		
+		"size": "MEDIUM",
+		"numLevels": {
+			"min": 3,
+			"max": 5
+		},
+		"levelConfigs": [
+			{
+				"numRooms": {
+					"min":	20,
+					"max": 40	
+					},
+				"width": {
+					"min":	5,
+					"max": 15
+				},
+				"depth": {
+					"min":	5,
+					"max": 15
+				},
+				"height": {
+					"min":	5,
+					"max": 9
+				}
+			}
+		],
+		"surfaceConfig": null
+	},
+	{
+		"name": "large",
+		"version": "1.0.0",
+		"biomeWhiteList": ["*"],
+		"biomeBlackList": [""],		
+		"size": "LARGE",
+		"numLevels": {
+			"min": 6,
+			"max": 9
+		},
+		"levelConfigs": [
+			{
+				"numRooms": {
+					"min":	20,
+					"max": 40	
+					},
+				"width": {
+					"min":	5,
+					"max": 15
+				},
+				"depth": {
+					"min":	5,
+					"max": 15
+				},
+				"height": {
+					"min":	5,
+					"max": 9
+				}
+			}
+		],
+		"surfaceConfig": null
+	},
+	{
+		"name": "vast",
+		"version": "1.0.0",
+		"biomeWhiteList": ["*"],
+		"biomeBlackList": [""],		
+		"size": "VAST",
+		"numLevels": {
+			"min": 8,
+			"max": 11
+		},
+		"levelConfigs": [
+			{
+				"numRooms": {
+					"min":	20,
+					"max": 40	
+					},
+				"width": {
+					"min":	5,
+					"max": 15
+				},
+				"depth": {
+					"min":	5,
+					"max": 15
+				},
+				"height": {
+					"min":	5,
+					"max": 9
+				}
+			}
+		],
+		"surfaceConfig": null
+	}	
+]

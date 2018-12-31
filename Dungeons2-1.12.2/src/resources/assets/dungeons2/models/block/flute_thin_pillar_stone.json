@@ -1,6 +1,6 @@
 {
     "parent": "Dungeons2:block/flute_thin_pillar",
     "textures": {
-        "0": "blocks/stone"
+       "0": "blocks/stone"
     }
 }

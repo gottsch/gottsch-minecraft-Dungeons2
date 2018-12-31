@@ -77,6 +77,38 @@
 		"surfaceConfig": null
 	},
 	{
+		"name": "medium",
+		"version": "1.0.0",
+		"biomeWhiteList": ["*"],
+		"biomeBlackList": [""],		
+		"size": "MEDIUM",
+		"numLevels": {
+			"min": 4,
+			"max": 7
+		},
+		"levelConfigs": [
+			{
+				"numRooms": {
+					"min":	15,
+					"max": 30	
+					},
+				"width": {
+					"min":	5,
+					"max": 15
+				},
+				"depth": {
+					"min":	5,
+					"max": 15
+				},
+				"height": {
+					"min":	5,
+					"max": 9
+				}
+			}
+		],
+		"surfaceConfig": null
+	},	
+	{
 		"name": "large",
 		"version": "1.0.0",
 		"biomeWhiteList": ["*"],

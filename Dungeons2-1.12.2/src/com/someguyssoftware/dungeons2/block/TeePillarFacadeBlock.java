@@ -3,6 +3,7 @@
  */
 package com.someguyssoftware.dungeons2.block;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
 
 import net.minecraft.block.SoundType;
@@ -25,7 +26,7 @@ public class TeePillarFacadeBlock extends CardinalDirectionFacadeBlock {
 	public TeePillarFacadeBlock(String modID, String name, Material material) {
 		super(modID, name, material);
 		setSoundType(SoundType.STONE);
-		setCreativeTab(CreativeTabs.BUILDING_BLOCKS);
+		setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		setBoundingBox(
 				new AxisAlignedBB(0F, 0F, 0.25F, 1F, 1F, 1F),
 				new AxisAlignedBB(0F, 0F, 0F, 0.25F, 1F, 1F), 

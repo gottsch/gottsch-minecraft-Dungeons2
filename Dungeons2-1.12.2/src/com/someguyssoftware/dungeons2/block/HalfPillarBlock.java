@@ -3,11 +3,11 @@
  */
 package com.someguyssoftware.dungeons2.block;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.RelativeDirectionFacadeBlock;
 
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.util.math.AxisAlignedBB;
 
 /**
@@ -31,6 +31,6 @@ public class HalfPillarBlock extends RelativeDirectionFacadeBlock {
 				new AxisAlignedBB(0.25F, 0F, 0.25F, 0.75F, 1F, 0.75F), // EAST
 				new AxisAlignedBB(0.25F, 0F, 0.25F, 0.75F, 1F, 0.75F),	 // SOUTH
 				new AxisAlignedBB(0.25F, 0F, 0.25F, 0.75F, 1F, 0.75F)); // WEST
-		setCreativeTab(CreativeTabs.BUILDING_BLOCKS);
+		setCreativeTab(Dungeons2.DUNGEONS_TAB);
 	}	
 }

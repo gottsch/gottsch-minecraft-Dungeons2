@@ -12,6 +12,7 @@ import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.items.DungeonsItems;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
@@ -25,6 +26,8 @@ import com.someguyssoftware.gottschcore.mod.IMod;
 import com.someguyssoftware.gottschcore.proxy.IProxy;
 import com.someguyssoftware.gottschcore.version.BuildVersion;
 
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -36,6 +39,8 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 
 /**
@@ -88,6 +93,17 @@ public class Dungeons2 extends AbstractMod {
 	private static final String DUNGEONS_CONFIG_DIR = "dungeons2";
 	private static ModConfig config;
 	public static DungeonConfigManager dgnCfgMgr; // TODO move to DungeonWorldGen ?
+	
+	/*
+	 *  Dungeons2 Creative Tab
+	 *  Must be initialized <b>before</b> any registry events so that it is available to assign to blocks and items.
+	 */
+	public static CreativeTabs DUNGEONS_TAB = new CreativeTabs(CreativeTabs.getNextID(), Dungeons2.MODID + ":" + ModConfig.DUNGEONS2_TAB_ID) {
+		@SideOnly(Side.CLIENT)
+		public ItemStack getTabIconItem() {
+			return new ItemStack(DungeonsItems.DUNGEONS_TAB, 1);
+		}
+	};
 	
 	/**
 	 * 
