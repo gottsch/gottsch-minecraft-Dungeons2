@@ -99,6 +99,8 @@ public class LevelBuilder {
 
 	private static final int MIN_START_ROOM_SIZE = 7;
 
+	private static final double MIN_BOUNDARY_SIZE = 25;
+
 	/**
 	 * @since 2.0
 	 */
@@ -124,7 +126,7 @@ public class LevelBuilder {
 	 * 
 	 */
 	public LevelBuilder() {
-		this.config = new LevelConfig();
+//		this.config = new LevelConfig();
 	}
 	
 	/**
@@ -149,8 +151,28 @@ public class LevelBuilder {
 //		
 		// resize field
 		if (factor < 1.0D) {
-			int xAmount = (int) (((boundary.maxX - boundary.minX) * (1.0 - factor)) / 2);
-			int zAmount = (int) (((boundary.maxZ - boundary.minZ) * (1.0 - factor)) / 2);
+			double deltaX = (boundary.maxX - boundary.minX);
+			double deltaZ = (boundary.maxZ - boundary.minZ);	
+			Dungeons2.log.debug("deltaX -> {}", deltaX);
+			Dungeons2.log.debug("deltaZ -> {}", deltaZ);
+			int xAmount = (int) ((deltaX * (1.0 - factor)) / 2);
+			int zAmount = (int) ((deltaZ * (1.0 - factor)) / 2);
+			Dungeons2.log.debug("initial shrink amounts -> {} {}", xAmount, zAmount);
+			
+			// determine and recalculate if the shrunk amount is less than the minimum size
+			if (Math.abs(deltaX - (xAmount*2)) < MIN_BOUNDARY_SIZE ) {
+				// calculate what amount will give 50
+				double p = 1.0D - 50/Math.abs(deltaX);
+				xAmount = (int) ((deltaX * p) / 2);
+				Dungeons2.log.debug("x less than min, new amount -> {} [{}%]", xAmount, p);
+			}
+			if (Math.abs(deltaZ - (zAmount*2)) < MIN_BOUNDARY_SIZE) {
+				// calculate what amount wil give 50
+				double p = 1.0D - 50/Math.abs(deltaZ);
+				zAmount = (int) ((deltaZ * p) / 2);
+				Dungeons2.log.debug("z less than min, new amount -> {} [{}%]", zAmount, p);
+			}
+			
 			AxisAlignedBB newBoundary = boundary.grow(-xAmount, 0, -zAmount);
 			Dungeons2.log.debug("boundary shrunk by -> {} {}, to new size -> {}", xAmount, zAmount, newBoundary);
 			return newBoundary;

@@ -30,7 +30,7 @@ public class LevelConfig implements ILevelConfig {
 	 */
 	private Quantity width;// = new Quantity(5, 15);
 	private Quantity depth;// = new Quantity(5, 15);
-	private Quantity height = new Quantity(5, 15);
+	private Quantity height;// = new Quantity(5, 15);
 	
 	/*
 	 * min/max number of edges or hallways that each room can have

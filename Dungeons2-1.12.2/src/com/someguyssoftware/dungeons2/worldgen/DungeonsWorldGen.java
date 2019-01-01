@@ -274,22 +274,22 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
 	   			
 //    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
-	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
+//>>	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
 //				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
 //				BuildSize dungeonSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
-	   			BuildSize levelSize = ((RandomBuildSize)levelSizes.next()).size;
-	   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
-				BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
+//	>>   			BuildSize levelSize = ((RandomBuildSize)levelSizes.next()).size;
+//	>>   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
+//	>>			BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
 				
 				// TODO this should be inside of DungeonConfig
 				// 5. determine a preset level config based on pattern and size
-				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
-				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
-						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
+//				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
+//				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
+//						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
 				
 				// TODO this should be inside dungeon builder
 				// get the level builder
-				LevelBuilder levelBuilder = new LevelBuilder(levelConfig);
+				LevelBuilder levelBuilder = new LevelBuilder(/*levelConfig*/);
 				
 				// 6. create a dungeon builder using the defined level builder(s)
 				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);				
@@ -302,7 +302,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				// the dungeon config will drive part of the level config, ie # of rooms etc.
 				// 7. determine a preset dungeon config base on size
 //				DungeonConfig dungeonConfig = new DungeonConfig();
-				DungeonConfig dungeonConfig = PRESET_DUNGEON_CONFIGS.getConfig(dungeonSize);
+//	>>			DungeonConfig dungeonConfig = PRESET_DUNGEON_CONFIGS.getConfig(dungeonSize);
 
 //				Dungeons2.log.debug(
 //						String.format("Building D2 dungeons @ %s\n" + 
@@ -319,7 +319,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
 				 *  In future each level in a dungeon may have a different support setting
 				 */
-				levelConfig.setSupportOn(dungeonConfig.useSupport());
+//	>>			levelConfig.setSupportOn(dungeonConfig.useSupport());
 
 	   			// 8. update the dungeon with the theme
 	   			dungeon.setTheme(theme);
@@ -337,7 +337,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				
 				if (isGenerated) {
 					// register the dungeon with the Dungeon Registry
-					DungeonInfo info = new DungeonInfo(dungeon, pattern, dungeonSize, levelSize, direction);
+					DungeonInfo info = new DungeonInfo(dungeon, null, null, null, null/*pattern, dungeonSize, levelSize, direction*/);
 					// update the coords to the actual entrance (changed due to usage of field)
 					coords = info.getCoords();
 					DungeonRegistry.getInstance().register(coords.toShortString(), info);

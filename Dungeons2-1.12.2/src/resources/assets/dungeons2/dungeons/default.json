@@ -23,7 +23,7 @@
 	"minecraftConstraints": true,
 	"levelConfigs": [
 		{
-			"boundaryFactor": 1.0,
+			"boundaryFactor": 0.8,
 			"spawnBoundaryFactor": 0.2,
 			"numRooms": {
 				"min":	15,

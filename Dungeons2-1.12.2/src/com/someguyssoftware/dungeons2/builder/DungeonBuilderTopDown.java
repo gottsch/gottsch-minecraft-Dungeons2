@@ -129,12 +129,10 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		}
 		else dungeonBoundary = this.getBoundary();		
 
-		// TODO something wrong here, dungeon boundary is not loading from config
 		Dungeons2.log.debug("Dungeon boundary -> {}", dungeonBoundary);
 		Dungeons2.log.debug("Dungeon boundary factor -> {}", config.getBoundaryFactor());
 		// resize boundary
 		if (config.getBoundaryFactor() > 0D && config.getBoundaryFactor() < 1.0D) {
-			// TODO this is wrong! this is assuming the boundary is a square, which it is not it, is a rectangle with one side 2x the other side
 			int xAmount = (int) (((dungeonBoundary.maxX - dungeonBoundary.minX) * (1.0 - config.getBoundaryFactor())) / 2);
 			int zAmount = (int) (((dungeonBoundary.maxZ - dungeonBoundary.minZ) * (1.0 - config.getBoundaryFactor())) / 2);
 			dungeonBoundary = dungeonBoundary.grow(-xAmount, 0, -zAmount);

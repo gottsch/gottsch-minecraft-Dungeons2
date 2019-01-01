@@ -19,7 +19,7 @@
 		},
 		"levelConfigs": [
 			{
-				"boundaryFactor": 1.0,
+				"boundaryFactor": 0.5,
 				"spawnBoundaryFactor": 0.2,			
 				"numRooms": {
 					"min":	10,
@@ -88,6 +88,8 @@
 		},
 		"levelConfigs": [
 			{
+				"boundaryFactor": 0.5,
+				"spawnBoundaryFactor": 0.25,		
 				"numRooms": {
 					"min":	15,
 					"max": 30	
@@ -120,6 +122,8 @@
 		},
 		"levelConfigs": [
 			{
+				"boundaryFactor": 0.5,
+				"spawnBoundaryFactor": 0.4,					
 				"numRooms": {
 					"min":	20,
 					"max": 40	
@@ -152,6 +156,8 @@
 		},
 		"levelConfigs": [
 			{
+				"boundaryFactor": 0.5,
+				"spawnBoundaryFactor": 0.5,					
 				"numRooms": {
 					"min":	20,
 					"max": 40	

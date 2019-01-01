@@ -16,19 +16,19 @@
 		},
 		"levelConfigs": [
 			{
-				"boundaryFactor": 5.0,
-				"spawnBoundaryFactor": 0.1,			
+				"boundaryFactor": 0.5,
+				"spawnBoundaryFactor": 0.2,			
 				"numRooms": {
 					"min":	5,
-					"max": 8	
+					"max": 9
 					},
 				"width": {
 					"min":	5,
-					"max": 8
+					"max": 9
 				},
 				"depth": {
 					"min":	5,
-					"max": 8
+					"max": 9
 				},
 				"height": {
 					"min":	5,
@@ -36,18 +36,18 @@
 				}
 			},
 			{
-				"spawnBoundaryFactor": 0.2,	
+				"spawnBoundaryFactor": 0.25,	
 				"numRooms": {
 					"min":	7,
 					"max": 10	
 					},
 				"width": {
 					"min":	5,
-					"max": 9
+					"max": 10
 				},
 				"depth": {
 					"min":	5,
-					"max": 9
+					"max": 10
 				},
 				"height": {
 					"min":	5,
@@ -62,11 +62,11 @@
 					},
 				"width": {
 					"min":	5,
-					"max": 10
+					"max": 12
 				},
 				"depth": {
 					"min":	5,
-					"max": 10
+					"max": 12
 				},
 				"height": {
 					"min":	5,
@@ -81,11 +81,11 @@
 					},
 				"width": {
 					"min":	5,
-					"max": 12
+					"max": 15
 				},
 				"depth": {
 					"min":	5,
-					"max": 12
+					"max": 15
 				},
 				"height": {
 					"min":	5,
@@ -107,38 +107,38 @@
 		},
 		"levelConfigs": [
 			{
-				"boundaryFactor": 5.0,
-				"spawnBoundaryFactor": 0.1,	
+				"boundaryFactor": 0.5,
+				"spawnBoundaryFactor": 0.2,	
 				"numRooms": {
 					"min":	7,
 					"max": 10	
 					},
 				"width": {
 					"min":	5,
-					"max": 8
+					"max": 9
 				},
 				"depth": {
 					"min":	5,
-					"max": 8
+					"max": 9
 				},
 				"height": {
 					"min":	5,
-					"max": 8	
+					"max": 9
 				}
 			},
 			{
-				"spawnBoundaryFactor": 0.2,	
+				"spawnBoundaryFactor": 0.25,	
 				"numRooms": {
 					"min":	10,
 					"max": 15	
 					},
 				"width": {
 					"min":	5,
-					"max": 9
+					"max": 10
 				},
 				"depth": {
 					"min":	5,
-					"max": 9
+					"max": 10
 				},
 				"height": {
 					"min":	5,
@@ -153,11 +153,11 @@
 					},
 				"width": {
 					"min":	5,
-					"max": 10
+					"max": 12
 				},
 				"depth": {
 					"min":	5,
-					"max": 10
+					"max": 12
 				},
 				"height": {
 					"min":	5,
@@ -172,11 +172,11 @@
 					},
 				"width": {
 					"min":	5,
-					"max": 12
+					"max": 15
 				},
 				"depth": {
 					"min":	5,
-					"max": 12
+					"max": 15
 				},
 				"height": {
 					"min":	5,
@@ -202,7 +202,7 @@
 		"surfaceConfig": null
 	},
 	{
-		"name": "large",
+		"name": "large-pyramid",
 		"version": "1.0.0",
 		"biomeWhiteList": ["*"],
 		"biomeBlackList": [""],		
@@ -213,19 +213,19 @@
 		},
 		"levelConfigs": [
 			{
-				"boundaryFactor": 5.0,
-				"spawnBoundaryFactor": 0.1,	
+				"boundaryFactor": 0.6,
+				"spawnBoundaryFactor": 0.2,	
 				"numRooms": {
 					"min":	7,
 					"max": 10	
 					},
 				"width": {
 					"min":	5,
-					"max": 8
+					"max": 9
 				},
 				"depth": {
 					"min":	5,
-					"max": 8
+					"max": 9
 				},
 				"height": {
 					"min":	5,
@@ -233,18 +233,18 @@
 				}
 			},
 			{
-				"spawnBoundaryFactor": 0.2,	
+				"spawnBoundaryFactor": 0.25,	
 				"numRooms": {
 					"min":	10,
 					"max": 15	
 					},
 				"width": {
 					"min":	5,
-					"max": 9
+					"max": 10
 				},
 				"depth": {
 					"min":	5,
-					"max": 9
+					"max": 10
 				},
 				"height": {
 					"min":	5,
@@ -259,11 +259,11 @@
 					},
 				"width": {
 					"min":	5,
-					"max": 10
+					"max": 12
 				},
 				"depth": {
 					"min":	5,
-					"max": 10
+					"max": 12
 				},
 				"height": {
 					"min":	5,
@@ -278,11 +278,11 @@
 					},
 				"width": {
 					"min":	5,
-					"max": 12
+					"max": 15
 				},
 				"depth": {
 					"min":	5,
-					"max": 12
+					"max": 15
 				},
 				"height": {
 					"min":	5,
@@ -307,7 +307,7 @@
 			{
 				"numRooms": {
 					"min":	20,
-					"max": 40	
+					"max": 40
 					}
 			}			
 		],

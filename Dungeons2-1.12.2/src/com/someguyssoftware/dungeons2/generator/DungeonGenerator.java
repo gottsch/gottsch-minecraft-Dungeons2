@@ -136,7 +136,7 @@ public class DungeonGenerator {
 		// generate all the rooms
 		for (Level level : dungeon.getLevels()) {
 			Dungeons2.log.debug("Level -> {} ", levelCount);
-			Dungeons2.log.debug("Is Level Support On -> {}", level.getConfig().isSupport());
+//			Dungeons2.log.debug("Is Level Support On -> {}", level.getConfig().isSupport());
 			Theme levelTheme = null;
 			if (level.getConfig().getTheme() != null && !level.getConfig().getTheme().equals("")) {
 				// TODO select the theme - themes need to be mapped.

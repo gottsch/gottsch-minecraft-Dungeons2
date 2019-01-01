@@ -164,10 +164,10 @@ public class RoomDecorator implements IRoomDecorator {
 				if (inventory != null) {
 					// read the chest categories from the level config
 					String chestCategory = config.getChestCategories().get(random.nextInt(config.getChestCategories().size()));
-					Dungeons2.log.debug("Chest category:" + chestCategory);
+//					Dungeons2.log.debug("Chest category:" + chestCategory);
 					// get chests by category and choose one
 					List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory.toLowerCase());
-					Dungeons2.log.debug("Containers found:" + containers.size());
+//					Dungeons2.log.debug("Containers found:" + containers.size());
 					if (containers != null && !containers.isEmpty()) {
 						// add each container to the random prob collection
 						RandomProbabilityCollection<ChestContainer> chestProbCol = new RandomProbabilityCollection<>(containers);
