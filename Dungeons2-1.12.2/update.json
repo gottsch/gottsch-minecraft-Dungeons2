@@ -12,6 +12,6 @@
         "1.3.2": "-Uses GottschCore 1.2.0.\nFixed update.json file.",
         "1.3.3": "-Fixed gen issues. Wrapped Biome.getName() in world.isRemote() conditional statement.",
         "1.5.0": "-Uses GottschCore 1.6.0.\nAdded new method for determining where dungeon is generated and keeping it within loaded chunks. Prevents cascading worldgen lag error.",
-        "1.6.0": "Added configurable Dungeon and Level json files to control dungeon generation. Started porting to DungeonsEngine library. Added Smooth Sandstone dungeon blocks.\nIncluded the Wall Sconces.\nFixed Wall Sconces bounding boxes.\n"
+        "1.6.0": "Added configurable Dungeon and Level json files to control dungeon generation.\nStarted porting to DungeonsEngine library.\nAdded Smooth Sandstone dungeon blocks.\nIncluded the Wall Sconces.\nFixed Wall Sconces bounding boxes.\n"
     }
 }
