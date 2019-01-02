@@ -39,11 +39,12 @@ public class DungeonsTorchBlock extends CardinalDirectionFacadeBlock {
 		super(modID, name, Material.CIRCUITS);
 		this.setTickRandomly(true);
 		setSoundType(SoundType.WOOD);
+		setCreativeTab(Dungeons2.DUNGEONS_TAB);	
 		setBoundingBox(
-				new AxisAlignedBB(0.15F, 0.2F, 0.7F, 0.85F, 0.8F, 1F),
-				new AxisAlignedBB(0.7F, 0.2F, 0.15F, 1F, 0.8F, 0.85F), 
-				new AxisAlignedBB(0.15F, 0.2F, 0F, 0.85F, 0.8F, 0.3F),
-				new AxisAlignedBB(0F, 0.2F, 0.15F, 0.3F, 0.8F, 0.85F)
+				new AxisAlignedBB(0.15F, 0.2F, 0.7F, 0.85F, 0.8F, 1F),	//n
+				new AxisAlignedBB(0F, 0.2F, 0.15F, 0.3F, 0.8F, 0.85F),	//e
+				new AxisAlignedBB(0.15F, 0.2F, 0F, 0.85F, 0.8F, 0.3F),	//s
+				new AxisAlignedBB(0.7F, 0.2F, 0.15F, 1F, 0.8F, 0.85F)	//w
 				);		
 	}
 	

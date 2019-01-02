@@ -13,6 +13,25 @@ import net.minecraftforge.common.config.Configuration;
  *
  */
 public class ModConfig extends AbstractConfig {
+	// tab
+	public static final String DUNGEONS2_TAB_ID = "dungeons_tab";
+	
+	public static final String BASIC_SMOOTH_SANDSTONE_FACADE_ID = "basic_facade_smooth_sandstone";
+	public static final String TEE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "tee_pillar_smooth_sandstone";
+	public static final String TEE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "tee_thin_pillar_smooth_sandstone";
+	public static final String FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "flute_pillar_smooth_sandstone";
+	public static final String FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "flute_thin_pillar_smooth_sandstone";
+	public static final String CORNICE_SMOOTH_SANDSTONE_BLOCK_ID = "cornice_smooth_sandstone";
+	public static final String CROWN_MOLDING_SMOOTH_SANDSTONE_BLOCK_ID = "crown_molding_smooth_sandstone";
+	public static final String SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE = "seven_eights_pillar_smooth_sandstone";
+	public static final String SILL_SMOOTH_SANDSTONE_BLOCK_ID = "sill_smooth_sandstone";
+	public static final String DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK_ID = "double_sill_smooth_sandstone";
+	public static final String HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK_ID = "half_pillar_base_smooth_sandstone";
+	public static final String HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "half_pillar_smooth_sandstone";
+	public static final String COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_middle_smooth_sandstone";
+	public static final String COFFER_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_smooth_sandstone";
+	public static final String WALL_SCONCE_SMOOTH_SANDSTONE_BLOCK_ID = "wall_sconce_smooth_sandstone";
+
 	// resources
 	public static String dungeonsFolder;
 	

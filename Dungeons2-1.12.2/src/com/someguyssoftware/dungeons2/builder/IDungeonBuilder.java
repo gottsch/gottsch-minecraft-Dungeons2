@@ -8,6 +8,7 @@ import java.util.Random;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.Room;
+import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.util.math.AxisAlignedBB;
@@ -49,6 +50,13 @@ public interface IDungeonBuilder {
 	 */
 	Room buildEntranceRoom(World world, Random rand, ICoords startPoint);
 
-	DungeonBuilderTopDown withField(AxisAlignedBB field);
+	DungeonBuilderTopDown withBoundary(AxisAlignedBB field);
+	AxisAlignedBB getBoundary();
+	
+	IDungeonConfig getConfig();
+
+	Dungeon build(World world, Random rand, ICoords spawnCoords, IDungeonConfig config);
+	
+	
 
 }

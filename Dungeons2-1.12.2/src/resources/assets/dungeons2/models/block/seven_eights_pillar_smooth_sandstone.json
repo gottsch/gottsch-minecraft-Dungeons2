@@ -1,0 +1,7 @@
+{
+	"parent": "Dungeons2:block/seven_eights_pillar",
+    "textures": {
+       "0": "blocks/sandstone_smooth",
+        "particle": "blocks/sandstone_smooth"
+    }
+}

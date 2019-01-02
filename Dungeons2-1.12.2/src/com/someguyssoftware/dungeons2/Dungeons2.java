@@ -12,21 +12,22 @@ import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.items.DungeonsItems;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.gottschcore.GottschCore;
 import com.someguyssoftware.gottschcore.annotation.Credits;
 import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
 import com.someguyssoftware.gottschcore.config.IConfig;
 import com.someguyssoftware.gottschcore.mod.AbstractMod;
 import com.someguyssoftware.gottschcore.mod.IMod;
-import com.someguyssoftware.gottschcore.positional.Coords;
-import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.proxy.IProxy;
 import com.someguyssoftware.gottschcore.version.BuildVersion;
 
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -38,6 +39,8 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 
 /**
@@ -62,7 +65,7 @@ public class Dungeons2 extends AbstractMod {
 
 	public static final String MODID = "dungeons2";
 	public static final String NAME = "Dungeons2!";
-	public static final String VERSION = "1.5.0"; 
+	public static final String VERSION = "1.6.0"; 
 	public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12.2/update.json";
 
 	// latest VERSION
@@ -89,7 +92,19 @@ public class Dungeons2 extends AbstractMod {
 	 */
 	private static final String DUNGEONS_CONFIG_DIR = "dungeons2";
 	private static ModConfig config;
-
+	public static DungeonConfigManager dgnCfgMgr; // TODO move to DungeonWorldGen ?
+	
+	/*
+	 *  Dungeons2 Creative Tab
+	 *  Must be initialized <b>before</b> any registry events so that it is available to assign to blocks and items.
+	 */
+	public static CreativeTabs DUNGEONS_TAB = new CreativeTabs(CreativeTabs.getNextID(), Dungeons2.MODID + ":" + ModConfig.DUNGEONS2_TAB_ID) {
+		@SideOnly(Side.CLIENT)
+		public ItemStack getTabIconItem() {
+			return new ItemStack(DungeonsItems.DUNGEONS_TAB, 1);
+		}
+	};
+	
 	/**
 	 * 
 	 */
@@ -158,6 +173,9 @@ public class Dungeons2 extends AbstractMod {
 			// add to world generators
 			Dungeons2.dungeonsWorldGen = new DungeonsWorldGen();
 			GameRegistry.registerWorldGenerator(Dungeons2.dungeonsWorldGen, 100);
+			
+			// add dungeon config managers
+			Dungeons2.dgnCfgMgr = new DungeonConfigManager();
 		}
 
 	}

@@ -8,13 +8,13 @@ import java.util.Random;
 
 import javax.annotation.Nullable;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.RelativeDirectionFacadeBlock;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockRenderLayer;
@@ -41,7 +41,7 @@ public class DecorationBlock extends RelativeDirectionFacadeBlock implements ISh
 	 */
 	public DecorationBlock(String modID, String name, Material material) {
 		super(modID, name, material);
-		setCreativeTab(CreativeTabs.BUILDING_BLOCKS);
+		setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		this.setDefaultState(blockState.getBaseState().withProperty(BASE, EnumFacing.NORTH));
 		setBoundingBox(
 				new AxisAlignedBB(0.0D, 0.0D, 1.0D, 1.0D, 1.0D, 1.0D),	// n

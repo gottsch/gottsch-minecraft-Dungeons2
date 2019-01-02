@@ -12,6 +12,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -36,6 +37,74 @@ public class HallwayGenerator extends AbstractRoomGenerator {
 		setGenerationStrategy(generator);
 	}
 
+	@Override
+	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
+			ILevelConfig config) {
+
+		// generate the room structure
+		getGenerationStrategy().generate(world, random, room, theme, styleSheet, config);
+
+		/*
+		 *  add additional elements
+		 */
+		Hallway hw = (Hallway)room;
+		// build the doors
+		for (Door door : hw.getDoors()) {
+			if (hw.getAlignment() == Alignment.HORIZONTAL) {
+				// test which side the door is on
+				if (door.getCoords().getX() == hw.getMinX()) {
+					if (door.getCoords().getZ() == door.getRoom().getMinZ()) {
+						buildDoorway(world, door.getCoords(), Direction.WEST, Direction.SOUTH);
+					}
+					else if (door.getCoords().getZ() == door.getRoom().getMaxZ()) {
+						buildDoorway(world, door.getCoords(), Direction.WEST, Direction.NORTH);
+					}
+					else {
+						buildDoorway(world, door.getCoords(), Direction.WEST);
+					}
+				}
+				if (door.getCoords().getX() == hw.getMaxX()) {
+					if (door.getCoords().getZ() == door.getRoom().getMinZ()) {
+						buildDoorway(world, door.getCoords(), Direction.EAST, Direction.SOUTH);
+					}
+					else if (door.getCoords().getZ() == door.getRoom().getMaxZ()) {
+						buildDoorway(world, door.getCoords(), Direction.EAST, Direction.NORTH);
+					}
+					else {				
+						buildDoorway(world, door.getCoords(), Direction.EAST);
+					}
+				}
+			}
+			// VERTICAL (NORTH/SOUTH)
+			else {
+
+				if (door.getCoords().getZ() == hw.getMinZ()) {
+					if (door.getCoords().getX() == door.getRoom().getMinX()) {
+						buildDoorway(world, door.getCoords(), Direction.NORTH, Direction.EAST);
+					}
+					else if (door.getCoords().getX() == door.getRoom().getMaxX()) {
+						buildDoorway(world, door.getCoords(), Direction.NORTH, Direction.WEST);					
+					}
+					else {
+						buildDoorway(world, door.getCoords(), Direction.NORTH);
+					}
+				}
+				if (door.getCoords().getZ() == hw.getMaxZ()) {
+					if (door.getCoords().getX() == door.getRoom().getMinX()) {
+						buildDoorway(world, door.getCoords(), Direction.SOUTH, Direction.EAST);				
+					}
+					else if (door.getCoords().getX() == door.getRoom().getMaxX()) {
+						buildDoorway(world, door.getCoords(), Direction.SOUTH, Direction.WEST);
+					}
+					else {
+						buildDoorway(world, door.getCoords(), Direction.SOUTH);
+					}
+				}
+			}
+		}
+	}
+	
+	@Deprecated
 	@Override
 	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
 			LevelConfig config) {

@@ -21,6 +21,7 @@ import com.someguyssoftware.dungeons2.style.Layout;
 import com.someguyssoftware.dungeons2.style.Style;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.enums.Rotate;
@@ -39,6 +40,28 @@ public interface IDungeonsBlockProvider {
 	public static String NULL_BLOCK_NAME = "null";
 	public static IBlockState NULL_BLOCK = new NullBlock().getDefaultState();
 
+	default public IBlockState getBlockState(Random random, ICoords worldCoords, Room room, Arrangement arrangement,
+			Theme theme, StyleSheet styleSheet, ILevelConfig config)  {
+		IBlockState blockState = null;
+		DesignElement elem = arrangement.getElement();
+		
+		// apply decay if not air and style dicates
+		int decayIndex = -1;
+		if (elem != DesignElement.AIR && elem.getFamily() != DesignElement.SURFACE_AIR) {
+			// get the style for the element
+			Style style = getStyle(elem, room.getLayout(), theme, styleSheet);
+			// get the decayed index
+			decayIndex = getDecayIndex(random, config.getDecayMultiplier(), style);
+			// get calculated blockstate
+			blockState = getBlockState(arrangement, style, decayIndex);
+
+		}
+		else {
+			blockState = Blocks.AIR.getDefaultState();
+		}
+		return blockState;
+	}
+	
 	/**
 	 * 
 	 * @param random
@@ -50,6 +73,7 @@ public interface IDungeonsBlockProvider {
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	default public IBlockState getBlockState(Random random, ICoords worldCoords, Room room, Arrangement arrangement,
 			Theme theme, StyleSheet styleSheet, LevelConfig config)  {
 		IBlockState blockState = null;

@@ -11,6 +11,7 @@ import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
@@ -36,7 +37,38 @@ public interface IRoomDecorator {
 	 * @param config
 	 */
 	void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, LevelConfig config);
-
+	void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config);
+	
+	default public void addBlock(final World world, Random random, final IDungeonsBlockProvider provider,
+			final Room room, final List<Entry<DesignElement, ICoords>> zone, final IBlockState[] states, 
+			final Quantity frequency, final Quantity number, final ILevelConfig config) {
+		
+		IBlockState state = null;
+		double freq = RandomHelper.randomDouble(random, frequency.getMin(), frequency.getMax());
+		int scaledNum = scaleNumForSizeOfRoom(room, RandomHelper.randomInt(random, number.getMinInt(), number.getMaxInt()), config);
+		
+		for (int i = 0; i < scaledNum; i++) {
+			double n = random.nextDouble() * 100;
+			if (n < freq && zone.size() > 0) {
+				// select ANY zone
+				int zoneIndex = random.nextInt(zone.size());
+				Entry<DesignElement, ICoords> entry = zone.get(zoneIndex);
+				DesignElement elem = zone.get(zoneIndex).getKey();
+				ICoords coords = entry.getValue();
+				// check if the adjoining block exists
+				if (hasSupport(world, coords, elem, provider.getLocation(coords, room, room.getLayout()))) {
+					// select a block
+					if (states.length==1) state = states[0];
+					else state = states[random.nextInt(states.length)];					
+					// update the world
+					world.setBlockState(coords.toPos(), state, 3);	
+					// remove location from airZone
+					zone.remove(entry);
+				}
+			}
+		}		
+	}
+	
 	/**
 	 * NOTE This is a STATELESS method ie blocks that don't have a specific state to be in, like WEB.
 	 * This won't work with Blocks that use FACING etc.
@@ -51,6 +83,7 @@ public interface IRoomDecorator {
 	 * @param number
 	 * @param config
 	 */
+	@Deprecated
 	default public void addBlock(final World world, Random random, final IDungeonsBlockProvider provider,
 			final Room room, final List<Entry<DesignElement, ICoords>> zone, final IBlockState[] states, 
 			final Quantity frequency, final Quantity number, final LevelConfig config) {
@@ -131,6 +164,26 @@ public interface IRoomDecorator {
 	}
 	
 	/**
+	 * 
+	 * @param room
+	 * @param numDecorations
+	 * @param config
+	 * @return
+	 */
+	default public int scaleNumForSizeOfRoom(Room room, int numDecorations, ILevelConfig config) {
+		int size = (room.getWidth()-2) * (room.getDepth()-2) * (room.getHeight()-2);
+		int halfOfMax = ((config.getWidth().getMaxInt()-2) * (config.getDepth().getMaxInt()-2) * (config.getHeight().getMaxInt()-2))/2;
+		float factor = 1F;
+		
+		if (size <= 27) factor = 0.25F;
+		else if (size < halfOfMax) factor = 0.5F;		
+		
+		int num = (int) (numDecorations * factor);
+
+		return num;
+	}
+	
+	/**
 	 * Depending on the size of the room, scale the number of decorations.
 	 * Anything bigger than half the room size gets full amount, under half scales downward.
 	 * @param room
@@ -138,6 +191,7 @@ public interface IRoomDecorator {
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	default public int scaleNumForSizeOfRoom(Room room, int numDecorations, LevelConfig config) {
 		int size = (room.getWidth()-2) * (room.getDepth()-2) * (room.getHeight()-2);
 		int halfOfMax = ((config.getWidth().getMaxInt()-2) * (config.getDepth().getMaxInt()-2) * (config.getHeight().getMaxInt()-2))/2;
@@ -150,6 +204,7 @@ public interface IRoomDecorator {
 
 		return num;
 	}
+	
 	/**
 	 * 
 	 * @param location

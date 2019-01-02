@@ -1,0 +1,305 @@
+package com.someguyssoftware.dungeonsengine.model;
+
+import java.util.Comparator;
+import java.util.List;
+
+import com.someguyssoftware.dungeonsengine.enums.SpaceTag;
+import com.someguyssoftware.gottschcore.enums.Direction;
+import com.someguyssoftware.gottschcore.positional.BBox;
+import com.someguyssoftware.gottschcore.positional.Coords;
+import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.positional.Intersect;
+
+/**
+ * 
+ * @author Mark Gottschling on Dec 18, 2018
+ *
+ */
+public interface IVoid {
+	public static final int MIN_DEPTH = 5;
+	public static final int MIN_WIDTH = 5;
+	public static final int MIN_HEIGHT = 4;
+	public static final int MIN_SPECIAL_WIDTH = 7;
+	public static final int MIN_SPECIAL_DEPTH = 7;
+	
+	/**
+	 * 
+	 * @return
+	 */
+	IVoid copy();
+	
+	/**
+	 * 
+	 * @return
+	 */
+	int getId();
+
+	/**
+	 * 
+	 * @param id
+	 */
+	IVoid setId(int id);
+	
+	/**
+	 * 
+	 * @return
+	 */
+	String getName();
+
+	/**
+	 * 
+	 * @param name
+	 */
+	IVoid setName(String name);
+	
+	/**
+	 * @return the coords
+	 */
+	ICoords getCoords();
+
+	/**
+	 * @param coords the coords to set
+	 */
+	IVoid setCoords(ICoords coords);	
+
+	/**
+	 * @return the depth
+	 */
+	int getDepth();
+
+	/**
+	 * @param depth the depth to set
+	 */
+	IVoid setDepth(int depth);
+
+	/**
+	 * @return the width
+	 */
+	int getWidth();
+
+	/**
+	 * @param width the width to set
+	 */
+	IVoid setWidth(int width);
+
+	/**
+	 * @return the height
+	 */
+	int getHeight();
+
+	/**
+	 * @param height the height to set
+	 */
+	IVoid setHeight(int height);
+
+	/**
+	 * @return the direction
+	 */
+	Direction getDirection();
+
+	/**
+	 * @param direction the direction to set
+	 */
+	IVoid setDirection(Direction direction);
+	
+	/**
+	 * 
+	 * @return
+	 */
+	int getDegrees();  /// ? probably shouldn't be here
+
+	/**
+	 * 
+	 * @param degrees
+	 * @return
+	 */
+	IVoid setDegrees(int degrees);
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public int getMinX() {
+		return this.getCoords().getX();
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	default public int getMaxX() {
+		return this.getCoords().getX() + this.getWidth() - 1;
+	}
+
+	/*
+	 * 
+	 */
+	default public int getMinY() {
+		return this.getCoords().getY();
+	}
+	
+	/*
+	 * 
+	 */
+	default public int getMaxY() {
+		return this.getCoords().getY() + this.getHeight() - 1;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public int getMinZ() {
+		return this.getCoords().getZ();
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public int getMaxZ() {
+		return this.getCoords().getZ() + this.getDepth() - 1;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public BBox getBoundingBox() {
+		BBox bb = new BBox(getCoords(), getCoords().add(getWidth(), getHeight(), getDepth()));
+		return bb;
+	}
+	
+	/**
+	 * Creates a bounding box by the XZ dimensions with a height (Y) of 1
+	 * @return
+	 */
+	default public BBox getXZBoundingBox() {
+		BBox bb = new BBox(new Coords(getCoords().getX(), 0, getCoords().getZ()),
+				getCoords().add(getWidth(), 1, getDepth()));
+		return bb;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public ICoords getCenter() {
+		int x = this.getCoords().getX()  + ((this.getWidth()-1) / 2) ;
+		int y = this.getCoords().getY()  + ((this.getHeight()-1) / 2);
+		int z = this.getCoords().getZ()  + ((this.getDepth()-1) / 2);
+		ICoords coords = new Coords(x, y, z);
+		return coords;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public ICoords getBottomCenter() {
+		int x = this.getCoords().getX()  + ((this.getWidth()-1) / 2);
+		int y = this.getCoords().getY();
+		int z = this.getCoords().getZ()  + ((this.getDepth()-1) / 2);
+		ICoords coords = new Coords(x, y, z);
+		return coords;	
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	default public ICoords getTopCenter() {
+		int x = this.getCoords().getX()  + ((this.getWidth()-1) / 2);
+		int y = this.getCoords().getY() + this.getHeight();
+		int z = this.getCoords().getZ()  + ((this.getDepth()-1) / 2);
+		ICoords coords = new Coords(x, y, z);
+		return coords;	
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	default public ICoords getXZCenter() {
+		int x = this.getCoords().getX()  + ((this.getWidth()-1) / 2);
+		int y = this.getCoords().getY();
+		int z = this.getCoords().getZ()  + ((this.getDepth()-1) / 2);
+		ICoords coords = new Coords(x, y, z);
+		return coords;
+	}
+	
+	/**
+	 * 
+	 * @param room
+	 * @return
+	 */
+	default public Intersect getIntersect(IVoid room) {
+		return Intersect.getIntersect(this.getBoundingBox(), room.getBoundingBox());
+	}
+	
+	/**
+	 * Returns a new ISpace with the force applied at the angle on the XZ plane.
+	 * @param angle
+	 * @param force
+	 * @return
+	 */
+	default public IVoid addXZForce(double angle, double force) {
+		double xForce = Math.sin(angle) * force;
+        double zForce = Math.cos(angle) * force;
+
+        IVoid room = copy();
+        room.setCoords(room.getCoords().add((int)xForce, 0, (int)zForce));
+        return room;
+	}
+	
+	/**
+	 * Comparator to sort by Id
+	 */
+	public static Comparator<IVoid> idComparator = new Comparator<IVoid>() {
+		@Override
+		public int compare(IVoid p1, IVoid p2) {
+			if (p1.getId() > p2.getId()) {
+				// greater than
+				return 1;
+			}
+			else {
+				// less than
+				return -1;
+			}
+		}
+	};
+	
+	default public String printDimensions() {
+		return String.format("Dimensions -> [w: %d, h: %d, d: %d]", getWidth(), getHeight(), getDepth());
+	}
+	
+	default public String printCoords() {
+		return String.format("Coords -> [x: %d, y: %d, z: %d]", getCoords().getX(), getCoords().getY(), getCoords().getZ());
+	}
+	
+	default public String printCenter() {
+		return String.format("Center -> [x: %d, y: %d, z: %d]", getCenter().getX(), getCenter().getY(), getCenter().getZ());		
+	}
+
+	boolean isAnchor();
+
+	IVoid setAnchor(boolean anchor);
+
+	boolean isStart();
+
+	IVoid setStart(boolean start);
+
+	boolean isEnd();
+
+	IVoid setEnd(boolean end);
+
+	boolean isObstacle();
+
+	IVoid setObstacle(boolean obstacle);
+
+	void centerOn(ICoords coords);
+
+	List<SpaceTag> getTags();
+
+	void setTags(List<SpaceTag> tags);
+}

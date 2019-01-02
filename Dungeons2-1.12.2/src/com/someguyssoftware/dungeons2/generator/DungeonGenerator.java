@@ -31,6 +31,8 @@ import com.someguyssoftware.dungeons2.style.LibraryRoomDecorator;
 import com.someguyssoftware.dungeons2.style.RoomDecorator;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
+import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
 
@@ -133,24 +135,35 @@ public class DungeonGenerator {
 		int libraryCount = 0;
 		// generate all the rooms
 		for (Level level : dungeon.getLevels()) {
-			Dungeons2.log.debug("Level: " + levelCount);
-//			Dungeons2.log.debug("Is Level Support On? " + level.getConfig().isSupportOn());
+			Dungeons2.log.debug("Level -> {} ", levelCount);
+//			Dungeons2.log.debug("Is Level Support On -> {}", level.getConfig().isSupport());
+			Theme levelTheme = null;
+			if (level.getConfig().getTheme() != null && !level.getConfig().getTheme().equals("")) {
+				// TODO select the theme - themes need to be mapped.
+				levelTheme = styleSheet.getThemes().get(level.getConfig().getTheme());
+			}
+			else {
+				levelTheme = dungeon.getTheme();
+			}
+			
 			// build the rooms for the level
 			for (Room room : level.getRooms()) {
 				// assign a layout to the room
 				layoutAssigner.assign(random, room);
 				
 				// get the room generator
-				roomGen = factory.createRoomGenerator(random, room, level.getConfig().isSupportOn());
+				roomGen = factory.createRoomGenerator(random, room, level.getConfig().isSupport());
 //				if (roomGen.getGenerationStrategy().getBlockProvider() instanceof CheckedFloorRoomBlockProvider) {
 //					Dungeons2.log.debug("Generating Checked Room @ " + room.getCoords().toShortString());
 //				}
 				
 				// generate the room into the world
-				roomGen.generate(world, random, room, dungeon.getTheme(), styleSheet, level.getConfig());
+				roomGen.generate(world, random, room, levelTheme, styleSheet, level.getConfig());
+//				Dungeons2.log.debug("Room.floorMap after generate -> {}", room.getFloorMap());
 				
 				// TODO need a decorator factory
 				if (room.getType() == Type.BOSS) {
+					Dungeons2.log.debug("Boss Room @ {}", room.getCoords());
 					bossRoomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
 				}
 				
@@ -185,8 +198,8 @@ public class DungeonGenerator {
 				// assign a layout
 				layoutAssigner.assign(random, hallway);
 				// NOTE passing hallways here is a list of hallways (excluding the current one, to check if they intersect
-				roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), generatedHallways, level.getConfig().isSupportOn());
-				roomGen.generate(world, random, hallway, dungeon.getTheme(), styleSheet, level.getConfig());
+				roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), generatedHallways, level.getConfig().isSupport());
+				roomGen.generate(world, random, hallway, levelTheme, styleSheet, level.getConfig());
 				// add the hallway to the list of generated hallways
 				generatedHallways.add(hallway);
 			}
@@ -196,8 +209,8 @@ public class DungeonGenerator {
 //				Dungeons2.log.debug("Building Shaft: " + shaft);
 				// assign the layout
 				shaft.setLayout(shaft.getParent().getLayout());
-				roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupportOn());
-				roomGen.generate(world, random, shaft, dungeon.getTheme(), styleSheet, level.getConfig());
+				roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupport());
+				roomGen.generate(world, random, shaft, levelTheme, styleSheet, level.getConfig());
 			}
 			levelCount++;
 		}
@@ -219,11 +232,15 @@ public class DungeonGenerator {
 		
 		Room entranceRoom = dungeon.getEntrance();
 		// create and setup a config for entrance
-		LevelConfig entranceLevelConfig = dungeon.getLevels().get(0).getConfig().copy();
+		Dungeons2.log.debug("Dungeon -> {}", dungeon);
+		Dungeons2.log.debug("Levels -> {}", dungeon.getLevels());
+		Dungeons2.log.debug("Levels.size -> {}", dungeon.getLevels().size());
+		Dungeons2.log.debug("Levels[0].config -> {}", dungeon.getLevels().get(0).getConfig());
+		ILevelConfig entranceLevelConfig = dungeon.getLevels().get(0).getConfig().copy();
 		entranceLevelConfig.setDecayMultiplier(Math.min(5, entranceLevelConfig.getDecayMultiplier())); // increase the decay multiplier to a minimum of 5
 		// assign a layout to the entrance room
 		layoutAssigner.assign(random, entranceRoom);
-		IRoomGenerator roomGen = factory.createRoomGenerator(random, entranceRoom, dungeon.getLevels().get(0).getConfig().isSupportOn());
+		IRoomGenerator roomGen = factory.createRoomGenerator(random, entranceRoom, dungeon.getLevels().get(0).getConfig().isSupport());
 		// TODO need to provide the entrance room generator with a different level config that uses a higher decay multiplier
 		// to create a much more decayed surface structure.
 		roomGen.generate(world, random, entranceRoom, dungeon.getTheme(), styleSheet, entranceLevelConfig);

@@ -1,0 +1,73 @@
+[{
+	"name": "desert-small",
+	"biomeWhiteList": ["desert"],
+	"size": "SMALL",
+	"numLevels": {
+		"min": 2,
+		"max": 4
+	},
+	"boundaryFactor": 0.8,
+	"levelConfigs": [
+		{
+			"boundaryFactor": 1.0,
+			"spawnBoundaryFactor": 0.2,
+			"numRooms": {
+				"min":	6,
+				"max": 12
+				},
+			"width": {
+				"min":	5,
+				"max": 10	
+			},
+			"depth": {
+				"min":	5,
+				"max": 10
+			},
+			"height": {
+				"min":	5,
+				"max": 8
+			},
+			"decayMultiplier": 3,
+			"numberOfWebs": {
+				"min":	10,
+				"max": 20		
+			},
+			"numberOfVines": {
+				"min":	0,
+				"max": 0
+			},
+			"theme": "desert"
+		},
+		{
+			"boundaryFactor": 1.0,
+			"spawnBoundaryFactor": 0.5,
+			"numRooms": {
+				"min":	6,
+				"max": 15
+				},
+			"width": {
+				"min":	5,
+				"max": 12
+			},
+			"depth": {
+				"min":	5,
+				"max": 12
+			},
+			"height": {
+				"min":	5,
+				"max": 10
+			},
+			"decayMultiplier": 3,
+			"numberOfWebs": {
+				"min":	10,
+				"max": 20		
+			},
+			"numberOfVines": {
+				"min":	0,
+				"max": 0		
+			},
+			"theme": "desert"
+		}		
+	],
+	"surfaceConfig": null
+}]

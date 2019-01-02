@@ -3,11 +3,11 @@
  */
 package com.someguyssoftware.dungeons2.block;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
 
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.util.math.AxisAlignedBB;
 
 /**
@@ -25,7 +25,7 @@ public class CofferMiddleFacadeBlock extends CardinalDirectionFacadeBlock {
 	public CofferMiddleFacadeBlock(String modID, String name, Material material) {
 		super(modID, name, material);
 		setSoundType(SoundType.STONE);
-		setCreativeTab(CreativeTabs.BUILDING_BLOCKS);		
+		setCreativeTab(Dungeons2.DUNGEONS_TAB);		
 		setBoundingBox(
 				new AxisAlignedBB(0D, 0.5D, 0D, 1D, 1D, 1D),
 				new AxisAlignedBB(0D, 0.5D, 0D, 1D, 1D, 1D), 

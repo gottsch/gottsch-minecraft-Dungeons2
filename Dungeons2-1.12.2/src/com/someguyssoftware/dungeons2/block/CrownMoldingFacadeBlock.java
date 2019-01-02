@@ -3,6 +3,7 @@
  */
 package com.someguyssoftware.dungeons2.block;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
 
 import net.minecraft.block.Block;
@@ -12,7 +13,6 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -38,7 +38,7 @@ public class CrownMoldingFacadeBlock extends CardinalDirectionFacadeBlock {
 	public CrownMoldingFacadeBlock(String modID, String name, Material material) {
 		super(modID, name, material);
 		setSoundType(SoundType.STONE);
-		setCreativeTab(CreativeTabs.BUILDING_BLOCKS);
+		setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		setBoundingBox(
 				new AxisAlignedBB(0F, 0F, 0.625F, 1F, 1F, 1F),	// N
 				new AxisAlignedBB(0F, 0F, 0F, 0.375F, 1F, 1F),	// E

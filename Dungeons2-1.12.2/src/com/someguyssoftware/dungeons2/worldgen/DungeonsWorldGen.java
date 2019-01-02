@@ -42,6 +42,7 @@ import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -134,7 +135,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	    dungeonSizes.add(25, new RandomBuildSize(BuildSize.LARGE));
 	    dungeonSizes.add(20, new RandomBuildSize(BuildSize.VAST));
 
-		try {		
+		try {	
+			// TODO this should be static in own classes
 			// add the directories if they don't exist
 			Path folder = Paths.get(ModConfig.dungeonsFolder, StyleSheetLoader.BUILT_IN_STYLE_SHEET_SUB_FOLDER);
 			try {
@@ -237,7 +239,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 				// 2. test if correct biome
 				Biome biome = world.getBiome(coords.toPos());
-
+				Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
 			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
 			    	if (world.isRemote) {
 			    		Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));
@@ -263,26 +265,31 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    
 			    // TODO load the patterns and size into RandomProbabilityCollection with differing weights with small, square being more common
 			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
-
+			    // get the dungeons for this biome
+			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(biome.getBiomeName());
+			    // select one
+			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
+			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
 			    
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
+	   			
 //    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
-	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
+//>>	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
 //				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
 //				BuildSize dungeonSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
-	   			BuildSize levelSize = ((RandomBuildSize)levelSizes.next()).size;
-	   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
-				BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
+//	>>   			BuildSize levelSize = ((RandomBuildSize)levelSizes.next()).size;
+//	>>   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
+//	>>			BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
 				
 				// TODO this should be inside of DungeonConfig
 				// 5. determine a preset level config based on pattern and size
-				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
-				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
-						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
+//				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
+//				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
+//						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
 				
 				// TODO this should be inside dungeon builder
 				// get the level builder
-				LevelBuilder levelBuilder = new LevelBuilder(levelConfig);
+				LevelBuilder levelBuilder = new LevelBuilder(/*levelConfig*/);
 				
 				// 6. create a dungeon builder using the defined level builder(s)
 				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);				
@@ -295,7 +302,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				// the dungeon config will drive part of the level config, ie # of rooms etc.
 				// 7. determine a preset dungeon config base on size
 //				DungeonConfig dungeonConfig = new DungeonConfig();
-				DungeonConfig dungeonConfig = PRESET_DUNGEON_CONFIGS.getConfig(dungeonSize);
+//	>>			DungeonConfig dungeonConfig = PRESET_DUNGEON_CONFIGS.getConfig(dungeonSize);
 
 //				Dungeons2.log.debug(
 //						String.format("Building D2 dungeons @ %s\n" + 
@@ -305,13 +312,14 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				
 				// 7. build the dungeon
 				Dungeons2.log.debug("Starting BUILD process...");
-				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
+//				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
+				Dungeon dungeon = builder.build(world, random, coords, dc);
 				Dungeons2.log.debug("BUILD process complete.");
 				/*
 				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
 				 *  In future each level in a dungeon may have a different support setting
 				 */
-				levelConfig.setSupportOn(dungeonConfig.useSupport());
+//	>>			levelConfig.setSupportOn(dungeonConfig.useSupport());
 
 	   			// 8. update the dungeon with the theme
 	   			dungeon.setTheme(theme);
@@ -329,7 +337,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				
 				if (isGenerated) {
 					// register the dungeon with the Dungeon Registry
-					DungeonInfo info = new DungeonInfo(dungeon, pattern, dungeonSize, levelSize, direction);
+					DungeonInfo info = new DungeonInfo(dungeon, null, null, null, null/*pattern, dungeonSize, levelSize, direction*/);
 					// update the coords to the actual entrance (changed due to usage of field)
 					coords = info.getCoords();
 					DungeonRegistry.getInstance().register(coords.toShortString(), info);

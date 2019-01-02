@@ -10,6 +10,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
 
@@ -27,6 +28,6 @@ public interface IRoomGenerator {
 	 * @param styleSheet
 	 */
 	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet, LevelConfig config);
-	
+	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet, ILevelConfig config);
 	public IRoomGenerationStrategy getGenerationStrategy();
 }

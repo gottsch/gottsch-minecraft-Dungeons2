@@ -30,6 +30,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 import com.someguyssoftware.gottschcore.enums.Direction;
@@ -44,8 +45,11 @@ import io.github.jdiemke.triangulation.DelaunayTriangulator;
 import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
@@ -53,7 +57,7 @@ import net.minecraft.world.chunk.Chunk;
 
 /**
  * @author Mark Gottschling on Jul 9, 2016
- *
+ * @version 2.0
  */
 public class LevelBuilder {
 	/**
@@ -93,10 +97,20 @@ public class LevelBuilder {
 
 	public static final Shaft EMPTY_SHAFT = new Shaft();
 
+	private static final int MIN_START_ROOM_SIZE = 7;
+
+	private static final double MIN_BOUNDARY_SIZE = 25;
+
+	/**
+	 * @since 2.0
+	 */
+	private IDungeonBuilder dungeonBuilder; 
+	
+	@Deprecated
 	private LevelConfig config;
 	
 	private AxisAlignedBB field;
-	private AxisAlignedBB roomField;
+	private AxisAlignedBB roomBoundary;
 	
 	/*
 	 * the number of rooms lost as a result of distance buffering
@@ -112,7 +126,7 @@ public class LevelBuilder {
 	 * 
 	 */
 	public LevelBuilder() {
-		this.config = new LevelConfig();
+//		this.config = new LevelConfig();
 	}
 	
 	/**
@@ -124,12 +138,56 @@ public class LevelBuilder {
 	}
 
 	/**
+	 * TODO this doesn't belong in LevelBuilder but should be part of Boundary class
+	 * @param boundary
+	 * @return
+	 */
+	public AxisAlignedBB resizeBoundary(final AxisAlignedBB boundary, final double factor) {
+		/*
+		 * AxisAlignedBB.getCenter() is @ClientSide so must calculate the center
+		 */
+//		Vec3d center = new Vec3d(boundary.minX + (boundary.maxX - boundary.minX) * 0.5D, boundary.minY + (boundary.maxY - boundary.minY) * 0.5D, boundary.minZ + (boundary.maxZ - boundary.minZ) * 0.5D);
+//		AxisAlignedBB newBoundary = new AxisAlignedBB(new BlockPos(center)).grow(30);
+//		
+		// resize field
+		if (factor < 1.0D) {
+			double deltaX = (boundary.maxX - boundary.minX);
+			double deltaZ = (boundary.maxZ - boundary.minZ);	
+			Dungeons2.log.debug("deltaX -> {}", deltaX);
+			Dungeons2.log.debug("deltaZ -> {}", deltaZ);
+			int xAmount = (int) ((deltaX * (1.0 - factor)) / 2);
+			int zAmount = (int) ((deltaZ * (1.0 - factor)) / 2);
+			Dungeons2.log.debug("initial shrink amounts -> {} {}", xAmount, zAmount);
+			
+			// determine and recalculate if the shrunk amount is less than the minimum size
+			if (Math.abs(deltaX - (xAmount*2)) < MIN_BOUNDARY_SIZE ) {
+				// calculate what amount will give 50
+				double p = 1.0D - 50/Math.abs(deltaX);
+				xAmount = (int) ((deltaX * p) / 2);
+				Dungeons2.log.debug("x less than min, new amount -> {} [{}%]", xAmount, p);
+			}
+			if (Math.abs(deltaZ - (zAmount*2)) < MIN_BOUNDARY_SIZE) {
+				// calculate what amount wil give 50
+				double p = 1.0D - 50/Math.abs(deltaZ);
+				zAmount = (int) ((deltaZ * p) / 2);
+				Dungeons2.log.debug("z less than min, new amount -> {} [{}%]", zAmount, p);
+			}
+			
+			AxisAlignedBB newBoundary = boundary.grow(-xAmount, 0, -zAmount);
+			Dungeons2.log.debug("boundary shrunk by -> {} {}, to new size -> {}", xAmount, zAmount, newBoundary);
+			return newBoundary;
+		}
+		else return boundary;
+	}
+	
+	/**
 	 * 
 	 * @param random
 	 * @param startPoint
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	protected List<Room> spawnRooms(Random rand, ICoords startPoint, LevelConfig config) {
 		List<Room> rooms = new ArrayList<>();
 
@@ -150,28 +208,57 @@ public class LevelBuilder {
 		
 		return rooms;
 	}
-		
-		protected List<Room> spawnRooms(Random rand, AxisAlignedBB field, ICoords startPoint, LevelConfig config) {
-			List<Room> rooms = new ArrayList<>();
 
-			int levelSize = Math.max(
-					MIN_NUMBER_OF_ROOMS,
-					RandomHelper.randomInt(rand, config.getNumberOfRooms().getMinInt(), config.getNumberOfRooms().getMaxInt())
+	/**
+	 * 
+	 * @param rand
+	 * @param field
+	 * @param startPoint
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
+	protected List<Room> spawnRooms(Random rand, AxisAlignedBB field, ICoords startPoint, LevelConfig config) {
+		List<Room> rooms = new ArrayList<>();
+
+		int levelSize = Math.max(
+				MIN_NUMBER_OF_ROOMS,
+				RandomHelper.randomInt(rand, config.getNumberOfRooms().getMinInt(), config.getNumberOfRooms().getMaxInt())
 				);
-			
-			// generate rooms
-			for (int i = 0; i < levelSize; i++) {
-				Room room = new Room(i);
-				// TODO where should the min width check take place?? - inside the setWidth, setDepth of LevelConfig
-//				room = randomizeRoom(rand, room, startPoint /*, xOffset, zOffset, */, config);
-				room = randomizeRoom(rand, room, field, startPoint, config);
-				// add to the working list that contains all the rooms sorted on distance (farthest to closest)
-				rooms.add(room);
-			}
+
+		// generate rooms
+		for (int i = 0; i < levelSize; i++) {
+			Room room = new Room(i);
+			// TODO where should the min width check take place?? - inside the setWidth, setDepth of LevelConfig
+			//				room = randomizeRoom(rand, room, startPoint /*, xOffset, zOffset, */, config);
+			room = randomizeRoom(rand, room, field, startPoint, config);
+			// add to the working list that contains all the rooms sorted on distance (farthest to closest)
+			rooms.add(room);
+		}
 
 		return rooms;
 	}
 
+	protected List<Room> spawnRooms(Random rand, AxisAlignedBB field, ICoords startPoint, ILevelConfig config) {
+		List<Room> rooms = new ArrayList<>();
+
+		int levelSize = Math.max(
+				MIN_NUMBER_OF_ROOMS,
+				RandomHelper.randomInt(rand, config.getNumRooms().getMinInt(), config.getNumRooms().getMaxInt())
+				);
+
+		// generate rooms
+		for (int i = 0; i < levelSize; i++) {
+			Room room = new Room(i);
+			// TODO where should the min width check take place?? - inside the setWidth, setDepth of LevelConfig
+			//			room = randomizeRoom(rand, room, startPoint /*, xOffset, zOffset, */, config);
+			room = randomizeRoom(rand, room, field, startPoint, config);
+			// add to the working list that contains all the rooms sorted on distance (farthest to closest)
+			rooms.add(room);
+		}
+		return rooms;
+	}
+	
 	/**
 	 * 
 	 * @param rand
@@ -198,7 +285,40 @@ public class LevelBuilder {
 
 		return room;
 	}
-	
+
+	/**
+	 * 
+	 * @param rand
+	 * @param roomIn
+	 * @param field
+	 * @param startPoint
+	 * @param config
+	 * @return
+	 */
+	protected Room randomizeRoom(Random rand, Room roomIn, AxisAlignedBB field, 
+			ICoords startPoint, ILevelConfig config) {
+		// randomize dimensions
+		Room room = randomizeDimensions(rand, roomIn, config);
+
+		// randomize the rooms
+//		room = randomizeRoomCoords(rand, room, config);
+		room = randomizeRoomCoords(rand, room, field, config);
+//		logger.info("room: " + room);
+		// offset and center room from starting point
+//		room.setCoords(room.getCoords().add(startPoint.getX() - (room.getWidth()/2), startPoint.getY(), startPoint.getZ()-(room.getDepth()/2)));
+		// reset the room y position
+		room.setCoords(room.getCoords().resetY(startPoint.getY()));
+		// calculate distance squared
+		room.setDistance(room.getCenter().getDistanceSq(startPoint));
+		// set the degrees (number of edges)
+		room.setDegrees(RandomHelper.randomInt(rand, config.getDegrees().getMinInt(), config.getDegrees().getMaxInt()));
+		// randomize a direction
+		room.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+
+		return room;
+	}
+
+	@Deprecated
 	protected Room randomizeRoom(Random rand, Room roomIn, AxisAlignedBB field, ICoords startPoint, LevelConfig config) {
 		// randomize dimensions
 		Room room = randomizeDimensions(rand, roomIn, config);
@@ -244,9 +364,29 @@ public class LevelBuilder {
 	 * 
 	 * @param random
 	 * @param roomIn
+	 * @param field
 	 * @param config
 	 * @return
 	 */
+	protected Room randomizeRoomCoords(Random random, Room roomIn, AxisAlignedBB field, ILevelConfig config) {
+		Room room = new Room(roomIn);
+		// generate a ranom set of coords
+		ICoords c = randomizeCoords(random, field);
+		// center room using the random coords
+//		room.setCoords(c.add(-(room.getWidth()/2), 0, -(room.getDepth()/2)));
+		room.centerOn(c);
+		return room;
+	}
+
+	
+	/**
+	 * 
+	 * @param random
+	 * @param roomIn
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
 	protected Room randomizeRoomCoords(Random random, Room roomIn, AxisAlignedBB field, LevelConfig config) {
 		Room room = new Room(roomIn);
 		// generate a ranom set of coords
@@ -286,6 +426,13 @@ public class LevelBuilder {
 		return new Coords((int)field.minX, (int)field.minY, (int)field.minZ).add(x, y, z);
 	}
 	
+	protected ICoords randomizeCoords(Random random, AxisAlignedBB field) {
+		int x = RandomHelper.randomInt(random, 0, (int) (field.maxX - field.minX));
+		int y = RandomHelper.randomInt(random, 0, (int) (field.maxY - field.minY));
+		int z = RandomHelper.randomInt(random, 0, (int) (field.maxZ - field.minZ));
+		return new Coords((int)field.minX, (int)field.minY, (int)field.minZ).add(x, y, z);
+	}
+	
 	/**
 	 * 
 	 * @param rand
@@ -293,6 +440,22 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	protected Room randomizeDimensions(Random rand, Room roomIn, ILevelConfig config) {
+		Room room = new Room(roomIn);
+		room.setWidth(Math.max(Room.MIN_WIDTH, RandomHelper.randomInt(rand, config.getWidth().getMinInt(), config.getWidth().getMaxInt())));
+		room.setDepth(Math.max(Room.MIN_DEPTH, RandomHelper.randomInt(rand, config.getDepth().getMinInt(), config.getDepth().getMaxInt())));
+		room.setHeight(Math.max(Room.MIN_HEIGHT, RandomHelper.randomInt(rand, config.getHeight().getMinInt(), config.getHeight().getMaxInt())));		
+		return room;
+	}
+	
+	/**
+	 * 
+	 * @param rand
+	 * @param roomIn
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
 	protected Room randomizeDimensions(Random rand, Room roomIn, LevelConfig config) {
 		Room room = new Room(roomIn);
 		room.setWidth(Math.max(Room.MIN_WIDTH, RandomHelper.randomInt(rand, config.getWidth().getMinInt(), config.getWidth().getMaxInt())));
@@ -310,7 +473,7 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
-	protected List<Room> applyDistanceBuffering(Random rand, ICoords startPoint, final List<Room> anchors, final List<Room> rooms, LevelConfig config) {
+	protected List<Room> applyDistanceBuffering(Random rand, ICoords startPoint, final List<Room> anchors, final List<Room> rooms/*, LevelConfig config*/) {
 		List<Room> bufferedRooms = new ArrayList<>();
 		/*
 		 * a count of the number times a single room is processed against the list of buffered rooms
@@ -563,7 +726,7 @@ public class LevelBuilder {
 		/*
 		 * the start of the level
 		 */
-		Room startRoom = buildStartRoom(world, rand, getField(), startPoint, config);
+		Room startRoom = buildStartRoom(world, rand, getBoundary(), startPoint, config);
 		if (startRoom == EMPTY_ROOM) {
 			if (Dungeons2.log.isWarnEnabled()) {
 				Dungeons2.log.warn(String.format("Start Room has invalid Minecraft world room conditions: %s", startRoom.toString()));
@@ -576,7 +739,7 @@ public class LevelBuilder {
 		 * the end room of the level.
 		 * only one way into the end room - only if boss/treasure room
 		 */
-		Room endRoom = buildEndRoom(world, rand, getField(), startPoint, predefinedRooms, config);
+		Room endRoom = buildEndRoom(world, rand, getBoundary(), startPoint, predefinedRooms, config);
 		if (endRoom == EMPTY_ROOM) {
 			return EMPTY_LEVEL;
 		}
@@ -613,6 +776,176 @@ public class LevelBuilder {
 	
 	/**
 	 * 
+	 * @param world
+	 * @param rand
+	 * @param startPoint
+	 * @param plannedRooms
+	 * @param config
+	 * @return
+	 */
+	public Level build(World world, Random rand, ICoords startPoint, List<Room> plannedRooms, ILevelConfig config) {
+		List<Room> anchors = new ArrayList<>();
+		List<Room> spawned = null;
+		List<Room> rooms = null;
+		List<Edge> edges = null;
+		List<Edge> paths = null;
+		List<Wayline> waylines = null;
+		List<Hallway> hallways = null;
+		Room startRoom = null;
+		Room endRoom = null;
+		Level level = new Level();	
+		
+		// NOTE at this point the level boundary and spawn boundarys should already be set.
+		
+		spawned = spawnRooms(rand, getRoomBoundary(), startPoint, config);		
+		Dungeons2.log.debug("Spawned.size=" + spawned.size());
+		
+		// TODO new method
+		// process all predefined rooms and categorize
+		for (Room room : plannedRooms) {
+			if (room.isStart() && startRoom == null) startRoom = room;
+			else if (room.isEnd() && endRoom == null) endRoom = room;
+			if (room.isAnchor())
+				anchors.add(room);
+			else
+				spawned.add(room);
+		}
+		
+		// sort working array based on distance
+		Collections.sort(spawned, Room.distanceComparator);
+				
+		// move apart any intersecting rooms (uses anti-grav method)
+		Dungeons2.log.debug("Before Apply Distance Buffering Rooms.size -> {}", anchors.size() + spawned.size());
+		rooms = applyDistanceBuffering(rand, startPoint, anchors, spawned);
+		Dungeons2.log.debug("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
+//		System.out.println("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
+		
+		// select rooms to use ie. filter out rooms that don't meet criteria
+		rooms = selectValidRooms(world, rand, rooms, config);
+		Dungeons2.log.debug("After select valid rooms Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToValidation());
+		if (rooms == null || rooms.size() < MIN_NUMBER_OF_ROOMS) {
+			return EMPTY_LEVEL;
+		}
+		
+		// TODO record as a value pair, move to own method
+		// record minimum dimensions of all the rooms
+		int mx = 0;
+		int mz = 0;
+		for (int i = 0; i < rooms.size(); i++) {
+			if (rooms.get(i).getMinX() < mx) mx = rooms.get(i).getMinX();
+			if (rooms.get(i).getMinZ() < mz) mz = rooms.get(i).getMinZ();
+		}
+		
+		// TODO move own method
+		// if dimensions are negative, offset all rooms by positive (Math.abs()) amount +1
+		if (mx < 0 || mz < 0) {
+			for (Room room : rooms) {
+				room.setCoords(room.getCoords().add(Math.abs(mx)+1, 0, Math.abs(mz)+1));
+			}
+		}
+		
+		// triangulate valid rooms
+		edges = triangulate(rooms);
+		if (edges == null) {
+			return EMPTY_LEVEL;
+		}
+		
+		// get the mst
+		paths = calculatePaths(rand, edges, rooms);
+		
+		Dungeons2.log.debug("StartRoom.id=" + startRoom.getId());
+		Dungeons2.log.debug("EndRoom.id=" + endRoom.getId());
+		if (!BFS(startRoom.getId(), endRoom.getId(), rooms, paths)) {
+			Dungeons2.log.debug("A path doesn't exist from start room to end room on level.");
+			return EMPTY_LEVEL;
+		}
+		
+		// calculate room waypoints - the coords that build a hallway (edge) between to rooms (vertice)
+		waylines = calculateWaylines(rand, paths, rooms);
+		if (waylines == EMPTY_WAYLINES) return EMPTY_LEVEL;
+
+		// revert room dimensions and generated waylines back to original values by removing offset.
+		if (mx < 0 || mz < 0) {
+			for (Room room : rooms) {
+				room.setCoords(room.getCoords().add(mx-1, 0, mz-1));
+			}
+			for (Wayline line : waylines) {
+				line.getPoint1().setCoords(line.getPoint1().getCoords().add(mx-1, 0, mz-1));
+				line.getPoint2().setCoords(line.getPoint2().getCoords().add(mx-1, 0, mz-1));
+			}
+		}
+		
+		/*
+		 * build the hallways
+		 */
+		hallways = new ArrayList<>();
+		// a list to hold waylines from an L-shaped (elbow join) set of waylines
+		List<Wayline> processedJoins = new ArrayList<>(10);
+		// process each wayline
+		for (Wayline line : waylines) {
+			// build a hallway (room) from a wayline
+			//Hallway hallway = Hallway.fromWayline(line, level.getRooms());
+			Hallway hallway = buildHallway(line, rooms);
+			
+			// add the hallway to the list of generated hallways
+			hallways.add(hallway);
+			addDoorsToRoom(hallway);
+			// if an L-shaped ie. multiple connected waylines.
+			if (line.getWayline() != null) {				
+				// check if second wayline is in process joins list
+				if (!processedJoins.contains(line.getWayline())) {
+					Hallway hallway2 = buildHallway(line.getWayline(), rooms);
+					hallway2.setHallway(hallway);
+					hallway.setHallway(hallway2);
+					addDoorsToRoom(hallway2);
+					hallways.add(hallway2);
+					
+					// add first wayline to processed joins
+					processedJoins.add(line);
+				}
+			}
+		}
+		
+		// setup the level
+		Room room = rooms.get(0);
+		int minX = room.getMinX();
+		int maxX = room.getMaxX();
+		int minY = room.getMinY();
+		int maxY = room.getMaxY();
+		int minZ = room.getMinZ();
+		int maxZ = room.getMaxZ();
+		// record min and max dimension values for level
+		for (int i = 1; i < rooms.size(); i++) {
+			if (rooms.get(i).getMinX() < minX) minX = rooms.get(i).getMinX();
+			if (rooms.get(i).getMaxX() > maxX) maxX = rooms.get(i).getMaxX();
+			if (rooms.get(i).getMinY() < minY) minY = rooms.get(i).getMinY();
+			if (rooms.get(i).getMaxY() > maxY) maxY = rooms.get(i).getMaxY();
+			if (rooms.get(i).getMinZ() < minZ) minZ = rooms.get(i).getMinZ();
+			if (rooms.get(i).getMaxZ() > maxZ) maxZ = rooms.get(i).getMaxZ();
+		}
+		
+		// update the level
+		level.setStartPoint(startPoint);
+		level.setStartRoom(startRoom);
+		level.setEndRoom(endRoom);
+		level.setRooms(rooms);
+		level.setEdges(edges);
+		level.setPaths(paths);
+		level.setWaylines(waylines);
+		level.setHallways(hallways);
+		level.setMinX(minX);
+		level.setMaxX(maxX);
+		level.setMinY(minY);
+		level.setMaxY(maxY);
+		level.setMinZ(minZ);
+		level.setMaxZ(maxZ);
+		level.setConfig(config);
+		
+		return level;
+	}
+	
+	/**
+	 * 
 	 * @param rand
 	 * @param startPoint
 	 * @param startRooms
@@ -620,6 +953,7 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	public Level build(World world, Random rand, ICoords startPoint, List<Room> plannedRooms, LevelConfig config) {
 		/*
 		 * special rooms which are designed as <em>fixed position</em>. ex. ladder rooms, treasure rooms, boss rooms.
@@ -669,7 +1003,7 @@ public class LevelBuilder {
 		
 		// add randomly generated rooms
 //		spawned = spawnRooms(rand,  startPoint, config);
-		spawned = spawnRooms(rand, getRoomField(), startPoint, config);
+		spawned = spawnRooms(rand, getRoomBoundary(), startPoint, config);
 		
 		Dungeons2.log.debug("Spawned.size=" + spawned.size());
 		
@@ -688,7 +1022,7 @@ public class LevelBuilder {
 				
 		// move apart any intersecting rooms (uses anti-grav method)
 		Dungeons2.log.debug("Before Apply Distance Buffering Rooms.size -> {}", spawned.size());
-		rooms = applyDistanceBuffering(rand, startPoint, anchors, spawned, config);
+		rooms = applyDistanceBuffering(rand, startPoint, anchors, spawned/*, config*/);
 		Dungeons2.log.debug("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
 //		System.out.println("After Apply Distance Buffering Rooms.size -> {}, room loss -> {}", rooms.size(), getRoomLossToDistanceBuffering());
 		
@@ -742,7 +1076,7 @@ public class LevelBuilder {
 		}
 		
 		// calculate room waypoints - the coords that build a hallway (edge) between to rooms (vertice)
-		waylines = calculateWaylines(rand, paths, rooms, config);
+		waylines = calculateWaylines(rand, paths, rooms/*, config*/);
 		if (waylines == EMPTY_WAYLINES) return EMPTY_LEVEL;
 
 //				Collections.sort(rooms, Room.distanceComparator);
@@ -844,7 +1178,7 @@ public class LevelBuilder {
 		level.setMaxY(maxY);
 		level.setMinZ(minZ);
 		level.setMaxZ(maxZ);
-		level.setConfig(config);
+//		level.setConfig(config);
 
 		return level;
 	}
@@ -861,6 +1195,52 @@ public class LevelBuilder {
 		}
 	}
 
+	protected List<Edge> calculatePaths(Random rand, List<Edge> edges, List<Room> rooms) {
+		/*
+		 * holds are the reduced edges generated by the Minimun Spanning Tree
+		 */
+		List<Edge> paths = new ArrayList<>();
+		/**
+		 * counts the number of edges are assigned to each node/vertex
+		 */
+		int[] edgeCount = new int[rooms.size()];
+
+		// reduce all edges to MST
+		EdgeWeightedGraph graph = new EdgeWeightedGraph(rooms.size(), edges);
+		LazyPrimMST mst = new LazyPrimMST(graph);
+		for (Edge e : mst.edges()) {
+			if (e.v < rooms.size() && e.w < rooms.size()) {
+				Room room1 = rooms.get(e.v);
+				Room room2 = rooms.get(e.w);	
+				paths.add(e);
+				edgeCount[room1.getId()]++;
+				edgeCount[room2.getId()]++;
+			}
+			else {
+				Dungeons2.log.warn(String.format("Ignored Room: array out-of-bounds: v: %d, w: %d", e.v, e.w));
+			}
+		}
+
+		// add more edges
+		int addtionalEdges = (int) (edges.size() * 0.25); // TODO get the % from config
+		for (int i = 0 ; i < addtionalEdges; i++) {
+			int pos = rand.nextInt(edges.size());
+			Edge e = edges.get(pos);
+			// TODO ensure that only non-used edges are selected (and doesn't increment the counter)
+			Room room1 = rooms.get(e.v);
+			Room room2 = rooms.get(e.w);
+			if (!room1.isEnd() && !room2.isEnd() &&
+					edgeCount[room1.getId()] < room1.getDegrees() && edgeCount[room2.getId()] < room2.getDegrees()) {
+				paths.add(e);
+				edgeCount[room1.getId()]++;
+				edgeCount[room2.getId()]++;				
+			}
+
+		}
+		return paths;
+	}
+
+	
 	/**
 	 * 
 	 * @param rand
@@ -869,6 +1249,7 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	protected List<Edge> calculatePaths(Random rand, List<Edge> edges, List<Room> rooms, LevelConfig config) {
 		/*
 		 * holds are the reduced edges generated by the Minimun Spanning Tree
@@ -1303,7 +1684,7 @@ public class LevelBuilder {
 	 * @param rooms
 	 * @param config
 	 */
-	protected List<Wayline> calculateWaylines(Random rand, List<Edge> paths, List<Room> rooms, LevelConfig config) {
+	protected List<Wayline> calculateWaylines(Random rand, List<Edge> paths, List<Room> rooms/*, LevelConfig config*/) {
 		List<Wayline> resolvedWaylines = null;
 		
 		/*
@@ -1800,16 +2181,106 @@ public class LevelBuilder {
 	}
 
 	/**
+	 * 
+	 * @param world
+	 * @param rand
+	 * @param rooms
+	 * @param config
+	 * @return
+	 */
+	protected List<Room> selectValidRooms(World world, Random rand, List<Room> rooms, ILevelConfig config) {
+		List<Room> met = new ArrayList<>();
+		int roomId = 0;
+		AxisAlignedBB dbb = getDungeonBuilder().getBoundary();
+		AxisAlignedBB lbb = getBoundary(); // getDungeonBuilder().getBoundary();
+		
+		for (Room room : rooms) {
+			if (room.isObstacle()) continue;
+
+			// NOTE at this point it is assumed any anchors are pre-validated and meet all criteria
+			if (room.isAnchor()) {
+				room.setId(roomId++);
+				met.add(room);
+				continue;
+			}
+
+			boolean isValid = false;
+
+			// check if the room is inside the level bounding box
+			AxisAlignedBB rbb = room.getXZBoundingBox();
+			if ((rbb.minX >= lbb.minX && rbb.maxX <= lbb.maxX) &&
+					(rbb.minZ >= lbb.minZ && rbb.maxZ <= lbb.maxZ)) {
+				isValid = true;
+			}
+			else {
+				Dungeons2.log.debug("Removing room for being outside level bounds -> {}", room);
+				System.out.println("Removing room for being outside level bounds -> " +  room);
+				incrementLossToValidation(1);
+			}
+			
+			if (isValid &&
+					(rbb.minX >= dbb.minX && rbb.maxX <= dbb.maxX) &&
+					(rbb.minZ >= dbb.minZ && rbb.maxZ <= dbb.maxZ)) {
+				isValid = true;
+			}
+			else {
+				Dungeons2.log.debug("Removing room for being outside dungeon bounds -> {}", room.getId());
+				System.out.println("Removing room for being outside dungeon bounds -> " +  room.getId());
+				incrementLossToValidation(1);
+			}
+			
+			// TODO move to method
+			// check if the chunk is loaded
+			if (isValid && getDungeonBuilder().getConfig().isMinecraftConstraints()) {
+				isValid = false;
+				
+				if (isRoomInLoadedChunks(world, room)) {
+					isValid = true;
+//					Dungeons2.log.debug("room[{}] is VALID at chuck(s) -> {} {}", room.getId(), room.getXZCenter(), Dungeons2.toChunk(room.getXZCenter()));
+				}
+				else {
+//					Dungeons2.log.debug("room[{}] is NOT valid at chuck(s) -> {}", room.getId(), room.getXZCenter());
+					Dungeons2.log.debug("Removing room for residing in unloaded chunk -> {}", room.getId());
+					incrementLossToValidation(1);
+				}
+
+			}
+			
+			// check if room meets all criteria/constraints for generation
+			if (isValid) {
+				isValid = validateRoomConstraints(world, room, config);
+			}
+			else {
+				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
+				incrementLossToValidation(1);
+			}
+			
+			if (isValid) {
+				// assign a new id to room
+				room.setId(roomId++);
+				// add room
+				met.add(room);		
+			}
+			else {
+				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
+				incrementLossToValidation(1);
+			}
+		}
+		return met;
+	}
+	
+	/**
 	 * LevelVisualizer against all build criteria. Rooms that don't meet criteria are removed from the list.
 	 * @param rand
 	 * @param rooms
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	protected List<Room> selectValidRooms(World world, Random rand, List<Room> rooms, LevelConfig config) {
 		List<Room> met = new ArrayList<>();
 		int roomId = 0;
-		AxisAlignedBB lbb = getField(); // <-- should be passed in.
+		AxisAlignedBB lbb = getBoundary(); // <-- should be passed in.
 		
 		for (Room room : rooms) {
 			if (room.isObstacle()) {
@@ -1901,6 +2372,90 @@ public class LevelBuilder {
 	 * @param room
 	 * @return
 	 */
+	protected boolean validateRoomConstraints(World world, Room room, ILevelConfig config) {
+		if (room == null || room.isReject()) return false;
+		if (!getDungeonBuilder().getConfig().isMinecraftConstraints()) return true; 
+		// ensure that the room is above the bottom
+		if (room.getCoords().getY() <= getDungeonBuilder().getConfig().getBottomLimit()) {
+			if (Dungeons2.log.isDebugEnabled()) {
+				Dungeons2.log.debug("Room bottom [{}] is below min y constraint [{}]", 
+						room.getCoords().getY(), 
+						getDungeonBuilder().getConfig().getBottomLimit());
+			}
+			return false;
+		}
+
+		// ensure the room is below the y max threshold
+		if (room.getCoords().getY() + room.getHeight() > getDungeonBuilder().getConfig().getTopLimit()) {
+			if (Dungeons2.log.isDebugEnabled()) {
+				Dungeons2.log.debug(
+					String.format("Room top [%d] is above max y constraint [%d]", 
+							(room.getCoords().getY() + room.getHeight()), 
+							getDungeonBuilder().getConfig().getTopLimit()));
+			}
+			return false;
+		}
+
+		// NOTE these next 3 calls a) take ~1 second to complete and b) cause cascading worldgen lag because they access the world in non-loaded chunks.
+		// get percentage of solid base blocks
+		double percentSolid = WorldInfo.getSolidBasePercent(world, room.getCoords(), room.getWidth(), room.getDepth());
+//		Dungeons2.log.debug("Percent solid base:" + percentSolid);
+		
+		// get the depth from the surface to top of the room
+		int surfaceRoomDepth = WorldInfo.getDifferenceWithSurface(world, room.getCenter());
+//		Dungeons2.log.debug("The surface/room depth =" + surfaceRoomDepth);
+		if (surfaceRoomDepth == WorldInfo.INVALID_SURFACE_POS) {
+			Dungeons2.log.debug("Unable to locate the surface position.");
+			return false;
+		}
+		
+		// check if the top y valueof the node is above sea level
+		if (room.getCoords().getY() + room.getHeight() > world.getSeaLevel()) {
+			
+			Dungeons2.log.trace("Room is above sea level -> {}", room.getCenter());
+			/*
+			 *  if surfaceRoomDepth is greater than a [x] negative amount.
+			 *  negative implies the room is higher than the surface, ie the room is exposed.
+			 */
+			if (surfaceRoomDepth < -3) { // TODO make -3 a constant or a config value
+				Dungeons2.log.debug("Room rejected due to exposure -> {}", room.getCenter());
+				return false;
+			}			
+			else if (percentSolid < 50.0f) {
+				Dungeons2.log.debug("Room has less than 50 % base @ " + room.getCenter());
+				/*
+				 * there is less than 50% solid base
+				 */
+				return false;
+			}
+		}
+		else {
+//			Dungeons2.log.debug("Room is below sea level @ " + room.getCenter());
+			if (percentSolid < 20.0f) {
+				Dungeons2.log.debug("Room has less than 20 % base @ " + room.getCenter());
+				/*
+				 * 0-20% = mostly likely suspended over a chasm/pit/ravine
+				 */
+				return false;
+			}
+			else if (percentSolid < 50.0f) {
+				Dungeons2.log.debug("Room has less than 50 % base @ " + room.getCenter());
+				/*
+				 * 21-40 = overrhanging a chasm/pit/ravine
+				 */
+				return false;
+			}
+		}		
+		return true;
+	}
+	
+	/**
+	 * Ensure the room meets are criteria to be built.
+	 * @param world 
+	 * @param room
+	 * @return
+	 */
+	@Deprecated
 	protected boolean meetsRoomConstraints(World world, Room room, LevelConfig config) {
 		if (room == null || room.isReject()) return false;
 		if (!config.isMinecraftConstraintsOn()) return true;
@@ -2023,6 +2578,51 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	protected Room buildStartRoom(World world, Random rand, AxisAlignedBB field, ICoords startPoint, ILevelConfig config) {
+		/*
+		 * the start of the level
+		 */
+		Room startRoom = new Room().setStart(true).setAnchor(true).setType(Type.LADDER);
+		startRoom = randomizeDimensions(rand, startRoom, config);
+		// ensure min dimensions are met for start room
+		startRoom.setWidth(Math.max(MIN_START_ROOM_SIZE, startRoom.getWidth()));
+		startRoom.setDepth(Math.max(MIN_START_ROOM_SIZE,  startRoom.getDepth()));
+		// ensure that start room's dimensions are odd in length
+		if (startRoom.getWidth() % 2 == 0) startRoom.setWidth(startRoom.getWidth()+1);
+		if (startRoom.getDepth() % 2 == 0) startRoom.setDepth(startRoom.getDepth()+1);
+		
+		// set the starting room coords to be in the middle of the start point
+		startRoom.centerOn(startPoint);
+//		.setCoords(
+//				new Coords(startPoint.getX()-(startRoom.getWidth()/2),
+//						startPoint.getY(),
+//						startPoint.getZ()-(startRoom.getDepth()/2)));
+		//startRoom.setDistance(startRoom.getCoords().getDistanceSq(startPoint));
+		startRoom.setDistance(0.0);
+		// randomize a direction
+		startRoom.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+		// test if the room meets conditions to be placed in the minecraft world
+		// TEMP remove
+		if (!validateRoomConstraints(world, startRoom, config)) {
+			Dungeons2.log.debug("Start Room failed room constraints @ " + startRoom.getCenter());
+			if (Dungeons2.log.isWarnEnabled()) {
+				Dungeons2.log.warn(String.format("Start Room has invalid Minecraft world room conditions: %s", startRoom.toString()));
+			}
+			return EMPTY_ROOM;
+		}
+		
+		return startRoom;
+	}
+	
+	/**
+	 * Builds a room at the centered on the startPoint.
+	 * @param world
+	 * @param rand
+	 * @param startPoint
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
 	protected Room buildStartRoom(World world, Random rand, AxisAlignedBB field, ICoords startPoint, LevelConfig config) {
 		/*
 		 * the start of the level
@@ -2057,6 +2657,51 @@ public class LevelBuilder {
 		
 		return startRoom;
 	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param rand
+	 * @param field
+	 * @param startPoint
+	 * @param plannedRooms
+	 * @param config
+	 * @return
+	 */
+	protected Room buildEndRoom(World world, Random rand,
+			AxisAlignedBB field, ICoords startPoint, List<Room> plannedRooms, ILevelConfig config) {
+		/*
+		 * the end room of the level.
+		 */
+
+		/*
+		 * change the distance that the end room can be from startpoint.
+		 * (this chance only affects the end room).
+		 */
+		// NOTE distance no longer matters as using the field
+//		double factor = 2.0;
+//		ILevelConfig c2 = new LevelConfig(config);
+//		Quantity qx = new Quantity(c2.getXDistance().getMin(), c2.getXDistance().getMax()*factor);
+//		Quantity qz = new Quantity(c2.getZDistance().getMin(), c2.getZDistance().getMax()*factor);
+//		c2.setXDistance(qx);
+//		c2.setZDistance(qz);
+		
+		// build the end room
+		Room endRoom  = buildPlannedRoom(world, rand, field, startPoint, plannedRooms, config)
+				.setEnd(true)
+				.setAnchor(true)
+				.setType(Type.LADDER);
+		
+		// ensure min dimensions are met for start room
+		endRoom.setWidth(Math.max(MIN_START_ROOM_SIZE, endRoom.getWidth()));
+		endRoom.setDepth(Math.max(MIN_START_ROOM_SIZE,  endRoom.getDepth()));
+		// ensure that the room's dimensions are odd in length
+		if (endRoom.getWidth() % 2 == 0) endRoom.setWidth(endRoom.getWidth()+1);
+		if (endRoom.getDepth() % 2 == 0) endRoom.setDepth(endRoom.getDepth()+1);
+		
+		return endRoom;
+	}
+
 	
 	/**
 	 * @param world
@@ -2066,6 +2711,7 @@ public class LevelBuilder {
 	 * @param levelConfig
 	 * @return
 	 */
+	@Deprecated
 	protected Room buildEndRoom(World world, Random rand,
 			AxisAlignedBB field, ICoords startPoint, List<Room> plannedRooms, LevelConfig config) {
 		/*
@@ -2135,6 +2781,51 @@ public class LevelBuilder {
 //		} while (checkRooms);		
 //		return plannedRoom;
 //	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param rand
+	 * @param field
+	 * @param startPoint
+	 * @param plannedRooms
+	 * @param config
+	 * @return
+	 */
+	protected Room buildPlannedRoom(World world, Random rand, AxisAlignedBB field, 
+			ICoords startPoint, List<Room> plannedRooms, ILevelConfig config) {
+		Room plannedRoom = new Room();
+		
+		/* 
+		 * check to make sure planned rooms don't intersect.
+		 * test up to 10 times for a successful position
+		 */
+		boolean checkRooms = true;
+		int endCheckIndex = 0;
+		checkingRooms:
+		do {
+			plannedRoom = randomizeRoom(rand, plannedRoom, field, startPoint, config);
+			Dungeons2.log.debug("New Planned Room:" + plannedRoom);
+			endCheckIndex++;
+			if (endCheckIndex > 10) {
+				Dungeons2.log.warn("Unable to position Planned Room that meets positional criteria.");
+				return EMPTY_ROOM;
+			}
+			for (Room room : plannedRooms) {
+				if (room.getXZBoundingBox().intersects(plannedRoom.getXZBoundingBox())) {
+					Dungeons2.log.debug("New Planned room intersects with planned list room.");
+					continue checkingRooms;
+				}
+			}
+			// test if the room meets conditions to be placed in the minecraft world
+			if (!validateRoomConstraints(world, plannedRoom, config)) {
+				break;
+			}			
+			checkRooms = false;			
+		} while (checkRooms);		
+		return plannedRoom;
+	}
+
 	
 	/**
 	 * 
@@ -2144,6 +2835,7 @@ public class LevelBuilder {
 	 * @param config
 	 * @return
 	 */
+	@Deprecated
 	protected Room buildPlannedRoom(World world, Random rand, AxisAlignedBB field, ICoords startPoint, List<Room> plannedRooms, LevelConfig config) {
 		Room plannedRoom = new Room();
 		
@@ -2181,11 +2873,35 @@ public class LevelBuilder {
 	 * 
 	 * @param world
 	 * @param rand
+	 * @param field
 	 * @param startPoint
 	 * @param predefinedRooms
 	 * @param config
 	 * @return
 	 */
+	protected Room buildBossRoom(World world, Random rand, AxisAlignedBB field,
+			ICoords startPoint, List<Room> predefinedRooms, ILevelConfig config) {
+		final int BOSS_ROOM_MIN_XZ = 10;
+		final int BOSS_ROOM_MIN_Y = 10;
+		
+		Room bossRoom = buildEndRoom(world, rand, field, startPoint, predefinedRooms, config).setType(Type.BOSS).setDegrees(1);	
+		// ensure min dimensions are met for start room
+		bossRoom.setWidth(Math.max(BOSS_ROOM_MIN_XZ, bossRoom.getWidth()));
+		bossRoom.setDepth(Math.max(BOSS_ROOM_MIN_XZ, bossRoom.getDepth()));
+		bossRoom.setHeight(Math.max(Math.min(BOSS_ROOM_MIN_Y, config.getHeight().getMaxInt()),  bossRoom.getHeight()));
+		return bossRoom;
+	}
+	
+	/**
+	 * 
+	 * @param world
+	 * @param rand
+	 * @param startPoint
+	 * @param predefinedRooms
+	 * @param config
+	 * @return
+	 */
+	@Deprecated
 	protected Room buildBossRoom(World world, Random rand, AxisAlignedBB field,
 			ICoords startPoint, List<Room> predefinedRooms, LevelConfig config) {
 		final int BOSS_ROOM_MIN_XZ = 10;
@@ -2244,29 +2960,29 @@ public class LevelBuilder {
 	/**
 	 * @return the field
 	 */
-	protected AxisAlignedBB getField() {
+	protected AxisAlignedBB getBoundary() {
 		return field;
 	}
 
 	/**
 	 * @param field the field to set
 	 */
-	protected void setField(AxisAlignedBB field) {
+	protected void setBoundary(AxisAlignedBB field) {
 		this.field = field;
 	}
 
 	/**
-	 * @return the roomField
+	 * @return the roomBoundary
 	 */
-	protected AxisAlignedBB getRoomField() {
-		return roomField;
+	protected AxisAlignedBB getRoomBoundary() {
+		return roomBoundary;
 	}
 
 	/**
-	 * @param roomField the roomField to set
+	 * @param roomBoundary the roomBoundary to set
 	 */
-	protected void setRoomField(AxisAlignedBB roomField) {
-		this.roomField = roomField;
+	protected void setRoomBoundary(AxisAlignedBB roomBoundary) {
+		this.roomBoundary = roomBoundary;
 	}
 	
 	/**
@@ -2311,6 +3027,22 @@ public class LevelBuilder {
 	 */
 	protected void setRoomLossToValidation(int roomLossToValidation) {
 		this.roomLossToValidation = roomLossToValidation;
+	}
+
+	/**
+	 * @since 2.0
+	 * @return
+	 */
+	public IDungeonBuilder getDungeonBuilder() {
+		return dungeonBuilder;
+	}
+
+	/**
+	 * @since 2.0
+	 * @param dungeonBuilder
+	 */
+	public void setDungeonBuilder(IDungeonBuilder dungeonBuilder) {
+		this.dungeonBuilder = dungeonBuilder;
 	}
 	
 }

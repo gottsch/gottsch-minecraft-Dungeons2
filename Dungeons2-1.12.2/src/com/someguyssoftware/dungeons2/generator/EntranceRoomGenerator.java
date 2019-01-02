@@ -11,6 +11,7 @@ import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
 
@@ -30,6 +31,21 @@ public class EntranceRoomGenerator extends AbstractExteriorRoomGenerator {
 		setGenerationStrategy(generator);
 	}
 	
+	@Override
+	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
+			ILevelConfig config) {
+//		Dungeons2.log.debug("Has Crenellation:" + room.hasCrenellation());
+//		Dungeons2.log.debug("Has Parapet:"+ room.hasParapet());
+//		Dungeons2.log.debug("Has Merlon:" + room.hasMerlon());
+//		Dungeons2.log.debug("Has Cornice:" + room.hasCornice());
+//		Dungeons2.log.debug("Has Plinth:" + room.hasPlinth());
+		// generate the room structure
+		getGenerationStrategy().generate(world, random, room, theme, styleSheet, config);
+		// build doorway
+		buildDoorway(world, room);		
+	}
+	
+	@Deprecated
 	@Override
 	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
 			LevelConfig config) {
