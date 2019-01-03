@@ -104,7 +104,9 @@ public class BuildCommand extends CommandBase {
     			ICoords startPoint = new Coords(x, y, z);
     			
     			Biome biome = world.getBiome(startPoint.toPos());
-			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(biome.getBiomeName());
+				// get the biome ID
+				Integer biomeID = Biome.getIdForBiome(biome);
+			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(/*biome.getBiomeName()*/biomeID);
 			    // select one
 			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);

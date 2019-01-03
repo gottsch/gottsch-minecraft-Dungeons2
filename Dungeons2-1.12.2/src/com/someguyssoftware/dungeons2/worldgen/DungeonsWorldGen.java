@@ -239,7 +239,9 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 				// 2. test if correct biome
 				Biome biome = world.getBiome(coords.toPos());
-				Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
+				if (world.isRemote) {
+					Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
+				}
 			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
 			    	if (world.isRemote) {
 			    		Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));
@@ -265,8 +267,10 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    
 			    // TODO load the patterns and size into RandomProbabilityCollection with differing weights with small, square being more common
 			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
+				// get the biome ID
+				Integer biomeID = Biome.getIdForBiome(biome);
 			    // get the dungeons for this biome
-			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(biome.getBiomeName());
+			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(/*biome.getBiomeName()*/biomeID);
 			    // select one
 			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
