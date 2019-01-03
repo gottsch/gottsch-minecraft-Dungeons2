@@ -26,7 +26,8 @@ public class DungeonConfigManager {
 	/*
 	 * Guava Table of Dungeon Configs based on Biome Name and Size
 	 */
-	public static Table<String, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
+//	public static Table<String, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
+	public static Table<Integer, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
 
 	public static IDungeonConfig defaultConfig;
 	
@@ -51,10 +52,12 @@ public class DungeonConfigManager {
 				for (Biome biome : biomes) {
 					// exclude nether and end biome
 					if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
-						if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
-							DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
+						// get the biome ID
+						Integer biomeID = Biome.getIdForBiome(biome);
+						if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
+							DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
 						}
-						DUNGEON_CONFIG_TABLE.get(biome.getBiomeName(), c.getSize()).add(c);
+						DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
 					}
 				}
 			}
@@ -66,10 +69,12 @@ public class DungeonConfigManager {
 						Biome biome = ForgeRegistries.BIOMES.getValue(new ResourceLocation(biomeName));
 //						Dungeons2.log.debug("wl.cname -> {}, biome -> {}, size -> {}", c.getName(), biome.getBiomeName(), c.getSize());
 						if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
-							if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
-								DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
+							// get the biome ID
+							Integer biomeID = Biome.getIdForBiome(biome);
+							if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
+								DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
 							}
-							DUNGEON_CONFIG_TABLE.get(biome.getBiomeName(), c.getSize()).add(c);
+							DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
 						}
 					}
 				}
@@ -77,14 +82,18 @@ public class DungeonConfigManager {
 					// register configs
 					List<Biome> biomes = (List<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
 					for (Biome biome : biomes) {
-						Dungeons2.log.debug("bl.cname -> {}, biome -> {}, size -> {}", c.getName(), biome.getBiomeName(), c.getSize());
+						if (Dungeons2.log.isDebugEnabled()) {
+							Dungeons2.log.debug("bl.cname -> {}, biomeID -> {}, size -> {}", c.getName(), Biome.getIdForBiome(biome), c.getSize());
+						}
 						if (!c.getBiomeBlackList().contains(biome.getBiomeName().toLowerCase()) &&
 								!BiomeDictionary.hasType(biome, Type.END) &&
 								!BiomeDictionary.hasType(biome, Type.NETHER)) {
-							if (!DUNGEON_CONFIG_TABLE.contains(biome.getBiomeName(), c.getSize())) {
-								DUNGEON_CONFIG_TABLE.put(biome.getBiomeName(), c.getSize(), new ArrayList<>(3));
+							// get the biome ID
+							Integer biomeID = Biome.getIdForBiome(biome);
+							if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
+								DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
 							}
-							DUNGEON_CONFIG_TABLE.get(biome.getBiomeName(), c.getSize()).add(c);
+							DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
 						}
 					}
 				}				
@@ -97,9 +106,18 @@ public class DungeonConfigManager {
 	 * @param biomeName
 	 * @return
 	 */
-	public List<IDungeonConfig> getByBiome(String biomeName) {
+//	@Deprecated
+//	public List<IDungeonConfig> getByBiome(String biomeName) {
+//		List<IDungeonConfig> list = new ArrayList<>();
+//		for (List<IDungeonConfig> l :DUNGEON_CONFIG_TABLE.row(biomeName).values()) {
+//			list.addAll(l);
+//		}
+//		return list;
+//	}
+	
+	public List<IDungeonConfig> getByBiome(Integer biomeID) {
 		List<IDungeonConfig> list = new ArrayList<>();
-		for (List<IDungeonConfig> l :DUNGEON_CONFIG_TABLE.row(biomeName).values()) {
+		for (List<IDungeonConfig> l :DUNGEON_CONFIG_TABLE.row(biomeID).values()) {
 			list.addAll(l);
 		}
 		return list;
