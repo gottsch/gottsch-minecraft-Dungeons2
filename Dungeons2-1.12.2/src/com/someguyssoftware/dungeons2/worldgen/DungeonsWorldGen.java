@@ -270,7 +270,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				// get the biome ID
 				Integer biomeID = Biome.getIdForBiome(biome);
 			    // get the dungeons for this biome
-			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(/*biome.getBiomeName()*/biomeID);
+			    List<IDungeonConfig> dcList = Dungeons2.CONFIG_MANAGER.getByBiome(/*biome.getBiomeName()*/biomeID);
 			    // select one
 			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 
+import com.google.common.collect.ImmutableList;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
@@ -21,6 +22,7 @@ import com.someguyssoftware.gottschcore.GottschCore;
 import com.someguyssoftware.gottschcore.annotation.Credits;
 import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
 import com.someguyssoftware.gottschcore.config.IConfig;
+import com.someguyssoftware.gottschcore.loot.LootTableMaster;
 import com.someguyssoftware.gottschcore.mod.AbstractMod;
 import com.someguyssoftware.gottschcore.mod.IMod;
 import com.someguyssoftware.gottschcore.proxy.IProxy;
@@ -65,7 +67,7 @@ public class Dungeons2 extends AbstractMod {
 
 	public static final String MODID = "dungeons2";
 	public static final String NAME = "Dungeons2!";
-	public static final String VERSION = "1.6.1"; 
+	public static final String VERSION = "1.7.0"; 
 	public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12.2/update.json";
 
 	// latest VERSION
@@ -92,7 +94,10 @@ public class Dungeons2 extends AbstractMod {
 	 */
 	private static final String DUNGEONS_CONFIG_DIR = "dungeons2";
 	private static ModConfig config;
-	public static DungeonConfigManager dgnCfgMgr; // TODO move to DungeonWorldGen ?
+	public static DungeonConfigManager CONFIG_MANAGER; // TODO move to DungeonWorldGen ?
+	
+	// loot tables management
+	public static LootTableMaster LOOT_TABLES;
 	
 	/*
 	 *  Dungeons2 Creative Tab
@@ -143,16 +148,6 @@ public class Dungeons2 extends AbstractMod {
 		// check if the spawnSheet exists, else create it from the resource
 		SpawnSheetLoader.exposeSpawnSheet(ModConfig.spawnSheetFile);
 		// TODO later when setting up the DungeonGenerator, get the style sheet from the file system and pass to generator
-
-
-		// register blocks
-		//			proxy.registerBlocks();
-
-		// register items
-		//			proxy.registerItems();
-
-		// regsiter tile entities
-		//			proxy.registerTileEntities();
 	}
 
 	@EventHandler
@@ -175,7 +170,18 @@ public class Dungeons2 extends AbstractMod {
 			GameRegistry.registerWorldGenerator(Dungeons2.dungeonsWorldGen, 100);
 			
 			// add dungeon config managers
-			Dungeons2.dgnCfgMgr = new DungeonConfigManager();
+			Dungeons2.CONFIG_MANAGER = new DungeonConfigManager();
+			
+			// add the loot table managers
+			LOOT_TABLES = new LootTableMaster(Dungeons2.instance, "", "loot_tables");
+			LOOT_TABLES.setLootTableFolderLocations(ImmutableList.of(
+			"chests/common",
+			"chests/uncommon",
+			"chests/scarce",
+			"chests/rare",
+			"chests/epic"
+			));
+			LOOT_TABLES.buildAndExpose("/loot_tables/", Dungeons2.MODID); 
 		}
 
 	}
