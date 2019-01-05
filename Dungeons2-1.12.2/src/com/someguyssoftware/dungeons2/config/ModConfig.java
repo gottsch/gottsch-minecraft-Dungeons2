@@ -246,7 +246,8 @@ public class ModConfig extends AbstractConfig {
 		Configuration config = super.load(file);
 
         // resources
-        config.setCategoryComment("02-resources", "Resource properties.");   
+        config.setCategoryComment("02-resources", "Resource properties."); 
+        setModsFolder("mods");
         dungeonsFolder = config.getString("dungeonsFolder", "02-resources", "mods/dungeons2/", "Where default Dungeons2 folder is located.");
 
         styleSheetFile = config.getString("styleSheetFile", "02-resources", "mods/dungeons2/styleSheet.json", "@Deprecated\nWhere the style sheet file is located.");

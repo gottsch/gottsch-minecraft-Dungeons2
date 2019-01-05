@@ -13,6 +13,7 @@ import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.eventhandler.WorldEventHandler;
 import com.someguyssoftware.dungeons2.items.DungeonsItems;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
@@ -22,6 +23,7 @@ import com.someguyssoftware.gottschcore.GottschCore;
 import com.someguyssoftware.gottschcore.annotation.Credits;
 import com.someguyssoftware.gottschcore.command.ShowVersionCommand;
 import com.someguyssoftware.gottschcore.config.IConfig;
+import com.someguyssoftware.gottschcore.eventhandler.LoginEventHandler;
 import com.someguyssoftware.gottschcore.loot.LootTableMaster;
 import com.someguyssoftware.gottschcore.mod.AbstractMod;
 import com.someguyssoftware.gottschcore.mod.IMod;
@@ -30,6 +32,7 @@ import com.someguyssoftware.gottschcore.version.BuildVersion;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -121,7 +124,8 @@ public class Dungeons2 extends AbstractMod {
 	public void preInt(FMLPreInitializationEvent event) {
 		super.preInt(event);
 		// register additional events
-
+		MinecraftForge.EVENT_BUS.register(new WorldEventHandler(getInstance()));
+		
 		// create and load the config file		
 		config = new ModConfig(this, event.getModConfigurationDirectory(), DUNGEONS_CONFIG_DIR, "general.cfg");
 
@@ -155,7 +159,7 @@ public class Dungeons2 extends AbstractMod {
 		// load the world (minecraft) low-level generators map (NOTE must be AFTER all blocks are registered)
 		log.debug("Setting up generator map");
 
-		if (ModConfig.enableDungeons) {		
+		if (ModConfig.enableDungeons) {	
 			// register client renderers
 			proxy.registerRenderers(getConfig());
 
@@ -179,8 +183,14 @@ public class Dungeons2 extends AbstractMod {
 			"chests/uncommon",
 			"chests/scarce",
 			"chests/rare",
-			"chests/epic"
+			"chests/epic",
+			"armor",
+			"items",
+			"food",
+			"potions",
+			"tools"
 			));
+			Dungeons2.log.debug("should be exposing loot tables here.");
 			LOOT_TABLES.buildAndExpose("/loot_tables/", Dungeons2.MODID); 
 		}
 

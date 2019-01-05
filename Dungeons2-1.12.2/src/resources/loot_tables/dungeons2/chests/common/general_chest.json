@@ -1,17 +1,6 @@
 {
 	"pools": [
 		{
-			"name": "treasure",
-			"rolls": 2,
-			"entries": [
-				{
-					"type": "loot_table",
-					"name": "treasure2:treasure/common",
-					"weight": 30
-				}
-			]
-		},
-		{
 			"name": "items",
 			"rolls": {
 				"min": 1,
@@ -20,16 +9,11 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "treasure2:items/common",
+					"name": "dungeons2:items/common",
 					"weight": 1
-				},
-                {
-                    "type": "loot_table",
-                    "name": "treasure2:loot_tables/mocreatures/items/common",
-                    "weight": 1
-                }				
+				}
 			]
-		},			
+		},
 		{
 			"name": "armor",
 			"rolls": {
@@ -39,16 +23,11 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "treasure2:armor/common",
+					"name": "dungeons2:armor/common",
 					"weight": 1
-				},
-               {
-                    "type": "loot_table",
-                    "name": "treasure2:loot_tables/mocreatures/armor/common",
-                    "weight": 1
-                }					
+				}
 			]
-		},	
+		},
 		{
 			"name": "food",
 			"rolls": {
@@ -58,16 +37,11 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "treasure2:food/common",
+					"name": "dungeons2:food/common",
 					"weight": 1
-				},
-				{
-					"type": "loot_table",
-					"name": "treasure2:loot_tables/mocreatures/food/common",
-					"weight": 1
-				}				
+				}
 			]
-		},	
+		},
 		{
 			"name": "tools",
 			"rolls": {
@@ -77,16 +51,11 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "treasure2:tools/common",
+					"name": "dungeons2:tools/common",
 					"weight": 1
-				},
-				{
-					"type": "loot_table",
-					"name": "treasure2:loot_tables/mocreatures/tools/common",
-					"weight": 1
-				}				
+				}
 			]
-		},	
+		},
 		{
 			"name": "potions",
 			"rolls": {
@@ -96,7 +65,7 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "treasure2:potions/common",
+					"name": "dungeons2:potions/common",
 					"weight": 1
 				}
 			]
