@@ -34,12 +34,12 @@ public class DungeonLootTableMaster extends LootTableMaster {
 	/*
 	 * Guava Table of LootTable ResourceLocations based on LootTableManager-key and Rarity 
 	 */
-	public final Table<String, Rarity, List<ResourceLocation>> CHEST_LOOT_TABLES_RESOURCE_LOCATION_TABLE = HashBasedTable.create();
+	private final Table<String, Rarity, List<ResourceLocation>> CHEST_LOOT_TABLES_RESOURCE_LOCATION_TABLE = HashBasedTable.create();
 
 	/*
 	 * Guava Table of LootTables based on LootTableManager-key and Rarity
 	 */
-	public final Table<String, Rarity, List<LootTable>> CHEST_LOOT_TABLES_TABLE = HashBasedTable.create();
+	private final Table<String, Rarity, List<LootTable>> CHEST_LOOT_TABLES_TABLE = HashBasedTable.create();
 	
 	/*
 	 * relative location of chest loot tables - in resource path or file system
@@ -98,7 +98,7 @@ public class DungeonLootTableMaster extends LootTableMaster {
 				Path path = Paths.get(loc.getResourcePath());
 				Dungeons2.log.debug("path to resource loc -> {}", path.toString());
 				// map the loot table resource location
-				Rarity key = Rarity.valueOf(path.getFileName().toString().toUpperCase());
+				Rarity key = Rarity.valueOf(path.getName(path.getNameCount()-2).toString().toUpperCase());
 				// add to resourcemap
 				CHEST_LOOT_TABLES_RESOURCE_LOCATION_TABLE.get(CUSTOM_LOOT_TABLE_KEY, key).add(loc);				
 				// create loot table
@@ -126,4 +126,14 @@ public class DungeonLootTableMaster extends LootTableMaster {
 		}
 		return tables;
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public Table<String, Rarity, List<LootTable>> getChestLootTablesTable() {
+		return CHEST_LOOT_TABLES_TABLE;
+	}
+	
+
 }

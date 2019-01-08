@@ -17,12 +17,12 @@ import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
-import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.dungeonsengine.config.LootTableMethod;
 import com.someguyssoftware.gottschcore.enums.Rarity;
 import com.someguyssoftware.gottschcore.loot.LootTable;
 import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.block.BlockCarpet;
@@ -139,31 +139,33 @@ public class BossRoomDecorator extends RoomDecorator {
 				if (config.getChestConfig() != null) {
 					if (config.getChestConfig().getLootTableMethod() == LootTableMethod.CUSTOM) {
 //						List<Rarity> rarities = config.getChestConfig().getRarity();
-						// TODO how to pass in the modID of the loot tables?
-						// TODO might just have to map by rarity... so take whats in LootTableMaster and remap
-						String key = Dungeons2.MODID + ":" + Dungeons2.LOOT_TABLES.getLootTablesFolderName() + "/dungeons2/chests/" + Rarity.SCARCE.getValue() ;
-						Dungeons2.log.debug("boss chest key -> {}", key);
-						List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTablesMap().get(key);
-						if (lootTables != null)
+
+						// TODO all this could be one method fillChest(rand, inventory, rarity)
+						List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(Rarity.SCARCE);
+						if (lootTables != null) {
 							Dungeons2.log.debug("found loot tables -> {}", lootTables.size());
+							int index = RandomHelper.randomInt(random, 0, lootTables.size()-1);
+							LootTable table = lootTables.get(index);
+							table.fillInventory(inventory, random, Dungeons2.LOOT_TABLES.getContext());
+						}
 						else
-							Dungeons2.log.debug("did not find any loot tables.");
+							Dungeons2.log.debug("did not find any loot tables by rarity -> {}", Rarity.SCARCE);
 					}
 				}
 				
 				// select a epic/boss chest
-				String chestCategory = ChestCategory.EPIC.name().toLowerCase();
-				Dungeons2.log.debug("Chest category:" + chestCategory);
-				// get chests by category and choose one
-				List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory);
-				Dungeons2.log.debug("Containers found:" + containers.size());
-				if (containers != null && !containers.isEmpty()) {
-					// TODO use RandomProbabilityCollection
-					ChestContainer chest = containers.get(random.nextInt(containers.size()));
-					// populate the chest with items from the selected chest sheet container
-					chestPopulator.populate(random, inventory, chest);
-					// TODO update room floor map with chest
-				}
+//				String chestCategory = ChestCategory.EPIC.name().toLowerCase();
+//				Dungeons2.log.debug("Chest category:" + chestCategory);
+//				// get chests by category and choose one
+//				List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory);
+//				Dungeons2.log.debug("Containers found:" + containers.size());
+//				if (containers != null && !containers.isEmpty()) {
+//					// TODO use RandomProbabilityCollection
+//					ChestContainer chest = containers.get(random.nextInt(containers.size()));
+//					// populate the chest with items from the selected chest sheet container
+//					chestPopulator.populate(random, inventory, chest);
+//					// TODO update room floor map with chest
+//				}
 			}
 			else {
 				Dungeons2.log.debug("Chest does not have iinventory.");
