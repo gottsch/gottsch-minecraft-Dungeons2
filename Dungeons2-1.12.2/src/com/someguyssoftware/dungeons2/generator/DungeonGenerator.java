@@ -11,6 +11,7 @@ import java.util.Random;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.chest.BossChestPopulator;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.generator.blockprovider.CheckedFloorRoomBlockProvider;
@@ -117,7 +118,8 @@ public class DungeonGenerator {
 		 * create the room decorators
 		 */
 		IRoomDecorator roomDecorator = new RoomDecorator(chestSheet, spawnSheet);
-		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
+//		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
+		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(new BossChestPopulator());
 		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
 		
 		/*
