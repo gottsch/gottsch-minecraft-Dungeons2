@@ -17,8 +17,13 @@ import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
+import com.someguyssoftware.dungeonsengine.config.LootTableMethod;
+import com.someguyssoftware.gottschcore.enums.Rarity;
+import com.someguyssoftware.gottschcore.loot.LootTable;
 import com.someguyssoftware.gottschcore.positional.ICoords;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.block.BlockCarpet;
 import net.minecraft.block.BlockHorizontal;
@@ -89,7 +94,7 @@ public class BossRoomDecorator extends RoomDecorator {
 			if (location != null) {
 				EntityHanging entityhanging = new EntityPainting(world, coords.toPos(), facing);
 		        if (entityhanging != null && entityhanging.onValidSurface()) {
-		            if (!world.isRemote) {
+		            if (WorldInfo.isServerSide(world)/*!world.isRemote*/) {
 		                entityhanging.playPlaceSound();
 		                world.spawnEntity(entityhanging);
 		            }
@@ -128,8 +133,24 @@ public class BossRoomDecorator extends RoomDecorator {
 			Dungeons2.log.debug("Adding boss chest @ " + chestCoords.toShortString());
 			// get the chest inventory
 			IInventory inventory = this.chestPopulator.getChestTileEntity(world, chestCoords);
-			if (inventory != null) {
-				// TODO categories should have a weight as well.. ie common chests should occur more than rare etc.
+			if (inventory != null) {				
+				// TODO use loot tables here. Get the EPIC/BOSS loot tables from map and populate the chest
+				// TODO check the chest config if CUSTOM or BUILTIN to determine how the chest should be filled.
+				if (config.getChestConfig() != null) {
+					if (config.getChestConfig().getLootTableMethod() == LootTableMethod.CUSTOM) {
+//						List<Rarity> rarities = config.getChestConfig().getRarity();
+						// TODO how to pass in the modID of the loot tables?
+						// TODO might just have to map by rarity... so take whats in LootTableMaster and remap
+						String key = Dungeons2.MODID + ":" + Dungeons2.LOOT_TABLES.getLootTablesFolderName() + "/dungeons2/chests/" + Rarity.SCARCE.getValue() ;
+						Dungeons2.log.debug("boss chest key -> {}", key);
+						List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTablesMap().get(key);
+						if (lootTables != null)
+							Dungeons2.log.debug("found loot tables -> {}", lootTables.size());
+						else
+							Dungeons2.log.debug("did not find any loot tables.");
+					}
+				}
+				
 				// select a epic/boss chest
 				String chestCategory = ChestCategory.EPIC.name().toLowerCase();
 				Dungeons2.log.debug("Chest category:" + chestCategory);
@@ -197,7 +218,7 @@ public class BossRoomDecorator extends RoomDecorator {
 			if (location != null) {
 				EntityHanging entityhanging = new EntityPainting(world, coords.toPos(), facing);
 		        if (entityhanging != null && entityhanging.onValidSurface()) {
-		            if (!world.isRemote) {
+		            if (WorldInfo.isServerSide(world)/*!world.isRemote*/) {
 		                entityhanging.playPlaceSound();
 		                world.spawnEntity(entityhanging);
 		            }

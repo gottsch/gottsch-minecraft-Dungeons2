@@ -32,6 +32,22 @@ public class ModConfig extends AbstractConfig {
 	public static final String COFFER_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_smooth_sandstone";
 	public static final String WALL_SCONCE_SMOOTH_SANDSTONE_BLOCK_ID = "wall_sconce_smooth_sandstone";
 
+	public static final String BASIC_SANDSTONE_FACADE_ID = "basic_facade_sandstone";
+	public static final String TEE_PILLAR_SANDSTONE_BLOCK_ID = "tee_pillar_sandstone";
+	public static final String TEE_THIN_PILLAR_SANDSTONE_BLOCK_ID = "tee_thin_pillar_sandstone";
+	public static final String FLUTE_PILLAR_SANDSTONE_BLOCK_ID = "flute_pillar_sandstone";
+	public static final String FLUTE_THIN_PILLAR_SANDSTONE_BLOCK_ID = "flute_thin_pillar_sandstone";
+	public static final String CORNICE_SANDSTONE_BLOCK_ID = "cornice_sandstone";
+	public static final String CROWN_MOLDING_SANDSTONE_BLOCK_ID = "crown_molding_sandstone";
+	public static final String SEVEN_EIGHTS_PILLAR_SANDSTONE = "seven_eights_pillar_sandstone";
+	public static final String SILL_SANDSTONE_BLOCK_ID = "sill_sandstone";
+	public static final String DOUBLE_SILL_SANDSTONE_BLOCK_ID = "double_sill_sandstone";
+	public static final String HALF_PILLAR_BASE_SANDSTONE_BLOCK_ID = "half_pillar_base_sandstone";
+	public static final String HALF_PILLAR_SANDSTONE_BLOCK_ID = "half_pillar_sandstone";
+	public static final String COFFER_MIDDLE_SANDSTONE_BLOCK_ID = "coffer_middle_sandstone";
+	public static final String COFFER_SANDSTONE_BLOCK_ID = "coffer_sandstone";
+	public static final String WALL_SCONCE_SANDSTONE_BLOCK_ID = "wall_sconce_sandstone";
+
 	// resources
 	public static String dungeonsFolder;
 	

@@ -8,7 +8,7 @@
 	"*******"
 	],
 	"name": "default",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"biomeWhiteList": ["*"],
 	"biomeBlackList": [""],
 	"size": "MEDIUM",
@@ -73,6 +73,14 @@
 			"support": true,
 			"decorations": true,
 			"theme": "",
+			"chestConfig": {
+				"lootTableMethod": "CUSTOM",
+				"rarity": ["COMMON", "UNCOMMON", "SCARCE"],
+				"probability": {
+					"min":	5,
+					"max": 10		
+				}
+			},
 			"chestCategories": [
 				"COMMON", "UNCOMMON", "RARE"
 			]

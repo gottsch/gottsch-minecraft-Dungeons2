@@ -15,6 +15,7 @@ import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.eventhandler.WorldEventHandler;
 import com.someguyssoftware.dungeons2.items.DungeonsItems;
+import com.someguyssoftware.dungeons2.loot.DungeonLootTableMaster;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
@@ -57,7 +58,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 		modid=Dungeons2.MODID,
 		name=Dungeons2.NAME,
 		version=Dungeons2.VERSION,
-		dependencies="required-after:forge@[14.23.5.2768,);required-after:gottschcore@[1.6.0,)",
+		dependencies="required-after:forge@[14.23.5.2768,);required-after:gottschcore@[1.7.0,)",
 		acceptedMinecraftVersions = "[1.12.2]",
 		updateJSON = Dungeons2.UPDATE_JSON_URL
 		)
@@ -100,7 +101,7 @@ public class Dungeons2 extends AbstractMod {
 	public static DungeonConfigManager CONFIG_MANAGER; // TODO move to DungeonWorldGen ?
 	
 	// loot tables management
-	public static LootTableMaster LOOT_TABLES;
+	public static DungeonLootTableMaster LOOT_TABLES;
 	
 	/*
 	 *  Dungeons2 Creative Tab
@@ -177,21 +178,20 @@ public class Dungeons2 extends AbstractMod {
 			Dungeons2.CONFIG_MANAGER = new DungeonConfigManager();
 			
 			// add the loot table managers
-			LOOT_TABLES = new LootTableMaster(Dungeons2.instance, "", "loot_tables");
-			LOOT_TABLES.setLootTableFolderLocations(ImmutableList.of(
-			"chests/common",
-			"chests/uncommon",
-			"chests/scarce",
-			"chests/rare",
-			"chests/epic",
-			"armor",
-			"items",
-			"food",
-			"potions",
-			"tools"
-			));
-			Dungeons2.log.debug("should be exposing loot tables here.");
-			LOOT_TABLES.buildAndExpose("/loot_tables/", Dungeons2.MODID); 
+			LOOT_TABLES = new DungeonLootTableMaster(Dungeons2.instance, "", "loot_tables");
+//			LOOT_TABLES.setLootTableFolderLocations(ImmutableList.of(
+//			"chests/common",
+//			"chests/uncommon",
+//			"chests/scarce",
+//			"chests/rare",
+//			"chests/epic",
+//			"armor",
+//			"items",
+//			"food",
+//			"potions",
+//			"tools"
+//			));
+//			LOOT_TABLES.buildAndExpose("/loot_tables/", Dungeons2.MODID); 
 		}
 
 	}

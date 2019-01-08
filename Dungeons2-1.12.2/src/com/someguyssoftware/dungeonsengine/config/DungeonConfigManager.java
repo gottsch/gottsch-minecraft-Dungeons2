@@ -35,6 +35,7 @@ public class DungeonConfigManager {
 	 * 
 	 */
 	public DungeonConfigManager() {
+		Dungeons2.log.debug("instansiating DungeonConfigManager...");
 		// load the default config
 		try {
 			defaultConfig = DungeonConfigLoader.loadDefault();
@@ -47,16 +48,21 @@ public class DungeonConfigManager {
 		List<IDungeonConfig> configs = DungeonConfigLoader.loadAll();
 		// map the configs to the table
 		for (IDungeonConfig c : configs) {
+//			Dungeons2.log.debug("whitelist -> {}, blacklist -> {}", c.getBiomeWhiteList().get(0), c.getBiomeBlackList().get(0));
+			
 			if (c.getBiomeWhiteList().contains("*") || (c.getBiomeWhiteList().isEmpty() && c.getBiomeBlackList().isEmpty())) {
 				Set<Biome> biomes = (Set<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
 				for (Biome biome : biomes) {
+//					Dungeons2.log.debug("processing biome -> {}", Biome.getIdForBiome(biome));
 					// exclude nether and end biome
 					if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
 						// get the biome ID
 						Integer biomeID = Biome.getIdForBiome(biome);
+//						Dungeons2.log.debug("wl.cname -> {}, biome -> {}, size -> {}", c.getName(), biomeID, c.getSize());
 						if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
 							DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
 						}
+//						Dungeons2.log.debug("Registering biomeID -> {} with size -> {}", c.getSize());
 						DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
 					}
 				}
@@ -82,9 +88,9 @@ public class DungeonConfigManager {
 					// register configs
 					List<Biome> biomes = (List<Biome>) ForgeRegistries.BIOMES.getValuesCollection();
 					for (Biome biome : biomes) {
-						if (Dungeons2.log.isDebugEnabled()) {
-							Dungeons2.log.debug("bl.cname -> {}, biomeID -> {}, size -> {}", c.getName(), Biome.getIdForBiome(biome), c.getSize());
-						}
+//						if (Dungeons2.log.isDebugEnabled()) {
+//							Dungeons2.log.debug("bl.cname -> {}, biomeID -> {}, size -> {}", c.getName(), Biome.getIdForBiome(biome), c.getSize());
+//						}
 						if (!c.getBiomeBlackList().contains(biome.getBiomeName().toLowerCase()) &&
 								!BiomeDictionary.hasType(biome, Type.END) &&
 								!BiomeDictionary.hasType(biome, Type.NETHER)) {
@@ -117,8 +123,8 @@ public class DungeonConfigManager {
 	
 	public List<IDungeonConfig> getByBiome(Integer biomeID) {
 		List<IDungeonConfig> list = new ArrayList<>();
-		for (List<IDungeonConfig> l :DUNGEON_CONFIG_TABLE.row(biomeID).values()) {
-			list.addAll(l);
+		for (List<IDungeonConfig> configList : DUNGEON_CONFIG_TABLE.row(biomeID).values()) {
+			list.addAll(configList);
 		}
 		return list;
 	}

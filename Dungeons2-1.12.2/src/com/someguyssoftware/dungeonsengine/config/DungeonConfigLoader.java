@@ -91,8 +91,13 @@ public class DungeonConfigLoader {
 					f -> {
 						List<IDungeonConfig> dungeonConfig = null;
 						try {
-							dungeonConfig = load(f);
-							configs.addAll(dungeonConfig);
+							if (f.toString().endsWith(".json")) {
+								dungeonConfig = load(f);
+								configs.addAll(dungeonConfig);
+							}
+							else {
+								Dungeons2.log.debug("skipping invalid dungeon config json file -> {}", f.toString());
+							}
 						} catch (Exception e) {
 							Dungeons2.log.error("Unable to load dungeon config json file -> " + f.toString(), e);
 						}
@@ -128,6 +133,7 @@ public class DungeonConfigLoader {
 		GsonBuilder builder = new GsonBuilder();
 		
 		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
+		builder.registerTypeAdapter(IChestConfig.class, new GenericDeserializer(ChestConfig.class));
 
 		Gson gson = builder.create();	
 		
@@ -142,6 +148,8 @@ public class DungeonConfigLoader {
 			// close objects
 			try {
 				jsonReader.close();
+				in.close();
+				out.close();
 			} catch (IOException e) {
 				Dungeons2.log.warn("Unable to close JSON Reader when reading built-in style sheet.");
 			}
@@ -171,7 +179,8 @@ public class DungeonConfigLoader {
 		GsonBuilder builder = new GsonBuilder();	
 		builder.registerTypeAdapter(IDungeonConfig.class, new GenericDeserializer(DungeonConfig.class));
 		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
-
+		builder.registerTypeAdapter(IChestConfig.class, new GenericDeserializer(ChestConfig.class));
+		
 		Gson gson = builder.create();	
 		List<IDungeonConfig> configs = null;
 		
@@ -203,6 +212,8 @@ public class DungeonConfigLoader {
 	 * @throws Exception
 	 */
 	public static List<IDungeonConfig> load(Path path) throws Exception {
+		Dungeons2.log	.debug("loading dungeon config from path -> {}", path.toString());
+		
 		InputStream is = new FileInputStream(path.toString());
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		JSMin minifier = new JSMin(is, out);
@@ -216,6 +227,7 @@ public class DungeonConfigLoader {
 		GsonBuilder builder = new GsonBuilder();	
 		builder.registerTypeAdapter(IDungeonConfig.class, new GenericDeserializer(DungeonConfig.class));
 		builder.registerTypeAdapter(ILevelConfig.class, new GenericDeserializer(LevelConfig.class));
+		builder.registerTypeAdapter(IChestConfig.class, new GenericDeserializer(ChestConfig.class));
 
 		Gson gson = builder.create();	
 		List<IDungeonConfig> config = null;
@@ -223,14 +235,12 @@ public class DungeonConfigLoader {
 			Type listType = new TypeToken<List<IDungeonConfig>>() {}.getType();
 			config = gson.fromJson(jsonReader, /*DungeonConfig.class*/listType);
 			for (IDungeonConfig c : config) {
-//				Dungeons2.log.debug("loaded dungeon config -> {}", c);
 				if (c.getBiomeWhiteList() != null) c.getBiomeWhiteList().replaceAll(String::toUpperCase);
 				if (c.getBiomeBlackList() != null) c.getBiomeBlackList().replaceAll(String::toUpperCase);
 				for (ILevelConfig lc : c.getLevelConfigs()) {
 					if (lc.getChestCategories() != null) lc.getChestCategories().replaceAll(String::toUpperCase);
 				}
-//				Dungeons2.log.debug("Loaded dungeon config:" + config);
-				
+				Dungeons2.log.debug("loaded dungeon config -> {}", c);
 			}
 		}
 		catch(JsonIOException | JsonSyntaxException e) {
@@ -301,8 +311,15 @@ public class DungeonConfigLoader {
 					Path dungeonConfigPath = Paths.get(folder.toString(), resourceFilePath.getFileName().toString()).toAbsolutePath();
 					Dungeons2.log.debug("dungeonConfigPath -> {}", dungeonConfigPath.toString());
 
+					// skip if not a json file
+					if (!dungeonConfigPath.toString().endsWith(".json")) {
+						Dungeons2.log.debug("Skipping non-valid .json file -> {}", dungeonConfigPath.toString());
+						continue;
+					}
+					
 					// if the file already exists
 					if (Files.exists(dungeonConfigPath)) {
+						Dungeons2.log.debug("comparing config versions...");
 						// load resource configs
 						List<IDungeonConfig> resourceConfigs = loadFromResource(resourceFilePath.toAbsolutePath().toString());
 						
@@ -311,6 +328,8 @@ public class DungeonConfigLoader {
 						// map FS 
 						Map<String, IDungeonConfig> fsConfigsMap =
 							    fsConfigs.stream().collect(Collectors.toMap(IDungeonConfig::getName, Function.identity()));
+						// TODO need to keep this map around so we don't have to reload the file
+						
 						
 						// now process each config in resource configs
 						boolean isCurrent = true;

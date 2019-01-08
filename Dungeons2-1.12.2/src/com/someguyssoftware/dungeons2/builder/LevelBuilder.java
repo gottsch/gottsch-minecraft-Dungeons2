@@ -1750,11 +1750,11 @@ public class LevelBuilder {
 			/*
 			 * if the rooms overlap each other on a single axis, they are "close" enough
 			 */
-			// horizontal wayline
-			if ((room1.getMaxZ() < room2.getMaxZ() && room1.getMaxZ() > room2.getMinZ()) ||
-					(room2.getMaxZ() < room1.getMaxZ() && room2.getMaxZ() > room1.getMinZ()) ||
-					(room1.getMinZ() >= room2.getMinZ() && room1.getMaxZ() <= room2.getMaxZ()) ||
-					(room2.getMinZ() >= room1.getMinZ() && room2.getMaxZ() <= room1.getMaxZ())) {
+			// horizontal wayline (east-west)
+			if ((room1.getMaxZ() < (room2.getMaxZ()-1) && room1.getMaxZ() > (room2.getMinZ()+1)) ||
+					(room2.getMaxZ() < (room1.getMaxZ()-1) && room2.getMaxZ() > (room1.getMinZ()+1)) ||
+					(room1.getMinZ() > (room2.getMinZ()+1)&& room1.getMaxZ() < (room2.getMaxZ()-1)) ||
+					(room2.getMinZ() > (room1.getMinZ()+1) && room2.getMaxZ() <= (room1.getMaxZ()-1))) {
 				int z = (innerMaxZ + innerMinZ)/2;
 				
 				// TODO need some sort of check that if rooms are close by 1 block, which creates a horz wayline that runs from
@@ -1776,11 +1776,11 @@ public class LevelBuilder {
 				waylines.addAll(resolvedWaylines);
 				continue;
 			}
-			// vertical wayline
-			if ((room1.getMaxX() < room2.getMaxX() && room1.getMaxX() > room2.getMinX()) ||
-					(room2.getMaxX() < room1.getMaxX() && room2.getMaxX() > room1.getMinX()) ||
-					(room1.getMinX() >= room2.getMinX() && room1.getMaxX() <= room2.getMaxX()) ||
-					(room2.getMinX() >= room1.getMinX() && room2.getMaxX() <= room1.getMaxX())) {
+			// vertical wayline (north-south)
+			if ((room1.getMaxX() < (room2.getMaxX()-1) && room1.getMaxX() > (room2.getMinX()+1)) ||
+					(room2.getMaxX() < (room1.getMaxX()-1) && room2.getMaxX() > (room1.getMinX()+1)) ||
+					(room1.getMinX() > (room2.getMinX()+1) && room1.getMaxX() <= (room2.getMaxX()-1)) ||
+					(room2.getMinX() > (room1.getMinX()+1) && room2.getMaxX() <= (room1.getMaxX()-1))) {
 				int x = (innerMaxX + innerMinX)/2;
 				Wayline wayline = new Wayline(new Waypoint(minZMap.get(innerMinZ).getId(), x, 0, innerMinZ-1),
 						new Waypoint(maxZMap.get(innerMaxZ).getId(), x, 0, innerMaxZ+1), Alignment.VERTICAL);

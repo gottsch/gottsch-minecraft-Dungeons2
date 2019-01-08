@@ -224,8 +224,7 @@ public class CorniceFacadeBlock extends CardinalDirectionFacadeBlock {
 	 * @author Mark Gottschling on Nov 16, 2015
 	 *
 	 */
-    public static enum EnumShape implements IStringSerializable
-    {
+    public static enum EnumShape implements IStringSerializable {
         STRAIGHT("straight"),
         INNER_LEFT("inner_left"),
         INNER_RIGHT("inner_right"),

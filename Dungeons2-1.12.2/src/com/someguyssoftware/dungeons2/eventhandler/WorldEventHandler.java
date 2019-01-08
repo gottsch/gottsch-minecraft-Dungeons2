@@ -7,6 +7,7 @@ import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.persistence.DungeonsGenSavedData;
 import com.someguyssoftware.gottschcore.loot.LootTableMaster;
 import com.someguyssoftware.gottschcore.mod.IMod;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.world.WorldEvent;
@@ -31,7 +32,7 @@ public class WorldEventHandler {
 	
 	@SubscribeEvent
 	public void onWorldLoad(WorldEvent.Load event) {
-		if (!event.getWorld().isRemote) {
+		if (WorldInfo.isServerSide(event.getWorld())/*!event.getWorld().isRemote*/) {
 			
 			// only fire for overworld since dungeons only exist there (for now :))
 			if (event.getWorld().provider.getDimension() == 0) {

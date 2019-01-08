@@ -237,13 +237,14 @@ public class DungeonsWorldGen implements IWorldGenerator {
 					return;
 				}		
 
+				// TODO redo biome testing - currently tests against TYPE not NAME/ID
 				// 2. test if correct biome
 				Biome biome = world.getBiome(coords.toPos());
-				if (world.isRemote) {
+				if (WorldInfo.isClientSide(world)/*world.isRemote*/) {
 					Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
 				}
 			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
-			    	if (world.isRemote) {
+			    	if (WorldInfo.isClientSide(world)/*world.isRemote*/) {
 			    		Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));
 			    	}
 			    	return;
@@ -269,9 +270,15 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
 				// get the biome ID
 				Integer biomeID = Biome.getIdForBiome(biome);
+				Dungeons2.log.debug("biome ID -> {}", biomeID);
 			    // get the dungeons for this biome
 			    List<IDungeonConfig> dcList = Dungeons2.CONFIG_MANAGER.getByBiome(/*biome.getBiomeName()*/biomeID);
 			    // select one
+			    if (dcList == null || dcList.size() == 0) {
+			    	Dungeons2.log.debug("could not find any dungeon configs for biomeID -> {}", biomeID);
+			    	this.setGenerating(false);
+			    	return;
+			    }
 			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
 			    

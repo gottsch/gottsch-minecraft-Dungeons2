@@ -44,4 +44,7 @@ public interface ILevelConfig {
 	
 	ILevelConfig apply(ILevelConfig config);
 	
+	IChestConfig getChestConfig();
+	void setChestConfig(IChestConfig chestConfig);
+	
 }
