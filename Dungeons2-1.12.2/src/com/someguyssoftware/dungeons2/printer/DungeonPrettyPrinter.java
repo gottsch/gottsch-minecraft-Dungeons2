@@ -73,7 +73,7 @@ public class DungeonPrettyPrinter {
 			
 			// entrance room
 			RoomPrettyPrinter roomPrinter = new RoomPrettyPrinter();
-			String room = roomPrinter.print(dungeon.getEntrance(), "Entrance Room");
+			String room = roomPrinter.print(dungeon.getEntrance(), "Exit Room");
 			sb.append(room).append("\n");
 			
 			// levels

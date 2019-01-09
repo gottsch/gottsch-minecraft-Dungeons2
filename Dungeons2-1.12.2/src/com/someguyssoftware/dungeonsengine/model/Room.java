@@ -3,12 +3,12 @@
  */
 package com.someguyssoftware.dungeonsengine.model;
 
-import static com.someguyssoftware.dungeonsengine.enums.SpaceTag.*;
+import static com.someguyssoftware.dungeonsengine.enums.RoomTag.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.someguyssoftware.dungeonsengine.enums.SpaceTag;
+import com.someguyssoftware.dungeonsengine.enums.RoomTag;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -17,7 +17,7 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
  * @author Mark Gottschling on Dec 25, 2018
  *
  */
-public class Void implements IVoid {
+public class Room implements IRoom {
 
 	private int id;
 	private String name;
@@ -28,23 +28,30 @@ public class Void implements IVoid {
 	private int height;
 	
 	private Direction direction;	
-	List<SpaceTag> tags;
+	List<RoomTag> tags;
 	
-	// graphing
+	/*
+	 * the number of edges that a room (vertice) can have when graphing
+	 */
 	private int degrees;
+	
+	/*
+	 * 
+	 */
+	private List<IExit> exits;
 	
 	/**
 	 * 
 	 */
-	public Void() {}
+	public Room() {}
 
 	/**
 	 * 
 	 * @param space
 	 */
-	public Void(IVoid space) {
+	public Room(IRoom space) {
 		if (space != null) {
-			setId(space.getId());
+			setID(space.getID());
 
 		}
 	}
@@ -53,8 +60,8 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#copy()
 	 */
 	@Override
-	public IVoid copy() {
-		return new Void(this);
+	public IRoom copy() {
+		return new Room(this);
 	}
 
 	/**
@@ -73,7 +80,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getId()
 	 */
 	@Override
-	public int getId() {
+	public int getID() {
 		return id;
 	}
 
@@ -81,7 +88,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setId(int)
 	 */
 	@Override
-	public IVoid setId(int id) {
+	public IRoom setID(int id) {
 		this.id = id;
 		return this;
 	}
@@ -98,7 +105,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setName(java.lang.String)
 	 */
 	@Override
-	public IVoid setName(String name) {
+	public IRoom setName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -115,7 +122,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setCoords(com.someguyssoftware.gottschcore.positional.ICoords)
 	 */
 	@Override
-	public IVoid setCoords(ICoords coords) {
+	public IRoom setCoords(ICoords coords) {
 		this.coords = coords;
 		return this;
 	}
@@ -132,7 +139,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setDepth(int)
 	 */
 	@Override
-	public IVoid setDepth(int depth) {
+	public IRoom setDepth(int depth) {
 		this.depth = depth;
 		return this;
 	}
@@ -149,7 +156,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setWidth(int)
 	 */
 	@Override
-	public IVoid setWidth(int width) {
+	public IRoom setWidth(int width) {
 		this.width = width;
 		return this;
 	}
@@ -166,7 +173,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setHeight(int)
 	 */
 	@Override
-	public IVoid setHeight(int height) {
+	public IRoom setHeight(int height) {
 		this.height = height;
 		return this;
 	}
@@ -180,7 +187,7 @@ public class Void implements IVoid {
 	}	
 
 	@Override
-	public IVoid setDirection(Direction direction) {
+	public IRoom setDirection(Direction direction) {
 		this.direction = direction;
 		return this;
 	}
@@ -198,11 +205,28 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setDegrees(int)
 	 */
 	@Override
-	public IVoid setDegrees(int degrees) {
+	public IRoom setDegrees(int degrees) {
 		this.degrees = degrees;
 		return this;
 	}
 
+	/**
+	 * @return the tags
+	 */
+	@Override
+	public List<RoomTag> getTags() {
+		if (tags == null) tags = new ArrayList<>();
+		return tags;
+	}
+
+	/**
+	 * @param tags the tags to set
+	 */
+	@Override
+	public void setTags(List<RoomTag> tags) {
+		this.tags = tags;
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#isAnchor()
 	 */
@@ -216,7 +240,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setAnchor(boolean)
 	 */
 	@Override
-	public IVoid setAnchor(boolean anchor) {
+	public IRoom setAnchor(boolean anchor) {
 		if (anchor)
 			if (!getTags().contains(ANCHOR)) getTags().add(ANCHOR);
 		else {
@@ -238,7 +262,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setStart(boolean)
 	 */
 	@Override
-	public IVoid setStart(boolean start) {
+	public IRoom setStart(boolean start) {
 		if (start)
 			if (!getTags().contains(START)) getTags().add(START);
 		else {
@@ -260,7 +284,7 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setEnd(boolean)
 	 */
 	@Override
-	public IVoid setEnd(boolean end) {
+	public IRoom setEnd(boolean end) {
 		if (end)
 			if (!getTags().contains(END)) getTags().add(END);
 		else {
@@ -282,69 +306,28 @@ public class Void implements IVoid {
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setObstacle(boolean)
 	 */
 	@Override
-	public IVoid setObstacle(boolean obstacle) {
+	public IRoom setObstacle(boolean obstacle) {
 		if (obstacle)
-			if (!getTags().contains(OBSTACLE)) getTags().add(SpaceTag.OBSTACLE);
+			if (!getTags().contains(OBSTACLE)) getTags().add(RoomTag.OBSTACLE);
 		else {
 			if (getTags().contains(OBSTACLE)) getTags().remove(OBSTACLE);
 		}
 		return this;
 	}
 
-//	// TODO move to own file or part of IRoom
-//	public enum Type {
-//		GENERAL("general"),
-//		LADDER("ladder"),
-//		ENTRANCE("entrance"),
-//		EXIT("exit"),
-//		TREASURE("treasure"),
-//		BOSS("boss"),
-//		HALLWAY("hallway");
-//
-//		private String name;
-//		
-//		/**
-//		 * @param arg0
-//		 * @param arg1
-//		 */
-//		Type(String name) {
-//			this.name = name;
-//		}
-//
-//		/**
-//		 * @return the NAME
-//		 */
-//		public String getName() {
-//			return name;
-//		}
-//
-//		/**
-//		 * @param NAME the NAME to set
-//		 */
-//		public void setName(String name) {
-//			this.name = name;
-//		}
-//	}
-//	
-//	public void setType(Type type) {
-//		
-//	}
-
-	/**
-	 * @return the tags
-	 */
-	@Override
-	public List<SpaceTag> getTags() {
-		if (tags == null) tags = new ArrayList<>();
-		return tags;
+	public List<IExit> getExits() {
+		return exits;
 	}
 
-	/**
-	 * @param tags the tags to set
-	 */
+	public void setExits(List<IExit> exits) {
+		this.exits = exits;
+	}
+
 	@Override
-	public void setTags(List<SpaceTag> tags) {
-		this.tags = tags;
+	public String toString() {
+		return String.format(
+				"Room [\n\tid=%s, \n\tname=%s, \n\tcoords=%s, \n\tdepth=%s, \n\twidth=%s, \n\theight=%s, \n\tdirection=%s, \n\ttags=%s, \n\tdegrees=%s, \n\texits=%s]",
+				id, name, coords, depth, width, height, direction, tags, degrees, exits);
 	}
 	
 	

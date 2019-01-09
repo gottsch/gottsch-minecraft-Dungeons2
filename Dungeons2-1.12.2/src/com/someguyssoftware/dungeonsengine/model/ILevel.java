@@ -11,32 +11,32 @@ public interface ILevel {
 	/**
 	 * @return the start
 	 */
-	IVoid getStart();
+	IRoom getStart();
 
 	/**
 	 * @param startSpace the startSpace to set
 	 */
-	void setStart(IVoid start);
+	void setStart(IRoom start);
 
 	/**
 	 * @return the end
 	 */
-	IVoid getEnd();
+	IRoom getEnd();
 
 	/**
 	 * @param end the end to set
 	 */
-	void setEnd(IVoid end);
+	void setEnd(IRoom end);
 
 	/**
 	 * @return the voids
 	 */
-	List<IVoid> getVoids();
+	List<IRoom> getRooms();
 
 	/**
 	 * @param voids the void list to set
 	 */
-	void setVoids(List<IVoid> voids);
+	void setRooms(List<IRoom> rooms);
 
 	/**
 	 * The smallest bounding box which encapsulates all the voids.

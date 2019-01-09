@@ -5,7 +5,7 @@ import java.util.List;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.dungeonsengine.config.LevelConfig;
 import com.someguyssoftware.dungeonsengine.model.ILevel;
-import com.someguyssoftware.dungeonsengine.model.IVoid;
+import com.someguyssoftware.dungeonsengine.model.IRoom;
 
 /**
  * 
@@ -30,16 +30,16 @@ public interface ILevelBuilder {
 //	void setVoidBuilder(IVoidBuilder builder);
 	ILevelBuilder with(IVoidBuilder builder);
 	
-	List<IVoid> getPlannedVoids();
+	List<IRoom> getPlannedVoids();
 	
 	/**
 	 * Adds a void space to the planned voids
 	 * @param voidSpace
 	 */
-	ILevelBuilder with(IVoid voidSpace);
+	ILevelBuilder with(IRoom voidSpace);
 	
 	void reset();
 
-//	IShaft join(IVoid sourceVoid, IVoid destVoid);
+//	IShaft join(IRoom sourceVoid, IRoom destVoid);
 //	IShaft join(ILevel sourceLevel, ILevel destLevel);
 }

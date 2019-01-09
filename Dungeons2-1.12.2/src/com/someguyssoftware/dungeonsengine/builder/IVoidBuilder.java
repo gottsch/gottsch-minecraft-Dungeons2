@@ -3,7 +3,7 @@ package com.someguyssoftware.dungeonsengine.builder;
 import java.util.List;
 
 import com.someguyssoftware.dungeonsengine.model.Boundary;
-import com.someguyssoftware.dungeonsengine.model.IVoid;
+import com.someguyssoftware.dungeonsengine.model.IRoom;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 public interface IVoidBuilder {
@@ -14,16 +14,16 @@ public interface IVoidBuilder {
 	/*
 	 * build a generic space
 	 */
-	IVoid buildSpace(ICoords startPoint, IVoid spaceIn);
+	IRoom buildSpace(ICoords startPoint, IRoom spaceIn);
 	
 	/*
 	 * build a 'planned' space, using existing spaces to determine where and if it can be placed within the boundary
 	 */
-	IVoid buildPlannedSpace(ICoords startPoint, List<IVoid> predefinedSpaces);
+	IRoom buildPlannedSpace(ICoords startPoint, List<IRoom> predefinedSpaces);
 	
-	IVoid buildStartSpace(ICoords startPoint);
+	IRoom buildStartSpace(ICoords startPoint);
 	
-	IVoid buildEndSpace(ICoords startPoint, List<IVoid> predefinedSpaces);
+	IRoom buildEndSpace(ICoords startPoint, List<IRoom> predefinedSpaces);
 	
 	/**
 	 * 
@@ -33,6 +33,6 @@ public interface IVoidBuilder {
 	 * @param predefinedSpaces
 	 * @return
 	 */
-	IVoid buildTreasureSpace(ICoords startPoint, List<IVoid> predefinedSpaces);
+	IRoom buildTreasureSpace(ICoords startPoint, List<IRoom> predefinedSpaces);
 	
 }

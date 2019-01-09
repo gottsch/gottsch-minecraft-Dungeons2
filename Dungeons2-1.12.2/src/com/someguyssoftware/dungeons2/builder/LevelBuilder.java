@@ -1353,6 +1353,7 @@ public class LevelBuilder {
 			width = Math.abs(startPoint.getX() - endPoint.getX()) + 1;
 			
 			/*
+			 *  center the hallway:
 			 *  this is to maintain the actual hallway (air part) to still be along the wayline,
 			 *  since the hallway is 3 wide (2 walls and 1 air)
 			 */
@@ -1397,12 +1398,27 @@ public class LevelBuilder {
 		
 		// get the rooms referenced by the waypoints
 		Room room1 = rooms.get(startPoint.getId());
-		Room room2 = rooms.get(endPoint.getId());		
-
+		Room room2 = rooms.get(endPoint.getId());
+		
+		/////////////////////
+		// TODO
+		/////////////////////
+		// at this point we can test the positioning of the hallway against the room to determine if the hallway can be greater than 3 blocks wide.
+		// need to have separate branches for horz and vert
+		//
+		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+			
+		}
+		else {
+			
+		}
+		
 		 // the start/end points y-vlaue isn't set, so update them.
 		startPoint.setCoords(startPoint.getCoords().resetY(room1.getCoords().getY()));
 		endPoint.setCoords(endPoint.getCoords().resetY(room2.getCoords().getY()));
 
+		// TODO this is wrong and a waste of computing. it will always be 4. all rooms on the same level have the same min Y, so that formula cancels out, then adds 4.
+		// TODO should be min(r1.maxY, r2.maxY) - r1.minY. this gives the max height a hallway can have. lose the +3.
 		// calculate what the dimensions should be
 		int height = Math.abs(
 				Math.min(room1.getMinY(), room2.getMinY()) - 

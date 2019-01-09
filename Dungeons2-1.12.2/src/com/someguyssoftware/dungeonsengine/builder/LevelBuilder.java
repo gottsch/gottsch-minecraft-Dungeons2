@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.ILevel;
-import com.someguyssoftware.dungeonsengine.model.IVoid;
+import com.someguyssoftware.dungeonsengine.model.IRoom;
 import com.someguyssoftware.dungeonsengine.model.Level;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
@@ -31,7 +31,7 @@ public class LevelBuilder implements ILevelBuilder {
 	 */
 //	public static final ILevel EMPTY_LEVEL = new Level();
 
-	public static final List<IVoid> EMPTY_VOIDS = new ArrayList<>(1);
+	public static final List<IRoom> EMPTY_VOIDS = new ArrayList<>(1);
 
 //	public static final List<Wayline> EMPTY_WAYLINES = new ArrayList<>(1);
 
@@ -50,7 +50,7 @@ public class LevelBuilder implements ILevelBuilder {
 	private ICoords startPoint;
 	
 	private IVoidBuilder voidBuilder;
-	private List<IVoid> plannedVoids;
+	private List<IRoom> plannedVoids;
 	
 	/*
 	 * the number of rooms lost as a result of distance buffering
@@ -81,12 +81,12 @@ public class LevelBuilder implements ILevelBuilder {
 		/*
 		 * local handle to the start room
 		 */
-		IVoid start = null;
+		IRoom start = null;
 		
 		/*
 		 *  local handle to the end room
 		 */
-		IVoid end = null;
+		IRoom end = null;
 		
 		/*
 		 * return object containing all the rooms that meet build criteria and the locations of the special rooms.
@@ -134,7 +134,7 @@ public class LevelBuilder implements ILevelBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#getPlannedSpaces()
 	 */
 	@Override
-	public List<IVoid> getPlannedVoids() {
+	public List<IRoom> getPlannedVoids() {
 		if (this.plannedVoids == null) this.plannedVoids = new ArrayList<>();
 		return this.plannedVoids;
 	}
@@ -143,7 +143,7 @@ public class LevelBuilder implements ILevelBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#withSpace(com.someguyssoftware.dungeonsengine.model.ISpace)
 	 */
 	@Override
-	public ILevelBuilder with(IVoid voidSpace) {
+	public ILevelBuilder with(IRoom voidSpace) {
 		getPlannedVoids().add(voidSpace);
 		return this;
 	}

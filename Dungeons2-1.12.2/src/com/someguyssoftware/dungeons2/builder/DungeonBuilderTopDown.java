@@ -219,7 +219,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		// TODO 4,5,6 can go into a new method and return boolean or Room?
 		// 4. determine if the entrance room can be build at this spot
 		Room entranceRoom = buildEntranceRoom(world, rand, surfaceCoords);
-		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
+		Dungeons2.log.debug("Exit Room:" + entranceRoom);
 		
 		// 5. ensure the entrance is in a loaded chunk
 		if (!levelBuilder.isRoomInLoadedChunks(world, entranceRoom)) {
@@ -420,7 +420,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		
 		Dungeons2.log.debug("Joining shaft from entrance to start room...");
 		Dungeons2.log.debug("Start Room:" + dungeon.getLevels().get(0).getStartRoom());
-		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
+		Dungeons2.log.debug("Exit Room:" + entranceRoom);
 		// join the top start room with the entrance room
 		Shaft shaft = levelBuilder.join(dungeon.getLevels().get(0).getStartRoom(), entranceRoom);
 		if (shaft == LevelBuilder.EMPTY_SHAFT) {
@@ -555,7 +555,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		
 		// 4. determine if the entrance room can be build at this spot
 		Room entranceRoom = buildEntranceRoom(world, rand, surfaceCoords);
-		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
+		Dungeons2.log.debug("Exit Room:" + entranceRoom);
 
 		/*
 		 *  TODO 1. room is centered on surfaceCoords, and thus the isValidAboveGroundBase() should be taking in coords
@@ -743,7 +743,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		
 		Dungeons2.log.debug("Joining shaft from entrance to start room...");
 		Dungeons2.log.debug("Start Room:" + dungeon.getLevels().get(0).getStartRoom());
-		Dungeons2.log.debug("Entrance Room:" + entranceRoom);
+		Dungeons2.log.debug("Exit Room:" + entranceRoom);
 		// join the top start room with the entrance room
 		Shaft shaft = levelBuilder.join(dungeon.getLevels().get(0).getStartRoom(), entranceRoom);
 		if (shaft == LevelBuilder.EMPTY_SHAFT) {

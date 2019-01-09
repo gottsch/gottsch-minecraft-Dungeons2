@@ -3,7 +3,7 @@ package com.someguyssoftware.dungeonsengine.model;
 import java.util.Comparator;
 import java.util.List;
 
-import com.someguyssoftware.dungeonsengine.enums.SpaceTag;
+import com.someguyssoftware.dungeonsengine.enums.RoomTag;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.BBox;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -15,7 +15,7 @@ import com.someguyssoftware.gottschcore.positional.Intersect;
  * @author Mark Gottschling on Dec 18, 2018
  *
  */
-public interface IVoid {
+public interface IRoom {
 	public static final int MIN_DEPTH = 5;
 	public static final int MIN_WIDTH = 5;
 	public static final int MIN_HEIGHT = 4;
@@ -26,19 +26,19 @@ public interface IVoid {
 	 * 
 	 * @return
 	 */
-	IVoid copy();
+	IRoom copy();
 	
 	/**
 	 * 
 	 * @return
 	 */
-	int getId();
+	int getID();
 
 	/**
 	 * 
 	 * @param id
 	 */
-	IVoid setId(int id);
+	IRoom setID(int id);
 	
 	/**
 	 * 
@@ -50,7 +50,7 @@ public interface IVoid {
 	 * 
 	 * @param name
 	 */
-	IVoid setName(String name);
+	IRoom setName(String name);
 	
 	/**
 	 * @return the coords
@@ -60,7 +60,7 @@ public interface IVoid {
 	/**
 	 * @param coords the coords to set
 	 */
-	IVoid setCoords(ICoords coords);	
+	IRoom setCoords(ICoords coords);	
 
 	/**
 	 * @return the depth
@@ -70,7 +70,7 @@ public interface IVoid {
 	/**
 	 * @param depth the depth to set
 	 */
-	IVoid setDepth(int depth);
+	IRoom setDepth(int depth);
 
 	/**
 	 * @return the width
@@ -80,7 +80,7 @@ public interface IVoid {
 	/**
 	 * @param width the width to set
 	 */
-	IVoid setWidth(int width);
+	IRoom setWidth(int width);
 
 	/**
 	 * @return the height
@@ -90,7 +90,7 @@ public interface IVoid {
 	/**
 	 * @param height the height to set
 	 */
-	IVoid setHeight(int height);
+	IRoom setHeight(int height);
 
 	/**
 	 * @return the direction
@@ -100,7 +100,7 @@ public interface IVoid {
 	/**
 	 * @param direction the direction to set
 	 */
-	IVoid setDirection(Direction direction);
+	IRoom setDirection(Direction direction);
 	
 	/**
 	 * 
@@ -113,7 +113,7 @@ public interface IVoid {
 	 * @param degrees
 	 * @return
 	 */
-	IVoid setDegrees(int degrees);
+	IRoom setDegrees(int degrees);
 	
 	/**
 	 * 
@@ -233,7 +233,7 @@ public interface IVoid {
 	 * @param room
 	 * @return
 	 */
-	default public Intersect getIntersect(IVoid room) {
+	default public Intersect getIntersect(IRoom room) {
 		return Intersect.getIntersect(this.getBoundingBox(), room.getBoundingBox());
 	}
 	
@@ -243,11 +243,11 @@ public interface IVoid {
 	 * @param force
 	 * @return
 	 */
-	default public IVoid addXZForce(double angle, double force) {
+	default public IRoom addXZForce(double angle, double force) {
 		double xForce = Math.sin(angle) * force;
         double zForce = Math.cos(angle) * force;
 
-        IVoid room = copy();
+        IRoom room = copy();
         room.setCoords(room.getCoords().add((int)xForce, 0, (int)zForce));
         return room;
 	}
@@ -255,10 +255,10 @@ public interface IVoid {
 	/**
 	 * Comparator to sort by Id
 	 */
-	public static Comparator<IVoid> idComparator = new Comparator<IVoid>() {
+	public static Comparator<IRoom> idComparator = new Comparator<IRoom>() {
 		@Override
-		public int compare(IVoid p1, IVoid p2) {
-			if (p1.getId() > p2.getId()) {
+		public int compare(IRoom p1, IRoom p2) {
+			if (p1.getID() > p2.getID()) {
 				// greater than
 				return 1;
 			}
@@ -283,23 +283,23 @@ public interface IVoid {
 
 	boolean isAnchor();
 
-	IVoid setAnchor(boolean anchor);
+	IRoom setAnchor(boolean anchor);
 
 	boolean isStart();
 
-	IVoid setStart(boolean start);
+	IRoom setStart(boolean start);
 
 	boolean isEnd();
 
-	IVoid setEnd(boolean end);
+	IRoom setEnd(boolean end);
 
 	boolean isObstacle();
 
-	IVoid setObstacle(boolean obstacle);
+	IRoom setObstacle(boolean obstacle);
 
 	void centerOn(ICoords coords);
 
-	List<SpaceTag> getTags();
+	List<RoomTag> getTags();
 
-	void setTags(List<SpaceTag> tags);
+	void setTags(List<RoomTag> tags);
 }
