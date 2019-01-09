@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeonsengine.chest.IPopulator;
+import com.someguyssoftware.dungeonsengine.chest.ILootLoader;
 import com.someguyssoftware.dungeonsengine.config.IChestConfig;
 import com.someguyssoftware.dungeonsengine.config.LootTableMethod;
 import com.someguyssoftware.gottschcore.enums.Rarity;
@@ -25,39 +25,39 @@ import net.minecraft.world.World;
  * @author Mark Gottschling on Jan 8, 2019
  *
  */
-public class BossChestPopulator implements IPopulator {
+public class BossLootLoader implements ILootLoader {
 
 	/**
 	 * 
 	 */
-	public BossChestPopulator() {
+	public BossLootLoader() {
 		// TODO Auto-generated constructor stub
 	}
 
 	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.chest.IPopulator#populate(net.minecraft.inventory.IInventory, com.someguyssoftware.dungeonsengine.config.IChestConfig)
+	 * @see com.someguyssoftware.dungeonsengine.chest.ILootLoader#populate(net.minecraft.inventory.IInventory, com.someguyssoftware.dungeonsengine.config.IChestConfig)
 	 */
 	@Override
-	public void populate(IInventory inventory, IChestConfig config) {
+	public void fill(World world, IInventory inventory, IChestConfig config, Random random) {
 		// TODO Auto-generated method stub
 
 	}
 
 	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.chest.IPopulator#populate(net.minecraft.tileentity.TileEntityChest, com.someguyssoftware.dungeonsengine.config.IChestConfig)
+	 * @see com.someguyssoftware.dungeonsengine.chest.ILootLoader#populate(net.minecraft.tileentity.TileEntityChest, com.someguyssoftware.dungeonsengine.config.IChestConfig)
 	 */
 	@Override
-	public void populate(TileEntityChest entity, IChestConfig config) {
+	public void fill(World world, Random random, TileEntityChest entity, IChestConfig config) {
 		// TODO Auto-generated method stub
 
 	}
 
 	// TODO this should be the only method or one that takes an object ...
 	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.chest.IPopulator#populate(net.minecraft.world.World, net.minecraft.util.math.BlockPos, com.someguyssoftware.dungeonsengine.config.IChestConfig)
+	 * @see com.someguyssoftware.dungeonsengine.chest.ILootLoader#populate(net.minecraft.world.World, net.minecraft.util.math.BlockPos, com.someguyssoftware.dungeonsengine.config.IChestConfig)
 	 */
 	@Override
-	public void populate(World world, Random random, ICoords coords, IChestConfig config) {
+	public void fill(World world, Random random, ICoords coords, IChestConfig config) {
 		TileEntity te = world.getTileEntity(coords.toPos());
 		if (te == null) {
 			Dungeons2.log.warn("Unable to locate Chest TileEntity @: " + coords.toShortString());
@@ -66,9 +66,7 @@ public class BossChestPopulator implements IPopulator {
 		
 		if (te instanceof TileEntityChest) {
 			if (config != null) {
-				if (config.getLootTableMethod() == LootTableMethod.CUSTOM) {					
-				
-					// TODO all this could be one method fillChest(rand, inventory, rarity)
+				if (config.getLootTableMethod() == LootTableMethod.CUSTOM) {
 					List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(Rarity.SCARCE);
 					if (lootTables != null) {
 						Dungeons2.log.debug("found loot tables -> {}", lootTables.size());

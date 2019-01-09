@@ -10,12 +10,38 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public interface IPopulator {
+/**
+ * 
+ * @author Mark Gottschling on Jan 8, 2019
+ *
+ */
+public interface ILootLoader {
 
-	void populate(IInventory inventory, IChestConfig config);
+	/**
+	 * 
+	 * @param world
+	 * @param inventory
+	 * @param config
+	 * @param random
+	 */
+	void fill(World world, IInventory inventory, IChestConfig config, Random random);
 
-	void populate(TileEntityChest entity, IChestConfig config);
+	/**
+	 * 
+	 * @param world
+	 * @param random
+	 * @param entity
+	 * @param config
+	 */
+	void fill(World world, Random random, TileEntityChest entity, IChestConfig config);
 
-	void populate(World world, Random random, ICoords coords, IChestConfig config);
+	/**
+	 * 
+	 * @param world
+	 * @param random
+	 * @param coords
+	 * @param config
+	 */
+	void fill(World world, Random random, ICoords coords, IChestConfig config);
 
 }

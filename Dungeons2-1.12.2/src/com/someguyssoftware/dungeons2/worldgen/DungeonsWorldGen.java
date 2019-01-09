@@ -88,7 +88,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	
 	// sheets
 	private StyleSheet styleSheet;
-	private ChestSheet chestSheet;
+//	private ChestSheet chestSheet;
 	private SpawnSheet spawnSheet;
 	
 	private static RandomProbabilityCollection<IRandomProbabilityItem> patterns = new RandomProbabilityCollection<>();
@@ -144,11 +144,11 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			}
 			catch(FileAlreadyExistsException e) {;}
 			
-			folder = Paths.get(ModConfig.dungeonsFolder, ChestSheetLoader.BUILT_IN_CHEST_SHEET_SUB_FOLDER);
-			try {
-				Files.createDirectory(folder);
-			}
-			catch(FileAlreadyExistsException e) {;}
+//			folder = Paths.get(ModConfig.dungeonsFolder, ChestSheetLoader.BUILT_IN_CHEST_SHEET_SUB_FOLDER);
+//			try {
+//				Files.createDirectory(folder);
+//			}
+//			catch(FileAlreadyExistsException e) {;}
 			
 			folder = Paths.get(ModConfig.dungeonsFolder, SpawnSheetLoader.BUILT_IN_SPAWN_SHEET_SUB_FOLDER);
 			try {
@@ -162,12 +162,12 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				Dungeons2.log.debug("Stylesheet empty, loading default style sheet...");
 				styleSheet = StyleSheetLoader.load();
 			}
-			this.chestSheet = ChestSheetLoader.loadAll();
-			Dungeons2.log.debug("Returned Loaded chestSheet:" + this.chestSheet);
-			if (this.chestSheet == null || this.chestSheet.getItems() == null || this.chestSheet.getItems().size() == 0) {
-				Dungeons2.log.debug("Chestsheet empty, loading default chest sheet...");
-				this.chestSheet = ChestSheetLoader.load();
-			}			
+//			this.chestSheet = ChestSheetLoader.loadAll();
+//			Dungeons2.log.debug("Returned Loaded chestSheet:" + this.chestSheet);
+//			if (this.chestSheet == null || this.chestSheet.getItems() == null || this.chestSheet.getItems().size() == 0) {
+//				Dungeons2.log.debug("Chestsheet empty, loading default chest sheet...");
+//				this.chestSheet = ChestSheetLoader.load();
+//			}			
 			this.spawnSheet = SpawnSheetLoader.loadAll();
 			if (this.spawnSheet == null || this.spawnSheet.getGroups() == null || this.spawnSheet.getGroups().size() == 0) {
 				Dungeons2.log.debug("Spawnsheet empty, loading default spawn sheet...");
@@ -339,7 +339,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 					// 9. generate the dungeon
 					try {
 						Dungeons2.log.debug("Start GENERATE process...");
-						isGenerated = generator.generate(world, random, dungeon, styleSheet, chestSheet, spawnSheet);
+						isGenerated = generator.generate(world, random, dungeon, styleSheet, /*chestSheet*/null, spawnSheet);
 						Dungeons2.log.debug("GENERATE process complete.");
 					} catch (FileNotFoundException e) {
 						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);

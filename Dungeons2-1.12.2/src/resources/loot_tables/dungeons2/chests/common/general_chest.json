@@ -9,7 +9,7 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "dungeons2:items/common",
+					"name": "dungeons2:loot_tables/dungeons2/items/common",
 					"weight": 1
 				}
 			]
@@ -23,7 +23,7 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "dungeons2:armor/common",
+					"name": "dungeons2:loot_tables/dungeons2/armor/common",
 					"weight": 1
 				}
 			]
@@ -37,7 +37,7 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "dungeons2:food/common",
+					"name": "dungeons2:loot_tables/dungeons2/food/common",
 					"weight": 1
 				}
 			]
@@ -51,7 +51,7 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "dungeons2:tools/common",
+					"name": "dungeons2:loot_tables/dungeons2/tools/common",
 					"weight": 1
 				}
 			]
@@ -65,7 +65,7 @@
 			"entries": [
 				{
 					"type": "loot_table",
-					"name": "dungeons2:potions/common",
+					"name": "dungeons2:loot_tables/dungeons2/potions/common",
 					"weight": 1
 				}
 			]

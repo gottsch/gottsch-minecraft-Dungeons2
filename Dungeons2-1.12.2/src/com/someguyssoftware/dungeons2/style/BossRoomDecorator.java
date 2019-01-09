@@ -17,13 +17,9 @@ import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
-import com.someguyssoftware.dungeonsengine.chest.IPopulator;
+import com.someguyssoftware.dungeonsengine.chest.ILootLoader;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
-import com.someguyssoftware.dungeonsengine.config.LootTableMethod;
-import com.someguyssoftware.gottschcore.enums.Rarity;
-import com.someguyssoftware.gottschcore.loot.LootTable;
 import com.someguyssoftware.gottschcore.positional.ICoords;
-import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
 import net.minecraft.block.BlockCarpet;
@@ -45,21 +41,21 @@ public class BossRoomDecorator extends RoomDecorator {
 	
 	private static final int CARPET_PERCENT_CHANCE = 75;
 	private ChestPopulator chestPopulator;
-	private IPopulator enginesChestPopulator;
+	private ILootLoader lootLoader;
 	
 	/**
 	 * @param chestSheet
 	 */
 	public BossRoomDecorator(ChestSheet chestSheet) {
-		this.chestPopulator = new ChestPopulator(chestSheet);
+//		this.chestPopulator = new ChestPopulator(chestSheet);
 	}
 
 	/**
 	 * 
-	 * @param populator
+	 * @param loader
 	 */
-	public BossRoomDecorator(IPopulator populator) {
-		setEnginesChestPopulator(populator);
+	public BossRoomDecorator(ILootLoader loader) {
+		setLootLoader(loader);
 	}
 	
 	/**
@@ -145,7 +141,7 @@ public class BossRoomDecorator extends RoomDecorator {
 		if (chestCoords != null) {
 			Dungeons2.log.debug("Adding boss chest @ " + chestCoords.toShortString());
 			
-			getEnginesChestPopulator().populate(world, random, chestCoords, config.getChestConfig());
+			getLootLoader().fill(world, random, chestCoords, config.getChestConfig());
 			
 			// get the chest inventory
 //			IInventory inventory = this.chestPopulator.getChestTileEntity(world, chestCoords);
@@ -155,7 +151,7 @@ public class BossRoomDecorator extends RoomDecorator {
 //				if (config.getChestConfig() != null) {
 //					if (config.getChestConfig().getLootTableMethod() == LootTableMethod.CUSTOM) {
 ////						List<Rarity> rarities = config.getChestConfig().getRarity();
-//						enginesChestPopulator.populate(world, random, chestCoords, config.getChestConfig());
+//						lootLoader.populate(world, random, chestCoords, config.getChestConfig());
 //						
 //						// TODO all this could be one method fillChest(rand, inventory, rarity)
 //						List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(Rarity.SCARCE);
@@ -300,17 +296,17 @@ public class BossRoomDecorator extends RoomDecorator {
 	}
 
 	/**
-	 * @return the enginesChestPopulator
+	 * @return the lootLoader
 	 */
-	public IPopulator getEnginesChestPopulator() {
-		return enginesChestPopulator;
+	public ILootLoader getLootLoader() {
+		return lootLoader;
 	}
 
 	/**
-	 * @param enginesChestPopulator the enginesChestPopulator to set
+	 * @param lootLoader the lootLoader to set
 	 */
-	public void setEnginesChestPopulator(IPopulator enginesChestPopulator) {
-		this.enginesChestPopulator = enginesChestPopulator;
+	public void setLootLoader(ILootLoader loader) {
+		this.lootLoader = loader;
 	}
 }
 

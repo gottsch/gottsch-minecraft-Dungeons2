@@ -9,7 +9,7 @@
 			"entries": [
                 {
                     "type": "loot_table",
-                    "name": "dungeons2:items/scarce",
+                    "name": "dungeons2:loot_tables/dungeons2/items/scarce",
                     "weight": 1
                 }
 			]
@@ -23,7 +23,7 @@
 			"entries": [
 	                {
                     "type": "loot_table",
-                    "name": "dungeons2:armor/scarce",
+                    "name": "dungeons2:loot_tables/dungeons2/armor/scarce",
                     "weight": 1
                 }		
 			]
@@ -37,7 +37,7 @@
 			"entries": [
 	                {
                     "type": "loot_table",
-                    "name": "dungeons2:food/scarce",
+                    "name": "dungeons2:loot_tables/dungeons2/food/scarce",
                     "weight": 1
                 }				
 			]
@@ -51,7 +51,7 @@
 			"entries": [
 	            {
                     "type": "loot_table",
-                    "name": "dungeons2:tools/scarce",
+                    "name": "dungeons2:loot_tables/dungeons2/tools/scarce",
                     "weight": 1
                 }				
 			]
@@ -65,7 +65,7 @@
 			"entries": [
 		            {
                     "type": "loot_table",
-                    "name": "dungeons2:potions/scarce",
+                    "name": "dungeons2:loot_tables/dungeons2/potions/scarce",
                     "weight": 1
                 }			
 			]
@@ -80,7 +80,7 @@
 			"entries": [
                 {
                     "type": "loot_table",
-                    "name": "dungeons2:items/uncommon",
+                    "name": "dungeons2:loot_tables/dungeons2/items/uncommon",
                     "weight": 1
                 }
 			]
@@ -94,7 +94,7 @@
 			"entries": [
 	                {
                     "type": "loot_table",
-                    "name": "dungeons2:armor/uncommon",
+                    "name": "dungeons2:loot_tables/dungeons2/armor/uncommon",
                     "weight": 1
                 }		
 			]
@@ -108,7 +108,7 @@
 			"entries": [
 	                {
                     "type": "loot_table",
-                    "name": "dungeons2:food/uncommon",
+                    "name": "dungeons2:loot_tables/dungeons2/food/uncommon",
                     "weight": 1
                 }				
 			]
@@ -122,7 +122,7 @@
 			"entries": [
 	            {
                     "type": "loot_table",
-                    "name": "dungeons2:tools/uncommon",
+                    "name": "dungeons2:loot_tables/dungeons2/tools/uncommon",
                     "weight": 1
                 }				
 			]
@@ -136,7 +136,7 @@
 			"entries": [
 		            {
                     "type": "loot_table",
-                    "name": "dungeons2:potions/uncommon",
+                    "name": "dungeons2:loot_tables/dungeons2/potions/uncommon",
                     "weight": 1
                 }			
 			]
