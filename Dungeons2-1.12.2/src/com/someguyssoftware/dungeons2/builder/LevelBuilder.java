@@ -40,6 +40,7 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.positional.Intersect;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.sun.jna.platform.win32.WinBase.STARTUPINFO;
 
 import io.github.jdiemke.triangulation.DelaunayTriangulator;
 import io.github.jdiemke.triangulation.NotEnoughPointsException;
@@ -1301,7 +1302,7 @@ public class LevelBuilder {
 //			}
 		}
 		return paths;
-	}
+	}	
 	
 	/**
 	 * 
@@ -1319,6 +1320,7 @@ public class LevelBuilder {
 		ICoords startCoords = null;
 		boolean isElbowJoint = false;
 		
+		// TODO this all could be moved to a single method that takes alignment as a param
 		// HORIZONTAL (WEST <--> EAST)
 		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
 			// determine which point is the "start point" - having the smallest coords
@@ -1331,6 +1333,9 @@ public class LevelBuilder {
 				endPoint = wayline.getPoint1();
 			}
 
+			// TODO at this point we know the start/end point, so we could lookup the rooms already
+			// then detemine the width of the hall etc
+			
 			// determine if this is a "elbow joint" wayline
 			if (!startPoint.isTerminated() || !endPoint.isTerminated()) {
 				isElbowJoint = true;
@@ -1396,22 +1401,48 @@ public class LevelBuilder {
 			startCoords = startCoords.add(-1, 0, 0);
 		}
 		
+		////////////////////
+		Waypoint[] points = wayline.getAlignedPoints();
+		boolean isSegment = wayline.isSegment();
+		////////////////////
+		
 		// get the rooms referenced by the waypoints
 		Room room1 = rooms.get(startPoint.getId());
 		Room room2 = rooms.get(endPoint.getId());
 		
 		/////////////////////
-		// TODO
-		/////////////////////
-		// at this point we can test the positioning of the hallway against the room to determine if the hallway can be greater than 3 blocks wide.
-		// need to have separate branches for horz and vert
-		//
+		int hall1MaxSize = getHallwayMaximumSize(points[Wayline.START_POINT_INDEX], room1, wayline.getAlignment());
+		int hall2MaxSize = getHallwayMaximumSize(points[Wayline.END_POINT_INDEX], room2, wayline.getAlignment());
+		int maxSize = Math.min(hall1MaxSize, hall2MaxSize);
+		Dungeons2.log.debug("room1 d-> {}, w-> {}, startpoint -> {}, alignment -> {}, >> hallMaxSize -> {}",
+				room1.getDepth(), room1.getWidth(), points[Wayline.START_POINT_INDEX], wayline.getAlignment(), hall1MaxSize);
+		Dungeons2.log.debug("room2 d-> {}, w-> {}, startpoint -> {}, alignment -> {}, >> hallMaxSize -> {}",
+				room2.getDepth(), room2.getWidth(), points[Wayline.END_POINT_INDEX], wayline.getAlignment(), hall1MaxSize);
+		// randomly select a size
+		if (maxSize > 3) {
+			maxSize = RandomHelper.randomInt(3, maxSize);
+			if (maxSize % 2 ==0) maxSize++;
+		}
+		Dungeons2.log.debug("randomly selected width -> {}", maxSize);
+		
+		// set the dimensions
+		int width2, depth2, height2 = 0;
 		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
-			
+			width2 = Math.abs(startPoint.getX() - endPoint.getX()) + 1;
+			depth2 = maxSize;
 		}
 		else {
-			
+			width2 = maxSize;
+			depth2 = Math.abs(startPoint.getZ( ) - endPoint.getZ()) + 1;
 		}
+		height2 = Math.min(room1.getMaxY(), room2.getMaxY()) - room1.getMinY();
+		Dungeons2.log.debug("hall dims: w -> {}, d -> {}, h -> {}", width2, depth2, height2);
+		// NOTE don't need to take the min/max of the subtraction because all rooms on the same level have the same minY.
+				
+		points = getJointAdjusted(points, wayline.getAlignment(), maxSize);
+//		points = getCenterAdjusted(points, wayline.getAlignment());
+		/////////////////////
+		
 		
 		 // the start/end points y-vlaue isn't set, so update them.
 		startPoint.setCoords(startPoint.getCoords().resetY(room1.getCoords().getY()));
@@ -1451,6 +1482,124 @@ public class LevelBuilder {
 		// can't here as it is needs to process the entire wayline first, then produces the hallway
 		return hallway;
 	}
+
+//	private int getHallwaySize(Waypoint[] points, Alignment alignment, Room room1, Room room2) {
+	private int getHallwayMaximumSize(Waypoint point, Room room, Alignment alignment) { 		
+		int size = 3;
+		/////////////////////
+		// TODO
+		/////////////////////
+		// at this point we can test the positioning of the hallway against the room to determine if the hallway can be greater than 3 blocks wide.
+		// need to have separate branches for horz and vert
+		//
+		// TODO get the smaller of the rooms
+//		Room room = null;
+		int size1, size2 = 0;
+		int offset1, offset2 = 0;
+		if (alignment == Alignment.HORIZONTAL) {
+//			if (points[Wayline.START_POINT_INDEX].isTerminated()) {
+			if (point.isTerminated()) {
+				size1 = room.getDepth();
+				offset1 = Math.abs(room.getCenter().getZ() - /*points[Wayline.START_POINT_INDEX]*/point.getZ());
+			}
+			else {
+				size1 = room.getWidth();
+				offset1 = Math.abs(room.getCenter().getX() - /*points[Wayline.START_POINT_INDEX]*/point.getX());
+			}
+//			if (points[Wayline.END_POINT_INDEX].isTerminated()) {
+//				size2 = room2.getDepth();
+//				offset2 = Math.abs(room2.getCenter().getZ() - points[Wayline.START_POINT_INDEX].getZ());
+//			}
+//			else {
+//				size2 = room2.getWidth();
+//				offset2 = Math.abs(room2.getCenter().getX() - points[Wayline.START_POINT_INDEX].getX());
+//			}			
+//			size1 = (points[Wayline.START_POINT_INDEX].isTerminated()) ? room1.getDepth() : room1.getWidth();
+//			size2 = (points[Wayline.END_POINT_INDEX].isTerminated()) ? room2.getDepth() : room2.getWidth();
+		}
+		else {
+//			if (points[Wayline.START_POINT_INDEX].isTerminated()) {
+			if (point.isTerminated()) {
+				size1 = room.getWidth();
+				offset1 = Math.abs(room.getCenter().getX() - /*points[Wayline.START_POINT_INDEX]*/point.getX());
+			}
+			else {
+				size1 = room.getDepth();
+				offset1 = Math.abs(room.getCenter().getZ() - /*points[Wayline.START_POINT_INDEX]*/point.getZ());
+			}
+//			if (points[Wayline.END_POINT_INDEX].isTerminated()) {
+//				size2 = room2.getWidth();
+//				offset2 = Math.abs(room2.getCenter().getX() - points[Wayline.START_POINT_INDEX].getX());
+//			}
+//			else {
+//				size2 = room2.getDepth();
+//				offset2 = Math.abs(room2.getCenter().getZ() - points[Wayline.START_POINT_INDEX].getZ());
+//			}	
+//			size1 = (points[Wayline.START_POINT_INDEX].isTerminated()) ? room1.getWidth() : room1.getDepth();			
+//			size2 = (points[Wayline.END_POINT_INDEX].isTerminated()) ? room2.getWidth() : room2.getDepth();
+		}
+		
+		int maxSize = (int) Math.floor(((size1 - offset1) + 1) / 2);
+		maxSize = (maxSize % 2 ==1) ? maxSize++ : maxSize;
+		
+		// calculate the max size for both rooms
+//		size = Math.max(Math.min(size1, size2), 3);
+		
+//		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+//			// get the depth
+//			int d = room.getDepth();
+//			// get how far off-center the hall is from room (in z direction)
+//			int offset = Math.abs(room.getCenter().getZ() - wayline.getPoint1().getZ());
+//			Dungeons2.log.debug("hallgen: room depth -> {}, offset -> {}", d, offset);
+//			// formula = Math.floor((d - offset ) + 1) / 2) + 1 if even
+//			int newd = (int) Math.floor(((d - offset) + 1) / 2);
+//			if (newd %2 ==1) newd++;
+//			Dungeons2.log.debug("hallgen: proposed hall width -> {}", newd);
+//			newd = Math.max(3, newd);
+//			// randomize a new size between 3 and newd
+//			if (newd > 3) {
+//				newd = RandomHelper.randomInt(3, newd);
+//				if (newd %2 ==1) newd++;
+//			}			
+//			// TODO update hall to the correct offset so the center is still aligned
+//			
+//			// TODO update the start/end point to "complete" the L-join
+//			
+//		}
+//		else {
+//			
+//		}
+		return maxSize;
+	}
+
+	/**
+	 * 
+	 * @param points
+	 * @param alignment
+	 * @param width
+	 * @return
+	 */
+	private Waypoint[] getJointAdjusted(Waypoint[] points, Alignment alignment, int width) {
+		Waypoint[] newPoints = new Waypoint[2];
+		if (alignment == Alignment.HORIZONTAL) {
+			if (!points[Wayline.START_POINT_INDEX].isTerminated()) {
+				newPoints[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().add(0, 0, -1));
+			}				
+			if (!points[Wayline.END_POINT_INDEX].isTerminated()) {
+				newPoints[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().add(0, 0, 1));
+			}
+		}
+		else {
+			if (!points[Wayline.START_POINT_INDEX].isTerminated()) {
+				newPoints[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().add(0, 0, -1));
+			}				
+			if (!points[Wayline.END_POINT_INDEX].isTerminated()) {
+				newPoints[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().add(0, 0, 1));
+			}
+		}
+		return newPoints;
+	}
+	
 
 	/**
 	 * Determines which side/direction the door is on.

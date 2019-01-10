@@ -17,15 +17,15 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
  * @author Mark Gottschling on Dec 25, 2018
  *
  */
-public class Room implements IRoom {
+public class Room extends AbstractSpace implements IRoom {
 
 	private int id;
 	private String name;
-	private ICoords coords;
+//	private ICoords coords;
 
-	private int depth;
-	private int width;
-	private int height;
+//	private int depth;
+//	private int width;
+//	private int height;
 	
 	private Direction direction;	
 	List<RoomTag> tags;
@@ -38,7 +38,7 @@ public class Room implements IRoom {
 	/*
 	 * 
 	 */
-	private List<IExit> exits;
+//	private List<IExit> exits;
 	
 	/**
 	 * 
@@ -110,73 +110,88 @@ public class Room implements IRoom {
 		return this;
 	}
 
+	/**
+	 * Convenience method
+	 * @param width
+	 * @param height
+	 * @param depth
+	 * @return
+	 */
+	@Override
+	public IRoom setDimensions(int width, int height, int depth) {
+		setWidth(width);
+		setHeight(height);
+		setDepth(depth);
+		return this;
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getCoords()
 	 */
-	@Override
-	public ICoords getCoords() {
-		return coords;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setCoords(com.someguyssoftware.gottschcore.positional.ICoords)
-	 */
-	@Override
-	public IRoom setCoords(ICoords coords) {
-		this.coords = coords;
-		return this;
-	}
+//	@Override
+//	public ICoords getCoords() {
+//		return coords;
+//	}
+//
+//	/* (non-Javadoc)
+//	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setCoords(com.someguyssoftware.gottschcore.positional.ICoords)
+//	 */
+//	@Override
+//	public IRoom setCoords(ICoords coords) {
+//		this.coords = coords;
+//		return this;
+//	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getDepth()
 	 */
-	@Override
-	public int getDepth() {
-		return depth;
-	}
+//	@Override
+//	public int getDepth() {
+//		return depth;
+//	}
+//
+//	/* (non-Javadoc)
+//	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setDepth(int)
+//	 */
+//	@Override
+//	public IRoom setDepth(int depth) {
+//		this.depth = depth;
+//		return this;
+//	}
+//
+//	/* (non-Javadoc)
+//	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getWidth()
+//	 */
+//	@Override
+//	public int getWidth() {
+//		return width;
+//	}
+//
+//	/* (non-Javadoc)
+//	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setWidth(int)
+//	 */
+//	@Override
+//	public IRoom setWidth(int width) {
+//		this.width = width;
+//		return this;
+//	}
 
-	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setDepth(int)
-	 */
-	@Override
-	public IRoom setDepth(int depth) {
-		this.depth = depth;
-		return this;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getWidth()
-	 */
-	@Override
-	public int getWidth() {
-		return width;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setWidth(int)
-	 */
-	@Override
-	public IRoom setWidth(int width) {
-		this.width = width;
-		return this;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getHeight()
-	 */
-	@Override
-	public int getHeight() {
-		return height;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setHeight(int)
-	 */
-	@Override
-	public IRoom setHeight(int height) {
-		this.height = height;
-		return this;
-	}
+//	/* (non-Javadoc)
+//	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getHeight()
+//	 */
+//	@Override
+//	public int getHeight() {
+//		return height;
+//	}
+//
+//	/* (non-Javadoc)
+//	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#setHeight(int)
+//	 */
+//	@Override
+//	public IRoom setHeight(int height) {
+//		this.height = height;
+//		return this;
+//	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.model.ISpace#getDirection()

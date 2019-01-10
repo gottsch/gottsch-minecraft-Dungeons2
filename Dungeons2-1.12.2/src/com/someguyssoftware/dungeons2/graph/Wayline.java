@@ -11,6 +11,9 @@ import com.someguyssoftware.gottschcore.enums.Alignment;
  * @version 2.0
  */
 public class Wayline {
+	public static final int START_POINT_INDEX = 0;
+	public static final int END_POINT_INDEX = 1;
+	
 	private Waypoint point1;
 	private Waypoint point2;
 	private Alignment alignment;
@@ -125,5 +128,47 @@ public class Wayline {
 	 */
 	public void setWayline(Wayline wayline) {
 		this.wayline = wayline;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public Waypoint[] getAlignedPoints() {
+		Waypoint[] points = new Waypoint[2];
+		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+			// determine which point is the "start point" - having the smallest coords
+			if (wayline.getPoint1().getX() < wayline.getPoint2().getX()) {
+				points[START_POINT_INDEX] = wayline.getPoint1();
+				points[END_POINT_INDEX] = wayline.getPoint2();
+			}
+			else {
+				points[START_POINT_INDEX] = wayline.getPoint2();
+				points[END_POINT_INDEX] = wayline.getPoint1();
+			}
+		}
+		else {
+			if (wayline.getPoint1().getZ() < wayline.getPoint2().getZ()) {
+				points[START_POINT_INDEX] = wayline.getPoint1();
+				points[END_POINT_INDEX] = wayline.getPoint2();
+			}
+			else {
+				points[START_POINT_INDEX] = wayline.getPoint2();
+				points[END_POINT_INDEX] = wayline.getPoint1();
+			}			
+		}
+		return points;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isSegment() {
+		// determine if this is a "elbow joint" wayline
+		if (!getPoint1().isTerminated() || !getPoint2().isTerminated()) {
+			return true;
+		}
+		return false;
 	}
 }

@@ -15,7 +15,7 @@ import com.someguyssoftware.gottschcore.positional.Intersect;
  * @author Mark Gottschling on Dec 18, 2018
  *
  */
-public interface IRoom {
+public interface IRoom extends ISpace {
 	public static final int MIN_DEPTH = 5;
 	public static final int MIN_WIDTH = 5;
 	public static final int MIN_HEIGHT = 4;
@@ -52,45 +52,45 @@ public interface IRoom {
 	 */
 	IRoom setName(String name);
 	
-	/**
-	 * @return the coords
-	 */
-	ICoords getCoords();
+//	/**
+//	 * @return the coords
+//	 */
+//	ICoords getCoords();
+//
+//	/**
+//	 * @param coords the coords to set
+//	 */
+//	IRoom setCoords(ICoords coords);	
 
-	/**
-	 * @param coords the coords to set
-	 */
-	IRoom setCoords(ICoords coords);	
-
-	/**
-	 * @return the depth
-	 */
-	int getDepth();
-
-	/**
-	 * @param depth the depth to set
-	 */
-	IRoom setDepth(int depth);
-
-	/**
-	 * @return the width
-	 */
-	int getWidth();
-
-	/**
-	 * @param width the width to set
-	 */
-	IRoom setWidth(int width);
-
-	/**
-	 * @return the height
-	 */
-	int getHeight();
-
-	/**
-	 * @param height the height to set
-	 */
-	IRoom setHeight(int height);
+//	/**
+//	 * @return the depth
+//	 */
+//	int getDepth();
+//
+//	/**
+//	 * @param depth the depth to set
+//	 */
+//	IRoom setDepth(int depth);
+//
+//	/**
+//	 * @return the width
+//	 */
+//	int getWidth();
+//
+//	/**
+//	 * @param width the width to set
+//	 */
+//	IRoom setWidth(int width);
+//
+//	/**
+//	 * @return the height
+//	 */
+//	int getHeight();
+//
+//	/**
+//	 * @param height the height to set
+//	 */
+//	IRoom setHeight(int height);
 
 	/**
 	 * @return the direction
@@ -302,4 +302,6 @@ public interface IRoom {
 	List<RoomTag> getTags();
 
 	void setTags(List<RoomTag> tags);
+
+	IRoom setDimensions(int width, int height, int depth);
 }

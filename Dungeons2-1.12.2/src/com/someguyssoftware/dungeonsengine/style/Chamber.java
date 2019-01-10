@@ -4,28 +4,34 @@
 package com.someguyssoftware.dungeonsengine.style;
 
 import com.someguyssoftware.dungeonsengine.model.IRoom;
+import com.someguyssoftware.dungeonsengine.model.ISpace;
 
 /**
  * @author Mark Gottschling on Jan 9, 2019
  *
  */
 public class Chamber {
-	private IRoom model;
+	private ISpace space;
 	
 	/**
 	 * 
-	 * @param model
+	 * @param space
 	 */
-	public Chamber(IRoom model) {
-		setModel(model);
+	public Chamber(ISpace space) {
+		setSpace(space);
 	}
 
-	public IRoom getModel() {
-		return model;
+	public ISpace getSpace() {
+		return space;
 	}
 
-	public void setModel(IRoom model) {
-		this.model = model;
+	private void setSpace(ISpace space) {
+		this.space = space;
+	}
+	
+	// TODO needed?
+	public IRoom getRoom() {
+		return (IRoom) getSpace();
 	}
 	
 }
