@@ -3,6 +3,7 @@
  */
 package com.someguyssoftware.dungeons2.graph;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 
 /**
@@ -92,12 +93,10 @@ public class Wayline {
 		this.point2 = point2;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
-		return "Wayline [point1=" + point1 + ", point2=" + point2 + "]";
+		return "Wayline [point1=" + point1 + ", point2=" + point2 + ", alignment=" + alignment + ", wayline=" + wayline
+				+ "]";
 	}
 
 	/**
@@ -136,25 +135,26 @@ public class Wayline {
 	 */
 	public Waypoint[] getAlignedPoints() {
 		Waypoint[] points = new Waypoint[2];
-		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+		Dungeons2.log.debug("wayline -> {}", this); 
+		if (this.getAlignment() == Alignment.HORIZONTAL) {
 			// determine which point is the "start point" - having the smallest coords
-			if (wayline.getPoint1().getX() < wayline.getPoint2().getX()) {
-				points[START_POINT_INDEX] = wayline.getPoint1();
-				points[END_POINT_INDEX] = wayline.getPoint2();
+			if (this.getPoint1().getX() < this.getPoint2().getX()) {
+				points[START_POINT_INDEX] = this.getPoint1();
+				points[END_POINT_INDEX] = this.getPoint2();
 			}
 			else {
-				points[START_POINT_INDEX] = wayline.getPoint2();
-				points[END_POINT_INDEX] = wayline.getPoint1();
+				points[START_POINT_INDEX] = this.getPoint2();
+				points[END_POINT_INDEX] = this.getPoint1();
 			}
 		}
 		else {
-			if (wayline.getPoint1().getZ() < wayline.getPoint2().getZ()) {
-				points[START_POINT_INDEX] = wayline.getPoint1();
-				points[END_POINT_INDEX] = wayline.getPoint2();
+			if (this.getPoint1().getZ() < this.getPoint2().getZ()) {
+				points[START_POINT_INDEX] = this.getPoint1();
+				points[END_POINT_INDEX] = this.getPoint2();
 			}
 			else {
-				points[START_POINT_INDEX] = wayline.getPoint2();
-				points[END_POINT_INDEX] = wayline.getPoint1();
+				points[START_POINT_INDEX] = this.getPoint2();
+				points[END_POINT_INDEX] = this.getPoint1();
 			}			
 		}
 		return points;
