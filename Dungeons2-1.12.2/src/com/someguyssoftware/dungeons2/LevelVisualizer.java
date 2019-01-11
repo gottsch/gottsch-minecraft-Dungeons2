@@ -35,6 +35,8 @@ import com.someguyssoftware.gottschcore.random.RandomHelper;
  * @author Mark Gottschling on Jul 9, 2016
  *
  */
+
+@Deprecated
 public class LevelVisualizer {
 	private static final Logger logger = LogManager.getLogger(LevelVisualizer.class);
 //	DungeonBuilderBottomUp dungeonBuilder = new DungeonBuilderBottomUp();
@@ -96,7 +98,8 @@ public class LevelVisualizer {
 		dConfig.setUseSupport(false);
 		dConfig.setNumberOfLevels(new Quantity(1,1));
 		Level level = null;
-		Dungeon dungeon = test.dungeonBuilder.build(null, random, test.startPoint, dConfig);
+//		Dungeon dungeon = test.dungeonBuilder.build(null, random, test.startPoint, dConfig);
+		Dungeon dungeon = null;
 		if (dungeon == DungeonBuilderTopDown.EMPTY_DUNGEON) {
 			logger.warn("Empty Dungeon");
 			return;

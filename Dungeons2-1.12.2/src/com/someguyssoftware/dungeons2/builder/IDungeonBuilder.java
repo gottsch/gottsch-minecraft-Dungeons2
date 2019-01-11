@@ -30,7 +30,8 @@ public interface IDungeonBuilder {
 	 * @param config
 	 * @return
 	 */
-	Dungeon build(World world, Random rand, ICoords startPoint, DungeonConfig config);
+	//	@Override
+	//	Dungeon build(World world, Random rand, ICoords startPoint, DungeonConfig config);
 
 	/**
 	 * @return the levelBuilder
