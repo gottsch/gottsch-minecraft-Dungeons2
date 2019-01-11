@@ -29,7 +29,7 @@ public class DungeonConfigManager {
 //	public static Table<String, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
 	public static Table<Integer, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
 
-	public static IDungeonConfig defaultConfig;
+	public static IDungeonConfig DEFAULT_CONFIG;
 	
 	/**
 	 * 
@@ -38,7 +38,7 @@ public class DungeonConfigManager {
 		Dungeons2.log.debug("instansiating DungeonConfigManager...");
 		// load the default config
 		try {
-			defaultConfig = DungeonConfigLoader.loadDefault();
+			DEFAULT_CONFIG = DungeonConfigLoader.loadDefault();
 		} catch (Exception e) {
 			Dungeons2.log.error(e);
 			// TODO manually set values ?

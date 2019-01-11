@@ -6,7 +6,7 @@ import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.IRoom;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
-public interface IVoidBuilder {
+public interface IRoomBuilder {
 	
 	public Boundary getBoundary();
 	public void setBoundary(Boundary boundary);
@@ -14,7 +14,7 @@ public interface IVoidBuilder {
 	/*
 	 * build a generic space
 	 */
-	IRoom buildSpace(ICoords startPoint, IRoom spaceIn);
+	IRoom buildRoom(ICoords startPoint, IRoom spaceIn);
 	
 	/*
 	 * build a 'planned' space, using existing spaces to determine where and if it can be placed within the boundary

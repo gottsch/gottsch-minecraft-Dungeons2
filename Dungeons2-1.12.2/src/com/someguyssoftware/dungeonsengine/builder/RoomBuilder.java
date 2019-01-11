@@ -23,10 +23,10 @@ import com.someguyssoftware.gottschcore.random.RandomHelper;
  * @author Mark Gottschling on Sep 22, 2018
  *
  */
-public class VoidBuilder implements IVoidBuilder {
+public class RoomBuilder implements IRoomBuilder {
 	public static Logger logger = LogManager.getLogger("DungeonsEngine");
 	
-	public static final IRoom EMPTY_SPACE = new Room();	
+	public static final IRoom EMPTY_ROOM = new Room();	
 	public static final ICoords EMPTY_COORDS = new Coords(0, 0, 0);
 	
 	private ILevelConfig config;
@@ -37,7 +37,7 @@ public class VoidBuilder implements IVoidBuilder {
 	 * 
 	 * @param boundary
 	 */
-	public VoidBuilder(Random random, Boundary boundary, ILevelConfig config) {
+	public RoomBuilder(Random random, Boundary boundary, ILevelConfig config) {
 		this.random = random;
 		this.config = config;
 		this.boundary = config.getSpawnBoundaryFactor() < 1.0D ? boundary.shrink(config.getSpawnBoundaryFactor()) : boundary;
@@ -58,19 +58,19 @@ public class VoidBuilder implements IVoidBuilder {
 		return space;
 	}
 
-	/**
-	 * 
-	 * @param random
-	 * @param field
-	 * @param config
-	 * @return
-	 */
-	public ICoords randomizeCoords() {
-		int x = RandomHelper.randomInt(random, 0, (int) (boundary.getMaxCoords().getX() - boundary.getMinCoords().getX()));
-//		int y = RandomHelper.randomInt(random, config.getYVariance().getMinInt(), config.getYVariance().getMaxInt());
-		int z = RandomHelper.randomInt(random, 0, (int) (boundary.getMaxCoords().getZ() - boundary.getMinCoords().getZ()));
-		return new Coords((int)boundary.getMinCoords().getX(), 0, (int)boundary.getMinCoords().getZ()).add(x, 0, z);
-	}
+//	/**
+//	 * 
+//	 * @param random
+//	 * @param field
+//	 * @param config
+//	 * @return
+//	 */
+//	public ICoords randomizeCoords() {
+//		int x = RandomHelper.randomInt(random, 0, (int) (boundary.getMaxCoords().getX() - boundary.getMinCoords().getX()));
+////		int y = RandomHelper.randomInt(random, config.getYVariance().getMinInt(), config.getYVariance().getMaxInt());
+//		int z = RandomHelper.randomInt(random, 0, (int) (boundary.getMaxCoords().getZ() - boundary.getMinCoords().getZ()));
+//		return new Coords((int)boundary.getMinCoords().getX(), 0, (int)boundary.getMinCoords().getZ()).add(x, 0, z);
+//	}
 	
 	/**
 	 * 
@@ -84,8 +84,8 @@ public class VoidBuilder implements IVoidBuilder {
 //		Space room = new Space(roomIn);
 		IRoom room = roomIn.copy();
 		// generate a ranom set of coords
-		ICoords c = randomizeCoords();
-		if (c == EMPTY_COORDS) return EMPTY_SPACE;
+		ICoords c = GenUtil.randomizeCoords(this.random, this.boundary);
+		if (c == EMPTY_COORDS) return EMPTY_ROOM;
 		// center room using the random coords
 		room.setCoords(c.add(-(room.getWidth()/2), 0, -(room.getDepth()/2)));
 		return room;
@@ -97,24 +97,24 @@ public class VoidBuilder implements IVoidBuilder {
 	 * @return
 	 */
 	
-	public IRoom buildSpace(ICoords startPoint, IRoom roomIn) {
+	public IRoom buildRoom(ICoords startPoint, IRoom roomIn) {
 		// randomize dimensions
-		IRoom space = randomizeDimensions(roomIn);
-		if (space == EMPTY_SPACE) return space;
+		IRoom room = randomizeDimensions(roomIn);
+		if (room == EMPTY_ROOM) return room;
 		
 		// randomize the coords
-		space = randomizeCoords(space);
-		if (space == EMPTY_SPACE) return space;
+		room = randomizeCoords(room);
+		if (room == EMPTY_ROOM) return room;
 		
 		// set the degrees (number of edges)
-		space.setDegrees(RandomHelper.randomInt(random, 
+		room.setDegrees(RandomHelper.randomInt(random, 
 				config.getDegrees().getMinInt(), 
 				config.getDegrees().getMaxInt()));
 		
 		// randomize a direction
-		space.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+		room.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
 
-		return space;
+		return room;
 	}
 	
 	/* (non-Javadoc)
@@ -202,13 +202,13 @@ public class VoidBuilder implements IVoidBuilder {
 		int endCheckIndex = 0;
 		checkingSpaces:
 		do {
-			predefinedSpace = buildSpace(startPoint, predefinedSpace);
-			if (predefinedSpace == EMPTY_SPACE) return predefinedSpace;
+			predefinedSpace = buildRoom(startPoint, predefinedSpace);
+			if (predefinedSpace == EMPTY_ROOM) return predefinedSpace;
 			logger.debug("New Planned Space:" + predefinedSpace);
 			endCheckIndex++;
 			if (endCheckIndex > 10) {
 				logger.warn("Unable to position Planned Space that meets positional criteria.");
-				return EMPTY_SPACE;
+				return EMPTY_ROOM;
 			}
 			for (IRoom space : predefinedSpaces) {
 				if (space.getXZBoundingBox().intersects(predefinedSpace.getXZBoundingBox())) {

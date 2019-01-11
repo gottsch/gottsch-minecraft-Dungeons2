@@ -99,7 +99,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		Dungeon dungeon = new Dungeon();
 		List<Room> plannedRooms = new ArrayList<>();
 		ILevelConfig defaultLevelConfig = config.getLevelConfigs()[0]
-				.apply(DungeonConfigManager.defaultConfig.getLevelConfigs()[0]);
+				.apply(DungeonConfigManager.DEFAULT_CONFIG.getLevelConfigs()[0]);
 
 		this.config = config;
 		
@@ -249,7 +249,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		 */
 		int numberOfLevels = RandomHelper.randomInt(rand, (int)config.getNumLevels().getMin(), (int)config.getNumLevels().getMax());
 		Dungeons2.log.debug("number of levels:" + numberOfLevels);
-		ILevelConfig prevLevelConfig = DungeonConfigManager.defaultConfig.getLevelConfigs()[0];
+		ILevelConfig prevLevelConfig = DungeonConfigManager.DEFAULT_CONFIG.getLevelConfigs()[0];
 		ILevelConfig levelConfig = null;
 		// for every n in numLevels
 		for (int levelIndex = 0; levelIndex < numberOfLevels; levelIndex++) {

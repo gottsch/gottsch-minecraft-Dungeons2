@@ -26,9 +26,9 @@ public interface ILevelBuilder {
 	
 //	void setConfig(LevelConfig config);
 
-	IVoidBuilder getVoidBuilder();
-//	void setVoidBuilder(IVoidBuilder builder);
-	ILevelBuilder with(IVoidBuilder builder);
+	IRoomBuilder getVoidBuilder();
+//	void setVoidBuilder(IRoomBuilder builder);
+	ILevelBuilder with(IRoomBuilder builder);
 	
 	List<IRoom> getPlannedVoids();
 	

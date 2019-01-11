@@ -31,7 +31,7 @@ public class LevelBuilder implements ILevelBuilder {
 	 */
 //	public static final ILevel EMPTY_LEVEL = new Level();
 
-	public static final List<IRoom> EMPTY_VOIDS = new ArrayList<>(1);
+	public static final List<IRoom> EMPTY_ROOMS = new ArrayList<>(1);
 
 //	public static final List<Wayline> EMPTY_WAYLINES = new ArrayList<>(1);
 
@@ -49,7 +49,7 @@ public class LevelBuilder implements ILevelBuilder {
 	 */
 	private ICoords startPoint;
 	
-	private IVoidBuilder voidBuilder;
+	private IRoomBuilder roomBuilder;
 	private List<IRoom> plannedVoids;
 	
 	/*
@@ -64,14 +64,33 @@ public class LevelBuilder implements ILevelBuilder {
 	
 	/**
 	 * 
+	 * @param world
 	 */
-	public LevelBuilder(World world, Random random, Boundary boundary, ICoords startPoint, ILevelConfig config) {
+	public LevelBuilder(World world) {
+		this.world = world;
+		this.random = new Random();
+	}
+	
+	/**
+	 * 
+	 * @param world
+	 * @param random
+	 */
+	public LevelBuilder(World world, Random random) {
 		this.world = world;
 		this.random = random;
-		this.boundary = boundary;
-		this.startPoint = startPoint;
-		this.config = config;
 	}
+	
+	/**
+	 * 
+	 */
+//	public LevelBuilder(World world, Random random, Boundary boundary, ICoords startPoint, ILevelConfig config) {
+//		this.world = world;
+//		this.random = random;
+//		this.boundary = boundary;
+//		this.startPoint = startPoint;
+//		this.config = config;
+//	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#build()
@@ -117,16 +136,16 @@ public class LevelBuilder implements ILevelBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#getSpaceBuilder()
 	 */
 	@Override
-	public IVoidBuilder getVoidBuilder() {
-		return this.voidBuilder;
+	public IRoomBuilder getVoidBuilder() {
+		return this.roomBuilder;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#setSpaceBuilder(com.someguyssoftware.dungeonsengine.builder.ISpaceBuilder)
 	 */
 	@Override
-	public ILevelBuilder with(IVoidBuilder builder) {
-		if (builder != null) this.voidBuilder = builder;
+	public ILevelBuilder with(IRoomBuilder builder) {
+		if (builder != null) this.roomBuilder = builder;
 		return this;
 	}
 
