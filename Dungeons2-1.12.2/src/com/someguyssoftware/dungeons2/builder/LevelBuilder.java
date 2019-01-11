@@ -1193,6 +1193,10 @@ public class LevelBuilder {
 	 */
 	private void addDoorsToRoom(Hallway hallway) {
 		for (Door d : hallway.getDoors()) {
+			if (d.getCoords() == null ) Dungeons2.log.debug("door.c is null");
+			if (d.getRoom() == null ) Dungeons2.log.debug("door.room is null");
+			if (d.getHallway() == null ) Dungeons2.log.debug("door.hallway is null");
+			if (d.getDirection() == null ) Dungeons2.log.debug("door.direction is null");
 			// create a new door instance and flip the direction
 			Door door = new Door(d.getCoords(), d.getRoom(), d.getHallway(), d.getDirection().rotate(Rotate.ROTATE_180));
 			d.getRoom().getDoors().add(door);
@@ -1317,6 +1321,9 @@ public class LevelBuilder {
 		int width = 3;
 		int depth = 3;
 		
+		int width2 = 3, depth2 = 3;
+		int height2 = 4;
+		
 		// work with temp way points
 		Waypoint startPoint = null;
 		Waypoint endPoint = null;
@@ -1404,16 +1411,18 @@ public class LevelBuilder {
 			startCoords = startCoords.add(-1, 0, 0);
 		}
 		
+		// get the rooms referenced by the waypoints
+//		Room room1 = rooms.get(startPoint.getId());
+//		Room room2 = rooms.get(endPoint.getId());
+		
 		////////////////////
 		Waypoint[] points = wayline.getAlignedPoints();
-		boolean isSegment = wayline.isSegment();
-		////////////////////
+//		boolean isSegment = wayline.isSegment();
 		
-		// get the rooms referenced by the waypoints
-		Room room1 = rooms.get(startPoint.getId());
-		Room room2 = rooms.get(endPoint.getId());
+		// get the room referenced by the waypoints
+		Room room1 = rooms.get(points[Wayline.START_POINT_INDEX].getId());
+		Room room2 = rooms.get(points[Wayline.END_POINT_INDEX].getId());
 		
-		/////////////////////
 		int hall1MaxSize = getHallwayMaximumSize(points[Wayline.START_POINT_INDEX], room1, wayline.getAlignment());
 		int hall2MaxSize = getHallwayMaximumSize(points[Wayline.END_POINT_INDEX], room2, wayline.getAlignment());
 		int maxSize = Math.min(hall1MaxSize, hall2MaxSize);
@@ -1430,23 +1439,29 @@ public class LevelBuilder {
 		Dungeons2.log.debug("randomly selected maxSize -> {}", maxSize);
 		
 		// set the dimensions
-		int width2, depth2, height2 = 0;
-		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
-			width2 = Math.abs(startPoint.getX() - endPoint.getX()) + 1;
-			depth2 = Math.max(3, maxSize);
+		if (!wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
+			if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+				width2 = Math.abs(startPoint.getX() - endPoint.getX()) + 1;
+				depth2 = Math.max(3, maxSize);
+			}
+			else {
+				width2 = Math.max(3, maxSize);
+				depth2 = Math.abs(startPoint.getZ( ) - endPoint.getZ()) + 1;
+			}
+			height2 = Math.min(room1.getMaxY(), room2.getMaxY()) - room1.getMinY();
+			Dungeons2.log.debug("hall dims: w -> {}, d -> {}, h -> {}", width2, depth2, height2);
 		}
-		else {
-			width2 = Math.max(3, maxSize);
-			depth2 = Math.abs(startPoint.getZ( ) - endPoint.getZ()) + 1;
-		}
-		height2 = Math.min(room1.getMaxY(), room2.getMaxY()) - room1.getMinY();
-		Dungeons2.log.debug("hall dims: w -> {}, d -> {}, h -> {}", width2, depth2, height2);
 		// NOTE don't need to take the min/max of the subtraction because all rooms on the same level have the same minY.
 				
 		points = getJointAdjusted(points, wayline.getAlignment(), maxSize);
-//		points = getCenterAdjusted(points, wayline.getAlignment());
+		Dungeons2.log.debug("joint adjusted p1-> {}, p2-> {}", points[0], points[1]);
+		points = getCenterAdjusted(points, wayline.getAlignment(), maxSize);
+		Dungeons2.log.debug("center adjusted p1-> {}, p2-> {}", points[0], points[1]);
 		/////////////////////
 		
+		// TODO make this better
+		points[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().resetY(room1.getCoords().getY()));
+		points[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().resetY(room2.getCoords().getY()));
 		
 		 // the start/end points y-vlaue isn't set, so update them.
 		startPoint.setCoords(startPoint.getCoords().resetY(room1.getCoords().getY()));
@@ -1463,25 +1478,35 @@ public class LevelBuilder {
 		// create a temp room out of the dimensions
 		Hallway hallway = (Hallway) new Hallway().setCoords(
 				new Coords(
-						startCoords.getX(),
-						startPoint.getCoords().getY(),
-						startCoords.getZ()))
-				.setWidth(width)
-				.setDepth(depth)
-				.setHeight(height)
+						points[Wayline.START_POINT_INDEX].getCoords().getX(),
+						points[Wayline.START_POINT_INDEX].getCoords().getY(),
+						points[Wayline.START_POINT_INDEX].getCoords().getZ()))
+//						startCoords.getX(),
+//						startPoint.getCoords().getY(),
+//						startCoords.getZ()))
+				.setWidth(width2)
+				.setDepth(depth2)
+				.setHeight(height2)
 				.setType(Type.HALLWAY);
 		// update the alignment (Hallway specific property)
 		hallway.setAlignment(wayline.getAlignment());
-		
+		Dungeons2.log.debug("wp1 -> {}", points[Wayline.START_POINT_INDEX]);
+		Dungeons2.log.debug("wp2 -> {}", points[Wayline.END_POINT_INDEX]);
+		Dungeons2.log.debug("hallway -> {}", hallway);
 		// store the start/end point as doorCoords iff they are terminated.
-		if (startPoint.isTerminated()) {
+//		if (startPoint.isTerminated()) {
+		if (points[Wayline.START_POINT_INDEX].isTerminated()) {
 			Direction d = calculateDirection(hallway, startPoint.getCoords(), room1);
+			Dungeons2.log.debug("hallway direction -> {}", d);
 			hallway.getDoors().add(new Door(startPoint.getCoords(), room1, hallway, d));
 		}
-		if (endPoint.isTerminated()) {
+//		if (endPoint.isTerminated()) {
+		if (points[Wayline.END_POINT_INDEX].isTerminated()) {
 			Direction d = calculateDirection(hallway, endPoint.getCoords(), room2);
+			Dungeons2.log.debug("hallway direction -> {}", d);
 			hallway.getDoors().add(new Door(endPoint.getCoords(), room2, hallway, d));
 		}
+		
 		// TODO else { add and set Hallway property. ie this is an elbow join, and this hallway points to another hallway)
 		// can't here as it is needs to process the entire wayline first, then produces the hallway
 		return hallway;
@@ -1489,15 +1514,6 @@ public class LevelBuilder {
 
 //	private int getHallwaySize(Waypoint[] points, Alignment alignment, Room room1, Room room2) {
 	private int getHallwayMaximumSize(Waypoint point, Room room, Alignment alignment) { 		
-		int size = 3;
-		/////////////////////
-		// TODO
-		/////////////////////
-		// at this point we can test the positioning of the hallway against the room to determine if the hallway can be greater than 3 blocks wide.
-		// need to have separate branches for horz and vert
-		//
-		// TODO get the smaller of the rooms
-//		Room room = null;
 		int size1 =0;
 		int offset1 = 0;
 		if (alignment == Alignment.HORIZONTAL) {
@@ -1544,35 +1560,8 @@ public class LevelBuilder {
 		}
 		Dungeons2.log.debug("hall offset -> {}", offset1);
 		int maxSize = (int) Math.floor(((size1 - offset1) + 1) / 2);
-		maxSize = (maxSize % 2 == 0) ? maxSize++ : maxSize;
-		
-		// calculate the max size for both rooms
-//		size = Math.max(Math.min(size1, size2), 3);
-		
-//		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
-//			// get the depth
-//			int d = room.getDepth();
-//			// get how far off-center the hall is from room (in z direction)
-//			int offset = Math.abs(room.getCenter().getZ() - wayline.getPoint1().getZ());
-//			Dungeons2.log.debug("hallgen: room depth -> {}, offset -> {}", d, offset);
-//			// formula = Math.floor((d - offset ) + 1) / 2) + 1 if even
-//			int newd = (int) Math.floor(((d - offset) + 1) / 2);
-//			if (newd %2 ==1) newd++;
-//			Dungeons2.log.debug("hallgen: proposed hall width -> {}", newd);
-//			newd = Math.max(3, newd);
-//			// randomize a new size between 3 and newd
-//			if (newd > 3) {
-//				newd = RandomHelper.randomInt(3, newd);
-//				if (newd %2 ==1) newd++;
-//			}			
-//			// TODO update hall to the correct offset so the center is still aligned
-//			
-//			// TODO update the start/end point to "complete" the L-join
-//			
-//		}
-//		else {
-//			
-//		}
+		maxSize = (maxSize % 2 == 0) ? maxSize+1 : maxSize;
+
 		return maxSize;
 	}
 
@@ -1584,7 +1573,7 @@ public class LevelBuilder {
 	 * @return
 	 */
 	private Waypoint[] getJointAdjusted(Waypoint[] points, Alignment alignment, int width) {
-		Waypoint[] newPoints = new Waypoint[2];
+		Waypoint[] newPoints = points;
 		if (alignment == Alignment.HORIZONTAL) {
 			if (!points[Wayline.START_POINT_INDEX].isTerminated()) {
 				Waypoint p = points[Wayline.START_POINT_INDEX];
@@ -1612,6 +1601,24 @@ public class LevelBuilder {
 		return newPoints;
 	}
 	
+	/**
+	 *  centers the hallway.
+	 *  this is to maintain the actual hallway (air part) to still be along the wayline,
+	 *  since the hallway is 3 wide (2 walls and 1 air)
+	 */
+	private Waypoint[] getCenterAdjusted(Waypoint[] points, Alignment alignment, int width) {
+		int size = (int)Math.floor(width/2);
+		if (alignment == Alignment.HORIZONTAL) {
+			points[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().add(0, 0, -size));
+			points[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().add(0, 0, -size));
+		}
+		else {
+		// left-shift by one since horiztonal hallways are 3 depth
+			points[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().add(-size, 0, 0));
+			points[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().add(-size, 0, 0));
+		}		
+		return points;
+	}
 
 	/**
 	 * Determines which side/direction the door is on.

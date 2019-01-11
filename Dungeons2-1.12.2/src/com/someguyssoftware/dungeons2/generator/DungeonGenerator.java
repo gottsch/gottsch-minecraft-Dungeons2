@@ -125,7 +125,8 @@ public class DungeonGenerator {
 		IRoomDecorator roomDecorator = new RoomDecorator(new StandardLootLoader(), spawnSheet);
 //		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
 		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(new BossLootLoader());
-		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
+//		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
+		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(new StandardLootLoader(), spawnSheet);
 		
 		/*
 		 *  NOTE careful here. IRoomGenerator can alter the state of the IGenerationStrategy with a

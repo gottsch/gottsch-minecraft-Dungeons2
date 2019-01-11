@@ -95,8 +95,7 @@ public class Wayline {
 
 	@Override
 	public String toString() {
-		return "Wayline [point1=" + point1 + ", point2=" + point2 + ", alignment=" + alignment + ", wayline=" + wayline
-				+ "]";
+		return "Wayline [point1=" + point1 + ", point2=" + point2 + ", alignment=" + alignment + "]";
 	}
 
 	/**

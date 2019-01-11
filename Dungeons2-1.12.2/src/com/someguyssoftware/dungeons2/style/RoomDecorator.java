@@ -66,6 +66,7 @@ public class RoomDecorator implements IRoomDecorator {
 	 * 
 	 * @param chestSheet
 	 */
+	@Deprecated
 	public RoomDecorator(ChestSheet chestSheet, SpawnSheet spawnSheet) {
 //		this.chestPopulator = new ChestPopulator(chestSheet);
 		this.spawnerPopulator = new SpawnerPopulator(spawnSheet);
