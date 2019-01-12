@@ -1430,23 +1430,23 @@ public class LevelBuilder {
 				room1.getDepth(), room1.getWidth(), room1.getHeight(), points[Wayline.START_POINT_INDEX], wayline.getAlignment(), hall1MaxSize);
 		Dungeons2.log.debug("room2 d-> {}, w-> {}, height-> {}, \n\tendpoint -> {}, alignment -> {}, >> hallMaxSize -> {}",
 				room2.getDepth(), room2.getWidth(), room2.getHeight(), points[Wayline.END_POINT_INDEX], wayline.getAlignment(), hall2MaxSize);
-		Dungeons2.log.debug("maxSzie before random -> {}", maxSize);
+//		Dungeons2.log.debug("maxSzie before random -> {}", maxSize);
 		// randomly select a size
 		if (maxSize > 3) {
 			maxSize = RandomHelper.randomInt(3, maxSize);
 			if (maxSize % 2 ==0) maxSize++;
 		}
-		Dungeons2.log.debug("randomly selected maxSize -> {}", maxSize);
+//		Dungeons2.log.debug("randomly selected maxSize -> {}", maxSize);
 		
 		// set the dimensions
 		if (!wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
 			if (wayline.getAlignment() == Alignment.HORIZONTAL) {
-				width2 = Math.abs(startPoint.getX() - endPoint.getX()) + 1;
+				width2 = Math.abs(points[0].getX() - points[1].getX()) + 1;
 				depth2 = Math.max(3, maxSize);
 			}
 			else {
 				width2 = Math.max(3, maxSize);
-				depth2 = Math.abs(startPoint.getZ( ) - endPoint.getZ()) + 1;
+				depth2 = Math.abs(points[0].getZ( ) - points[1].getZ()) + 1;
 			}
 			height2 = Math.min(room1.getMaxY(), room2.getMaxY()) - room1.getMinY();
 			Dungeons2.log.debug("hall dims: w -> {}, d -> {}, h -> {}", width2, depth2, height2);
@@ -1492,8 +1492,8 @@ public class LevelBuilder {
 		hallway.setAlignment(wayline.getAlignment());
 		Dungeons2.log.debug("wp1 -> {}", points[Wayline.START_POINT_INDEX]);
 		Dungeons2.log.debug("wp2 -> {}", points[Wayline.END_POINT_INDEX]);
-		Dungeons2.log.debug("room1[{}].coords -> {}", room1.getId(), room1.getCoords());
-		Dungeons2.log.debug("room2[{}].coords -> {}", room2.getId(), room2.getCoords());
+		Dungeons2.log.debug("room1 -> {}", room1);
+		Dungeons2.log.debug("room2 -> {}", room2);
 		// store the start/end point as doorCoords iff they are terminated.
 //		if (startPoint.isTerminated()) {
 		if (points[Wayline.START_POINT_INDEX].isTerminated()) {
