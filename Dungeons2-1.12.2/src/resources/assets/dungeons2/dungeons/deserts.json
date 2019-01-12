@@ -40,7 +40,7 @@
 		},
 		{
 			"boundaryFactor": 1.0,
-			"spawnBoundaryFactor": 0.5,
+			"spawnBoundaryFactor": 0.3,
 			"numRooms": {
 				"min":	6,
 				"max": 15

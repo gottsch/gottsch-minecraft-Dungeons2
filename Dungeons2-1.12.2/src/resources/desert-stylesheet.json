@@ -29,55 +29,50 @@
 				"minecraft:air@0"
 			]
 		},
-		"default-pilaster-base": {
-			"block": "minecraft:stonebrick@0",
+		"desert-default-pilaster-base": {
+			"block": "minecraft:sandstone@3",
 			"category": "default",
 			"decay": 5.0,
 			"decayBlocks": [
-				"minecraft:stonebrick@1",
+				"minecraft:sandstone@0",
 				"minecraft:air@0"
 			]
 		},
-		"default-plinth": {
-			"block": "minecraft:stone_brick_stairs@0",
+		"desert-default-plinth": {
+			"block": "minecraft:sandstone_stairs@3",
 			"category": "default",
 			"decay": 15.0,
 			"decayBlocks": [
-				"minecraft:stone_brick_stairs@0",
-				"minecraft:stone_brick_stairs@0",
+				"minecraft:sandstone_stairs@3",
 				"minecraft:air@0"
 			]
 		},
-		"default-pilaster-capital": {
-			"block": "minecraft:stonebrick@0",
+		"desert-default-pilaster-capital": {
+			"block": "minecraft:sandstone@3",
 			"category": "default",
 			"decay": 5.0,
 			"decayBlocks": [
-				"minecraft:stonebrick@1",
+				"minecraft:sandstone@0",
 				"minecraft:air@0"
 			]
 		},
-		"default-merlon": {
-			"block": "minecraft:stonebrick@0",
+		"desert-default-merlon": {
+			"block": "minecraft:sandstone@3",
 			"category": "default",
 			"decay": 5.0,
 			"decayBlocks": [
-				"minecraft:stonebrick@1",
-				"minecraft:stonebrick@2",
-				"minecraft:cobblestone@0",
-				"minecraft:gravel@0",
+				"minecraft:sandstone@0",
+				"dungeons2:sandstone_gravel@0",
+				"minecraft:sand@0",
 				"minecraft:air@0"
 			]
 		},
-		"default-coffered-crossbeam": {
-			"block": "dungeons2:coffer_stonebrick@0",
+		"desert-default-coffered-crossbeam": {
+			"block": "dungeons2:coffer_smooth_sandstone@0",
 			"category": "default",
-			"decay": 15.0,
+			"decay": 7.0,
 			"decayBlocks": [
-				"dungeons2:coffer_stonebrick_mossy@0",
-				"dungeons2:coffer_stonebrick_cracked@0",
-				"dungeons2:coffer_cobblestone@0",
-				"dungeons2:coffer_cobblestone_mossy@0",
+				"dungeons2:coffer_sandstone@0",
 				"minecraft:air@0"
 			]
 		},

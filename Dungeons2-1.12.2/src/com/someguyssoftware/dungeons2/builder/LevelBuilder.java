@@ -1635,6 +1635,8 @@ public class LevelBuilder {
 			if (coords.getX() == hw.getMaxX()) {
 				return Direction.EAST;
 			}
+			Dungeons2.log.debug("direction failed on horizontal: coords.x -> {}, hw.minX -> {}, hw.maxX -> {}", coords.getX(),
+					hw.getMinX(), hw.getMaxX());
 		}
 		else {
 			if (coords.getZ() == hw.getMinZ()) {
@@ -1643,6 +1645,8 @@ public class LevelBuilder {
 			if (coords.getZ() == hw.getMaxZ()) {
 				return Direction.SOUTH;
 			}
+			Dungeons2.log.debug("direction failed on vertical: coords.z -> {}, hw.minZ -> {}, hw.maxZ -> {}", coords.getZ(),
+					hw.getMinZ(), hw.getMaxZ());
 		}
 		return null;
 	}
