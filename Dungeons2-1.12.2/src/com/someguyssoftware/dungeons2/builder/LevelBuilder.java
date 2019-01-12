@@ -1492,7 +1492,8 @@ public class LevelBuilder {
 		hallway.setAlignment(wayline.getAlignment());
 		Dungeons2.log.debug("wp1 -> {}", points[Wayline.START_POINT_INDEX]);
 		Dungeons2.log.debug("wp2 -> {}", points[Wayline.END_POINT_INDEX]);
-		Dungeons2.log.debug("hallway -> {}", hallway);
+		Dungeons2.log.debug("room1[{}].coords -> {}", room1.getId(), room1.getCoords());
+		Dungeons2.log.debug("room2[{}].coords -> {}", room2.getId(), room2.getCoords());
 		// store the start/end point as doorCoords iff they are terminated.
 //		if (startPoint.isTerminated()) {
 		if (points[Wayline.START_POINT_INDEX].isTerminated()) {
