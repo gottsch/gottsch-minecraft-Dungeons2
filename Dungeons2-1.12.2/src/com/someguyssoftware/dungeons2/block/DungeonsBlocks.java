@@ -218,6 +218,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	// grate
 	public static Block grateBlock;
 
+	// other
+	public static Block SANDSTONE_GRAVEL;
+	
 	// decorations
 	//	public static Block moss;
 	//	public static Block moss2;
@@ -399,6 +402,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		// grate
 		grateBlock = new GrateBlock(Dungeons2.MODID, ModConfig.grateBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
+		// other
+		SANDSTONE_GRAVEL = new SandstoneGravelBlock(Dungeons2.MODID, ModConfig.SANDSTONE_GRAVEL_BLOCK_ID, Material.ROCK);
+
 		// decorations - moss
 		//	    moss = new DecorationBlock(Material.GRASS, ModConfig.mossBlockId);
 		//	    moss2 = new DecorationBlock(Material.GRASS, ModConfig.moss2BlockId);
@@ -407,6 +413,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		PUDDLE = new DecorationBlock(Dungeons2.MODID, ModConfig.puddleBlockId, Material.GRASS);
 		//	    blood = new DecorationBlock(Material.GRASS, ModConfig.bloodBlockId);
 		//	    mold1 = new DecorationBlock(Material.GRASS, ModConfig.mold1BlockId);
+		
 		
 		/*
 		 *  setup array
@@ -564,9 +571,16 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(WALL_SCONCE_SANDSTONE_FACADE);
 		BLOCKS.add(WALL_SCONCE_SMOOTH_SANDSTONE_FACADE);
 		// grate
-		BLOCKS.add(grateBlock);		
+		BLOCKS.add(grateBlock);
+		// other
+		BLOCKS.add(SANDSTONE_GRAVEL);
 	}
 
+	/**
+	 * 
+	 * @author Mark Gottschling on Jan 13, 2019
+	 *
+	 */
 	@Mod.EventBusSubscriber(modid = Dungeons2.MODID)
 	public static class RegistrationHandler {
 		public static final Set<ItemBlock> ITEM_BLOCKS = new HashSet<>();

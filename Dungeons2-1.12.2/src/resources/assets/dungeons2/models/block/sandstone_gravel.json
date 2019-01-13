@@ -1,0 +1,6 @@
+{
+    "parent": "block/cube_all",
+    "textures": {
+        "all": "Dungeons2:blocks/sandstone_gravel"
+    }
+}
