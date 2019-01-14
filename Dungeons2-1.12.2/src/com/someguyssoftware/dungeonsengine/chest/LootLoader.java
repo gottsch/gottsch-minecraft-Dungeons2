@@ -1,13 +1,12 @@
 /**
  * 
  */
-package com.someguyssoftware.dungeons2.chest;
+package com.someguyssoftware.dungeonsengine.chest;
 
 import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeonsengine.chest.ILootLoader;
 import com.someguyssoftware.dungeonsengine.config.IChestConfig;
 import com.someguyssoftware.dungeonsengine.config.LootTableMethod;
 import com.someguyssoftware.gottschcore.enums.Rarity;
@@ -24,7 +23,7 @@ import net.minecraft.world.World;
  * @author Mark Gottschling on Jan 8, 2019
  *
  */
-public class StandardLootLoader implements ILootLoader {
+public class LootLoader implements ILootLoader {
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.chest.ILootLoader#populate(net.minecraft.inventory.IInventory, com.someguyssoftware.dungeonsengine.config.IChestConfig)
@@ -59,7 +58,7 @@ public class StandardLootLoader implements ILootLoader {
 			if (config != null) {
 				if (config.getLootTableMethod() == LootTableMethod.CUSTOM) {
 					// select a random rarity from the config
-					Rarity rarity = config.getRarity().get(random.nextInt(config.getRarity().size()-1));
+					Rarity rarity = config.getRarity().get(random.nextInt(config.getRarity().size()));
 					List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(rarity);
 					if (lootTables != null) {
 						Dungeons2.log.debug("found loot tables -> {}", lootTables.size());

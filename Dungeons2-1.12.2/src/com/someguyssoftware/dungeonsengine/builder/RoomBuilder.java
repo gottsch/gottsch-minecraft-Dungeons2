@@ -121,63 +121,63 @@ public class RoomBuilder implements IRoomBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ISpaceBuilder#buildStartSpace()
 	 */
 	@Override
-	public IRoom buildStartSpace(ICoords startPoint) {
+	public IRoom buildStartRoom(ICoords startPoint) {
 		/*
 		 * the start of the level
 		 */
-		IRoom startSpace = new Room().setStart(true).setAnchor(true);
-		startSpace = randomizeDimensions(startSpace);
+		IRoom start = new Room().setStart(true).setAnchor(true);
+		start = randomizeDimensions(start);
 		// ensure min dimensions are met for start room
-		startSpace.setWidth(Math.max(IRoom.MIN_SPECIAL_WIDTH, startSpace.getWidth()));
-		startSpace.setDepth(Math.max(IRoom.MIN_SPECIAL_DEPTH, startSpace.getDepth()));
+		start.setWidth(Math.max(IRoom.MIN_SPECIAL_WIDTH, start.getWidth()));
+		start.setDepth(Math.max(IRoom.MIN_SPECIAL_DEPTH, start.getDepth()));
 		
 		// ensure that start room's dimensions are odd in length
-		if (startSpace.getWidth() % 2 == 0) startSpace.setWidth(startSpace.getWidth()+1);
-		if (startSpace.getDepth() % 2 == 0) startSpace.setDepth(startSpace.getDepth()+1);
+		if (start.getWidth() % 2 == 0) start.setWidth(start.getWidth()+1);
+		if (start.getDepth() % 2 == 0) start.setDepth(start.getDepth()+1);
 		
 		// set the starting room coords to be in the middle of the start point
 //		startSpace.setCoords(
 //				new Coords(startPoint.getX()-(startSpace.getWidth()/2),
 //						startPoint.getY(),
 //						startPoint.getZ()-(startSpace.getDepth()/2)));
-		startSpace.centerOn(startPoint);
+		start.centerOn(startPoint);
 		
 		// randomize a direction
-		startSpace.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
-		return startSpace;
+		start.setDirection(Direction.getByCode(RandomHelper.randomInt(2, 5)));
+		return start;
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.builder.ISpaceBuilder#buildEndSpace(java.util.List)
 	 */
 	@Override
-	public IRoom buildEndSpace(ICoords startPoint, List<IRoom> predefinedSpaces) {
+	public IRoom buildEndRoom(ICoords startPoint, List<IRoom> predefinedSpaces) {
 		/*
 		 * the end room of the level.
 		 */
 	
 		// build the end room
-		IRoom endSpace  = buildPlannedSpace(startPoint, predefinedSpaces).setEnd(true).setAnchor(true);
+		IRoom end  = buildPlannedRoom(startPoint, predefinedSpaces).setEnd(true).setAnchor(true);
 		// ensure min dimensions are met for start room
-		endSpace.setWidth(Math.max(IRoom.MIN_SPECIAL_WIDTH, endSpace.getWidth()));
-		endSpace.setDepth(Math.max(IRoom.MIN_SPECIAL_DEPTH, endSpace.getDepth()));
+		end.setWidth(Math.max(IRoom.MIN_SPECIAL_WIDTH, end.getWidth()));
+		end.setDepth(Math.max(IRoom.MIN_SPECIAL_DEPTH, end.getDepth()));
 		
 		// ensure that the room's dimensions are odd in length
-		if (endSpace.getWidth() % 2 == 0) endSpace.setWidth(endSpace.getWidth()+1);
-		if (endSpace.getDepth() % 2 == 0) endSpace.setDepth(endSpace.getDepth()+1);
+		if (end.getWidth() % 2 == 0) end.setWidth(end.getWidth()+1);
+		if (end.getDepth() % 2 == 0) end.setDepth(end.getDepth()+1);
 		
-		return endSpace;
+		return end;
 	}
 
 	/**
 	 * 
 	 */
 	@Override
-	public IRoom buildTreasureSpace(ICoords startPoint, List<IRoom> predefinedSpaces) {
+	public IRoom buildTreasureRoom(ICoords startPoint, List<IRoom> predefinedSpaces) {
 		final int SPACE_MIN_XZ = 10;
 		final int SPACE_MIN_Y = 10;
 		
-		IRoom space = buildEndSpace(startPoint, predefinedSpaces)
+		IRoom space = buildEndRoom(startPoint, predefinedSpaces)
 				.setDegrees(1);
 				space.getTags().add(RoomTag.TREASURE);
 		
@@ -192,7 +192,7 @@ public class RoomBuilder implements IRoomBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ISpaceBuilder#buildSpace(java.util.List)
 	 */
 	@Override
-	public IRoom buildPlannedSpace(ICoords startPoint, List<IRoom> predefinedSpaces) {
+	public IRoom buildPlannedRoom(ICoords startPoint, List<IRoom> predefinedSpaces) {
 		IRoom predefinedSpace = new Room();		
 		/* 
 		 * check to make sure predefined rooms don't intersect.

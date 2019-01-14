@@ -11,10 +11,8 @@ import java.util.Random;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeons2.chest.BossLootLoader;
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
-import com.someguyssoftware.dungeons2.chest.StandardLootLoader;
 import com.someguyssoftware.dungeons2.generator.blockprovider.CheckedFloorRoomBlockProvider;
 import com.someguyssoftware.dungeons2.graph.Wayline;
 import com.someguyssoftware.dungeons2.model.Dungeon;
@@ -34,6 +32,8 @@ import com.someguyssoftware.dungeons2.style.RoomDecorator;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.chest.BossLootLoader;
+import com.someguyssoftware.dungeonsengine.chest.LootLoader;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
@@ -122,11 +122,11 @@ public class DungeonGenerator {
 		 */
 		// TODO is many more decorators, they all should share the same set of loaders instead of creating new ones each.
 //		IRoomDecorator roomDecorator = new RoomDecorator(chestSheet, spawnSheet);
-		IRoomDecorator roomDecorator = new RoomDecorator(new StandardLootLoader(), spawnSheet);
+		IRoomDecorator roomDecorator = new RoomDecorator(new LootLoader(), spawnSheet);
 //		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
 		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(new BossLootLoader());
 //		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
-		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(new StandardLootLoader(), spawnSheet);
+		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(new LootLoader(), spawnSheet);
 		
 		/*
 		 *  NOTE careful here. IRoomGenerator can alter the state of the IGenerationStrategy with a

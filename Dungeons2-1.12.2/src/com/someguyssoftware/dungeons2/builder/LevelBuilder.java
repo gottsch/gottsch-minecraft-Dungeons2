@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
@@ -31,7 +30,6 @@ import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
-import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.enums.Alignment;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.enums.Rotate;
@@ -40,21 +38,14 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.positional.Intersect;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
-import com.sun.jna.platform.win32.WinBase.STARTUPINFO;
 
 import io.github.jdiemke.triangulation.DelaunayTriangulator;
 import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.chunk.Chunk;
-
 
 /**
  * @author Mark Gottschling on Jul 9, 2016
@@ -1324,6 +1315,8 @@ public class LevelBuilder {
 		int width2 = 3, depth2 = 3;
 		int height2 = 4;
 		
+		Dungeons2.log.debug("1. wayline in -> {}", wayline);
+		
 		// work with temp way points
 		Waypoint startPoint = null;
 		Waypoint endPoint = null;
@@ -1416,20 +1409,30 @@ public class LevelBuilder {
 //		Room room2 = rooms.get(endPoint.getId());
 		
 		////////////////////
-		Waypoint[] points = wayline.getAlignedPoints();
+		Waypoint[] alignedPoints = wayline.getAlignedPoints();
 //		boolean isSegment = wayline.isSegment();
+		Dungeons2.log.debug("2. aligned points: p1 -> {}, p2 -> {}", alignedPoints[0], alignedPoints[1]);
 		
 		// get the room referenced by the waypoints
-		Room room1 = rooms.get(points[Wayline.START_POINT_INDEX].getId());
-		Room room2 = rooms.get(points[Wayline.END_POINT_INDEX].getId());
+		Room room1 = rooms.get(alignedPoints[Wayline.START_POINT_INDEX].getId());
+		Room room2 = rooms.get(alignedPoints[Wayline.END_POINT_INDEX].getId());
+		Dungeons2.log.debug("3. room1 -> {}", room1);
+		Dungeons2.log.debug("4. room2 -> {}", room2);
 		
-		int hall1MaxSize = getHallwayMaximumSize(points[Wayline.START_POINT_INDEX], room1, wayline.getAlignment());
-		int hall2MaxSize = getHallwayMaximumSize(points[Wayline.END_POINT_INDEX], room2, wayline.getAlignment());
+		// ensure the start/end points overlap with the rooms
+//		if (wayline.getAlignment() == Alignment.HORIZONTAL) {
+//			if (points[0].isTerminated() && points[0].getCoords().getX() != room1.getMaxX()) {
+//				
+//			}
+//		}
+		
+		int hall1MaxSize = getHallwayMaximumSize(alignedPoints[Wayline.START_POINT_INDEX], room1, wayline.getAlignment());
+		int hall2MaxSize = getHallwayMaximumSize(alignedPoints[Wayline.END_POINT_INDEX], room2, wayline.getAlignment());
 		int maxSize = Math.min(hall1MaxSize, hall2MaxSize);
-		Dungeons2.log.debug("room1 d-> {}, w-> {}, height-> {}, \n\tstartpoint -> {}, alignment -> {}, >> hallMaxSize -> {}",
-				room1.getDepth(), room1.getWidth(), room1.getHeight(), points[Wayline.START_POINT_INDEX], wayline.getAlignment(), hall1MaxSize);
-		Dungeons2.log.debug("room2 d-> {}, w-> {}, height-> {}, \n\tendpoint -> {}, alignment -> {}, >> hallMaxSize -> {}",
-				room2.getDepth(), room2.getWidth(), room2.getHeight(), points[Wayline.END_POINT_INDEX], wayline.getAlignment(), hall2MaxSize);
+//		Dungeons2.log.debug("\n5. room1: d-> {}, w-> {}, height-> {}, \n\tstartpoint -> {}, alignment -> {},\n\t >> hallMaxSize -> {}",
+//				room1.getDepth(), room1.getWidth(), room1.getHeight(), points[Wayline.START_POINT_INDEX], wayline.getAlignment(), hall1MaxSize);
+//		Dungeons2.log.debug("\n6. room2 d-> {}, w-> {}, height-> {}, \n\tendpoint -> {}, alignment -> {},\n\t>> hallMaxSize -> {}",
+//				room2.getDepth(), room2.getWidth(), room2.getHeight(), points[Wayline.END_POINT_INDEX], wayline.getAlignment(), hall2MaxSize);
 //		Dungeons2.log.debug("maxSzie before random -> {}", maxSize);
 		// randomly select a size
 		if (maxSize > 3) {
@@ -1437,6 +1440,11 @@ public class LevelBuilder {
 			if (maxSize % 2 ==0) maxSize++;
 		}
 //		Dungeons2.log.debug("randomly selected maxSize -> {}", maxSize);
+		Waypoint[] points = getJointAdjusted(alignedPoints, wayline.getAlignment(), maxSize);
+		Dungeons2.log.debug("7. joint adjusted p1-> {}, p2-> {}", points[0], points[1]);
+		
+		points = getCenterAdjusted(points, wayline.getAlignment(), maxSize);
+		Dungeons2.log.debug("8. center adjusted p1-> {}, p2-> {}", points[0], points[1]);
 		
 		// set the dimensions
 		if (!wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
@@ -1448,20 +1456,22 @@ public class LevelBuilder {
 				width2 = Math.max(3, maxSize);
 				depth2 = Math.abs(points[0].getZ( ) - points[1].getZ()) + 1;
 			}
-			height2 = Math.min(room1.getMaxY(), room2.getMaxY()) - room1.getMinY();
-			Dungeons2.log.debug("hall dims: w -> {}, d -> {}, h -> {}", width2, depth2, height2);
+			// TODO do something better with height. ie only can be bigger than 4 iff width is 3+
+			height2 = Math.min(5, Math.min(room1.getMaxY(), room2.getMaxY()) - room1.getMinY());
+			Dungeons2.log.debug("9. hall dims: w -> {}, d -> {}, h -> {}", width2, depth2, height2);
+		}
+		else {
+			Dungeons2.log.debug("9. way points are equal!");
 		}
 		// NOTE don't need to take the min/max of the subtraction because all rooms on the same level have the same minY.
 				
-		points = getJointAdjusted(points, wayline.getAlignment(), maxSize);
-		Dungeons2.log.debug("joint adjusted p1-> {}, p2-> {}", points[0], points[1]);
-		points = getCenterAdjusted(points, wayline.getAlignment(), maxSize);
-		Dungeons2.log.debug("center adjusted p1-> {}, p2-> {}", points[0], points[1]);
+
 		/////////////////////
 		
 		// TODO make this better
 		points[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().resetY(room1.getCoords().getY()));
 		points[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().resetY(room2.getCoords().getY()));
+//		Dungeons2.log.debug("\n10. update y: \n\tp1 -> {},\n\tp2 -> {}", points[0], points[1]);
 		
 		 // the start/end points y-vlaue isn't set, so update them.
 		startPoint.setCoords(startPoint.getCoords().resetY(room1.getCoords().getY()));
@@ -1490,79 +1500,68 @@ public class LevelBuilder {
 				.setType(Type.HALLWAY);
 		// update the alignment (Hallway specific property)
 		hallway.setAlignment(wayline.getAlignment());
-		Dungeons2.log.debug("wp1 -> {}", points[Wayline.START_POINT_INDEX]);
-		Dungeons2.log.debug("wp2 -> {}", points[Wayline.END_POINT_INDEX]);
-		Dungeons2.log.debug("room1 -> {}", room1);
-		Dungeons2.log.debug("room2 -> {}", room2);
+		Dungeons2.log.debug("11. final wp1 -> {}", points[Wayline.START_POINT_INDEX]);
+		Dungeons2.log.debug("12. final wp2 -> {}", points[Wayline.END_POINT_INDEX]);
+		Dungeons2.log.debug("13. final room1 -> {}", room1);
+		Dungeons2.log.debug("14. rinal room2 -> {}", room2);
 		// store the start/end point as doorCoords iff they are terminated.
 //		if (startPoint.isTerminated()) {
 		if (points[Wayline.START_POINT_INDEX].isTerminated()) {
-			Direction d = calculateDirection(hallway, startPoint.getCoords(), room1);
-			Dungeons2.log.debug("hallway direction -> {}", d);
-			hallway.getDoors().add(new Door(startPoint.getCoords(), room1, hallway, d));
+//			Direction d = calculateDirection(hallway, startPoint.getCoords(), room1);
+//			Dungeons2.log.debug("15a. p1 terminal: hallway direction -> {}", d);
+//			hallway.getDoors().add(new Door(startPoint.getCoords(), room1, hallway, d));
+			Direction d = calculateDirection(hallway, points[Wayline.START_POINT_INDEX].getCoords(), room1);
+			Dungeons2.log.debug("15a. p1 terminal: hallway direction -> {}", d);
+			hallway.getDoors().add(new Door(alignedPoints[Wayline.START_POINT_INDEX].getCoords(), room1, hallway, d));
 		}
 //		if (endPoint.isTerminated()) {
 		if (points[Wayline.END_POINT_INDEX].isTerminated()) {
-			Direction d = calculateDirection(hallway, endPoint.getCoords(), room2);
-			Dungeons2.log.debug("hallway direction -> {}", d);
-			hallway.getDoors().add(new Door(endPoint.getCoords(), room2, hallway, d));
+//			Direction d = calculateDirection(hallway, endPoint.getCoords(), room2);
+//			Dungeons2.log.debug("15b. p2 terminal: hallway direction -> {}", d);
+//			hallway.getDoors().add(new Door(endPoint.getCoords(), room2, hallway, d));
+			Direction d = calculateDirection(hallway, points[Wayline.END_POINT_INDEX].getCoords(), room2);
+			Dungeons2.log.debug("15b. p2 terminal: hallway direction -> {}", d);
+			hallway.getDoors().add(new Door(alignedPoints[Wayline.END_POINT_INDEX].getCoords(), room2, hallway, d));
 		}
 		
 		// TODO else { add and set Hallway property. ie this is an elbow join, and this hallway points to another hallway)
 		// can't here as it is needs to process the entire wayline first, then produces the hallway
 		return hallway;
 	}
-
-//	private int getHallwaySize(Waypoint[] points, Alignment alignment, Room room1, Room room2) {
+	
+	/**
+	 * 
+	 * @param point
+	 * @param room
+	 * @param alignment
+	 * @return
+	 */
 	private int getHallwayMaximumSize(Waypoint point, Room room, Alignment alignment) { 		
 		int size1 =0;
 		int offset1 = 0;
 		if (alignment == Alignment.HORIZONTAL) {
-//			if (points[Wayline.START_POINT_INDEX].isTerminated()) {
 			if (point.isTerminated()) {
 				size1 = room.getDepth();
-				offset1 = Math.abs(room.getCenter().getZ() - /*points[Wayline.START_POINT_INDEX]*/point.getZ());
+				offset1 = Math.abs(room.getCenter().getZ() - point.getZ());
 			}
 			else {
 				size1 = room.getWidth();
-				offset1 = Math.abs(room.getCenter().getX() - /*points[Wayline.START_POINT_INDEX]*/point.getX());
+				offset1 = Math.abs(room.getCenter().getX() - point.getX());
 			}
-//			if (points[Wayline.END_POINT_INDEX].isTerminated()) {
-//				size2 = room2.getDepth();
-//				offset2 = Math.abs(room2.getCenter().getZ() - points[Wayline.START_POINT_INDEX].getZ());
-//			}
-//			else {
-//				size2 = room2.getWidth();
-//				offset2 = Math.abs(room2.getCenter().getX() - points[Wayline.START_POINT_INDEX].getX());
-//			}			
-//			size1 = (points[Wayline.START_POINT_INDEX].isTerminated()) ? room1.getDepth() : room1.getWidth();
-//			size2 = (points[Wayline.END_POINT_INDEX].isTerminated()) ? room2.getDepth() : room2.getWidth();
 		}
 		else {
-//			if (points[Wayline.START_POINT_INDEX].isTerminated()) {
 			if (point.isTerminated()) {
 				size1 = room.getWidth();
-				offset1 = Math.abs(room.getCenter().getX() - /*points[Wayline.START_POINT_INDEX]*/point.getX());
+				offset1 = Math.abs(room.getCenter().getX() - point.getX());
 			}
 			else {
 				size1 = room.getDepth();
-				offset1 = Math.abs(room.getCenter().getZ() - /*points[Wayline.START_POINT_INDEX]*/point.getZ());
+				offset1 = Math.abs(room.getCenter().getZ() - point.getZ());
 			}
-//			if (points[Wayline.END_POINT_INDEX].isTerminated()) {
-//				size2 = room2.getWidth();
-//				offset2 = Math.abs(room2.getCenter().getX() - points[Wayline.START_POINT_INDEX].getX());
-//			}
-//			else {
-//				size2 = room2.getDepth();
-//				offset2 = Math.abs(room2.getCenter().getZ() - points[Wayline.START_POINT_INDEX].getZ());
-//			}	
-//			size1 = (points[Wayline.START_POINT_INDEX].isTerminated()) ? room1.getWidth() : room1.getDepth();			
-//			size2 = (points[Wayline.END_POINT_INDEX].isTerminated()) ? room2.getWidth() : room2.getDepth();
 		}
 		Dungeons2.log.debug("hall offset -> {}", offset1);
 		int maxSize = (int) Math.floor(((size1 - offset1) + 1) / 2);
 		maxSize = (maxSize % 2 == 0) ? maxSize+1 : maxSize;
-
 		return maxSize;
 	}
 
@@ -1574,28 +1573,32 @@ public class LevelBuilder {
 	 * @return
 	 */
 	private Waypoint[] getJointAdjusted(Waypoint[] points, Alignment alignment, int width) {
-		Waypoint[] newPoints = points;
+		Waypoint[] newPoints = {new Waypoint(points[0]), new Waypoint(points[1])};
 		if (alignment == Alignment.HORIZONTAL) {
 			if (!points[Wayline.START_POINT_INDEX].isTerminated()) {
-				Waypoint p = points[Wayline.START_POINT_INDEX];
-				newPoints[Wayline.START_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(-1, 0, 0), p.isTerminated());
+//				Waypoint p = newPoints[Wayline.START_POINT_INDEX];
+				newPoints[Wayline.START_POINT_INDEX].add(-1,  0, 0);			
+//				newPoints[Wayline.START_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(-1, 0, 0), p.isTerminated());
 //				newPoints[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().add(-1, 0, 0));
 			}				
 			if (!points[Wayline.END_POINT_INDEX].isTerminated()) {
-				Waypoint p = points[Wayline.END_POINT_INDEX];
-				newPoints[Wayline.END_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(1, 0, 0), p.isTerminated());
+				newPoints[Wayline.START_POINT_INDEX].add(1,  0, 0);	
+//				Waypoint p = newPoints[Wayline.END_POINT_INDEX];
+//				newPoints[Wayline.END_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(1, 0, 0), p.isTerminated());
 //				newPoints[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().add(1, 0, 0));
 			}
 		}
 		else {
 			if (!points[Wayline.START_POINT_INDEX].isTerminated()) {
-				Waypoint p = points[Wayline.START_POINT_INDEX];
-				newPoints[Wayline.START_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(0, 0, -1), p.isTerminated());
+				newPoints[Wayline.START_POINT_INDEX].add(0,  0, -1);	
+//				Waypoint p = newPoints[Wayline.START_POINT_INDEX];
+//				newPoints[Wayline.START_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(0, 0, -1), p.isTerminated());
 //				newPoints[Wayline.START_POINT_INDEX].setCoords(points[Wayline.START_POINT_INDEX].getCoords().add(0, 0, -1));
 			}				
 			if (!points[Wayline.END_POINT_INDEX].isTerminated()) {
-				Waypoint p = points[Wayline.END_POINT_INDEX];
-				newPoints[Wayline.END_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(0, 0, 1), p.isTerminated());
+				newPoints[Wayline.START_POINT_INDEX].add(0,  0, 1);	
+//				Waypoint p = newPoints[Wayline.END_POINT_INDEX];
+//				newPoints[Wayline.END_POINT_INDEX] = new Waypoint(p.getId(), p.getCoords().add(0, 0, 1), p.isTerminated());
 //				newPoints[Wayline.END_POINT_INDEX].setCoords(points[Wayline.END_POINT_INDEX].getCoords().add(0, 0, 1));
 			}
 		}
@@ -1940,10 +1943,10 @@ public class LevelBuilder {
 			 * if the rooms overlap each other on a single axis, they are "close" enough
 			 */
 			// horizontal wayline (east-west)
-			if ((room1.getMaxZ() < (room2.getMaxZ()-1) && room1.getMaxZ() > (room2.getMinZ()+1)) ||
-					(room2.getMaxZ() < (room1.getMaxZ()-1) && room2.getMaxZ() > (room1.getMinZ()+1)) ||
-					(room1.getMinZ() > (room2.getMinZ()+1)&& room1.getMaxZ() < (room2.getMaxZ()-1)) ||
-					(room2.getMinZ() > (room1.getMinZ()+1) && room2.getMaxZ() <= (room1.getMaxZ()-1))) {
+			if ((room1.getMaxZ() <= room2.getMaxZ() && room1.getMaxZ() > (room2.getMinZ()+1)) ||
+					(room2.getMaxZ() <= room1.getMaxZ() && room2.getMaxZ() > (room1.getMinZ()+1)) ||
+					(room1.getMinZ() >= room2.getMinZ() && room1.getMinZ() < (room2.getMaxZ()-1)) ||
+					(room2.getMinZ() >= room1.getMinZ() && room2.getMinZ() < (room1.getMaxZ()-1))) {
 				int z = (innerMaxZ + innerMinZ)/2;
 				
 				// TODO need some sort of check that if rooms are close by 1 block, which creates a horz wayline that runs from
@@ -1953,7 +1956,7 @@ public class LevelBuilder {
 				Wayline wayline = new Wayline(new Waypoint(minXMap.get(innerMinX).getId(), innerMinX-1, 0, z),
 						new Waypoint(maxXMap.get(innerMaxX).getId(), innerMaxX+1, 0, z), Alignment.HORIZONTAL);
 
-//				Dungeons2.log.info(String.format("Horz line from [%d, %d] to [%d, %d[", innerMinX, z, innerMaxX, z));
+				Dungeons2.log.info("Horz line from r1 ({}) [{}, {}] to r2 ({}) [{}, {}]", minXMap.get(innerMinX).getId(), innerMinX, z, maxXMap.get(innerMaxX).getId(), innerMaxX, z);
 				if (wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
 					Dungeons2.log.trace("Wayline's points are equal !!: " + wayline);
 				}
@@ -1966,14 +1969,14 @@ public class LevelBuilder {
 				continue;
 			}
 			// vertical wayline (north-south)
-			if ((room1.getMaxX() < (room2.getMaxX()-1) && room1.getMaxX() > (room2.getMinX()+1)) ||
-					(room2.getMaxX() < (room1.getMaxX()-1) && room2.getMaxX() > (room1.getMinX()+1)) ||
-					(room1.getMinX() > (room2.getMinX()+1) && room1.getMaxX() <= (room2.getMaxX()-1)) ||
-					(room2.getMinX() > (room1.getMinX()+1) && room2.getMaxX() <= (room1.getMaxX()-1))) {
+			if ((room1.getMaxX() <= room2.getMaxX() && room1.getMaxX() > (room2.getMinX()+1)) ||
+					(room2.getMaxX() <= room1.getMaxX() && room2.getMaxX() > (room1.getMinX()+1)) ||
+					(room1.getMinX() > room2.getMinX() && room1.getMinX() <= (room2.getMaxX()-1)) ||
+					(room2.getMinX() > room1.getMinX() && room2.getMinX() <= (room1.getMaxX()-1))) {
 				int x = (innerMaxX + innerMinX)/2;
 				Wayline wayline = new Wayline(new Waypoint(minZMap.get(innerMinZ).getId(), x, 0, innerMinZ-1),
 						new Waypoint(maxZMap.get(innerMaxZ).getId(), x, 0, innerMaxZ+1), Alignment.VERTICAL);
-//				Dungeons2.log.info(String.format("Vert line from [%d, %d] to [%d, %d[", x, innerMinZ, x, innerMaxZ));
+				Dungeons2.log.info("Vert line from r1 ({}) [{}, {}] to r2 ({}) [{}, {}]", minZMap.get(innerMinZ).getId(), x, innerMinZ, maxZMap.get(innerMaxZ).getId(), x, innerMaxZ);
 
 				if (wayline.getPoint1().getCoords().equals(wayline.getPoint2().getCoords())) {
 					Dungeons2.log.trace("Wayline's points are equal !!: " + wayline);

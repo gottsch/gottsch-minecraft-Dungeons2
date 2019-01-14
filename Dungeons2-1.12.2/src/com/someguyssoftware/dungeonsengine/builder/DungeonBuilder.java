@@ -27,8 +27,7 @@ import net.minecraft.world.World;
 public class DungeonBuilder {
 	private static int MIN_BOUNDARY_RADIUS = 25;
 	private static int MAX_BOUNDARY_RADIUS = 256;
-	
-	// TODO move to IDungeonBuilder
+
 	public Dungeon EMPTY_DUNGEON = new Dungeon();
 	public Boundary EMPTY_BOUNDARY = new Boundary(new BBox(new Coords(0,0,0)));
 	

@@ -26,17 +26,17 @@ public interface ILevelBuilder {
 	
 //	void setConfig(LevelConfig config);
 
-	IRoomBuilder getVoidBuilder();
+	IRoomBuilder getRoomBuilder();
 //	void setVoidBuilder(IRoomBuilder builder);
 	ILevelBuilder with(IRoomBuilder builder);
 	
-	List<IRoom> getPlannedVoids();
+	List<IRoom> getPlannedRooms();
 	
 	/**
 	 * Adds a void space to the planned voids
-	 * @param voidSpace
+	 * @param room
 	 */
-	ILevelBuilder with(IRoom voidSpace);
+	ILevelBuilder with(IRoom room);
 	
 	void reset();
 

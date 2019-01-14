@@ -1,13 +1,12 @@
 /**
  * 
  */
-package com.someguyssoftware.dungeons2.chest;
+package com.someguyssoftware.dungeonsengine.chest;
 
 import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
-import com.someguyssoftware.dungeonsengine.chest.ILootLoader;
 import com.someguyssoftware.dungeonsengine.config.IChestConfig;
 import com.someguyssoftware.dungeonsengine.config.LootTableMethod;
 import com.someguyssoftware.gottschcore.enums.Rarity;
@@ -67,7 +66,7 @@ public class BossLootLoader implements ILootLoader {
 		if (te instanceof TileEntityChest) {
 			if (config != null) {
 				if (config.getLootTableMethod() == LootTableMethod.CUSTOM) {
-					List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(Rarity.SCARCE);
+					List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(Rarity.BOSS);
 					if (lootTables != null) {
 						Dungeons2.log.debug("found loot tables -> {}", lootTables.size());
 						int index = RandomHelper.randomInt(random, 0, lootTables.size()-1);
@@ -75,7 +74,7 @@ public class BossLootLoader implements ILootLoader {
 						table.fillInventory((TileEntityChest)te, random, Dungeons2.LOOT_TABLES.getContext());
 					}
 					else
-						Dungeons2.log.debug("did not find any loot tables by rarity -> {}", Rarity.SCARCE);
+						Dungeons2.log.debug("did not find any loot tables by rarity -> {}", Rarity.BOSS);
 				}
 			}
 		}

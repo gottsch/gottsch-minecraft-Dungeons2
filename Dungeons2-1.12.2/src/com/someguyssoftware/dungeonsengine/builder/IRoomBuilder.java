@@ -19,11 +19,11 @@ public interface IRoomBuilder {
 	/*
 	 * build a 'planned' space, using existing spaces to determine where and if it can be placed within the boundary
 	 */
-	IRoom buildPlannedSpace(ICoords startPoint, List<IRoom> predefinedSpaces);
+	IRoom buildPlannedRoom(ICoords startPoint, List<IRoom> predefinedSpaces);
 	
-	IRoom buildStartSpace(ICoords startPoint);
+	IRoom buildStartRoom(ICoords startPoint);
 	
-	IRoom buildEndSpace(ICoords startPoint, List<IRoom> predefinedSpaces);
+	IRoom buildEndRoom(ICoords startPoint, List<IRoom> predefinedSpaces);
 	
 	/**
 	 * 
@@ -33,6 +33,6 @@ public interface IRoomBuilder {
 	 * @param predefinedSpaces
 	 * @return
 	 */
-	IRoom buildTreasureSpace(ICoords startPoint, List<IRoom> predefinedSpaces);
+	IRoom buildTreasureRoom(ICoords startPoint, List<IRoom> predefinedSpaces);
 	
 }

@@ -53,6 +53,14 @@ public class Waypoint {
 	
 	/**
 	 * 
+	 * @param p
+	 */
+	public Waypoint(Waypoint p) {
+		this(p.getId(), new Coords(p.getCoords()), p.isTerminated());
+	}
+	
+	/**
+	 * 
 	 * @param id
 	 * @param x
 	 * @param y
@@ -74,6 +82,17 @@ public class Waypoint {
 	public Waypoint(int x, int y, int z) {
 		this(-1, x, y, z);
 		setTerminated(true);
+	}
+	
+	/**
+	 * 
+	 * @param x
+	 * @param y
+	 * @param z
+	 */
+	public void add(int x, int y, int z) {
+		ICoords newCoords = getCoords().add(x, y, z);
+		setCoords(newCoords);
 	}
 	
 	/**
