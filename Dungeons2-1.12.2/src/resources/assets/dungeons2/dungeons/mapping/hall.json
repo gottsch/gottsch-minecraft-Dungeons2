@@ -4,6 +4,9 @@
 	"width":0,
 	"depth":0,
 	"rarity": [],
+	"type": "BASIC",
+	"limit": 5,
+	"limitType": "LEVEL",
 	"biomeWhiteList": [],
 	"biomeBlackList": [],
 	"styles": {

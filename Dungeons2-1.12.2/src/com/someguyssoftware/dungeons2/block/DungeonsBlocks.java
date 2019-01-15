@@ -48,6 +48,16 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 
 	// quarter facade
 	public static Block QUARTER_STONE_FACADE;
+	public static Block QUARTER_COBBLESTONE_FACADE;
+	public static Block QUARTER_MOSSY_COBBLESTONE_FACADE;
+	public static Block QUARTER_STONEBRICK_FACADE;
+	public static Block QUARTER_MOSSY_STONEBRICK_FACADE;
+	public static Block QUARTER_CRACKED_STONEBRICK_FACADE;
+	public static Block QUARTER_CHISELED_STONEBRICK_FACADE;
+	public static Block QUARTER_OBSIDIANBRICK_FACADE;
+	public static Block QUARTER_SANDSTONE_FACADE;
+	public static Block QUARTER_SMOOTH_SANDSTONE_FACADE;
+	
 //	public static Block basicCobblestoneFacade;
 //	public static Block basicMossyCobblestoneFacade;
 //	public static Block basicStonebrickFacade;
@@ -258,6 +268,15 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 
 		// quarter facade
 		QUARTER_STONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_STONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_COBBLESTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_COBBLESTONE_FACADE_ID, Material.ROCK).setHardness(2.0F).setResistance(10.0F);
+		QUARTER_MOSSY_COBBLESTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_MOSSY_COBBLESTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_MOSSY_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_MOSSY_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_CRACKED_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_CRACKED_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_CHISELED_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_CHISELED_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_OBSIDIANBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_OBSIDIANBRICK_FACADE_ID, Material.ROCK).setHardness(50F).setResistance(2000F);
+		QUARTER_SANDSTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_SMOOTH_SANDSTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_SMOOTH_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		
 		// t pillar
 		teePillarStoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -446,6 +465,15 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(BASIC_SANDSTONE_FACADE);
 		// quarter basic
 		BLOCKS.add(QUARTER_STONE_FACADE);
+		BLOCKS.add(QUARTER_COBBLESTONE_FACADE);
+		BLOCKS.add(QUARTER_MOSSY_COBBLESTONE_FACADE);
+		BLOCKS.add(QUARTER_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_MOSSY_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_CRACKED_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_CHISELED_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_OBSIDIANBRICK_FACADE);
+		BLOCKS.add(QUARTER_SANDSTONE_FACADE);
+		BLOCKS.add(QUARTER_SMOOTH_SANDSTONE_FACADE);
 		
 		// tee
 		BLOCKS.add(teePillarStoneFacade);

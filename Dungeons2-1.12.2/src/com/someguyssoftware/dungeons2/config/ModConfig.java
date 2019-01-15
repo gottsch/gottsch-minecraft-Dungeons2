@@ -17,40 +17,62 @@ public class ModConfig extends AbstractConfig {
 	public static final String DUNGEONS2_TAB_ID = "dungeons_tab";
 	
 	public static final String BASIC_SMOOTH_SANDSTONE_FACADE_ID = "basic_facade_smooth_sandstone";
-	public static final String TEE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "tee_pillar_smooth_sandstone";
-	public static final String TEE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "tee_thin_pillar_smooth_sandstone";
-	public static final String FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "flute_pillar_smooth_sandstone";
-	public static final String FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "flute_thin_pillar_smooth_sandstone";
-	public static final String CORNICE_SMOOTH_SANDSTONE_BLOCK_ID = "cornice_smooth_sandstone";
-	public static final String CROWN_MOLDING_SMOOTH_SANDSTONE_BLOCK_ID = "crown_molding_smooth_sandstone";
-	public static final String SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE = "seven_eights_pillar_smooth_sandstone";
-	public static final String SILL_SMOOTH_SANDSTONE_BLOCK_ID = "sill_smooth_sandstone";
-	public static final String DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK_ID = "double_sill_smooth_sandstone";
-	public static final String HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK_ID = "half_pillar_base_smooth_sandstone";
-	public static final String HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "half_pillar_smooth_sandstone";
-	public static final String COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_middle_smooth_sandstone";
-	public static final String COFFER_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_smooth_sandstone";
-	public static final String WALL_SCONCE_SMOOTH_SANDSTONE_BLOCK_ID = "wall_sconce_smooth_sandstone";
-
 	public static final String BASIC_SANDSTONE_FACADE_ID = "basic_facade_sandstone";
+	
+	public static final String TEE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "tee_pillar_smooth_sandstone";
 	public static final String TEE_PILLAR_SANDSTONE_BLOCK_ID = "tee_pillar_sandstone";
+	
+	public static final String TEE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "tee_thin_pillar_smooth_sandstone";
 	public static final String TEE_THIN_PILLAR_SANDSTONE_BLOCK_ID = "tee_thin_pillar_sandstone";
+	
+	public static final String FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "flute_pillar_smooth_sandstone";
 	public static final String FLUTE_PILLAR_SANDSTONE_BLOCK_ID = "flute_pillar_sandstone";
+	
+	public static final String FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "flute_thin_pillar_smooth_sandstone";
 	public static final String FLUTE_THIN_PILLAR_SANDSTONE_BLOCK_ID = "flute_thin_pillar_sandstone";
+	
+	public static final String CORNICE_SMOOTH_SANDSTONE_BLOCK_ID = "cornice_smooth_sandstone";
 	public static final String CORNICE_SANDSTONE_BLOCK_ID = "cornice_sandstone";
+	
+	public static final String CROWN_MOLDING_SMOOTH_SANDSTONE_BLOCK_ID = "crown_molding_smooth_sandstone";
 	public static final String CROWN_MOLDING_SANDSTONE_BLOCK_ID = "crown_molding_sandstone";
+	
+	public static final String SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE = "seven_eights_pillar_smooth_sandstone";
 	public static final String SEVEN_EIGHTS_PILLAR_SANDSTONE = "seven_eights_pillar_sandstone";
+	
+	public static final String SILL_SMOOTH_SANDSTONE_BLOCK_ID = "sill_smooth_sandstone";
 	public static final String SILL_SANDSTONE_BLOCK_ID = "sill_sandstone";
+	
+	public static final String DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK_ID = "double_sill_smooth_sandstone";
 	public static final String DOUBLE_SILL_SANDSTONE_BLOCK_ID = "double_sill_sandstone";
+	
+	public static final String HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK_ID = "half_pillar_base_smooth_sandstone";
 	public static final String HALF_PILLAR_BASE_SANDSTONE_BLOCK_ID = "half_pillar_base_sandstone";
+	
+	public static final String HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID = "half_pillar_smooth_sandstone";
 	public static final String HALF_PILLAR_SANDSTONE_BLOCK_ID = "half_pillar_sandstone";
+	
+	public static final String COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_middle_smooth_sandstone";
 	public static final String COFFER_MIDDLE_SANDSTONE_BLOCK_ID = "coffer_middle_sandstone";
+	
+	public static final String COFFER_SMOOTH_SANDSTONE_BLOCK_ID = "coffer_smooth_sandstone";
 	public static final String COFFER_SANDSTONE_BLOCK_ID = "coffer_sandstone";
+	
+	public static final String WALL_SCONCE_SMOOTH_SANDSTONE_BLOCK_ID = "wall_sconce_smooth_sandstone";	
 	public static final String WALL_SCONCE_SANDSTONE_BLOCK_ID = "wall_sconce_sandstone";
 
 	public static final String SANDSTONE_GRAVEL_BLOCK_ID = "sandstone_gravel";
 
 	public static final String QUARTER_STONE_FACADE_ID = "quarter_facade_stone";
+	public static final String QUARTER_COBBLESTONE_FACADE_ID = "quarter_facade_cobblestone";
+	public static final String QUARTER_MOSSY_COBBLESTONE_FACADE_ID = "quarter_facade_cobblestone_mossy";
+	public static final String QUARTER_STONEBRICK_FACADE_ID = "quarter_facade_stonebrick";
+	public static final String QUARTER_MOSSY_STONEBRICK_FACADE_ID = "quarter_facade_stonebrick_mossy";
+	public static final String QUARTER_CRACKED_STONEBRICK_FACADE_ID = "quarter_facade_stonebrick_cracked";
+	public static final String QUARTER_CHISELED_STONEBRICK_FACADE_ID = "quarter_facade_stonebrick_chiseled";
+	public static final String QUARTER_OBSIDIANBRICK_FACADE_ID = "quarter_facade_obsidianbrick";
+	public static final String QUARTER_SANDSTONE_FACADE_ID = "quarter_facade_sandstone";
+	public static final String QUARTER_SMOOTH_SANDSTONE_FACADE_ID = "quarter_facade_smooth_sandstone";
 
 	// resources
 	public static String dungeonsFolder;

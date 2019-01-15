@@ -1,0 +1,8 @@
+{
+    "parent": "dungeons2:block/quarter_facade",
+    "textures": {
+        "bottom": "dungeons2:blocks/obsidianbrick",
+        "top": "dungeons2:blocks/obsidianbrick",
+        "side": "dungeons2:blocks/obsidianbrick"
+    }
+}
