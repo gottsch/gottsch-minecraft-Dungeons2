@@ -176,19 +176,6 @@ public class Dungeons2 extends AbstractMod {
 			
 			// add the loot table managers
 			LOOT_TABLES = new DungeonLootTableMaster(Dungeons2.instance, "", "loot_tables");
-//			LOOT_TABLES.setLootTableFolderLocations(ImmutableList.of(
-//			"chests/common",
-//			"chests/uncommon",
-//			"chests/scarce",
-//			"chests/rare",
-//			"chests/epic",
-//			"armor",
-//			"items",
-//			"food",
-//			"potions",
-//			"tools"
-//			));
-//			LOOT_TABLES.buildAndExpose("/loot_tables/", Dungeons2.MODID); 
 		}
 
 	}

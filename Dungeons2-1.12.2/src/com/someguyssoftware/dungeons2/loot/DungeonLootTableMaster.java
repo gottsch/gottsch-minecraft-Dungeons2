@@ -49,7 +49,7 @@ public class DungeonLootTableMaster extends LootTableMaster {
 			"chests/uncommon",
 			"chests/scarce",
 			"chests/rare",
-			"chests/epic"
+			"chests/boss"
 			);
 	
 	/*

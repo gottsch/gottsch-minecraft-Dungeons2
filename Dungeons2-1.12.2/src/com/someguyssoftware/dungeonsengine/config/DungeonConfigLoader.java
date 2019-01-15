@@ -48,8 +48,8 @@ import com.someguyssoftware.gottschcore.version.VersionChecker;
  *
  */
 public class DungeonConfigLoader {
-	private static final String DUNGEON_CONFIGS_RESOURCE_DEFAULT_PATH = "/assets/dungeons2/dungeons/";
-	private static final String DUNGEON_CONFIGS_RESOURCE_BUILTIN_PATH = "/assets/dungeons2/dungeons/builtin/";
+	private static final String DUNGEON_CONFIGS_RESOURCE_DEFAULT_PATH = "/assets/dungeons2/dungeons/config/";
+	private static final String DUNGEON_CONFIGS_RESOURCE_BUILTIN_PATH = "/assets/dungeons2/dungeons/config/builtin/";
 	private static final String DEFAULT_CONFIG_FILE = "default.json";
 	private static final String DUNGEON_CONFIGS_FS_PATH = "dungeons";
 	private static final List<IDungeonConfig>EMPTY_CONFIG_LIST = new ArrayList<>(0);
