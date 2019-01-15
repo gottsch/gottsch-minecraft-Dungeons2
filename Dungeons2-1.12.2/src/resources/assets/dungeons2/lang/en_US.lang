@@ -9,11 +9,20 @@ tile.dungeons2:basic_facade_stonebrick_mossy.name=Basic Mossy Stonebrick Facade
 tile.dungeons2:basic_facade_stonebrick_cracked.name=Basic Cracked Stonebrick Facade
 tile.dungeons2:basic_facade_stonebrick_chiseled.name=Basic Chiseled Stonebrick Facade
 tile.dungeons2:basic_facade_obsidianbrick.name=Basic Obsidanbrick Facade
-tile.dungeons2:basic_facade_sandstone.name=Sandstone Facade
-tile.dungeons2:basic_facade_smooth_sandstone.name=Smooth Sandstone Facade
+tile.dungeons2:basic_facade_sandstone.name=Basic Sandstone Facade
+tile.dungeons2:basic_facade_smooth_sandstone.name=Basic Smooth Sandstone Facade
 
 # quarter basic
 tile.dungeons2:quarter_facade_stone.name=Quarter Stone Facade
+tile.dungeons2:quarter_facade_cobblestone.name=Quarter Cobblestone Facade
+tile.dungeons2:quarter_facade_cobblestone_mossy.name=Quarter Mossy Cobblestone Facade
+tile.dungeons2:quarter_facade_stonebrick.name=Quarter Stonebrick Facade
+tile.dungeons2:quarter_facade_stonebrick_mossy.name=Quarter Mossy Stonebrick Facade
+tile.dungeons2:quarter_facade_stonebrick_cracked.name=Quarter Cracked Stonebrick Facade
+tile.dungeons2:quarter_facade_stonebrick_chiseled.name=Quarter Chiseled Stonebrick Facade
+tile.dungeons2:quarter_facade_obsidianbrick.name=Quarter Obsidanbrick Facade
+tile.dungeons2:quarter_facade_sandstone.name=Quarter Sandstone Facade
+tile.dungeons2:quarter_facade_smooth_sandstone.name=Quarter Smooth Sandstone Facade
 
 #cornice
 tile.dungeons2:cornice_stone.name=Stone Cornice
