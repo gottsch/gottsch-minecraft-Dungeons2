@@ -2,8 +2,9 @@
 	{
 		"_comments": [
 		"*******",
-		"** Note that default values will populate every level, removing the need to populate every",
-		"** property. If the property doesn't require a new value, simply exclude it from",
+		"** Note that default and/or the previous level's values will populate subsequent levels",
+		"**  (within a single dungeon parent config) removing the need to populate every property.",
+		"** If the property doesn't require a new value, simply exclude it from",
 		"** the definition. I have added every property to the default definitions only to display",
 		"** the properties and default values.",
 		"*******"
@@ -69,10 +70,25 @@
 			"support": true,
 			"decorations": true,
 			"theme": "",
-			"chestCategories": [
-				"COMMON", "UNCOMMON", "RARE"
-			]				
+			"chestConfig": {
+				"lootTableMethod": "CUSTOM",
+				"rarity": ["COMMON"],
+				"probability": {
+					"min":	5,
+					"max": 10		
+					}
 			}
+		},
+		{
+			"chestConfig": {
+				"rarity": ["COMMON", "UNCOMMON"]
+			}
+		},
+		{
+			"chestConfig": {
+				"rarity": ["COMMON", "UNCOMMON", "SCARCE"]
+			}
+		}
 		],
 		"surfaceConfig": null
 	},
@@ -105,8 +121,26 @@
 				"height": {
 					"min":	5,
 					"max": 9
+				},
+				"chestConfig": {
+					"rarity": ["COMMON"]
+				}	
+			},
+			{
+				"chestConfig": {
+					"rarity": ["COMMON", "UNCOMMON"]
 				}
-			}
+			},	
+			{
+				"chestConfig": {
+					"rarity": ["COMMON", "UNCOMMON"]
+				}
+			},
+			{
+				"chestConfig": {
+					"rarity": ["COMMON", "UNCOMMON", "SCARCE"]
+				}
+			}			
 		],
 		"surfaceConfig": null
 	},	
@@ -139,8 +173,29 @@
 				"height": {
 					"min":	5,
 					"max": 9
+				},
+				"chestConfig": {
+					"rarity": ["COMMON"]
+				}				
+			},
+			{
+				"chestConfig": {
+					"rarity": ["COMMON", "UNCOMMON"]
 				}
-			}
+			},
+			{},
+			{},
+			{},
+			{
+				"chestConfig": {
+					"rarity": ["UNCOMMON", "SCARCE"]
+				}
+			},
+			{
+				"chestConfig": {
+					"rarity": ["UNCOMMON", "SCARCE", "RARE"]
+				}
+			}	
 		],
 		"surfaceConfig": null
 	},
@@ -173,8 +228,29 @@
 				"height": {
 					"min":	5,
 					"max": 9
+				},
+				"chestConfig": {
+					"rarity": ["COMMON"]
+				}				
+			},
+			{
+				"chestConfig": {
+					"rarity": ["COMMON", "UNCOMMON"]
 				}
-			}
+			},
+			{},
+			{},
+			{},
+			{
+				"chestConfig": {
+					"rarity": ["UNCOMMON", "SCARCE"]
+				}
+			},
+			{
+				"chestConfig": {
+					"rarity": ["UNCOMMON", "SCARCE", "RARE"]
+				}
+			}				
 		],
 		"surfaceConfig": null
 	}	

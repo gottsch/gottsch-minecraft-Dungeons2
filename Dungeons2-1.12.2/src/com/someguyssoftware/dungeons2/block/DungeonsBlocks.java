@@ -42,11 +42,22 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block basicMossyStonebrickFacade;
 	public static Block basicCrackedStonebrickFacade;
 	public static Block basicChiseledStonebrickFacade;
-	public static Block basicObsidianbrickFacade;
-	
+	public static Block basicObsidianbrickFacade;	
 	public static Block BASIC_SANDSTONE_FACADE;
 	public static Block BASIC_SMOOTH_SANDSTONE_FACADE; //basicSmoothSandstoneFacade
 
+	// quarter facade
+	public static Block QUARTER_STONE_FACADE;
+//	public static Block basicCobblestoneFacade;
+//	public static Block basicMossyCobblestoneFacade;
+//	public static Block basicStonebrickFacade;
+//	public static Block basicMossyStonebrickFacade;
+//	public static Block basicCrackedStonebrickFacade;
+//	public static Block basicChiseledStonebrickFacade;
+//	public static Block basicObsidianbrickFacade;	
+//	public static Block BASIC_SANDSTONE_FACADE;
+//	public static Block BASIC_SMOOTH_SANDSTONE_FACADE;
+	
 	// "T" Pillar
 	public static Block teePillarStoneFacade;
 	public static Block teePillarCobblestoneFacade;
@@ -245,6 +256,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BASIC_SANDSTONE_FACADE = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.BASIC_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		BASIC_SMOOTH_SANDSTONE_FACADE = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.BASIC_SMOOTH_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
+		// quarter facade
+		QUARTER_STONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_STONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		
 		// t pillar
 		teePillarStoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		teePillarCobblestoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarCobblestoneBlockId, Material.ROCK).setHardness(2.0F).setResistance(10.0F);
@@ -430,6 +444,9 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(basicObsidianbrickFacade);
 		BLOCKS.add(BASIC_SMOOTH_SANDSTONE_FACADE);
 		BLOCKS.add(BASIC_SANDSTONE_FACADE);
+		// quarter basic
+		BLOCKS.add(QUARTER_STONE_FACADE);
+		
 		// tee
 		BLOCKS.add(teePillarStoneFacade);
 		BLOCKS.add(teePillarCobblestoneFacade);

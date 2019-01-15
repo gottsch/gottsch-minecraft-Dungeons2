@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 
+import com.someguyssoftware.dungeons2.block.DungeonsBlocks;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
@@ -44,6 +45,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.oredict.OreDictionary;
 
 
 /**
@@ -195,6 +197,9 @@ public class Dungeons2 extends AbstractMod {
 	public void postInit(FMLPostInitializationEvent event) {
 		if (!getConfig().isModEnabled()) return;	
 		super.postInit(event);
+		
+		// register to the ore dictionary
+		OreDictionary.registerOre("gravel", DungeonsBlocks.SANDSTONE_GRAVEL);
 	}
 
 

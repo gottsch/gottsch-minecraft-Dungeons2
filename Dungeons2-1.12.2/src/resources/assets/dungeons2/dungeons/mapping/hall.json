@@ -1,0 +1,17 @@
+{
+	"name": "",
+	"height":0,
+	"width":0,
+	"depth":0,
+	"rarity": [],
+	"biomeWhiteList": [],
+	"biomeBlackList": [],
+	"styles": {
+		"key": {
+		}
+	},
+	"mappings": {
+		"minecraft:stone@0": "styleOrAliasName1",
+		"minecraft:sand@0": "styleOrAliasName2"
+	}
+}

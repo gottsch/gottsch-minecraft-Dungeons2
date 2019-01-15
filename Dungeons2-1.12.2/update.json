@@ -14,7 +14,7 @@
         "1.5.0": "-Uses GottschCore 1.6.0.\nAdded new method for determining where dungeon is generated and keeping it within loaded chunks. Prevents cascading worldgen lag error.",
         "1.6.0": "Added configurable Dungeon and Level json files to control dungeon generation.\nStarted porting to DungeonsEngine library.\nAdded Smooth Sandstone dungeon blocks.\nIncluded the Wall Sconces.\nFixed Wall Sconces bounding boxes.\n",
         "1.6.1": "Update DungeonConfigMangers registry to use biome ID instead of biome name since getBiomeName() is client side only.\n",
-       "1.7.0": "Added dungeon config version check.\nAdded Chest Config to the Level Config (classes and json files).\nAdded external custom Loot Tables (replaces ChestSheets).Added Sandstone dungeon blocks.\n"
+       "1.7.0": "Added dungeon config version check.\nAdded Chest Config to the Level Config (classes and json files).\nAdded external custom Loot Tables (replaces ChestSheets).Added Sandstone dungeon blocks.\nAdded Sandstone Gavel block.\nAdded corner shapes for basic facade block.\nFixed boundary box on inner/outer corners for basic facade.\n"
 
     }
 }

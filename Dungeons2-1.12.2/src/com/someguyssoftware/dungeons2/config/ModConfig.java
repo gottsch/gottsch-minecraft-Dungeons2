@@ -50,6 +50,8 @@ public class ModConfig extends AbstractConfig {
 
 	public static final String SANDSTONE_GRAVEL_BLOCK_ID = "sandstone_gravel";
 
+	public static final String QUARTER_STONE_FACADE_ID = "quarter_facade_stone";
+
 	// resources
 	public static String dungeonsFolder;
 	

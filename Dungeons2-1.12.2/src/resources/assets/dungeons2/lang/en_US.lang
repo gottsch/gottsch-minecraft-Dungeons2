@@ -12,6 +12,9 @@ tile.dungeons2:basic_facade_obsidianbrick.name=Basic Obsidanbrick Facade
 tile.dungeons2:basic_facade_sandstone.name=Sandstone Facade
 tile.dungeons2:basic_facade_smooth_sandstone.name=Smooth Sandstone Facade
 
+# quarter basic
+tile.dungeons2:quarter_facade_stone.name=Quarter Stone Facade
+
 #cornice
 tile.dungeons2:cornice_stone.name=Stone Cornice
 tile.dungeons2:cornice_cobblestone.name=Cobblestone Cornice
@@ -179,6 +182,9 @@ tile.dungeons2:wall_sconce_stonebrick_cracked.name=Cracked Stonebrick Wall Sconc
 tile.dungeons2:wall_sconce_obsidianbrick.name=Obsidianbrick Wall Sconce
 tile.dungeons2:wall_sconce_sandstone.name=Sandstone Wall Sconce
 tile.dungeons2:wall_sconce_smooth_sandstone.name=Smooth Sandstone Wall Sconce
+
+#gravel
+tile.dungeons2:sandstone_gravel.name=Sandstone Gravel
 
 #decorations
 tile.dungeons2:moss.name=Moss
