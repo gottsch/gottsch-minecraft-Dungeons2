@@ -65,7 +65,7 @@ import net.minecraftforge.oredict.OreDictionary;
 @Credits(values={"Dungeons2! was first developed by Mark Gottschling on July 1, 2016."})
 public class Dungeons2 extends AbstractMod {
 	// constants
-	private static final String VERSION_URL = "https://www.dropbox.com/s/fjcnqmbji9ujvbt/dungeons2-versions.json?dl=1";
+	private static final String VERSION_URL = ""; //"https://www.dropbox.com/s/fjcnqmbji9ujvbt/dungeons2-versions.json?dl=1";
 	private static final BuildVersion MINECRAFT_VERSION = new BuildVersion(1, 12, 2);
 
 	public static final String MODID = "dungeons2";
