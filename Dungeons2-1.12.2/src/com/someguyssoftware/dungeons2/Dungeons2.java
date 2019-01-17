@@ -7,12 +7,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 
+import com.someguyssoftware.dungeons2.block.DungeonsBlocks;
 import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.eventhandler.WorldEventHandler;
 import com.someguyssoftware.dungeons2.items.DungeonsItems;
+import com.someguyssoftware.dungeons2.loot.DungeonLootTableMaster;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
@@ -28,6 +31,7 @@ import com.someguyssoftware.gottschcore.version.BuildVersion;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -41,6 +45,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.oredict.OreDictionary;
 
 
 /**
@@ -52,7 +57,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 		modid=Dungeons2.MODID,
 		name=Dungeons2.NAME,
 		version=Dungeons2.VERSION,
-		dependencies="required-after:forge@[14.23.5.2768,);required-after:gottschcore@[1.6.0,)",
+		dependencies="required-after:forge@[14.23.5.2768,);required-after:gottschcore@[1.7.0,)",
 		acceptedMinecraftVersions = "[1.12.2]",
 		updateJSON = Dungeons2.UPDATE_JSON_URL
 		)
@@ -60,12 +65,12 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @Credits(values={"Dungeons2! was first developed by Mark Gottschling on July 1, 2016."})
 public class Dungeons2 extends AbstractMod {
 	// constants
-	private static final String VERSION_URL = "https://www.dropbox.com/s/fjcnqmbji9ujvbt/dungeons2-versions.json?dl=1";
+	private static final String VERSION_URL = ""; //"https://www.dropbox.com/s/fjcnqmbji9ujvbt/dungeons2-versions.json?dl=1";
 	private static final BuildVersion MINECRAFT_VERSION = new BuildVersion(1, 12, 2);
 
 	public static final String MODID = "dungeons2";
 	public static final String NAME = "Dungeons2!";
-	public static final String VERSION = "1.6.1"; 
+	public static final String VERSION = "1.7.0"; 
 	public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/master/Dungeons2-1.12.2/update.json";
 
 	// latest VERSION
@@ -92,7 +97,10 @@ public class Dungeons2 extends AbstractMod {
 	 */
 	private static final String DUNGEONS_CONFIG_DIR = "dungeons2";
 	private static ModConfig config;
-	public static DungeonConfigManager dgnCfgMgr; // TODO move to DungeonWorldGen ?
+	public static DungeonConfigManager CONFIG_MANAGER; // TODO move to DungeonWorldGen ?
+	
+	// loot tables management
+	public static DungeonLootTableMaster LOOT_TABLES;
 	
 	/*
 	 *  Dungeons2 Creative Tab
@@ -116,7 +124,8 @@ public class Dungeons2 extends AbstractMod {
 	public void preInt(FMLPreInitializationEvent event) {
 		super.preInt(event);
 		// register additional events
-
+		MinecraftForge.EVENT_BUS.register(new WorldEventHandler(getInstance()));
+		
 		// create and load the config file		
 		config = new ModConfig(this, event.getModConfigurationDirectory(), DUNGEONS_CONFIG_DIR, "general.cfg");
 
@@ -138,21 +147,11 @@ public class Dungeons2 extends AbstractMod {
 		StyleSheetLoader.exposeStyleSheet(ModConfig.styleSheetFile);
 
 		// check if the chestSheet exists, else create it from the resource
-		ChestSheetLoader.exposeChestSheet(ModConfig.chestSheetFile);
+//		ChestSheetLoader.exposeChestSheet(ModConfig.chestSheetFile);
 
 		// check if the spawnSheet exists, else create it from the resource
 		SpawnSheetLoader.exposeSpawnSheet(ModConfig.spawnSheetFile);
 		// TODO later when setting up the DungeonGenerator, get the style sheet from the file system and pass to generator
-
-
-		// register blocks
-		//			proxy.registerBlocks();
-
-		// register items
-		//			proxy.registerItems();
-
-		// regsiter tile entities
-		//			proxy.registerTileEntities();
 	}
 
 	@EventHandler
@@ -160,7 +159,7 @@ public class Dungeons2 extends AbstractMod {
 		// load the world (minecraft) low-level generators map (NOTE must be AFTER all blocks are registered)
 		log.debug("Setting up generator map");
 
-		if (ModConfig.enableDungeons) {		
+		if (ModConfig.enableDungeons) {	
 			// register client renderers
 			proxy.registerRenderers(getConfig());
 
@@ -175,7 +174,10 @@ public class Dungeons2 extends AbstractMod {
 			GameRegistry.registerWorldGenerator(Dungeons2.dungeonsWorldGen, 100);
 			
 			// add dungeon config managers
-			Dungeons2.dgnCfgMgr = new DungeonConfigManager();
+			Dungeons2.CONFIG_MANAGER = new DungeonConfigManager();
+			
+			// add the loot table managers
+			LOOT_TABLES = new DungeonLootTableMaster(Dungeons2.instance, "", "loot_tables");
 		}
 
 	}
@@ -195,6 +197,9 @@ public class Dungeons2 extends AbstractMod {
 	public void postInit(FMLPostInitializationEvent event) {
 		if (!getConfig().isModEnabled()) return;	
 		super.postInit(event);
+		
+		// register to the ore dictionary
+		OreDictionary.registerOre("gravel", DungeonsBlocks.SANDSTONE_GRAVEL);
 	}
 
 

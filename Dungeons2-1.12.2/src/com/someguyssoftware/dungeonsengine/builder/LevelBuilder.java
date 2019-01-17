@@ -10,10 +10,11 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.dungeonsengine.model.Boundary;
 import com.someguyssoftware.dungeonsengine.model.ILevel;
-import com.someguyssoftware.dungeonsengine.model.IVoid;
+import com.someguyssoftware.dungeonsengine.model.IRoom;
 import com.someguyssoftware.dungeonsengine.model.Level;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
@@ -29,9 +30,9 @@ public class LevelBuilder implements ILevelBuilder {
 	/*
 	 * empty level
 	 */
-//	public static final ILevel EMPTY_LEVEL = new Level();
+	public static final ILevel EMPTY_LEVEL = new Level();
 
-	public static final List<IVoid> EMPTY_VOIDS = new ArrayList<>(1);
+	public static final List<IRoom> EMPTY_ROOMS = new ArrayList<>(1);
 
 //	public static final List<Wayline> EMPTY_WAYLINES = new ArrayList<>(1);
 
@@ -49,8 +50,8 @@ public class LevelBuilder implements ILevelBuilder {
 	 */
 	private ICoords startPoint;
 	
-	private IVoidBuilder voidBuilder;
-	private List<IVoid> plannedVoids;
+	private IRoomBuilder roomBuilder;
+	private List<IRoom> plannedRooms;
 	
 	/*
 	 * the number of rooms lost as a result of distance buffering
@@ -64,14 +65,33 @@ public class LevelBuilder implements ILevelBuilder {
 	
 	/**
 	 * 
+	 * @param world
 	 */
-	public LevelBuilder(World world, Random random, Boundary boundary, ICoords startPoint, ILevelConfig config) {
+	public LevelBuilder(World world) {
+		this.world = world;
+		this.random = new Random();
+	}
+	
+	/**
+	 * 
+	 * @param world
+	 * @param random
+	 */
+	public LevelBuilder(World world, Random random) {
 		this.world = world;
 		this.random = random;
-		this.boundary = boundary;
-		this.startPoint = startPoint;
-		this.config = config;
 	}
+	
+	/**
+	 * 
+	 */
+//	public LevelBuilder(World world, Random random, Boundary boundary, ICoords startPoint, ILevelConfig config) {
+//		this.world = world;
+//		this.random = random;
+//		this.boundary = boundary;
+//		this.startPoint = startPoint;
+//		this.config = config;
+//	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#build()
@@ -81,17 +101,25 @@ public class LevelBuilder implements ILevelBuilder {
 		/*
 		 * local handle to the start room
 		 */
-		IVoid start = null;
+		IRoom start = null;
 		
 		/*
 		 *  local handle to the end room
 		 */
-		IVoid end = null;
+		IRoom end = null;
 		
 		/*
 		 * return object containing all the rooms that meet build criteria and the locations of the special rooms.
 		 */
 		ILevel level = new Level();
+		
+		/*
+		 * test all options
+		 */
+		if (this.startPoint == null) {
+			Dungeons2.log.error("A start coordinate is required to build a dungeon.");
+			return EMPTY_LEVEL;
+		}
 		
 		return level;
 	}
@@ -117,16 +145,16 @@ public class LevelBuilder implements ILevelBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#getSpaceBuilder()
 	 */
 	@Override
-	public IVoidBuilder getVoidBuilder() {
-		return this.voidBuilder;
+	public IRoomBuilder getRoomBuilder() {
+		return this.roomBuilder;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#setSpaceBuilder(com.someguyssoftware.dungeonsengine.builder.ISpaceBuilder)
 	 */
 	@Override
-	public ILevelBuilder with(IVoidBuilder builder) {
-		if (builder != null) this.voidBuilder = builder;
+	public ILevelBuilder with(IRoomBuilder builder) {
+		if (builder != null) this.roomBuilder = builder;
 		return this;
 	}
 
@@ -134,17 +162,17 @@ public class LevelBuilder implements ILevelBuilder {
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#getPlannedSpaces()
 	 */
 	@Override
-	public List<IVoid> getPlannedVoids() {
-		if (this.plannedVoids == null) this.plannedVoids = new ArrayList<>();
-		return this.plannedVoids;
+	public List<IRoom> getPlannedRooms() {
+		if (this.plannedRooms == null) this.plannedRooms = new ArrayList<>();
+		return this.plannedRooms;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.someguyssoftware.dungeonsengine.builder.ILevelBuilder#withSpace(com.someguyssoftware.dungeonsengine.model.ISpace)
 	 */
 	@Override
-	public ILevelBuilder with(IVoid voidSpace) {
-		getPlannedVoids().add(voidSpace);
+	public ILevelBuilder with(IRoom room) {
+		getPlannedRooms().add(room);
 		return this;
 	}
 

@@ -1,0 +1,90 @@
+{
+	"_comments": [
+	"*******",
+	"** Note that default values will populate every dungeon and level, removing the need to populate every",
+	"** property. If the property doesn't require a new value, simply exclude it from",
+	"** the definition. I have added every property to the default definitions only to display",
+	"** the properties and default values.",
+	"*******"
+	],
+	"name": "default",
+	"version": "2.0.0",
+	"biomeWhiteList": ["*"],
+	"biomeBlackList": [""],
+	"size": "MEDIUM",
+	"numLevels": {
+		"min": 4,
+		"max": 7
+	},
+	"bottomLimit": 5,
+	"topLimit": 235,
+	"surfaceBuffer": 7,
+	"boundaryFactor": 1.0,
+	"minecraftConstraints": true,
+	"levelConfigs": [
+		{
+			"boundaryFactor": 0.8,
+			"spawnBoundaryFactor": 0.2,
+			"numRooms": {
+				"min":	15,
+				"max": 30	
+				},
+			"width": {
+				"min":	5,
+				"max": 15		
+			},
+			"depth": {
+				"min":	5,
+				"max": 15	
+			},
+			"height": {
+				"min":	5,
+				"max": 9				
+			},
+			"degrees": {
+				"min":	2,
+				"max": 4	
+			},
+			"decayMultiplier": 5,
+			"spawnerFrequency": {
+				"min":	5,
+				"max": 10				
+			},
+			"chestFrequency": {
+				"min":	5,
+				"max": 10				
+			},
+			"webFrequency": {
+				"min":	10,
+				"max": 20				
+			},
+			"numberOfWebs": {
+				"min":	10,
+				"max": 10		
+			},
+			"vineFrequency": {
+				"min":	10,
+				"max": 20				
+			},
+			"numberOfVines": {
+				"min":	10,
+				"max": 10		
+			},			
+			"support": true,
+			"decorations": true,
+			"theme": "",
+			"chestConfig": {
+				"lootTableMethod": "CUSTOM",
+				"rarity": ["COMMON", "UNCOMMON", "SCARCE"],
+				"probability": {
+					"min":	5,
+					"max": 10		
+				}
+			},
+			"chestCategories": [
+				"COMMON", "UNCOMMON", "RARE"
+			]
+		}
+	],
+	"surfaceConfig": null
+}

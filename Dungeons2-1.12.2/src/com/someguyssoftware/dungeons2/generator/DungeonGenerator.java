@@ -32,6 +32,8 @@ import com.someguyssoftware.dungeons2.style.RoomDecorator;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.chest.BossLootLoader;
+import com.someguyssoftware.dungeonsengine.chest.LootLoader;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 
 import net.minecraft.world.World;
@@ -91,7 +93,9 @@ public class DungeonGenerator {
 	 * @return
 	 * @throws FileNotFoundException
 	 */
-	public boolean generate(World world, Random random, Dungeon dungeon, StyleSheet styleSheet, ChestSheet chestSheet, SpawnSheet spawnSheet) throws FileNotFoundException {
+	public boolean generate(World world, Random random, 
+			Dungeon dungeon, StyleSheet styleSheet, @Deprecated ChestSheet chestSheet, SpawnSheet spawnSheet) 
+					throws FileNotFoundException {
 
 		// if styleSheet is null then use the default style sheet
 		if (styleSheet == null) {
@@ -116,9 +120,13 @@ public class DungeonGenerator {
 		/*
 		 * create the room decorators
 		 */
-		IRoomDecorator roomDecorator = new RoomDecorator(chestSheet, spawnSheet);
-		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
-		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
+		// TODO is many more decorators, they all should share the same set of loaders instead of creating new ones each.
+//		IRoomDecorator roomDecorator = new RoomDecorator(chestSheet, spawnSheet);
+		IRoomDecorator roomDecorator = new RoomDecorator(new LootLoader(), spawnSheet);
+//		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
+		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(new BossLootLoader());
+//		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
+		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(new LootLoader(), spawnSheet);
 		
 		/*
 		 *  NOTE careful here. IRoomGenerator can alter the state of the IGenerationStrategy with a

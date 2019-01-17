@@ -109,7 +109,7 @@ public class BuildEntranceCommand extends CommandBase {
     				Dungeons2.log.info(s);
     			}
     			else {
-    				Dungeons2.log.debug("Entrance was null ?");
+    				Dungeons2.log.debug("Exit was null ?");
     			}
     		}
 		}

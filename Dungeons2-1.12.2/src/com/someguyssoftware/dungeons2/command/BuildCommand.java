@@ -15,14 +15,13 @@ import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.generator.DungeonGenerator;
 import com.someguyssoftware.dungeons2.model.Dungeon;
-import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
-import com.someguyssoftware.dungeons2.printer.DungeonPrettyPrinter;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheet;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
 import com.someguyssoftware.dungeons2.style.Theme;
+import com.someguyssoftware.dungeonsengine.config.DungeonConfig;
 import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.positional.Coords;
@@ -106,7 +105,7 @@ public class BuildCommand extends CommandBase {
     			Biome biome = world.getBiome(startPoint.toPos());
 				// get the biome ID
 				Integer biomeID = Biome.getIdForBiome(biome);
-			    List<IDungeonConfig> dcList = Dungeons2.dgnCfgMgr.getByBiome(/*biome.getBiomeName()*/biomeID);
+			    List<IDungeonConfig> dcList = Dungeons2.CONFIG_MANAGER.getByBiome(/*biome.getBiomeName()*/biomeID);
 			    // select one
 			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
@@ -118,9 +117,9 @@ public class BuildCommand extends CommandBase {
     			
     			LevelBuilder levelBuilder = new LevelBuilder(config);
     			// select the dungeon config to use
-    			DungeonConfig dConfig = new DungeonConfig();
-    			dConfig.setNumberOfLevels(new Quantity(2, 5));
-    			dConfig.setUseSupport(false);
+    			IDungeonConfig dConfig = new DungeonConfig();
+
+    			dConfig.setNumLevels(new Quantity(2, 5));
 //    			dConfig.setUseSupport(true);
     			
     			// use a bottom-up dungeonBuilder

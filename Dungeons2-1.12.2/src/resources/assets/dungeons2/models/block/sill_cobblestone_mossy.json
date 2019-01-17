@@ -1,6 +1,8 @@
 {
 	"parent": "Dungeons2:block/sill",
     "textures": {
-        "0": "blocks/cobblestone_mossy"
+        "0": "blocks/cobblestone_mossy",
+        "top": "blocks/cobblestone_mossy",
+        "bottom": "blocks/cobblestone_mossy"
     }
 }

@@ -47,12 +47,16 @@ public class LevelConfig implements ILevelConfig {
 	 */
 	private Quantity spawnerFrequency;// = new Quantity(5,10);
 	
+	// TODO should be it's own class with properties
+	// private ChestConfig
 	/*
 	 * Chest properties
 	 */
+	private IChestConfig chestConfig;
 	private Quantity chestFrequency;// = new Quantity(5, 10);
 	
 	private List<String> chestCategories;// = Arrays.asList("COMMON", "UNCOMMON", "RARE");
+	
 	
 	// TODO rework these to be more generic - some sort of matrix
 	private Quantity numberOfWebs;// = new Quantity(10, 10);
@@ -83,6 +87,8 @@ public class LevelConfig implements ILevelConfig {
 	 * @param c
 	 */
 	public LevelConfig(LevelConfig c) {
+		// TODO all Quantity need to be new copies
+		this.setChestConfig(new ChestConfig(c.getChestConfig()));
 		this.setChestCategories(c.getChestCategories());
 		this.setChestFrequency(c.getChestFrequency());
 		this.setDecayMultiplier(c.getDecayMultiplier());
@@ -125,10 +131,14 @@ public class LevelConfig implements ILevelConfig {
 			setBoundaryFactor(config.getBoundaryFactor());
 		}
 		
+		if (getChestConfig() == null) setChestConfig(new ChestConfig(config.getChestConfig()));
+		else getChestConfig().apply(config.getChestConfig());
+		
 		if (getChestCategories() == null || getChestCategories().equals("")) {
 			setChestCategories(config.getChestCategories());
 		}
 		
+		// TODO all Quantity need to be new copies
 		if (getChestFrequency() == null) setChestFrequency(config.getChestFrequency());
 		if (getDecayMultiplier() == null) setDecayMultiplier(config.getDecayMultiplier());
 		if (isDecorations() == null) setDecorations(config.isDecorations());
@@ -397,14 +407,15 @@ public class LevelConfig implements ILevelConfig {
 		this.decorations = decorations;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
-		return "LevelConfig [fieldFactor=" + boundaryFactor + ", numRooms=" + numRooms + ", width=" + width + ", depth="
-				+ depth + ", height=" + height + ", degrees=" + degrees + ", decayMultiplier=" + decayMultiplier
-				+ ", spawnerFrequency=" + spawnerFrequency + ", chestFrequency=" + chestFrequency + ", chestCategories="
-				+ chestCategories + ", numberOfWebs=" + numberOfWebs + ", webFrequency=" + webFrequency
-				+ ", numberOfVines=" + numberOfVines + ", vineFrequency=" + vineFrequency + ", support=" + support
-				+ ", decorations=" + decorations + "]";
+		return "LevelConfig [boundaryFactor=" + boundaryFactor + ", spawnBoundaryFactor=" + spawnBoundaryFactor + ", numRooms=" + numRooms + ", width=" + width + ", depth=" + depth + ", height="
+				+ height + ", degrees=" + degrees + ", decayMultiplier=" + decayMultiplier + ", spawnerFrequency=" + spawnerFrequency + ", chestConfig=" + chestConfig + ", chestFrequency="
+				+ chestFrequency + ", chestCategories=" + chestCategories + ", numberOfWebs=" + numberOfWebs + ", webFrequency=" + webFrequency + ", numberOfVines=" + numberOfVines
+				+ ", vineFrequency=" + vineFrequency + ", theme=" + theme + ", support=" + support + ", decorations=" + decorations + "]";
 	}
 
 	@Override
@@ -431,6 +442,16 @@ public class LevelConfig implements ILevelConfig {
 	@Override
 	public void setTheme(String theme) {
 		this.theme = theme;
+	}
+
+	@Override
+	public IChestConfig getChestConfig() {
+		return chestConfig;
+	}
+
+	@Override
+	public void setChestConfig(IChestConfig chestConfig) {
+		this.chestConfig = chestConfig;
 	}
 
 }

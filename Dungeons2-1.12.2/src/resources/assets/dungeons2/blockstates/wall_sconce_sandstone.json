@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "normal": {
+      "model": "Dungeons2:wall_sconce_sandstone"
+    },
+    "facing=north": {
+      "model": "Dungeons2:wall_sconce_sandstone"
+    },
+    "facing=south": {
+      "model": "Dungeons2:wall_sconce_sandstone",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "Dungeons2:wall_sconce_sandstone",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "Dungeons2:wall_sconce_sandstone",
+      "y": 90
+    },
+    "facing=up": {
+      "model": "Dungeons2:wall_sconce_sandstone"
+    },
+    "facing=down": {
+      "model": "Dungeons2:wall_sconce_sandstone"
+    }
+  }
+}

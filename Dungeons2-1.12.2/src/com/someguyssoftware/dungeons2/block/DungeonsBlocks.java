@@ -42,10 +42,32 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block basicMossyStonebrickFacade;
 	public static Block basicCrackedStonebrickFacade;
 	public static Block basicChiseledStonebrickFacade;
-	public static Block basicObsidianbrickFacade;
-	
+	public static Block basicObsidianbrickFacade;	
+	public static Block BASIC_SANDSTONE_FACADE;
 	public static Block BASIC_SMOOTH_SANDSTONE_FACADE; //basicSmoothSandstoneFacade
 
+	// quarter facade
+	public static Block QUARTER_STONE_FACADE;
+	public static Block QUARTER_COBBLESTONE_FACADE;
+	public static Block QUARTER_MOSSY_COBBLESTONE_FACADE;
+	public static Block QUARTER_STONEBRICK_FACADE;
+	public static Block QUARTER_MOSSY_STONEBRICK_FACADE;
+	public static Block QUARTER_CRACKED_STONEBRICK_FACADE;
+	public static Block QUARTER_CHISELED_STONEBRICK_FACADE;
+	public static Block QUARTER_OBSIDIANBRICK_FACADE;
+	public static Block QUARTER_SANDSTONE_FACADE;
+	public static Block QUARTER_SMOOTH_SANDSTONE_FACADE;
+	
+//	public static Block basicCobblestoneFacade;
+//	public static Block basicMossyCobblestoneFacade;
+//	public static Block basicStonebrickFacade;
+//	public static Block basicMossyStonebrickFacade;
+//	public static Block basicCrackedStonebrickFacade;
+//	public static Block basicChiseledStonebrickFacade;
+//	public static Block basicObsidianbrickFacade;	
+//	public static Block BASIC_SANDSTONE_FACADE;
+//	public static Block BASIC_SMOOTH_SANDSTONE_FACADE;
+	
 	// "T" Pillar
 	public static Block teePillarStoneFacade;
 	public static Block teePillarCobblestoneFacade;
@@ -55,6 +77,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block teePillarCrackedStonebrickFacade;
 	public static Block teePillarObsidianbrickFacade;
 	
+	public static Block TEE_PILLAR_SANDSTONE_FACADE;
 	public static Block TEE_PILLAR_SMOOTH_SANDSTONE_FACADE;
 
 	// thin "T" Pillar	
@@ -66,7 +89,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block teeThinPillarCrackedStonebrickFacade;
 	public static Block teeThinPillarObsidianbrickFacade;
 
-	public static Block teeThinPillarSmoothSandstoneFacade;
+	public static Block TEE_THIN_PILLAR_SANDSTONE_FACADE;
+	public static Block TEE_THIN_PILLAR_SMOOTH_SANDSTONE_FACADE;
 	
 	// cornice
 	public static Block corniceStoneFacade;
@@ -77,7 +101,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block corniceCrackedStonebrickFacade;
 	public static Block corniceObsidianbrickFacade;
 
-	public static Block corniceSmoothSandstoneFacade;
+	public static Block CORNICE_SANDSTONE_FACADE;
+	public static Block CORNICE_SMOOTH_SANDSTONE_FACADE;
 	
 	// flute pillar
 	public static Block flutePillarStoneBlock;
@@ -88,7 +113,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block flutePillarCrackedStonebrickBlock;
 	public static Block flutePillarObsidianbrickBlock;
 
-	public static Block flutePillarSmoothSandstoneBlock;
+	public static Block FLUTE_PILLAR_SANDSTONE_BLOCK;
+	public static Block FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK;
 	
 	// flute thin pillar
 	public static Block fluteThinPillarStoneFacade;
@@ -99,7 +125,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block fluteThinPillarCrackedStonebrickFacade;
 	public static Block fluteThinPillarObsidianbrickFacade;
 
-	public static Block fluteThinPillarSmoothSandstoneFacade;
+	public static Block FLUTE_THIN_PILLAR_SANDSTONE_FACADE;
+	public static Block FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_FACADE;
 	
 	// seven eights
 	public static Block sevenEightsPillarStoneFacade;
@@ -110,7 +137,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block sevenEightsPillarCrackedStonebrickFacade;
 	public static Block sevenEightsPillarObsidianbrickFacade;
 
-	public static Block sevenEightsPillarSmoothSandstoneFacade;
+	public static Block SEVEN_EIGHTS_PILLAR_SANDSTONE_FACADE;
+	public static Block SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE_FACADE;
 	
 	// sills
 	public static Block sillStoneBlock;
@@ -121,7 +149,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block sillCrackedStonebrickBlock;
 	public static Block sillObsidianbrickBlock;
 
-	public static Block sillSmoothSandstoneBlock;
+	public static Block SILL_SANDSTONE_BLOCK;
+	public static Block SILL_SMOOTH_SANDSTONE_BLOCK;
 	
 	// double sills
 	public static Block doubleSillStoneBlock;
@@ -132,7 +161,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block doubleSillCrackedStonebrickBlock;	
 	public static Block doubleSillObsidianbrickBlock;
 
-	public static Block doubleSillSmoothSandstoneBlock;
+	public static Block DOUBLE_SILL_SANDSTONE_BLOCK;
+	public static Block DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK;
 	
 	// half pillar base
 	public static Block halfPillarBaseStoneBlock;
@@ -143,7 +173,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block halfPillarBaseCrackedStonebrickBlock;
 	public static Block halfPillarBaseObsidianbrickBlock;
 
-	public static Block halfPillarBaseSmoothSandstoneBlock;
+	public static Block HALF_PILLAR_BASE_SANDSTONE_BLOCK;
+	public static Block HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK;
 	
 	// half pillar
 	public static Block halfPillarStoneBlock;
@@ -154,7 +185,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block halfPillarCrackedStonebrickBlock;
 	public static Block halfPillarObsidianbrickBlock;
 
-	public static Block halfPillarSmoothSandstoneBlock;
+	public static Block HALF_PILLAR_SANDSTONE_BLOCK;
+	public static Block HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK;
 	
 	// coffer middle
 	public static Block cofferMiddleStoneBlock;
@@ -165,7 +197,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block cofferMiddleCrackedStonebrickBlock;
 	public static Block cofferMiddleObsidianbrickBlock;
 
-	public static Block cofferMiddleSmoothSandstoneBlock;
+	public static Block COFFER_MIDDLE_SANDSTONE_BLOCK;
+	public static Block COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK;
 	
 	// coffer
 	public static Block cofferStoneBlock;
@@ -176,7 +209,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block cofferCrackedStonebrickBlock;
 	public static Block cofferObsidianbrickBlock;
 
-	public static Block cofferSmoothSandstoneBlock;
+	public static Block COFFER_SANDSTONE_BLOCK;
+	public static Block COFFER_SMOOTH_SANDSTONE_BLOCK;
 	
 	// crown molding
 	public static Block crownMoldingStoneFacade;
@@ -187,7 +221,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block crownMoldingCrackedStonebrickFacade;
 	public static Block crownMoldingObsidianbrickFacade;
 
-	public static Block crownMoldingSmoothSandstoneFacade;
+	public static Block CROWN_MOLDING_SANDSTONE_FACADE;
+	public static Block CROWN_MOLDING_SMOOTH_SANDSTONE_FACADE;
 	
 	// wall sconce 
 	public static Block wallSconceStoneFacade;
@@ -198,11 +233,15 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	public static Block wallSconceCrackedStonebrickFacade;
 	public static Block wallSconceObsidianbrickFacade;
 
-	public static Block wallSconceSmoothSandstoneFacade;
+	public static Block WALL_SCONCE_SANDSTONE_FACADE;
+	public static Block WALL_SCONCE_SMOOTH_SANDSTONE_FACADE;
 	
 	// grate
 	public static Block grateBlock;
 
+	// other
+	public static Block SANDSTONE_GRAVEL;
+	
 	// decorations
 	//	public static Block moss;
 	//	public static Block moss2;
@@ -224,8 +263,21 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		basicCrackedStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicCrackedStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicChiseledStonebrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicChiseledStonebrickFacadeId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		basicObsidianbrickFacade = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.basicObsidianbrickFacadeId, Material.ROCK).setHardness(50F).setResistance(2000F);
+		BASIC_SANDSTONE_FACADE = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.BASIC_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		BASIC_SMOOTH_SANDSTONE_FACADE = new BasicFacadeBlock(Dungeons2.MODID, ModConfig.BASIC_SMOOTH_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
+		// quarter facade
+		QUARTER_STONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_STONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_COBBLESTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_COBBLESTONE_FACADE_ID, Material.ROCK).setHardness(2.0F).setResistance(10.0F);
+		QUARTER_MOSSY_COBBLESTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_MOSSY_COBBLESTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_MOSSY_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_MOSSY_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_CRACKED_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_CRACKED_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_CHISELED_STONEBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_CHISELED_STONEBRICK_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_OBSIDIANBRICK_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_OBSIDIANBRICK_FACADE_ID, Material.ROCK).setHardness(50F).setResistance(2000F);
+		QUARTER_SANDSTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		QUARTER_SMOOTH_SANDSTONE_FACADE = new QuarterFacadeBlock(Dungeons2.MODID, ModConfig.QUARTER_SMOOTH_SANDSTONE_FACADE_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		
 		// t pillar
 		teePillarStoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		teePillarCobblestoneFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarCobblestoneBlockId, Material.ROCK).setHardness(2.0F).setResistance(10.0F);
@@ -234,6 +286,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		teePillarMossyStonebrickFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		teePillarCrackedStonebrickFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		teePillarObsidianbrickFacade = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.teePillarObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000F);
+		TEE_PILLAR_SANDSTONE_FACADE = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.TEE_PILLAR_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		TEE_PILLAR_SMOOTH_SANDSTONE_FACADE = new TeePillarFacadeBlock(Dungeons2.MODID, ModConfig.TEE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// t pillar facade
@@ -244,7 +297,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		teeThinPillarMossyStonebrickFacade = new TeeThinPillarFacadeBlock(Dungeons2.MODID, ModConfig.teeThinPillarMossyStonebrickBlockId, Material.ROCK ).setHardness(1.5F).setResistance(10.0F);
 		teeThinPillarCrackedStonebrickFacade = new TeeThinPillarFacadeBlock(Dungeons2.MODID, ModConfig.teeThinPillarCrackedStonebrickBlockId,Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		teeThinPillarObsidianbrickFacade = new TeeThinPillarFacadeBlock(Dungeons2.MODID, ModConfig.teeThinPillarObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000F);
-		teeThinPillarSmoothSandstoneFacade = new TeeThinPillarFacadeBlock(Dungeons2.MODID, ModConfig.TEE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		TEE_THIN_PILLAR_SANDSTONE_FACADE = new TeeThinPillarFacadeBlock(Dungeons2.MODID, ModConfig.TEE_THIN_PILLAR_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		TEE_THIN_PILLAR_SMOOTH_SANDSTONE_FACADE = new TeeThinPillarFacadeBlock(Dungeons2.MODID, ModConfig.TEE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// flute pillar
 		flutePillarStoneBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.flutePillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -254,7 +308,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		flutePillarMossyStonebrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.flutePillarMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		flutePillarCrackedStonebrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.flutePillarCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		flutePillarObsidianbrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.flutePillarObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000F);
-		flutePillarSmoothSandstoneBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		FLUTE_PILLAR_SANDSTONE_BLOCK = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.FLUTE_PILLAR_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// flute pillar facade
 		fluteThinPillarStoneFacade = new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.fluteThinPillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -264,7 +319,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		fluteThinPillarMossyStonebrickFacade= new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.fluteThinPillarMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		fluteThinPillarCrackedStonebrickFacade = new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.fluteThinPillarCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		fluteThinPillarObsidianbrickFacade = new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.fluteThinPillarObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000F);
-		fluteThinPillarSmoothSandstoneFacade = new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		FLUTE_THIN_PILLAR_SANDSTONE_FACADE = new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.FLUTE_THIN_PILLAR_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_FACADE = new FlutePillarFacadeBlock(Dungeons2.MODID, ModConfig.FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// cornice
 		corniceStoneFacade = new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.corniceStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -274,7 +330,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		corniceMossyStonebrickFacade= new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.corniceMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		corniceCrackedStonebrickFacade = new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.corniceCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		corniceObsidianbrickFacade = new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.corniceObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000F);
-		corniceSmoothSandstoneFacade = new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.CORNICE_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		CORNICE_SANDSTONE_FACADE = new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.CORNICE_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		CORNICE_SMOOTH_SANDSTONE_FACADE = new CorniceFacadeBlock(Dungeons2.MODID, ModConfig.CORNICE_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// crown molding
 		crownMoldingStoneFacade = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.crownMoldingStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -284,7 +341,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		crownMoldingMossyStonebrickFacade = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.crownMoldingMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		crownMoldingCrackedStonebrickFacade = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.crownMoldingCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		crownMoldingObsidianbrickFacade = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.crownMoldingObsidianbrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(2000.0F);
-		crownMoldingSmoothSandstoneFacade = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.CROWN_MOLDING_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		CROWN_MOLDING_SANDSTONE_FACADE = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.CROWN_MOLDING_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		CROWN_MOLDING_SMOOTH_SANDSTONE_FACADE = new CrownMoldingFacadeBlock(Dungeons2.MODID, ModConfig.CROWN_MOLDING_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// seven eights
 		sevenEightsPillarStoneFacade = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.sevenEightsPillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -294,7 +352,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		sevenEightsPillarMossyStonebrickFacade = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.sevenEightsPillarMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		sevenEightsPillarCrackedStonebrickFacade = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.sevenEightsPillarCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		sevenEightsPillarObsidianbrickFacade = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.sevenEightsPillarObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000F);
-		sevenEightsPillarSmoothSandstoneFacade = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		SEVEN_EIGHTS_PILLAR_SANDSTONE_FACADE = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.SEVEN_EIGHTS_PILLAR_SANDSTONE, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE_FACADE = new SevenEightsPillarFacadeBlock(Dungeons2.MODID, ModConfig.SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// sills
 		sillStoneBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.sillStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
@@ -304,7 +363,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		sillMossyStonebrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.sillMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		sillCrackedStonebrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.sillCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		sillObsidianbrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.sillObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
-		sillSmoothSandstoneBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.SILL_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
+		SILL_SANDSTONE_BLOCK = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.SILL_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
+		SILL_SMOOTH_SANDSTONE_BLOCK = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.SILL_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
 
 		// double sills
 		doubleSillStoneBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.doubleSillStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
@@ -314,7 +374,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		doubleSillMossyStonebrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.doubleSillMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		doubleSillCrackedStonebrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.doubleSillCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
 		doubleSillObsidianbrickBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.doubleSillObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
-		doubleSillSmoothSandstoneBlock = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
+		DOUBLE_SILL_SANDSTONE_BLOCK = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.DOUBLE_SILL_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
+		DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK = new CardinalDirectionBlock(Dungeons2.MODID, ModConfig.DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F).setCreativeTab(Dungeons2.DUNGEONS_TAB);
 
 		// half pillar bases
 		halfPillarBaseStoneBlock = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.halfPillarBaseStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -324,7 +385,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		halfPillarBaseMossyStonebrickBlock = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.halfPillarBaseMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F);
 		halfPillarBaseCrackedStonebrickBlock = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.halfPillarBaseCrackedStonebrickBlockId,Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		halfPillarBaseObsidianbrickBlock = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.halfPillarBaseObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000.0F);
-		halfPillarBaseSmoothSandstoneBlock = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		HALF_PILLAR_BASE_SANDSTONE_BLOCK = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.HALF_PILLAR_BASE_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK = new RelativeDirectionFacadeBlock(Dungeons2.MODID, ModConfig.HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// half pillars
 		halfPillarStoneBlock = new HalfPillarBlock(Dungeons2.MODID, ModConfig.halfPillarStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -334,7 +396,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		halfPillarMossyStonebrickBlock = new HalfPillarBlock(Dungeons2.MODID, ModConfig.halfPillarMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		halfPillarCrackedStonebrickBlock = new HalfPillarBlock(Dungeons2.MODID, ModConfig.halfPillarCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		halfPillarObsidianbrickBlock = new HalfPillarBlock(Dungeons2.MODID, ModConfig.halfPillarObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000.0F);
-		halfPillarSmoothSandstoneBlock = new HalfPillarBlock(Dungeons2.MODID, ModConfig.HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		HALF_PILLAR_SANDSTONE_BLOCK = new HalfPillarBlock(Dungeons2.MODID, ModConfig.HALF_PILLAR_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK = new HalfPillarBlock(Dungeons2.MODID, ModConfig.HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// middle coffer
 		cofferMiddleStoneBlock = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.cofferMiddleStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -344,7 +407,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		cofferMiddleMossyStonebrickBlock = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.cofferMiddleMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		cofferMiddleCrackedStonebrickBlock = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.cofferMiddleCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		cofferMiddleObsidianbrickBlock = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.cofferMiddleObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000.0F);
-		cofferMiddleSmoothSandstoneBlock = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		COFFER_MIDDLE_SANDSTONE_BLOCK = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.COFFER_MIDDLE_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK = new CofferMiddleFacadeBlock(Dungeons2.MODID, ModConfig.COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// coffer
 		cofferStoneBlock = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.cofferStoneBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
@@ -354,7 +418,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		cofferMossyStonebrickBlock = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.cofferMossyStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		cofferCrackedStonebrickBlock = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.cofferCrackedStonebrickBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 		cofferObsidianbrickBlock = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.cofferObsidianbrickBlockId, Material.ROCK).setHardness(50F).setResistance(2000.0F);
-		cofferSmoothSandstoneBlock = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.COFFER_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		COFFER_SANDSTONE_BLOCK = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.COFFER_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+		COFFER_SMOOTH_SANDSTONE_BLOCK = new CofferFacadeBlock(Dungeons2.MODID, ModConfig.COFFER_SMOOTH_SANDSTONE_BLOCK_ID, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
 
 		// wall sconce
 		wallSconceStoneFacade = new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.wallSconceStoneBlockId).setHardness(0.0F).setLightLevel(0.9375F);
@@ -364,10 +429,14 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		wallSconceMossyStonebrickFacade = new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.wallSconceMossyStonebrickBlockId).setHardness(0.0F).setLightLevel(0.9375F);
 		wallSconceCrackedStonebrickFacade = new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.wallSconceCrackedStonebrickBlockId).setHardness(0.0F).setLightLevel(0.9375F);
 		wallSconceObsidianbrickFacade = 	new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.wallSconceObsidianbrickBlockId).setHardness(0.0F).setLightLevel(0.9375F);
-		wallSconceSmoothSandstoneFacade = new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.WALL_SCONCE_SMOOTH_SANDSTONE_BLOCK_ID).setHardness(0.0F).setLightLevel(0.9375F);
+		WALL_SCONCE_SANDSTONE_FACADE = new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.WALL_SCONCE_SANDSTONE_BLOCK_ID).setHardness(0.0F).setLightLevel(0.9375F);
+		WALL_SCONCE_SMOOTH_SANDSTONE_FACADE = new DungeonsTorchBlock(Dungeons2.MODID, ModConfig.WALL_SCONCE_SMOOTH_SANDSTONE_BLOCK_ID).setHardness(0.0F).setLightLevel(0.9375F);
 
 		// grate
 		grateBlock = new GrateBlock(Dungeons2.MODID, ModConfig.grateBlockId, Material.ROCK).setHardness(1.5F).setResistance(10.0F);
+
+		// other
+		SANDSTONE_GRAVEL = new SandstoneGravelBlock(Dungeons2.MODID, ModConfig.SANDSTONE_GRAVEL_BLOCK_ID, Material.ROCK);
 
 		// decorations - moss
 		//	    moss = new DecorationBlock(Material.GRASS, ModConfig.mossBlockId);
@@ -377,6 +446,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		PUDDLE = new DecorationBlock(Dungeons2.MODID, ModConfig.puddleBlockId, Material.GRASS);
 		//	    blood = new DecorationBlock(Material.GRASS, ModConfig.bloodBlockId);
 		//	    mold1 = new DecorationBlock(Material.GRASS, ModConfig.mold1BlockId);
+		
 		
 		/*
 		 *  setup array
@@ -392,6 +462,19 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(basicChiseledStonebrickFacade);
 		BLOCKS.add(basicObsidianbrickFacade);
 		BLOCKS.add(BASIC_SMOOTH_SANDSTONE_FACADE);
+		BLOCKS.add(BASIC_SANDSTONE_FACADE);
+		// quarter basic
+		BLOCKS.add(QUARTER_STONE_FACADE);
+		BLOCKS.add(QUARTER_COBBLESTONE_FACADE);
+		BLOCKS.add(QUARTER_MOSSY_COBBLESTONE_FACADE);
+		BLOCKS.add(QUARTER_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_MOSSY_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_CRACKED_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_CHISELED_STONEBRICK_FACADE);
+		BLOCKS.add(QUARTER_OBSIDIANBRICK_FACADE);
+		BLOCKS.add(QUARTER_SANDSTONE_FACADE);
+		BLOCKS.add(QUARTER_SMOOTH_SANDSTONE_FACADE);
+		
 		// tee
 		BLOCKS.add(teePillarStoneFacade);
 		BLOCKS.add(teePillarCobblestoneFacade);
@@ -401,6 +484,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(teePillarCrackedStonebrickFacade);
 		BLOCKS.add(teePillarObsidianbrickFacade);
 		BLOCKS.add(TEE_PILLAR_SMOOTH_SANDSTONE_FACADE);
+		BLOCKS.add(TEE_PILLAR_SANDSTONE_FACADE);
 		// thin tee
 		BLOCKS.add(teeThinPillarStoneFacade);
 		BLOCKS.add(teeThinPillarCobblestoneFacade);
@@ -409,7 +493,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(teeThinPillarMossyStonebrickFacade);
 		BLOCKS.add(teeThinPillarCrackedStonebrickFacade);
 		BLOCKS.add(teeThinPillarObsidianbrickFacade);
-		BLOCKS.add(teeThinPillarSmoothSandstoneFacade);
+		BLOCKS.add(TEE_THIN_PILLAR_SMOOTH_SANDSTONE_FACADE);
+		BLOCKS.add(TEE_THIN_PILLAR_SANDSTONE_FACADE);
 		// flute
 		BLOCKS.add(flutePillarStoneBlock);
 		BLOCKS.add(flutePillarCobblestoneBlock);
@@ -418,8 +503,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(flutePillarMossyStonebrickBlock);
 		BLOCKS.add(flutePillarCrackedStonebrickBlock);
 		BLOCKS.add(flutePillarObsidianbrickBlock);
-		BLOCKS.add(flutePillarSmoothSandstoneBlock);
-
+		BLOCKS.add(FLUTE_PILLAR_SANDSTONE_BLOCK);
+		BLOCKS.add(FLUTE_PILLAR_SMOOTH_SANDSTONE_BLOCK);
 		// flute thin
 		BLOCKS.add(fluteThinPillarStoneFacade);
 		BLOCKS.add(fluteThinPillarCobblestoneFacade);
@@ -428,8 +513,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(fluteThinPillarMossyStonebrickFacade);
 		BLOCKS.add(fluteThinPillarCrackedStonebrickFacade);
 		BLOCKS.add(fluteThinPillarObsidianbrickFacade);
-		BLOCKS.add(fluteThinPillarSmoothSandstoneFacade);
-
+		BLOCKS.add(FLUTE_THIN_PILLAR_SANDSTONE_FACADE);
+		BLOCKS.add(FLUTE_THIN_PILLAR_SMOOTH_SANDSTONE_FACADE);
 		// cornice
 		BLOCKS.add(corniceStoneFacade);
 		BLOCKS.add(corniceCobblestoneFacade);
@@ -438,7 +523,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(corniceMossyStonebrickFacade);
 		BLOCKS.add(corniceCrackedStonebrickFacade);
 		BLOCKS.add(corniceObsidianbrickFacade);
-		BLOCKS.add(corniceSmoothSandstoneFacade);		
+		BLOCKS.add(CORNICE_SANDSTONE_FACADE);
+		BLOCKS.add(CORNICE_SMOOTH_SANDSTONE_FACADE);	
 		// crown
 		BLOCKS.add(crownMoldingStoneFacade);
 		BLOCKS.add(crownMoldingCobblestoneFacade);
@@ -447,7 +533,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(crownMoldingMossyStonebrickFacade);
 		BLOCKS.add(crownMoldingCrackedStonebrickFacade);
 		BLOCKS.add(crownMoldingObsidianbrickFacade);
-		BLOCKS.add(crownMoldingSmoothSandstoneFacade);
+		BLOCKS.add(CROWN_MOLDING_SANDSTONE_FACADE);
+		BLOCKS.add(CROWN_MOLDING_SMOOTH_SANDSTONE_FACADE);
 		// seven-eights
 		BLOCKS.add(sevenEightsPillarStoneFacade);
 		BLOCKS.add(sevenEightsPillarCobblestoneFacade);
@@ -456,7 +543,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(sevenEightsPillarMossyStonebrickFacade);
 		BLOCKS.add(sevenEightsPillarCrackedStonebrickFacade);
 		BLOCKS.add(sevenEightsPillarObsidianbrickFacade);
-		BLOCKS.add(sevenEightsPillarSmoothSandstoneFacade);				
+		BLOCKS.add(SEVEN_EIGHTS_PILLAR_SANDSTONE_FACADE);
+		BLOCKS.add(SEVEN_EIGHTS_PILLAR_SMOOTH_SANDSTONE_FACADE);	
 		// sills
 		BLOCKS.add(sillStoneBlock);
 		BLOCKS.add(sillCobblestoneBlock);
@@ -465,7 +553,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(sillMossyStonebrickBlock);
 		BLOCKS.add(sillCrackedStonebrickBlock);
 		BLOCKS.add(sillObsidianbrickBlock);
-		BLOCKS.add(sillSmoothSandstoneBlock);
+		BLOCKS.add(SILL_SANDSTONE_BLOCK);
+		BLOCKS.add(SILL_SMOOTH_SANDSTONE_BLOCK);
 		// double sills
 		BLOCKS.add(doubleSillStoneBlock);
 		BLOCKS.add(doubleSillCobblestoneBlock);
@@ -474,7 +563,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(doubleSillMossyStonebrickBlock);
 		BLOCKS.add(doubleSillCrackedStonebrickBlock);
 		BLOCKS.add(doubleSillObsidianbrickBlock);
-		BLOCKS.add(doubleSillSmoothSandstoneBlock);	
+		BLOCKS.add(DOUBLE_SILL_SANDSTONE_BLOCK);
+		BLOCKS.add(DOUBLE_SILL_SMOOTH_SANDSTONE_BLOCK);	
 		// half pillar base
 		BLOCKS.add(halfPillarBaseStoneBlock);
 		BLOCKS.add(halfPillarBaseCobblestoneBlock);
@@ -483,8 +573,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(halfPillarBaseMossyStonebrickBlock);
 		BLOCKS.add(halfPillarBaseCrackedStonebrickBlock);
 		BLOCKS.add(halfPillarBaseObsidianbrickBlock);
-		BLOCKS.add(halfPillarBaseSmoothSandstoneBlock);
-		
+		BLOCKS.add(HALF_PILLAR_BASE_SANDSTONE_BLOCK);
+		BLOCKS.add(HALF_PILLAR_BASE_SMOOTH_SANDSTONE_BLOCK);
 		// half pillar
 		BLOCKS.add(halfPillarStoneBlock);
 		BLOCKS.add(halfPillarCobblestoneBlock);
@@ -493,8 +583,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(halfPillarMossyStonebrickBlock);
 		BLOCKS.add(halfPillarCrackedStonebrickBlock);
 		BLOCKS.add(halfPillarObsidianbrickBlock);
-		BLOCKS.add(halfPillarSmoothSandstoneBlock);
-		
+		BLOCKS.add(HALF_PILLAR_SANDSTONE_BLOCK);
+		BLOCKS.add(HALF_PILLAR_SMOOTH_SANDSTONE_BLOCK);
 		// middle coffer
 		BLOCKS.add(cofferMiddleStoneBlock);
 		BLOCKS.add(cofferMiddleCobblestoneBlock);
@@ -503,7 +593,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(cofferMiddleMossyStonebrickBlock);
 		BLOCKS.add(cofferMiddleCrackedStonebrickBlock);
 		BLOCKS.add(cofferMiddleObsidianbrickBlock);
-		BLOCKS.add(cofferMiddleSmoothSandstoneBlock);
+		BLOCKS.add(COFFER_MIDDLE_SANDSTONE_BLOCK);
+		BLOCKS.add(COFFER_MIDDLE_SMOOTH_SANDSTONE_BLOCK);
 		// coffer
 		BLOCKS.add(cofferStoneBlock);
 		BLOCKS.add(cofferCobblestoneBlock);
@@ -512,7 +603,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(cofferMossyStonebrickBlock);
 		BLOCKS.add(cofferCrackedStonebrickBlock);
 		BLOCKS.add(cofferObsidianbrickBlock);
-		BLOCKS.add(cofferSmoothSandstoneBlock);
+		BLOCKS.add(COFFER_SANDSTONE_BLOCK);
+		BLOCKS.add(COFFER_SMOOTH_SANDSTONE_BLOCK);
 		// wall sconce
 		BLOCKS.add(wallSconceStoneFacade);
 		BLOCKS.add(wallSconceCobblestoneFacade);
@@ -521,11 +613,19 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		BLOCKS.add(wallSconceMossyStonebrickFacade);
 		BLOCKS.add(wallSconceCrackedStonebrickFacade);
 		BLOCKS.add(wallSconceObsidianbrickFacade);
-		BLOCKS.add(wallSconceSmoothSandstoneFacade);
+		BLOCKS.add(WALL_SCONCE_SANDSTONE_FACADE);
+		BLOCKS.add(WALL_SCONCE_SMOOTH_SANDSTONE_FACADE);
 		// grate
-		BLOCKS.add(grateBlock);		
+		BLOCKS.add(grateBlock);
+		// other
+		BLOCKS.add(SANDSTONE_GRAVEL);
 	}
 
+	/**
+	 * 
+	 * @author Mark Gottschling on Jan 13, 2019
+	 *
+	 */
 	@Mod.EventBusSubscriber(modid = Dungeons2.MODID)
 	public static class RegistrationHandler {
 		public static final Set<ItemBlock> ITEM_BLOCKS = new HashSet<>();

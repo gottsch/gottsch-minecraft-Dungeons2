@@ -25,6 +25,7 @@ import com.someguyssoftware.dungeons2.rotate.RotatorHelper;
 import com.someguyssoftware.dungeons2.spawner.SpawnGroup;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
 import com.someguyssoftware.dungeons2.spawner.SpawnerPopulator;
+import com.someguyssoftware.dungeonsengine.chest.ILootLoader;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.enums.Direction;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -54,7 +55,8 @@ public class RoomDecorator implements IRoomDecorator {
 
 	private ChestPopulator chestPopulator;
 	private SpawnerPopulator spawnerPopulator;
-
+	private ILootLoader lootLoader;
+	
 	/**
 	 * 
 	 */
@@ -64,10 +66,21 @@ public class RoomDecorator implements IRoomDecorator {
 	 * 
 	 * @param chestSheet
 	 */
+	@Deprecated
 	public RoomDecorator(ChestSheet chestSheet, SpawnSheet spawnSheet) {
-		this.chestPopulator = new ChestPopulator(chestSheet);
+//		this.chestPopulator = new ChestPopulator(chestSheet);
 		this.spawnerPopulator = new SpawnerPopulator(spawnSheet);
 		//		this.chestSheet = chestSheet;
+	}
+	
+	/**
+	 * 
+	 * @param loader
+	 * @param spawnSheet
+	 */
+	public RoomDecorator(ILootLoader loader, SpawnSheet spawnSheet) {
+		this.spawnerPopulator = new SpawnerPopulator(spawnSheet);
+		this.setLootLoader(loader);
 	}
 
 	@Override
@@ -149,43 +162,45 @@ public class RoomDecorator implements IRoomDecorator {
 		if (ModConfig.enableChests) {
 		ICoords chestCoords = addChest(world, random, provider, room, floorZone, config);
 			if (chestCoords != null) {
+				getLootLoader().fill(world, random, chestCoords, config.getChestConfig());
 				if (Dungeons2.log.isDebugEnabled()) {
 					Dungeons2.log.debug("Added chest block @ " + chestCoords.toShortString());
 				}
-				// get the chest inventory
-				IInventory inventory = this.chestPopulator.getChestTileEntity(world, chestCoords);
-				Dungeons2.log.debug("Checking for chest tile entity...");
-				if (inventory == null) {
-					Dungeons2.log.debug("Manually adding chest tile entity.");
-					world.setTileEntity(chestCoords.toPos(), new TileEntityChest());
-					inventory = (TileEntityChest) world.getTileEntity(chestCoords.toPos());
-				}
 				
-				if (inventory != null) {
-					// read the chest categories from the level config
-					String chestCategory = config.getChestCategories().get(random.nextInt(config.getChestCategories().size()));
-//					Dungeons2.log.debug("Chest category:" + chestCategory);
-					// get chests by category and choose one
-					List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory.toLowerCase());
-//					Dungeons2.log.debug("Containers found:" + containers.size());
-					if (containers != null && !containers.isEmpty()) {
-						// add each container to the random prob collection
-						RandomProbabilityCollection<ChestContainer> chestProbCol = new RandomProbabilityCollection<>(containers);
-						// select a container
-						ChestContainer chest = (ChestContainer) chestProbCol.next();
-	//					ChestContainer chest = containers.get(random.nextInt(containers.size()));
-						// populate the chest with items from the selected chest sheet container
-						chestPopulator.populate(random, inventory, chest);
-					}
-					else {
-						// TODO remove chest
-						Dungeons2.log.debug("No Containers found for category -> {}", chestCategory);
-					}
-				}
-				else {
-					Dungeons2.log.debug("Chest tile entity not found... removing chest block.");
-					world.setBlockState(chestCoords.toPos(), Blocks.AIR.getDefaultState());
-				}
+//				// get the chest inventory
+//				IInventory inventory = this.chestPopulator.getChestTileEntity(world, chestCoords);
+//				Dungeons2.log.debug("Checking for chest tile entity...");
+//				if (inventory == null) {
+//					Dungeons2.log.debug("Manually adding chest tile entity.");
+//					world.setTileEntity(chestCoords.toPos(), new TileEntityChest());
+//					inventory = (TileEntityChest) world.getTileEntity(chestCoords.toPos());
+//				}
+//				
+//				if (inventory != null) {
+//					// read the chest categories from the level config
+//					String chestCategory = config.getChestCategories().get(random.nextInt(config.getChestCategories().size()));
+////					Dungeons2.log.debug("Chest category:" + chestCategory);
+//					// get chests by category and choose one
+//					List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory.toLowerCase());
+////					Dungeons2.log.debug("Containers found:" + containers.size());
+//					if (containers != null && !containers.isEmpty()) {
+//						// add each container to the random prob collection
+//						RandomProbabilityCollection<ChestContainer> chestProbCol = new RandomProbabilityCollection<>(containers);
+//						// select a container
+//						ChestContainer chest = (ChestContainer) chestProbCol.next();
+//	//					ChestContainer chest = containers.get(random.nextInt(containers.size()));
+//						// populate the chest with items from the selected chest sheet container
+//						chestPopulator.populate(random, inventory, chest);
+//					}
+//					else {
+//						// TODO remove chest
+//						Dungeons2.log.debug("No Containers found for category -> {}", chestCategory);
+//					}
+//				}
+//				else {
+//					Dungeons2.log.debug("Chest tile entity not found... removing chest block.");
+//					world.setBlockState(chestCoords.toPos(), Blocks.AIR.getDefaultState());
+//				}
 			}
 		}
 
@@ -854,5 +869,13 @@ public class RoomDecorator implements IRoomDecorator {
 			}
 		}
 		return spawnerCoords;
+	}
+
+	public ILootLoader getLootLoader() {
+		return lootLoader;
+	}
+
+	public void setLootLoader(ILootLoader lootLoader) {
+		this.lootLoader = lootLoader;
 	}
 }

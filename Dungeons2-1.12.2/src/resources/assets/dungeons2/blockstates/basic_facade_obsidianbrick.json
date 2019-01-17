@@ -1,11 +1,40 @@
 {
     "variants": {
 		"normal": { "model": "Dungeons2:basic_facade_obsidianbrick" },
-        "facing=north": { "model": "Dungeons2:basic_facade_obsidianbrick" },
-        "facing=south": { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 180, "uvlock": true },
-        "facing=west":  { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 270, "uvlock": true },
-        "facing=east":  { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 90, "uvlock": true },
-        "facing=up": { "model": "Dungeons2:basic_facade_obsidianbrick" },
-        "facing=down": { "model": "Dungeons2:basic_facade_obsidianbrick" }
+        
+        "facing=north,shape=straight":  { "model": "Dungeons2:basic_facade_obsidianbrick" },
+        "facing=south,shape=straight":  { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 180, "uvlock": true },        
+        "facing=west,shape=straight": { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 270, "uvlock": true },
+        "facing=east,shape=straight": { "model": "Dungeons2:basic_facade_obsidianbrick", "y": 90, "uvlock": true },
+        "facing=up,shape=straight":  { "model": "Dungeons2:basic_facade_obsidianbrick" },
+        "facing=down,shape=straight":  { "model": "Dungeons2:basic_facade_obsidianbrick" },
+        
+        "facing=north,shape=inner_left":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick" },
+        "facing=south,shape=inner_left":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick", "y":180, "uvlock":true },
+        "facing=west,shape=inner_left": { "model": "Dungeons2:basic_facade_inner_obsidianbrick", "y": 270, "uvlock": true },
+        "facing=east,shape=inner_left": { "model": "Dungeons2:basic_facade_inner_obsidianbrick", "y": 90, "uvlock": true },
+        "facing=up,shape=inner_left":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick" },
+        "facing=down,shape=inner_left":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick" },
+        
+        "facing=north,shape=inner_right":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick", "y":90, "uvlock":true },
+        "facing=south,shape=inner_right":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick", "y":270, "uvlock":true },
+        "facing=west,shape=inner_right":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick" },
+        "facing=east,shape=inner_right":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick", "y":180, "uvlock":true },
+        "facing=up,shape=inner_right":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick" },
+        "facing=down,shape=inner_right":  { "model": "Dungeons2:basic_facade_inner_obsidianbrick" },
+
+        "facing=north,shape=outer_left":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick" },
+        "facing=south,shape=outer_left":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick", "y":180, "uvlock":true },
+        "facing=west,shape=outer_left": { "model": "Dungeons2:basic_facade_outer_obsidianbrick", "y": 270, "uvlock": true },
+        "facing=east,shape=outer_left": { "model": "Dungeons2:basic_facade_outer_obsidianbrick", "y": 90, "uvlock": true },
+        "facing=up,shape=outer_left":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick" },
+        "facing=down,shape=outer_left":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick" },
+        
+        "facing=north,shape=outer_right":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick", "y":270, "uvlock":true },
+        "facing=south,shape=outer_right":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick", "y":90, "uvlock":true },
+        "facing=west,shape=outer_right":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick", "y":180, "uvlock": true },
+        "facing=east,shape=outer_right":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick"},
+        "facing=up,shape=outer_right":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick"},
+        "facing=down,shape=outer_right":  { "model": "Dungeons2:basic_facade_outer_obsidianbrick"}
     }
 }

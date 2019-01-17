@@ -14,6 +14,8 @@ import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProv
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
+import com.someguyssoftware.dungeons2.spawner.SpawnerPopulator;
+import com.someguyssoftware.dungeonsengine.chest.ILootLoader;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
@@ -38,10 +40,19 @@ public class LibraryRoomDecorator extends RoomDecorator {
 	 * @param chestSheet
 	 * @param spawnSheet
 	 */
+	@Deprecated
 	public LibraryRoomDecorator(ChestSheet chestSheet, SpawnSheet spawnSheet) {
 		super(chestSheet, spawnSheet);
 	}
 
+	/**
+	 * 
+	 * @param loader
+	 * @param spawnSheet
+	 */
+	public LibraryRoomDecorator(ILootLoader loader, SpawnSheet spawnSheet) {
+		super(loader, spawnSheet);
+	}
 
 	@Override
 	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {

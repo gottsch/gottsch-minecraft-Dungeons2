@@ -25,9 +25,9 @@ public class Level implements ILevel {
 	private String name;
 	private ICoords spawnPoint;
 	private ICoords startPoint;
-	private IVoid start;
-	private IVoid end;
-	private List<IVoid> voids;
+	private IRoom start;
+	private IRoom end;
+	private List<IRoom> rooms;
 	
 	private Boundary boundary;
 	// TODO maybe create a VisualLevel extends Level that contains the transient data and is only set if a flag is set
@@ -59,16 +59,16 @@ public class Level implements ILevel {
 	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#getStartRoom()
 	 */
 	@Override
-	public IVoid getStart() {
+	public IRoom getStart() {
 		return start;
 	}
 
 
 	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#setStartRoom(com.someguyssoftware.dungeonsengine.model.IVoid)
+	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#setStartRoom(com.someguyssoftware.dungeonsengine.model.IRoom)
 	 */
 	@Override
-	public void setStart(IVoid start) {
+	public void setStart(IRoom start) {
 		this.start = start;
 	}
 
@@ -77,16 +77,16 @@ public class Level implements ILevel {
 	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#getEndRoom()
 	 */
 	@Override
-	public IVoid getEnd() {
+	public IRoom getEnd() {
 		return end;
 	}
 
 
 	/* (non-Javadoc)
-	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#setEndRoom(com.someguyssoftware.dungeonsengine.model.IVoid)
+	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#setEndRoom(com.someguyssoftware.dungeonsengine.model.IRoom)
 	 */
 	@Override
-	public void setEnd(IVoid end) {
+	public void setEnd(IRoom end) {
 		this.end = end;
 	}
 
@@ -95,9 +95,9 @@ public class Level implements ILevel {
 	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#getRooms()
 	 */
 	@Override
-	public List<IVoid> getVoids() {
-		if (this.voids == null) this.voids = new ArrayList<>();
-		return voids;
+	public List<IRoom> getRooms() {
+		if (this.rooms == null) this.rooms = new ArrayList<>();
+		return rooms;
 	}
 
 
@@ -105,21 +105,21 @@ public class Level implements ILevel {
 	 * @see com.someguyssoftware.dungeonsengine.model.ILevel#setRooms(java.util.List)
 	 */
 	@Override
-	public void setVoids(List<IVoid> rooms) {
-		this.voids = rooms;
+	public void setRooms(List<IRoom> rooms) {
+		this.rooms = rooms;
 	}
 
 
 	/**
 	 * @param startRoom
 	 * @param endRoom
-	 * @param voids
+	 * @param rooms
 	 */
-	public Level(IVoid start, IVoid end, List<IVoid> voids) {
+	public Level(IRoom start, IRoom end, List<IRoom> rooms) {
 		super();
 		this.start = start;
 		this.end = end;
-		this.voids = voids;
+		this.rooms = rooms;
 	}
 
 	/* (non-Javadoc)

@@ -1,6 +1,8 @@
 {
 	"parent": "Dungeons2:block/sill",
     "textures": {
-       "0": "blocks/sandstone_smooth"
+       "0": "blocks/sandstone_smooth",
+        "top": "blocks/sandstone_top",
+        "bottom": "blocks/sandstone_bottom"
     }
 }
