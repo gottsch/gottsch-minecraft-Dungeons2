@@ -147,7 +147,7 @@ public class Dungeons2 extends AbstractMod {
 		StyleSheetLoader.exposeStyleSheet(ModConfig.styleSheetFile);
 
 		// check if the chestSheet exists, else create it from the resource
-		ChestSheetLoader.exposeChestSheet(ModConfig.chestSheetFile);
+//		ChestSheetLoader.exposeChestSheet(ModConfig.chestSheetFile);
 
 		// check if the spawnSheet exists, else create it from the resource
 		SpawnSheetLoader.exposeSpawnSheet(ModConfig.spawnSheetFile);
