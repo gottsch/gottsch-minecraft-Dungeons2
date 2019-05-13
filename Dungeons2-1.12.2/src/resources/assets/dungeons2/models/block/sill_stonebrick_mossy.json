@@ -3,6 +3,6 @@
     "textures": {
         "0": "blocks/stonebrick_mossy",
         "top": "blocks/stonebrick_mossy",
-        "bottom": "blocks/sonebrick_mossy"
+        "bottom": "blocks/stonebrick_mossy"
     }
 }
