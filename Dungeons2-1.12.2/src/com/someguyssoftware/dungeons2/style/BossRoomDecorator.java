@@ -61,6 +61,8 @@ public class BossRoomDecorator extends RoomDecorator {
 	/**
 	 * 
 	 */
+    // TODO this method needs to use the Template pattern. Needs to take in the Dungeon and return the dungeon
+    // or has to return something that returns all important things added like, chests, spawners and any other specials. (like StructureGen in Treasure)
 	@Override
 	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {
 		Dungeons2.log.debug("In Boos Room Decorator.");
@@ -117,6 +119,7 @@ public class BossRoomDecorator extends RoomDecorator {
 		/*
 		 * add chest
 		 */
+        // TODO create ICoords addChest() abstract method in interface
 		// select a random position on the floor
 		Entry<DesignElement, ICoords> floorEntry = floorZone.get(random.nextInt(floorZone.size()));
 		DesignElement elem = floorEntry.getKey();
@@ -125,7 +128,12 @@ public class BossRoomDecorator extends RoomDecorator {
 		Location location = provider.getLocation(chestCoords, room, room.getLayout());
 		if (hasSupport(world, chestCoords, elem, location)) {	
 			EnumFacing facing = orientChest(location);			
-			// place a chest
+            // place a chest
+            if (Loader.isModLoaded("treasure2")) {
+                // TODO look at GottschCore Loot function
+                // TODO look at Treasure SpawnChestCommand
+            }
+            else {}
 			world.setBlockState(chestCoords.toPos(), Blocks.CHEST.getDefaultState().withProperty(BlockHorizontal.FACING,  facing), 3);
 			// remove from list
 			floorZone.remove(floorEntry);
@@ -142,47 +150,6 @@ public class BossRoomDecorator extends RoomDecorator {
 			Dungeons2.log.debug("Adding boss chest @ " + chestCoords.toShortString());
 			
 			getLootLoader().fill(world, random, chestCoords, config.getChestConfig());
-			
-			// get the chest inventory
-//			IInventory inventory = this.chestPopulator.getChestTileEntity(world, chestCoords);
-//			if (inventory != null) {				
-//				// TODO use loot tables here. Get the EPIC/BOSS loot tables from map and populate the chest
-//				// TODO check the chest config if CUSTOM or BUILTIN to determine how the chest should be filled.
-//				if (config.getChestConfig() != null) {
-//					if (config.getChestConfig().getLootTableMethod() == LootTableMethod.CUSTOM) {
-////						List<Rarity> rarities = config.getChestConfig().getRarity();
-//						lootLoader.populate(world, random, chestCoords, config.getChestConfig());
-//						
-//						// TODO all this could be one method fillChest(rand, inventory, rarity)
-//						List<LootTable> lootTables = Dungeons2.LOOT_TABLES.getLootTableByRarity(Rarity.SCARCE);
-//						if (lootTables != null) {
-//							Dungeons2.log.debug("found loot tables -> {}", lootTables.size());
-//							int index = RandomHelper.randomInt(random, 0, lootTables.size()-1);
-//							LootTable table = lootTables.get(index);
-//							table.fillInventory(inventory, random, Dungeons2.LOOT_TABLES.getContext());
-//						}
-//						else
-//							Dungeons2.log.debug("did not find any loot tables by rarity -> {}", Rarity.SCARCE);
-//					}
-//				}
-				
-				// select a epic/boss chest
-//				String chestCategory = ChestCategory.EPIC.name().toLowerCase();
-//				Dungeons2.log.debug("Chest category:" + chestCategory);
-//				// get chests by category and choose one
-//				List<ChestContainer> containers = (List<ChestContainer>) chestPopulator.getMap().get(chestCategory);
-//				Dungeons2.log.debug("Containers found:" + containers.size());
-//				if (containers != null && !containers.isEmpty()) {
-//					// TODO use RandomProbabilityCollection
-//					ChestContainer chest = containers.get(random.nextInt(containers.size()));
-//					// populate the chest with items from the selected chest sheet container
-//					chestPopulator.populate(random, inventory, chest);
-//					// TODO update room floor map with chest
-//				}
-//			}
-//			else {
-//				Dungeons2.log.debug("Chest does not have iinventory.");
-//			}
 		}
 		
 	}

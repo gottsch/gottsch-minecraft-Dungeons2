@@ -121,11 +121,8 @@ public class DungeonGenerator {
 		 * create the room decorators
 		 */
 		// TODO is many more decorators, they all should share the same set of loaders instead of creating new ones each.
-//		IRoomDecorator roomDecorator = new RoomDecorator(chestSheet, spawnSheet);
 		IRoomDecorator roomDecorator = new RoomDecorator(new LootLoader(), spawnSheet);
-//		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(chestSheet);
 		IRoomDecorator bossRoomDecorator = new BossRoomDecorator(new BossLootLoader());
-//		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(chestSheet, spawnSheet);
 		IRoomDecorator libraryDecorator = new LibraryRoomDecorator(new LootLoader(), spawnSheet);
 		
 		/*
@@ -144,7 +141,6 @@ public class DungeonGenerator {
 		// generate all the rooms
 		for (Level level : dungeon.getLevels()) {
 			Dungeons2.log.debug("Level -> {} ", levelCount);
-//			Dungeons2.log.debug("Is Level Support On -> {}", level.getConfig().isSupport());
 			Theme levelTheme = null;
 			if (level.getConfig().getTheme() != null && !level.getConfig().getTheme().equals("")) {
 				// TODO select the theme - themes need to be mapped.
@@ -161,17 +157,18 @@ public class DungeonGenerator {
 				
 				// get the room generator
 				roomGen = factory.createRoomGenerator(random, room, level.getConfig().isSupport());
-//				if (roomGen.getGenerationStrategy().getBlockProvider() instanceof CheckedFloorRoomBlockProvider) {
-//					Dungeons2.log.debug("Generating Checked Room @ " + room.getCoords().toShortString());
-//				}
 				
 				// generate the room into the world
 				roomGen.generate(world, random, room, levelTheme, styleSheet, level.getConfig());
-//				Dungeons2.log.debug("Room.floorMap after generate -> {}", room.getFloorMap());
-				
+	
 				// TODO need a decorator factory
 				if (room.getType() == Type.BOSS) {
-					Dungeons2.log.debug("Boss Room @ {}", room.getCoords());
+                    Dungeons2.log.debug("Boss Room @ {}", room.getCoords());
+                    // TODO if going to integrate with Treasure2, need to know how big the dungeons is: size, # of levels
+                    // in order to select the correct chest/loot table rarity
+                    // TODO also should make it randomized ex 50% normal boss chest, 50% treasure2 chest
+                    // extend the bossRoomDecorator -> TreasureBossRoomDecorator and set more properties
+                    // TODO should return ICoords of boss chest so Dungeon can record
 					bossRoomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
 				}
 				
