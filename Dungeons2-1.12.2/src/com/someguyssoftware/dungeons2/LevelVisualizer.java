@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -24,8 +25,9 @@ import com.someguyssoftware.dungeons2.graph.mst.Edge;
 import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.DungeonConfig;
 import com.someguyssoftware.dungeons2.model.Level;
-import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
+import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
+import com.someguyssoftware.dungeonsengine.config.LevelConfig;
 import com.someguyssoftware.gottschcore.Quantity;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
@@ -41,8 +43,8 @@ public class LevelVisualizer {
 	private static final Logger logger = LogManager.getLogger(LevelVisualizer.class);
 //	DungeonBuilderBottomUp dungeonBuilder = new DungeonBuilderBottomUp();
 	DungeonBuilderTopDown dungeonBuilder = new DungeonBuilderTopDown();
-	LevelBuilder builder = new LevelBuilder();
-	LevelConfig config = new LevelConfig();
+	public LevelBuilder builder = new LevelBuilder();
+	ILevelConfig config = new LevelConfig();
 	// seed for random
 	//long seed = System.currentTimeMillis();
 	long seed = new Random().nextInt(10000)-5000;
@@ -66,7 +68,8 @@ public class LevelVisualizer {
 		}
 		Random random = new Random(test.seed);
 		
-		test.config.setNumberOfRooms(new Quantity(25, 50));
+//		test.config.setNumberOfRooms(new Quantity(25, 50));
+		test.config.setNumRooms(new Quantity(25, 50));
 		double factor = 3.2;
 		test.config.setWidth(new Quantity(7*factor, 15*factor));
 		test.config.setDepth(new Quantity(7*factor, 15*factor));
@@ -74,14 +77,16 @@ public class LevelVisualizer {
 		test.config.setDegrees(new Quantity(2, 4));
 		// epicenter style settings
 		// NOTE epicenter style needs to have a smaller distance, else you get a lot of long hallways
-		test.config.setXDistance(new Quantity(-(60*factor)*0.6, (60*factor)*1.4));
-		test.config.setZDistance(new Quantity(-5*factor, 5*factor));
+//		test.config.setXDistance(new Quantity(-(60*factor)*0.6, (60*factor)*1.4));
+//		test.config.setZDistance(new Quantity(-5*factor, 5*factor));
+		test.config.setDepth(new Quantity(20, 100));
+		test.config.setWidth(new Quantity(20, 100));
 		int r = RandomHelper.randomInt(15, 25);
 //		test.config.setNumberOfRooms(new Quantity(r, r));
 //		test.config.setXDistance(new Quantity(-(r+10), (r*2.5)));
 //		test.config.setZDistance(new Quantity(-(r*1.5), r*1.5));
 		
-		test.config.setYVariance(new Quantity(0, 0));
+//		test.config.setYVariance(new Quantity(0, 0));
 //		test.config.setXOffset(new Quantity(50, 50));
 //		test.config.setZOffset(new Quantity(50, 50));		
 		// pancake style settings		
@@ -90,23 +95,26 @@ public class LevelVisualizer {
 //		test.config.setXOffset(new Quantity(50, 50));
 //		test.config.setYOffset(new Quantity(150, 150));
 		
-		test.config.setMinecraftConstraintsOn(false);
-		test.config.setSupportOn(false);
-		test.builder.setConfig(test.config);
+//		test.config.setMinecraftConstraintsOn(false);
+//		test.config.setSupportOn(false);
+//		test.builder.setConfig(test.config);
 		test.dungeonBuilder.setLevelBuilder(test.builder);
 		DungeonConfig dConfig = new DungeonConfig();
 		dConfig.setUseSupport(false);
 		dConfig.setNumberOfLevels(new Quantity(1,1));
-		Level level = null;
+//		Level level = null;
 //		Dungeon dungeon = test.dungeonBuilder.build(null, random, test.startPoint, dConfig);
 		Dungeon dungeon = null;
-		if (dungeon == DungeonBuilderTopDown.EMPTY_DUNGEON) {
-			logger.warn("Empty Dungeon");
-			return;
-		}
-		else {
-			level = dungeon.getLevels().get(0);
-		}
+//		if (dungeon == DungeonBuilderTopDown.EMPTY_DUNGEON) {
+//			logger.warn("Empty Dungeon");
+//			return;
+//		}
+//		else {
+//			level = dungeon.getLevels().get(0);
+//		}
+		List<Room> list = new ArrayList<>();
+		Level level = test.builder.build(null, random, new Coords(0,63,0), list, test.config);
+
 //		Level level = test.builder.build(null, random, test.startPoint, test.config);
 		
 		// draw out rectangles
@@ -166,15 +174,15 @@ public class LevelVisualizer {
 	        // setup thte config properties
 	        g2d.setFont(new Font("Verdana", Font.PLAIN, 9));
 	        g2d.setColor(Color.BLACK);
-	        g2d.drawString("# of Rooms: " + test.config.getNumberOfRooms().getMinInt()+" to "+test.config.getNumberOfRooms().getMaxInt(), 10, 20);
+//	        g2d.drawString("# of Rooms: " + test.config.getNumberOfRooms().getMinInt()+" to "+test.config.getNumberOfRooms().getMaxInt(), 10, 20);
 	        g2d.drawString("Width (X): "+ test.config.getWidth().getMinInt()+" to "+test.config.getWidth().getMaxInt(), 10, 30);
 	        g2d.drawString("Height (Y): "+ test.config.getHeight().getMinInt()+" to "+test.config.getHeight().getMaxInt(), 10, 40);
 	        g2d.drawString("Depth (Z): "+ test.config.getDepth().getMinInt()+" to "+test.config.getDepth().getMaxInt(), 10, 50);
-			g2d.drawString("XDistance: "+ test.config.getXDistance().getMinInt()+" to "+test.config.getXDistance().getMaxInt(), 10, 60);
-			g2d.drawString("ZDistance: "+ test.config.getZDistance().getMinInt()+" to "+test.config.getZDistance().getMaxInt(), 10, 70);
+//			g2d.drawString("XDistance: "+ test.config.getXDistance().getMinInt()+" to "+test.config.getXDistance().getMaxInt(), 10, 60);
+//			g2d.drawString("ZDistance: "+ test.config.getZDistance().getMinInt()+" to "+test.config.getZDistance().getMaxInt(), 10, 70);
 //			g2d.drawString("XOffset: "+ test.config.getXOffset().getMinInt()+"-"+test.config.getXOffset().getMaxInt(), 10, 80);
 //			g2d.drawString("ZOffset: "+ test.config.getZOffset().getMinInt()+"-"+test.config.getZOffset().getMaxInt(), 10, 90);
-			g2d.drawString("YVariance: "+ test.config.getYVariance().getMinInt()+" to "+test.config.getYVariance().getMaxInt(), 10, 100);
+//			g2d.drawString("YVariance: "+ test.config.getYVariance().getMinInt()+" to "+test.config.getYVariance().getMaxInt(), 10, 100);
 			
 			g2d.drawString("Random Seed: "+ test.seed, 10, 120);
 			g2d.drawString("Start Point: " + level.getStartPoint().toShortString(), 10, 130);

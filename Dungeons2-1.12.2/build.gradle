@@ -55,11 +55,13 @@ sourceSets.main{
 	}
 }
 def gottschcore_path="../../gottsch-minecraft-GottschCore/GottschCore${mc_version}/build/libs/GottschCore-mc${mc_version}-f${forge_version}-v${gottschcore_version}.jar"
+def treasure2_path="../../gottsch-minecraft-Treasure/build/libs/Treasure2-mc${mc_version}-f${forge_version}-v${treasure2_version}.jar"
 
 dependencies {
 	compile files('../../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')
 	// use 'shadow' to include dependency in compile but to exclude for the shadow jar
-	shadow files(gottschcore_path)	
+	shadow files(gottschcore_path)
+	shadow files(treasure2_path)
 }
 
 processResources
@@ -94,16 +96,44 @@ reobf {
     shadowJar {} 
 }
 
+//an array containing destination paths
+def destinations = ["${dest_folder}", "${dest_server_folder}"]
+println destinations[0]
+
+task deleteOldJar(type: Delete) {
+        delete fileTree("${dest_folder}") {
+            include "**/${mod_name}-*.*"
+
+        }
+        delete fileTree("${dest_server_folder}") {
+            include "**/${mod_name}-*.*"
+        }
+    }
+task copyJar << {
+	// iterate over the array with destination paths
+ 	destinations.each { destination ->
+        // for every destination define new CopySpec
+        println destination
+        copy {
+            from jar
+            into destination
+        }
+    }
+}
+
+build.dependsOn copyJar
+copyJar.dependsOn deleteOldJar
+
 // first delete the old build
-delete "${mod_name}-mc${mc_version}-v${mod_version}.jar"
+//delete "${mod_name}-mc${mc_version}-v${mod_version}.jar"
 
 // make a copy of the build and remove the build number portion from the file name.
-copy {
-	from 'build/libs'
-	into 'build/libs'
-	include "${mod_name}-mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}.jar"
-	rename {filename -> "${mod_name}-mc${mc_version}-v${mod_version}.jar"}
-}
+//copy {
+//	from 'build/libs'
+//	into 'build/libs'
+//	include "${mod_name}-mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}.jar"
+//	rename {filename -> "${mod_name}-mc${mc_version}-v${mod_version}.jar"}
+//}
 
 
 //task packageJavadoc(type: Jar, dependsOn: 'javadoc') {

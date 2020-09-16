@@ -169,7 +169,7 @@ public class DungeonGenerator {
                     // TODO also should make it randomized ex 50% normal boss chest, 50% treasure2 chest
                     // extend the bossRoomDecorator -> TreasureBossRoomDecorator and set more properties
                     // TODO should return ICoords of boss chest so Dungeon can record
-					bossRoomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
+					bossRoomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
 				}
 				
 				/*
@@ -185,12 +185,12 @@ public class DungeonGenerator {
 						&& random.nextInt(100) < 10
 						&& libraryCount < 3) {
 					Dungeons2.log.debug("Using library decorator for room @ " + room.getCoords().toShortString());
-						libraryDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
+						libraryDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
 						libraryCount++;
 				}
 				else {
 					// decorate the room (spawners, chests, webbings, etc)
-					roomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
+					roomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
 				}
 			
 				// TODO add to JSON output
@@ -249,7 +249,7 @@ public class DungeonGenerator {
 		// TODO need to provide the entrance room generator with a different level config that uses a higher decay multiplier
 		// to create a much more decayed surface structure.
 		roomGen.generate(world, random, entranceRoom, dungeon.getTheme(), styleSheet, entranceLevelConfig);
-		roomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), entranceRoom, entranceLevelConfig);
+		roomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), entranceRoom, entranceLevelConfig);
 	}
 
 	/**

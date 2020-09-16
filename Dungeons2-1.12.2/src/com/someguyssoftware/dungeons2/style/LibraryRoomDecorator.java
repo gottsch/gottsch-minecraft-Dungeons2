@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.someguyssoftware.dungeons2.chest.ChestSheet;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
+import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheet;
@@ -55,7 +56,7 @@ public class LibraryRoomDecorator extends RoomDecorator {
 	}
 
 	@Override
-	public void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {
+	public void decorate(World world, Random random, Dungeon dungeon, IDungeonsBlockProvider provider, Room room, ILevelConfig config) {
 		/*
 		 * NOTE these streams aren't needed for the multimap - just access to get the collection
 		 */
@@ -153,7 +154,7 @@ public class LibraryRoomDecorator extends RoomDecorator {
 		// add shelves that extend from the wall
 
 		// decorate as normal
-		super.decorate(world, random, provider, room, config);
+		super.decorate(world, random, dungeon, provider, room, config);
 	}
 	
 	@Deprecated
