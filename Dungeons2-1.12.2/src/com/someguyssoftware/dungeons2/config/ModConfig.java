@@ -268,6 +268,10 @@ public class ModConfig extends AbstractConfig {
 
 	public static boolean enableDumps;
 
+	public static boolean enableTreasure2Integration;
+	public static int treasure2ChestProbability;
+	
+
 	/**
 	 * 
 	 * @param mod
@@ -322,6 +326,11 @@ public class ModConfig extends AbstractConfig {
 
         // dumps
         enableDumps = config.getBoolean("enableDumps", "04-dungeon-gen", false, "Enable/disable the generation of dungeon dumps. These a debugging files.");
+        
+        // mod integration
+        config.setCategoryComment("05-mod-integration", "Dungeon mod integration properties.");  
+        enableTreasure2Integration = config.getBoolean("enableTreasure2Integration", "05-mod-integration", true, "Enable/disable the Treasure2 integration with Dungeons2.");
+        treasure2ChestProbability = config.getInt("treasure2ChestProbability", "05-mod-integration", 50, 0, 100, "Probability that a dungeon will have a Treasure2 chest as its boss chest.");
         
         // ids
         config.setCategoryComment("99-ids", "ID properties.");

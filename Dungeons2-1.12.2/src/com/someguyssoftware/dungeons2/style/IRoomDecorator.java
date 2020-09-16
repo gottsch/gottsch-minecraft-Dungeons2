@@ -9,6 +9,7 @@ import java.util.Random;
 
 import com.someguyssoftware.dungeons2.generator.Location;
 import com.someguyssoftware.dungeons2.generator.blockprovider.IDungeonsBlockProvider;
+import com.someguyssoftware.dungeons2.model.Dungeon;
 import com.someguyssoftware.dungeons2.model.LevelConfig;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
@@ -36,8 +37,9 @@ public interface IRoomDecorator {
 	 * @param room
 	 * @param config
 	 */
+	// keep this version for legecy purposes
 	void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, LevelConfig config);
-	void decorate(World world, Random random, IDungeonsBlockProvider provider, Room room, ILevelConfig config);
+	void decorate(World world, Random random, Dungeon dungeon, IDungeonsBlockProvider provider, Room room, ILevelConfig config);
 	
 	default public void addBlock(final World world, Random random, final IDungeonsBlockProvider provider,
 			final Room room, final List<Entry<DesignElement, ICoords>> zone, final IBlockState[] states, 

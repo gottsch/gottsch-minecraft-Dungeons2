@@ -283,22 +283,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
 			    
 	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
+	   			// TODO create a custom exception to throw if theme is null/not found.
 	   			
-//    			BuildPattern pattern = BuildPattern.values()[random.nextInt(BuildPattern.values().length)];
-//>>	   			BuildPattern pattern = ((RandomBuildPattern)patterns.next()).pattern;
-//				BuildSize levelSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
-//				BuildSize dungeonSize = BuildSize.values()[random.nextInt(BuildSize.values().length)];
-//	>>   			BuildSize levelSize = ((RandomBuildSize)levelSizes.next()).size;
-//	>>   			BuildSize dungeonSize = ((RandomBuildSize)dungeonSizes.next()).size;
-//	>>			BuildDirection direction = BuildDirection.values()[random.nextInt(BuildDirection.values().length)];
-				
-				// TODO this should be inside of DungeonConfig
-				// 5. determine a preset level config based on pattern and size
-//				LevelConfig levelConfig = PRESET_LEVEL_CONFIGS.getConfig(pattern, levelSize, direction);
-//				Dungeons2.log.debug(String.format("Using PRESET: dungeonSize: %s, pattern: %s, levelSize: %s, direction: %s",
-//						dungeonSize.name(), pattern.name(), levelSize.name(), direction.name()));
-				
-				// TODO this should be inside dungeon builder
 				// get the level builder
 				LevelBuilder levelBuilder = new LevelBuilder(/*levelConfig*/);
 				
