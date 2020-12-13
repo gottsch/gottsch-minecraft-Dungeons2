@@ -1,6 +1,0 @@
-{
-    "parent": "Dungeons2:block/tee_pillar",
-    "textures": {
-        "0": "Dungeons2:blocks/obsidianbrick"
-    }
-}

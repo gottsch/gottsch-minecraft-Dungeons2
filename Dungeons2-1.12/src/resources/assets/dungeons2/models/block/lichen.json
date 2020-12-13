@@ -1,6 +1,0 @@
-{
-    "parent": "Dungeons2:block/decoration",
-    "textures": {
- 	   "0": "Dungeons2:blocks/lichen"
-    }
-}

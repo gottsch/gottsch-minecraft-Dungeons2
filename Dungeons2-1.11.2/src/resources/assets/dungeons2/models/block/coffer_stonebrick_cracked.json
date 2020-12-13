@@ -1,6 +1,0 @@
-{
-    "parent": "Dungeons2:block/coffer",
-    "textures": {
-        "0": "blocks/stonebrick_cracked"
-    }
-}

@@ -1,7 +1,0 @@
-{
-	"parent": "Dungeons2:block/seven_eights_pillar",
-    "textures": {
-        "0": "blocks/stonebrick_mossy",
-        "particle": "blocks/stonebrick_mossy"
-    }
-}

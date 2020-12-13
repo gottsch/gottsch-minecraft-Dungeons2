@@ -1,6 +1,0 @@
-{
-    "parent": "Dungeons2:block/cornice",
-    "textures": {
-        "0": "blocks/cobblestone_mossy"
-    }
-}
