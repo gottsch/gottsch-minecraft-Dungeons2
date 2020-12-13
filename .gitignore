@@ -1,6 +1,8 @@
 /*
+gradle.log
 !/src/
 !.gitignore
+!.classpath
 !gradlew*
 !/gradle/
 !/LICENSE.txt
