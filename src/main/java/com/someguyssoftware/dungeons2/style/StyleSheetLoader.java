@@ -241,7 +241,9 @@ public class StyleSheetLoader {
 	 */
 	public static void exposeStyleSheet(String filePath) {
 		Path path = Paths.get(filePath).toAbsolutePath();
-		if (Files.notExists(path)) {				
+		if (Files.notExists(path)) {	
+			Dungeons2.log.error("Attempting to copy style to path -> {}", path.toString());
+			// TODO create folder
 			// copy from resource/classpath to file path
 			InputStream is = Dungeons2.instance.getClass().getResourceAsStream(StyleSheetLoader.BUILT_IN_STYLE_SHEET_PATH);
 			try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
@@ -252,7 +254,7 @@ public class StyleSheetLoader {
 				}
 			}
 			catch(IOException e) {
-				Dungeons2.log.error("Error exposing stylesheet resource to file system.");
+				Dungeons2.log.error("Error exposing stylesheet resource to file system: ", e);
 			}
 		}
 	}

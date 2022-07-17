@@ -1,34 +1,24 @@
 buildscript {
     repositories {
-        jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+   		maven { url = "http://files.minecraftforge.net/maven" }
+        jcenter()       
+        mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-        classpath 'org.ajoberstar:grgit:1.7.2'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
     }
 }
-
-// include shadow
 plugins {
-  //  must use gradle v3.0+ for this version of shadow (2.0.1).  Update gradle-wrapper.properties
-    id "com.github.johnrengelman.shadow" version "2.0.1"
+	 //  must use gradle v3.0+ for this version of shadow (2.0.1).  Update gradle-wrapper.properties
+	id "com.github.johnrengelman.shadow" version "4.0.4"
 }
 
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
+//Only edit below this line, the above code adds and enables the nessasary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
 
-ext {
-    // Open the Git repository in the parent directory.
-    git = org.ajoberstar.grgit.Grgit.open(file('../'))
-
-    // Get commit id of HEAD.
-    revision = git.head().id
-    // Alternative is using abbreviatedId of head() method.
-    // revision = git.head().abbreviatedId
-}
-
-//version = "mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}"
-version = "mc${mc_version}-f${forge_version}-v${mod_version}"
+version = "mc${mc_version}-f${forge_version}-${mod_version_type}${mod_version}"
 group = "${package_group}" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "${mod_name}"
 
@@ -38,53 +28,94 @@ compileJava {
 }
 
 minecraft {
-    version = "${mc_version}-${forge_version}"
-    runDir = "run"
+    // The mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   Snapshot are built nightly.
+    // stable_#            Stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not always work.
+    // Simply re-run your setup task after changing the mappings to update your workspace.
+    mappings channel: 'snapshot', version: '20171003-1.12'
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
-    if (project.hasProperty('mappings_version'))
-        mappings = project.mappings_version
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+
+        server {
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
 }
 
-//Optional: change the project structure
-sourceSets.main{
-    java{
-		srcDirs 'src' //, 'test' //set the source folder as the /src subfolder
-	}
-    resources{
-		srcDirs 'src/resources'//set the resources folder as the /resources subfolder
-	}
+repositories {
+    maven {
+        name 'Curseforge Maven'
+        url 'https://minecraft.curseforge.com/api/maven/'
+    }
+    maven { 
+        url 'https://maven.blamejared.com' 
+    }
+     maven {
+        url "https://www.cursemaven.com"
+    }
+    maven {
+        // location of the maven that hosts JEI files
+        name = "Progwml6 maven"
+        url = "http://dvs1.progwml6.com/files/maven"
+    }
+    flatDir {
+        // location for sources
+        dirs 'libs'
+    }
 }
-def gottschcore_path="../../gottsch-minecraft-GottschCore/GottschCore${mc_version}/build/libs/GottschCore-mc${mc_version}-f${forge_version}-v${gottschcore_version}.jar"
-def treasure2_path="../../gottsch-minecraft-Treasure/build/libs/Treasure2-mc${mc_version}-f${forge_version}-v${treasure2_version}.jar"
 
+def gottschcore_path="../GottschCore/build/libs/GottschCore-mc${mc_version}-f${gottschcore_forge_version}-v${gottschcore_version}.jar"
+def treasure2_path="../Treasure/build/libs/Treasure2-mc${mc_version}-f${forge_version}-v${treasure2_version}.jar"
+
+println gottschcore_path
 dependencies {
-	compile files('../../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')
-	// use 'shadow' to include dependency in compile but to exclude for the shadow jar
-	shadow files(gottschcore_path)
+	minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
+	compile files('../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')
+	//implementation fg.deobf("curse.maven:gottschcore-${gottschcore_project_id}:${gottschcore_field_id}") // for prod
+	//compile files(gottschcore_path)	
+	shadow files(gottschcore_path) // for dev
 	shadow files(treasure2_path)
 }
 
-processResources
-{
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-        
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "${archivesBaseName}",
+            "Specification-Vendor": "Some Guys Software",
+            "Specification-Version": "1", // We are version 1 of ourselves
+            "Implementation-Title": "${archivesBaseName}-${version}",
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"Some Guys Software",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
     }
 }
 
 shadowJar {
+	// with version 4.0.4+ of ShadowJar, the dependencies are required to  instruct what files
+	// are included in the shadow
+	dependencies {
+     	include(dependency(files('../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')))
+   }
     // move everything under "io.github" (which in the DelaunayTriangulator lib) to "com.someguyssoftware.dungeons2.triangulation"
     relocate "io.github", "com.someguyssoftware.dungeons2.triangulation"
 	// Replace the default JAR
@@ -95,52 +126,3 @@ reobf {
 	// Reobfuscate the shadowed JAR
     shadowJar {} 
 }
-
-//an array containing destination paths
-def destinations = ["${dest_folder}", "${dest_server_folder}"]
-println destinations[0]
-
-task deleteOldJar(type: Delete) {
-        delete fileTree("${dest_folder}") {
-            include "**/${mod_name}-*.*"
-
-        }
-        delete fileTree("${dest_server_folder}") {
-            include "**/${mod_name}-*.*"
-        }
-    }
-task copyJar << {
-	// iterate over the array with destination paths
- 	destinations.each { destination ->
-        // for every destination define new CopySpec
-        println destination
-        copy {
-            from jar
-            into destination
-        }
-    }
-}
-
-build.dependsOn copyJar
-copyJar.dependsOn deleteOldJar
-
-// first delete the old build
-//delete "${mod_name}-mc${mc_version}-v${mod_version}.jar"
-
-// make a copy of the build and remove the build number portion from the file name.
-//copy {
-//	from 'build/libs'
-//	into 'build/libs'
-//	include "${mod_name}-mc${mc_version}-v${mod_version}-${git.head().abbreviatedId}.jar"
-//	rename {filename -> "${mod_name}-mc${mc_version}-v${mod_version}.jar"}
-//}
-
-
-//task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
-//    from javadoc.destinationDir
-//    classifier = 'javadoc'
-//}
-
-//artifacts {
-//    archives packageJavadoc
-//}
