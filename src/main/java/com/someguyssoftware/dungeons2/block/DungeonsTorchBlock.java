@@ -5,8 +5,6 @@ package com.someguyssoftware.dungeons2.block;
 
 import java.util.Random;
 
-import javax.annotation.Nullable;
-
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.CardinalDirectionFacadeBlock;
 
@@ -47,8 +45,7 @@ public class DungeonsTorchBlock extends CardinalDirectionFacadeBlock {
 				new AxisAlignedBB(0.7F, 0.2F, 0.15F, 1F, 0.8F, 0.85F)	//w
 				);		
 	}
-	
-   @Nullable
+
     public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, World worldIn, BlockPos pos) {
         return NULL_AABB;
     }

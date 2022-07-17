@@ -6,8 +6,6 @@ package com.someguyssoftware.dungeons2.block;
 import java.util.List;
 import java.util.Random;
 
-import javax.annotation.Nullable;
-
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.gottschcore.block.RelativeDirectionFacadeBlock;
 
@@ -55,7 +53,6 @@ public class DecorationBlock extends RelativeDirectionFacadeBlock implements ISh
 	}
 
     @Override
-	@Nullable
     public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, IBlockAccess worldIn, BlockPos pos) {
         return NULL_AABB;
     }
