@@ -1,5 +1,0 @@
-{
-	"parent": "Dungeons2:block/fancy_cube",
-    "textures": {
-        "0": "blocks/stone"   
-}

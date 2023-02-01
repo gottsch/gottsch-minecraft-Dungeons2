@@ -1,8 +1,0 @@
-{
-     "parent": "Dungeons2:block/quarter_facade_inner",
-    "textures": {
-        "bottom": "Dungeons2:blocks/obsidianbrick",
-        "top": "Dungeons2:blocks/obsidianbrick",
-        "side": "Dungeons2:blocks/obsidianbrick"
-    }
-}

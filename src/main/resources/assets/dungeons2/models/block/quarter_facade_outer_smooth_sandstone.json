@@ -1,8 +1,0 @@
-{
-     "parent": "Dungeons2:block/quarter_facade_outer",
-    "textures": {
-        "bottom": "blocks/sandstone_smooth",
-        "top": "blocks/sandstone_top",
-        "side": "blocks/sandstone_smooth"
-    }
-}

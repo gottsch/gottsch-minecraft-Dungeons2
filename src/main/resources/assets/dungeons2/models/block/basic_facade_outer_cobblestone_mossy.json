@@ -1,8 +1,0 @@
-{
-     "parent": "Dungeons2:block/basic_facade_outer",
-    "textures": {
-        "bottom": "blocks/cobblestone_mossy",
-        "top": "blocks/cobblestone_mossy",
-        "side": "blocks/cobblestone_mossy"
-    }
-}

@@ -1,6 +1,0 @@
-{
-     "parent": "Dungeons2:block/crown_molding_inner",
-    "textures": {
-       "0": "blocks/sandstone_smooth"
-    }
-}

@@ -1,8 +1,0 @@
-{
-     "parent": "Dungeons2:block/quarter_facade_inner",
-    "textures": {
-        "bottom": "blocks/cobblestone",
-        "top": "blocks/cobblestone",
-        "side": "blocks/cobblestone"
-    }
-}

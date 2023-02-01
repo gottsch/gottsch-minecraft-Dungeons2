@@ -1,42 +1,32 @@
 buildscript {
     repositories {
-   		maven { url = "http://files.minecraftforge.net/maven" }
-        jcenter()       
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://maven.minecraftforge.net' }
         mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 plugins {
-	 //  must use gradle v3.0+ for this version of shadow (2.0.1).  Update gradle-wrapper.properties
-	id "com.github.johnrengelman.shadow" version "4.0.4"
+    id 'eclipse'
+    id 'maven-publish'
 }
-
 apply plugin: 'net.minecraftforge.gradle'
-//Only edit below this line, the above code adds and enables the nessasary things for Forge to be setup.
-apply plugin: 'eclipse'
-apply plugin: 'maven-publish'
 
 version = "mc${mc_version}-f${forge_version}-${mod_version_type}${mod_version}"
 group = "${package_group}" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "${mod_name}"
 
-sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+// Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
+println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 minecraft {
-    // The mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   Snapshot are built nightly.
-    // stable_#            Stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not always work.
-    // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: 'snapshot', version: '20171003-1.12'
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
-    
-    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+ mappings channel: 'official', version: '1.18.2'
+
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg') // Currently, this location cannot be changed from the default.
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -44,85 +34,109 @@ minecraft {
         client {
             workingDirectory project.file('run')
 
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.markers', 'REGISTRIES'
+	        property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', 'dungeons2'
 
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
+            mods {
+                dungeons2 {
+                    source sourceSets.main
+                }
+            }
         }
 
         server {
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            workingDirectory project.file('run')
 
-            // Recommended logging level for the console
+            property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', 'dungeons2'
+
+            mods {
+                dungeons2 {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        gameTestServer {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+           property 'forge.logging.console.level', 'debug'
+		   property 'forge.enabledGameTestNamespaces', 'dungeons2'
+
+            mods {
+                dungeons2 {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            property 'forge.logging.console.level', 'debug'
+
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            args '--mod', 'dungeons2', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            mods {
+                dungeons2 {
+                    source sourceSets.main
+                }
+            }
         }
     }
 }
 
+// Include resources generated by data generators.
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
 repositories {
     maven {
-        name 'Curseforge Maven'
-        url 'https://minecraft.curseforge.com/api/maven/'
-    }
-    maven { 
-        url 'https://maven.blamejared.com' 
-    }
-     maven {
-        url "https://www.cursemaven.com"
-    }
-    maven {
-        // location of the maven that hosts JEI files
-        name = "Progwml6 maven"
-        url = "http://dvs1.progwml6.com/files/maven"
-    }
-    flatDir {
-        // location for sources
-        dirs 'libs'
+        url "${project.projectDir}/../maven"
     }
 }
 
-def gottschcore_path="../GottschCore/build/libs/GottschCore-mc${mc_version}-f${gottschcore_forge_version}-v${gottschcore_version}.jar"
-def treasure2_path="../Treasure/build/libs/Treasure2-mc${mc_version}-f${forge_version}-v${treasure2_version}.jar"
-
-println gottschcore_path
 dependencies {
-	minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
-	compile files('../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')
-	//implementation fg.deobf("curse.maven:gottschcore-${gottschcore_project_id}:${gottschcore_field_id}") // for prod
-	//compile files(gottschcore_path)	
-	shadow files(gottschcore_path) // for dev
-	shadow files(treasure2_path)
-}
+     minecraft 'net.minecraftforge:forge:1.18.2-40.2.0'
+    compileOnly fg.deobf("someguyssoftware.gottschcore:GottschCore:mc1.18.2-f40.1.0-v2.1.0")
+  }
 
+// Example for how to get properties into the manifest for reading at runtime.
 jar {
     manifest {
         attributes([
-            "Specification-Title": "${archivesBaseName}",
-            "Specification-Vendor": "Some Guys Software",
-            "Specification-Version": "1", // We are version 1 of ourselves
-            "Implementation-Title": "${archivesBaseName}-${version}",
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"Some Guys Software",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                "Specification-Title"     : "dungeons2",
+                "Specification-Vendor"    : "gottsch",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : project.jar.archiveVersion,
+                "Implementation-Vendor"   : "gottsch",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
 
-shadowJar {
-	// with version 4.0.4+ of ShadowJar, the dependencies are required to  instruct what files
-	// are included in the shadow
-	dependencies {
-     	include(dependency(files('../ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar')))
-   }
-    // move everything under "io.github" (which in the DelaunayTriangulator lib) to "com.someguyssoftware.dungeons2.triangulation"
-    relocate "io.github", "com.someguyssoftware.dungeons2.triangulation"
-	// Replace the default JAR
-    classifier '' 
+jar.finalizedBy('reobfJar')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            name="localMaven"
+            url "file:///${project.projectDir}/../maven"
+        }
+    }
 }
 
-reobf {
-	// Reobfuscate the shadowed JAR
-    shadowJar {} 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }

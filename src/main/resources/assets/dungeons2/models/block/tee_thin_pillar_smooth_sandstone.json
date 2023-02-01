@@ -1,6 +1,0 @@
-{
-    "parent": "Dungeons2:block/tee_thin_pillar",
-    "textures": {
-       "0": "blocks/sandstone_smooth"
-    }
-}

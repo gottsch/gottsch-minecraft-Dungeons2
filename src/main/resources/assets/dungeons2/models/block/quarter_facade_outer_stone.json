@@ -1,8 +1,0 @@
-{
-     "parent": "dungeons2:block/quarter_facade_outer",
-    "textures": {
-        "bottom": "blocks/stone",
-        "top": "blocks/stone",
-        "side": "blocks/stone"
-    }
-}
