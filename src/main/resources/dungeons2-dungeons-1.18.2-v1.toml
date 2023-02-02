@@ -1,0 +1,35 @@
+[[dungeonGeneratorConfigs]]
+	# name of dungeon. for debug/information purposes only.
+	name="standard large"
+	# size category of the dungeon
+	size="large"
+	# dimensions in blocks
+	width=96
+	depth=96
+	minLevels=3
+	maxLevels=10
+	minRooms=9
+	maxRooms=25
+	minRoomSize=5
+	maxRoomSize=16
+	minRoomHeight=4
+	maxRoomHeight=8
+	hardBoundary=true
+	
+[[dungeonGeneratorConfigs]]
+	name="standard medium"
+	size="medium"
+	width=72
+	depth=72
+	minLevels=3
+	maxLevels=7
+	minRooms=9
+	maxRooms=25
+	minRoomSize=5
+	maxRoomSize=16
+	minRoomHeight=4
+	maxRoomHeight=8
+	hardBoundary=true
+	
+
+

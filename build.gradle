@@ -12,7 +12,10 @@ buildscript {
 plugins {
     id 'eclipse'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+    id 'java'
 }
+
 apply plugin: 'net.minecraftforge.gradle'
 
 version = "mc${mc_version}-f${forge_version}-${mod_version_type}${mod_version}"
@@ -104,6 +107,7 @@ repositories {
 dependencies {
      minecraft 'net.minecraftforge:forge:1.18.2-40.2.0'
     compileOnly fg.deobf("someguyssoftware.gottschcore:GottschCore:mc1.18.2-f40.1.0-v2.1.0")
+//compile group: 'com.github.jdiemke.delaunay-triangulator', name: 'DelaunayTriangulator', version: '1.0.0'
   }
 
 // Example for how to get properties into the manifest for reading at runtime.

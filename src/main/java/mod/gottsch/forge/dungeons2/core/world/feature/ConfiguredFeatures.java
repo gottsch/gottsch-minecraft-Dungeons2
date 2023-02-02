@@ -19,7 +19,7 @@ package mod.gottsch.forge.dungeons2.core.world.feature;
 
 import java.util.List;
 
-import mod.gottsch.forge.dungeons2.core.Dungeons;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;

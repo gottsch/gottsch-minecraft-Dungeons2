@@ -17,7 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.setup;
 
-import mod.gottsch.forge.dungeons2.core.Dungeons;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.entity.EntityType;

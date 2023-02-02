@@ -17,9 +17,18 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.conversion.ObjectConverter;
+import com.google.common.collect.Maps;
+
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.gottschcore.config.AbstractConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -37,73 +46,80 @@ public class Config extends AbstractConfig {
 	protected static final ForgeConfigSpec.Builder CLIENT_BUILDER = new ForgeConfigSpec.Builder();
 	protected static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
 	protected static final ForgeConfigSpec.Builder SERVER_BUILDER = new ForgeConfigSpec.Builder();
-	
+	public static final ForgeConfigSpec DUNGEONS_CONFIG_SPEC;
 	public static ForgeConfigSpec CLIENT_CONFIG;
 	public static ForgeConfigSpec COMMON_CONFIG;
 	public static ForgeConfigSpec SERVER_CONFIG;
-	
+
 	public static final Logging LOGGING;
 	public static final ServerConfig SERVER;
 	public static Config instance = new Config();
-	
+
 	static {
-		
+
+	}
+	static {
+
 		CLIENT_CONFIG = CLIENT_BUILDER.build();
-		
+
 		LOGGING = new Logging(COMMON_BUILDER);
 		COMMON_CONFIG = COMMON_BUILDER.build();
-		
+
 		SERVER = new ServerConfig(SERVER_BUILDER);
 		SERVER_CONFIG = SERVER_BUILDER.build();
+
+		final Pair<DungeonConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder()
+				.configure(DungeonConfig::new);
+		DUNGEONS_CONFIG_SPEC = specPair.getRight();
 	}
-	
+
 	/*
 	 * 
 	 */
 	public static class ServerConfig {
-//		public ForgeConfigSpec.IntValue mageFlameLifespan;
-//		public ForgeConfigSpec.IntValue lesserRevelationLifespan;
-//		public ForgeConfigSpec.IntValue greaterRevelationLifespan;
-		public Dungeons dungeons;
-		
+		//		public ForgeConfigSpec.IntValue mageFlameLifespan;
+		//		public ForgeConfigSpec.IntValue lesserRevelationLifespan;
+		//		public ForgeConfigSpec.IntValue greaterRevelationLifespan;
+		public DungeonsWorldGen dungeons;
+
 		public ServerConfig(ForgeConfigSpec.Builder builder) {
 
-			dungeons = new Dungeons(builder);
-//			builder.comment(CATEGORY_DIV, "Dungeon Properties", CATEGORY_DIV)
-//			.push("dungeons");
-			
-//			mageFlameLifespan = builder
-//					.comment(" The lifespan of a Mage Flame spell/entity in ticks.", 
-//							"Ex. 20 ticks * 60 seconds * 5 = 6000 = 5 minutes.")
-//					.defineInRange("mageFlameLifespan", 12000, 1200, 72000);
-//
-//			lesserRevelationLifespan = builder
-//					.comment(" The lifespan of a Lesser Revelation spell/entity in ticks.")
-//					.defineInRange("lesserRevelationLifespan", 18000, 1200, 72000);
-//			
-//			greaterRevelationLifespan = builder
-//					.comment(" The lifespan of a Greater Revelation spell/entity in ticks.")
-//					.defineInRange("greaterRevelationLifespan", 36000, 1200, 72000);
+			dungeons = new DungeonsWorldGen(builder);
+			//			builder.comment(CATEGORY_DIV, "Dungeon Properties", CATEGORY_DIV)
+			//			.push("dungeons");
 
-//			builder.pop();
+			//			mageFlameLifespan = builder
+			//					.comment(" The lifespan of a Mage Flame spell/entity in ticks.", 
+			//							"Ex. 20 ticks * 60 seconds * 5 = 6000 = 5 minutes.")
+			//					.defineInRange("mageFlameLifespan", 12000, 1200, 72000);
+			//
+			//			lesserRevelationLifespan = builder
+			//					.comment(" The lifespan of a Lesser Revelation spell/entity in ticks.")
+			//					.defineInRange("lesserRevelationLifespan", 18000, 1200, 72000);
+			//			
+			//			greaterRevelationLifespan = builder
+			//					.comment(" The lifespan of a Greater Revelation spell/entity in ticks.")
+			//					.defineInRange("greaterRevelationLifespan", 36000, 1200, 72000);
+
+			//			builder.pop();
 		}
 	}
-	
-	public static class Dungeons {
+
+	public static class DungeonsWorldGen {
 		public ConfigValue<Integer> registrySize;
 		public ConfigValue<List<? extends String>> dimensionsWhitelist;
 		public ConfigValue<List<? extends String>> biomesWhitelist;
 		public ConfigValue<List<? extends String>> biomesBlacklist;
-		
+
 		public ConfigValue<Integer>	 waitChunks;
 		public ConfigValue<Integer> minBlockDistance;
 		public ConfigValue<Double> probability;
 
-		
-		public Dungeons(final ForgeConfigSpec.Builder builder)	 {
+
+		public DungeonsWorldGen(final ForgeConfigSpec.Builder builder)	 {
 			builder.comment(CATEGORY_DIV, " Dungeon properties", CATEGORY_DIV)
 			.push("dungeons");
-			
+
 			registrySize = builder
 					.comment(" The number of dungeon spawns that are monitored.",
 							" Most recent additions replace least recent when the registry is full.",
@@ -112,29 +128,29 @@ public class Config extends AbstractConfig {
 							" However, dungeons are large and are defaulted with a high min. distance, ",
 							"so the number can be on the lower side unless other properties are changed.")
 					.defineInRange("registrySize", 50, 25, 1000);
-			
+
 			dimensionsWhitelist = builder
 					.comment(" Permitted dimensions for Dungeons2 execution.", 
 							" Dungeons2 was designed for 'normal' overworld-type dimensions.", 
 							" This setting does not use any wildcards (*). You must explicitly set the dimensions that are allowed.", 
 							" ex. minecraft:overworld")
 					.defineList("dimensionsWhitelist", Arrays.asList(new String []{"minecraft:overworld"}), s -> s instanceof String);
-			
+
 			this.waitChunks = builder
 					.comment(" The number of chunks that are generated in a new world before dungeons start to spawn.")
 					.defineInRange("waitChunks", 100, 10, 32000);
-			
+
 			this.minBlockDistance = builder
 					.comment(" The minimum distance, measured in blocks, that two dungeons can be in proximity (ie radius).",
 							" Note: Only dungeons in the registry are checked against this property.",
 							" Default = 600 blocks, or 16 chunks.")
 					.defineInRange("minBlockDistance", 600, 100, 32000);
-			
+
 			this.probability = builder
 					.comment(" The probability that a dungeon will generate at selected spawn location.",
 							" Including a non-100 value increases the randomization of dungeon placement.")
 					.defineInRange("probability", 90.0, 0.0, 100.0);
-			
+
 			biomesWhitelist = builder
 					.comment(" Permitted biomes for Dungeons2 execution.",
 							" This setting does not use any wildcards (*). You must explicitly set the biomes that are allowed.", 
@@ -151,16 +167,71 @@ public class Config extends AbstractConfig {
 			builder.pop();
 		}
 	}
-	
+
+	public static List<DungeonGeneratorConfiguration> dungeonConfigurations;
+	public static Map<String, List<DungeonGeneratorConfiguration>> dungeonGeneratorConfigMap;
+
+	/*
+	 * internal config class only. used for loading the defaultconfig file
+	 * and transformed into the exposed dungeonConfigs property
+	 */
+	private static class DungeonConfig {
+		public DungeonConfig(ForgeConfigSpec.Builder builder) {
+			// IMPORTANT! the define name must match what is in the defaultconfig file!
+			builder
+			.comment("####", "Dungeon Configs", "####")
+			.define("dungeonGeneratorConfigs", new ArrayList<>());
+			builder.build();
+		}
+	}
+
+	/**
+	 * 
+	 * @param configData
+	 */
+	public static void transform(CommentedConfig configData) {
+		// convert the data to an object
+		DungeonConfigHolder holder = new ObjectConverter().toObject(configData, DungeonConfigHolder::new);
+		if (holder.dungeonGeneratorConfigs == null || holder.dungeonGeneratorConfigs.isEmpty()) {
+			Dungeons.LOGGER.warn(
+					"\n===========================================================\n" +
+					"The Dungeons Generators config is not found or malformed.\n" +
+					"===========================================================");
+		}
+
+		// get the list from the holder and set the config property
+		dungeonConfigurations = holder.dungeonGeneratorConfigs;
+
+		// create the chest config map
+		dungeonGeneratorConfigMap = Maps.newHashMap();
+		if (dungeonConfigurations != null && !dungeonConfigurations.isEmpty()) {
+			dungeonConfigurations.forEach(generator -> {
+				// test if the array has been initialized
+				if (!dungeonGeneratorConfigMap.containsKey(generator.getSize())) {
+					dungeonGeneratorConfigMap.put(generator.getSize(), new ArrayList<>());
+				}
+				dungeonGeneratorConfigMap.get(generator.getSize()).add(generator);
+			});
+		}
+	}
+
+	/**
+	 * A temporary holder class.
+	 *
+	 */
+	private static class DungeonConfigHolder {
+		public List<DungeonGeneratorConfiguration> dungeonGeneratorConfigs;
+	}
+
 	@Override
 	public String getLogsFolder() {
 		return Config.LOGGING.folder.get();
 	}
-	
+
 	public void setLogsFolder(String folder) {
 		Config.LOGGING.folder.set(folder);
 	}
-	
+
 	@Override
 	public String getLoggingLevel() {
 		return Config.LOGGING.level.get();

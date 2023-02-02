@@ -17,7 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.event;
 
-import mod.gottsch.forge.dungeons2.core.Dungeons;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.persistence.DungeonsSavedData;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;

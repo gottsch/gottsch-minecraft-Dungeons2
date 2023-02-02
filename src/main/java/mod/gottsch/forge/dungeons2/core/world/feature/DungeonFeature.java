@@ -21,7 +21,7 @@ import java.util.Random;
 
 import com.mojang.serialization.Codec;
 
-import mod.gottsch.forge.dungeons2.core.Dungeons;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.registry.DimensionalGeneratedRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.GeneratedRegistry;

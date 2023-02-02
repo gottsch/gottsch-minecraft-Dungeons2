@@ -17,7 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.persistence;
 
-import mod.gottsch.forge.dungeons2.core.Dungeons;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.registry.DimensionalGeneratedRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;

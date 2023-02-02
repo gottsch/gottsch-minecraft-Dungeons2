@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import mod.gottsch.forge.dungeons2.core.Dungeons;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.registry.support.DungeonGeneratedContext;
 import mod.gottsch.forge.dungeons2.core.registry.support.IGeneratedContext;
