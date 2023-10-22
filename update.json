@@ -1,8 +1,8 @@
 {
     "homepage": "http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2792910-dungeons2",
     "promos": {
-    "1.12.2-latest": "1.7.6",
-    "1.12.2-recommended": "1.7.6"
+    "1.12.2-latest": "1.8.0",
+    "1.12.2-recommended": "1.8.0"
   },
     "1.12.2": {
         "1.1.0": "-Initial release",
@@ -17,6 +17,7 @@
        "1.7.0": "Added dungeon config version check.\nAdded Chest Config to the Level Config (classes and json files).\nAdded external custom Loot Tables (replaces ChestSheets).Added Sandstone dungeon blocks.\nAdded Sandstone Gavel block.\nAdded Quarter Facade block.\nAdded corner shapes for basic facade block.\nFixed boundary box on inner/outer corners for basic facade.\nPrevent certain facade blocks from having torches placed on them.\n",
        "1.7.1": "Fixed the Mossy Stonebrick Sill texture bug.",
        "1.7.5": "Integrate Treasure2 mod - use Chests in Dungeons.",
-       "1.7.6": "Compatible with Treasure2 v2.0.0+"
+       "1.7.6": "Compatible with Treasure2 v2.0.0+",
+       "1.8.0": "NEW STUFF - Deferred Generation, Fixed Entrance, ..."
     }
 }

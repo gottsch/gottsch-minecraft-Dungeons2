@@ -42,7 +42,15 @@ import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
 import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
+import mod.gottsch.forge.treasure2.Treasure;
+import mod.gottsch.forge.treasure2.core.cache.FeatureCaches;
+import mod.gottsch.forge.treasure2.core.cache.SimpleDistanceCache;
+import mod.gottsch.forge.treasure2.core.registry.DimensionalGeneratedCache;
+import mod.gottsch.forge.treasure2.core.registry.GeneratedCache;
+import mod.gottsch.forge.treasure2.core.registry.support.GeneratedChestContext;
+import mod.gottsch.forge.treasure2.core.registry.support.GeneratedContext;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.IChunkProvider;
@@ -58,14 +66,15 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	// the number of blocks of half a chunk (radius) (a chunk is 16x16)
 	public static final int CHUNK_RADIUS = 8;
 
-	private static final double DEFAULT_GENERATION_PROXIMITY_SQAURED = 6400;
+	// TEMP comment out
+//	private static final double DEFAULT_GENERATION_PROXIMITY_SQAURED = 6400;
 		
 	/*
 	 *  values that control the frequency of dungeon generation
 	 *  persisted to game save data
 	 */	
-	private int chunksSinceLastDungeon = 0;
-	private ICoords lastDungeonCoords = null;
+//	private int chunksSinceLastDungeon = 0;
+//	private ICoords lastDungeonCoords = null;
 	private boolean isGenerating = false;
 	
 	// biome white/black lists
@@ -77,7 +86,6 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	
 	// sheets
 	private StyleSheet styleSheet;
-//	private ChestSheet chestSheet;
 	private SpawnSheet spawnSheet;
 	
 	private static RandomProbabilityCollection<IRandomProbabilityItem> patterns = new RandomProbabilityCollection<>();
@@ -133,12 +141,6 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			}
 			catch(FileAlreadyExistsException e) {;}
 			
-//			folder = Paths.get(ModConfig.dungeonsFolder, ChestSheetLoader.BUILT_IN_CHEST_SHEET_SUB_FOLDER);
-//			try {
-//				Files.createDirectory(folder);
-//			}
-//			catch(FileAlreadyExistsException e) {;}
-			
 			folder = Paths.get(ModConfig.dungeonsFolder, SpawnSheetLoader.BUILT_IN_SPAWN_SHEET_SUB_FOLDER);
 			try {
 				Files.createDirectory(folder);
@@ -151,12 +153,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 				Dungeons2.log.debug("Stylesheet empty, loading default style sheet...");
 				styleSheet = StyleSheetLoader.load();
 			}
-//			this.chestSheet = ChestSheetLoader.loadAll();
-//			Dungeons2.log.debug("Returned Loaded chestSheet:" + this.chestSheet);
-//			if (this.chestSheet == null || this.chestSheet.getItems() == null || this.chestSheet.getItems().size() == 0) {
-//				Dungeons2.log.debug("Chestsheet empty, loading default chest sheet...");
-//				this.chestSheet = ChestSheetLoader.load();
-//			}			
+		
 			this.spawnSheet = SpawnSheetLoader.loadAll();
 			if (this.spawnSheet == null || this.spawnSheet.getGroups() == null || this.spawnSheet.getGroups().size() == 0) {
 				Dungeons2.log.debug("Spawnsheet empty, loading default spawn sheet...");
@@ -169,7 +166,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	}
 	
 	/**
-	 * This executes for every block in the chunk.
+	 * This executes for every chunk.
 	 */
 	@Override
 	public void generate(Random random, int chunkX, int chunkZ, World world,
@@ -178,24 +175,47 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		if (generator == null) return;
 		
 		// test for which overworld dimension
-		switch(world.provider.getDimension()) {
-		// surface/overworld
-		case 0:
-			break;
-		default:
-			return;
-		}
+//		switch(world.provider.getDimension()) {
+//		// surface/overworld
+//		case 0:
+//			break;
+//		default:
+//			return;
+//		}
 		
 		// result of generation
      	boolean isGenerated = false;
      	
 	    // increment last dungeon chunk count
-	    chunksSinceLastDungeon++;
-	 
+//	    chunksSinceLastDungeon++;
+ 
+     	// get the dimension
+     	int dimensionId = world.provider.getDimension();
+     	     	
+		// test the dimension
+		if (!meetsDimensionCriteria(dimension)) { 
+			return;
+		}
+		
+		// TODO copy all the Treasure2 1.18+ cache classes
+		// get the dungeon registry
+		SimpleDistanceCache<GeneratedContext> cache = FeatureCaches.WELL_CACHE.getDimensionDistanceCache().get(dimension);
+		if (cache == null) {
+			Treasure.LOGGER.debug("GeneratedRegistry is null for dimension & WELL_CACHE. This shouldn't be. Should be initialized.");
+			return false;
+		}
+		
+		if (!meetsWorldAgeCriteria(context.level(), cache)) {
+			this.waitChunksCount++;
+			FeatureCaches.WELL_CACHE.setDelayCount(waitChunksCount);
+			return false;
+		}
+		
+		
      	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
-     		Dungeons2.log.debug(String.format("Gen: pass first test: chunksSinceLast: %d, minChunks: %d", chunksSinceLastDungeon, ModConfig.minChunksPerDungeon));
+     		Dungeons2.log.debug("gen pass first test: chunksSinceLast -> {}, minChunks -> {}", chunksSinceLastDungeon, ModConfig.minChunksPerDungeon);
  			// clear count
-			chunksSinceLastDungeon = 0;
+//			chunksSinceLastDungeon = 0;
 			
      		/*
      		 * get current chunk position
@@ -204,17 +224,10 @@ public class DungeonsWorldGen implements IWorldGenerator {
             // spawn @ middle of chunk
             int xSpawn = chunkX * 16 + 8;
             int zSpawn = chunkZ * 16 + 8;
-            
-            // the get first surface y (could be leaves, trunk, water, etc)
- //>>           int ySpawn = world.getChunkFromChunkCoords(chunkX, chunkZ).getHeightValue(8, 8);
 
             ICoords coords = new Coords(xSpawn, 64, zSpawn);
 //     		Dungeons2.log.debug("Starting Coords:" + coords);
-     		
-            // TODO remove redux... dungeon generator will be responsible for determining field based on 
-            // the spawn point            
-//     		coords = getReduxCoords(world, coords);
-//			Dungeons2.log.debug("New coords:" + coords.toShortString());
+
             
 //			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
      		// check if  the min distance between dungeons is met
