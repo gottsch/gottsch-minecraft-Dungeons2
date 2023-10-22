@@ -16,9 +16,14 @@ import java.util.List;
 import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.block.DeferredDungeonGeneratorBlock;
+import com.someguyssoftware.dungeons2.block.DungeonsBlocks;
 import com.someguyssoftware.dungeons2.builder.DungeonBuilderTopDown;
 import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
 import com.someguyssoftware.dungeons2.builder.LevelBuilder;
+import com.someguyssoftware.dungeons2.cache.DelayedFeatureSimpleDistanceCache;
+import com.someguyssoftware.dungeons2.cache.FeatureCaches;
+import com.someguyssoftware.dungeons2.cache.SimpleDistanceCache;
 import com.someguyssoftware.dungeons2.config.BuildPattern;
 import com.someguyssoftware.dungeons2.config.BuildSize;
 import com.someguyssoftware.dungeons2.config.ModConfig;
@@ -39,18 +44,11 @@ import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
+import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
-import mod.gottsch.forge.treasure2.Treasure;
-import mod.gottsch.forge.treasure2.core.cache.FeatureCaches;
-import mod.gottsch.forge.treasure2.core.cache.SimpleDistanceCache;
-import mod.gottsch.forge.treasure2.core.registry.DimensionalGeneratedCache;
-import mod.gottsch.forge.treasure2.core.registry.GeneratedCache;
-import mod.gottsch.forge.treasure2.core.registry.support.GeneratedChestContext;
-import mod.gottsch.forge.treasure2.core.registry.support.GeneratedContext;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.IChunkProvider;
@@ -66,6 +64,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	// the number of blocks of half a chunk (radius) (a chunk is 16x16)
 	public static final int CHUNK_RADIUS = 8;
 
+	private int waitChunksCount = 0;
+	
 	// TEMP comment out
 //	private static final double DEFAULT_GENERATION_PROXIMITY_SQAURED = 6400;
 		
@@ -75,7 +75,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	 */	
 //	private int chunksSinceLastDungeon = 0;
 //	private ICoords lastDungeonCoords = null;
-	private boolean isGenerating = false;
+//	private boolean isGenerating = false;
 	
 	// biome white/black lists
 	private List<BiomeTypeHolder> biomeWhiteList;
@@ -174,194 +174,240 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		
 		if (generator == null) return;
 		
-		// test for which overworld dimension
-//		switch(world.provider.getDimension()) {
-//		// surface/overworld
-//		case 0:
-//			break;
-//		default:
-//			return;
-//		}
-		
 		// result of generation
      	boolean isGenerated = false;
-     	
-	    // increment last dungeon chunk count
-//	    chunksSinceLastDungeon++;
  
      	// get the dimension
      	int dimensionId = world.provider.getDimension();
      	     	
 		// test the dimension
-		if (!meetsDimensionCriteria(dimension)) { 
+		if (!meetsDimensionCriteria(dimensionId)) { 
 			return;
 		}
 		
-		// TODO copy all the Treasure2 1.18+ cache classes
 		// get the dungeon registry
-		SimpleDistanceCache<GeneratedContext> cache = FeatureCaches.WELL_CACHE.getDimensionDistanceCache().get(dimension);
+		DelayedFeatureSimpleDistanceCache<DungeonInfo> cache = FeatureCaches.CACHE;
 		if (cache == null) {
-			Treasure.LOGGER.debug("GeneratedRegistry is null for dimension & WELL_CACHE. This shouldn't be. Should be initialized.");
-			return false;
+			Dungeons2.log.debug("cache is null. this shouldn't be. should be initialized.");
+			return;
 		}
 		
-		if (!meetsWorldAgeCriteria(context.level(), cache)) {
+		if (!meetsWorldAgeCriteria(world, cache)) {
+			// increment the local feature wait count
 			this.waitChunksCount++;
-			FeatureCaches.WELL_CACHE.setDelayCount(waitChunksCount);
-			return false;
+			// update the cache's delay count
+			cache.setDelayCount(waitChunksCount);
+			return;
 		}
 		
+        int xSpawn = chunkX * 16 + 7;
+        int zSpawn = chunkZ * 16 + 7;
+        ICoords coords = new Coords(xSpawn, 64, zSpawn);
+        Dungeons2.log.debug("starting Coords:" + coords);
+        
+		if (!meetsBiomeCriteria(world, coords)) {
+			return;
+		}		
 		
-     	if (!isGenerating() && chunksSinceLastDungeon > ModConfig.minChunksPerDungeon) {
-     		Dungeons2.log.debug("gen pass first test: chunksSinceLast -> {}, minChunks -> {}", chunksSinceLastDungeon, ModConfig.minChunksPerDungeon);
- 			// clear count
-//			chunksSinceLastDungeon = 0;
-			
-     		/*
-     		 * get current chunk position
-     		 */
-            
-            // spawn @ middle of chunk
-            int xSpawn = chunkX * 16 + 8;
-            int zSpawn = chunkZ * 16 + 8;
+		// check against all cached dungeons
+		if (meetsProximityCriteria(world, coords, ModConfig.minDistancePerDungeon, cache)) {			
+			return;
+		}
+		
+		// check if meets the probability criteria
+		if (!meetsProbabilityCriteria(random)) {
+			failAndPlacehold(world, cache, coords);
+			return;
+		}
 
-            ICoords coords = new Coords(xSpawn, 64, zSpawn);
-//     		Dungeons2.log.debug("Starting Coords:" + coords);
+		// get land coords
+		coords = WorldInfo.getDryLandSurfaceCoords(world, coords);
+		if (coords == WorldInfo.EMPTY_COORDS) {
+			failAndPlacehold(world, cache, coords);
+			return;
+		}		
 
-            
-//			Dungeons2.log.debug("Last Dungeon dist^2:" + lastDungeonCoords.getDistanceSq(coords));
-     		// check if  the min distance between dungeons is met
-     		if (lastDungeonCoords == null || lastDungeonCoords.getDistanceSq(coords) > (ModConfig.minDistancePerDungeon * ModConfig.minDistancePerDungeon)) {
+		// place deferred block
+		world.setBlockState(coords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 3);
+		
+		// cache placeholder
+		DungeonInfo info = new DungeonInfo();
+		info.setCoords(coords);
+		cache.cache(coords, info);
+		
+//				// get the biome ID
+//				Biome biome = world.getBiome(coords.toPos());
+//				Integer biomeID = Biome.getIdForBiome(biome);
+//				Dungeons2.log.debug("biome ID -> {}", biomeID);
+//			    // get the dungeons for this biome
+//			    List<IDungeonConfig> dcList = Dungeons2.CONFIG_MANAGER.getByBiome(biomeID);
+//			    // select one
+//			    if (dcList == null || dcList.size() == 0) {
+//			    	Dungeons2.log.debug("could not find any dungeon configs for biomeID -> {}", biomeID);
+////			    	this.setGenerating(false);
+//			    	return;
+//			    }
+//			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
+//			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
+//			    
+//	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
+//	   			// TODO create a custom exception to throw if theme is null/not found.
+//	   			
+//				// get the level builder
+//				LevelBuilder levelBuilder = new LevelBuilder();
+//				
+//				// 6. create a dungeon builder using the defined level builder(s)
+//				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);				
+//				
+//				// 7. build the dungeon
+//				Dungeons2.log.debug("starting BUILD process...");
+//				Dungeon dungeon = builder.build(world, random, coords, dc);
+//				Dungeons2.log.debug("BUILD process complete.");
+//				/*
+//				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
+//				 *  In future each level in a dungeon may have a different support setting
+//				 */
+////	>>			levelConfig.setSupportOn(dungeonConfig.useSupport());
+//
+//	   			// 8. update the dungeon with the theme
+//	   			dungeon.setTheme(theme);
+//	   			
+//				if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
+//					// 9. generate the dungeon
+//					try {
+//						Dungeons2.log.debug("Start GENERATE process...");
+//						isGenerated = generator.generate(world, random, dungeon, styleSheet, /*chestSheet*/null, spawnSheet);
+//						Dungeons2.log.debug("GENERATE process complete.");
+//					} catch (FileNotFoundException e) {
+//						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
+//					}
+//				}
+//				
+//				if (isGenerated) {
+//					// register the dungeon with the Dungeon Registry
+//					DungeonInfo info = new DungeonInfo(dungeon, null, null, null, null/*pattern, dungeonSize, levelSize, direction*/);
+//					// update the coords to the actual entrance (changed due to usage of field)
+//					coords = info.getCoords();
+//					DungeonRegistry.getInstance().register(coords.toShortString(), info);
+//
+//					// update the last dungeon position
+//					lastDungeonCoords = coords;
+//					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
+//					
+//					// TODO if generated and config.dumps is on, generate a dungeon dump (text file of all properties or dungeon, levels, rooms, doors, etc)
+//					// TODO is generated and config.dumps.json is on, generate a dungeon json file. (same as above but in json format)
+//					if (ModConfig.enableDumps) {
+//						dump(dungeon);
+//					}
+//				}
 
-				// 1. test if dungeon meets the probability criteria
-				if (random.nextInt(100) > ModConfig.dungeonGenProbability) {
-					Dungeons2.log.debug("Dungeon fail generate probability.");
-					return;
-				}		
-
-				// TODO redo biome testing - currently tests against TYPE not NAME/ID
-				// 2. test if correct biome
-				Biome biome = world.getBiome(coords.toPos());
-				if (WorldInfo.isClientSide(world)/*world.isRemote*/) {
-					Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
-				}
-			    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
-			    	if (WorldInfo.isClientSide(world)/*world.isRemote*/) {
-			    		Dungeons2.log.debug(String.format("[%s] is not a valid biome.", biome.getBiomeName()));
-			    	}
-			    	return;
-			    }
-			    
-			    // TODO this distance is affected by fields as the coords does not necessarily refer to where the dungeon actually spawns
-     			// 2.5 check against all registered dungeons
-     			if (isRegisteredDungeonWithinDistance(world, coords, ModConfig.minDistancePerDungeon)) {
-   					Dungeons2.log.debug("The distance to the nearest dungeon is less than the minimun required.");
-     				return;
-     			}
-     			
-			    // set the generating flag
-			    this.setGenerating(true);
-			    
-			    // 3. get the sheets - NOTE see constructor
-
-				// 4. select random theme, pattern, size and direction
-//				Dungeons2.log.debug("StyleSheet:" + styleSheet);
-//				Dungeons2.log.debug("Themes.size: " + styleSheet.getThemes().size());
-			    
-			    // TODO load the patterns and size into RandomProbabilityCollection with differing weights with small, square being more common
-			    // TODO eventurally these values should be part of a dungeonSheet to be able to config it.
-				// get the biome ID
-				Integer biomeID = Biome.getIdForBiome(biome);
-				Dungeons2.log.debug("biome ID -> {}", biomeID);
-			    // get the dungeons for this biome
-			    List<IDungeonConfig> dcList = Dungeons2.CONFIG_MANAGER.getByBiome(/*biome.getBiomeName()*/biomeID);
-			    // select one
-			    if (dcList == null || dcList.size() == 0) {
-			    	Dungeons2.log.debug("could not find any dungeon configs for biomeID -> {}", biomeID);
-			    	this.setGenerating(false);
-			    	return;
-			    }
-			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
-			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
-			    
-	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
-	   			// TODO create a custom exception to throw if theme is null/not found.
-	   			
-				// get the level builder
-				LevelBuilder levelBuilder = new LevelBuilder(/*levelConfig*/);
-				
-				// 6. create a dungeon builder using the defined level builder(s)
-				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);				
-				// TODO select a dungeon config - check config if support or no support
-				// TODO propogate support value to levelConfig(s)
-				// NOTE for future, dungeon config should probably have an array of levelConfig so each level can have it's own config
-				// ex. a dungeon where the levels increase in size the further you go down (volcano).
-				// NOTE for future, dungeon config(s) should be loaded via JSON
-				// TODO probably need a separate method that constructs the whole dungeon config with level configs in it
-				// the dungeon config will drive part of the level config, ie # of rooms etc.
-				// 7. determine a preset dungeon config base on size
-//				DungeonConfig dungeonConfig = new DungeonConfig();
-//	>>			DungeonConfig dungeonConfig = PRESET_DUNGEON_CONFIGS.getConfig(dungeonSize);
-
-//				Dungeons2.log.debug(
-//						String.format("Building D2 dungeons @ %s\n" + 
-//								"\tUsing LevelConfig: %s\n" +
-//								"\tUsing LevelBuilder: %s\n" +
-//								"\tUsing DungeonConfig: %s", pos, levelConfig, levelBuilder, dungeonConfig));
-				
-				// 7. build the dungeon
-				Dungeons2.log.debug("Starting BUILD process...");
-//				Dungeon dungeon = builder.build(world, random, coords, dungeonConfig);
-				Dungeon dungeon = builder.build(world, random, coords, dc);
-				Dungeons2.log.debug("BUILD process complete.");
-				/*
-				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
-				 *  In future each level in a dungeon may have a different support setting
-				 */
-//	>>			levelConfig.setSupportOn(dungeonConfig.useSupport());
-
-	   			// 8. update the dungeon with the theme
-	   			dungeon.setTheme(theme);
-	   			
-				if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
-					// 9. generate the dungeon
-					try {
-						Dungeons2.log.debug("Start GENERATE process...");
-						isGenerated = generator.generate(world, random, dungeon, styleSheet, /*chestSheet*/null, spawnSheet);
-						Dungeons2.log.debug("GENERATE process complete.");
-					} catch (FileNotFoundException e) {
-						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
-					}
-				}
-				
-				if (isGenerated) {
-					// register the dungeon with the Dungeon Registry
-					DungeonInfo info = new DungeonInfo(dungeon, null, null, null, null/*pattern, dungeonSize, levelSize, direction*/);
-					// update the coords to the actual entrance (changed due to usage of field)
-					coords = info.getCoords();
-					DungeonRegistry.getInstance().register(coords.toShortString(), info);
-
-					// update the last dungeon position
-					lastDungeonCoords = coords;
-					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
-					
-					// TODO if generated and config.dumps is on, generate a dungeon dump (text file of all properties or dungeon, levels, rooms, doors, etc)
-					// TODO is generated and config.dumps.json is on, generate a dungeon json file. (same as above but in json format)
-					if (ModConfig.enableDumps) {
-						dump(dungeon);
-					}
-				}
-				
-				// set the generating flag
-			    this.setGenerating(false);
-     		}
-     	}
      	// save world data
 		DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
     	if (savedData != null) {
     		savedData.markDirty();
     	}
 		
+	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param cache
+	 * @param coords
+	 * @return
+	 */
+	private boolean failAndPlacehold(World world, DelayedFeatureSimpleDistanceCache<DungeonInfo> cache, ICoords coords) {
+		// add placeholder
+		DungeonInfo info = new DungeonInfo();
+		info.setCoords(coords);
+		cache.cache(coords, info);
+
+		// need to save on fail
+		DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
+    	if (savedData != null) {
+    		savedData.markDirty();
+    	}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param random
+	 * @return
+	 */
+	private boolean meetsProbabilityCriteria(Random random) {
+		if (!RandomHelper.checkProbability(random, ModConfig.dungeonGenProbability)) {
+			Dungeons2.log.debug("does not meet generate probability.");
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param coords
+	 * @param minDistance
+	 * @param cache
+	 * @return
+	 */
+	private boolean meetsProximityCriteria(World world, ICoords coords, int minDistance,
+			DelayedFeatureSimpleDistanceCache<DungeonInfo> cache) {
+		if (cache == null || cache.getValues().isEmpty()) {
+			Dungeons2.log.debug("unable to locate the cache or the cache doesn't contain any values");
+			return true;
+		}
+
+		// generate a box with coords as center and minDistance as radius
+		ICoords startBox = new Coords(coords.getX() - minDistance, 0, coords.getZ() - minDistance);
+		ICoords endBox = new Coords(coords.getX() + minDistance, 0, coords.getZ() + minDistance);
+
+		// find if box overlaps anything in the registry
+		if (cache.withinArea(startBox, endBox)) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param coords
+	 * @return
+	 */
+	private boolean meetsBiomeCriteria(World world, ICoords coords) {
+		Biome biome = world.getBiome(coords.toPos());
+		if (WorldInfo.isClientSide(world)/*world.isRemote*/) {
+			Dungeons2.log.debug("biome -> {}", biome.getBiomeName());
+		}
+	    if (!BiomeHelper.isBiomeAllowed(biome, biomeWhiteList, biomeBlackList)) {
+	    	if (WorldInfo.isClientSide(world)/*world.isRemote*/) {
+	    		Dungeons2.log.debug("{} is not a valid biome.", biome.getBiomeName());
+	    	}
+	    	return false;
+	    }
+	    return true;
+	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param cache
+	 * @return
+	 */
+	private boolean meetsWorldAgeCriteria(World world, DelayedFeatureSimpleDistanceCache<DungeonInfo> cache) {
+		// wait count check		
+		// TODO since wells are very rare, a well may not generated before the world is save and player exits
+		// in this case the waitChunksCount would be reset when the world restarts. this value needs to be saved.
+		if (cache.getValues().isEmpty() && waitChunksCount < ModConfig.waitChunks) {
+			Dungeons2.log.debug("world is too young");
+			return false;
+		}
+		return true;
+	}
+
+	private boolean meetsDimensionCriteria(int dimensionId) {
+		return dimensionId == 0 ? true : false;
 	}
 
 	/**
@@ -391,69 +437,70 @@ public class DungeonsWorldGen implements IWorldGenerator {
 //		Dungeons2.log.debug("\n" + s);
 	}
 	
+	// TODO this might be needed in the DeferredDungeonGeneratorTileEntity
 	/**
 	 * 
 	 * @param world
 	 * @param coords
 	 * @return
 	 */
-	private ICoords getReduxCoords(World world, ICoords coords) {
-		/*
-		 * Get the closest player's distance from coords
-		 */
-        double closestDistSq = -1.0D;
-        ICoords closestCoords = null;
-		for (int i = 0; i < world.playerEntities.size(); ++i) {
-			EntityPlayer player = world.playerEntities.get(i);
-			ICoords playerCoords = new Coords(player.getPosition());
-			double dist = coords.getDistanceSq(playerCoords);
-			if (closestDistSq == -1.0D || dist < closestDistSq) {
-				closestDistSq = dist;
-				closestCoords = playerCoords;
-			}
-		}
-		
-		if (closestCoords != null) {
-			Dungeons2.log.debug(
-				String.format("The closest player is %s squared blocks away at pos %s", String.valueOf(closestDistSq), closestCoords.toShortString())
-			);
-		}
-		
-		// determine if closest player is within generate threshold (80 blocks / 5 chunks)
-		if (closestDistSq > DEFAULT_GENERATION_PROXIMITY_SQAURED) {
-			Dungeons2.log.debug("Closest player is outside of generation proximity. Moving to a closer position.");
-			/*
-			 * move the spawn coords to 80 blocks away.
-			 * use scaling method instead of slope & pythagorean theorem
-			 *  to avoid calculating squares and square roots.
-			 * 
-			 */
-			
-			// get dist ratio
-			double ratio = DEFAULT_GENERATION_PROXIMITY_SQAURED / closestDistSq;
-//			Dungeons2.log.debug("Distance ratio: " + ratio);
-			
-			// get x, z delta (or distance in blocks along the axis)
-			ICoords delta = coords.delta(closestCoords);
-//			Dungeons2.log.debug("Delta coords: " + delta.toShortString());
-			
-			// reduce the x, z distances by (1 - pecent)
-			double redux = 1 - ratio;
-			double xRedux = delta.getX() * redux;
-			double zRedux = delta.getZ() * redux;
-//			Dungeons2.log.debug(String.format("Redux: %s, xdux: %s, zdux: %s", String.valueOf(redux), String.valueOf(xRedux), String.valueOf(zRedux)));
-										
-			int xSpawn = coords.getX() - ((int)Math.floor(xRedux));
-			int zSpawn = coords.getZ() - ((int)Math.floor(zRedux));
-//			Dungeons2.log.debug("redux xSpawn:" + xSpawn);
-//			Dungeons2.log.debug("redux zSpawn:" + zSpawn);
-			int ySpawn = WorldInfo.getHeightValue(world, new Coords(xSpawn, 255, zSpawn));
-//			Dungeons2.log.debug("redux ySpawn from WorldInfo:" + ySpawn);
-			
-			coords = new Coords (xSpawn, ySpawn, zSpawn);	
-		}		
-		return coords;
-	}
+//	private ICoords getReduxCoords(World world, ICoords coords) {
+//		/*
+//		 * Get the closest player's distance from coords
+//		 */
+//        double closestDistSq = -1.0D;
+//        ICoords closestCoords = null;
+//		for (int i = 0; i < world.playerEntities.size(); ++i) {
+//			EntityPlayer player = world.playerEntities.get(i);
+//			ICoords playerCoords = new Coords(player.getPosition());
+//			double dist = coords.getDistanceSq(playerCoords);
+//			if (closestDistSq == -1.0D || dist < closestDistSq) {
+//				closestDistSq = dist;
+//				closestCoords = playerCoords;
+//			}
+//		}
+//		
+//		if (closestCoords != null) {
+//			Dungeons2.log.debug(
+//				String.format("The closest player is %s squared blocks away at pos %s", String.valueOf(closestDistSq), closestCoords.toShortString())
+//			);
+//		}
+//		
+//		// determine if closest player is within generate threshold (80 blocks / 5 chunks)
+//		if (closestDistSq > DEFAULT_GENERATION_PROXIMITY_SQAURED) {
+//			Dungeons2.log.debug("Closest player is outside of generation proximity. Moving to a closer position.");
+//			/*
+//			 * move the spawn coords to 80 blocks away.
+//			 * use scaling method instead of slope & pythagorean theorem
+//			 *  to avoid calculating squares and square roots.
+//			 * 
+//			 */
+//			
+//			// get dist ratio
+//			double ratio = DEFAULT_GENERATION_PROXIMITY_SQAURED / closestDistSq;
+////			Dungeons2.log.debug("Distance ratio: " + ratio);
+//			
+//			// get x, z delta (or distance in blocks along the axis)
+//			ICoords delta = coords.delta(closestCoords);
+////			Dungeons2.log.debug("Delta coords: " + delta.toShortString());
+//			
+//			// reduce the x, z distances by (1 - pecent)
+//			double redux = 1 - ratio;
+//			double xRedux = delta.getX() * redux;
+//			double zRedux = delta.getZ() * redux;
+////			Dungeons2.log.debug(String.format("Redux: %s, xdux: %s, zdux: %s", String.valueOf(redux), String.valueOf(xRedux), String.valueOf(zRedux)));
+//										
+//			int xSpawn = coords.getX() - ((int)Math.floor(xRedux));
+//			int zSpawn = coords.getZ() - ((int)Math.floor(zRedux));
+////			Dungeons2.log.debug("redux xSpawn:" + xSpawn);
+////			Dungeons2.log.debug("redux zSpawn:" + zSpawn);
+//			int ySpawn = WorldInfo.getHeightValue(world, new Coords(xSpawn, 255, zSpawn));
+////			Dungeons2.log.debug("redux ySpawn from WorldInfo:" + ySpawn);
+//			
+//			coords = new Coords (xSpawn, ySpawn, zSpawn);	
+//		}		
+//		return coords;
+//	}
 
 	/**
 	 * 
@@ -488,38 +535,38 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	/**
 	 * @return the chunksSinceLastDungeon
 	 */
-	public int getChunksSinceLastDungeon() {
-		return chunksSinceLastDungeon;
-	}
+//	public int getChunksSinceLastDungeon() {
+//		return chunksSinceLastDungeon;
+//	}
 
 	/**
 	 * @param chunksSinceLastDungeon the chunksSinceLastDungeon to set
 	 */
-	public void setChunksSinceLastDungeon(int chunksSinceLastDungeon) {
-		this.chunksSinceLastDungeon = chunksSinceLastDungeon;
-	}
+//	public void setChunksSinceLastDungeon(int chunksSinceLastDungeon) {
+//		this.chunksSinceLastDungeon = chunksSinceLastDungeon;
+//	}
 
 	/**
 	 * @return the lastDungeonCoords
 	 */
-	public ICoords getLastDungeonCoords() {
-		return lastDungeonCoords;
-	}
+//	public ICoords getLastDungeonCoords() {
+//		return lastDungeonCoords;
+//	}
 
 	/**
 	 * @param lastDungeonCoords the lastDungeonCoords to set
-	 */
-	public void setLastDungeonCoords(ICoords lastDungeonBlockPos) {
-		this.lastDungeonCoords = lastDungeonBlockPos;
-	}
+//	 */
+//	public void setLastDungeonCoords(ICoords lastDungeonBlockPos) {
+//		this.lastDungeonCoords = lastDungeonBlockPos;
+//	}
 
-	public synchronized boolean isGenerating() {
-		return isGenerating;
-	}
-
-	public synchronized void setGenerating(boolean isGenerating) {
-		this.isGenerating = isGenerating;
-	}
+//	public synchronized boolean isGenerating() {
+//		return isGenerating;
+//	}
+//
+//	public synchronized void setGenerating(boolean isGenerating) {
+//		this.isGenerating = isGenerating;
+//	}
 
 	private class RandomBuildPattern implements IRandomProbabilityItem {
 		public BuildPattern pattern;

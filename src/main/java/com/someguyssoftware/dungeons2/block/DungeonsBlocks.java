@@ -251,6 +251,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	//	public static Block blood;
 	//	public static Block mold1;
 
+	public static final Block DEFERRED_DUNGEON_GENERATOR;
+	
 	public static List<Block> BLOCKS = new ArrayList<>(100);
 	
 	static {
@@ -447,6 +449,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		//	    blood = new DecorationBlock(Material.GRASS, ModConfig.bloodBlockId);
 		//	    mold1 = new DecorationBlock(Material.GRASS, ModConfig.mold1BlockId);
 		
+		DEFERRED_DUNGEON_GENERATOR = new DeferredDungeonGeneratorBlock(Dungeons2.MODID, "deferred_dungeon_generator");
 		
 		/*
 		 *  setup array

@@ -3,7 +3,10 @@ package com.someguyssoftware.dungeons2.model;
 import com.someguyssoftware.dungeons2.config.BuildDirection;
 import com.someguyssoftware.dungeons2.config.BuildPattern;
 import com.someguyssoftware.dungeons2.config.BuildSize;
+import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
+
+import net.minecraft.nbt.NBTTagCompound;
 
 /**
  * 
@@ -59,6 +62,113 @@ public class DungeonInfo {
 		setSize(dungeonSize);
 		setLevelSize(levelSize);
 		setDirection(direction);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public NBTTagCompound save() {		
+		NBTTagCompound tag = new NBTTagCompound();
+
+		if (getCoords() != null) {
+			tag.setInteger("x", getCoords().getX());
+			tag.setInteger("y", getCoords().getY());
+			tag.setInteger("z", getCoords().getZ());
+		}
+		tag.setInteger("minX", getMinX());
+		tag.setInteger("minY", getMinY());
+		tag.setInteger("minZ", getMinZ());
+		tag.setInteger("maxX", getMaxX());
+		tag.setInteger("maxY", getMaxY());
+		tag.setInteger("maxZ", getMaxZ());
+		
+		tag.setInteger("levels", getLevels());
+		if (getThemeName() != null) {
+			tag.setString("theme", getThemeName());
+		}
+		if (getPattern() != null) {
+			tag.setString("pattern", getPattern().name());
+		}
+		if (getSize() != null) {
+			tag.setString("size", getSize().name());
+		}
+		if (getLevelSize() != null) {
+			tag.setString("levelSize", getLevelSize().name());
+		}
+		if (getDirection() != null) {
+			tag.setString("direction", getDirection().name());
+		}
+		if (getBossChestCoords() != null) {
+			tag.setInteger("bossChestX", getBossChestCoords().getX());
+			tag.setInteger("bossChestY", getBossChestCoords().getY());
+			tag.setInteger("bossChestZ", getBossChestCoords().getZ());
+		}
+		return tag;
+	}
+	
+	/**
+	 * 
+	 * @param tag
+	 */
+	public void load(NBTTagCompound tag) {
+		if (tag.hasKey("x") && tag.hasKey("y") && tag.hasKey("z")) {
+			setCoords(new Coords(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
+		}
+		else {
+			return;
+		}
+		
+		if (tag.hasKey("minX")) {
+			setMinX(tag.getInteger("minX"));
+		}
+		if (tag.hasKey("minY")) {
+			setMinX(tag.getInteger("minY"));
+		}
+		if (tag.hasKey("minZ")) {
+			setMinX(tag.getInteger("minZ"));
+		}
+		if (tag.hasKey("maxX")) {
+			setMaxX(tag.getInteger("maxX"));
+		}
+		if (tag.hasKey("maxY")) {
+			setMaxX(tag.getInteger("maxY"));
+		}
+		if (tag.hasKey("maxZ")) {
+			setMaxX(tag.getInteger("maxZ"));
+		}
+		
+		if (tag.hasKey("levels")) {
+			setLevels(tag.getInteger("levels"));
+		}
+
+		if (tag.hasKey("theme")) {
+			setThemeName(tag.getString("theme"));
+		}
+		
+		if (tag.hasKey("pattern")) {
+			String pattern = tag.getString("pattern");
+			if (!pattern.equals("")) setPattern(BuildPattern.valueOf(pattern));
+		}
+
+		if (tag.hasKey("size")) {
+			String size = tag.getString("size");
+			if (!size.equals("")) setSize(BuildSize.valueOf(size));
+		}
+		
+		if (tag.hasKey("levelSize")) {
+			String levelSize = tag.getString("levelSize");
+			if (!levelSize.equals("")) setLevelSize(BuildSize.valueOf(levelSize));
+		}
+		
+		if (tag.hasKey("direction")) {
+			String direction = tag.getString("direction");
+			if (!direction.equals("")) setDirection(BuildDirection.valueOf(direction));
+		}
+
+		if (tag.hasKey("bossChestX") && tag.hasKey("bossChestY") && tag.hasKey("bossChestZ")) {
+			setBossChestCoords(new Coords(tag.getInteger("bossChestX"), tag.getInteger("bossChestY"), tag.getInteger("bossChestZ")));
+		}
 	}
 	
 	public ICoords getCoords() {
@@ -171,5 +281,13 @@ public class DungeonInfo {
 
 	public void setSize(BuildSize size) {
 		this.size = size;
+	}
+
+	@Override
+	public String toString() {
+		return "DungeonInfo [coords=" + coords + ", levels=" + levels + ", minX=" + minX + ", maxX=" + maxX + ", minY="
+				+ minY + ", maxY=" + maxY + ", minZ=" + minZ + ", maxZ=" + maxZ + ", themeName=" + themeName
+				+ ", bossChestCoords=" + bossChestCoords + ", pattern=" + pattern + ", levelSize=" + levelSize
+				+ ", size=" + size + ", direction=" + direction + "]";
 	};
 }
