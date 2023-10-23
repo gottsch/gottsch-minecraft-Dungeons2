@@ -2,6 +2,7 @@ package com.someguyssoftware.dungeons2.block;
 
 import javax.annotation.Nullable;
 
+import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.tileentity.DeferredDungeonGeneratorTileEntity;
 import com.someguyssoftware.gottschcore.block.ModBlock;
 
@@ -35,6 +36,7 @@ public class DeferredDungeonGeneratorBlock extends ModBlock implements ITileEnti
 		DeferredDungeonGeneratorTileEntity entity = null;
 		try {
 			entity = new DeferredDungeonGeneratorTileEntity();
+			Dungeons2.log.debug("created deferred dungeon generator");
 		}
 		catch(Exception e) {
 			e.printStackTrace();

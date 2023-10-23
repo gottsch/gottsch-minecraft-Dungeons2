@@ -593,4 +593,16 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			return prob;
 		}		
 	}
+
+	public StyleSheet getStyleSheet() {
+		return styleSheet;
+	}
+
+	public SpawnSheet getSpawnSheet() {
+		return spawnSheet;
+	}
+
+	public DungeonGenerator getGenerator() {
+		return generator;
+	}
 }

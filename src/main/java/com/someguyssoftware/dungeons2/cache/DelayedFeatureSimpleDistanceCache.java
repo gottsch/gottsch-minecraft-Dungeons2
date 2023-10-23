@@ -1,5 +1,11 @@
 package com.someguyssoftware.dungeons2.cache;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.someguyssoftware.dungeons2.bst.IInterval;
+import com.someguyssoftware.gottschcore.positional.ICoords;
+
 /**
  * Wraps SimpleDistanceCache, adding a delayCount property.
  * @author Mark Gottschling on May 19, 2023
@@ -16,7 +22,7 @@ public class DelayedFeatureSimpleDistanceCache<T> extends SimpleDistanceCache<T>
 		super(max);
 		setDelayCount(delayCount);
 	}
-
+	
 	public int getDelayCount() {
 		return delayCount;
 	}

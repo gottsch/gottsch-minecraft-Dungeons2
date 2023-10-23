@@ -2,6 +2,7 @@ package com.someguyssoftware.dungeons2.cache;
 
 import java.util.List;
 
+import com.someguyssoftware.dungeons2.bst.IInterval;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 /**
@@ -48,4 +49,6 @@ public interface ISimpleDistanceCache<T> {
 	 * @return
 	 */
 	List<T> getValues();
+	
+	List<T> getData(ICoords coords1, ICoords coords2);
 }

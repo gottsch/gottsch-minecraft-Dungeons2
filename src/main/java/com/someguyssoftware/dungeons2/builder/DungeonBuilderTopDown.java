@@ -106,6 +106,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		/*
 		 * Calculate dungeon boundary
 		 */
+		// TODO change this. use 96x96 centered at spawn
 		AxisAlignedBB dungeonBoundary = null;
 		ICoords closestCoords = null;
 		if (this.getBoundary() == null) {

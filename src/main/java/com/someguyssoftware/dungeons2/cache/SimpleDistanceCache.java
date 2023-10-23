@@ -93,6 +93,16 @@ public class SimpleDistanceCache<T> implements ISimpleDistanceCache<T> {
 		return true;
 	}
 	
+	@Override
+	public List<T> getData(ICoords start, ICoords end) {
+		List<IInterval<T>> list = distanceCache.getOverlapping(distanceCache.getRoot(), new CoordsInterval<>(start, end));
+		List<T> data = new ArrayList<>();
+		list.forEach(element -> {
+			data.add(element.getData());
+		});		
+		return data;
+	}
+	
 	/**
 	 * This will not update parent collection.
 	 * @return
