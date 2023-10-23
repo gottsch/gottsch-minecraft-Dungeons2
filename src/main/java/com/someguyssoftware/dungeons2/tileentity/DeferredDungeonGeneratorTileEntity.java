@@ -62,99 +62,94 @@ public class DeferredDungeonGeneratorTileEntity extends AbstractModTileEntity im
         
         // square the raidus of the dungeon field        
         double proximitySq = (FIELD_SIZE/2) * (FIELD_SIZE/2);
-        
-        // TODO check for any players within distance
 
         // for each player
-        for (int playerIndex = 0; playerIndex < getWorld().playerEntities.size(); ++playerIndex) {
+        for (int playerIndex = 0; playerIndex < getWorld().playerEntities.size(); playerIndex++) {
             EntityPlayer player = (EntityPlayer)getWorld().playerEntities.get(playerIndex);
             // get the distance
             double distanceSq = player.getDistanceSq(this.getPos().add(0.5D, 0.5D, 0.5D));
             Dungeons2.log.debug("deferred dungeon block ticking when player is -> {} blocks away", Math.sqrt(distanceSq));
-           
-            if (distanceSq < proximitySq) {
-            	// TODO generate dungeon
             	
-				// get the biome ID
-				Biome biome = world.getBiome(coords.toPos());
-				Integer biomeID = Biome.getIdForBiome(biome);
-				Dungeons2.log.debug("biome ID -> {}", biomeID);
-            	
-			    // get the dungeons for this biome
-			    List<IDungeonConfig> dungeonConfigs = Dungeons2.CONFIG_MANAGER.getByBiome(biomeID);
-			    // select one
-			    if (dungeonConfigs == null || dungeonConfigs.size() == 0) {
-			    	Dungeons2.log.debug("could not find any dungeon configs for biomeID -> {}", biomeID);
-			    	selfDestruct();
-			    	return;
-			    }
-			    IDungeonConfig dc = dungeonConfigs.get(world.rand.nextInt(dungeonConfigs.size()));
-			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
-				
-			    DungeonsWorldGen worldGenerator = Dungeons2.dungeonsWorldGen;
-			    Theme theme = worldGenerator.getStyleSheet().getThemes()
-			    		.get(worldGenerator.getStyleSheet().getThemes().keySet()
-			    				.toArray()[world.rand.nextInt(worldGenerator.getStyleSheet().getThemes().size())]);
-	   			
-			    // get the level builder
-				LevelBuilder levelBuilder = new LevelBuilder();
-			    
-				// create a dungeon builder using the defined level builder(s)
-				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);	
-				
-				// build the dungeon
-				Dungeons2.log.debug("starting BUILD process...");
-				Dungeon dungeon = builder.build(world, world.rand, coords, dc);
-				Dungeons2.log.debug("BUILD process complete.");
-				
-				// update the dungeon with the theme
-	   			dungeon.setTheme(theme);
-				
-	   			if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
-					// generate the dungeon
-					try {
-						Dungeons2.log.debug("Start GENERATE process...");
-						boolean isGenerated = worldGenerator.getGenerator().generate(world, world.rand, dungeon, worldGenerator.getStyleSheet(), /*chestSheet*/null, worldGenerator.getSpawnSheet());
-						Dungeons2.log.debug("GENERATE process complete.");
-						
-						if (!isGenerated) {
-							selfDestruct();
-							return;
-						}
-					} catch (FileNotFoundException e) {
-						Dungeons2.log.error("error generating dungeon @ " + coords.toShortString(), e);
+			// get the biome ID
+			Biome biome = world.getBiome(coords.toPos());
+			Integer biomeID = Biome.getIdForBiome(biome);
+			Dungeons2.log.debug("biome ID -> {}", biomeID);
+        	
+		    // get the dungeons for this biome
+		    List<IDungeonConfig> dungeonConfigs = Dungeons2.CONFIG_MANAGER.getByBiome(biomeID);
+		    // select one
+		    if (dungeonConfigs == null || dungeonConfigs.size() == 0) {
+		    	Dungeons2.log.debug("could not find any dungeon configs for biomeID -> {}", biomeID);
+		    	selfDestruct();
+		    	return;
+		    }
+		    IDungeonConfig dungeonConfig = dungeonConfigs.get(world.rand.nextInt(dungeonConfigs.size()));
+		    Dungeons2.log.debug("selected dungeon config -> {}", dungeonConfig);
+			
+		    DungeonsWorldGen worldGenerator = Dungeons2.dungeonsWorldGen;
+		    Theme theme = worldGenerator.getStyleSheet().getThemes()
+		    		.get(worldGenerator.getStyleSheet().getThemes().keySet()
+		    				.toArray()[world.rand.nextInt(worldGenerator.getStyleSheet().getThemes().size())]);
+   			
+		    // get the level builder
+			LevelBuilder levelBuilder = new LevelBuilder();
+		    
+			// create a dungeon builder using the defined level builder(s)
+			IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);	
+			
+			// build the dungeon
+			Dungeons2.log.debug("starting BUILD process...");
+			Dungeon dungeon = builder.build(world, world.rand, coords, dungeonConfig);
+			Dungeons2.log.debug("BUILD process complete.");
+			
+			// update the dungeon with the theme
+   			dungeon.setTheme(theme);
+			
+   			if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
+				// generate the dungeon
+				try {
+					Dungeons2.log.debug("Start GENERATE process...");
+					boolean isGenerated = worldGenerator.getGenerator().generate(world, world.rand, dungeon, worldGenerator.getStyleSheet(), /*chestSheet*/null, worldGenerator.getSpawnSheet());
+					Dungeons2.log.debug("GENERATE process complete.");
+					
+					if (!isGenerated) {
 						selfDestruct();
 						return;
 					}
-					
-					// update the cache
-					DelayedFeatureSimpleDistanceCache<DungeonInfo> cache = FeatureCaches.CACHE;
-					List<DungeonInfo> infos = cache.getData(coords.add(-1, 0, -1), coords.add(1, 0, 1));
-					DungeonInfo info;
-					if (infos == null || infos.size() == 0) {
-						info = new DungeonInfo(dungeon, null, null, null, null);
-						cache.cache(info.getCoords(), info);
-					} else {
-						info = infos.get(0);
-						info.setCoords(dungeon.getEntrance().getBottomCenter());
-					}
-					
-					Dungeons2.log.info("dungeon generated -> {}", coords.toShortString());
-					
-			     	// save world data
-					DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
-			    	if (savedData != null) {
-			    		savedData.markDirty();
-			    	}
+				} catch (FileNotFoundException e) {
+					Dungeons2.log.error("error generating dungeon @ " + coords.toShortString(), e);
+					selfDestruct();
+					return;
 				}
-	   				
-            	// self-destruct is not done already
-            	selfDestruct();
-            	
-            	// break out of loop
-            	break;
-            }
-
+				
+				// update the cache
+				DelayedFeatureSimpleDistanceCache<DungeonInfo> cache = FeatureCaches.CACHE;
+				List<DungeonInfo> infos = cache.getData(coords.add(-1, 0, -1), coords.add(1, 0, 1));
+				DungeonInfo info;
+				if (infos == null || infos.size() == 0) {
+					info = new DungeonInfo(dungeon, null, null, null, null);
+					Dungeons2.log.info("generated info -> {}", info);
+					cache.cache(info.getCoords(), info);
+				} else {
+					info = infos.get(0);
+					Dungeons2.log.info("got info -> {}", info);
+					info.setCoords(dungeon.getEntrance().getBottomCenter());
+				}
+				
+				Dungeons2.log.info("dungeon generated -> {}", coords.toShortString());
+				
+		     	// save world data
+				DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
+		    	if (savedData != null) {
+		    		savedData.markDirty();
+		    	}
+			}
+   				
+        	// self-destruct is not done already
+        	selfDestruct();
+        	
+        	// break out of loop
+        	break;   
         }
 	}
 	

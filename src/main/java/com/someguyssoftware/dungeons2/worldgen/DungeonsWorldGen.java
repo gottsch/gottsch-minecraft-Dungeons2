@@ -66,17 +66,6 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 	private int waitChunksCount = 0;
 	
-	// TEMP comment out
-//	private static final double DEFAULT_GENERATION_PROXIMITY_SQAURED = 6400;
-		
-	/*
-	 *  values that control the frequency of dungeon generation
-	 *  persisted to game save data
-	 */	
-//	private int chunksSinceLastDungeon = 0;
-//	private ICoords lastDungeonCoords = null;
-//	private boolean isGenerating = false;
-	
 	// biome white/black lists
 	private List<BiomeTypeHolder> biomeWhiteList;
 	private List<BiomeTypeHolder> biomeBlackList;
@@ -173,9 +162,6 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			IChunkGenerator chunkGenerator, IChunkProvider chunkProvider) {
 		
 		if (generator == null) return;
-		
-		// result of generation
-     	boolean isGenerated = false;
  
      	// get the dimension
      	int dimensionId = world.provider.getDimension();
@@ -203,7 +189,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
         int xSpawn = chunkX * 16 + 7;
         int zSpawn = chunkZ * 16 + 7;
         ICoords coords = new Coords(xSpawn, 64, zSpawn);
-        Dungeons2.log.debug("starting Coords:" + coords);
+//        Dungeons2.log.debug("starting Coords:" + coords);
         
 		if (!meetsBiomeCriteria(world, coords)) {
 			return;
@@ -216,90 +202,27 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		
 		// check if meets the probability criteria
 		if (!meetsProbabilityCriteria(random)) {
+			Dungeons2.log.info("failed probability -> {}", coords);
 			failAndPlacehold(world, cache, coords);
 			return;
 		}
 
 		// get land coords
-		coords = WorldInfo.getDryLandSurfaceCoords(world, coords);
-		if (coords == WorldInfo.EMPTY_COORDS) {
+		ICoords spawnCoords = WorldInfo.getDryLandSurfaceCoords(world, coords);
+		if (spawnCoords == WorldInfo.EMPTY_COORDS) {
+			Dungeons2.log.info("failed dry land -> {}", coords);
 			failAndPlacehold(world, cache, coords);
 			return;
 		}		
 
 		// place deferred block
-		world.setBlockState(coords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 3);
+		world.setBlockState(spawnCoords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 3);
 		
 		// cache placeholder
 		DungeonInfo info = new DungeonInfo();
-		info.setCoords(coords);
-		cache.cache(coords, info);
-		
-//				// get the biome ID
-//				Biome biome = world.getBiome(coords.toPos());
-//				Integer biomeID = Biome.getIdForBiome(biome);
-//				Dungeons2.log.debug("biome ID -> {}", biomeID);
-//			    // get the dungeons for this biome
-//			    List<IDungeonConfig> dcList = Dungeons2.CONFIG_MANAGER.getByBiome(biomeID);
-//			    // select one
-//			    if (dcList == null || dcList.size() == 0) {
-//			    	Dungeons2.log.debug("could not find any dungeon configs for biomeID -> {}", biomeID);
-////			    	this.setGenerating(false);
-//			    	return;
-//			    }
-//			    IDungeonConfig dc = dcList.get(random.nextInt(dcList.size()));
-//			    Dungeons2.log.debug("selected dungeon config -> {}", dc);
-//			    
-//	   			Theme theme = styleSheet.getThemes().get(styleSheet.getThemes().keySet().toArray()[random.nextInt(styleSheet.getThemes().size())]);
-//	   			// TODO create a custom exception to throw if theme is null/not found.
-//	   			
-//				// get the level builder
-//				LevelBuilder levelBuilder = new LevelBuilder();
-//				
-//				// 6. create a dungeon builder using the defined level builder(s)
-//				IDungeonBuilder builder = new DungeonBuilderTopDown(levelBuilder);				
-//				
-//				// 7. build the dungeon
-//				Dungeons2.log.debug("starting BUILD process...");
-//				Dungeon dungeon = builder.build(world, random, coords, dc);
-//				Dungeons2.log.debug("BUILD process complete.");
-//				/*
-//				 *  NOTE for now propagate the support property from dungeonConfig to levelConfig.
-//				 *  In future each level in a dungeon may have a different support setting
-//				 */
-////	>>			levelConfig.setSupportOn(dungeonConfig.useSupport());
-//
-//	   			// 8. update the dungeon with the theme
-//	   			dungeon.setTheme(theme);
-//	   			
-//				if (dungeon != null && dungeon != IDungeonBuilder.EMPTY_DUNGEON) {
-//					// 9. generate the dungeon
-//					try {
-//						Dungeons2.log.debug("Start GENERATE process...");
-//						isGenerated = generator.generate(world, random, dungeon, styleSheet, /*chestSheet*/null, spawnSheet);
-//						Dungeons2.log.debug("GENERATE process complete.");
-//					} catch (FileNotFoundException e) {
-//						Dungeons2.log.error("Error generating dungeon @ " + coords.toShortString(), e);
-//					}
-//				}
-//				
-//				if (isGenerated) {
-//					// register the dungeon with the Dungeon Registry
-//					DungeonInfo info = new DungeonInfo(dungeon, null, null, null, null/*pattern, dungeonSize, levelSize, direction*/);
-//					// update the coords to the actual entrance (changed due to usage of field)
-//					coords = info.getCoords();
-//					DungeonRegistry.getInstance().register(coords.toShortString(), info);
-//
-//					// update the last dungeon position
-//					lastDungeonCoords = coords;
-//					Dungeons2.log.info("Dungeon generated @ " + coords.toShortString());
-//					
-//					// TODO if generated and config.dumps is on, generate a dungeon dump (text file of all properties or dungeon, levels, rooms, doors, etc)
-//					// TODO is generated and config.dumps.json is on, generate a dungeon json file. (same as above but in json format)
-//					if (ModConfig.enableDumps) {
-//						dump(dungeon);
-//					}
-//				}
+		info.setCoords(spawnCoords);
+		cache.cache(spawnCoords, info);
+		Dungeons2.log.info("deferred placerholder -> {}", info);
 
      	// save world data
 		DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
@@ -321,7 +244,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		DungeonInfo info = new DungeonInfo();
 		info.setCoords(coords);
 		cache.cache(coords, info);
-
+		Dungeons2.log.info("failed and place holder -> {}", info);
 		// need to save on fail
 		DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
     	if (savedData != null) {

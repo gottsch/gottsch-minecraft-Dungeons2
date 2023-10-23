@@ -7,9 +7,9 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="E:/Development/workspace/git/ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/forge-1.12.2-2859"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Treasure"/>
+	<classpathentry kind="lib" path="C:/Development/workspace/git/ModCommonLibs/libs/DelaunayTriangulator-1.0.3.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/GottschCore-1.12.2"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Treasure-1.12.2"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/forge-1.12.2"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

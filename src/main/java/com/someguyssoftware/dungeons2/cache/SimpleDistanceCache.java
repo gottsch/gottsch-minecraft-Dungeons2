@@ -50,7 +50,7 @@ public class SimpleDistanceCache<T> implements ISimpleDistanceCache<T> {
 	 */
 	@Override
 	public synchronized void cache(final ICoords key, final T object) {	
-		Dungeons2.log.debug("caching @ ->" + object.toString());
+		Dungeons2.log.debug("caching @ -> {}", object.toString());
 		if (isCached(object)) {
 			return;
 		}
