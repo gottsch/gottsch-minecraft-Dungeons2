@@ -210,7 +210,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		}		
 		
 		// check against all cached dungeons
-		if (meetsProximityCriteria(world, coords, ModConfig.minDistancePerDungeon, cache)) {			
+		if (!meetsProximityCriteria(world, coords, ModConfig.minDistancePerDungeon, cache)) {			
 			return;
 		}
 		
@@ -344,7 +344,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	}
 
 	/**
-	 * 
+	 * Determines if the coords is outside/farther away from the minDistance
 	 * @param world
 	 * @param coords
 	 * @param minDistance
