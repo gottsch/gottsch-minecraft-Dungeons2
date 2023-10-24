@@ -93,6 +93,7 @@ public class ModConfig extends AbstractConfig {
 	public static int minChunksPerDungeon;
 	public static int minDistancePerDungeon;
 	public static int dungeonGenProbability;
+	public static int waitChunks;
 	
 	// biome type white/black lists
 	public static String[] generalDungeonBiomeWhiteList;
@@ -312,7 +313,8 @@ public class ModConfig extends AbstractConfig {
         // props
         minChunksPerDungeon = config.getInt("minChunksPerDungeon", "04-dungeon-gen", 300, 25, 32000, "");
         minDistancePerDungeon = config.getInt("minDistancePerDungeon", "04-dungeon-gen", 600, 300, 32000, "Minimum block distance between 2 consecutive dungeon spawns.");
-        dungeonGenProbability = config.getInt("dungeonGenProbability", "04-dungeon-gen", 45, 0, 100, "");
+        dungeonGenProbability = config.getInt("dungeonGenProbability", "04-dungeon-gen", 75, 0, 100, "");
+        waitChunks = config.getInt("dungeonGenProbability", "04-dungeon-gen", 50, 10, 32000, "");
         
         // white/black lists
         generalDungeonBiomeWhiteList = config.getStringList("generalDungeonBiomeWhiteList", "04-dungeon-gen", new String[]{}, "Allowable Biome Types for general Dungeons. Must match the Type identifer(s).");

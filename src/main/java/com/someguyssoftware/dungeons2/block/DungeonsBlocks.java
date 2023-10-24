@@ -11,9 +11,13 @@ import java.util.Set;
 import com.google.common.base.Preconditions;
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.config.ModConfig;
+import com.someguyssoftware.dungeons2.tileentity.DeferredDungeonGeneratorTileEntity;
 import com.someguyssoftware.gottschcore.AbstractModObjectHolder;
 import com.someguyssoftware.gottschcore.block.CardinalDirectionBlock;
 import com.someguyssoftware.gottschcore.block.RelativeDirectionFacadeBlock;
+import com.someguyssoftware.treasure2.Treasure;
+import com.someguyssoftware.treasure2.config.TreasureConfig;
+import com.someguyssoftware.treasure2.tileentity.ProximitySpawnerTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -24,6 +28,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
 
 /**
@@ -251,6 +256,8 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 	//	public static Block blood;
 	//	public static Block mold1;
 
+	public static final Block DEFERRED_DUNGEON_GENERATOR;
+	
 	public static List<Block> BLOCKS = new ArrayList<>(100);
 	
 	static {
@@ -447,6 +454,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 		//	    blood = new DecorationBlock(Material.GRASS, ModConfig.bloodBlockId);
 		//	    mold1 = new DecorationBlock(Material.GRASS, ModConfig.mold1BlockId);
 		
+		DEFERRED_DUNGEON_GENERATOR = new DeferredDungeonGeneratorBlock(Dungeons2.MODID, "deferred_dungeon_generator");
 		
 		/*
 		 *  setup array
@@ -642,6 +650,13 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 			for (Block b : BLOCKS) {
 				registry.register(b);
 			}
+			
+			// register non blockItem blocks
+			registry.register(DEFERRED_DUNGEON_GENERATOR);
+			
+			// register tile entities
+			GameRegistry.registerTileEntity(DeferredDungeonGeneratorTileEntity.class,
+					new ResourceLocation(Treasure.MODID + ":" + "deferred_dungeon_generator_te"));
 		}
 
 		/**

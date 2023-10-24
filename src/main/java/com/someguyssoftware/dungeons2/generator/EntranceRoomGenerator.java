@@ -34,11 +34,15 @@ public class EntranceRoomGenerator extends AbstractExteriorRoomGenerator {
 	@Override
 	public void generate(World world, Random random, Room room, Theme theme, StyleSheet styleSheet,
 			ILevelConfig config) {
-//		Dungeons2.log.debug("Has Crenellation:" + room.hasCrenellation());
-//		Dungeons2.log.debug("Has Parapet:"+ room.hasParapet());
-//		Dungeons2.log.debug("Has Merlon:" + room.hasMerlon());
-//		Dungeons2.log.debug("Has Cornice:" + room.hasCornice());
-//		Dungeons2.log.debug("Has Plinth:" + room.hasPlinth());
+		Dungeons2.log.debug("Has Crenellation:" + room.hasCrenellation());
+		Dungeons2.log.debug("Has Parapet:"+ room.hasParapet());
+		Dungeons2.log.debug("Has Merlon:" + room.hasMerlon());
+		Dungeons2.log.debug("Has Cornice:" + room.hasCornice());
+		Dungeons2.log.debug("Has Plinth:" + room.hasPlinth());
+		
+		// TODO probably doesn't generate properly because it takes in a StandardRoomGenerator with a EntraceRoomBlockProvider
+		// so it isn't building on the outside of the walls? or on top of the roof
+		
 		// generate the room structure
 		getGenerationStrategy().generate(world, random, room, theme, styleSheet, config);
 		// build doorway
