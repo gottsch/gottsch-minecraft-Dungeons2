@@ -42,8 +42,8 @@ import net.minecraft.world.World;
 public class DungeonBuilderTopDown implements IDungeonBuilder {
 	private static final Logger logger = LogManager.getLogger(Dungeons2.LOGGER_NAME);
 
-	private static final int MIN_ENTRANCE_XZ = 5;
-	private static final int MAX_ENTRANCE_XZ = 9;
+	private static final int MIN_ENTRANCE_XZ = 7; //5;
+	private static final int MAX_ENTRANCE_XZ = 11;
 	private static final int MIN_ENTRANCE_Y= 7;
 	private static final int MAX_ENTRANCE_Y = 13;
 
@@ -106,22 +106,24 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		/*
 		 * Calculate dungeon boundary
 		 */
+		// TODO change this. use 96x96 centered at spawn
 		AxisAlignedBB dungeonBoundary = null;
-		ICoords closestCoords = null;
+//		ICoords closestCoords = null;
 		if (this.getBoundary() == null) {
 			// get the closest player
-			closestCoords = WorldInfo.getClosestPlayerCoords(world, spawnCoords);
-			if (closestCoords == null) {
-				Dungeons2.log.warn("Unable to locate closest player - using World spawn point");
-				closestCoords = new Coords(world.getSpawnPoint());
-			}
+//			closestCoords = WorldInfo.getClosestPlayerCoords(world, spawnCoords);
+//			if (closestCoords == null) {
+//				Dungeons2.log.warn("Unable to locate closest player - using World spawn point");
+//				closestCoords = new Coords(world.getSpawnPoint());
+//			}
 			// get the boundary based on the player position and spawn
-			dungeonBoundary = getDungeonBoundary(spawnCoords, closestCoords);
-			if (dungeonBoundary == null) {
-				Dungeons2.log.warn("Unable to calculate dungeon boundary from spawn pos-> {}, and player pos -> {}", 
-						spawnCoords.toShortString(), closestCoords.toShortString());				
-				return EMPTY_DUNGEON;
-			}
+//			dungeonBoundary = getDungeonBoundary(spawnCoords, closestCoords);
+//			if (dungeonBoundary == null) {
+//				Dungeons2.log.warn("Unable to calculate dungeon boundary from spawn pos-> {}, and player pos -> {}", 
+//						spawnCoords.toShortString(), closestCoords.toShortString());				
+//				return EMPTY_DUNGEON;
+//			}
+			dungeonBoundary = getDungeonBoundary(spawnCoords);
 			// update the boundary property to the dungeon boundary
 			this.boundary = dungeonBoundary;
 		}
@@ -158,7 +160,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			startPoint = getLevelBuilder().randomizeCoords(rand, roomBoundary);
 			// check if the start point is in a loaded chunk
 			ChunkPos startChunk = startPoint.toChunkPos();
-			if (!world.isChunkGeneratedAt(startChunk.x, startChunk.z)) {
+			if (!world.getChunkFromBlockCoords(startPoint.toPos() ).isLoaded()) {
+//			if (!world.isChunkGeneratedAt(startChunk.x, startChunk.z)) {
 				Dungeons2.log.debug("startPoint is not in a loaded chunk -> {}", startChunk);
 				return EMPTY_DUNGEON;
 			}
@@ -776,12 +779,18 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 		return roomBoundary;
 	}
 
+	private AxisAlignedBB getDungeonBoundary(ICoords spawnCoords) {
+		AxisAlignedBB boundary = new AxisAlignedBB(spawnCoords.toPos()).grow((96/2)); // TODO make 96 a const
+		return boundary;
+	}
+	
 	/**
 	 * 
 	 * @param spawnCoords
 	 * @param closestCoords
 	 * @return
 	 */
+	@Deprecated
 	private AxisAlignedBB getDungeonBoundary(ICoords spawnCoords, ICoords closestCoords) {
 		AxisAlignedBB dungeonBoundary = null;
 		

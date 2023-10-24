@@ -237,10 +237,10 @@ public class DungeonGenerator {
 		
 		Room entranceRoom = dungeon.getEntrance();
 		// create and setup a config for entrance
-		Dungeons2.log.debug("Dungeon -> {}", dungeon);
-		Dungeons2.log.debug("Levels -> {}", dungeon.getLevels());
-		Dungeons2.log.debug("Levels.size -> {}", dungeon.getLevels().size());
-		Dungeons2.log.debug("Levels[0].config -> {}", dungeon.getLevels().get(0).getConfig());
+//		Dungeons2.log.debug("Dungeon -> {}", dungeon);
+//		Dungeons2.log.debug("Levels -> {}", dungeon.getLevels());
+//		Dungeons2.log.debug("Levels.size -> {}", dungeon.getLevels().size());
+//		Dungeons2.log.debug("Levels[0].config -> {}", dungeon.getLevels().get(0).getConfig());
 		ILevelConfig entranceLevelConfig = dungeon.getLevels().get(0).getConfig().copy();
 		entranceLevelConfig.setDecayMultiplier(Math.min(5, entranceLevelConfig.getDecayMultiplier())); // increase the decay multiplier to a minimum of 5
 		// assign a layout to the entrance room

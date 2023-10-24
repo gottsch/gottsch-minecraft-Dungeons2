@@ -183,7 +183,10 @@ public class LayoutAssigner {
 			
 			if (room.getType() == Type.ENTRANCE) {
 				if (getStyleSheet().hasFrame(layout, DesignElement.COLUMN)) {
+					Dungeons2.log.debug("style sheet has Column for entrance");
 					room.setHasColumn(true);
+				} else {
+					Dungeons2.log.debug("style sheet DOES NOT have Column for entrance");
 				}
 				if (getStyleSheet().hasFrame(layout, DesignElement.CORNICE)) {
 					room.setHasCornice(true);

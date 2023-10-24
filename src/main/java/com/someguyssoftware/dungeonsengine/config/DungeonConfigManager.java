@@ -26,7 +26,6 @@ public class DungeonConfigManager {
 	/*
 	 * Guava Table of Dungeon Configs based on Biome Name and Size
 	 */
-//	public static Table<String, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
 	public static Table<Integer, DungeonSize, List<IDungeonConfig>> DUNGEON_CONFIG_TABLE = HashBasedTable.create();
 
 	public static IDungeonConfig DEFAULT_CONFIG;
@@ -59,11 +58,11 @@ public class DungeonConfigManager {
 						// get the biome ID
 						Integer biomeID = Biome.getIdForBiome(biome);
 //						Dungeons2.log.debug("wl.cname -> {}, biome -> {}, size -> {}", c.getName(), biomeID, c.getSize());
-						if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
-							DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
+						if (!DUNGEON_CONFIG_TABLE.contains(biomeID, c.getSize())) {
+							DUNGEON_CONFIG_TABLE.put(biomeID, c.getSize(), new ArrayList<>(3));
 						}
 //						Dungeons2.log.debug("Registering biomeID -> {} with size -> {}", c.getSize());
-						DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
+						DUNGEON_CONFIG_TABLE.get(biomeID, c.getSize()).add(c);
 					}
 				}
 			}
@@ -77,10 +76,10 @@ public class DungeonConfigManager {
 						if (!BiomeDictionary.hasType(biome, Type.END) && !BiomeDictionary.hasType(biome, Type.NETHER)) {
 							// get the biome ID
 							Integer biomeID = Biome.getIdForBiome(biome);
-							if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
-								DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
+							if (!DUNGEON_CONFIG_TABLE.contains(biomeID, c.getSize())) {
+								DUNGEON_CONFIG_TABLE.put(biomeID, c.getSize(), new ArrayList<>(3));
 							}
-							DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
+							DUNGEON_CONFIG_TABLE.get(biomeID, c.getSize()).add(c);
 						}
 					}
 				}
@@ -96,10 +95,10 @@ public class DungeonConfigManager {
 								!BiomeDictionary.hasType(biome, Type.NETHER)) {
 							// get the biome ID
 							Integer biomeID = Biome.getIdForBiome(biome);
-							if (!DUNGEON_CONFIG_TABLE.contains(/*biome.getBiomeName()*/biomeID, c.getSize())) {
-								DUNGEON_CONFIG_TABLE.put(/*biome.getBiomeName()*/biomeID, c.getSize(), new ArrayList<>(3));
+							if (!DUNGEON_CONFIG_TABLE.contains(biomeID, c.getSize())) {
+								DUNGEON_CONFIG_TABLE.put(biomeID, c.getSize(), new ArrayList<>(3));
 							}
-							DUNGEON_CONFIG_TABLE.get(/*biome.getBiomeName()*/biomeID, c.getSize()).add(c);
+							DUNGEON_CONFIG_TABLE.get(biomeID, c.getSize()).add(c);
 						}
 					}
 				}				
