@@ -44,6 +44,7 @@ import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 
@@ -624,11 +625,11 @@ public class LevelBuilder {
 		
 		Room destRoom = destRooms.get(0);
 		Room sourceRoom = sourceRooms.get(0);
-		Dungeons2.log.debug("destRoom: " + destRoom);
-		Dungeons2.log.debug("sourceRoom: " + sourceRoom);
+//		Dungeons2.log.debug("destRoom: " + destRoom);
+//		Dungeons2.log.debug("sourceRoom: " + sourceRoom);
 		
 		shaft =  join(sourceRoom, destRoom);
-		Dungeons2.log.debug("shaft: " + shaft);
+//		Dungeons2.log.debug("shaft: " + shaft);
 		// add the shaft to the list
 		if (shaft != EMPTY_SHAFT) {
 			sourceLevel.getShafts().add(shaft);
@@ -2209,8 +2210,8 @@ public class LevelBuilder {
 				isValid = true;
 			}
 			else {
-				Dungeons2.log.debug("Removing room for being outside level bounds -> {}", room);
-				System.out.println("Removing room for being outside level bounds -> " +  room);
+//				Dungeons2.log.debug("Removing room for being outside level bounds -> {}", room);
+//				System.out.println("Removing room for being outside level bounds -> " +  room);
 				incrementLossToValidation(1);
 			}
 			
@@ -2220,8 +2221,8 @@ public class LevelBuilder {
 				isValid = true;
 			}
 			else {
-				Dungeons2.log.debug("Removing room for being outside dungeon bounds -> {}", room.getId());
-				System.out.println("Removing room for being outside dungeon bounds -> " +  room.getId());
+//				Dungeons2.log.debug("Removing room for being outside dungeon bounds -> {}", room.getId());
+//				System.out.println("Removing room for being outside dungeon bounds -> " +  room.getId());
 				incrementLossToValidation(1);
 			}
 			
@@ -2236,7 +2237,7 @@ public class LevelBuilder {
 				}
 				else {
 //					Dungeons2.log.debug("room[{}] is NOT valid at chuck(s) -> {}", room.getId(), room.getXZCenter());
-					Dungeons2.log.debug("Removing room for residing in unloaded chunk -> {}", room.getId());
+//					Dungeons2.log.debug("Removing room for residing in unloaded chunk -> {}", room.getId());
 					incrementLossToValidation(1);
 				}
 
@@ -2247,7 +2248,7 @@ public class LevelBuilder {
 				isValid = validateRoomConstraints(world, room, config);
 			}
 			else {
-				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
+//				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
 				incrementLossToValidation(1);
 			}
 			
@@ -2258,7 +2259,7 @@ public class LevelBuilder {
 				met.add(room);		
 			}
 			else {
-				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
+//				Dungeons2.log.debug("Removing room for failing constraints -> {}", room);
 				incrementLossToValidation(1);
 			}
 		}
@@ -2353,10 +2354,14 @@ public class LevelBuilder {
 		ChunkPos[] cp = room.getCornersInChunkPos();
 		
 		if (
-				world.isChunkGeneratedAt(cp[0].x, cp[0].z) &&
-				world.isChunkGeneratedAt(cp[1].x, cp[1].z) &&
-				world.isChunkGeneratedAt(cp[2].x, cp[2].z) &&
-				world.isChunkGeneratedAt(cp[3].x, cp[3].z)				
+//				world.isChunkGeneratedAt(cp[0].x, cp[0].z) &&
+//				world.isChunkGeneratedAt(cp[1].x, cp[1].z) &&
+//				world.isChunkGeneratedAt(cp[2].x, cp[2].z) &&
+//				world.isChunkGeneratedAt(cp[3].x, cp[3].z)		
+				world.getChunkFromBlockCoords(new BlockPos(cp[0].x, 64, cp[0].z)).isLoaded() &&
+				world.getChunkFromBlockCoords(new BlockPos(cp[1].x, 64, cp[1].z)).isLoaded() &&
+				world.getChunkFromBlockCoords(new BlockPos(cp[2].x, 64, cp[2].z)).isLoaded() &&
+				world.getChunkFromBlockCoords(new BlockPos(cp[3].x, 64, cp[3].z)).isLoaded()
 				) isValid = true;			
 		
 		return isValid;

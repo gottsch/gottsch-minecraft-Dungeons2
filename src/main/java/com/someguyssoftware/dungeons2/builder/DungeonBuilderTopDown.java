@@ -42,8 +42,8 @@ import net.minecraft.world.World;
 public class DungeonBuilderTopDown implements IDungeonBuilder {
 	private static final Logger logger = LogManager.getLogger(Dungeons2.LOGGER_NAME);
 
-	private static final int MIN_ENTRANCE_XZ = 5;
-	private static final int MAX_ENTRANCE_XZ = 9;
+	private static final int MIN_ENTRANCE_XZ = 7; //5;
+	private static final int MAX_ENTRANCE_XZ = 11;
 	private static final int MIN_ENTRANCE_Y= 7;
 	private static final int MAX_ENTRANCE_Y = 13;
 

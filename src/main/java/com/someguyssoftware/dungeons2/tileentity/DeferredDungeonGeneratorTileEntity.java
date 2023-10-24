@@ -29,6 +29,7 @@ public class DeferredDungeonGeneratorTileEntity extends AbstractModTileEntity im
 
 	private static final int FIELD_SIZE = 96;
 	private static final int FIELD_RADIUS = FIELD_SIZE / 2;
+	private static final int THRESHOLD_SQ = 256 * 256;
 
 	public DeferredDungeonGeneratorTileEntity() {
 		Dungeons2.log.debug("created deferred dungeon generator tile entity");
@@ -38,13 +39,11 @@ public class DeferredDungeonGeneratorTileEntity extends AbstractModTileEntity im
 	public void update() {
         if (WorldInfo.isClientSide()) {
         	return;
-        }      
-   
-        // TODO determine the size of dungeon to create
-        // TODO get the field size - or should it always be the largest size?
+        }    
         
-        // check the four corners of the dungeon field size to determine if the chunks are loaded
         ICoords coords = new Coords(getPos());
+
+        // check the four corners of the dungeon field size to determine if the chunks are loaded
         ICoords c1 = coords.add(FIELD_RADIUS, 0, FIELD_RADIUS);
         ICoords c2 = coords.add(FIELD_RADIUS, 0, -FIELD_RADIUS);
         ICoords c3 = coords.add(-FIELD_RADIUS, 0, FIELD_RADIUS);
@@ -69,7 +68,19 @@ public class DeferredDungeonGeneratorTileEntity extends AbstractModTileEntity im
             // get the distance
             double distanceSq = player.getDistanceSq(this.getPos().add(0.5D, 0.5D, 0.5D));
             Dungeons2.log.debug("deferred dungeon block ticking when player is -> {} blocks away", Math.sqrt(distanceSq));
-            	
+            
+            if (distanceSq > THRESHOLD_SQ) {
+            	Dungeons2.log.debug("not within gen threshold");
+            	return;
+            }
+                        
+    		// get land coords - need this so as not to replace something with nothing
+    		ICoords spawnCoords = WorldInfo.getDryLandSurfaceCoords(world, coords);
+    		if (spawnCoords == WorldInfo.EMPTY_COORDS) {
+    			world.setBlockToAir(getPos());
+    			return;
+    		}	
+    		
 			// get the biome ID
 			Biome biome = world.getBiome(coords.toPos());
 			Integer biomeID = Biome.getIdForBiome(biome);

@@ -41,6 +41,7 @@ import com.someguyssoftware.dungeons2.style.Theme;
 import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.gottschcore.biome.BiomeHelper;
 import com.someguyssoftware.gottschcore.biome.BiomeTypeHolder;
+import com.someguyssoftware.gottschcore.cube.Cube;
 import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.random.IRandomProbabilityItem;
@@ -48,6 +49,7 @@ import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.random.RandomProbabilityCollection;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -207,14 +209,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 			return;
 		}
 
-		// get land coords
-		ICoords spawnCoords = WorldInfo.getDryLandSurfaceCoords(world, coords);
-		if (spawnCoords == WorldInfo.EMPTY_COORDS) {
-			Dungeons2.log.info("failed dry land -> {}", coords);
-			failAndPlacehold(world, cache, coords);
-			return;
-		}		
-
+		ICoords spawnCoords = coords;
+		
 		// place deferred block
 		world.setBlockState(spawnCoords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 3);
 		
@@ -231,7 +227,7 @@ public class DungeonsWorldGen implements IWorldGenerator {
     	}
 		
 	}
-
+	
 	/**
 	 * 
 	 * @param world

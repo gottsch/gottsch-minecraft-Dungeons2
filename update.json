@@ -18,6 +18,6 @@
        "1.7.1": "Fixed the Mossy Stonebrick Sill texture bug.",
        "1.7.5": "Integrate Treasure2 mod - use Chests in Dungeons.",
        "1.7.6": "Compatible with Treasure2 v2.0.0+",
-       "2.0.0": "NEW STUFF - Deferred Generation, Fixed Entrance, ..."
+       "2.0.0": "Added a new Deferred Generation strategy.\nAdded a wait period after world creation before generation.\nReplaced DungeonRegistry with a BST cache.\nUpdated to use a 96x96 max field for generation."
     }
 }
