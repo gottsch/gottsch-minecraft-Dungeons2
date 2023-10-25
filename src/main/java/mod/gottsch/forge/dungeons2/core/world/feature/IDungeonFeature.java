@@ -23,14 +23,13 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.registry.GeneratedRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.support.IGeneratedContext;
+import mod.gottsch.forge.dungeons2.core.util.ModUtil;
 import mod.gottsch.forge.gottschcore.biome.BiomeHelper;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
-import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome;
 
 /**
  * 
@@ -52,7 +51,7 @@ public interface IDungeonFeature {
 	/**
 	 * 
 	 * @param level
-	 * @param dimension
+	 * @param registry
 	 * @param spawnCoords
 	 * @param minDistance
 	 * @return
@@ -68,34 +67,25 @@ public interface IDungeonFeature {
 	/**
 	 * 
 	 * @param level
-	 * @param dimension
-	 * @param key
+	 * @param registry
 	 * @param coords
 	 * @param minDistance
 	 * @return
 	 */
 	public boolean isRegisteredDungeonWithinDistance(Level level, GeneratedRegistry<IGeneratedContext> registry, ICoords coords, int minDistance);
 
-	
-	/**
-	 * 
-	 * @param level
-	 * @param spawnCoords
-	 * @param whitelist
-	 * @param blacklist
-	 * @return
-	 */
-	default public boolean meetsBiomeCriteria(ServerLevel level, ICoords spawnCoords, List<? extends String> whitelist, List<? extends String> blacklist) {
-		Holder<Biome> biome = level.getBiome(spawnCoords.toPos());
-		BiomeHelper.Result biomeCheck =BiomeHelper.isBiomeAllowed(biome.value(), whitelist, blacklist);
+	default public boolean meetsBiomeCriteria(ServerLevel world, ICoords spawnCoords, List<String> whitelist, List<String> blacklist) {
+		ResourceLocation name = ModUtil.getName(world.getBiome(spawnCoords.toPos()));
+		BiomeHelper.Result biomeCheck =BiomeHelper.isBiomeAllowed(name, whitelist, blacklist);
+
 		if(biomeCheck == BiomeHelper.Result.BLACK_LISTED ) {
-			if (WorldInfo.isClientSide(level)) {
-				Dungeons.LOGGER.debug("biome {} is not a valid biome at -> {}", biome.value().getRegistryName().toString(), spawnCoords.toShortString());
+			if (WorldInfo.isClientSide(world)) {
+				Dungeons.LOGGER.debug("biome {} is not a valid biome at -> {}", name, spawnCoords.toShortString());
 			}
 			else {
 				// TODO test if this crashes with the getRegistryName because in 1.12 this was a client side only
-				Dungeons.LOGGER.debug("biome {} is not valid at -> {}",biome.value().getRegistryName().toString(), spawnCoords.toShortString());
-			}					
+				Dungeons.LOGGER.debug("biome {} is not valid at -> {}", name, spawnCoords.toShortString());
+			}
 			return false;
 		}
 		return true;

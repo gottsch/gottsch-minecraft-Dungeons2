@@ -86,7 +86,6 @@ public class GeneratedRegistry<T extends IGeneratedContext> {
 	/**
 	 * 
 	 * @param start
-	 * @param rarity
 	 * @param context
 	 */
 	public synchronized void register(/*final IRarity rarity, */final ICoords start, final ICoords end, final T context) {

@@ -17,15 +17,14 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.feature;
 
-import java.util.Random;
-
 import com.mojang.serialization.Codec;
-
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
 import mod.gottsch.forge.dungeons2.core.config.Config;
+import mod.gottsch.forge.dungeons2.core.persistence.DungeonsSavedData;
 import mod.gottsch.forge.dungeons2.core.registry.DimensionalGeneratedRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.GeneratedRegistry;
-import mod.gottsch.forge.dungeons2.core.registry.support.DungeonGeneratedContext;
+import mod.gottsch.forge.dungeons2.core.registry.support.GeneratedDungeonContext;
 import mod.gottsch.forge.dungeons2.core.registry.support.IGeneratedContext;
 import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -33,10 +32,13 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
+
+import java.util.List;
 
 /**
  * 
@@ -75,68 +77,62 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 		}
 		
 		// check if a dungeon is already in this chunk
-		// TODO this will skip all other criteria tests, locate the set of rooms to generate
-		// and proceed to generate for this chunk.
+		// ensures that 2 dungeons do not overlap using the max. size of a dungeon
+		// TODO maybe should have the config loaded and the size decided on
 		if (isChunkWithinDungeonBoundary(registry, new Coords(context.origin()))) {
 			Dungeons.LOGGER.debug("chunk is within current dungeon field -> {}. Should do gen processes at this point.", context.origin());
+			return false;
 		}
-		else {
-			// DO everything else
-		}
-		
-		// TODO will also have to check if any rooms are in a generated chunk that are not complete
-		// and process them at this time. this will have to happen for every new chunk gen where the chunk
-		// is within a current dungeon
-		
+
+
 		// the get first surface y (could be leaves, trunk, etc)
-		// NOTE don't use offset on chunkPos ie. don't use center of chunk, use the origin
-//		offset(WorldInfo.CHUNK_RADIUS - 1, 0, WorldInfo.CHUNK_RADIUS - 1)
-		ICoords spawnCoords = WorldInfo.getDryLandSurfaceCoords(level, context.chunkGenerator(), new Coords(context.origin()));
+		ICoords coords = new Coords(context.origin().offset(WorldInfo.CHUNK_RADIUS - 1, 0, WorldInfo.CHUNK_RADIUS - 1));
+		ICoords spawnCoords = WorldInfo.getDryLandSurfaceCoords(level, context.chunkGenerator(), coords);
 		if (spawnCoords == Coords.EMPTY) {
 			Dungeons.LOGGER.debug("No spawn coords  at -> {}", context.origin());
 			return false;
 		}
 
 		if (!meetsAllCriteria(level, context.random(), spawnCoords, registry)) {
-			Dungeons.LOGGER.debug("Didn't meet criteria -> {}", spawnCoords);
+			Dungeons.LOGGER.debug("didn't meet criteria -> {}", spawnCoords);
+			failAndPlacehold((ServerLevel)level, registry, spawnCoords);
 			return false;
 		}
 
 		// TODO if not, generate dungeon layout
 //		IDungeonLayout layout = DungeonGenerator.build(level, random, spawnCoords);
-		
-		// TODO get all chunk coords that are within the dungeon field area.
-		
-		// TODO get all chunks for list that exist ie already generated.
-		
-		// TODO if % of exists > threshold, then ok placement for dungeon
 
-		// TODO register dungeon using the start and end coords of the dungeon field
-		DungeonGeneratedContext gc = new DungeonGeneratedContext(spawnCoords, spawnCoords.add(96, 0, 96));
+		// generate deferred dungeon block
+		level.setBlock(spawnCoords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.get().defaultBlockState(), 3);
+
+		// register dungeon using the start and end coords of the dungeon field
+		GeneratedDungeonContext generatedContext = new GeneratedDungeonContext(spawnCoords.add(-48, 0, -48), spawnCoords.add(48, 0, 48));
 		
-		// TEMP expand coords to simulate a large dungeon (96x96)
-		registry.register(gc.getMinCoords(), gc.getMaxCoords(), gc);
-		
-		// TODO generate dungeon chunk in world
-		
+		// add a placeholder
+		registry.register(generatedContext.getMinCoords(), generatedContext.getMaxCoords(), generatedContext);
+
+		DungeonsSavedData savedData = DungeonsSavedData.get(level);
+		if (savedData != null) {
+			savedData.setDirty();
+		}
+
 		// TODO also have to register / store the dungeon layout somewhere - same registry?
 		// NOTE is the dimensional generated registry ONLY for completed dungeons? dont' necessarily
-		// want to store all the incomplete details needed about a dungeon here as it
-		Dungeons.LOGGER.debug("This is a good chunk to gen -> {}", spawnCoords.toShortString());
 		return true;
 	}
 
 	protected boolean isChunkWithinDungeonBoundary(GeneratedRegistry<IGeneratedContext> registry, Coords coords) {
-		return registry.withinArea(coords, coords.add(CHUNK_SIZE, 0, CHUNK_SIZE));
+//		return registry.withinArea(coords, coords.add(CHUNK_SIZE, 0, CHUNK_SIZE));
+		return isRegisteredDungeonWithinDistance(null, registry, coords,96/2);
 	}
 
-	protected boolean meetsAllCriteria(ServerLevel level, Random random, ICoords spawnCoords, GeneratedRegistry<IGeneratedContext> registry) {
+	protected boolean meetsAllCriteria(ServerLevel level, RandomSource random, ICoords spawnCoords, GeneratedRegistry<IGeneratedContext> registry) {
 		// test the world age
 		if (!meetsWorldAgeCriteria(registry)) {
 			return false;
 		}
 		// test if the override (global) biome is allowed
-		if (!meetsBiomeCriteria(level, spawnCoords, Config.SERVER.dungeons.biomesWhitelist.get(), Config.SERVER.dungeons.biomesBlacklist.get())) {
+		if (!meetsBiomeCriteria(level, spawnCoords, (List<String>) Config.SERVER.dungeons.biomesWhitelist.get(), (List<String>) Config.SERVER.dungeons.biomesBlacklist.get())) {
 			return false;
 		}
 		
@@ -168,7 +164,7 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 		return true;
 	}
 	
-	protected boolean meetsProbabilityCriteria(Random random) {
+	protected boolean meetsProbabilityCriteria(RandomSource random) {
 		if (!RandomHelper.checkProbability(random, Config.SERVER.dungeons.probability.get())) {
 			Dungeons.LOGGER.debug("chest gen does not meet generate probability.");
 			return false;
@@ -181,7 +177,7 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 	 */
 	@Override
 	public boolean isRegisteredDungeonWithinDistance(Level world, GeneratedRegistry<IGeneratedContext> registry, 
-			ICoords coords,int minDistance) {
+			ICoords coords, int minDistance) {
 
 		if (registry == null || registry.getValues().isEmpty()) {
 			Dungeons.LOGGER.debug("unable to locate the GeneratedRegistry or the registry doesn't contain any values");
@@ -197,5 +193,25 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 			return true;
 		}
 		return false;
+	}
+
+	public boolean failAndPlacehold(ServerLevel level, GeneratedRegistry<IGeneratedContext> registry, ICoords coords) {
+		// add placeholder
+
+		// TODO add inflate to Box
+
+		// TODO move to own method
+		int minDistance = 48;
+		ICoords startBox = new Coords(coords.getX() - minDistance, 0, coords.getZ() - minDistance);
+		ICoords endBox = new Coords(coords.getX() + minDistance, 0, coords.getZ() + minDistance);
+
+		GeneratedDungeonContext context = new GeneratedDungeonContext(startBox, endBox);
+		registry.register(context.getMinCoords(), context.getMaxCoords(), context);
+		// need to save on fail
+		DungeonsSavedData savedData = DungeonsSavedData.get(level);
+		if (savedData != null) {
+			savedData.setDirty();
+		}
+		return true;
 	}
 }

@@ -23,6 +23,7 @@ import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -39,7 +40,9 @@ public class Registration {
 	 */
 	public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Dungeons.MOD_ID);
 	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Dungeons.MOD_ID);
-	public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, Dungeons.MOD_ID);
+	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, Dungeons.MOD_ID);
+
+	public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Dungeons.MOD_ID);
 	public static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, Dungeons.MOD_ID);
 
 	
@@ -50,9 +53,10 @@ public class Registration {
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(eventBus);
 		ITEMS.register(eventBus);
+		BLOCK_ENTITIES.register(eventBus);
 		ENTITIES.register(eventBus);
 		PARTICLES.register(eventBus);
 		
-		ConfiguredFeatures.register();
+		ConfiguredFeatures.register(eventBus);
 	}
 }

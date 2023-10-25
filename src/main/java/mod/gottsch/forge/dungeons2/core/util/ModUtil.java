@@ -23,13 +23,16 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.biome.Biome;
 
 /**
  * 
@@ -39,6 +42,10 @@ import net.minecraft.world.level.NaturalSpawner;
 public class ModUtil {
 	public static ResourceLocation asLocation(String name) {
 		return hasDomain(name) ? new ResourceLocation(name) : new ResourceLocation(Dungeons.MOD_ID, name);
+	}
+
+	public static ResourceLocation getName(Holder<Biome> biome) {
+		return biome.unwrapKey().get().location();
 	}
 
 	public static boolean hasDomain(String name) {
@@ -61,7 +68,7 @@ public class ModUtil {
 		 * @param coords
 		 * @return
 		 */
-		public static Entity spawn(ServerLevel level, Random random, EntityType<?> entityType, Entity mob, ICoords coords) {
+		public static Entity spawn(ServerLevel level, RandomSource random, EntityType<?> entityType, Entity mob, ICoords coords) {
 
 			for (int i = 0; i < 20; i++) { // 20 tries
 				int spawnX = coords.getX() + Mth.nextInt(random, 1, 2) * Mth.nextInt(random, -1, 1);

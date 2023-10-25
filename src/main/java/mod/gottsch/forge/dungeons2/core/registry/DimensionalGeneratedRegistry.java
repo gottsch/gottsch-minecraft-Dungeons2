@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.Config;
-import mod.gottsch.forge.dungeons2.core.registry.support.DungeonGeneratedContext;
+import mod.gottsch.forge.dungeons2.core.registry.support.GeneratedDungeonContext;
 import mod.gottsch.forge.dungeons2.core.registry.support.IGeneratedContext;
 import mod.gottsch.forge.dungeons2.core.util.ModUtil;
 import net.minecraft.nbt.CompoundTag;
@@ -85,7 +85,7 @@ public class DimensionalGeneratedRegistry {
 				if (compound.contains(DUNGEON_REGISTRY_NAME)) {
 					GeneratedRegistry<IGeneratedContext> registry  = DUNGEON_REGISTRY.get(dimension);
 					if (registry != null) {
-						loadRegistry(compound.getList(DUNGEON_REGISTRY_NAME, Tag.TAG_COMPOUND), registry, DungeonGeneratedContext::new);
+						loadRegistry(compound.getList(DUNGEON_REGISTRY_NAME, Tag.TAG_COMPOUND), registry, GeneratedDungeonContext::new);
 					}
 				}
 			}

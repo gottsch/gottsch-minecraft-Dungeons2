@@ -21,7 +21,6 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.registry.DimensionalGeneratedRegistry;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -51,22 +50,22 @@ public class CommonSetup {
 	 * attach defined attributes to the entity.
 	 * @param event
 	 */
-	@SubscribeEvent
-	public static void onAttributeCreate(EntityAttributeCreationEvent event) {
+//	@SubscribeEvent
+//	public static void onAttributeCreate(EntityAttributeCreationEvent event) {
 //		event.put(Registration.MAGE_FLAME_ENTITY.get(), Dungeons2Entity.createAttributes().build());
 //		event.put(Registration.LESSER_REVELATION_ENTITY.get(), LesserRevelationEntity.createAttributes().build());
 //		event.put(Registration.GREATER_REVELATION_ENTITY.get(), GreaterRevelationEntity.createAttributes().build());
 //		event.put(Registration.WINGED_TORCH_ENTITY.get(), WingedTorchEntity.createAttributes().build());
 
-	}
+//	}
 	
 	// NOTE not sure if these are needed since they are manually spawned
-	@SubscribeEvent
-	public static void registerEntitySpawn(RegistryEvent.Register<EntityType<?>> event) {
+//	@SubscribeEvent
+//	public static void registerEntitySpawn(RegistryEvent.Register<EntityType<?>> event) {
 //		SpawnPlacements.register(Registration.MAGE_FLAME_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Dungeons2Entity::checkSpawnRules);
 //		SpawnPlacements.register(Registration.LESSER_REVELATION_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, LesserRevelationEntity::checkSpawnRules);
 //		SpawnPlacements.register(Registration.GREATER_REVELATION_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, GreaterRevelationEntity::checkSpawnRules);
 //		SpawnPlacements.register(Registration.WINGED_TORCH_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, GreaterRevelationEntity::checkSpawnRules);
 
-	}
+//	}
 }

@@ -22,10 +22,8 @@ import mod.gottsch.forge.dungeons2.core.persistence.DungeonsSavedData;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome.BiomeCategory;
 import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraftforge.event.world.BiomeLoadingEvent;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -40,9 +38,9 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 public class WorldEvents {
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
-	public void onWorldLoad(WorldEvent.Load event) {
-		if (!event.getWorld().isClientSide()) {
-			Level world = (Level) event.getWorld();
+	public void onWorldLoad(LevelEvent.Load event) {
+		if (!event.getLevel().isClientSide()) {
+			Level world = (Level) event.getLevel();
 			Dungeons.LOGGER.info("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
 			if (WorldInfo.isSurfaceWorld(world)) {
 				Dungeons.LOGGER.info("loading Dungeons data...");
@@ -50,16 +48,16 @@ public class WorldEvents {
 			}
 		}
 	}
-	@SubscribeEvent
-	public static void onBiomeLoading(final BiomeLoadingEvent event) {
-		/* 
-		 * NOTE: 
-		 * generation must occur in the correct order according to GenerationStep.Decoration
-		 */
-//		TreasureOreGeneration.generateOres(event);
-		
-		if (event.getCategory() != BiomeCategory.OCEAN) {
-			event.getGeneration().addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION, ConfiguredFeatures.DUNGEON_PLACED_FEATURE.getHolder().get());
-		}
-	}
+//	@SubscribeEvent
+//	public static void onBiomeLoading(final BiomeLoadingEvent event) {
+//		/*
+//		 * NOTE:
+//		 * generation must occur in the correct order according to GenerationStep.Decoration
+//		 */
+////		TreasureOreGeneration.generateOres(event);
+//
+//		if (event.getCategory() != BiomeCategory.OCEAN) {
+//			event.getGeneration().addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION, ConfiguredFeatures.DUNGEON_PLACED_FEATURE.getHolder().get());
+//		}
+//	}
 }

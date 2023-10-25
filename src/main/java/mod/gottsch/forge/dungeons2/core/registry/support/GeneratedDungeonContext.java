@@ -27,12 +27,12 @@ import net.minecraft.nbt.CompoundTag;
  * @author Mark Gottschling Feb 1, 2023
  *
  */
-public class DungeonGeneratedContext extends GeneratedContext {
+public class GeneratedDungeonContext extends GeneratedContext {
 	// TODO all the coords code can be moved to the GeneratedContext abstract
 	private ICoords minCoords;
 	private ICoords maxCoords;
 	
-	public DungeonGeneratedContext() {
+	public GeneratedDungeonContext() {
 		
 	}
 	
@@ -41,13 +41,13 @@ public class DungeonGeneratedContext extends GeneratedContext {
 	 * @param start
 	 * @param end
 	 */
-	public DungeonGeneratedContext(ICoords start, ICoords end) {
+	public GeneratedDungeonContext(ICoords start, ICoords end) {
 		this.minCoords = start;
 		this.maxCoords = end;
 		this.setCoords(start);
 	}
 	
-	public DungeonGeneratedContext(Box box) {
+	public GeneratedDungeonContext(Box box) {
 		this.minCoords = box.getMinCoords();
 		this.maxCoords = box.getMaxCoords();
 	}
