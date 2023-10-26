@@ -117,15 +117,28 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 		}
 
 		// TODO also have to register / store the dungeon layout somewhere - same registry?
-		// NOTE is the dimensional generated registry ONLY for completed dungeons? dont' necessarily
 		return true;
 	}
 
+	/**
+	 *
+	 * @param registry
+	 * @param coords
+	 * @return
+	 */
 	protected boolean isChunkWithinDungeonBoundary(GeneratedRegistry<IGeneratedContext> registry, Coords coords) {
 //		return registry.withinArea(coords, coords.add(CHUNK_SIZE, 0, CHUNK_SIZE));
 		return isRegisteredDungeonWithinDistance(null, registry, coords,96/2);
 	}
 
+	/**
+	 *
+	 * @param level
+	 * @param random
+	 * @param spawnCoords
+	 * @param registry
+	 * @return
+	 */
 	protected boolean meetsAllCriteria(ServerLevel level, RandomSource random, ICoords spawnCoords, GeneratedRegistry<IGeneratedContext> registry) {
 		// test the world age
 		if (!meetsWorldAgeCriteria(registry)) {
@@ -163,7 +176,12 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 		}
 		return true;
 	}
-	
+
+	/**
+	 *
+	 * @param random
+	 * @return
+	 */
 	protected boolean meetsProbabilityCriteria(RandomSource random) {
 		if (!RandomHelper.checkProbability(random, Config.SERVER.dungeons.probability.get())) {
 			Dungeons.LOGGER.debug("chest gen does not meet generate probability.");
@@ -195,6 +213,13 @@ public class DungeonFeature extends Feature<NoneFeatureConfiguration> implements
 		return false;
 	}
 
+	/**
+	 *
+	 * @param level
+	 * @param registry
+	 * @param coords
+	 * @return
+	 */
 	public boolean failAndPlacehold(ServerLevel level, GeneratedRegistry<IGeneratedContext> registry, ICoords coords) {
 		// add placeholder
 
