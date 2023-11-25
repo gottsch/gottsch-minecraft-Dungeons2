@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2020 Mark Gottschling (gottsch)
+ * Copyright (c) 2023 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,15 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package mod.gottsch.forge.dungeons2.core.generator;
+package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
 /**
- * @author Mark Gottschling on Sep 17, 2020
+ * @author Mark Gottschling on Oct Nov 8, 2023
  *
  */
-public enum NodeType {
-	START,
-	END,
-	STANDARD,
-	CUSTOM;
+public enum RegionType {
+    ROOM,
+    CORRIDOR;
 }

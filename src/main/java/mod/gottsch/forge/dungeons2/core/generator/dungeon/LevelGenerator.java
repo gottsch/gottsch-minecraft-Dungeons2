@@ -18,10 +18,8 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
 /**
- * Enum interface for extensibility
- * @author Mark Gottschling Feb 1, 2023
+ * @author Mark Gottschling on Oct Nov 14, 2023
  *
  */
-public interface IRoomFlag {
-
+public class LevelGenerator {
 }

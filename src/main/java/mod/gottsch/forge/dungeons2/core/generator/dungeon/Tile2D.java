@@ -17,11 +17,44 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
+
 /**
- * @author Mark Gottschling on Sep 19, 2020
- *
+ * @author Mark Gottschling on Oct Nov 10, 2023
  */
-public enum RoomRole implements IRoomRole {
-	MAIN,
-	AUXILIARY;
+public class Tile2D {
+    private Coords2D coords;
+    private Direction2D direction;
+
+    public Tile2D(int x, int y, Direction2D direction) {
+        this(new Coords2D(x, y), direction);
+    }
+
+    public Tile2D(Coords2D coords, Direction2D direction) {
+        this.coords = coords;
+        this.direction = direction;
+    }
+
+    public int getX() {
+        return getCoords().getX();
+    }
+
+    public int getY() {
+        return getCoords().getY();
+    }
+
+    public Coords2D getCoords() {
+        return coords;
+    }
+
+    public void setCoords(Coords2D coords) {
+        this.coords = coords;
+    }
+
+    public Direction2D getDirection() {
+        return direction;
+    }
+
+    public void setDirection(Direction2D direction) {
+        this.direction = direction;
+    }
 }

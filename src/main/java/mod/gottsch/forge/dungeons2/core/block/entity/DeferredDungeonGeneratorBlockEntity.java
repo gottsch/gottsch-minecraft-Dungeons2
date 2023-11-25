@@ -29,14 +29,10 @@ import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
 
 /**
  *
@@ -70,52 +66,53 @@ public class DeferredDungeonGeneratorBlockEntity extends BlockEntity {
                 }
 
                 // get the generator config
-                ChestFeaturesConfiguration config = Config.chestConfig;
-                if (config == null) {
-                    Dungeons.LOGGER.debug("ChestConfiguration is null. This shouldn't be.");
-                    failAndPlacehold((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
-                    return;
-                }
+//                ChestFeaturesConfiguration config = Config.chestConfig;
+//                if (config == null) {
+//                    Dungeons.LOGGER.debug("ChestConfiguration is null. This shouldn't be.");
+//                    failAndPlacehold((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
+//                    return;
+//                }
 
-                ChestFeaturesConfiguration.Generator generatorConfig = config.getGenerator(FEATURE_TYPE.getName());
-                if (generatorConfig == null) {
-                    Dungeons.LOGGER.warn("unable to locate a config for feature type -> {}.", FEATURE_TYPE.getName());
-                    failAndPlacehold((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
-                    return;
-                }
+//                ChestFeaturesConfiguration.Generator generatorConfig = config.getGenerator(FEATURE_TYPE.getName());
+//                if (generatorConfig == null) {
+//                    Dungeons.LOGGER.warn("unable to locate a config for feature type -> {}.", FEATURE_TYPE.getName());
+//                    failAndPlacehold((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
+//                    return;
+//                }
 
-                IFeatureGenerator featureGenerator = TreasureFeatureGenerators.WITHER_FEATURE_GENERATOR;
-                Dungeons.LOGGER.debug("feature generator -> {}", featureGenerator.getClass().getSimpleName());
+//                IFeatureGenerator featureGenerator = TreasureFeatureGenerators.WITHER_FEATURE_GENERATOR;
+//                Dungeons.LOGGER.debug("feature generator -> {}", featureGenerator.getClass().getSimpleName());
 
-                Optional<ChestFeaturesConfiguration.ChestRarity> rarityConfig = generatorConfig.getRarity(rarity);
-                if (!rarityConfig.isPresent()) {
-                    Dungeons.LOGGER.warn("unable to locate rarity config for rarity - >{}", rarity);
-                    failAndPlacehold((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
-                    return;
-                }
+//                Optional<ChestFeaturesConfiguration.ChestRarity> rarityConfig = generatorConfig.getRarity(rarity);
+//                if (!rarityConfig.isPresent()) {
+//                    Dungeons.LOGGER.warn("unable to locate rarity config for rarity - >{}", rarity);
+//                    failAndPlacehold((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
+//                    return;
+//                }
+
                 // call generate
-                Optional<GeneratorResult<ChestGeneratorData>> result =
-                        featureGenerator.generate(
-                                new FeatureGenContext(
-                                    (ServerLevel)getLevel(),
-                                    ((ServerLevel)getLevel()).getChunkSource().getGenerator(),
-                                    getLevel().getRandom(),
-                                    FEATURE_TYPE),
-                                spawnCoords, rarity, rarityConfig.get());
+//                Optional<GeneratorResult<GeneratorData>> result =
+//                        featureGenerator.generate(
+//                                new FeatureGenContext(
+//                                    (ServerLevel)getLevel(),
+//                                    ((ServerLevel)getLevel()).getChunkSource().getGenerator(),
+//                                    getLevel().getRandom(),
+//                                    FEATURE_TYPE),
+//                                spawnCoords, rarity, rarityConfig.get());
 
-                if (result.isPresent()) {
-                    cacheGeneratedChest((ServerLevel)getLevel(), rarity, FEATURE_TYPE, chestCache, result.get());
-                    updateChestGeneratorRegistry(dimension, rarity, FEATURE_TYPE);
-                } else {
-                    failAndPlaceholdChest((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
-                    return;
-                }
+//                if (result.isPresent()) {
+//                    cacheGeneratedChest((ServerLevel)getLevel(), rarity, FEATURE_TYPE, chestCache, result.get());
+//                    updateChestGeneratorRegistry(dimension, rarity, FEATURE_TYPE);
+//                } else {
+//                    failAndPlaceholdChest((ServerLevel)getLevel(), chestCache, rarity, spawnCoords, FEATURE_TYPE);
+//                    return;
+//                }
 
-                // save world data
-                TreasureSavedData savedData = TreasureSavedData.get(getLevel());
-                if (savedData != null) {
-                    savedData.setDirty();
-                }
+//                // save world data
+//                TreasureSavedData savedData = TreasureSavedData.get(getLevel());
+//                if (savedData != null) {
+//                    savedData.setDirty();
+//                }
 
             } catch(Exception e) {
                 Dungeons.LOGGER.error("unable to generate wither tree", e);
@@ -147,17 +144,17 @@ public class DeferredDungeonGeneratorBlockEntity extends BlockEntity {
         }
     }
 
-    public boolean failAndPlacehold(WorldGenLevel genLevel, GeneratedCache<GeneratedChestContext> cache, IRarity rarity, ICoords coords, IFeatureType featureType) {
-        // add placeholder
-        GeneratedChestContext generatedChestContext = new GeneratedChestContext(rarity, coords, GeneratedChestContext.GeneratedType.PLACEHOLDER).withFeatureType(featureType);
-        cache.cache(rarity, coords, generatedChestContext);
-        // need to save on fail
-        TreasureSavedData savedData = TreasureSavedData.get(genLevel.getLevel());
-        if (savedData != null) {
-            savedData.setDirty();
-        }
-        return false;
-    }
+//    public boolean failAndPlacehold(WorldGenLevel genLevel, GeneratedCache<GeneratedChestContext> cache, IRarity rarity, ICoords coords, IFeatureType featureType) {
+//        // add placeholder
+//        GeneratedChestContext generatedChestContext = new GeneratedChestContext(rarity, coords, GeneratedChestContext.GeneratedType.PLACEHOLDER).withFeatureType(featureType);
+//        cache.cache(rarity, coords, generatedChestContext);
+//        // need to save on fail
+//        TreasureSavedData savedData = TreasureSavedData.get(genLevel.getLevel());
+//        if (savedData != null) {
+//            savedData.setDirty();
+//        }
+//        return false;
+//    }
 
 //    public IRarity getRarity() {
 //        return rarity;

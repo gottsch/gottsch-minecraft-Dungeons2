@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package mod.gottsch.forge.dungeons2.core.generator;
+package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
 /**
  * @author Mark Gottschling on Jun 21, 2020
  *
  */
 public class Coords2D {
+	/* in the context of this 2d generator library, all coords are positive */
+	public static Coords2D EMPTY = new Coords2D(-1, -1);
 	private int x;
 	private int y;
 	

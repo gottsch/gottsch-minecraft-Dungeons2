@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2020 Mark Gottschling (gottsch)
+ * Copyright (c) 2023 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,33 +17,21 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
-import java.util.List;
-import java.util.Map;
-
-import mod.gottsch.forge.dungeons2.core.generator.Coords2D;
-import mod.gottsch.forge.dungeons2.core.generator.INode;
-import mod.gottsch.forge.dungeons2.core.generator.Rectangle2D;
-
-
 /**
- * @author Mark Gottschling on Sep 15, 2020
+ * @author Mark Gottschling on Oct Nov 21, 2023
  *
  */
-// TODO should probably be totally disconnected from the graphing classes
-public interface IRoom extends INode {
-	public Rectangle2D getBox();
-	public void setBox(Rectangle2D box);
-	
-	IRoomRole getRole();
-	IRoom setRole(IRoomRole roomRole);
-	
-	List<Coords2D> getExits();
-	void setExits(List<Coords2D> exits);
-	
-	List<IRoomFlag> getFlags();
-	void setFlags(List<IRoomFlag> flags);
-	boolean hasFlag(IRoomFlag flag);
-	
-	boolean hasConnectors();
-	Map<Direction2D, List<IConnector>> getConnectors();
+public interface IRoom {
+
+    int getWidth();
+
+    IRoom setWidth(int width);
+
+    int getDepth();
+
+    void setDepth(int depth);
+
+    int getHeight();
+
+    void setHeight(int height);
 }

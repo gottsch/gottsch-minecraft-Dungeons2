@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package mod.gottsch.forge.dungeons2.core.generator;
+package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
 
 /**
@@ -121,6 +121,9 @@ public class Rectangle2D {
 	}
 
 	public int getMaxX() {
+		// TODO -1 doesn't seem right ??
+		// if (1, 1) & w = 3 => (1, 1) -> (4, 4) non-inclusive (ie 4 in the boundary but not included in the render)
+		// but if you use -1, then => (1, 1) -> (3, 3) inclusive
 		return getOrigin().getX() + getWidth() - 1;
 	}
 

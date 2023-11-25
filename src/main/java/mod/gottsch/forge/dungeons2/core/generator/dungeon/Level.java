@@ -17,45 +17,95 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
+
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+
+import java.util.List;
+
 /**
- * @author Mark Gottschling on Oct Nov 22, 2023
+ * @author Mark Gottschling on Oct Nov 21, 2023
  *
  */
-public class Room implements IRoom {
+public class Level {
+    // x-axis
     private int width;
+    // z-axid
     private int depth;
+    // y-axis
     private int height;
 
-    public Room() {}
+    private Grid2D grid;
 
-    @Override
+    private IRoom startRoom;
+    private IRoom endRoom;
+
+    private List<IRoom> rooms;
+
+    private ICoords spawnCoords;
+
+    public Level() {}
+
     public int getWidth() {
         return width;
     }
 
-    @Override
-    public IRoom setWidth(int width) {
+    public void setWidth(int width) {
         this.width = width;
-        return this;
     }
 
-    @Override
     public int getDepth() {
         return depth;
     }
 
-    @Override
     public void setDepth(int depth) {
         this.depth = depth;
     }
 
-    @Override
     public int getHeight() {
         return height;
     }
 
-    @Override
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public Grid2D getGrid() {
+        return grid;
+    }
+
+    public void setGrid(Grid2D grid) {
+        this.grid = grid;
+    }
+
+    public IRoom getStartRoom() {
+        return startRoom;
+    }
+
+    public void setStartRoom(IRoom startRoom) {
+        this.startRoom = startRoom;
+    }
+
+    public IRoom getEndRoom() {
+        return endRoom;
+    }
+
+    public void setEndRoom(IRoom endRoom) {
+        this.endRoom = endRoom;
+    }
+
+    public List<IRoom> getRooms() {
+        return rooms;
+    }
+
+    public void setRooms(List<IRoom> rooms) {
+        this.rooms = rooms;
+    }
+
+    public ICoords getSpawnCoords() {
+        return spawnCoords;
+    }
+
+    public void setSpawnCoords(ICoords spawnCoords) {
+        this.spawnCoords = spawnCoords;
     }
 }

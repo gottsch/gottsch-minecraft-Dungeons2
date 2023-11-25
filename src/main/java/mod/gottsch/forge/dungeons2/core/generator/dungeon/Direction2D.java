@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2022 Mark Gottschling (gottsch)
+ * Copyright (c) 2023 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,13 +18,12 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
 /**
- * 
- * @author Mark Gottschling on Jun 23, 2022
+ * @author Mark Gottschling on Oct Nov 8, 2023
  *
  */
 public enum Direction2D {
-	TOP,
-	RIGHT,
-	BOTTOM,
-	LEFT;
+    NORTH,
+    EAST,
+    SOUTH,
+    WEST;
 }
