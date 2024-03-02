@@ -17,16 +17,35 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+
 /**
  * @author Mark Gottschling on Oct Nov 22, 2023
  *
  */
 public class Room implements IRoom {
+    private int id;
     private int width;
     private int depth;
     private int height;
 
+    private ICoords coords;
+
+    // TODO is start
+    // TODO is end
+
     public Room() {}
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
+    @Override
+    public IRoom setId(int id) {
+        this.id = id;
+        return this;
+    }
 
     @Override
     public int getWidth() {
@@ -45,8 +64,9 @@ public class Room implements IRoom {
     }
 
     @Override
-    public void setDepth(int depth) {
+    public IRoom setDepth(int depth) {
         this.depth = depth;
+        return this;
     }
 
     @Override
@@ -55,7 +75,19 @@ public class Room implements IRoom {
     }
 
     @Override
-    public void setHeight(int height) {
+    public IRoom setHeight(int height) {
         this.height = height;
+        return this;
+    }
+
+    @Override
+    public ICoords getCoords() {
+        return coords;
+    }
+
+    @Override
+    public IRoom setCoords(ICoords coords) {
+        this.coords = coords;
+        return this;
     }
 }

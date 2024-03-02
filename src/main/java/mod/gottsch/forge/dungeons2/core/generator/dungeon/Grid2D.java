@@ -17,34 +17,20 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
+import mod.gottsch.forge.dungeons2.core.collection.Array2D;
+
 import java.util.List;
 
 /**
- * 0 = rock
- * 1 = wall
- * n = id of region
+ * @author Mark Gottschling on Oct Nov 8, 2023
+ *
  */
-public class Grid2D {
-    public static enum TileIDs {
-        ROCK(0),
-        WALL(1),
-        CONNECTOR(2),
-        DOOR(3);
-
-        final int id;
-        TileIDs(int id) {
-            this.id = id;
-        }
-
-        public int getId() {
-            return id;
-        }
-    };
-
-    private byte[][] tiles;
+// TODO should extend Array2D
+public class Grid2D extends Array2D<Cell> {
 
     public Grid2D(int width, int height) {
-        tiles = new byte[width][height];
+        super(Cell.class, width, height);
+//        cells = new Cell[width][height];
 
         // initialize ie add walls to the borders
         initialize(width, height);
@@ -52,44 +38,15 @@ public class Grid2D {
 
     private void initialize(int width, int height) {
         for (int x = 0; x < width; x++) {
-            tiles[x][0] = 1;
-            tiles[x][height-1] = 1;
+            for (int y = 0; y < height; y++) {
+//                cells[x][y] = new Cell(x, y);
+                put(x, y, new Cell(x, y));
+                if (x == 0 || x == width -1 || y == 0 || y == height -1) {
+//                    cells[x][y].setType(CellType.WALL);
+                    get(x, y).setType(CellType.WALL);
+                }
+            }
         }
-
-        for (int y = 0; y < height; y++) {
-            tiles[0][y] = 1;
-            tiles[width-1][y] = 1;
-        }
-    }
-
-    public int getWidth() {
-        return tiles.length;
-    }
-
-    public int getHeight() {
-        return tiles[0].length;
-    }
-
-    /**
-     *
-     * @param x
-     * @param y
-     * @return
-     */
-    public byte getId(int x, int y) {
-        return tiles[x][y];
-    }
-
-    public void setId(int x, int y, byte id) {
-        tiles[x][y] = id;
-    }
-
-    public byte getId(Coords2D coords) {
-        return tiles[coords.getX()][coords.getY()];
-    }
-
-    public void setId(Coords2D coords, byte id) {
-        tiles[coords.getX()][coords.getY()] = id;
     }
 
     /**
@@ -104,13 +61,22 @@ public class Grid2D {
                 for (int y = 0; y < room.getHeight(); y++) {
                     // test for wall indexes
                     if (x ==0 || y == 0 || x == room.getWidth()-1 || y == room.getHeight()-1) {
-                        tiles[xOffset + x][yOffset + y] = (byte)1;
+//                        cells[xOffset + x][yOffset + y].setType(CellType.WALL);
+                        get(xOffset + x, yOffset + y).setType(CellType.WALL);
                     } else {
                         // else update tiles with the id of the room
-                        tiles[xOffset + x][yOffset + y] = (byte)room.getId(); //Integer.valueOf(room.getId()).byteValue();
+//                        cells[xOffset + x][yOffset + y].setType((CellType.ROOM));
+//                        cells[xOffset + x][yOffset + y].setRegionId((int)room.getId());
+                        get(xOffset + x, yOffset + y).setType((CellType.ROOM));
+                        get(xOffset + x, yOffset + y).setRegionId((int)room.getId());
                     }
                 }
             }
         });
+    }
+
+    @Override
+    public Grid2D clone() throws CloneNotSupportedException {
+        return (Grid2D)super.clone();
     }
 }

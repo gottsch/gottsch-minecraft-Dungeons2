@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2023 Mark Gottschling (gottsch)
+ * Copyright (c) 2024 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,33 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package mod.gottsch.forge.dungeons2.core.generator.dungeon;
-
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
+package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
 /**
- * @author Mark Gottschling on Oct Nov 21, 2023
+ * @author Mark Gottschling on Mar 1, 2024
  *
  */
-public interface IRoom {
-
-    int getId();
-
-    IRoom setId(int id);
-
-    int getWidth();
-
-    IRoom setWidth(int width);
-
-    int getDepth();
-
-    IRoom setDepth(int depth);
-
-    int getHeight();
-
-    IRoom setHeight(int height);
-
-    ICoords getCoords();
-
-    IRoom setCoords(ICoords coords);
+public interface IDungeonFloorGenerator {
 }

@@ -49,7 +49,7 @@ public class SpawnDungeonCommand {
 //            Optional<ILevel2D> level = generator.generate();
 
             DungeonGenerator gen = new DungeonGenerator();
-            gen.generate(sourceStack.getLevel(), sourceStack.getLevel().getRandom(), new Coords(sourceStack.getPosition()));
+            gen.generate(sourceStack.getLevel(), sourceStack.getLevel().getRandom(), new Coords(pos));
 
         } catch(Exception e) {
             Dungeons.LOGGER.error("an error occurred: ", e);

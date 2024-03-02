@@ -17,10 +17,6 @@
  */
 package mod.gottsch.forge.dungeons2.core.registry;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
-
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.registry.support.GeneratedDungeonContext;
@@ -30,6 +26,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * 
@@ -51,6 +51,7 @@ public class DimensionalGeneratedRegistry {
 	 * Initialize from Config file.
 	 */
 	public static void initialize() {
+		// TODO this needs to happen on Config event
 		for (String dimensionName : Config.SERVER.dungeons.dimensionsWhitelist.get()) {
 			Dungeons.LOGGER.debug("white list dimension -> {}", dimensionName);
 			ResourceLocation dimension = ModUtil.asLocation(dimensionName);

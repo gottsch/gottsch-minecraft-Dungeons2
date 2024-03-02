@@ -26,7 +26,7 @@ import java.util.List;
  * @author Mark Gottschling on Oct Nov 21, 2023
  *
  */
-public class Level {
+public class DungeonLevel {
     // x-axis
     private int width;
     // z-axid
@@ -43,7 +43,7 @@ public class Level {
 
     private ICoords spawnCoords;
 
-    public Level() {}
+    public DungeonLevel() {}
 
     public int getWidth() {
         return width;

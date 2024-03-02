@@ -17,44 +17,23 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
+import mod.gottsch.forge.dungeons2.core.collection.Array2D;
 
 /**
- * @author Mark Gottschling on Oct Nov 10, 2023
+ * Convenience class.
+ * @author Mark Gottschling on Dec 7, 2023
+ *
  */
-public class Tile2D {
-    private Coords2D coords;
-    private Direction2D direction;
+public class BooleanGrid extends Array2D<Boolean> {
 
-    public Tile2D(int x, int y, Direction2D direction) {
-        this(new Coords2D(x, y), direction);
-    }
+    public BooleanGrid(int width, int height) {
+        super(Boolean.class, width, height);
 
-    public Tile2D(Coords2D coords, Direction2D direction) {
-        this.coords = coords;
-        this.direction = direction;
-    }
-
-    public int getX() {
-        return getCoords().getX();
-    }
-
-    public int getY() {
-        return getCoords().getY();
-    }
-
-    public Coords2D getCoords() {
-        return coords;
-    }
-
-    public void setCoords(Coords2D coords) {
-        this.coords = coords;
-    }
-
-    public Direction2D getDirection() {
-        return direction;
-    }
-
-    public void setDirection(Direction2D direction) {
-        this.direction = direction;
+        // init
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                put(x, y, false);
+            }
+        }
     }
 }

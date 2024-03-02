@@ -26,10 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
-import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
 
 /**
  * 
@@ -37,7 +34,7 @@ import net.minecraftforge.registries.RegistryObject;
  *
  */
 public class ConfiguredFeatures {
-	private static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(Registries.FEATURE, Dungeons.MOD_ID);
+//	private static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(Registries.FEATURE, Dungeons.MOD_ID);
 //	private static final DeferredRegister<ConfiguredFeature<?, ?>> CONFIGURED_FEATURES = DeferredRegister.create(Registry.CONFIGURED_FEATURE_REGISTRY, Dungeons.MOD_ID);
 //    private static final DeferredRegister<PlacedFeature> PLACED_FEATURES = DeferredRegister.create(Registry.PLACED_FEATURE_REGISTRY, Dungeons.MOD_ID);
     
@@ -45,7 +42,7 @@ public class ConfiguredFeatures {
 //	public static final RegistryObject<Feature<NoneFeatureConfiguration>> DUNGEON_FEATURE = FEATURES.register("dungeon",
 //			() -> new DungeonFeature(NoneFeatureConfiguration.CODEC));
 
-	public static final ResourceKey<ConfiguredFeature<?, ?>> DEFERRED_DUNGEON_KEY = registerKey("deferred_dungeon");
+//	public static final ResourceKey<ConfiguredFeature<?, ?>> DEFERRED_DUNGEON_KEY = registerKey("deferred_dungeon");
 
 //	public static final RegistryObject<ConfiguredFeature<?, ?>> DUNGEON_CONFIGURED_FEATURE = CONFIGURED_FEATURES.register("dungeon",
 //			() -> new ConfiguredFeature<>(DUNGEON_FEATURE.get(), NoneFeatureConfiguration.INSTANCE));
@@ -55,14 +52,14 @@ public class ConfiguredFeatures {
 //			() -> new PlacedFeature(DUNGEON_CONFIGURED_FEATURE.getHolder().get(), List.of(BiomeFilter.biome())));
 
 	// Feature
-	public static final RegistryObject<Feature<NoneFeatureConfiguration>> DEFERRED_DUNGEON = FEATURES.register("deferred_dungeon",
-			() -> new DungeonFeature(NoneFeatureConfiguration.CODEC));
+//	public static final RegistryObject<Feature<NoneFeatureConfiguration>> DEFERRED_DUNGEON = FEATURES.register("deferred_dungeon",
+//			() -> new DungeonFeature(NoneFeatureConfiguration.CODEC));
 
 	public static void register(IEventBus bus) {
 //		IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 //		CONFIGURED_FEATURES.register(bus);
 //		PLACED_FEATURES.register(bus);
-		FEATURES.register(bus);
+//		FEATURES.register(bus);
 	}
 
 	public static ResourceKey<ConfiguredFeature<?, ?>> registerKey(String name) {

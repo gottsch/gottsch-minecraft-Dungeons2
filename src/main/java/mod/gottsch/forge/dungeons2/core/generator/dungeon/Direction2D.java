@@ -22,8 +22,14 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon;
  *
  */
 public enum Direction2D {
+    NONE,
     NORTH,
+    NORTH_WEST,
+    NORTH_EAST,
     EAST,
     SOUTH,
-    WEST;
+    SOUTH_EAST,
+    SOUTH_WEST,
+    WEST,
+    CENTER;
 }

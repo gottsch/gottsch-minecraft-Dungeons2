@@ -9,6 +9,6 @@
   "minecraft:frozen_river", "minecraft:river", "minecraft:ice_spikes", "minecraft:old_growth_pine_taiga", "minecraft:sunflower_plains", 
   "minecraft:old_growth_birch_forest", "minecraft:sparse_jungle", "minecraft:bamboo_jungle", "minecraft:eroded_badlands", 
   "minecraft:windswept_savanna", "minecraft:frozen_peaks" ],
-  "features" : "treasure2:deferred_dungeon_placed",
+  "features" : "dungeons2:deferred_dungeon_placed",
   "step" : "top_layer_modification"
 }
