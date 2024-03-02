@@ -67,14 +67,17 @@ public class DungeonGenerator {
 //        MazeLevelGenerator2D levelGenerator2D = new MazeLevelGenerator2D.Builder().build();
         MazeLevelGenerator2D levelGenerator2D = new MazeLevelGenerator2D.Builder()
                 .with($ -> {
-                    $.width = 65;
-                    $.height = 65;
+                    $.width = 45;
+                    $.height = 45;
                     $.numberOfRooms = 35;
-                    $.attemptsMax = 500;
-                    $.runFactor = 1.0;
+                    $.attemptsMax = 1000;
+                    $.runFactor = 0.9;
                     $.curveFactor = 0.75;
                     $.minCorridorSize = 25;
                     $.maxCorridorSize = 50;
+                    $.fillAttempts = 4;
+                    $.fillRoomsPerSize = 5;
+                 //   $.fillRoomSizes = {{7, 7}, {5,5}}; // TODO provide sizes of fill rooms
                 }).build();
 
         Optional<ILevel2D> level2DOptional = levelGenerator2D.generate();

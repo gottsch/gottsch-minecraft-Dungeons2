@@ -40,6 +40,13 @@ public class Room2D implements IRoom2D {
 
     private List<Coords2D> doorways;
 
+    private RoomType roomType;
+
+    public enum RoomType {
+        ROOM,
+        JOINER,
+        JOINER_NO_DOORS;
+    }
 
     public Room2D(Rectangle2D box) {
         this.box = box;
