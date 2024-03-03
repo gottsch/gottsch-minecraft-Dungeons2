@@ -77,31 +77,10 @@ public class Config extends AbstractConfig {
 	 * 
 	 */
 	public static class ServerConfig {
-		//		public ForgeConfigSpec.IntValue mageFlameLifespan;
-		//		public ForgeConfigSpec.IntValue lesserRevelationLifespan;
-		//		public ForgeConfigSpec.IntValue greaterRevelationLifespan;
 		public DungeonsWorldGen dungeons;
 
 		public ServerConfig(ForgeConfigSpec.Builder builder) {
-
 			dungeons = new DungeonsWorldGen(builder);
-			//			builder.comment(CATEGORY_DIV, "Dungeon Properties", CATEGORY_DIV)
-			//			.push("dungeons");
-
-			//			mageFlameLifespan = builder
-			//					.comment(" The lifespan of a Mage Flame spell/entity in ticks.", 
-			//							"Ex. 20 ticks * 60 seconds * 5 = 6000 = 5 minutes.")
-			//					.defineInRange("mageFlameLifespan", 12000, 1200, 72000);
-			//
-			//			lesserRevelationLifespan = builder
-			//					.comment(" The lifespan of a Lesser Revelation spell/entity in ticks.")
-			//					.defineInRange("lesserRevelationLifespan", 18000, 1200, 72000);
-			//			
-			//			greaterRevelationLifespan = builder
-			//					.comment(" The lifespan of a Greater Revelation spell/entity in ticks.")
-			//					.defineInRange("greaterRevelationLifespan", 36000, 1200, 72000);
-
-			//			builder.pop();
 		}
 	}
 

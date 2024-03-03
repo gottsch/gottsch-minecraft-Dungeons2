@@ -53,7 +53,7 @@ public class Dungeons {
 
 	public static final String MOD_ID = "dungeons2";
 	
-	private static final String DUNGEONS_CONFIG_VERSION = "1.18.2-v1";
+	private static final String DUNGEONS_CONFIG_VERSION = "1.20.1-v1";
 
 	/**
 	 * 

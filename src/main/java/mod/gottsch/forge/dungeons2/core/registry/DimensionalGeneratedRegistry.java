@@ -36,6 +36,7 @@ import java.util.function.Supplier;
  * @author Mark Gottschling Jan 31, 2023
  *
  */
+@Deprecated
 public class DimensionalGeneratedRegistry {
 	private static final String DIMENSION_NAME = "dimension";
 	private static final String DUNGEON_REGISTRY_NAME = "registry";

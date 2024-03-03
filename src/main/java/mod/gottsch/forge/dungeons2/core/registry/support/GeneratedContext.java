@@ -22,18 +22,18 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.nbt.CompoundTag;
 
 /**
- * 
  * @author Mark Gottschling Jan 31, 2023
- *
  */
 public abstract class GeneratedContext implements IGeneratedContext {
 	private ICoords coords;
-	
-	public GeneratedContext() {}
+
+	public GeneratedContext() {
+	}
+
 	public GeneratedContext(ICoords coords) {
 		this.coords = coords;
 	}
-	
+
 	@Override
 	public CompoundTag save() {
 		CompoundTag tag = new CompoundTag();
@@ -41,7 +41,7 @@ public abstract class GeneratedContext implements IGeneratedContext {
 //		tag.putString("rarity", rarity.getValue());		
 		return tag;
 	}
-	
+
 	@Override
 	public void load(CompoundTag tag) {
 		if (tag.contains("coords")) {
@@ -58,11 +58,12 @@ public abstract class GeneratedContext implements IGeneratedContext {
 //			}
 //		}
 	}
-	
+
 	@Override
 	public ICoords getCoords() {
 		return coords;
 	}
+
 	@Override
 	public void setCoords(ICoords coords) {
 		this.coords = coords;
@@ -73,4 +74,10 @@ public abstract class GeneratedContext implements IGeneratedContext {
 //	public void setRarity(IRarity rarity) {
 //		this.rarity = rarity;
 //	}
+
+	@Override
+	public String toString() {
+		return "GeneratedContext [coords=" + coords + "]";
+	}
 }
+
