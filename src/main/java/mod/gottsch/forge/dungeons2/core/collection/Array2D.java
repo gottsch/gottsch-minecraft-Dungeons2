@@ -32,13 +32,17 @@ public class Array2D<T> {
         this.data = (T[][]) Array.newInstance(clazz, width, height);
     }
 
-    private Array2D(T[][] data) {
+    protected Array2D(T[][] data) {
         this.data = data.clone();
     }
 
     @Override
-    protected Array2D clone() throws CloneNotSupportedException {
-        return new Array2D(this.data);
+    protected Array2D<T> clone() throws CloneNotSupportedException {
+        return new Array2D<T>(this.data);
+    }
+
+    protected T[][] getData() {
+        return data;
     }
 
     public Coords2D getSize() {

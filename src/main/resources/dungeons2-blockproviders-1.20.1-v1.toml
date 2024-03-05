@@ -1,0 +1,37 @@
+[[motif]]
+	name="stonebricks"
+
+	[[motif.pattern]]
+	name="wall_pattern"
+	[[pattern.element]]
+		name="wall"
+		block="minecraft:stone_bricks"
+	[[pattern.element]]
+		name="corner"
+		block="minecraft:polished_andesite"
+	[[pattern.element]]
+		name="top_corner"
+		block="minecraft:polished_andesite"
+
+	[[motif.pattern]]
+		name="floor_pattern"
+		[[pattern.element]]
+			name="floor"
+			block="minecraft:stone_bricks"
+		[[pattern.element]]
+			name="alternate_floor"
+			block="minecraftr:cobblestone"
+		[[pattern.element]]
+			name="corner"
+			block="minecraft:polished_andesite"
+		[[pattern.element]]
+			name="center"
+			block="minecraft:polished_andesite"
+
+[[motif]]
+	name="catacombs"
+	[[motif.pattern]]
+	name="wall_pattern"
+	[[pattern.element]]
+		name="wall"
+		block="minecraft:bricks"

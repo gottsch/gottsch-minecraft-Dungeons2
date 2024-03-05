@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
+import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.GeneratorData;
 import mod.gottsch.forge.dungeons2.core.generator.GeneratorResult;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor.BasicCorridorGenerator;
@@ -70,9 +71,9 @@ public class DungeonGenerator {
                     $.width = 45;
                     $.height = 45;
                     $.numberOfRooms = 35;
-                    $.attemptsMax = 1000;
-                    $.runFactor = 0.9;
-                    $.curveFactor = 0.75;
+                    $.attemptsMax = 2000;
+                    $.runFactor = 0.8;
+                    $.curveFactor = 0.8;
                     $.minCorridorSize = 25;
                     $.maxCorridorSize = 50;
                     $.fillAttempts = 4;
@@ -96,7 +97,7 @@ public class DungeonGenerator {
 
 
         // TODO
-        addToWorld(level, spawnCoords, dungeonLevel);
+        addToWorld(level, random, spawnCoords, dungeonLevel);
 
         return null;
     }
@@ -108,7 +109,7 @@ public class DungeonGenerator {
      * @param spawnCoords
      * @param dungeonLevel
      */
-    private void addToWorld(ServerLevel level, ICoords spawnCoords, DungeonLevel dungeonLevel) {
+    private void addToWorld(ServerLevel level, RandomSource random, ICoords spawnCoords, DungeonLevel dungeonLevel) {
         // get the BlocksPos from the coords
         BlockPos pos = spawnCoords.toPos();
         Grid2D grid = dungeonLevel.getGrid();
@@ -129,19 +130,19 @@ public class DungeonGenerator {
         // TODO randomly pick from registered generators by theme/config
         ICorridorGenerator corridorGenerator = new BasicCorridorGenerator();
 
-        corridorGenerator.addToWorld(level, grid, spawnCoords.add(0, 2, 0));
+        corridorGenerator.addToWorld(level, grid, spawnCoords.add(0, 2, 0), DungeonMotif.STONEBRICK);
 
         /*
          * a room generator
          */
         IRoomGenerator roomGenerator = new BasicRoomGenerator();
-        roomGenerator.addToWorld(level, dungeonLevel, spawnCoords, DungeonMotif.STONEBRICK);
+        roomGenerator.addToWorld(level, random, dungeonLevel, spawnCoords, DungeonMotif.STONEBRICK);
 
         /*
          * a door generator
          */
         IDoorGenerator doorGenerator = new BasicDoorGenerator();
-        doorGenerator.addToWorld(level, dungeonLevel, spawnCoords);
+        doorGenerator.addToWorld(level, random, dungeonLevel, spawnCoords, DungeonMotif.STONEBRICK);
     }
 
     private void addCorridorToWorld (ServerLevel level, DungeonLevel dungeonLevel, Coords2D coords2D){

@@ -25,7 +25,6 @@ import java.util.List;
  * @author Mark Gottschling on Oct Nov 8, 2023
  *
  */
-// TODO should extend Array2D
 public class Grid2D extends Array2D<Cell> {
 
     public Grid2D(int width, int height) {
@@ -34,6 +33,10 @@ public class Grid2D extends Array2D<Cell> {
 
         // initialize ie add walls to the borders
         initialize(width, height);
+    }
+
+    private Grid2D(Cell[][] cells) {
+        super(cells);
     }
 
     private void initialize(int width, int height) {
@@ -77,6 +80,6 @@ public class Grid2D extends Array2D<Cell> {
 
     @Override
     public Grid2D clone() throws CloneNotSupportedException {
-        return (Grid2D)super.clone();
+        return new Grid2D(getData());
     }
 }
