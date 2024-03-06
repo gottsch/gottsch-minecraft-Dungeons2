@@ -52,7 +52,7 @@ public class PatternRegistry {
 		}
 		// add enum to inner map
 		if (!map.containsKey(ienum.getName().toUpperCase())) {
-			map.put(ienum.getName(), ienum);
+			map.put(ienum.getName().toUpperCase(), ienum);
 		}
 	}
 	
@@ -100,5 +100,9 @@ public class PatternRegistry {
 	 */
 	public static Optional<IPatternEnum> getFloorPattern(String key) {
 		return get(DungeonRoomPatterns.FLOOR_PATTERN, key);
+	}
+
+	public static Optional<IPatternEnum> getWallPattern(String key) {
+		return get(DungeonRoomPatterns.WALL_PATTERN, key);
 	}
 }

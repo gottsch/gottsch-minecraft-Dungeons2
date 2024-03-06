@@ -20,13 +20,10 @@ package mod.gottsch.forge.dungeons2.core.event;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.cache.FeatureCaches;
 import mod.gottsch.forge.dungeons2.core.config.Config;
-import mod.gottsch.forge.dungeons2.core.persistence.DungeonsSavedData;
-import mod.gottsch.forge.dungeons2.core.util.ModUtil;
+import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -34,7 +31,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
 /**
  *
@@ -48,8 +44,7 @@ public class WorldEvents {
 	private static boolean isClientLoaded = false;
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
-	public void onWorldLoad(LevelEvent.Load event) {
-
+	public static void onWorldLoad(LevelEvent.Load event) {
 		if (WorldInfo.isServerSide((Level)event.getLevel())) {
 			ResourceLocation dimension = WorldInfo.getDimension((Level) event.getLevel());
 			Dungeons.LOGGER.info("In world load event for dimension {}", dimension.toString());
@@ -61,17 +56,21 @@ public class WorldEvents {
 				if ((!isLoaded && Config.SERVER.dungeons.dimensionsWhitelist.get().contains(dimension.toString()))) {
 					// initialize feature caches
 					FeatureCaches.initialize();
+
+					// initialize/register all block providers
+					// TODO pulled from the BlockProvidersConfiguration config property
+					BlockProivderRegistry.register(Config.blockProviderConfiguration.getMotifs());
 				}
 			}
 
-		if (!event.getLevel().isClientSide()) {
-			Level world = (Level) event.getLevel();
-			Dungeons.LOGGER.info("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
-			if (WorldInfo.isSurfaceWorld(world)) {
-				Dungeons.LOGGER.info("loading Dungeons data...");
-				DungeonsSavedData.get(world);
-			}
-		}
+//		if (!event.getLevel().isClientSide()) {
+//			Level world = (Level) event.getLevel();
+//			Dungeons.LOGGER.info("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
+//			if (WorldInfo.isSurfaceWorld(world)) {
+//				Dungeons.LOGGER.info("loading Dungeons data...");
+//				DungeonsSavedData.get(world);
+//			}
+//		}
 	}
 //	@SubscribeEvent
 //	public static void onBiomeLoading(final BiomeLoadingEvent event) {

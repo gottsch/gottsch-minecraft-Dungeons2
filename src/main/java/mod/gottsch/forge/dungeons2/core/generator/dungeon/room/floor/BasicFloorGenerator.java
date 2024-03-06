@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
+import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -63,8 +64,12 @@ public class BasicFloorGenerator implements IDungeonFloorGenerator {
                     floorGrid.put(x, z, 1);
                 }
                 else {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT));
-                    floorGrid.put(x, z, 1);
+                    if (RandomHelper.checkProbability(random, 45)) {
+                        level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
+                    } else {
+                        level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT));
+                    }
+                   floorGrid.put(x, z, 1);
                 }
             }
         }

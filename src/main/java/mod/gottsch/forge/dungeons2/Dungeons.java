@@ -17,16 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Objects;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.electronwill.nightconfig.core.CommentedConfig;
-
+import mod.gottsch.forge.dungeons2.core.config.BlockProviderConfiguration;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.setup.CommonSetup;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
@@ -40,6 +32,14 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
+import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 
@@ -54,7 +54,7 @@ public class Dungeons {
 	public static final String MOD_ID = "dungeons2";
 	
 	private static final String DUNGEONS_CONFIG_VERSION = "1.20.1-v1";
-
+	private static final String BLOCK_PROVIDER_CONFIG_VERSION = "1.20.1-v1";
 	/**
 	 * 
 	 */
@@ -62,9 +62,10 @@ public class Dungeons {
 		// TODO change to the new Echelons style of config setup
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
+
 		// create the default config
 		createServerConfig(Config.DUNGEONS_CONFIG_SPEC, "dungeons", DUNGEONS_CONFIG_VERSION);
-		
+		createServerConfig(Config.BLOCK_PROVIDER_CONFIG_SPEC, "blockproviders", BLOCK_PROVIDER_CONFIG_VERSION);
 		// register the deferred registries
         Registration.init();
         
@@ -79,6 +80,7 @@ public class Dungeons {
 	 */
 	private static void createServerConfig(ForgeConfigSpec spec, String suffix, String version) {
 		String fileName = "dungeons2-" + suffix + "-" + version + ".toml";
+		LOGGER.debug("config file name -> {}", fileName);
 		ModLoadingContext.get().registerConfig(Type.SERVER, spec, fileName);
 		File defaults = new File(FMLPaths.GAMEDIR.get() + "/defaultconfigs/" + fileName);
 
@@ -96,6 +98,7 @@ public class Dungeons {
 	/**
 	 * On a config event.
 	 * @param event
+	 *
 	 */
 	private void config(final ModConfigEvent event) {
 		if (event.getConfig().getModId().equals(MOD_ID)) {
@@ -107,7 +110,9 @@ public class Dungeons {
 				if (spec == Config.DUNGEONS_CONFIG_SPEC) {
 					// transform/copy the toml into the config
 					Config.transform(commentedConfig);
-				} 
+				} else if (spec == Config.BLOCK_PROVIDER_CONFIG_SPEC) {
+					Optional<BlockProviderConfiguration> blockProviderConfigurationList = Config.transformBlockProviderConfiguration(commentedConfig);
+				}
 			}
 		}
 	}

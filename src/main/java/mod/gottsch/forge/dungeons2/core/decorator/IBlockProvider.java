@@ -20,7 +20,7 @@ public interface IBlockProvider {
      */
     public static IBlockProvider get(IDungeonMotif motif) {
         Optional<IBlockProvider> blockProviderOptional = DungeonsApi.getBlockProvider(motif);
-        return blockProviderOptional.orElseGet(BasicBlockProvider::new);
+        return blockProviderOptional.orElseGet(BlockProvider::new);
     }
 
     public Optional<BlockState> get(IPatternEnum pattern);

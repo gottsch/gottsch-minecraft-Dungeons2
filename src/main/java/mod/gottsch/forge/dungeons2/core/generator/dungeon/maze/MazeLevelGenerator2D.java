@@ -367,25 +367,25 @@ public class MazeLevelGenerator2D {
         }
 
         for (int fillAttemptIndex = 0; fillAttemptIndex < this.fillAttempts; fillAttemptIndex++) {
-            Dungeons.LOGGER.debug("attempt # -> {}", fillAttemptIndex);
+//            Dungeons.LOGGER.debug("attempt # -> {}", fillAttemptIndex);
             List<IRoom2D> rooms = new ArrayList<>();
             // scan the void grid looking for empty space candidates
             List<Rectangle2D> maximalRectangleList = getMaximalRectangles(voidGrid);
-            Dungeons.LOGGER.debug("size of rectangles -> {}", maximalRectangleList.size());
+//            Dungeons.LOGGER.debug("size of rectangles -> {}", maximalRectangleList.size());
             // randomize the sort of the list
             Collections.shuffle(maximalRectangleList);
-            Dungeons.LOGGER.debug("size of supplied rooms -> {}", suppliedRooms.size());
+//            Dungeons.LOGGER.debug("size of supplied rooms -> {}", suppliedRooms.size());
             // for each of the supplied rooms
             for (IRoom2D suppliedRoom : suppliedRooms) {
                 // a list to manage the rectangles to remove
                 List<Rectangle2D> rectangleRemoveList = new ArrayList<>();
                 // get the size of the room
                 Coords2D size = new Coords2D(suppliedRoom.getWidth(), suppliedRoom.getHeight());
-                Dungeons.LOGGER.debug("testing room -> {}, size -> {}", suppliedRoom.getId(), size);
-                Dungeons.LOGGER.debug("size of rectangles2 -> {}", maximalRectangleList.size());
+//                Dungeons.LOGGER.debug("testing room -> {}, size -> {}", suppliedRoom.getId(), size);
+//                Dungeons.LOGGER.debug("size of rectangles2 -> {}", maximalRectangleList.size());
                 // scan all the rectangles
                 for (Rectangle2D r : maximalRectangleList) {
-                    Dungeons.LOGGER.debug("testing against rectangle -> {}x{}", r.getWidth(), r.getHeight());
+//                    Dungeons.LOGGER.debug("testing against rectangle -> {}x{}", r.getWidth(), r.getHeight());
                     if (size.getX() <= r.getWidth() && size.getY() <= r.getHeight()) {
                         // find the delta of x,y between size and r
                         int dx = r.getWidth() - size.getX();

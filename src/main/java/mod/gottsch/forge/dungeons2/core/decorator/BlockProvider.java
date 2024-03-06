@@ -15,22 +15,16 @@ import java.util.Optional;
  *
  */
 // TODO should be one block provider or a separate provider for each room element?
-public class BasicBlockProvider implements IBlockProvider {
-    private static final Map<IPatternEnum, Block> REGISTRY = Maps.newHashMap();
+public class BlockProvider implements IBlockProvider {
+    private final Map<IPatternEnum, Block> registry = Maps.newHashMap();
 
     public void set(IPatternEnum pattern, Block block) {
-        REGISTRY.put(pattern, block);
+        registry.put(pattern, block);
     }
 
     @Override
     public Optional<BlockState> get(IPatternEnum pattern) {
-        // TODO get the blockstate by pattern from the internal registry which is loaded by json files
-//        BlockState newState = switch (pattern) {
-//            case CORNER -> Blocks.POLISHED_ANDESITE.defaultBlockState();
-//            default -> Blocks.STONE_BRICKS.defaultBlockState();
-//        };
-//        return newState;
-        Block block = REGISTRY.get(pattern);
+        Block block = registry.get(pattern);
         if (block == null) {
             return Optional.empty();
         }
@@ -40,7 +34,7 @@ public class BasicBlockProvider implements IBlockProvider {
     @Override
     public Optional<BlockState> get(IPatternEnum pattern, BlockState state) {
         // TODO get the blockstate by pattern from the internal registry
-        Block block = REGISTRY.get(pattern);
+        Block block = registry.get(pattern);
         if (block == null) {
             return Optional.empty();
         }
@@ -60,7 +54,7 @@ public class BasicBlockProvider implements IBlockProvider {
      * @return
      */
     public BlockState get(FloorPattern pattern) {
-        Block block = REGISTRY.get(pattern);
+        Block block = registry.get(pattern);
         if (block != null) {
             return block.defaultBlockState();
         }
