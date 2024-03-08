@@ -19,7 +19,7 @@ package mod.gottsch.forge.dungeons2.core.registry;
 
 import com.google.common.collect.Maps;
 import mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns;
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 
 import java.util.ArrayList;
 import java.util.List;

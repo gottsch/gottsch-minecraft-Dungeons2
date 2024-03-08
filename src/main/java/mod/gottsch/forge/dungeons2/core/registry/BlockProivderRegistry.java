@@ -5,7 +5,7 @@ import mod.gottsch.forge.dungeons2.core.config.BlockProviderConfiguration;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 

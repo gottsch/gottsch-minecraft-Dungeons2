@@ -10,7 +10,6 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorProperties;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
 import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.server.level.ServerLevel;
@@ -32,11 +31,7 @@ public class DefaultFloorDecorator implements IRoomElementDecorator {
 
         FloorProperties properties = new FloorProperties();
 
-        Optional<IBlockProvider> blockProviderOptional = DungeonsApi.getBlockProvider(motif);
-        if (blockProviderOptional.isEmpty()) {
-            return layout;
-        }
-        IBlockProvider blockProvider = blockProviderOptional.get();
+        IBlockProvider blockProvider = IBlockProvider.get(motif);
 
         // TODO determine if using a sunken floor
         // get the size of the footprint
@@ -51,9 +46,9 @@ public class DefaultFloorDecorator implements IRoomElementDecorator {
             properties.setBorder(true);
         }
 
-        if (RandomHelper.checkProbability(random, 25)) {
-            properties.setCornerGrates(true);
-        }
+//        if (RandomHelper.checkProbability(random, 25)) {
+//            properties.setCornerGrates(true);
+//        }
 
         int y = 0;
 
@@ -61,61 +56,45 @@ public class DefaultFloorDecorator implements IRoomElementDecorator {
         // TODO this really should be calling a FloorBorderDecorator
         if (properties.border) {
             // TODO should be Optional
-            IRoomElementDecorator borderDecorator = getDecorator(random, FloorElementType.FLOOR_BORDER);
-            borderDecorator.decorate(level, random, layout, room, coords, motif);
-//            for (int x = 1; x < room.getWidth() - 1; x++) {
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(x, y, 1).toPos(), blockProvider.get(FloorPattern.BORDER));
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(x, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.BORDER));
-//            }
-//            for (int z = 2; z < room.getDepth() - 2; z++) {
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, z).toPos(), blockProvider.get(FloorPattern.BORDER));
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, z).toPos(), blockProvider.get(FloorPattern.BORDER));
-//            }
+            Optional<IRoomElementDecorator> borderDecorator = getDecorator(random, FloorElementType.FLOOR_BORDER);
+            if (borderDecorator.isPresent()) {
+                borderDecorator.get().decorate(level, random, layout, room, coords, motif);
+            }
         }
         if (properties.paddedBorder) {
-            IRoomElementDecorator borderDecorator = getDecorator(random, FloorElementType.FLOOR_PADDED_BORDER);
-            borderDecorator.decorate(level, random, layout, room, coords, motif);
-//            for (int x = 2; x < room.getWidth() - 2; x++) {
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(x, y, 2).toPos(), blockProvider.get(FloorPattern.BORDER));
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(x, y, room.getDepth() - 3).toPos(), blockProvider.get(FloorPattern.BORDER));
-//            }
-//            for (int z = 3; z < room.getDepth() - 3; z++) {
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(2, y, z).toPos(), blockProvider.get(FloorPattern.BORDER));
-//                level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 3, y, z).toPos(), blockProvider.get(FloorPattern.BORDER));
-//            }
+            Optional<IRoomElementDecorator> borderDecorator = getDecorator(random, FloorElementType.FLOOR_PADDED_BORDER);
+            if (borderDecorator.isPresent()) {
+                borderDecorator.get().decorate(level, random, layout, room, coords, motif);
+            }
         }
 
         // corners last
-        if (properties.cornerGrates) {
+//        if (properties.cornerGrates) {
+            Optional<IRoomElementDecorator> drainageDecorator = getDecorator(random, FloorElementType.FLOOR_DRAINAGE);
+            if (drainageDecorator.isPresent()) {
+                drainageDecorator.get().decorate(level, random, layout, room, coords, motif);
+                // NOTE don't put it into lambda notation as we need the return value
+            }
+
 //            IRoomElementDecorator cornerDecorator = getDecorator(random, FloorElementType.FLOOR_CORNER);
 //            cornerDecorator.decorate(level, random, layout, room, coords, motif);
 
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, 1).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, 1).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-        }
+            // TODO could hardcode the grates here OR use another patter - FloorDrainagePattern
+
+//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, 1).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
+//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, 1).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
+//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
+//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
+//        }
 
         return layout;
     }
 
-    private IRoomElementDecorator getDecorator(RandomSource random, IRoomElementType type) {
-        // TODO get from registry
-        // TODO return Optional
-
-     List<IRoomElementDecorator> decoratorList = DungeonsApi.getDecorator(type);
+    private Optional<IRoomElementDecorator> getDecorator(RandomSource random, IRoomElementType type) {
+     List<IRoomElementDecorator> decoratorList = DungeonsApi.getDecorators(type);
         if (decoratorList.isEmpty()) {
-            return this;
+            return Optional.empty();
         }
-        return decoratorList.get(RandomHelper.randomInt(random, 0, decoratorList.size() - 1));
-
-        // TEMP
-//        if ("floor_border".equals(key)) {
-//            return new DefaultBorderDecorator();
-//        }
-//        else if ("floor_padded_border".equals(key)) {
-//            return new DefaultPaddedBorderDecorator();
-//        }
-//        return null;
+        return Optional.of(decoratorList.get(random.nextInt(decoratorList.size())));
     }
 }

@@ -46,31 +46,32 @@ public class BasicFloorGenerator implements IDungeonFloorGenerator {
         Coords2D size = new Coords2D(room.getWidth(), room.getDepth());
         Array2D<Integer> floorGrid = new Array2D<>(Integer.class, size.getX(), size.getY());
 
+        // generate the natural border
         int y = 0;
-        for (int x = 0; x < room.getWidth(); x++) {
-            for (int z = 0; z < room.getDepth(); z++) {
-                if (
-                        ((x == 0 || x == room.getWidth() - 1) && (z == 0 || z == room.getDepth() - 1))
-                                || ((x == 0 || x == room.getWidth() - 1))
-                                || ((z == 0 || z == room.getDepth() - 1))
-                ) {
-                    // skip the edges as they aren't visible anyway
-                }
-                else if (
-                        (x == 1 || x == room.getWidth() - 2)
-                        || (z == 1 || z == room.getDepth() - 2)
-                ) {
+        int[] xx = {1, room.getWidth() -2};
+        for (int x : xx) {
+            for (int z = 1; z < room.getDepth() - 1; z++) {
+                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
+                floorGrid.put(x, z, 1);
+            }
+        }
+        int [] zz = {1, room.getDepth() -2};
+        for (int z : zz) {
+            for (int x = 2; x < room.getWidth() -2; x++) {
+                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
+                floorGrid.put(x, z, 1);
+            }
+        }
+
+        // generate the main floor body
+        for (int x = 2; x < room.getWidth()-2; x++) {
+            for (int z = 2; z < room.getDepth()-2; z++) {
+                if (RandomHelper.checkProbability(random, 45)) {
                     level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
-                    floorGrid.put(x, z, 1);
+                } else {
+                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT));
                 }
-                else {
-                    if (RandomHelper.checkProbability(random, 45)) {
-                        level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
-                    } else {
-                        level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT));
-                    }
-                   floorGrid.put(x, z, 1);
-                }
+                floorGrid.put(x, z, 1);
             }
         }
 

@@ -27,32 +27,66 @@
 			name="corner"
 			block="minecraft:polished_andesite"
 		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="alternate_corner"
+			block="minecraft:chiseled_stone_bricks"
+		[[blockProviderConfigs.motifs.patterns.elements]]
 			name="center"
 			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="alternate_center"
+			block="minecraft:chiseled_stone_bricks"
 
 	[[blockProviderConfigs.motifs.patterns]]
 		name="corridor_floor_pattern"
 		[[blockProviderConfigs.motifs.patterns.elements]]
 			name="floor"
 			block="minecraft:cobblestone"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="alternate_floor"
+			block="minecraft:gravel"
+
 
 	[[blockProviderConfigs.motifs.patterns]]
 		name="floor_border_pattern"
 		[[blockProviderConfigs.motifs.patterns.elements]]
 			name="border"
 			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="center"
+			block="minecraft:chiseled_stone_bricks"
+
+	[[blockProviderConfigs.motifs.patterns]]
+		name="floor_drainage_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="corner"
+			block="dungeonblocks:dark_iron_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="alternate_corner"
+			block="dungeonblocks:weathered_copper_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="center"
+			block="dungeonblocks:dark_iron_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="alternate_center"
+			block="dungeonblocks:weathered_copper_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="gutter"
+			block="dungeonblocks:weathered_copper_sewer_block"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="alternate_gutter"
+			block="dungeonblocks:terracotta_copper_sewer_block"
 
 	[[blockProviderConfigs.motifs.patterns]]
 		name="ceiling_pattern"
 		[[blockProviderConfigs.motifs.patterns.elements]]
 			name="ceiling"
-			block="minecraft:stonebrick"
+			block="minecraft:stone_bricks"
 
 	[[blockProviderConfigs.motifs.patterns]]
 		name="corridor_ceiling_pattern"
 		[[blockProviderConfigs.motifs.patterns.elements]]
 			name="ceiling"
-			block="minecraft:stonebrick"
+			block="minecraft:stone_bricks"
 
 	[[blockProviderConfigs.motifs.patterns]]
 		name="door_pattern"
@@ -81,10 +115,19 @@
 		[[blockProviderConfigs.motifs.patterns.elements]]
 			name="wall"
 			block="minecraft:deepslate_bricks"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="corner"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			name="top_corner"
+			block="minecraft:polished_blackstone"
 
 [[blockProviderConfigs.decays]]
-	from="minecraft:stonebrick"
-	to=["minecraft:mossy_stonebrick", "minecraft:cracked_stonebrick", "minecraft:cobblestone"]
+	from="minecraft:stone_bricks"
+	to=["minecraft:mossy_stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:cobblestone"]
 [[blockProviderConfigs.decays]]
 	from="minecraft:cobblestone"
 	to=["minecraft:mossy_cobblestone","minecraft:gravel"]
+[[blockProviderConfigs.decays]]
+	from="minecraft:polished_andesite"
+	to=["minecraft:andesite"]

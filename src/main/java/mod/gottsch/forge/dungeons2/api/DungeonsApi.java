@@ -4,14 +4,16 @@ import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
 import mod.gottsch.forge.dungeons2.core.enums.IRoomElementType;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.DecoratorRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.EnumRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.PatternRegistry;
 import mod.gottsch.forge.gottschcore.enums.IEnum;
 import mod.gottsch.forge.gottschcore.enums.IRarity;
+import mod.gottsch.forge.gottschcore.random.RandomHelper;
+import net.minecraft.util.RandomSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -72,8 +74,16 @@ public class DungeonsApi {
         return enums.stream().map(e -> (IRarity)e).collect(Collectors.toList());
     }
 
-    public static List<IRoomElementDecorator> getDecorator(IRoomElementType type) {
+    public static List<IRoomElementDecorator> getDecorators(IRoomElementType type) {
         return DecoratorRegistry.get(type);
+    }
+
+    public static Optional<IRoomElementDecorator> getDecorator(RandomSource random, IRoomElementType type) {
+        List<IRoomElementDecorator> list = getDecorators(type);
+        if (list.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(list.get(RandomHelper.randomInt(random, 0, list.size() - 1)));
     }
 
     public static Optional<IBlockProvider> getBlockProvider(IDungeonMotif motif) {

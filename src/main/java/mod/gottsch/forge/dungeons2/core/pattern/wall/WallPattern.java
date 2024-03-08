@@ -1,6 +1,6 @@
 package mod.gottsch.forge.dungeons2.core.pattern.wall;
 
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 
 public enum WallPattern implements IPatternEnum {
     CORNER,

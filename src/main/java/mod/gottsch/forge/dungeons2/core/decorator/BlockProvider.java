@@ -2,7 +2,7 @@ package mod.gottsch.forge.dungeons2.core.decorator;
 
 import com.google.common.collect.Maps;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;

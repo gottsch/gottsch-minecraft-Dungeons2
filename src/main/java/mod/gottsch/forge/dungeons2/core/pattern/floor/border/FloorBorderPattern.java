@@ -14,7 +14,7 @@ package mod.gottsch.forge.dungeons2.core.pattern.floor.border;
 // just need to supply a different motif.
 
 
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 
 /**
  * @author Mark Gottschling on March 2, 2024
@@ -22,6 +22,9 @@ import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
  */
 public enum FloorBorderPattern implements IPatternEnum {
     CORNER,
+    ALTERNATE_CORNER,
+    CENTER,
+    ALTERNATE_CENTER,
     BORDER,
     ALTERNATE_BORDER;
 

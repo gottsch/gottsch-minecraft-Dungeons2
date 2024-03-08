@@ -11,16 +11,12 @@ import java.util.stream.Collectors;
 
 /**
  * 
- * @author Mark Gottschling on Mar 3, 2024
+ * @author Mark Gottschling on Mar 6, 2024
  *
  */
-public enum FloorElementType implements IRoomElementType {
-	FLOOR(0, "floor"),
-	FLOOR_BORDER(1, "floor_border"),
-	FLOOR_PADDED_BORDER(2, "floor_padded_border"),
-	FLOOR_CORNER(3, "floor_corner"),
-	UNKNOWN(-1, "unknown"),
-	FLOOR_DRAINAGE(4, "floor_drainage");
+public enum WallElementType implements IRoomElementType {
+	WALL(0, "wall"),
+	UNKNOWN(-1, "unknown");
 
 	private static final Map<Integer, IEnum> codes = new HashMap<Integer, IEnum>();
 	private static final Map<String, IEnum> values = new HashMap<String, IEnum>();
@@ -29,7 +25,7 @@ public enum FloorElementType implements IRoomElementType {
 
 	// setup reverse lookup
 	static {
-		for (FloorElementType x : EnumSet.allOf(FloorElementType.class)) {
+		for (WallElementType x : EnumSet.allOf(WallElementType.class)) {
 			codes.put(x.getCode(), x);
 			values.put(x.getValue(), x);
 		}
@@ -40,17 +36,17 @@ public enum FloorElementType implements IRoomElementType {
 	 * @param code
 	 * @param value
 	 */
-	FloorElementType(Integer code, String value) {
+	WallElementType(Integer code, String value) {
 		this.code = code;
 		this.value = value;
 	}
 
-	public static FloorElementType get(String name) {
+	public static WallElementType get(String name) {
 		try {
 			return valueOf(name.toUpperCase());
 		}
 		catch(Exception e) {
-			return FloorElementType.UNKNOWN;
+			return WallElementType.UNKNOWN;
 		}
 	}
 	
@@ -84,16 +80,16 @@ public enum FloorElementType implements IRoomElementType {
 	 * @param code
 	 * @return
 	 */
-	public static FloorElementType getByCode(Integer code) {
-		return (FloorElementType) codes.get(code);
+	public static WallElementType getByCode(Integer code) {
+		return (WallElementType) codes.get(code);
 	}
 	/**
 	 * 
 	 * @param value
 	 * @return
 	 */
-	public static FloorElementType getByValue(String value) {
-		return (FloorElementType) values.get(value);
+	public static WallElementType getByValue(String value) {
+		return (WallElementType) values.get(value);
 	}
 
 	@Override
@@ -110,7 +106,7 @@ public enum FloorElementType implements IRoomElementType {
 	 * @return
 	 */
 	public static List<String> getNames() {
-		List<String> names = EnumSet.allOf(FloorElementType.class).stream().map(x -> x.name()).collect(Collectors.toList());
+		List<String> names = EnumSet.allOf(WallElementType.class).stream().map(x -> x.name()).collect(Collectors.toList());
 		return names;
 	}
 }

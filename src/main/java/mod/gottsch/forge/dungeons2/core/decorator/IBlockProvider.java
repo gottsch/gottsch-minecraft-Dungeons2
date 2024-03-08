@@ -2,7 +2,7 @@ package mod.gottsch.forge.dungeons2.core.decorator;
 
 import mod.gottsch.forge.dungeons2.api.DungeonsApi;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 

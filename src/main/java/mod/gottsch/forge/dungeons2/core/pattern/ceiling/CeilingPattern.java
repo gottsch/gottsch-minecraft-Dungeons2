@@ -1,6 +1,6 @@
 package mod.gottsch.forge.dungeons2.core.pattern.ceiling;
 
-import mod.gottsch.forge.dungeons2.core.enums.IPatternEnum;
+import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 
 /**
  * @author Mark Gottschling on March 4, 2024
