@@ -18,7 +18,6 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.collection.Array2D;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.FloorElementType;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -101,7 +100,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         IDungeonFloorGenerator floorGenerator = selectFloorGenerator(level, motif);
         IDungeonCeilingGenerator ceilingGenerator = selectCeilingGenerator(level, motif);
 
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
+//        BlockProvider blockProvider = BlockProvider.get(motif);
 
         // TODO how to pass ALL the grids back up to the generators and decorators
         // generate the walls

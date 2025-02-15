@@ -18,7 +18,8 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
 import mod.gottsch.forge.dungeons2.core.collection.Array2D;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
@@ -30,6 +31,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.FLOOR_PATTERN;
+
 /**
  * @author Mark Gottschling on March 1, 2024
  *
@@ -39,7 +42,7 @@ public class BasicFloorGenerator implements IDungeonFloorGenerator {
 
     @Override
     public Array2D<Integer> addToWorld(ServerLevel level, RandomSource random, IRoom room, ICoords normalSpawnCoords, IDungeonMotif motif) {
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
+        BlockSet blockSet = BlockProvider.get(motif, FLOOR_PATTERN, random);
 
         // TODO determine if using a sunken floor
         // get the size of the footprint
@@ -51,14 +54,14 @@ public class BasicFloorGenerator implements IDungeonFloorGenerator {
         int[] xx = {1, room.getWidth() -2};
         for (int x : xx) {
             for (int z = 1; z < room.getDepth() - 1; z++) {
-                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
+                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockSet.get(FloorPattern.FLOOR).orElse(DEFAULT));
                 floorGrid.put(x, z, 1);
             }
         }
         int [] zz = {1, room.getDepth() -2};
         for (int z : zz) {
             for (int x = 2; x < room.getWidth() -2; x++) {
-                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
+                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockSet.get(FloorPattern.FLOOR).orElse(DEFAULT));
                 floorGrid.put(x, z, 1);
             }
         }
@@ -67,9 +70,9 @@ public class BasicFloorGenerator implements IDungeonFloorGenerator {
         for (int x = 2; x < room.getWidth()-2; x++) {
             for (int z = 2; z < room.getDepth()-2; z++) {
                 if (RandomHelper.checkProbability(random, 45)) {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
+                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockSet.get(FloorPattern.FLOOR).orElse(DEFAULT));
                 } else {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT));
+                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockSet.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT));
                 }
                 floorGrid.put(x, z, 1);
             }

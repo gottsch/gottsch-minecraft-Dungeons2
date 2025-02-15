@@ -1,0 +1,173 @@
+[[blockProviderConfigs]]
+#=============================
+#=============================
+[[blockProviderConfigs.motifs]]
+	id="classic"
+	biomeWhitelist=["*"]
+	biomeBlacklist=[]
+
+	[[blockProviderConfigs.motifs.patterns]]
+		id="wall_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="wall"
+			block="minecraft:stone_bricks"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="corner"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="top_corner"
+			block="minecraft:polished_andesite"
+
+	#==============================
+	[[blockProviderConfigs.motifs.patterns]]
+		id="floor_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="floor"
+			block="minecraft:stone_bricks"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_floor"
+			block="minecraft:cobblestone"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="corner"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_corner"
+			block="minecraft:chiseled_stone_bricks"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="center"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_center"
+			block="minecraft:chiseled_stone_bricks"
+#=============================
+	[[blockProviderConfigs.motifs.patterns]]
+		id="corridor_floor_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="floor"
+			block="minecraft:cobblestone"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_floor"
+			block="minecraft:gravel"
+#=============================
+
+	[[blockProviderConfigs.motifs.patterns]]
+		id="floor_border_pattern"
+		blockset="default"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="border"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="center"
+			block="minecraft:chiseled_stone_bricks"
+	# NOTE solution1: same pattern id, but different blockset
+	# NOTE solution2: see dungeons2-blockproviders-1.20.1-v1.toml
+	# solution 2 is better unless we add more configuration elements to
+	# each motif. then you would have to create another object for motifs
+	# that is referenced, almost like a RDBMS.
+	[[blockProviderConfigs.motifs.patterns]]
+		id="floor_border_pattern"
+		blockset="greek"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="border"
+			block="dungeonblocks:stone_greek_block"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="center"
+			block="minecraft:chiseled_stone_bricks"
+
+	# solution 3:
+	[[blockProviderConfigs.motifs.patterns]]
+		id="floor_border_pattern"
+		[[blockProviderConfigs.motifs.patterns.blocksets]]
+			id="greek"
+			[[blockProviderConfigs.motifs.patterns.blocksets.elements]]
+				id="border"
+				block="dungeonblocks:stone_greek_block"
+			[[blockProviderConfigs.motifs.patterns.blocksets.elements]]
+				id="center"
+				block="minecraft:chiseled_stone_bricks"
+		[[blockProviderConfigs.motifs.patterns.blocksets]]
+			id="default"
+			[[blockProviderConfigs.motifs.patterns.blocksets.elements]]
+				id="border"
+				block="minecraft:polished_andesite"
+			[[blockProviderConfigs.motifs.patterns.blocksets.elements]]
+				id="center"
+				block="minecraft:chiseled_stone_bricks"
+
+#=============================
+	[[blockProviderConfigs.motifs.patterns]]
+		id="floor_drainage_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="corner"
+			block="dungeonblocks:dark_iron_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_corner"
+			block="dungeonblocks:weathered_copper_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="center"
+			block="dungeonblocks:dark_iron_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_center"
+			block="dungeonblocks:weathered_copper_grate"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="gutter"
+			block="dungeonblocks:weathered_copper_sewer_block"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="alternate_gutter"
+			block="dungeonblocks:terracotta_copper_sewer_block"
+
+	[[blockProviderConfigs.motifs.patterns]]
+		id="ceiling_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="ceiling"
+			block="minecraft:stone_bricks"
+
+	[[blockProviderConfigs.motifs.patterns]]
+		id="corridor_ceiling_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="ceiling"
+			block="minecraft:stone_bricks"
+
+	[[blockProviderConfigs.motifs.patterns]]
+		id="door_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="door"
+			block="dungeonblocks:spruce_dungeon_door"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="lintel"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="floor"
+			block="minecraft:polished_andesite"
+
+[[blockProviderConfigs.motifs]]
+	id="catacombs"
+	[[blockProviderConfigs.motifs.patterns]]
+		id="wall_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="wall"
+			block="minecraft:bricks"
+
+[[blockProviderConfigs.motifs]]
+	id="deep_slate"
+	[[blockProviderConfigs.motifs.patterns]]
+		id="wall_pattern"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="wall"
+			block="minecraft:deepslate_bricks"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="corner"
+			block="minecraft:polished_andesite"
+		[[blockProviderConfigs.motifs.patterns.elements]]
+			id="top_corner"
+			block="minecraft:polished_blackstone"
+
+[[blockProviderConfigs.decays]]
+	from="minecraft:stone_bricks"
+	to=["minecraft:mossy_stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:cobblestone"]
+[[blockProviderConfigs.decays]]
+	from="minecraft:cobblestone"
+	to=["minecraft:mossy_cobblestone","minecraft:gravel"]
+[[blockProviderConfigs.decays]]
+	from="minecraft:polished_andesite"
+	to=["minecraft:andesite"]

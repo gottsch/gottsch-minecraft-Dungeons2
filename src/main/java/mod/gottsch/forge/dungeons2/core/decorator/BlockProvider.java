@@ -1,75 +1,79 @@
 package mod.gottsch.forge.dungeons2.core.decorator;
 
-import com.google.common.collect.Maps;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
-import net.minecraft.world.level.block.Block;
+import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Property;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * @author Mark Gottschling on Mar 1, 2024
  *
  */
-// TODO should be one block provider or a separate provider for each room element?
-public class BlockProvider implements IBlockProvider {
-    private final Map<IPatternEnum, Block> registry = Maps.newHashMap();
+public class BlockProvider {
 
-    public void set(IPatternEnum pattern, Block block) {
-        registry.put(pattern, block);
-    }
+    private final Multimap<String, BlockSet> registry = ArrayListMultimap.create();
 
-    @Override
-    public Optional<BlockState> get(IPatternEnum pattern) {
-        Block block = registry.get(pattern);
-        if (block == null) {
-            return Optional.empty();
-        }
-        return Optional.of(block.defaultBlockState());
-    }
-
-    @Override
-    public Optional<BlockState> get(IPatternEnum pattern, BlockState state) {
-        // TODO get the blockstate by pattern from the internal registry
-        Block block = registry.get(pattern);
-        if (block == null) {
-            return Optional.empty();
-        }
-        BlockState newState = block.defaultBlockState();
-//        // ie this is for things like stairs which will have a certain facing property set etc.
-//        BlockState newState = Blocks.POLISHED_ANDESITE.defaultBlockState();
-        for (Property<?> property : state.getProperties()) {
-            newState = copyProperty(state, newState, property);
-        }
-//        return newState;
-        return Optional.of(block.defaultBlockState());
+    /**
+     * Convenience method to get a concrete BlockProvider instead of an Optional.
+     * @param motif
+     * @return
+     */
+    public static BlockProvider get(IDungeonMotif motif) {
+        Optional<BlockProvider> blockProviderOptional = BlockProivderRegistry.get(motif);
+        return blockProviderOptional.orElseGet(BlockProvider::new);
     }
 
     /**
-     *
+     * Convenience method to get a concrete BlockSet instead of an Optional.
+     * @param random
+     * @param motif
      * @param pattern
      * @return
      */
-    public BlockState get(FloorPattern pattern) {
-        Block block = registry.get(pattern);
-        if (block != null) {
-            return block.defaultBlockState();
-        }
-        return null;
-//        BlockState newState = switch (pattern) {
-//            case CORNER -> ModBlocks.DARK_IRON_GRATE.get().defaultBlockState();
-//            case BORDER -> Blocks.POLISHED_ANDESITE.defaultBlockState();
-//            // default = FLOOR
-//            default -> Blocks.STONE_BRICKS.defaultBlockState();
-
-//        };
-//        return newState;
+    public static BlockSet get(IDungeonMotif motif, String pattern, RandomSource random) {
+        return BlockProvider.get(motif).get(random, pattern).orElseGet(BlockSet::new);
     }
 
-    private static <T extends Comparable<T>> BlockState copyProperty(BlockState from, BlockState to, Property<T> property) {
-        return to.setValue(property, from.getValue(property));
+    public void register(String patternId, BlockSet blockSet) {
+        registry.put(patternId.toLowerCase(), blockSet);
+    }
+
+    public List<BlockSet> getAll(String patternId) {
+        return (List<BlockSet>) registry.get(patternId.toLowerCase());
+    }
+
+    public Optional<BlockSet> get(String patternId, String blockSetId) {
+        if (registry.containsKey(patternId.toLowerCase())) {
+            List<BlockSet> blockSets = getAll(patternId);
+            for (BlockSet blockSet : blockSets) {
+                if (blockSet.getId().equalsIgnoreCase(blockSetId)) {
+                    return Optional.of(blockSet);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<BlockSet> get(RandomSource random, String patternId) {
+        if (registry.containsKey(patternId.toLowerCase())) {
+            List<BlockSet> blockSets = getAll(patternId);
+            return Optional.of(blockSets.get(random.nextInt(blockSets.size())));
+        }
+        return Optional.empty();
+    }
+
+    public Optional<BlockState> get(RandomSource random, String patternId, IPatternEnum pattern) {
+        if (registry.containsKey(patternId.toLowerCase())) {
+            List<BlockSet> blockSets = getAll(patternId);
+            BlockSet blockSet = blockSets.get(random.nextInt(blockSets.size()));
+            return blockSet.get(pattern);
+        }
+        return Optional.empty();
     }
 }

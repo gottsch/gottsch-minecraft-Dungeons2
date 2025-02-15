@@ -17,8 +17,6 @@
  */
 package mod.gottsch.forge.dungeons2.core.util;
 
-import java.util.Random;
-
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
@@ -92,4 +90,12 @@ public class ModUtil {
 			return mob;
 		}
 	}
+
+//	public BlockState copy(BlockState state1, BlockState state2) {
+//        for (Property<?> property : state2.getProperties()) {
+//			if (state1.hasProperty(property)) {
+//				state1 = state1.setValue(property, state2.getValue(property));
+//			}
+//        }
+//	}
 }

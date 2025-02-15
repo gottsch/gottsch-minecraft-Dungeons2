@@ -70,8 +70,8 @@ public class DungeonGenerator {
                 .with($ -> {
                     $.width = 45;
                     $.height = 45;
-                    $.numberOfRooms = 35;
-                    $.attemptsMax = 2000;
+                    $.numberOfRooms = 15;
+                    $.attemptsMax = 1000;
                     $.runFactor = 0.8;
                     $.curveFactor = 0.8;
                     $.minCorridorSize = 25;
@@ -130,19 +130,19 @@ public class DungeonGenerator {
         // TODO randomly pick from registered generators by theme/config
         ICorridorGenerator corridorGenerator = new BasicCorridorGenerator();
 
-        corridorGenerator.addToWorld(level, grid, spawnCoords.add(0, 2, 0), DungeonMotif.STONEBRICK);
+        corridorGenerator.addToWorld(level, random, grid, spawnCoords.add(0, 2, 0), DungeonMotif.CLASSIC);
 
         /*
          * a room generator
          */
         IRoomGenerator roomGenerator = new BasicRoomGenerator();
-        roomGenerator.addToWorld(level, random, dungeonLevel, spawnCoords, DungeonMotif.STONEBRICK);
+        roomGenerator.addToWorld(level, random, dungeonLevel, spawnCoords, DungeonMotif.CLASSIC);
 
         /*
          * a door generator
          */
         IDoorGenerator doorGenerator = new BasicDoorGenerator();
-        doorGenerator.addToWorld(level, random, dungeonLevel, spawnCoords, DungeonMotif.STONEBRICK);
+        doorGenerator.addToWorld(level, random, dungeonLevel, spawnCoords, DungeonMotif.CLASSIC);
     }
 
     private void addCorridorToWorld (ServerLevel level, DungeonLevel dungeonLevel, Coords2D coords2D){

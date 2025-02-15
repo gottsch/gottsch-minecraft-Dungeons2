@@ -17,7 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.door;
 
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.DungeonLevel;
@@ -35,6 +36,8 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import java.util.Arrays;
 import java.util.List;
 
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.DOOR_PATTERN;
+
 /**
  * @author Mark Gottschling on Dev 7, 2023
  *
@@ -42,7 +45,7 @@ import java.util.List;
 public class BasicDoorGenerator implements IDoorGenerator {
     private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
     private IDungeonMotif cachedMotif;
-    private IBlockProvider cachedBlockProvider;
+    private BlockProvider cachedBlockProvider;
 
     @Override
     public void addToWorld(ServerLevel level, RandomSource random, DungeonLevel dungeonLevel, ICoords spawnCoords, IDungeonMotif motif) {
@@ -51,16 +54,20 @@ public class BasicDoorGenerator implements IDoorGenerator {
         // all corridors and doors will generated at y+2
         ICoords normalSpawnCoords = spawnCoords.add(0, 2, 0);
 
-        IBlockProvider blockProvider = getBlockProvider(motif);
+        BlockProvider blockProvider = getBlockProvider(motif);
 
+        // TODO need to cache this too!
+        BlockSet blockSet = blockProvider.get(random, DOOR_PATTERN).orElse(new BlockSet());
+
+        
         // scan all the tiles in the grid, looking for corridors
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int z = 0; z < grid.getHeight(); z++) {
                 if (grid.get(x, z).getType() == CellType.DOOR) {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 0, z).toPos(), blockProvider.get(DoorPattern.FLOOR).orElse(DEFAULT));
+                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 0, z).toPos(), blockSet.get(DoorPattern.FLOOR).orElse(DEFAULT));
                     level.setBlockAndUpdate(normalSpawnCoords.add(x, 1, z).toPos(), Blocks.AIR.defaultBlockState());
                     level.setBlockAndUpdate(normalSpawnCoords.add(x, 2, z).toPos(), Blocks.AIR.defaultBlockState());
-                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 3, z).toPos(), blockProvider.get(DoorPattern.LINTEL).orElse(DEFAULT));
+                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 3, z).toPos(), blockSet.get(DoorPattern.LINTEL).orElse(DEFAULT));
 
                     // test neighbors if corridor to determine the direction axis
                     List<CellType> validCellTypes = Arrays.asList(CellType.CORRIDOR, CellType.ROOM);
@@ -80,24 +87,24 @@ public class BasicDoorGenerator implements IDoorGenerator {
 
                     if (direction != Direction.DOWN) {
                         // add a dungeon door
-                        level.setBlockAndUpdate(normalSpawnCoords.add(x, 1, z).toPos(), blockProvider.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState()).setValue(DoorBlock.FACING, direction).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
-                        level.setBlockAndUpdate(normalSpawnCoords.add(x, 2, z).toPos(), blockProvider.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState()).setValue(DoorBlock.FACING, direction).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                        level.setBlockAndUpdate(normalSpawnCoords.add(x, 1, z).toPos(), blockSet.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState()).setValue(DoorBlock.FACING, direction).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                        level.setBlockAndUpdate(normalSpawnCoords.add(x, 2, z).toPos(), blockSet.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState()).setValue(DoorBlock.FACING, direction).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
                     }
                 }
             }
         }
     }
 
-    public IBlockProvider getBlockProvider(IDungeonMotif motif) {
-        IBlockProvider blockProvider;
+    public BlockProvider getBlockProvider(IDungeonMotif motif) {
+        BlockProvider blockSet;
         if (cachedMotif != null && cachedMotif == motif) {
-            blockProvider = cachedBlockProvider;
+            blockSet = cachedBlockProvider;
         }
         else {
             cachedMotif = motif;
-            blockProvider = IBlockProvider.get(motif);
-            cachedBlockProvider = blockProvider;
+            blockSet = BlockProvider.get(motif);
+            cachedBlockProvider = blockSet;
         }
-        return blockProvider;
+        return blockSet;
     }
 }

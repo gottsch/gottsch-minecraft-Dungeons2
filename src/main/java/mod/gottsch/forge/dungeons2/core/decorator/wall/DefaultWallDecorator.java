@@ -1,6 +1,7 @@
 package mod.gottsch.forge.dungeons2.core.decorator.wall;
 
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
@@ -13,6 +14,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
+
 /**
  * @author Mark Gottschling on Mar 6, 2024
  */
@@ -21,7 +24,7 @@ public class DefaultWallDecorator implements IRoomElementDecorator {
     private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
     @Override
     public Grid2D decorate(ServerLevel level, RandomSource random, Grid2D layout, IRoom room, ICoords coords, IDungeonMotif motif) {
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
+        BlockSet blockSet = BlockProvider.get(motif, WALL_PATTERN, random);
 
         Coords2D size = new Coords2D(room.getWidth(), room.getDepth());
 
@@ -33,7 +36,7 @@ public class DefaultWallDecorator implements IRoomElementDecorator {
         for (int x : xx) {
             for (int z : zz) {
                 for (int y : yy) {
-                    addCorners(level, coords, room, x, y, z, blockProvider);
+                    addCorners(level, coords, room, x, y, z, blockSet);
                 }
             }
         }
@@ -50,14 +53,14 @@ public class DefaultWallDecorator implements IRoomElementDecorator {
         for (int x : xx) {
             for (int z : zz) {
                 for (int y : yy) {
-                    addCorners(level, coords, room, x, y, z, blockProvider);
+                    addCorners(level, coords, room, x, y, z, blockSet);
                 }
             }
         }
         return layout;
     }
 
-    private void addCorners(ServerLevel level, ICoords coords, IRoom room, int x, int y, int z, IBlockProvider blockProvider) {
-        level.setBlockAndUpdate(coords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(WallPattern.CORNER).orElse(DEFAULT));
+    private void addCorners(ServerLevel level, ICoords coords, IRoom room, int x, int y, int z, BlockSet blockSet) {
+        level.setBlockAndUpdate(coords.add(room.getCoords()).add(x, y, z).toPos(), blockSet.get(WallPattern.CORNER).orElse(DEFAULT));
     }
 }

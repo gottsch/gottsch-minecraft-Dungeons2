@@ -1,7 +1,6 @@
 package mod.gottsch.forge.dungeons2.core.decorator.floor;
 
 import mod.gottsch.forge.dungeons2.api.DungeonsApi;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.FloorElementType;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -31,7 +30,7 @@ public class DefaultFloorDecorator implements IRoomElementDecorator {
 
         FloorProperties properties = new FloorProperties();
 
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
+//        BlockProvider blockProvider = BlockProvider.get(motif);
 
         // TODO determine if using a sunken floor
         // get the size of the footprint
@@ -70,23 +69,12 @@ public class DefaultFloorDecorator implements IRoomElementDecorator {
 
         // corners last
 //        if (properties.cornerGrates) {
-            Optional<IRoomElementDecorator> drainageDecorator = getDecorator(random, FloorElementType.FLOOR_DRAINAGE);
-            if (drainageDecorator.isPresent()) {
-                drainageDecorator.get().decorate(level, random, layout, room, coords, motif);
-                // NOTE don't put it into lambda notation as we need the return value
-            }
-
-//            IRoomElementDecorator cornerDecorator = getDecorator(random, FloorElementType.FLOOR_CORNER);
-//            cornerDecorator.decorate(level, random, layout, room, coords, motif);
-
-            // TODO could hardcode the grates here OR use another patter - FloorDrainagePattern
-
-//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, 1).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, 1).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-//            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, room.getDepth() - 2).toPos(), blockProvider.get(FloorPattern.CORNER).orElse(DEFAULT));
-//        }
-
+        Optional<IRoomElementDecorator> drainageDecorator = getDecorator(random, FloorElementType.FLOOR_DRAINAGE);
+        if (drainageDecorator.isPresent()) {
+            drainageDecorator.get().decorate(level, random, layout, room, coords, motif);
+            // NOTE don't put it into lambda notation as we need the return value
+        }
+//          }
         return layout;
     }
 

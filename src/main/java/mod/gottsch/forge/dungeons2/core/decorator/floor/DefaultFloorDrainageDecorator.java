@@ -1,7 +1,8 @@
 package mod.gottsch.forge.dungeons2.core.decorator.floor;
 
 import mod.gottsch.forge.dungeons2.api.DungeonsApi;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IRoomElementType;
@@ -19,6 +20,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 import java.util.Optional;
 
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.FLOOR_DRAINAGE_PATTERN;
+
 /**
  * @author Mark Gottschling on March 6, 2024
  *
@@ -28,7 +31,7 @@ public class DefaultFloorDrainageDecorator implements IRoomElementDecorator {
 
     public Grid2D decorate(ServerLevel level, RandomSource random, Grid2D layout, IRoom room, ICoords coords, IDungeonMotif motif) {
 
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
+        BlockSet blockSet = BlockProvider.get(motif, FLOOR_DRAINAGE_PATTERN, random);
 
         // get the size of the footprint
         Coords2D size = new Coords2D(room.getWidth(), room.getDepth());
@@ -41,18 +44,18 @@ public class DefaultFloorDrainageDecorator implements IRoomElementDecorator {
 
         // add corners
         if (random.nextDouble() < 0.25) {
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, 1).toPos(), blockProvider.get(pattern).orElse(DEFAULT));
+            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, 1).toPos(), blockSet.get(pattern).orElse(DEFAULT));
 //            layout.put(1, 1, 1);
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, 1).toPos(), blockProvider.get(pattern).orElse(DEFAULT));
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, room.getDepth() - 2).toPos(), blockProvider.get(pattern).orElse(DEFAULT));
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, room.getDepth() - 2).toPos(), blockProvider.get(pattern).orElse(DEFAULT));
+            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, 1).toPos(), blockSet.get(pattern).orElse(DEFAULT));
+            level.setBlockAndUpdate(coords.add(room.getCoords()).add(1, y, room.getDepth() - 2).toPos(), blockSet.get(pattern).orElse(DEFAULT));
+            level.setBlockAndUpdate(coords.add(room.getCoords()).add(room.getWidth() - 2, y, room.getDepth() - 2).toPos(), blockSet.get(pattern).orElse(DEFAULT));
         }
 
         // add center
         if (random.nextDouble() < 0.25) {
             // center
             Coords2D center = new Coords2D((room.getWidth()-1)/2, (room.getDepth()-1)/2);
-            level.setBlockAndUpdate(coords.add(room.getCoords()).add(center.getX(), y, center.getY()).toPos(), blockProvider.get(pattern == FloorDrainagePattern.CORNER ? FloorDrainagePattern.CENTER : FloorDrainagePattern.ALTERNATE_CENTER).orElse(DEFAULT));
+            level.setBlockAndUpdate(coords.add(room.getCoords()).add(center.getX(), y, center.getY()).toPos(), blockSet.get(pattern == FloorDrainagePattern.CORNER ? FloorDrainagePattern.CENTER : FloorDrainagePattern.ALTERNATE_CENTER).orElse(DEFAULT));
 
         }
 

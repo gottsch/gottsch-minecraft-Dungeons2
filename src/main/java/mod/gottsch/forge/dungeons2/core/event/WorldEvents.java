@@ -59,7 +59,7 @@ public class WorldEvents {
 
 					// initialize/register all block providers
 					// TODO pulled from the BlockProvidersConfiguration config property
-					BlockProivderRegistry.register(Config.blockProviderConfiguration.getMotifs());
+					BlockProivderRegistry.load(Config.blockProviderConfiguration.getBlockSets());
 				}
 			}
 

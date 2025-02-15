@@ -17,19 +17,23 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.*;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
 
 /**
  * @author Mark Gottschling on Dec 5, 2023
@@ -43,10 +47,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     private static final List<CellType> WALL_ELEMENTS = Arrays.asList(CellType.ROCK, CellType.WALL, CellType.DOOR, CellType.CONNECTOR);
 
     private IDungeonMotif cachedMotif;
-    private IBlockProvider cachedBlockProvider;
+    private BlockProvider cachedBlockProvider;
 
     @Override
-    public void addToWorld(ServerLevel level, Grid2D grid, ICoords spawnCoords, IDungeonMotif motif) {
+    public void addToWorld(ServerLevel level, RandomSource random, Grid2D grid, ICoords spawnCoords, IDungeonMotif motif) {
         // some working variables
         List<PrimsTile2D> activeList = new ArrayList<>();
 
@@ -77,18 +81,18 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                     /*
                      * examine all 8 surrounding tiles
                      */
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX(), active.getY()-1), motif);
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX(), active.getY()+1), motif);
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()), motif);
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX(), active.getY()-1), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX(), active.getY()+1), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()), motif);
 
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()-1), motif);
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()-1), motif);
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()+1), motif);
-                    visitGrid(level, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()+1), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()-1), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()-1), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()+1), motif);
+                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()+1), motif);
 
                     // build the current corridor to the world
-                    addCorridorToWorld(level, spawnCoords.add(active.getX(), 0, active.getY()), motif);
+                    addCorridorToWorld(level, random, spawnCoords.add(active.getX(), 0, active.getY()), motif);
                     visitedGrid.put(active.getCoords(), true);
 
                     // remove active from list
@@ -106,11 +110,11 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * @param visitCoords the current coords to visit on the grids
      * @return
      */
-    private void visitGrid(ServerLevel level, ICoords spawnCoords, List<PrimsTile2D> activeList, Grid2D grid, BooleanGrid visitedGrid, Coords2D visitCoords, IDungeonMotif motif) {
+    private void visitGrid(ServerLevel level, RandomSource random, ICoords spawnCoords, List<PrimsTile2D> activeList, Grid2D grid, BooleanGrid visitedGrid, Coords2D visitCoords, IDungeonMotif motif) {
         if (!visitedGrid.get(visitCoords)) {
             if (WALL_ELEMENTS.contains(grid.get(visitCoords).getType())) {
                 // generate wall into the world
-                addWallToWorld(level, spawnCoords.add(visitCoords.getX(), 0, visitCoords.getY()), motif);
+                addWallToWorld(level, random, spawnCoords.add(visitCoords.getX(), 0, visitCoords.getY()), motif);
                 visitedGrid.put(visitCoords, true);
             } else if (isCorridor(grid, visitCoords)) {
                 activeList.add(new PrimsTile2D(visitCoords, Direction2D.NONE));
@@ -121,37 +125,43 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
 
     // TODO use block provider
     @Override
-    public void addWallToWorld(ServerLevel level, ICoords coords, IDungeonMotif motif) {
-        IBlockProvider blockProvider;
+    public void addWallToWorld(ServerLevel level, RandomSource random, ICoords coords, IDungeonMotif motif) {
+        BlockProvider blockProvider;
         if (cachedMotif != null && cachedMotif == motif) {
             blockProvider = cachedBlockProvider;
         }
         else {
             cachedMotif = motif;
-            blockProvider = IBlockProvider.get(motif);
+            blockProvider = BlockProvider.get(motif);
             cachedBlockProvider = blockProvider;
         }
 
+        // TODO need to cache this too!
+        BlockSet blockSet = blockProvider.get(random, WALL_PATTERN).orElse(new BlockSet());
+
         // build bottom-up
         for (int i = 0; i < 5; i++) {
-            level.setBlock(coords.add(0, i, 0).toPos(), blockProvider.get(WallPattern.WALL).orElse(DEFAULT), 3);
+            level.setBlock(coords.add(0, i, 0).toPos(), blockSet.get(WallPattern.WALL).orElse(DEFAULT), 3);
         }
     }
 
     @Override
-    public void addCorridorToWorld(ServerLevel level, ICoords coords, IDungeonMotif motif) {
-        IBlockProvider blockProvider;
+    public void addCorridorToWorld(ServerLevel level, RandomSource random, ICoords coords, IDungeonMotif motif) {
+        BlockProvider blockProvider;
         if (cachedMotif != null && cachedMotif == motif) {
             blockProvider = cachedBlockProvider;
         }
         else {
             cachedMotif = motif;
-            blockProvider = IBlockProvider.get(motif);
+            blockProvider = BlockProvider.get(motif);
             cachedBlockProvider = blockProvider;
         }
 
+        // TODO need to cache this too!
+        BlockSet blockSet = blockProvider.get(random, WALL_PATTERN).orElse(new BlockSet());
+
         // floor
-        level.setBlockAndUpdate(coords.toPos(), blockProvider.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT));
+        level.setBlockAndUpdate(coords.toPos(), blockSet.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT));
         // passage/air
         for (int i = 1; i < 4; i++) {
             level.setBlockAndUpdate(coords.add(0, i, 0).toPos(), Blocks.AIR.defaultBlockState());

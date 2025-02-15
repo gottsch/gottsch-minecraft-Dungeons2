@@ -1,6 +1,6 @@
 package mod.gottsch.forge.dungeons2.api;
 
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -86,7 +86,7 @@ public class DungeonsApi {
         return Optional.of(list.get(RandomHelper.randomInt(random, 0, list.size() - 1)));
     }
 
-    public static Optional<IBlockProvider> getBlockProvider(IDungeonMotif motif) {
+    public static Optional<BlockProvider> getBlockProvider(IDungeonMotif motif) {
         return BlockProivderRegistry.get(motif);
     }
 }

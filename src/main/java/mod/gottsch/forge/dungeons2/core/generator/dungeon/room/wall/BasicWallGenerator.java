@@ -1,7 +1,8 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall;
 
 import mod.gottsch.forge.dungeons2.core.collection.Array2D;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
+import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
@@ -11,6 +12,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
 
 /**
  * @author Mark Gottschling on Mar 6, 2024
@@ -26,14 +29,15 @@ public class BasicWallGenerator implements IDungeonWallGenerator  {
         Array2D<Integer> grid = new Array2D<>(Integer.class, size.getX(), size.getY());
 
         // NOTE did it this way to build without using conditional statements
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
+        BlockSet blockSet = BlockProvider.get(motif, WALL_PATTERN, random);
+
         // TODO move the corners to the decorators
         int[] xx = {0, room.getWidth()-1};
         for (int x: xx) {
             for (int z = 0; z < room.getDepth(); z++) {
                 for (int y = 1; y < room.getHeight() - 1; y++) {
                     level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-                            blockProvider.get(WallPattern.WALL).orElse(DEFAULT));
+                            blockSet.get(WallPattern.WALL).orElse(DEFAULT));
                     grid.put(x, z, 1);
                 }
             }
@@ -44,7 +48,7 @@ public class BasicWallGenerator implements IDungeonWallGenerator  {
             for (int x = 0; x < room.getWidth(); x++) {
                 for (int y = 1; y < room.getHeight() - 1; y++) {
                     level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-                            blockProvider.get(WallPattern.WALL).orElse(DEFAULT));
+                            blockSet.get(WallPattern.WALL).orElse(DEFAULT));
                     grid.put(x, z, 1);
                 }
             }

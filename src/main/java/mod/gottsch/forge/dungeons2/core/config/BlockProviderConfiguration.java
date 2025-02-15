@@ -11,47 +11,36 @@ public class BlockProviderConfiguration {
     List<Motif> motifs;
     // TODO add decay mappings
 
-    /*
-     *
-     */
-    public static class Motif {
-        private String name;
-        private List<Pattern> patterns;
+    List<BlockSet> blockSets;
 
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public List<Pattern> getPatterns() {
-            return patterns;
-        }
-
-        public void setPatterns(List<Pattern> patterns) {
-            this.patterns = patterns;
-        }
-
-        @Override
-        public String toString() {
-            return "Motif{" +
-                    "name='" + name + '\'' +
-                    '}';
-        }
-    }
-
-    public static class Pattern {
-        private String name;
+    public static class BlockSet {
+        private String id;
+        private String motif;
+        private String pattern;
         private List<PatternElement> elements;
 
-        public String getName() {
-            return name;
+        public String getId() {
+            return id;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getMotif() {
+            return motif;
+        }
+
+        public void setMotif(String motif) {
+            this.motif = motif;
+        }
+
+        public String getPattern() {
+            return pattern;
+        }
+
+        public void setPattern(String pattern) {
+            this.pattern = pattern;
         }
 
         public List<PatternElement> getElements() {
@@ -66,16 +55,38 @@ public class BlockProviderConfiguration {
     /*
      *
      */
-    public static class PatternElement {
-        private String name;
-        private String block;
+    public static class Motif {
+        private String id;
 
-        public String getName() {
-            return name;
+        public String getId() {
+            return id;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public String toString() {
+            return "Motif{" +
+                    "id='" + id + '\'' +
+                    '}';
+        }
+    }
+
+    /*
+     *
+     */
+    public static class PatternElement {
+        private String id;
+        private String block;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
         }
 
         public String getBlock() {
@@ -93,6 +104,14 @@ public class BlockProviderConfiguration {
 
     public void setMotifs(List<Motif> motifs) {
         this.motifs = motifs;
+    }
+
+    public List<BlockSet> getBlockSets() {
+        return blockSets;
+    }
+
+    public void setBlockSets(List<BlockSet> blockSets) {
+        this.blockSets = blockSets;
     }
 
     @Override

@@ -1182,50 +1182,52 @@ public class MazeLevelGenerator2D {
             level.getGrid().get(passage.getCoords()).setType(CellType.CORRIDOR);
 
             // update sides of passage perpendicular to direction needs to turn into wall
-//            switch(passage.getDirection()) {
-//                case NORTH, SOUTH -> {
-//                    level.getGrid().get(passage.getX()-1, passage.getY()).setType(CellType.WALL);
-//                    level.getGrid().get(passage.getX()+1, passage.getY()).setType(CellType.WALL);
-//                }
-//                case EAST, WEST -> {
-//                    level.getGrid().get(passage.getX(), passage.getY()-1).setType(CellType.WALL);
-//                    level.getGrid().get(passage.getX(), passage.getY()+1).setType(CellType.WALL);
-//                }
-//            }
-            Cell passageCell = level.getGrid().get(passage.getCoords());
             switch(passage.getDirection()) {
                 case NORTH, SOUTH -> {
-                    // check the far side of walls for same region
-                    if (passage.getX()-2 > 0 && level.getGrid().get(passage.getX() - 2, passage.getY()).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX() - 2, passage.getY()).getRegionId() == passageCell.getRegionId()) {
-                        level.getGrid().get(passage.getX() - 1, passage.getY()).setRegionId(passageCell.getRegionId());
-                        level.getGrid().get(passage.getX() - 1, passage.getY()).setType(CellType.CORRIDOR);
-                    } else {
-                        level.getGrid().get(passage.getX() - 1, passage.getY()).setType(CellType.WALL);
-                    }
-
-                    if (passage.getX()+2 < getWidth() && level.getGrid().get(passage.getX() + 2, passage.getY()).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX() + 2, passage.getY()).getRegionId() == passageCell.getRegionId()) {
-                        level.getGrid().get(passage.getX() + 1, passage.getY()).setRegionId(passageCell.getRegionId());
-                        level.getGrid().get(passage.getX() + 1, passage.getY()).setType(CellType.CORRIDOR);
-                    } else {
-                        level.getGrid().get(passage.getX() + 1, passage.getY()).setType(CellType.WALL);
-                    }
+                    level.getGrid().get(passage.getX()-1, passage.getY()).setType(CellType.WALL);
+                    level.getGrid().get(passage.getX()+1, passage.getY()).setType(CellType.WALL);
                 }
                 case EAST, WEST -> {
-                    if(passage.getY()-2 > 0 && level.getGrid().get(passage.getX(), passage.getY()-2).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX(), passage.getY()-2).getRegionId() == passageCell.getRegionId()) {
-                        level.getGrid().get(passage.getX(), passage.getY() - 1).setRegionId(passageCell.getRegionId());
-                        level.getGrid().get(passage.getX(), passage.getY() - 1).setType(CellType.CORRIDOR);
-                    } else {
-                        level.getGrid().get(passage.getX(), passage.getY() - 1).setType(CellType.WALL);
-                    }
-
-                    if (passage.getY()+2 < getHeight() && level.getGrid().get(passage.getX(), passage.getY()+2).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX(), passage.getY()+2).getRegionId() == passageCell.getRegionId()) {
-                        level.getGrid().get(passage.getX(), passage.getY() + 1).setRegionId(passageCell.getRegionId());
-                        level.getGrid().get(passage.getX(), passage.getY() + 1).setType(CellType.CORRIDOR);
-                    } else {
-                        level.getGrid().get(passage.getX(), passage.getY() + 1).setType(CellType.WALL);
-                    }
+                    level.getGrid().get(passage.getX(), passage.getY()-1).setType(CellType.WALL);
+                    level.getGrid().get(passage.getX(), passage.getY()+1).setType(CellType.WALL);
                 }
             }
+
+            // NOTE this section isn't working at expected
+//            Cell passageCell = level.getGrid().get(passage.getCoords());
+//            switch(passage.getDirection()) {
+//                case NORTH, SOUTH -> {
+//                    // check the far side of walls for same region
+//                    if (passage.getX()-2 > 0 && level.getGrid().get(passage.getX() - 2, passage.getY()).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX() - 2, passage.getY()).getRegionId() == passageCell.getRegionId()) {
+//                        level.getGrid().get(passage.getX() - 1, passage.getY()).setRegionId(passageCell.getRegionId());
+//                        level.getGrid().get(passage.getX() - 1, passage.getY()).setType(CellType.CORRIDOR);
+//                    } else {
+//                        level.getGrid().get(passage.getX() - 1, passage.getY()).setType(CellType.WALL);
+//                    }
+//
+//                    if (passage.getX()+2 < getWidth() && level.getGrid().get(passage.getX() + 2, passage.getY()).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX() + 2, passage.getY()).getRegionId() == passageCell.getRegionId()) {
+//                        level.getGrid().get(passage.getX() + 1, passage.getY()).setRegionId(passageCell.getRegionId());
+//                        level.getGrid().get(passage.getX() + 1, passage.getY()).setType(CellType.CORRIDOR);
+//                    } else {
+//                        level.getGrid().get(passage.getX() + 1, passage.getY()).setType(CellType.WALL);
+//                    }
+//                }
+//                case EAST, WEST -> {
+//                    if(passage.getY()-2 > 0 && level.getGrid().get(passage.getX(), passage.getY()-2).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX(), passage.getY()-2).getRegionId() == passageCell.getRegionId()) {
+//                        level.getGrid().get(passage.getX(), passage.getY() - 1).setRegionId(passageCell.getRegionId());
+//                        level.getGrid().get(passage.getX(), passage.getY() - 1).setType(CellType.CORRIDOR);
+//                    } else {
+//                        level.getGrid().get(passage.getX(), passage.getY() - 1).setType(CellType.WALL);
+//                    }
+//
+//                    if (passage.getY()+2 < getHeight() && level.getGrid().get(passage.getX(), passage.getY()+2).getType() == CellType.CORRIDOR && level.getGrid().get(passage.getX(), passage.getY()+2).getRegionId() == passageCell.getRegionId()) {
+//                        level.getGrid().get(passage.getX(), passage.getY() + 1).setRegionId(passageCell.getRegionId());
+//                        level.getGrid().get(passage.getX(), passage.getY() + 1).setType(CellType.CORRIDOR);
+//                    } else {
+//                        level.getGrid().get(passage.getX(), passage.getY() + 1).setType(CellType.WALL);
+//                    }
+//                }
+//            }
 
             runCount++;
             if (runCount > maxRun) {
