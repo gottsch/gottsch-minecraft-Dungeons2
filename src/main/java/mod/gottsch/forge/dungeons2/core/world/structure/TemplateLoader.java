@@ -17,8 +17,13 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
@@ -48,5 +53,41 @@ public final class TemplateLoader {
     /** The template's bounding-box size in blocks (width=X, height=Y, depth=Z), or ZERO if absent. */
     public static Vec3i size(StructureTemplateManager manager, ResourceLocation id) {
         return manager.get(id).map(StructureTemplate::getSize).orElse(Vec3i.ZERO);
+    }
+
+    /**
+     * Where to place a template (as the {@code position} argument to a
+     * {@code TemplateStructurePiece}/{@code StructureTemplate}) so that its
+     * placed, rotated bounding box's min corner lands exactly at
+     * {@code desiredMinCorner}.
+     *
+     * <p>Rotation pivots at local {@link BlockPos#ZERO} (this mod's authoring
+     * convention &mdash; see the structures README's NW-bottom-corner origin
+     * rule), which is a template corner, not its center. Vanilla rotates around
+     * whatever pivot it's given without re-centering, so for any rotation other
+     * than {@code NONE} the rotated footprint swings into a different quadrant
+     * relative to that corner &mdash; e.g. a 90&deg; rotation flips the Z span
+     * negative. Placing the naive, unrotated min corner at a planner-reserved
+     * position is therefore wrong for 3 of every 4 rotations; this computes the
+     * correction using the template's real bounding box instead of hand-derived
+     * rotation math.</p>
+     *
+     * @return {@code desiredMinCorner} unchanged if the template isn't loaded
+     *         (caller's placement will simply do nothing useful, same as today).
+     */
+    public static BlockPos correctedOriginForRotation(StructureTemplateManager manager, ResourceLocation id,
+                                                       Rotation rotation, BlockPos desiredMinCorner) {
+        Optional<StructureTemplate> templateOpt = manager.get(id);
+        if (templateOpt.isEmpty()) {
+            return desiredMinCorner;
+        }
+        StructurePlaceSettings settings = new StructurePlaceSettings()
+                .setRotation(rotation)
+                .setMirror(Mirror.NONE)
+                .setRotationPivot(BlockPos.ZERO);
+        BoundingBox localBox = templateOpt.get().getBoundingBox(settings, BlockPos.ZERO);
+        int dx = desiredMinCorner.getX() - localBox.minX();
+        int dz = desiredMinCorner.getZ() - localBox.minZ();
+        return new BlockPos(dx, desiredMinCorner.getY(), dz);
     }
 }

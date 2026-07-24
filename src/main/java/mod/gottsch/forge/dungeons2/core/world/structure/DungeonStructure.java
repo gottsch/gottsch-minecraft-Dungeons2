@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
+import mod.gottsch.forge.dungeons2.core.data.TemplateEntry;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
@@ -30,6 +31,7 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
@@ -98,6 +100,15 @@ public class DungeonStructure extends Structure {
     /** Jigsaw {@code name} that marks a maze door candidate (vs. an assembly joint). */
     private static final String DOOR_JIGSAW_NAME = Dungeons.MOD_ID + ":door";
 
+    /**
+     * Hand-authored transition templates. Hardcoded for now &mdash; the
+     * {@link TemplateCatalog} is meant to be config-driven eventually (see its
+     * class doc), but a fixed list this short isn't worth that machinery yet.
+     */
+    private static final List<ResourceLocation> TRANSITION_TEMPLATES = List.of(
+            new ResourceLocation(Dungeons.MOD_ID, "transitions/ladder1"),
+            new ResourceLocation(Dungeons.MOD_ID, "transitions/stairs_1"));
+
     public DungeonStructure(Structure.StructureSettings settings) {
         super(settings);
     }
@@ -135,7 +146,7 @@ public class DungeonStructure extends Structure {
         // nothing assembled with door markers.
         DungeonStackPlanner planner =
                 new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
-                        surfaceY, motifValue, new TemplateCatalog());
+                        surfaceY, motifValue, buildCatalog(templateManager));
         if (geo != null) {
             Rectangle2D entranceWorldRect = new Rectangle2D(geo.minX(), geo.minZ(),
                     geo.maxX() - geo.minX() + 1, geo.maxZ() - geo.minZ() + 1);
@@ -183,6 +194,25 @@ public class DungeonStructure extends Structure {
 
             allPieces.forEach(builder::addPiece);
         }));
+    }
+
+    /**
+     * Builds the {@link TemplateCatalog} for this generation call. Hardcoded to
+     * {@link #TRANSITION_TEMPLATES} for now; a config-driven loader (per
+     * {@link TemplateCatalog}'s class doc) is deferred until the list is long
+     * enough to justify it. Templates that fail to load are silently skipped
+     * (planner falls back to its synthetic placeholder if none load).
+     */
+    private static TemplateCatalog buildCatalog(StructureTemplateManager templateManager) {
+        TemplateCatalog catalog = new TemplateCatalog();
+        for (ResourceLocation id : TRANSITION_TEMPLATES) {
+            Vec3i size = TemplateLoader.size(templateManager, id);
+            if (size.getX() > 0 && size.getZ() > 0) {
+                catalog.add(TemplateCatalog.Category.TRANSITION,
+                        new TemplateEntry(id.toString(), size.getX(), size.getZ(), size.getY()));
+            }
+        }
+        return catalog;
     }
 
     /**

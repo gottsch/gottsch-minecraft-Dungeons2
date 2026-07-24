@@ -87,6 +87,29 @@ public final class DungeonPieceEmitter {
         // its pieces are added to the builder directly; the planner's START slot
         // is reserved from that assembled geometry (see withAssembledEntrance).
 
+        // Transition template pieces go in FIRST, same reason as the assembled
+        // entrance: their authored dungeons2:door candidates are solid wall, and
+        // the maze's chosen door for that slot must be placed AFTER so it overwrites
+        // the template's column rather than the other way around.
+        if (templateManager != null) {
+            for (TransitionData transition : layout.getTransitions()) {
+                Rectangle2D fp = transition.getFootprint();
+                ResourceLocation templateId = new ResourceLocation(transition.getTemplateId());
+                Rotation rotation = toRotation(transition.getRotation());
+                // The planner reserved fp as a plain axis-aligned box in the maze
+                // grid; correct for rotation-around-corner so the PLACED piece's
+                // bounding box actually lands there too (see
+                // TemplateLoader#correctedOriginForRotation for why the naive min
+                // corner is wrong for 3 of every 4 rotations).
+                BlockPos desiredMin = new BlockPos(
+                        anchorX + fp.getMinX(), transition.getLowerY(), anchorZ + fp.getMinY());
+                BlockPos pos = TemplateLoader.correctedOriginForRotation(
+                        templateManager, templateId, rotation, desiredMin);
+                pieces.add(new DungeonTransitionPiece(templateManager, templateId, pos, rotation, motif,
+                        transition.getUpperFloorIndex(), transition.getLowerFloorIndex()));
+            }
+        }
+
         for (FloorLayout floor : layout.getFloors()) {
             int floorY = floor.getFloorY();
             for (RoomData room : floor.getRooms()) {
@@ -100,18 +123,6 @@ public final class DungeonPieceEmitter {
             }
             for (DoorData door : floor.getDoors()) {
                 pieces.add(new DungeonDoorPiece(door, motif, floorY, anchorX, anchorZ));
-            }
-        }
-
-        if (templateManager != null) {
-            for (TransitionData transition : layout.getTransitions()) {
-                Rectangle2D fp = transition.getFootprint();
-                BlockPos pos = new BlockPos(
-                        anchorX + fp.getMinX(), transition.getLowerY(), anchorZ + fp.getMinY());
-                pieces.add(new DungeonTransitionPiece(templateManager,
-                        new ResourceLocation(transition.getTemplateId()), pos,
-                        toRotation(transition.getRotation()), motif,
-                        transition.getUpperFloorIndex(), transition.getLowerFloorIndex()));
             }
         }
 

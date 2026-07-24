@@ -415,7 +415,7 @@ public class DungeonStackPlanner {
                     i + 1,
                     transitionLocalFootprints.get(i),
                     floorFloors[i],
-                    floorCeilings[i + 1],
+                    floorFloors[i + 1],
                     rollRotation(random));
             layout.getTransitions().add(transition);
         }
