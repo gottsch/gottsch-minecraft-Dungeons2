@@ -103,6 +103,20 @@ dependencies {
     implementation fg.deobf("gottsch:dungeonblocks:1.20.1-2.1.0")
     //compile group: 'com.github.jdiemke.delaunay-triangulator', name: 'DelaunayTriangulator', version: '1.0.0'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // JUnit 5 for the POJO core / planner tests (no Minecraft needed).
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Minimal SLF4J binding so MazeLevelGenerator2D's logger calls don't print "no provider" warnings during tests.
+    testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.9'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

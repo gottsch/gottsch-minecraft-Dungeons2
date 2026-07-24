@@ -60,4 +60,14 @@ public interface IRoom2D {
 
     List<Coords2D> getDoorways();
     void setDoorways(List<Coords2D> doorways);
+
+    /**
+     * "Possible" door cells this room is willing to be connected at (e.g. derived
+     * from a template's jigsaw markers). When non-empty, the maze restricts this
+     * room's doors to these cells and opens up to {@link #getDegrees()} of them;
+     * when empty, the maze is free to pick any valid perimeter cell. Distinct from
+     * {@link #getDoorways()}, which holds the doors actually opened.
+     */
+    List<Coords2D> getCandidateDoorways();
+    void setCandidateDoorways(List<Coords2D> candidateDoorways);
 }

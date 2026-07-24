@@ -39,6 +39,7 @@ public class Room2D implements IRoom2D {
     private int degrees = 1;
 
     private List<Coords2D> doorways;
+    private List<Coords2D> candidateDoorways;
 
     private RoomType roomType;
 
@@ -143,5 +144,18 @@ public class Room2D implements IRoom2D {
     @Override
     public void setDoorways(List<Coords2D> doorways) {
         this.doorways = doorways;
+    }
+
+    @Override
+    public List<Coords2D> getCandidateDoorways() {
+        if (candidateDoorways == null) {
+            candidateDoorways = new ArrayList<>();
+        }
+        return candidateDoorways;
+    }
+
+    @Override
+    public void setCandidateDoorways(List<Coords2D> candidateDoorways) {
+        this.candidateDoorways = candidateDoorways;
     }
 }

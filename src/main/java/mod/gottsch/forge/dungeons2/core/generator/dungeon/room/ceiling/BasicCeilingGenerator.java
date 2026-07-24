@@ -1,41 +1,66 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2024 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling;
 
-import mod.gottsch.forge.dungeons2.core.collection.Array2D;
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.List;
+
 import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CEILING_PATTERN;
 
 /**
- * @author Mark Gottschling on Mar 6, 2024
+ * Builds the ceiling of a {@link RoomData} as {@link BlockPlacement}s.
+ *
+ * <p>Ceiling occupies the interior cells (1 inset from the walls) at world
+ * Y={@code floorY + height - 1}.</p>
+ *
+ * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
     private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
 
     @Override
-    public Array2D<Integer> addToWorld(ServerLevel level, RandomSource random, IRoom room, ICoords normalSpawnCoords, IDungeonMotif motif) {
-        // get the size of the footprint
-        Coords2D size = new Coords2D(room.getWidth(), room.getDepth());
-        // create a grid
-        Array2D<Integer> grid = new Array2D<>(Integer.class, size.getX(), size.getY());
-
+    public void build(RoomData room, int floorY, IDungeonMotif motif,
+                      RandomSource random, List<BlockPlacement> out) {
         BlockSet blockSet = BlockProvider.get(motif, CEILING_PATTERN, random);
-        
-        int y = room.getHeight() -1;
-        for (int x = 1; x < room.getWidth() -1; x++) {
-            for (int z = 1; z < room.getDepth() -1; z++) {
-                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockSet.get(CeilingPattern.CEILING).orElse(DEFAULT));
+        BlockState ceilingState = blockSet.get(CeilingPattern.CEILING).orElse(DEFAULT);
+
+        int width = room.getWidth();
+        int depth = room.getDepth();
+        int height = room.getHeight();
+        int originX = room.getOriginX();
+        int originZ = room.getOriginZ();
+        int ceilingY = floorY + height - 1;
+
+        for (int x = 1; x < width - 1; x++) {
+            for (int z = 1; z < depth - 1; z++) {
+                out.add(BlockStateCodec.placement(
+                        originX + x, ceilingY, originZ + z, ceilingState));
             }
         }
-        return grid;
     }
 }

@@ -78,8 +78,26 @@ public class Grid2D extends Array2D<Cell> {
         });
     }
 
+    /**
+     * Deep clone: the returned grid has its own {@link Cell} instances, so
+     * mutating the clone never affects this grid. A shallow copy (sharing Cell
+     * objects) silently corrupted the source when callers stamped rooms into a
+     * "scratch" clone (see {@code placeFillRooms}).
+     */
     @Override
-    public Grid2D clone() throws CloneNotSupportedException {
-        return new Grid2D(getData());
+    public Grid2D clone() {
+        Grid2D copy = new Grid2D(getWidth(), getHeight());
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                Cell src = get(x, y);
+                if (src == null) {
+                    continue;
+                }
+                Cell dst = copy.get(x, y);
+                dst.setType(src.getType());
+                dst.setRegionId(src.getRegionId());
+            }
+        }
+        return copy;
     }
 }

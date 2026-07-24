@@ -17,8 +17,9 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.maze;
 
-import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -29,6 +30,8 @@ import java.util.function.Consumer;
  *
  */
 public class MazeLevelGenerator2D {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MazeLevelGenerator2D.class);
 
     ///////////// Default Constants ///////////////
     /*
@@ -73,6 +76,28 @@ public class MazeLevelGenerator2D {
     private int fillAttempts = DEFAULT_FILL_ATTEMPTS;
     private int fillRoomsPerSize = DEFAULT_FILL_ROOMS_PER_SIZE;
 
+    /**
+     * Number of dilation passes applied to corridors after Prim's carve.
+     * 0 = classic 1-wide corridors. 1 = 2-wide. 2 = 3-wide. Etc.
+     * See {@link #dilateCorridors(ILevel2D, int)}.
+     */
+    private int corridorDilationPasses = 0;
+
+    /**
+     * Room id -&gt; the set of corner quadrants (0=NW,1=NE,2=SW,3=SE) already
+     * claimed by a door candidate near that corner, for the CURRENT
+     * {@link #discoverConnectors} call (cleared at its start). A room's own
+     * per-wall corner exclusion (see {@link #generateConnector}) only keeps a
+     * door away from the corners of the ONE wall it's being scanned against; it
+     * has no way to see a candidate independently approaching the SAME corner
+     * from the perpendicular wall. Two dilated/wide corridors meeting a room at
+     * adjacent walls can each pass that per-wall check individually and still
+     * both open as doors crammed into one corner. This tracks corner claims
+     * across the whole scan so the second candidate near an already-claimed
+     * corner is rejected instead.
+     */
+    private final Map<Integer, Set<Integer>> claimedRoomCorners = new HashMap<>();
+
     private Random random = new Random();
 
     /*
@@ -111,6 +136,7 @@ public class MazeLevelGenerator2D {
         this.curveFactor = builder.curveFactor;
         this.fillAttempts = builder.fillAttempts;
         this.fillRoomsPerSize = builder.fillRoomsPerSize;
+        this.corridorDilationPasses = builder.corridorDilationPasses;
 
         this.startRoom = builder.startRoom;
         this.endRoom = builder.endRoom;
@@ -136,6 +162,13 @@ public class MazeLevelGenerator2D {
         // generateRooms() includes checking constraints as each room is added
         List<IRoom2D> rooms = addRooms(level, this.meanFactor);
 
+        // If addRooms returned no rooms (start/end could not be placed), bail cleanly
+        // rather than NPE-ing in discoverConnectors below on a level with no rooms set.
+        if (rooms.isEmpty()) {
+            LOGGER.warn("MazeLevelGenerator2D: addRooms produced no rooms; aborting generate()");
+            return Optional.empty();
+        }
+
         // NOTE This is moot as rooms are filtered as they are added
         // filter some rooms out. if something like this is re-implemented, add it to generateRooms
 //        rooms = removeRoomsBelowAreaMean(rooms, meanFactor);
@@ -147,19 +180,75 @@ public class MazeLevelGenerator2D {
         // carve passages
         carve(level);
 
+        // optional corridor widening: must run BEFORE discoverConnectors so doors
+        // land on the widened corridor walls, not the original 1-wide walls.
+        if (corridorDilationPasses > 0) {
+            dilateCorridors(level, corridorDilationPasses);
+        }
+
         // add connectors
         boolean isDiscoverSuccess = discoverConnectors(level);
         if (!isDiscoverSuccess) {
             return Optional.empty();
         }
 
+        // Snapshot every discovered connector BEFORE mergeRegions consumes the
+        // working list. ensureConnectivity reuses these as fallback doors.
+        List<Connector2D> allConnectors = new ArrayList<>(connectors);
+
         // merge regions
         mergeRegions(level, random);
+
+        // Guarantee the dungeon is fully connected (start can reach end). The
+        // random merge above does not track connected components, so rooms --
+        // especially the low-degree start/end anchors -- can be orphaned. Run
+        // this BEFORE backFill so any door we add anchors its corridor against
+        // dead-end removal.
+        ensureConnectivity(level, allConnectors);
 
         // back-fill dead-ends
         backFill(level);
 
+        // Restore the START anchor walls. The maze protects a room's ROOM
+        // interior but not its 1-cell WALL ring, so fill rooms and corridor
+        // dilation can breach it. For procedural rooms that is invisible, but the
+        // START anchor is an authored entrance template -- a breach shows up as a
+        // doorless hole cut into it. Revert any non-DOOR perimeter cell that got
+        // turned into corridor/connector back to WALL; real DOORs are preserved.
+        // (The END anchor is still a procedural placeholder and has a single
+        // fragile entrance, so it is left untouched until it becomes a template.)
+        restoreAnchorWalls(level.getStartRoom(), level);
+
         return Optional.of(level);
+    }
+
+    /**
+     * Reverts an anchor room's perimeter cells that were breached into
+     * corridor/connector back to WALL, leaving authored DOOR openings intact.
+     */
+    private void restoreAnchorWalls(IRoom2D room, ILevel2D level) {
+        if (room == null) {
+            return;
+        }
+        int x0 = room.getOrigin().getX();
+        int z0 = room.getOrigin().getY();
+        int x1 = x0 + room.getWidth() - 1;
+        int z1 = z0 + room.getHeight() - 1;
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                if (x != x0 && x != x1 && z != z0 && z != z1) {
+                    continue; // interior, not perimeter
+                }
+                if (x < 0 || z < 0 || x >= level.getGrid().getWidth() || z >= level.getGrid().getHeight()) {
+                    continue;
+                }
+                Cell cell = level.getGrid().get(x, z);
+                if (cell != null
+                        && (cell.getType() == CellType.CORRIDOR || cell.getType() == CellType.CONNECTOR)) {
+                    cell.setType(CellType.WALL);
+                }
+            }
+        }
     }
 
     /**
@@ -227,7 +316,7 @@ public class MazeLevelGenerator2D {
 
         // random rooms
         List<IRoom2D> randomRooms = generateRandomRooms(xRange, yRange, minSize, maxSize, levelBoundary, localMeanFactor, rooms, random);
-        Dungeons.LOGGER.debug("roomCount -> {}, numberfOfRooms -> {}", rooms.size(), numberOfRooms);
+        LOGGER.debug("roomCount -> {}, numberfOfRooms -> {}", rooms.size(), numberOfRooms);
 
         // TODO level is never updated with random rooms?!
 
@@ -236,11 +325,17 @@ public class MazeLevelGenerator2D {
         level.getGrid().add(rooms);
 
         int deltaRooms = numberOfRooms - rooms.size();
-        Dungeons.LOGGER.debug("deltaRooms -> {}", deltaRooms);
+        LOGGER.debug("deltaRooms -> {}", deltaRooms);
         if (deltaRooms > 0) {
             List<IRoom2D> fillRooms = generateFillRooms(deltaRooms, xRange, yRange, minSize, maxSize, levelBoundary, localMeanFactor, rooms, random);
-            Dungeons.LOGGER.debug("# fill rooms -> {}", fillRooms.size());
+            LOGGER.debug("# fill rooms -> {}", fillRooms.size());
             fillRooms = placeFillRooms(level, fillRooms);
+
+            // Keep fill rooms clear of the START anchor (an authored entrance
+            // template needs a little clearance). Fill rooms sharing a wall with
+            // each other or with other rooms is fine and desirable -- it packs the
+            // dungeon densely; only a 1-cell buffer around the entrance is removed.
+            fillRooms.removeIf(fr -> withinMargin(fr, level.getStartRoom(), 1));
 
             // add the fill rooms to the rooms list and grid
             level.getRooms().addAll(fillRooms);
@@ -248,6 +343,22 @@ public class MazeLevelGenerator2D {
         }
 
         return rooms;
+    }
+
+    /**
+     * True when {@code fill}'s footprint comes within {@code margin} cells of
+     * {@code anchor} (i.e. overlaps the anchor's box inflated by the margin).
+     */
+    private boolean withinMargin(IRoom2D fill, IRoom2D anchor, int margin) {
+        if (anchor == null) {
+            return false;
+        }
+        Rectangle2D inflated = new Rectangle2D(
+                anchor.getOrigin().getX() - margin,
+                anchor.getOrigin().getY() - margin,
+                anchor.getWidth() + 2 * margin,
+                anchor.getHeight() + 2 * margin);
+        return inflated.intersects(fill.getBox());
     }
 
     private Optional<IRoom2D> generateStartRoom(int xRange, int yRange, int minSize, int maxSize, Rectangle2D levelBoundary, Random random) {
@@ -264,7 +375,18 @@ public class MazeLevelGenerator2D {
                 return Optional.empty();
             }
         } else {
+            // Supplied start room: validate against boundary and assign an id so
+            // it participates in the region/connector system. Skipping validation
+            // here lets out-of-bounds rooms slip into grid.add() and crash.
             room = this.startRoom;
+            if (!isRoomValid(room, levelBoundary)) {
+                LOGGER.warn("supplied start room is invalid for level boundary {} -> {}",
+                        levelBoundary, room.getBox());
+                return Optional.empty();
+            }
+            if (room.getId() == 0) {
+                room.setId(idGenerator.next());
+            }
         }
         room.setStart(true);
         return Optional.of(room);
@@ -286,7 +408,20 @@ public class MazeLevelGenerator2D {
                 return Optional.empty();
             }
         } else {
+            // Supplied end room: same validation + id-assignment rationale as start.
             room = this.endRoom;
+            if (!isRoomValid(room, levelBoundary)) {
+                LOGGER.warn("supplied end room is invalid for level boundary {} -> {}",
+                        levelBoundary, room.getBox());
+                return Optional.empty();
+            }
+            if (hasIntersections(room.getBox(), rooms)) {
+                LOGGER.warn("supplied end room intersects existing rooms: {}", room.getBox());
+                return Optional.empty();
+            }
+            if (room.getId() == 0) {
+                room.setId(idGenerator.next());
+            }
         }
         room.setEnd(true);
 
@@ -317,7 +452,7 @@ public class MazeLevelGenerator2D {
             roomCount++;
 
             if (roomCount >= numberOfRooms) {
-                Dungeons.LOGGER.debug("attemptCount -> {}", attemptCount);
+                LOGGER.debug("attemptCount -> {}", attemptCount);
                 break;
             }
         }
@@ -362,30 +497,30 @@ public class MazeLevelGenerator2D {
         try {
             voidGrid = level.getGrid().clone();
         } catch(Exception ignore) {
-            Dungeons.LOGGER.error("unable to clone grid - unable to add fill rooms:", ignore);
+            LOGGER.error("unable to clone grid - unable to add fill rooms:", ignore);
             return newRooms;
         }
 
         for (int fillAttemptIndex = 0; fillAttemptIndex < this.fillAttempts; fillAttemptIndex++) {
-//            Dungeons.LOGGER.debug("attempt # -> {}", fillAttemptIndex);
+//            LOGGER.debug("attempt # -> {}", fillAttemptIndex);
             List<IRoom2D> rooms = new ArrayList<>();
             // scan the void grid looking for empty space candidates
             List<Rectangle2D> maximalRectangleList = getMaximalRectangles(voidGrid);
-//            Dungeons.LOGGER.debug("size of rectangles -> {}", maximalRectangleList.size());
-            // randomize the sort of the list
-            Collections.shuffle(maximalRectangleList);
-//            Dungeons.LOGGER.debug("size of supplied rooms -> {}", suppliedRooms.size());
+//            LOGGER.debug("size of rectangles -> {}", maximalRectangleList.size());
+            // randomize the sort of the list (use the seeded random for determinism)
+            Collections.shuffle(maximalRectangleList, random);
+//            LOGGER.debug("size of supplied rooms -> {}", suppliedRooms.size());
             // for each of the supplied rooms
             for (IRoom2D suppliedRoom : suppliedRooms) {
                 // a list to manage the rectangles to remove
                 List<Rectangle2D> rectangleRemoveList = new ArrayList<>();
                 // get the size of the room
                 Coords2D size = new Coords2D(suppliedRoom.getWidth(), suppliedRoom.getHeight());
-//                Dungeons.LOGGER.debug("testing room -> {}, size -> {}", suppliedRoom.getId(), size);
-//                Dungeons.LOGGER.debug("size of rectangles2 -> {}", maximalRectangleList.size());
+//                LOGGER.debug("testing room -> {}, size -> {}", suppliedRoom.getId(), size);
+//                LOGGER.debug("size of rectangles2 -> {}", maximalRectangleList.size());
                 // scan all the rectangles
                 for (Rectangle2D r : maximalRectangleList) {
-//                    Dungeons.LOGGER.debug("testing against rectangle -> {}x{}", r.getWidth(), r.getHeight());
+//                    LOGGER.debug("testing against rectangle -> {}x{}", r.getWidth(), r.getHeight());
                     if (size.getX() <= r.getWidth() && size.getY() <= r.getHeight()) {
                         // find the delta of x,y between size and r
                         int dx = r.getWidth() - size.getX();
@@ -411,7 +546,7 @@ public class MazeLevelGenerator2D {
                         suppliedRoom.getOrigin().setLocation(r.getMinX() + ox, r.getMinY() + oy);
                         rooms.add(suppliedRoom);
 
-                        Dungeons.LOGGER.debug("adding fill room -> {}", suppliedRoom);
+                        LOGGER.debug("adding fill room -> {}", suppliedRoom);
 
                         // add all intersecting rectangle to the remove list
                         for (Rectangle2D r2 : maximalRectangleList) {
@@ -438,7 +573,7 @@ public class MazeLevelGenerator2D {
             rooms.clear();
         }
 
-        Dungeons.LOGGER.debug("size of added rooms -> {}", newRooms.size());
+        LOGGER.debug("size of added rooms -> {}", newRooms.size());
         return newRooms;
     }
 
@@ -519,14 +654,34 @@ public class MazeLevelGenerator2D {
     }
 
     /**
-     * Detects all the maximal rectangles contained in the 'empty' space of the grid.
-     * Based on https://www.researchgate.net/publication/221249132_Object_Descriptors_Based_on_a_List_of_Rectangles_Method_and_Algorithm
-     * @param voidGrid
-     * @return
+     * Finds the large empty rectangles in the grid &mdash; the open pockets where
+     * {@link #placeFillRooms} can drop extra rooms.
+     *
+     * <p>Implements the "list of rectangles" maximal-rectangle algorithm
+     * (Based on https://www.researchgate.net/publication/221249132_Object_Descriptors_Based_on_a_List_of_Rectangles_Method_and_Algorithm).
+     * The idea, in two phases:</p>
+     * <ol>
+     *     <li><strong>Span tables.</strong> For every empty cell, precompute how
+     *         far the empty run extends upward ({@code dN}, "distance north") and
+     *         downward ({@code dS}, "distance south"). A non-empty cell stores
+     *         {@code -1}. This makes the vertical extent of any column an O(1)
+     *         lookup instead of a re-scan.</li>
+     *     <li><strong>Sweep.</strong> Scan columns right-to-left. At each empty
+     *         cell that starts a new horizontal run (its left neighbor is solid),
+     *         grow a candidate rectangle rightward, shrinking its vertical extent
+     *         (the running {@code N}/{@code S}) to the most restrictive column seen
+     *         so far. Whenever the extent would shrink, the current span is a
+     *         maximal rectangle &mdash; emit it if it clears the minimum size.</li>
+     * </ol>
+     *
+     * <p>Here "empty" means rock or wall (see {@link #isEmptyOrBorder}); the wall
+     * border counts as empty so edge pockets are detected too.</p>
      */
     private List<Rectangle2D> getMaximalRectangles(Grid2D voidGrid) {
         List<Rectangle2D> rectangles = new ArrayList<>();
 
+        // dN[col][row] = number of contiguous empty cells directly ABOVE (and
+        // including) this cell; -1 if this cell is occupied.
         int[][] dN = new int[voidGrid.getSize().getX()][voidGrid.getSize().getY()];
 
         // NOTE all levels have a wall border - this counts as empty space
@@ -534,6 +689,7 @@ public class MazeLevelGenerator2D {
             dN[col][0] = 0;
         }
 
+        // Fill dN top-down: each empty cell extends the run from the cell above.
         // NOTE start at row = 1
         for (int row = 1; row < voidGrid.getSize().getY(); row++) {
             for (int col = 0; col < voidGrid.getSize().getX(); col++) {
@@ -546,6 +702,7 @@ public class MazeLevelGenerator2D {
             }
         }
 
+        // dS[col][row] = the same, but counting DOWNWARD. Filled bottom-up.
         int[][] dS = new int[voidGrid.getWidth()][voidGrid.getHeight()];
         for (int col = 0; col < voidGrid.getWidth(); col++) {
             dS[col][voidGrid.getHeight()-1] = isEmptyOrBorder(voidGrid, col, voidGrid.getHeight()-1) ? 0 : -1;
@@ -560,29 +717,44 @@ public class MazeLevelGenerator2D {
             }
         }
 
-        // main loop
+        // Sweep columns right-to-left.
         for (int col = voidGrid.getWidth() -1; col >=0; col--) {
+            // maxS tracks the tallest rectangle already emitted ending at/below
+            // this row, so we don't re-emit a rectangle that's contained in a
+            // taller one. It's reset whenever we start a fresh run.
             int maxS = voidGrid.getHeight();
             for (int row = voidGrid.getHeight() -1; row >= 0; row--) {
                 maxS++;
+                // Only start a rectangle at the LEFT edge of a run (cell is empty
+                // and the cell to its left is solid or out of bounds) -- this is
+                // what makes each maximal rectangle get found exactly once.
                 if (isEmptyOrBorder(voidGrid, col, row) && (col == 0 || !isEmptyOrBorder(voidGrid, col -1, row))) {
+                    // N/S = how far the candidate can extend up/down. They only
+                    // ever shrink as we widen rightward to the most limiting column.
                     int N = dN[col][row];
                     int S = dS[col][row];
                     int width = 1;
+                    // Grow rightward while the next column is still empty.
                     while(col + width < voidGrid.getWidth() && isEmptyOrBorder(voidGrid, col + width, row)) {
                         int nextN = dN[col + width][row];
                         int nextS = dS[col + width][row];
+                        // The next column is shorter in some direction: the current
+                        // width is maximal for the current height, so record it
+                        // (if it's tall enough to be new and meets the min size).
                         if ((nextN < N) || (nextS < S)) {
                             if (S < maxS) {
                                 if (width >= MIN_RECTANGLE_WIDTH && (N + S + 1) >= MIN_RECTANGLE_HEIGHT) {
                                     rectangles.add(new Rectangle2D(col, row - N, width, N + S + 1));
                                 }
                             }
+                            // Clamp the running extent to the new limit before
+                            // continuing to widen.
                             if (nextN < N) N = nextN;
                             if (nextS < S) S = nextS;
                         }
                         width++;
                     }
+                    // Emit the final (widest) rectangle for this starting cell.
                     if (S < maxS) {
                         if (width >= MIN_RECTANGLE_WIDTH && (N + S + 1) >= MIN_RECTANGLE_HEIGHT) {
                             rectangles.add(new Rectangle2D(col, row - N, width, N + S + 1));
@@ -708,6 +880,7 @@ public class MazeLevelGenerator2D {
      * @param level
      */
     public boolean discoverConnectors(ILevel2D level) {
+        claimedRoomCorners.clear();
 
         // scan all rooms to see if they already have doorways
         List<Integer> ignoreIds = new ArrayList<>();
@@ -726,8 +899,26 @@ public class MazeLevelGenerator2D {
         }
 
         if (!customConnectorsSuccess) {
-            Dungeons.LOGGER.warn("failed to merge custom room to the level.");
+            LOGGER.warn("failed to merge custom room to the level.");
             return false;
+        }
+
+        // Candidate doorways: a room may mark a SET of "possible" door cells (e.g.
+        // from a template's jigsaw markers). Restrict that room's connectors to
+        // those cells and skip the room in the perimeter scan below, so doors only
+        // ever appear at marked cells. Generated permissively -- a candidate with
+        // no differing region across it simply yields no connector (it's a
+        // *possible* door, not a forced one) -- and NOT pre-counted as an opened
+        // door, so mergeRegions still opens at most `degrees` of them via its
+        // normal culling. Skipped for rooms that already supplied explicit
+        // doorways above (those take precedence).
+        for (IRoom2D room : level.getRooms()) {
+            if (room.getDoorways().isEmpty() && !room.getCandidateDoorways().isEmpty()) {
+                for (Coords2D candidate : room.getCandidateDoorways()) {
+                    generateConnector(level, connectors, candidate.getX(), candidate.getY());
+                }
+                ignoreIds.add(room.getId());
+            }
         }
 
         // scan all cells for
@@ -738,7 +929,12 @@ public class MazeLevelGenerator2D {
             for (int y = 1; y < level.getHeight()-1; y++) {
                 // find any wall
                 if (level.getGrid().get(x, y).getType() == CellType.WALL) {
-                    generateConnector(level, connectors, x, y, ignoreIds);
+                    // requireFrame=true: only the generic wall scan is exposed to
+                    // wide/dilated corridors, where a wall cell can bridge two
+                    // regions yet not be flanked by solid wall on its own row/
+                    // column (see hasSolidDoorFrame). Explicit/candidate doorways
+                    // (authored template positions) are exempt -- see below.
+                    generateConnector(level, connectors, x, y, ignoreIds, true);
                 }
             }
         }
@@ -747,7 +943,7 @@ public class MazeLevelGenerator2D {
     }
 
     private boolean generateConnector(ILevel2D level, List<Connector2D> connectors, int x, int y) {
-        return generateConnector(level, connectors, x, y, null);
+        return generateConnector(level, connectors, x, y, null, false);
     }
 
     /**
@@ -757,6 +953,34 @@ public class MazeLevelGenerator2D {
      * @param y
      */
     private boolean generateConnector(ILevel2D level, List<Connector2D> connectors, int x, int y, List<Integer> ignoreIds) {
+        return generateConnector(level, connectors, x, y, ignoreIds, false);
+    }
+
+    /**
+     * @param requireFrame if true, a candidate wall cell that bridges two
+     *                      regions is only accepted when its frame axis (the
+     *                      row/column the door itself would sit in, perpendicular
+     *                      to the regions it bridges) is solid on both sides —
+     *                      see {@link #hasSolidDoorFrame}. Without this, a door
+     *                      placed on a wide/dilated corridor's divider can end up
+     *                      with open corridor space beside it instead of a wall,
+     *                      reading as a "floating" door you can just walk around.
+     */
+    private boolean generateConnector(ILevel2D level, List<Connector2D> connectors, int x, int y,
+                                      List<Integer> ignoreIds, boolean requireFrame) {
+        // The generic wall-scan caller pre-filters to WALL cells before calling
+        // this, but the explicit/candidate-doorway callers (room.getDoorways() /
+        // room.getCandidateDoorways(), e.g. the jigsaw-assembled entrance's
+        // dungeons2:door markers -- what floor 0 uses on EVERY real dungeon) do
+        // not: they hand this whatever grid position the marker happened to map
+        // to, with no guarantee it's actually a wall between two regions. Without
+        // this check, a candidate that lands on a CORRIDOR/ROOM cell (or bare
+        // ROCK) gets blindly overwritten into a CONNECTOR/DOOR anyway, either
+        // punching a hole through a real corridor/room or creating a door with
+        // nothing legitimate on one or both sides.
+        if (level.getGrid().get(x, y).getType() != CellType.WALL) {
+            return true;
+        }
         int northId = level.getGrid().get(x, y-1).getRegionId();
         int southId = level.getGrid().get(x, y+1).getRegionId();
         // test east and west
@@ -768,10 +992,18 @@ public class MazeLevelGenerator2D {
             return false;
         }
 
-        if (northId >= idGenerator.getStart() && southId >= idGenerator.getStart() && northId != southId) {
+        if (northId >= idGenerator.getStart() && southId >= idGenerator.getStart() && northId != southId
+                && isRenderedRegionCell(level.getGrid(), x, y - 1)
+                && isRenderedRegionCell(level.getGrid(), x, y + 1)) {
             // get regions
             Region2D region1 = getRegionMap().get((int)northId);
             Region2D region2 = getRegionMap().get((int)southId);
+            // A region id can reference a region no longer in the map (e.g. a
+            // corridor cell adjacent to a candidate doorway whose region was not
+            // registered). Without this guard the type check below NPEs.
+            if (region1 == null || region2 == null) {
+                return false;
+            }
 
             // test that x,y is valid position on the x-axis (east-west) ie away from corners
             if (region1.getType() == RegionType.ROOM) {
@@ -785,15 +1017,28 @@ public class MazeLevelGenerator2D {
                 }
             }
 
+            // frame axis is east-west (perpendicular to the north-south split)
+            if (requireFrame && !hasSolidDoorFrame(level.getGrid(), x - 1, y, x + 1, y)) {
+                return true; // no valid door here; leave the cell as WALL
+            }
+            if (requireFrame && !claimRoomCorners(region1, region2, x, y)) {
+                return true; // a room corner here is already claimed by another candidate
+            }
+
             Connector2D connector = new Connector2D(x, y, region1, region2);
             // add connector to list
             connectors.add(connector);
             // update grid with id = CONNECTOR
             level.getGrid().get(connector.getCoords()).setType(CellType.CONNECTOR);
         }
-        else if (eastId >= idGenerator.getStart() && westId >= idGenerator.getStart() && eastId != westId) {
+        else if (eastId >= idGenerator.getStart() && westId >= idGenerator.getStart() && eastId != westId
+                && isRenderedRegionCell(level.getGrid(), x + 1, y)
+                && isRenderedRegionCell(level.getGrid(), x - 1, y)) {
             Region2D region1 = getRegionMap().get((int)eastId);
             Region2D region2 = getRegionMap().get((int)westId);
+            if (region1 == null || region2 == null) {
+                return false;
+            }
 
             if (region1.getType() == RegionType.ROOM) {
                 if (y < region1.getBox().getMinY() + 2 || y > region1.getBox().getMaxY() - 2) {
@@ -806,6 +1051,14 @@ public class MazeLevelGenerator2D {
                 }
             }
 
+            // frame axis is north-south (perpendicular to the east-west split)
+            if (requireFrame && !hasSolidDoorFrame(level.getGrid(), x, y - 1, x, y + 1)) {
+                return true; // no valid door here; leave the cell as WALL
+            }
+            if (requireFrame && !claimRoomCorners(region1, region2, x, y)) {
+                return true; // a room corner here is already claimed by another candidate
+            }
+
             Connector2D connector = new Connector2D(x, y, region1, region2);
             connectors.add(connector);
             level.getGrid().get(connector.getCoords()).setType(CellType.CONNECTOR);
@@ -814,19 +1067,137 @@ public class MazeLevelGenerator2D {
     }
 
     /**
-     * also need to add the selected connectors/doors to the Room list of doors
-     * @param level
+     * True if (x,y) is CURRENTLY a CORRIDOR or ROOM cell — i.e. a real, actually-
+     * rendered region, as opposed to a stale regionId left behind on a cell
+     * whose type was later reverted to WALL/ROCK/CONNECTOR. {@link Cell#setType}
+     * never clears {@code regionId}, so every pass that reclassifies a cell away
+     * from CORRIDOR/ROOM (backFill pruning a dead end, mergeRegions/
+     * cullRegionConnectors reverting an unopened connector, dilation's wall
+     * rebuild, ...) leaves that cell's old regionId sitting there, still
+     * numerically >= idGenerator.getStart() and therefore indistinguishable from
+     * a live region UNLESS the cell's current type is also checked. Without this,
+     * a door can be created against a cell that used to belong to a region but no
+     * longer renders anything there at all — a door leading into bare,
+     * unmodified terrain.
+     */
+    private boolean isRenderedRegionCell(Grid2D grid, int x, int y) {
+        CellType t = grid.get(x, y).getType();
+        return t == CellType.CORRIDOR || t == CellType.ROOM;
+    }
+
+    /**
+     * For each of region1/region2 that's a ROOM, checks whether (x,y) sits near
+     * one of that room's 4 corners (same margin as the existing per-wall corner
+     * exclusion above) and, if so, atomically claims it. Returns false — without
+     * claiming anything — the moment ANY involved room-corner is already claimed,
+     * so a caller can reject the whole candidate rather than leave a partial
+     * claim behind.
+     */
+    private boolean claimRoomCorners(Region2D region1, Region2D region2, int x, int y) {
+        int corner1 = region1.getType() == RegionType.ROOM ? roomCornerIndex(region1.getBox(), x, y) : -1;
+        int corner2 = region2.getType() == RegionType.ROOM ? roomCornerIndex(region2.getBox(), x, y) : -1;
+        if (corner1 >= 0 && isCornerClaimed(region1.getId(), corner1)) {
+            return false;
+        }
+        if (corner2 >= 0 && isCornerClaimed(region2.getId(), corner2)) {
+            return false;
+        }
+        if (corner1 >= 0) {
+            claimedRoomCorners.computeIfAbsent(region1.getId(), k -> new HashSet<>()).add(corner1);
+        }
+        if (corner2 >= 0) {
+            claimedRoomCorners.computeIfAbsent(region2.getId(), k -> new HashSet<>()).add(corner2);
+        }
+        return true;
+    }
+
+    private boolean isCornerClaimed(int roomId, int corner) {
+        Set<Integer> claimed = claimedRoomCorners.get(roomId);
+        return claimed != null && claimed.contains(corner);
+    }
+
+    /**
+     * Which of a room's 4 corners (0=NW, 1=NE, 2=SW, 3=SE) the point (x,y) sits
+     * near, using the same 2-cell margin as the existing per-wall corner
+     * exclusion in {@link #generateConnector}. Returns -1 if not near any corner.
+     * Works for both a fixed-row candidate (a north/south door, where y sits
+     * just outside the box and x varies) and a fixed-column candidate (an east/
+     * west door, where x sits just outside the box and y varies) — the door's
+     * own coordinate on its wall's axis is always comfortably within the margin
+     * of that axis, so no branch on door orientation is needed here.
+     */
+    private int roomCornerIndex(Rectangle2D box, int x, int y) {
+        int margin = 2;
+        boolean west = x <= box.getMinX() + margin;
+        boolean east = x >= box.getMaxX() - margin;
+        boolean north = y <= box.getMinY() + margin;
+        boolean south = y >= box.getMaxY() - margin;
+        if (west && north) return 0;
+        if (east && north) return 1;
+        if (west && south) return 2;
+        if (east && south) return 3;
+        return -1;
+    }
+
+    /**
+     * True if both frame-axis neighbors of a candidate door cell are non-
+     * walkable (i.e. still solid wall/rock), so a door placed there is actually
+     * flanked by wall rather than standing beside open corridor/room space.
+     * Cells outside the grid count as solid (the level border).
+     */
+    private boolean hasSolidDoorFrame(Grid2D grid, int x1, int z1, int x2, int z2) {
+        return !isFrameOpen(grid, x1, z1) && !isFrameOpen(grid, x2, z2);
+    }
+
+    private boolean isFrameOpen(Grid2D grid, int x, int z) {
+        if (x < 0 || z < 0 || x >= grid.getWidth() || z >= grid.getHeight()) {
+            return false;
+        }
+        CellType t = grid.get(x, z).getType();
+        return t == CellType.CORRIDOR || t == CellType.ROOM || t == CellType.DOOR || t == CellType.CONNECTOR;
+    }
+
+    /**
+     * Turns the raw set of {@link Connector2D candidate connectors} (every wall
+     * cell that touches two different regions) into the dungeon's actual doors.
+     *
+     * <p>Conceptually this is "carve openings between regions until the dungeon
+     * is joined, but don't over-connect." The algorithm:</p>
+     * <ol>
+     *     <li>Repeatedly pick a random remaining connector and turn it into a
+     *         {@link CellType#DOOR door} ({@link #addDoor}).</li>
+     *     <li>Discard the connectors immediately adjacent to that new door (you
+     *         don't want two doors side by side) and the duplicate connectors
+     *         between the same two regions (you don't want ten doors between one
+     *         pair of rooms) &mdash; with a small random chance ({@code > 0.965})
+     *         of keeping a duplicate as an extra door, up to each room's
+     *         {@code degrees} limit, to create the occasional loop/branch.</li>
+     *     <li>Skip/cull connectors for any room that has already reached its
+     *         {@code degrees} cap (see {@link #cullRegionsConnectors}).</li>
+     * </ol>
+     *
+     * <p><strong>Important limitation:</strong> this pass does <em>not</em> track
+     * connected components, so it can leave a region orphaned (this is the bug
+     * {@link #ensureConnectivity} was added to fix &mdash; see the TODO below).
+     * It also mutates the working connector list ({@link #getConnectors()}) as it
+     * goes; that list is empty by the time this method returns.</p>
      */
     public void mergeRegions(ILevel2D level, Random random) {
 
-        // build a map of rooms
+        // id -> room lookup so we can read each region's degree cap and record
+        // the doors we open back onto the rooms they touch.
         Map<Integer, IRoom2D> roomMap = new HashMap<>();
         level.getRooms().forEach(r -> {
             roomMap.put(Integer.valueOf(r.getId()), r);
         });
 
+        // Reused scratch list of "connectors between the same region pair as the
+        // door we just opened" (cleared at the top of every iteration).
         List<Connector2D> localConnectors = new ArrayList<>();
 
+        // Process connectors until none remain. Each iteration opens at most one
+        // primary door (plus the occasional random extra) and removes a batch of
+        // now-irrelevant connectors, so the list strictly shrinks and this halts.
         while (!getConnectors().isEmpty()) {
             localConnectors.clear();
             // randomly select a connector
@@ -835,6 +1206,8 @@ public class MazeLevelGenerator2D {
             Region2D region1 = (Region2D) regionMap.get(connector.getRegion1().getId());
             Region2D region2 = (Region2D) regionMap.get(connector.getRegion2().getId());
 
+            // If either region is already "full" (a room at its degree cap), don't
+            // open this door -- cull that region's connectors and pick another.
             if (cullRegionsConnectors(level, roomMap, region1, region2)) {
                 continue;
             }
@@ -843,6 +1216,8 @@ public class MazeLevelGenerator2D {
             // TODO may have to implement a path checker to ensure a path exists from start to end
             // and remove any rooms/halls that aren't connected. (only have ensure that a region is visited,
             // not every possible path to that region)
+            // NOTE: this gap is now backstopped by ensureConnectivity(), which runs
+            // after this method and guarantees start can reach end.
 
             /*
              * create a door from selected connector
@@ -864,6 +1239,10 @@ public class MazeLevelGenerator2D {
             /*
              * gather all connectors that match the regions
              */
+            // Collect every other candidate connector that bridges the SAME two
+            // regions we just doored (in either order). These are redundant for
+            // basic connectivity; the block below culls most and randomly keeps a
+            // few as extra doors.
             getConnectors().forEach(c -> {
                 if ((Objects.equals(c.getRegion1().getId(), connector.getRegion1().getId())
                         && Objects.equals(c.getRegion2().getId(), connector.getRegion2().getId()))
@@ -889,15 +1268,21 @@ public class MazeLevelGenerator2D {
 
             // TODO (B) test here if either room in connector has met its degrees limit and continue if so.
 
-            // for each of the remaining connectors in the working list
+            // Walk the remaining same-pair connectors. Most become wall; a rare
+            // few become extra doors so the dungeon isn't a strict tree (it gets
+            // the occasional loop / double-connection between two regions).
             List<Connector2D> ignoreList = new ArrayList<>();
             int connectorCount = 1;
             for(Connector2D c : localConnectors) {
                 IRoom2D room1 = roomMap.get(c.getRegion1().getId());
                 IRoom2D room2 = roomMap.get(c.getRegion2().getId());
+                // Effective degree cap for this pair = the stricter of the two
+                // rooms' caps (corridors aren't in roomMap -> treated as maxDegrees).
                 int degrees = (room1 != null && room2 != null) ? Math.min(room1.getDegrees(), room2.getDegrees())
                         : room1 == null ? room2 == null ? maxDegrees : room2.getDegrees() : room1.getDegrees();
 
+                // ~3.5% chance to keep this as an extra door, but only if we
+                // haven't already ignored it and the pair is under its degree cap.
                 if (random.nextDouble() > 0.965 && !ignoreList.contains(c) && connectorCount < degrees) {
                     // build extra door
                     addDoor(level, c, roomMap);
@@ -924,13 +1309,13 @@ public class MazeLevelGenerator2D {
     private boolean cullRegionsConnectors(ILevel2D level, Map<Integer, IRoom2D> roomMap, Region2D region1, Region2D region2) {
         boolean shouldMoveToNextConnector = false;
         for (Region2D region : Arrays.asList(region1, region2)) {
-//            Dungeons.LOGGER.debug("region -> {} of type -> {}", region.getId(), region.getType());
+//            LOGGER.debug("region -> {} of type -> {}", region.getId(), region.getType());
             if (region.getType() == RegionType.ROOM) {
                 IRoom2D room = roomMap.get(region.getId());
-//                Dungeons.LOGGER.debug("room -> {} has degrees -> {} and doors -> {}", room.getId(), room.getDegrees(), room.getDoorways().size());
+//                LOGGER.debug("room -> {} has degrees -> {} and doors -> {}", room.getId(), room.getDegrees(), room.getDoorways().size());
 
                 if (room.getDoorways().size() >= room.getDegrees()) {
-//                    Dungeons.LOGGER.debug("room -> {} has met its degrees. moving to next connector.", room.getId());
+//                    LOGGER.debug("room -> {} has met its degrees. moving to next connector.", room.getId());
                     cullRegionConnectors(level, region.getId());
                     shouldMoveToNextConnector = true;
                 }
@@ -972,18 +1357,394 @@ public class MazeLevelGenerator2D {
     }
 
     /**
+     * Guarantees the dungeon is fully connected after the (component-unaware)
+     * {@link #mergeRegions} pass.
+     *
+     * <p>Builds a union-find of regions from the doors that were actually placed,
+     * then runs a Kruskal-style sweep over {@code allConnectors} (the full set of
+     * candidate doorways discovered earlier): for any connector that still joins
+     * two disconnected components, it re-opens that connector as a door. Because
+     * the region-adjacency graph of a contiguous grid is itself connected, this
+     * yields a single spanning tree &mdash; so the start room can always reach the
+     * end room.</p>
+     *
+     * <p>The end room is capped at <strong>one</strong> door: once it has a
+     * doorway, no further connectors touching it are opened. That keeps the
+     * terminal room's "single entrance" design intact while still guaranteeing it
+     * is reachable. For already-connected dungeons this method adds nothing.</p>
+     */
+    public void ensureConnectivity(ILevel2D level, List<Connector2D> allConnectors) {
+        IRoom2D start = level.getStartRoom();
+        IRoom2D end = level.getEndRoom();
+        if (start == null || end == null) {
+            return;
+        }
+
+        // Region id -> room, so addDoor can record the new doorway on the rooms
+        // a connector touches (corridors aren't in this map; that's fine).
+        Map<Integer, IRoom2D> roomMap = new HashMap<>();
+        level.getRooms().forEach(r -> roomMap.put(r.getId(), r));
+
+        // ---- Step 1: rebuild the current connectivity as a union-find. ----
+        // Each region (every room and every corridor) starts in its own set.
+        UnionFind uf = new UnionFind();
+        for (Integer id : getRegionMap().keySet()) {
+            uf.add(id);
+        }
+        // Every door mergeRegions already placed joins two regions, so union the
+        // pair on each side of every DOOR cell. After this loop, two regions are
+        // in the same set iff there's already a path between them. We rebuild this
+        // from the grid (rather than tracking it during mergeRegions) so this pass
+        // stays a self-contained, independently-testable add-on.
+        for (int x = 1; x < level.getWidth() - 1; x++) {
+            for (int y = 1; y < level.getHeight() - 1; y++) {
+                if (level.getGrid().get(x, y).getType() == CellType.DOOR) {
+                    int[] regions = doorRegions(level, x, y);
+                    if (regions != null) {
+                        uf.union(regions[0], regions[1]);
+                    }
+                }
+            }
+        }
+
+        int endId = end.getId();
+        boolean endHasDoor = !end.getDoorways().isEmpty();
+
+        // ---- Step 2: Kruskal-style spanning sweep over the candidate doors. ----
+        // allConnectors is every doorway position discovered before mergeRegions
+        // (most were culled back to wall). We walk them once and, like building a
+        // minimum spanning tree, open one as a real door whenever it bridges two
+        // regions that are NOT yet connected. Opening it merges their sets, so we
+        // never create a redundant loop. Since the region-adjacency graph of a
+        // contiguous grid is connected, this leaves every region in one set --
+        // i.e. the whole dungeon becomes reachable, start room included.
+        for (Connector2D connector : allConnectors) {
+            int r1 = connector.getRegion1().getId();
+            int r2 = connector.getRegion2().getId();
+
+            boolean touchesEnd = (r1 == endId || r2 == endId);
+            // The terminal room is allowed exactly one entrance. Once it has a
+            // door, skip any further connectors touching it -- the rest of the
+            // sweep will route around it via corridors instead.
+            if (touchesEnd && endHasDoor) {
+                continue;
+            }
+            // Both regions already reachable from each other -> opening this door
+            // would just add a redundant loop. Leave it as wall.
+            if (uf.connected(r1, r2)) {
+                continue;
+            }
+            // This connector bridges two separate components: re-open it as a door
+            // and merge the components.
+            addDoor(level, connector, roomMap);
+            uf.union(r1, r2);
+            if (touchesEnd) {
+                endHasDoor = true;
+            }
+        }
+
+        if (!uf.connected(start.getId(), endId)) {
+            // The connector graph itself was disconnected: the end room's cluster
+            // is walled off from the rest by solid rock, so no candidate door can
+            // bridge it. Carve a fresh tunnel through the rock to guarantee a path.
+            forceConnect(level, start, end);
+        }
+    }
+
+    /**
+     * Last-resort connectivity: carves a brand-new corridor through solid rock
+     * from the end room's cluster to the start room's cluster.
+     *
+     * <p>Only invoked when {@link #ensureConnectivity}'s connector sweep can't
+     * join the two (the candidate-connector graph is itself split). It runs a
+     * breadth-first search outward from the end cluster, stepping through
+     * <em>any</em> cell &mdash; rock and wall included &mdash; until it touches a
+     * cell already reachable from the start. The shortest such path is then carved
+     * to corridor, which makes the route walkable. Cells already passable along
+     * the way are left as-is, so the tunnel naturally stitches through any
+     * intermediate pockets too.</p>
+     */
+    private void forceConnect(ILevel2D level, IRoom2D start, IRoom2D end) {
+        Grid2D grid = level.getGrid();
+        // Cells already reachable from the start room (our BFS target set).
+        Set<Long> startComponent = floodPassable(grid,
+                start.getOrigin().getX() + start.getWidth() / 2,
+                start.getOrigin().getY() + start.getHeight() / 2);
+        // Cells in the end room's (currently isolated) cluster (our BFS sources).
+        Set<Long> endComponent = floodPassable(grid,
+                end.getOrigin().getX() + end.getWidth() / 2,
+                end.getOrigin().getY() + end.getHeight() / 2);
+        if (startComponent.isEmpty() || endComponent.isEmpty()) {
+            return;
+        }
+
+        // parent[] records how each cell was reached, so once we hit the start
+        // component we can walk the path back to a source and carve it.
+        Map<Long, Long> parent = new HashMap<>();
+        ArrayDeque<int[]> queue = new ArrayDeque<>();
+        // Seed sources in sorted order so the BFS (and thus the carved tunnel) is
+        // deterministic -- a HashSet's iteration order is not.
+        endComponent.stream().sorted().forEach(cellKey -> {
+            parent.put(cellKey, cellKey); // a source is its own parent
+            queue.add(new int[]{unpackX(cellKey), unpackY(cellKey)});
+        });
+
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        while (!queue.isEmpty()) {
+            int[] c = queue.poll();
+            long ck = packKey(c[0], c[1]);
+            for (int[] d : dirs) {
+                int nx = c[0] + d[0];
+                int ny = c[1] + d[1];
+                // Never tunnel into the outer border (it's the level's wall).
+                if (nx < 1 || ny < 1 || nx >= grid.getWidth() - 1 || ny >= grid.getHeight() - 1) {
+                    continue;
+                }
+                long nk = packKey(nx, ny);
+                if (startComponent.contains(nk)) {
+                    // Path found: carve the rock/wall cells from c back to a source.
+                    carveTunnel(grid, parent, ck, start, end);
+                    return;
+                }
+                if (!parent.containsKey(nk)) {
+                    parent.put(nk, ck);
+                    queue.add(new int[]{nx, ny});
+                }
+            }
+        }
+        // Should be unreachable on a contiguous grid (the level interior is one
+        // solid block of cells), but log rather than silently leave it split.
+        LOGGER.warn("forceConnect: no tunnel route from end {} to start {}",
+                end.getId(), start.getId());
+    }
+
+    /**
+     * Carves every not-yet-walkable cell on the BFS path (walking parent links
+     * from {@code fromKey} back to an end-cluster source) into corridor. Cells
+     * that are already corridor/door/room are left untouched.
+     *
+     * <p>Logs a permanent (not TEMP-diagnostic) summary on completion —
+     * {@code start}/{@code end} are the dungeon's overall start/end rooms (the
+     * ones {@link #ensureConnectivity} is trying to join), the id/cell-count/
+     * grid-local bounding box identify the tunnel itself, and {@code doorCells}
+     * flags the awkward case: a very short tunnel (few cells, small bbox) that
+     * enters a room right next to where it entered rock reads as a small
+     * "closet" with a door that doesn't obviously lead anywhere — this is the
+     * one connectivity path in the generator that skips every other quality
+     * check added since (frame requirement, corner-claim tracking, divider
+     * preservation), because its only job is guaranteeing a path exists at all.</p>
+     */
+    private void carveTunnel(Grid2D grid, Map<Long, Long> parent, long fromKey, IRoom2D start, IRoom2D end) {
+        // A fresh region id so convertLevel groups the tunnel as one corridor.
+        Region2D tunnel = new Region2D(idGenerator.next());
+        tunnel.setType(RegionType.CORRIDOR);
+        getRegionMap().put(tunnel.getId(), tunnel);
+
+        int cellCount = 0;
+        int doorCells = 0;
+        int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
+        int minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+
+        long current = fromKey;
+        while (true) {
+            int x = unpackX(current);
+            int y = unpackY(current);
+            Cell cell = grid.get(x, y);
+            if (cell.getType() == CellType.ROCK) {
+                cell.setType(CellType.CORRIDOR);
+                cell.setRegionId(tunnel.getId());
+            } else if (cell.getType() == CellType.WALL) {
+                // A wall that borders a room is the room's perimeter -- the tunnel
+                // is entering/leaving that room here, so this cell is a DOORWAY,
+                // not a corridor punched through the wall. Carving it to corridor
+                // would leave a corridor cell touching the room interior (a wall
+                // rendered cutting through the room). Pure rock-region walls (no
+                // room neighbor) become corridor as before.
+                cell.setType(hasRoomNeighbor(grid, x, y) ? CellType.DOOR : CellType.CORRIDOR);
+                if (cell.getType() == CellType.CORRIDOR) {
+                    cell.setRegionId(tunnel.getId());
+                } else {
+                    doorCells++;
+                }
+            }
+            cellCount++;
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minZ = Math.min(minZ, y);
+            maxZ = Math.max(maxZ, y);
+            long next = parent.get(current);
+            if (next == current) {
+                break; // reached a source (already part of the end cluster)
+            }
+            current = next;
+        }
+
+        LOGGER.warn("forceConnect: carved tunnel region={} joining start={} end={} cells={} doorCells={} "
+                        + "gridBounds=x[{}..{}] z[{}..{}]",
+                tunnel.getId(), start.getId(), end.getId(), cellCount, doorCells, minX, maxX, minZ, maxZ);
+    }
+
+    /** True if any orthogonal neighbor of (x,z) is a room interior cell. */
+    private boolean hasRoomNeighbor(Grid2D grid, int x, int z) {
+        for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+            int nx = x + d[0], nz = z + d[1];
+            if (nx < 0 || nz < 0 || nx >= grid.getWidth() || nz >= grid.getHeight()) {
+                continue;
+            }
+            Cell n = grid.get(nx, nz);
+            if (n != null && n.getType() == CellType.ROOM) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Flood-fills the set of walkable cells (corridor / door / room interior)
+     * reachable from {@code (startX, startY)}, as packed x/y keys.
+     */
+    private Set<Long> floodPassable(Grid2D grid, int startX, int startY) {
+        Set<Long> visited = new HashSet<>();
+        if (!isWalkable(grid, startX, startY)) {
+            return visited;
+        }
+        ArrayDeque<int[]> queue = new ArrayDeque<>();
+        queue.add(new int[]{startX, startY});
+        visited.add(packKey(startX, startY));
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        while (!queue.isEmpty()) {
+            int[] c = queue.poll();
+            for (int[] d : dirs) {
+                int nx = c[0] + d[0];
+                int ny = c[1] + d[1];
+                if (isWalkable(grid, nx, ny) && visited.add(packKey(nx, ny))) {
+                    queue.add(new int[]{nx, ny});
+                }
+            }
+        }
+        return visited;
+    }
+
+    private boolean isWalkable(Grid2D grid, int x, int y) {
+        if (x < 0 || y < 0 || x >= grid.getWidth() || y >= grid.getHeight()) {
+            return false;
+        }
+        CellType t = grid.get(x, y).getType();
+        return t == CellType.CORRIDOR || t == CellType.DOOR || t == CellType.ROOM;
+    }
+
+    /** Packs non-negative x/y grid coords into one long key for visited/parent maps. */
+    private static long packKey(int x, int y) {
+        return (((long) x) << 32) ^ (y & 0xffffffffL);
+    }
+    private static int unpackX(long key) {
+        return (int) (key >> 32);
+    }
+    private static int unpackY(long key) {
+        return (int) (key & 0xffffffffL);
+    }
+
+    /**
+     * Resolves the two region ids a DOOR cell connects, mirroring the adjacency
+     * logic in {@link #generateConnector}. Returns null if the cell doesn't sit
+     * between two distinct regions.
+     */
+    private int[] doorRegions(ILevel2D level, int x, int y) {
+        Grid2D grid = level.getGrid();
+        int north = grid.get(x, y - 1).getRegionId();
+        int south = grid.get(x, y + 1).getRegionId();
+        if (north >= idGenerator.getStart() && south >= idGenerator.getStart() && north != south) {
+            return new int[]{north, south};
+        }
+        int east = grid.get(x + 1, y).getRegionId();
+        int west = grid.get(x - 1, y).getRegionId();
+        if (east >= idGenerator.getStart() && west >= idGenerator.getStart() && east != west) {
+            return new int[]{east, west};
+        }
+        return null;
+    }
+
+    /** Minimal region-id union-find for the connectivity guarantee. */
+    private static final class UnionFind {
+        private final Map<Integer, Integer> parent = new HashMap<>();
+
+        void add(int x) {
+            parent.putIfAbsent(x, x);
+        }
+
+        int find(int x) {
+            parent.putIfAbsent(x, x);
+            // First walk up parent links until we reach the set's root (a node
+            // that is its own parent).
+            int root = x;
+            while (parent.get(root) != root) {
+                root = parent.get(root);
+            }
+            // Path compression: walk the chain again, repointing every node we
+            // passed directly at the root. This flattens the tree so future
+            // find() calls on these nodes are O(1).
+            while (parent.get(x) != root) {
+                int next = parent.get(x);
+                parent.put(x, root);
+                x = next;
+            }
+            return root;
+        }
+
+        void union(int a, int b) {
+            int ra = find(a);
+            int rb = find(b);
+            if (ra != rb) {
+                parent.put(ra, rb);
+            }
+        }
+
+        boolean connected(int a, int b) {
+            return find(a) == find(b);
+        }
+    }
+
+    /**
      *
      * @param level
      */
     public void backFill(ILevel2D level) {
+        // Doors are placed (discoverConnectors/mergeRegions/ensureConnectivity)
+        // BEFORE this runs, so a corridor cell that's a legitimate dead-end tip
+        // can also be the exact cell a door was placed against. backFill has no
+        // awareness of doors -- a DOOR cell isn't ROCK/WALL, so from an adjacent
+        // corridor cell's perspective it just reads as "open" -- and would
+        // happily eat that cell anyway, leaving the door opening onto whatever
+        // backFill converts it to (a plain WALL). Protect any CORRIDOR cell
+        // directly adjacent to a DOOR so a door's far side always survives.
+        Set<Coords2D> doorAdjacentCorridors = collectDoorAdjacentCorridors(level);
         // scan all cells for solid rock
         // NOTE skip border cells as they are "walls"
         for (int x = 1; x < level.getWidth()-1; x+=2) {
             for (int y = 1; y < level.getHeight()-1; y+=2) {
                 // process at coords
-                backFill(level, new Coords2D(x, y));
+                backFill(level, new Coords2D(x, y), doorAdjacentCorridors);
             }
         }
+    }
+
+    /** Every CORRIDOR cell cardinal-adjacent to a DOOR cell, at the point backFill runs. */
+    private Set<Coords2D> collectDoorAdjacentCorridors(ILevel2D level) {
+        Grid2D grid = level.getGrid();
+        Set<Coords2D> out = new HashSet<>();
+        for (int x = 1; x < grid.getWidth() - 1; x++) {
+            for (int y = 1; y < grid.getHeight() - 1; y++) {
+                if (grid.get(x, y).getType() != CellType.DOOR) continue;
+                for (int[] off : CARDINALS) {
+                    int nx = x + off[0];
+                    int ny = y + off[1];
+                    if (grid.get(nx, ny).getType() == CellType.CORRIDOR) {
+                        out.add(new Coords2D(nx, ny));
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     /**
@@ -991,34 +1752,50 @@ public class MazeLevelGenerator2D {
      * @param level
      * @param startingCoords
      */
-    private void backFill(ILevel2D level, Coords2D startingCoords) {
+    private void backFill(ILevel2D level, Coords2D startingCoords, Set<Coords2D> doorAdjacentCorridors) {
         Coords2D active = startingCoords;
         List<CellType> elements = Arrays.asList(CellType.ROCK, CellType.WALL);
 
         while (active != null) {
+            // Only a CORRIDOR cell can legitimately be a dead-end tip. The outer
+            // scan calls this for every odd grid position regardless of type, so
+            // most calls land on WALL/ROCK/ROOM/DOOR cells that were never a real
+            // dead end -- without this guard, a WALL cell that happens to have 3
+            // ROCK/WALL neighbors (e.g. a divider between two wide corridors that
+            // stops short of a room) is misread as a dead-end tip and eaten too.
+            if (level.getGrid().get(active).getType() != CellType.CORRIDOR) {
+                break;
+            }
+            if (doorAdjacentCorridors.contains(active)) {
+                break;
+            }
             int wallCount = 0;
             Coords2D next = null;
 
-            // test for 3 wall
-            if (elements.contains(level.getGrid().get(active.getX(), active.getY()-1).getType())) {
+            // test for 3 wall. Out-of-bounds counts as a wall (matches the
+            // border convention used elsewhere in this class) -- without this,
+            // a dead-end walk that reaches x/y 0 or 1 can step to -1 and index
+            // out of bounds, since the border itself is never touched by any
+            // other pass and this loop has no innate reason to stop there.
+            if (isWallOrOutOfBounds(level, elements, active.getX(), active.getY()-1)) {
                 wallCount++;
             }
             else {
                 next = new Coords2D(active.getX(), active.getY()-1);
             }
-            if (elements.contains(level.getGrid().get(active.getX(), active.getY()+1).getType())) {
+            if (isWallOrOutOfBounds(level, elements, active.getX(), active.getY()+1)) {
                 wallCount++;
             }
             else {
                 next = new Coords2D(active.getX(), active.getY()+1);
             }
-            if (elements.contains(level.getGrid().get(active.getX()+1, active.getY()).getType())) {
+            if (isWallOrOutOfBounds(level, elements, active.getX()+1, active.getY())) {
                 wallCount++;
             }
             else {
                 next = new Coords2D(active.getX()+1, active.getY());
             }
-            if (elements.contains(level.getGrid().get(active.getX()-1, active.getY()).getType())) {
+            if (isWallOrOutOfBounds(level, elements, active.getX()-1, active.getY())) {
                 wallCount++;
             }
             else {
@@ -1026,8 +1803,14 @@ public class MazeLevelGenerator2D {
             }
 
             if (wallCount >= 3) {
-                // update level with WALL
-                level.getGrid().get(active).setType(CellType.ROCK);
+                // A pruned dead-end tip must become WALL, not bare ROCK: the
+                // surviving junction cell it retreats from can end up with this
+                // as its ONLY non-corridor neighbor (common once corridors are
+                // wide enough to have interior cells), and ROCK doesn't count as
+                // a boundary the way WALL/DOOR/ROOM do. ROCK and WALL render and
+                // behave identically everywhere else in this class, so this is
+                // a pure classification fix, not a behavior change.
+                level.getGrid().get(active).setType(CellType.WALL);
 
                 // move to the tile in the open direction
                 active = next;
@@ -1036,6 +1819,13 @@ public class MazeLevelGenerator2D {
                 active = null;
             }
         }
+    }
+
+    private boolean isWallOrOutOfBounds(ILevel2D level, List<CellType> elements, int x, int y) {
+        if (x < 0 || y < 0 || x >= level.getWidth() || y >= level.getHeight()) {
+            return true;
+        }
+        return elements.contains(level.getGrid().get(x, y).getType());
     }
 
     /**
@@ -1058,14 +1848,38 @@ public class MazeLevelGenerator2D {
     }
 
     /**
+     * Carves one corridor "region" into the solid rock using a randomized
+     * Prim's-style flood, starting from {@code startCoords}.
      *
-     * @param level
-     * @param startCoords
+     * <p>The maze lives on a grid where corridors occupy <em>even</em> spacing:
+     * a corridor cell, then a shared "passage" cell, then the next corridor cell
+     * &mdash; so we always step <strong>two</strong> cells at a time and convert
+     * the cell in between into corridor too. The cell on either side of a passage
+     * (perpendicular to travel) becomes {@link CellType#WALL}, which is what keeps
+     * parallel corridors separated.</p>
+     *
+     * <p>Behavioural knobs:</p>
+     * <ul>
+     *     <li>{@code runFactor} &mdash; chance of extending from the most recently
+     *         added cell (depth-first, long straight runs) vs. a random active
+     *         cell (breadth-first, bushier mazes).</li>
+     *     <li>{@code curveFactor} &mdash; chance of continuing in the same
+     *         direction (straighter corridors) vs. turning.</li>
+     *     <li>{@code maxRun} &mdash; a random length cap so a single corridor
+     *         region doesn't sprawl across the whole level.</li>
+     * </ul>
+     *
+     * <p>Each call produces a single connected corridor with its own region id;
+     * {@link #carve} calls this repeatedly to fill all remaining rock.</p>
      */
     private void prims(ILevel2D level, Coords2D startCoords) {
+        // activeList = the "frontier": cells we can still grow out of.
         List<PrimsTile2D> activeList = new ArrayList<>();
+        // Scratch maps (per iteration): the eligible next cell in each direction
+        // and the passage cell bridging to it.
         Map<Direction2D, PrimsTile2D> neighbors = new HashMap<>();
         Map<Direction2D, PrimsTile2D> passages = new HashMap<>();
+        // Random length cap for this corridor region.
         int maxRun = random.nextInt(maxCorridorSize - minCorridorSize) + minCorridorSize;
         // create tile
         PrimsTile2D tile = new PrimsTile2D(startCoords, Direction2D.SOUTH);
@@ -1073,7 +1887,8 @@ public class MazeLevelGenerator2D {
         // add tile to activeList
         activeList.add(tile);
 
-        // create a region
+        // Each prims() call is one corridor region with a fresh id; this is how
+        // discoverConnectors later tells corridors apart.
         Region2D region = new Region2D(idGenerator.next());
         region.setType(RegionType.CORRIDOR);
 
@@ -1089,7 +1904,9 @@ public class MazeLevelGenerator2D {
 
         int runCount = 0;
         while(!activeList.isEmpty()) {
-            // randomly select a cell from the active list
+            // Pick the cell to grow from. runFactor biases toward the newest
+            // frontier cell (long winding runs); otherwise pick one at random
+            // (more branching).
             PrimsTile2D active = null;
             if (random.nextDouble() < runFactor) {
                 active = activeList.get(activeList.size()-1);
@@ -1101,6 +1918,11 @@ public class MazeLevelGenerator2D {
             neighbors.clear();
             passages.clear();
 
+            // Scan all four directions. A direction is eligible only if BOTH the
+            // passage cell (1 away) and the landing cell (2 away) are still solid
+            // ROCK -- that guarantees we never carve into an existing corridor/room.
+            // If the landing cell is blocked, the passage cell is walled off so it
+            // can't later become a stray opening.
             // TODO how was -1, -1 array index prevented before ???
             // get neighbors of active
             if (level.getGrid().get(active.getX(), active.getY()-1).getType() == CellType.ROCK) {
@@ -1138,6 +1960,8 @@ public class MazeLevelGenerator2D {
                 }
             }
 
+            // Dead end: nowhere left to grow from this cell, drop it from the
+            // frontier and move on.
             if (neighbors.isEmpty()) {
                 activeList.remove(active);
                 continue;
@@ -1145,7 +1969,8 @@ public class MazeLevelGenerator2D {
 
             PrimsTile2D selected = null;
             PrimsTile2D passage = null;
-            // if available pick the same direction 80% of time
+            // Prefer continuing straight (curveFactor) when the current heading is
+            // still available; otherwise turn toward a random eligible direction.
             if (random.nextDouble() < curveFactor && neighbors.containsKey(active.getDirection())) {
                 // move in the same direction as last time
                 selected = neighbors.get(active.getDirection());
@@ -1168,20 +1993,23 @@ public class MazeLevelGenerator2D {
                 continue;
             }
 
+            // The landing cell joins the frontier so we can keep growing from it.
             activeList.add(selected);
 
             // add neighbor and passage to region
 //            region.addTile(selected);
 //            region.addTile(passage);
 
-            // update grid with id of region
+            // Carve both the landing cell and the passage cell between it and the
+            // current cell into corridor, tagged with this region's id.
             level.getGrid().get(selected.getCoords()).setRegionId(region.getId());
             level.getGrid().get(selected.getCoords()).setType(CellType.CORRIDOR);
 
             level.getGrid().get(passage.getCoords()).setRegionId(region.getId());
             level.getGrid().get(passage.getCoords()).setType(CellType.CORRIDOR);
 
-            // update sides of passage perpendicular to direction needs to turn into wall
+            // Wall off the two cells flanking the passage (perpendicular to travel)
+            // so adjacent parallel corridors stay separated by a wall.
             switch(passage.getDirection()) {
                 case NORTH, SOUTH -> {
                     level.getGrid().get(passage.getX()-1, passage.getY()).setType(CellType.WALL);
@@ -1229,11 +2057,175 @@ public class MazeLevelGenerator2D {
 //                }
 //            }
 
+            // Length cap: once this corridor has grown maxRun steps, abandon the
+            // frontier so the region stops here (the rest of the rock is left for
+            // subsequent prims() calls to become other corridor regions).
             runCount++;
             if (runCount > maxRun) {
                 activeList.clear();
             }
         }
+    }
+
+    /**
+     * Widens every Prim's-carved corridor by {@code passes} cells in each
+     * cardinal direction. After one pass, a 1-wide corridor becomes 2 cells
+     * wide; after two passes, 3 cells wide; and so on.
+     *
+     * <p><strong>Safety rules:</strong></p>
+     * <ul>
+     *     <li>Never carves into a {@link CellType#ROOM} cell &mdash; rooms
+     *         retain their full interior.</li>
+     *     <li>Never carves into a {@link CellType#WALL} cell that's adjacent
+     *         to a {@link CellType#ROOM} &mdash; preserves the room's outer
+     *         wall ring (so corridors can touch rooms but never breach them).</li>
+     *     <li>Never carves into a cell that touches CORRIDOR cells of more
+     *         than one distinct region &mdash; that cell is the divider
+     *         between two separate corridors, and carving it would silently
+     *         fuse them into one blob. The two corridors stay visually
+     *         distinct (and, if the maze needs them connected, get a proper
+     *         door there via {@link #discoverConnectors} instead).</li>
+     * </ul>
+     *
+     * <p>After dilation, walks the grid once more to rebuild
+     * {@link CellType#WALL} cells around the now-fat corridors (the old wall
+     * positions are now mid-corridor and need to be promoted/demoted
+     * appropriately).</p>
+     *
+     * <p>Purely deterministic &mdash; no RNG &mdash; so dilation does not
+     * affect the per-seed determinism guarantee.</p>
+     *
+     * <p>Must run <strong>before</strong> {@link #discoverConnectors} so doors
+     * are placed on the widened corridor walls.</p>
+     */
+    public void dilateCorridors(ILevel2D level, int passes) {
+        if (passes <= 0) return;
+        Grid2D grid = level.getGrid();
+        // Protect the FULL rectangle of every room (interior + border + corners).
+        // Dilation can never enter a room footprint, which keeps room walls
+        // intact even for adjacent or overlapping rooms.
+        Set<Coords2D> protectedRoomCells = collectRoomFootprintCells(level);
+
+        for (int pass = 0; pass < passes; pass++) {
+            // Two-step, over TWO snapshots: first find which CORRIDOR region(s)
+            // touch each candidate ROCK/WALL cell, then only carve candidates
+            // touched by exactly one region. A cell touched by two (or more)
+            // distinct regions is the shared divider between separate corridors
+            // and must stay a wall, regardless of carve order.
+            Map<Coords2D, Set<Integer>> touchingRegions = new HashMap<>();
+            for (int x = 1; x < grid.getWidth() - 1; x++) {
+                for (int z = 1; z < grid.getHeight() - 1; z++) {
+                    Cell cell = grid.get(x, z);
+                    if (cell.getType() != CellType.CORRIDOR) continue;
+                    int regionId = cell.getRegionId();
+                    for (int[] off : CARDINALS) {
+                        int nx = x + off[0];
+                        int nz = z + off[1];
+                        Cell neighbor = grid.get(nx, nz);
+                        CellType nType = neighbor.getType();
+                        if ((nType == CellType.ROCK || nType == CellType.WALL)
+                                && !protectedRoomCells.contains(new Coords2D(nx, nz))) {
+                            touchingRegions.computeIfAbsent(new Coords2D(nx, nz), k -> new HashSet<>())
+                                    .add(regionId);
+                        }
+                    }
+                }
+            }
+            // Process candidates in a deterministic (x, then z) order, independent
+            // of HashMap iteration order, since the live-grid re-check below makes
+            // carve order observable: two candidates from DIFFERENT regions can
+            // each look single-region-touched in the snapshot above yet be
+            // cardinal-adjacent to EACH OTHER (growing toward each other from
+            // opposite sides in the same pass). The snapshot alone can't see that;
+            // re-checking against the live grid at carve time can.
+            List<Map.Entry<Coords2D, Set<Integer>>> candidates = new ArrayList<>(touchingRegions.entrySet());
+            candidates.sort(Comparator.<Map.Entry<Coords2D, Set<Integer>>>comparingInt(e -> e.getKey().getX())
+                    .thenComparingInt(e -> e.getKey().getY()));
+            for (Map.Entry<Coords2D, Set<Integer>> e : candidates) {
+                if (e.getValue().size() != 1) continue; // divider between 2+ regions — keep as wall
+                Coords2D pos = e.getKey();
+                int regionId = e.getValue().iterator().next();
+                Cell c = grid.get(pos.getX(), pos.getY());
+                if (c.getType() == CellType.CORRIDOR) continue;
+                if (touchesForeignCorridor(grid, pos.getX(), pos.getY(), regionId)) continue;
+                c.setType(CellType.CORRIDOR);
+                c.setRegionId(regionId);
+            }
+        }
+        rebuildCorridorWalls(grid, protectedRoomCells);
+    }
+
+    /** 4 cardinal offsets for neighbor checks (used for carving/dilation steps). */
+    private static final int[][] CARDINALS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+    /**
+     * True if (x,z) is cardinal-adjacent, on the LIVE grid, to a CORRIDOR cell
+     * belonging to a region other than {@code regionId}. Used at dilation carve
+     * time (not just from the pre-pass snapshot) to catch two candidates from
+     * different regions growing into direct contact with each other within the
+     * same pass.
+     */
+    private boolean touchesForeignCorridor(Grid2D grid, int x, int z, int regionId) {
+        for (int[] off : CARDINALS) {
+            int nx = x + off[0];
+            int nz = z + off[1];
+            if (nx < 0 || nz < 0 || nx >= grid.getWidth() || nz >= grid.getHeight()) continue;
+            Cell n = grid.get(nx, nz);
+            if (n != null && n.getType() == CellType.CORRIDOR && n.getRegionId() != regionId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Collects every cell inside any room's footprint rectangle (origin to
+     * origin+width/depth). These cells &mdash; the room interior, its border
+     * walls, and its corners &mdash; are all protected from corridor dilation,
+     * so corridors can touch a room but never breach or erode it.
+     */
+    private Set<Coords2D> collectRoomFootprintCells(ILevel2D level) {
+        Set<Coords2D> out = new HashSet<>();
+        for (IRoom2D room : level.getRooms()) {
+            int ox = room.getOrigin().getX();
+            int oz = room.getOrigin().getY();
+            for (int x = 0; x < room.getWidth(); x++) {
+                for (int z = 0; z < room.getHeight(); z++) {
+                    out.add(new Coords2D(ox + x, oz + z));
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * After dilation, any non-corridor / non-room cell that now sits adjacent
+     * to a corridor must be promoted to {@link CellType#WALL}. Cells inside a
+     * room footprint (collected before dilation) are left alone so room walls
+     * stay intact.
+     */
+    private void rebuildCorridorWalls(Grid2D grid, Set<Coords2D> protectedRoomCells) {
+        for (int x = 0; x < grid.getWidth(); x++) {
+            for (int z = 0; z < grid.getHeight(); z++) {
+                Cell c = grid.get(x, z);
+                CellType t = c.getType();
+                if (t == CellType.CORRIDOR || t == CellType.ROOM || t == CellType.DOOR) continue;
+                if (protectedRoomCells.contains(new Coords2D(x, z))) continue;
+                if (hasCorridorNeighbor(grid, x, z)) {
+                    c.setType(CellType.WALL);
+                }
+            }
+        }
+    }
+
+    private boolean hasCorridorNeighbor(Grid2D grid, int x, int z) {
+        for (int[] off : CARDINALS) {
+            int nx = x + off[0];
+            int nz = z + off[1];
+            if (nx < 0 || nz < 0 || nx >= grid.getWidth() || nz >= grid.getHeight()) continue;
+            if (grid.get(nx, nz).getType() == CellType.CORRIDOR) return true;
+        }
+        return false;
     }
 
     public int getWidth() {
@@ -1383,6 +2375,7 @@ public class MazeLevelGenerator2D {
         public double curveFactor = DEFAULT_CURVE_FACTOR;
         public int fillAttempts = DEFAULT_FILL_ATTEMPTS;
         public int fillRoomsPerSize = DEFAULT_FILL_ROOMS_PER_SIZE;
+        public int corridorDilationPasses = 0;
 
         public IRoom2D startRoom;
         public IRoom2D endRoom;
@@ -1391,6 +2384,29 @@ public class MazeLevelGenerator2D {
 
         public Builder with(Consumer<Builder> builder) {
             builder.accept(this);
+            return this;
+        }
+
+        /**
+         * Convenience: pick corridor width in cells (1 = classic 1-wide,
+         * 2 = 2-wide, 3 = 3-wide, etc.). Internally translates to dilation
+         * passes (cells - 1).
+         */
+        public Builder corridorWidth(int cells) {
+            this.corridorDilationPasses = Math.max(0, cells - 1);
+            return this;
+        }
+
+        /**
+         * Convenience: seed the planner's RNG deterministically.
+         *
+         * <p>Equivalent to {@code this.random = new Random(seed)}. Callers that
+         * want byte-identical output across runs (e.g. {@code DungeonStackPlanner})
+         * must use this method (or pre-build their own seeded {@link Random})
+         * &mdash; the default field initializer creates an unseeded one.</p>
+         */
+        public Builder seed(long seed) {
+            this.random = new Random(seed);
             return this;
         }
 

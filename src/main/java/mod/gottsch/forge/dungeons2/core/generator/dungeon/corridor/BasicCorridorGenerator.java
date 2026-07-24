@@ -17,165 +17,136 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.*;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
+import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CORRIDOR_CEILING_PATTERN;
 import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
 
 /**
- * @author Mark Gottschling on Dec 5, 2023
+ * Builds one corridor region as {@link BlockPlacement}s.
+ *
+ * <p>For each cell in the corridor: emits a floor block at Y={@code floorY},
+ * 3 air blocks above (Y={@code floorY+1..floorY+3}), and a motif ceiling block
+ * at Y={@code floorY+4}. For each grid cell <em>neighboring</em> the corridor
+ * that is rock / wall / door / connector / out-of-bounds, emits a 5-block
+ * wall column (Y={@code floorY..floorY+4}). Walls are deduped per builder
+ * call so the same neighbor cell isn't emitted multiple times for a single
+ * corridor; cross-corridor wall duplication is acceptable (the renderer
+ * idempotently overwrites).</p>
+ *
+ * @author Mark Gottschling on Dec 5, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicCorridorGenerator implements ICorridorGenerator {
     private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
 
-    /*
-     * A DOOR is treated as a wall when generating the corridors.
-     */
-    private static final List<CellType> WALL_ELEMENTS = Arrays.asList(CellType.ROCK, CellType.WALL, CellType.DOOR, CellType.CONNECTOR);
-
-    private IDungeonMotif cachedMotif;
-    private BlockProvider cachedBlockProvider;
-
     @Override
-    public void addToWorld(ServerLevel level, RandomSource random, Grid2D grid, ICoords spawnCoords, IDungeonMotif motif) {
-        // some working variables
-        List<PrimsTile2D> activeList = new ArrayList<>();
+    public void build(CorridorData corridor, Grid2D grid, int floorY,
+                      IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
+        Palette palette = palette(motif, random);
 
-        /*
-         * a grid to keep track of what tiles have been placed/visited with same dimensions as the grid
-         */
-        BooleanGrid visitedGrid = new BooleanGrid(grid.getWidth(), grid.getHeight());
+        Set<Coords2D> wallsEmitted = new HashSet<>();
+        for (Coords2D cell : corridor.getCells()) {
+            int x = cell.getX();
+            int z = cell.getY();
+            emitCorridorColumn(x, z, floorY, palette, out);
 
-        // scan all the tiles in the grid, looking for corridors
-        for (int x = 0; x < grid.getWidth(); x++) {
-            for (int z = 0; z < grid.getHeight(); z++) {
-
-                // if already visited then move to the next tile
-                if (visitedGrid.get(x, z)) {
-                    continue;
-                }
-
-                if (isCorridor(grid, x, z)) {
-                    // create a Tile
-                    PrimsTile2D tile = new PrimsTile2D(new Coords2D(x, z), Direction2D.NONE);
-                    activeList.add(tile);
-                }
-
-                while (!activeList.isEmpty()) {
-                    // randomly select a cell from the active list
-                    PrimsTile2D active = activeList.get(0);
-
-                    /*
-                     * examine all 8 surrounding tiles
-                     */
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX(), active.getY()-1), motif);
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX(), active.getY()+1), motif);
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()), motif);
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()), motif);
-
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()-1), motif);
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()-1), motif);
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()-1, active.getY()+1), motif);
-                    visitGrid(level, random, spawnCoords, activeList, grid, visitedGrid, new Coords2D(active.getX()+1, active.getY()+1), motif);
-
-                    // build the current corridor to the world
-                    addCorridorToWorld(level, random, spawnCoords.add(active.getX(), 0, active.getY()), motif);
-                    visitedGrid.put(active.getCoords(), true);
-
-                    // remove active from list
-                    activeList.remove(active);
+            // 8-neighbor wall columns, sourced live from the grid.
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dz == 0) continue;
+                    int nx = x + dx;
+                    int nz = z + dz;
+                    Coords2D neighbor = new Coords2D(nx, nz);
+                    if (wallsEmitted.contains(neighbor)) continue;
+                    if (isWallElement(grid, nx, nz)) {
+                        emitWallColumn(nx, nz, floorY, palette, out);
+                        wallsEmitted.add(neighbor);
+                    }
                 }
             }
+        }
+    }
+
+    @Override
+    public void build(CorridorData corridor, int floorY,
+                      IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
+        Palette palette = palette(motif, random);
+
+        // Corridor columns first, then the pre-computed wall cells. The two sets
+        // are disjoint within a single corridor, so order is immaterial; the
+        // placements match the grid-based overload as a set.
+        for (Coords2D cell : corridor.getCells()) {
+            emitCorridorColumn(cell.getX(), cell.getY(), floorY, palette, out);
+        }
+        for (Coords2D wall : corridor.getWallCells()) {
+            emitWallColumn(wall.getX(), wall.getY(), floorY, palette, out);
         }
     }
 
     /**
-     * @param level the ServerLevel
-     * @param spawnCoords the spawn coords / offset
-     * @param grid the populated grid of the dungeon level
-     * @param visitedGrid the boolean grid of visited cells
-     * @param visitCoords the current coords to visit on the grids
-     * @return
+     * A floor block at {@code floorY}, 3 air blocks above, and a ceiling block at
+     * {@code floorY+4} (the top of the 5-tall corridor walls), closing the corridor.
      */
-    private void visitGrid(ServerLevel level, RandomSource random, ICoords spawnCoords, List<PrimsTile2D> activeList, Grid2D grid, BooleanGrid visitedGrid, Coords2D visitCoords, IDungeonMotif motif) {
-        if (!visitedGrid.get(visitCoords)) {
-            if (WALL_ELEMENTS.contains(grid.get(visitCoords).getType())) {
-                // generate wall into the world
-                addWallToWorld(level, random, spawnCoords.add(visitCoords.getX(), 0, visitCoords.getY()), motif);
-                visitedGrid.put(visitCoords, true);
-            } else if (isCorridor(grid, visitCoords)) {
-                activeList.add(new PrimsTile2D(visitCoords, Direction2D.NONE));
-            }
+    private static void emitCorridorColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
+        out.add(BlockStateCodec.placement(x, floorY, z, palette.floor));
+        for (int yOffset = 1; yOffset < 4; yOffset++) {
+            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.air));
+        }
+        out.add(BlockStateCodec.placement(x, floorY + 4, z, palette.ceiling));
+    }
+
+    /** A 5-block wall column (Y = floorY .. floorY+4). */
+    private static void emitWallColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
+        for (int yOffset = 0; yOffset < 5; yOffset++) {
+            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.wall));
         }
     }
 
-
-    // TODO use block provider
-    @Override
-    public void addWallToWorld(ServerLevel level, RandomSource random, ICoords coords, IDungeonMotif motif) {
-        BlockProvider blockProvider;
-        if (cachedMotif != null && cachedMotif == motif) {
-            blockProvider = cachedBlockProvider;
-        }
-        else {
-            cachedMotif = motif;
-            blockProvider = BlockProvider.get(motif);
-            cachedBlockProvider = blockProvider;
-        }
-
-        // TODO need to cache this too!
-        BlockSet blockSet = blockProvider.get(random, WALL_PATTERN).orElse(new BlockSet());
-
-        // build bottom-up
-        for (int i = 0; i < 5; i++) {
-            level.setBlock(coords.add(0, i, 0).toPos(), blockSet.get(WallPattern.WALL).orElse(DEFAULT), 3);
-        }
+    /**
+     * Resolves the floor / wall / air / ceiling block states once per build call.
+     * Wall and corridor-floor blocks come from the same WALL_PATTERN BlockSet
+     * (matching the original behavior; FLOOR is a slot inside the wall pattern);
+     * the ceiling comes from its own CORRIDOR_CEILING_PATTERN BlockSet, mirroring
+     * {@code BasicCeilingGenerator}'s room ceiling.
+     */
+    private static Palette palette(IDungeonMotif motif, RandomSource random) {
+        BlockSet blockSet = BlockProvider.get(motif, WALL_PATTERN, random);
+        BlockSet ceilingBlockSet = BlockProvider.get(motif, CORRIDOR_CEILING_PATTERN, random);
+        return new Palette(
+                blockSet.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT),
+                blockSet.get(WallPattern.WALL).orElse(DEFAULT),
+                Blocks.AIR.defaultBlockState(),
+                ceilingBlockSet.get(CeilingPattern.CEILING).orElse(DEFAULT));
     }
 
-    @Override
-    public void addCorridorToWorld(ServerLevel level, RandomSource random, ICoords coords, IDungeonMotif motif) {
-        BlockProvider blockProvider;
-        if (cachedMotif != null && cachedMotif == motif) {
-            blockProvider = cachedBlockProvider;
+    /** True if the cell at (x,z) is a wall-equivalent for corridor-wall placement. */
+    private static boolean isWallElement(Grid2D grid, int x, int z) {
+        if (x < 0 || z < 0 || x >= grid.getWidth() || z >= grid.getHeight()) {
+            return true;
         }
-        else {
-            cachedMotif = motif;
-            blockProvider = BlockProvider.get(motif);
-            cachedBlockProvider = blockProvider;
-        }
-
-        // TODO need to cache this too!
-        BlockSet blockSet = blockProvider.get(random, WALL_PATTERN).orElse(new BlockSet());
-
-        // floor
-        level.setBlockAndUpdate(coords.toPos(), blockSet.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT));
-        // passage/air
-        for (int i = 1; i < 4; i++) {
-            level.setBlockAndUpdate(coords.add(0, i, 0).toPos(), Blocks.AIR.defaultBlockState());
-        }
-        // ceiling
-        // TEMP don't gen ceiling
-//        level.setBlockAndUpdate(coords.add(0, 4, 0).toPos(), blockProvider.get(CorridorCeilingPattern.CEILING).orElse(DEFAULT));
+        CellType type = grid.get(x, z).getType();
+        return type == CellType.ROCK || type == CellType.WALL
+                || type == CellType.DOOR || type == CellType.CONNECTOR;
     }
 
-    private boolean isCorridor(Grid2D grid, int x, int z) {
-        return grid.get(x, z).getType() == CellType.CORRIDOR;
-    }
-
-    private boolean isCorridor(Grid2D grid, Coords2D coords) {
-        return isCorridor(grid, coords.getX(), coords.getY());
-    }
+    /** Resolved block states for one corridor render pass. */
+    private record Palette(BlockState floor, BlockState wall, BlockState air, BlockState ceiling) {}
 }

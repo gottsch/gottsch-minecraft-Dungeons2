@@ -18,7 +18,6 @@
 package mod.gottsch.forge.dungeons2;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import mod.gottsch.forge.dungeons2.core.config.BlockProviderConfiguration;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.setup.CommonSetup;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
@@ -39,7 +38,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * 
@@ -54,7 +52,6 @@ public class Dungeons {
 	public static final String MOD_ID = "dungeons2";
 	
 	private static final String DUNGEONS_CONFIG_VERSION = "1.20.1-v1";
-	private static final String BLOCK_PROVIDER_CONFIG_VERSION = "1.20.1-v1";
 	/**
 	 * 
 	 */
@@ -65,7 +62,6 @@ public class Dungeons {
 
 		// create the default config
 		createServerConfig(Config.DUNGEONS_CONFIG_SPEC, "dungeons", DUNGEONS_CONFIG_VERSION);
-		createServerConfig(Config.BLOCK_PROVIDER_CONFIG_SPEC, "blockproviders", BLOCK_PROVIDER_CONFIG_VERSION);
 		// register the deferred registries
         Registration.init();
         
@@ -110,9 +106,10 @@ public class Dungeons {
 				if (spec == Config.DUNGEONS_CONFIG_SPEC) {
 					// transform/copy the toml into the config
 					Config.transform(commentedConfig);
-				} else if (spec == Config.BLOCK_PROVIDER_CONFIG_SPEC) {
-					Optional<BlockProviderConfiguration> blockProviderConfigurationList = Config.transformBlockProviderConfiguration(commentedConfig);
 				}
+				// Block providers + substitutions are datapack-driven (data/dungeons2/
+				// block_provider/* and substitution/*), loaded via the reload listeners in
+				// DataPackEvents — no longer a Forge config spec.
 			}
 		}
 	}

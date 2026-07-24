@@ -17,158 +17,61 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
-import mod.gottsch.forge.dungeons2.core.collection.Array2D;
-import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
-import mod.gottsch.forge.dungeons2.core.enums.FloorElementType;
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.enums.WallElementType;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.DungeonLevel;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.BasicCeilingGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.IDungeonCeilingGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.BasicFloorGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.BasicWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.IDungeonWallGenerator;
-import mod.gottsch.forge.dungeons2.core.registry.DecoratorRegistry;
-import mod.gottsch.forge.gottschcore.random.RandomHelper;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
- * @author Mark Gottschling on Dec 7, 2023
+ * Default room orchestrator: delegates walls, floor, and ceiling to the three
+ * sub-builders. Phase 2 dropped the {@code IRoomElementDecorator} chain that
+ * the original implementation called &mdash; the decorators still wrote
+ * blocks via {@code ServerLevel} and need their own Phase 8 refactor before
+ * they can sit on top of this pipeline.
+ *
+ * <p>Sub-builder selection is currently hard-coded; the original code shipped
+ * with motif-aware lookups stubbed (returning a {@code Basic*} for every
+ * motif). Real per-motif specialization happens in a later phase.</p>
+ *
+ * @author Mark Gottschling on Dec 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicRoomGenerator implements IRoomGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
 
-    /**
-     * TODO add config / theme
-     *
-     * @param level
-     * @param dungeonLevel
-     * @param spawnCoords
-     */
     @Override
-    public void addToWorld(ServerLevel level, RandomSource random, DungeonLevel dungeonLevel, ICoords spawnCoords, IDungeonMotif motif) {
-        // a typical room will generate at y+2
-        ICoords normalizedSpawnCoords = spawnCoords.add(0, 2, 0);
+    public void build(RoomData room, int floorY, IDungeonMotif motif,
+                      RandomSource random, List<BlockPlacement> out) {
+        IDungeonWallGenerator wallGen = selectWallGenerator(motif);
+        IDungeonFloorGenerator floorGen = selectFloorGenerator(motif);
+        IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif);
 
-        // TODO revisit how decorators are registered - why introduce FloorElementType when Pattern already exist
-        IRoomElementDecorator floorDecorator;
-        List<IRoomElementDecorator> floorDecoratorList = DecoratorRegistry.get(FloorElementType.FLOOR);
-        if (floorDecoratorList.isEmpty()) {
-            return;
-        }
-        floorDecorator = floorDecoratorList.get(RandomHelper.randomInt(random, 0, floorDecoratorList.size() - 1));
-
-        Optional<IRoomElementDecorator> wallDecorator = Optional.empty();
-        List<IRoomElementDecorator> wallDecorators = DecoratorRegistry.get(WallElementType.WALL);
-        if (!wallDecorators.isEmpty()) {
-            wallDecorator = Optional.of(wallDecorators.get(random.nextInt(wallDecorators.size())));
-        }
-
-        for (IRoom room : dungeonLevel.getRooms()) {
-            // TODO determine if custom room
-            // TODO use resource location to get template
-            // TODO calculate offset if any
-
-            addRoomToWorld(level, random, room, normalizedSpawnCoords, motif);
-
-            // perform decorations
-            if (wallDecorator.isPresent()) {
-                // TODO replace grid with Array2D
-                Grid2D grid = wallDecorator.get().decorate(level, random, null, room, normalizedSpawnCoords, motif);
-            }
-            wallDecorator.get().decorate(level, random, null, room, normalizedSpawnCoords, motif);
-            floorDecorator.decorate(level, random, null, room, normalizedSpawnCoords, motif);
-            // ceilingDecorator.decorate(level, random, null, room, normailzedSpawnCoords, motif);
-        }
+        // Order matters when the renderer iterates the list in sequence
+        // and a later placement overwrites an earlier one (e.g., interior
+        // air from the wall step gets the final say over anything the
+        // floor step happens to put in the same cell). Keeping walls last
+        // here would lose the interior air; we do walls FIRST so the floor
+        // step has the final word at Y=floorY and ceiling at Y=floorY+height-1.
+        wallGen.build(room, floorY, motif, random, out);
+        floorGen.build(room, floorY, motif, random, out);
+        ceilingGen.build(room, floorY, motif, random, out);
     }
 
-    // TODO will have to return a map of grids - each decorator may need to know about the others
-    private void addRoomToWorld(ServerLevel level, RandomSource random, IRoom room, ICoords normalSpawnCoords, IDungeonMotif motif) {
-        // TODO wallGenerator
-        IDungeonWallGenerator wallGenerator = selectWallGenerator(level, motif);
-        // TODO properly develop the 2d map from the walls
-        IDungeonFloorGenerator floorGenerator = selectFloorGenerator(level, motif);
-        IDungeonCeilingGenerator ceilingGenerator = selectCeilingGenerator(level, motif);
-
-//        BlockProvider blockProvider = BlockProvider.get(motif);
-
-        // TODO how to pass ALL the grids back up to the generators and decorators
-        // generate the walls
-        Array2D<Integer> wallGrid = wallGenerator.addToWorld(level, random, room, normalSpawnCoords, motif);
-
-        // generate the floor
-        Array2D<Integer> floorGrid = floorGenerator.addToWorld(level, random, room, normalSpawnCoords, motif);
-
-        Array2D<Integer> ceilingGrid = ceilingGenerator.addToWorld(level, random, room, normalSpawnCoords, motif);
-//        // build box (minus the floor)
-//        for (int y = 1; y < room.getHeight(); y++) {
-//            for (int x = 0; x < room.getWidth(); x++) {
-//                for (int z = 0; z < room.getDepth(); z++) {
-//                    // edges
-//                    if (
-//                            ((x == 0 || x == room.getWidth() - 1) && (z == 0 || z == room.getDepth() - 1))
-//                                    || ((x == 0 || x == room.getWidth() - 1) && (y == 0 || y == room.getHeight() - 1))
-//                                    || ((z == 0 || z == room.getDepth() - 1) && (y == 0 || y == room.getHeight() - 1))
-//                    ) {
-//                        // skip the edges as they aren't visible anyway
-//                    } else {
-//                        // NOTE rooms will overwrite corridor walls? no can't do that! arg.
-//                        // NOTE meaning - can't have good wall designs unless make the wall thicker
-//                        // NOTE OR build a buffer around all rooms during 2D build - but then connectors would be out of wack
-//                        // build ceiling
-////                        if (y == room.getHeight() - 1) {
-//                            // TODO extract to a ceiling generator
-//                            // TEMP don't gen the ceiling
-////                            level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
-////                        }
-//                        // TODO extract to a wall generator and it goes first as it will determine how
-//                        // floor and ceiling is generated & decorated
-//                        // build walls
-////                        else if (x == 0 || x == room.getWidth() - 1 || z == 0 || z == room.getDepth() - 1) {
-////                            // top/bottom corners of wall
-////                            if (
-////                                    (y == 1 || y == room.getHeight() - 2) &&
-////                                            (
-////                                                    ((x == 0 || x == room.getWidth() - 1) && (z == 1 || z == room.getDepth() - 2))
-////                                                            || ((x == 1 || x == room.getWidth() - 2) && (z == 0 || z == room.getDepth() - 1))
-////                                            )
-////                            ) {
-////                                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-////                                        blockProvider.get(WallPattern.CORNER).orElse(DEFAULT));
-////                            } else {
-////                                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-////                                        blockProvider.get(WallPattern.WALL).orElse(DEFAULT));
-////                            }
-////                        } else {
-////                            // replace with air ie inside the room
-////                            level.setBlock(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), Blocks.AIR.defaultBlockState(), 3);
-////                        }
-//                    }
-//                }
-//            }
-//        }
-    }
-
-    public IDungeonWallGenerator selectWallGenerator(ServerLevel level, IDungeonMotif motif) {
+    public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif) {
         return new BasicWallGenerator();
     }
 
-    public IDungeonFloorGenerator selectFloorGenerator(ServerLevel level, IDungeonMotif motif) {
-        // TODO lookup registry for the floors by motif
+    public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif) {
         return new BasicFloorGenerator();
     }
 
-    public IDungeonCeilingGenerator selectCeilingGenerator(ServerLevel level, IDungeonMotif motif) {
+    public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif) {
         return new BasicCeilingGenerator();
     }
 }

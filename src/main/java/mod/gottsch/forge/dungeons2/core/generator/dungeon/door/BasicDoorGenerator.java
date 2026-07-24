@@ -17,94 +17,88 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.door;
 
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.DungeonLevel;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Direction2D;
 import mod.gottsch.forge.dungeons2.core.pattern.door.DoorPattern;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.DOOR_PATTERN;
 
 /**
- * @author Mark Gottschling on Dev 7, 2023
+ * Builds one doorway as a 4-block column of {@link BlockPlacement}s.
  *
+ * <p>Column layout (relative to floor surface Y):</p>
+ * <ul>
+ *     <li>Y = floorY: door-sill block (a floor-style block from
+ *         {@link DoorPattern#FLOOR})</li>
+ *     <li>Y = floorY+1: door lower half (or air if there's no valid facing)</li>
+ *     <li>Y = floorY+2: door upper half (or air)</li>
+ *     <li>Y = floorY+3: lintel block ({@link DoorPattern#LINTEL})</li>
+ * </ul>
+ *
+ * <p>The {@link DoorData#getFacing()} direction (planner-resolved at Phase 1
+ * convert time) is used to set the {@code FACING} property of both door
+ * halves. Doors with {@link Direction2D#NONE} facing emit air halves instead
+ * of doors &mdash; the column is still walkable but has no actual door.</p>
+ *
+ * @author Mark Gottschling on Dev 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicDoorGenerator implements IDoorGenerator {
     private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
-    private IDungeonMotif cachedMotif;
-    private BlockProvider cachedBlockProvider;
 
     @Override
-    public void addToWorld(ServerLevel level, RandomSource random, DungeonLevel dungeonLevel, ICoords spawnCoords, IDungeonMotif motif) {
-        Grid2D grid = dungeonLevel.getGrid();
+    public void build(DoorData door, int floorY, IDungeonMotif motif,
+                      RandomSource random, List<BlockPlacement> out) {
+        BlockSet blockSet = BlockProvider.get(motif, DOOR_PATTERN, random);
 
-        // all corridors and doors will generated at y+2
-        ICoords normalSpawnCoords = spawnCoords.add(0, 2, 0);
+        int x = door.getX();
+        int z = door.getZ();
 
-        BlockProvider blockProvider = getBlockProvider(motif);
+        // Sill (floor) and lintel (top).
+        out.add(BlockStateCodec.placement(x, floorY, z,
+                blockSet.get(DoorPattern.FLOOR).orElse(DEFAULT)));
+        out.add(BlockStateCodec.placement(x, floorY + 3, z,
+                blockSet.get(DoorPattern.LINTEL).orElse(DEFAULT)));
 
-        // TODO need to cache this too!
-        BlockSet blockSet = blockProvider.get(random, DOOR_PATTERN).orElse(new BlockSet());
-
-        
-        // scan all the tiles in the grid, looking for corridors
-        for (int x = 0; x < grid.getWidth(); x++) {
-            for (int z = 0; z < grid.getHeight(); z++) {
-                if (grid.get(x, z).getType() == CellType.DOOR) {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 0, z).toPos(), blockSet.get(DoorPattern.FLOOR).orElse(DEFAULT));
-                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 1, z).toPos(), Blocks.AIR.defaultBlockState());
-                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 2, z).toPos(), Blocks.AIR.defaultBlockState());
-                    level.setBlockAndUpdate(normalSpawnCoords.add(x, 3, z).toPos(), blockSet.get(DoorPattern.LINTEL).orElse(DEFAULT));
-
-                    // test neighbors if corridor to determine the direction axis
-                    List<CellType> validCellTypes = Arrays.asList(CellType.CORRIDOR, CellType.ROOM);
-
-                    // TODO add random conditional if door gets added
-                    // ie if corridor to corridor, then 35%, else 85%
-                    Direction direction = Direction.DOWN;
-                    if (validCellTypes.contains(grid.get(x, z-1).getType())) {
-                        direction = Direction.NORTH;
-                    } else if (validCellTypes.contains(grid.get(x, z+1).getType())) {
-                        direction = Direction.SOUTH;
-                    } else if (validCellTypes.contains(grid.get(x-1, z).getType())) {
-                        direction = Direction.WEST;
-                    } else if (validCellTypes.contains(grid.get(x+1, z).getType())) {
-                        direction = Direction.EAST;
-                    }
-
-                    if (direction != Direction.DOWN) {
-                        // add a dungeon door
-                        level.setBlockAndUpdate(normalSpawnCoords.add(x, 1, z).toPos(), blockSet.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState()).setValue(DoorBlock.FACING, direction).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
-                        level.setBlockAndUpdate(normalSpawnCoords.add(x, 2, z).toPos(), blockSet.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState()).setValue(DoorBlock.FACING, direction).setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
-                    }
-                }
-            }
+        // Door halves.
+        Direction direction = toMcDirection(door.getFacing());
+        BlockState doorBase = blockSet.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState());
+        if (direction != null) {
+            BlockState lower = doorBase.setValue(DoorBlock.FACING, direction)
+                    .setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+            BlockState upper = doorBase.setValue(DoorBlock.FACING, direction)
+                    .setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+            out.add(BlockStateCodec.placement(x, floorY + 1, z, lower));
+            out.add(BlockStateCodec.placement(x, floorY + 2, z, upper));
+        } else {
+            // No valid facing: emit air halves so the doorway is at least walkable.
+            BlockState airState = Blocks.AIR.defaultBlockState();
+            out.add(BlockStateCodec.placement(x, floorY + 1, z, airState));
+            out.add(BlockStateCodec.placement(x, floorY + 2, z, airState));
         }
     }
 
-    public BlockProvider getBlockProvider(IDungeonMotif motif) {
-        BlockProvider blockSet;
-        if (cachedMotif != null && cachedMotif == motif) {
-            blockSet = cachedBlockProvider;
-        }
-        else {
-            cachedMotif = motif;
-            blockSet = BlockProvider.get(motif);
-            cachedBlockProvider = blockSet;
-        }
-        return blockSet;
+    /** Map planner-level {@link Direction2D} to Minecraft {@link Direction}, or null for NONE. */
+    private static Direction toMcDirection(Direction2D facing) {
+        if (facing == null) return null;
+        return switch (facing) {
+            case NORTH -> Direction.NORTH;
+            case SOUTH -> Direction.SOUTH;
+            case EAST -> Direction.EAST;
+            case WEST -> Direction.WEST;
+            default -> null;
+        };
     }
 }

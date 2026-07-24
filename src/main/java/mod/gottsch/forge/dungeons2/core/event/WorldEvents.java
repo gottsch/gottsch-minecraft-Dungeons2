@@ -20,7 +20,6 @@ package mod.gottsch.forge.dungeons2.core.event;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.cache.FeatureCaches;
 import mod.gottsch.forge.dungeons2.core.config.Config;
-import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -57,9 +56,8 @@ public class WorldEvents {
 					// initialize feature caches
 					FeatureCaches.initialize();
 
-					// initialize/register all block providers
-					// TODO pulled from the BlockProvidersConfiguration config property
-					BlockProivderRegistry.load(Config.blockProviderConfiguration.getBlockSets());
+					// Block providers are datapack-driven now — populated by
+					// BlockProviderReloadListener (see DataPackEvents), not here.
 				}
 			}
 

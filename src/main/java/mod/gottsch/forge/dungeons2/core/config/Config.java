@@ -67,19 +67,7 @@ public class Config extends AbstractConfig {
 	}
 
 	/*
-	 * Structure Configuration
-	 */
-	public static final ForgeConfigSpec BLOCK_PROVIDER_CONFIG_SPEC;
-	public static BlockProviderConfiguration blockProviderConfiguration;
-
-	static {
-		final Pair<InternalBlockProviderConfiguration, ForgeConfigSpec> structSpecPair = new ForgeConfigSpec.Builder()
-				.configure(InternalBlockProviderConfiguration::new);
-		BLOCK_PROVIDER_CONFIG_SPEC = structSpecPair.getRight();
-	}
-
-	/*
-	 * 
+	 *
 	 */
 	public static class ServerConfig {
 		public DungeonsWorldGen dungeons;
@@ -151,37 +139,6 @@ public class Config extends AbstractConfig {
 			builder.pop();
 		}
 	}
-
-	/////////////////////////////////////////
-	/*
-	 * internal config class only. used for loading the dungeons2-blockproviders-x.toml file
-	 * and transformed into the exposed dungeonConfigs property
-	 */
-	private static class InternalBlockProviderConfiguration {
-		public InternalBlockProviderConfiguration(ForgeConfigSpec.Builder builder) {
-			// NOTE this define() name must match the wrapper property in the toml file.
-			builder.define("blockProviderConfigs", new ArrayList<>());
-			builder.build();
-		}
-	}
-
-	public static Optional<BlockProviderConfiguration> transformBlockProviderConfiguration(CommentedConfig configData) {
-		BlockProviderConfigurationHolder holder = new ObjectConverter().toObject(configData, BlockProviderConfigurationHolder::new);
-		if (holder == null || holder.blockProviderConfigs == null || holder.blockProviderConfigs.isEmpty()) {
-			return Optional.empty();
-		} else {
-			blockProviderConfiguration = holder.blockProviderConfigs.get(0);
-			// TODO convert blockProviderConfiguration to a usable Mapped class.
-			// TODO OR only need to read this in once into a Registry, so add some getXXX() method that just iterate over the lists
-		}
-		return Optional.ofNullable(holder.blockProviderConfigs.get(0));
-	}
-	// need a wrapper class around the config class in order to convert it from the commentedConfig
-	private static class BlockProviderConfigurationHolder {
-		// NOTE this property needs to be the same name as defined in the builder
-		public List<BlockProviderConfiguration> blockProviderConfigs;
-	}
-	///////////////////////////////////
 
 	public static List<DungeonGeneratorConfiguration> dungeonConfigurations;
 	public static Map<String, List<DungeonGeneratorConfiguration>> dungeonGeneratorConfigMap;

@@ -19,15 +19,19 @@ package mod.gottsch.forge.dungeons2.core.setup;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
+import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 /**
  * 
@@ -45,9 +49,18 @@ public class Registration {
 	public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Dungeons.MOD_ID);
 	public static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, Dungeons.MOD_ID);
 
-	
+	/*
+	 * structure types (vanilla registry, keyed by ResourceKey)
+	 */
+	public static final DeferredRegister<StructureType<?>> STRUCTURE_TYPES =
+			DeferredRegister.create(Registries.STRUCTURE_TYPE, Dungeons.MOD_ID);
+
+	/** The dungeon structure type. Its codec is referenced by the Phase 5 structure JSON. */
+	public static final RegistryObject<StructureType<DungeonStructure>> DUNGEON =
+			STRUCTURE_TYPES.register("dungeon", () -> () -> DungeonStructure.CODEC);
+
 	/**
-	 * 
+	 *
 	 */
 	public static void init() {
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -56,7 +69,8 @@ public class Registration {
 		BLOCK_ENTITIES.register(eventBus);
 		ENTITIES.register(eventBus);
 		PARTICLES.register(eventBus);
-		
+		STRUCTURE_TYPES.register(eventBus);
+
 		ConfiguredFeatures.register(eventBus);
 	}
 }

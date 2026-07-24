@@ -1,0 +1,25 @@
+{
+  "rules": [
+    {
+      "from": "minecraft:stone_bricks",
+      "to": [
+        "minecraft:mossy_stone_bricks",
+        "minecraft:cracked_stone_bricks",
+        "minecraft:cobblestone"
+      ]
+    },
+    {
+      "from": "minecraft:cobblestone",
+      "to": [
+        "minecraft:mossy_cobblestone",
+        "minecraft:gravel"
+      ]
+    },
+    {
+      "from": "minecraft:polished_andesite",
+      "to": [
+        "minecraft:andesite"
+      ]
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 package mod.gottsch.forge.dungeons2.core.registry;
 
 import com.google.common.collect.Maps;
-import mod.gottsch.forge.dungeons2.core.config.BlockProviderConfiguration;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
+import mod.gottsch.forge.dungeons2.core.decorator.data.BlockProviderDefinition;
+import mod.gottsch.forge.dungeons2.core.decorator.data.BlockSetDefinition;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.pattern.IPatternEnum;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -49,6 +50,47 @@ public class BlockProivderRegistry {
         return REGISTRY.containsKey(key.toLowerCase());
     }
 
+    /**
+     * Drops every registered provider. Used by the datapack reload listener so a
+     * {@code /reload} (or a re-loaded datapack) rebuilds the palette from scratch
+     * instead of accumulating stale block sets.
+     */
+    public static void clear() {
+        REGISTRY.clear();
+    }
+
+    /**
+     * Populates the registry from datapack {@link BlockProviderDefinition}s keyed by
+     * motif (the JSON file name under {@code data/<ns>/block_provider/}). The
+     * datapack-JSON analogue of {@link #load(List)}: same pattern-element resolution
+     * via {@link PatternRegistry}, same tolerant block lookup (an unknown / absent-mod
+     * block id resolves to air rather than failing the file).
+     *
+     * @param byMotif motif id -> its palette definition
+     */
+    public static void loadDefinitions(Map<String, BlockProviderDefinition> byMotif) {
+        for (Map.Entry<String, BlockProviderDefinition> motifEntry : byMotif.entrySet()) {
+            String motif = motifEntry.getKey();
+            BlockProvider blockProvider = get(motif).orElseGet(() -> {
+                BlockProvider created = new BlockProvider();
+                register(motif, created);
+                return created;
+            });
+
+            motifEntry.getValue().patterns().forEach((patternId, blockSetDefs) -> {
+                for (BlockSetDefinition blockSetDef : blockSetDefs) {
+                    BlockSet blockSet = new BlockSet(blockSetDef.id());
+                    blockSetDef.elements().forEach((elementId, blockRl) -> {
+                        Optional<IPatternEnum> patternEnum = PatternRegistry.get(patternId, elementId);
+                        patternEnum.ifPresent(penum ->
+                                blockSet.set(penum, BuiltInRegistries.BLOCK.get(blockRl)));
+                    });
+                    blockProvider.register(patternId, blockSet);
+                }
+            });
+        }
+    }
+
     public static Optional<BlockProvider> get(IDungeonMotif motif) {
         return get(motif.getName());
     }
@@ -61,33 +103,6 @@ public class BlockProivderRegistry {
     }
 
     // NOTE remember not to restrict motifs to enums
-
-    /**
-     * Loads BlockSets to a BlockProvider from the config
-     * @param blockSetConfigs
-     */
-    public static void load(List<BlockProviderConfiguration.BlockSet> blockSetConfigs) {
-        for (BlockProviderConfiguration.BlockSet blockSetConfig : blockSetConfigs) {
-            Optional<BlockProvider> blockProviderOptional = BlockProivderRegistry.get(blockSetConfig.getMotif());
-            BlockProvider blockProvider;
-            if (blockProviderOptional.isEmpty()) {
-                blockProvider = new BlockProvider();
-                BlockProivderRegistry.register(blockSetConfig.getMotif(), blockProvider);
-            } else {
-                blockProvider = blockProviderOptional.get();
-            }
-
-            // create a new block set
-            BlockSet blockSet = new BlockSet(blockSetConfig.getId());
-            for (BlockProviderConfiguration.PatternElement element : blockSetConfig.getElements()) {
-                // check if element has been registered
-                Optional<IPatternEnum> patternEnum = PatternRegistry.get(blockSetConfig.getPattern(), element.getId());
-                patternEnum.ifPresent(penum -> blockSet.set(penum, BuiltInRegistries.BLOCK.get(new ResourceLocation(element.getBlock()))));
-            }
-            // register the blockset to the pattern name
-            blockProvider.register(blockSetConfig.getPattern(), blockSet);
-        }
-    }
 
     public static List<BlockProvider> getValues() {
         return new ArrayList<>(REGISTRY.values());

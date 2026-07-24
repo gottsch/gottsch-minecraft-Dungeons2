@@ -41,6 +41,7 @@ import mod.gottsch.forge.dungeons2.core.pattern.floor.border.FloorBorderPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
 import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
 import mod.gottsch.forge.dungeons2.core.registry.DecoratorRegistry;
+import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
@@ -61,6 +62,12 @@ public class CommonSetup {
 		// add mod specific logging
 		Config.instance.addRollingFileAppender(Dungeons.MOD_ID);
 //		Dungeons2Networking.register();
+
+		// Register structure piece types. The STRUCTURE_PIECE registry is frozen
+		// after bootstrap, so this must run on the synchronized work queue (Forge
+		// unfreezes the vanilla registries there).
+		event.enqueueWork(StructurePieces::register);
+
 		Dungeons.LOGGER.info("common setup complete");
 		Dungeons.LOGGER.debug("initializing dimensional generated registries");
 
