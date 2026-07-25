@@ -19,9 +19,9 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
-import mod.gottsch.forge.dungeons2.core.data.TemplateEntry;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
@@ -31,7 +31,6 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
@@ -101,13 +100,40 @@ public class DungeonStructure extends Structure {
     private static final String DOOR_JIGSAW_NAME = Dungeons.MOD_ID + ":door";
 
     /**
-     * Hand-authored transition templates. Hardcoded for now &mdash; the
-     * {@link TemplateCatalog} is meant to be config-driven eventually (see its
-     * class doc), but a fixed list this short isn't worth that machinery yet.
+     * Jigsaw {@code name} that marks a "premade door" -- a candidate the maze may
+     * pick exactly like {@link #DOOR_JIGSAW_NAME}, but whose template already has
+     * a real, fully-built door at that cell, so no {@code DungeonDoorPiece} gets
+     * generated for it (see {@code DungeonStackPlanner.convertLevel}'s
+     * {@code premadeCells} handling). Authored the same way as a door candidate
+     * (front faces outward, local Y=0, &ge;2 from corners) except the wall/door
+     * itself should be built as a real, already-open doorway rather than solid.
      */
-    private static final List<ResourceLocation> TRANSITION_TEMPLATES = List.of(
-            new ResourceLocation(Dungeons.MOD_ID, "transitions/ladder1"),
-            new ResourceLocation(Dungeons.MOD_ID, "transitions/stairs_1"));
+    private static final String CONNECTOR_JIGSAW_NAME = Dungeons.MOD_ID + ":connector";
+
+    /**
+     * Transition assembly parameters. Unlike the entrance (anchored at the
+     * surface, chaining down), transitions are anchored at the LOWER floor's
+     * walking plane and chain UPWARD -- {@code ladder1}/{@code stairs_1} are
+     * authored with local Y=0 at the lower floor's plane, so assembly must start
+     * there. The start pool mixes those complete, self-contained templates with
+     * -- once authored -- bottom/segment/top chains; see the "transition jigsaw
+     * pools" section of {@code data/dungeons2/structures/README.md}. {@code
+     * maxDepth} is a safety cap only, not a design constraint: real chain length
+     * is bounded by whatever the author actually builds into the pools, not by us.
+     */
+    private static final ResourceLocation TRANSITION_START_POOL =
+            new ResourceLocation(Dungeons.MOD_ID, "transitions/shaft_bottom");
+    private static final int TRANSITION_MAX_DEPTH = 6;
+    private static final int TRANSITION_MAX_DISTANCE = 32;
+
+    /**
+     * Matches {@code DungeonStackPlanner}'s default {@code floorHeight*2 +
+     * gapBetweenFloors} (10*2+2). Diagnostic only, for the height-mismatch
+     * warning in {@link #scanTransitionGeometry} -- kept in sync by hand since
+     * this class doesn't have a live reference to the planner's (currently
+     * un-customized) floor constants.
+     */
+    private static final int EXPECTED_TRANSITION_HEIGHT = 22;
 
     public DungeonStructure(Structure.StructureSettings settings) {
         super(settings);
@@ -139,6 +165,34 @@ public class DungeonStructure extends Structure {
         List<StructurePiece> entrancePieces = assembleEntrance(context, position);
         EntranceGeometry geo = scanEntranceGeometry(entrancePieces, templateManager, seed);
 
+        // Transitions assemble lazily, one per inter-floor link, as the planner
+        // works out where each one should go -- see DungeonStackPlanner's
+        // TransitionAssembler. Real pieces accumulate here (mirroring
+        // entrancePieces) so they can be added to the builder directly, the same
+        // way the assembled entrance bypasses DungeonPieceEmitter.
+        List<StructurePiece> transitionPieces = new ArrayList<>();
+        DungeonStackPlanner.TransitionAssembler transitionAssembler = (worldX, worldY, worldZ, rand) -> {
+            // Vanilla's SinglePoolElement.getGroundLevelDelta() defaults to 1 (never
+            // overridden for our single_pool_element entries), and JigsawPlacement.
+            // addPieces uses it to move the placed piece DOWN by exactly 1 block
+            // relative to the Y passed in here: it computes
+            // l = boundingBox.minY() + groundLevelDelta (= worldY + 1 for the first
+            // piece, since minY starts out equal to the position we pass) and
+            // k = position.getY() (unchanged, no heightmap projection), then calls
+            // piece.move(0, k - l, 0) = move(0, -1, 0). Request one block higher so
+            // the piece's real local Y=0 lands exactly at worldY after that shift.
+            BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
+            List<StructurePiece> assembled = assembleTransition(context, candidatePos);
+            TransitionGeometry tgeo = scanTransitionGeometry(assembled, templateManager, seed, worldY);
+            if (tgeo == null) {
+                return Optional.empty();
+            }
+            transitionPieces.addAll(assembled);
+            return Optional.of(new DungeonStackPlanner.AssembledTransition(
+                    tgeo.worldFootprint(), tgeo.topDoorWorldCells(), tgeo.bottomDoorWorldCells(),
+                    tgeo.topPremadeWorldCells(), tgeo.bottomPremadeWorldCells()));
+        };
+
         // Hand the entrance's world geometry to the planner, which sizes floor 0's
         // grid (>= the size tier's rolled footprint), maps the door cells to grid
         // space, and returns the world anchor via DungeonLayout#getAnchor. Falls
@@ -146,7 +200,9 @@ public class DungeonStructure extends Structure {
         // nothing assembled with door markers.
         DungeonStackPlanner planner =
                 new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
-                        surfaceY, motifValue, buildCatalog(templateManager));
+                        surfaceY, motifValue, new TemplateCatalog());
+        planner.withCorridorWidth(DungeonGenerationConfigHelper.get(context.registryAccess()).corridorWidth());
+        planner.withTransitionAssembler(transitionAssembler);
         if (geo != null) {
             Rectangle2D entranceWorldRect = new Rectangle2D(geo.minX(), geo.minZ(),
                     geo.maxX() - geo.minX() + 1, geo.maxZ() - geo.minZ() + 1);
@@ -154,7 +210,11 @@ public class DungeonStructure extends Structure {
             for (int k = 0; k < geo.doorsX().size(); k++) {
                 doorWorldCells.add(new Coords2D(geo.doorsX().get(k), geo.doorsZ().get(k)));
             }
-            planner.withAssembledEntrance(entranceWorldRect, doorWorldCells, geo.floor0Y());
+            List<Coords2D> premadeWorldCells = new ArrayList<>(geo.premadeX().size());
+            for (int k = 0; k < geo.premadeX().size(); k++) {
+                premadeWorldCells.add(new Coords2D(geo.premadeX().get(k), geo.premadeZ().get(k)));
+            }
+            planner.withAssembledEntrance(entranceWorldRect, doorWorldCells, premadeWorldCells, geo.floor0Y());
         }
 
         Optional<DungeonLayout> layoutOpt = planner.plan();
@@ -164,14 +224,15 @@ public class DungeonStructure extends Structure {
         DungeonLayout layout = layoutOpt.get();
 
         // Emit anchor comes from the layout (chunk center in synthetic mode, or the
-        // entrance-derived anchor in assembled mode). Assembled entrance pieces go
-        // in first so later procedural pieces (doors) overwrite shared cells.
+        // entrance-derived anchor in assembled mode). Assembled entrance/transition
+        // pieces go in first so later procedural pieces (doors) overwrite shared cells.
         final int emitAnchorX = layout.getAnchor().getX();
         final int emitAnchorZ = layout.getAnchor().getZ();
 
         return Optional.of(new GenerationStub(position, builder -> {
             List<StructurePiece> allPieces = new ArrayList<>(entrancePieces);
-            allPieces.addAll(DungeonPieceEmitter.emit(layout, emitAnchorX, emitAnchorZ, templateManager));
+            allPieces.addAll(transitionPieces);
+            allPieces.addAll(DungeonPieceEmitter.emit(layout, emitAnchorX, emitAnchorZ));
 
             // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
             // full chunk range every piece's bounding box says it should touch, so
@@ -197,38 +258,22 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Builds the {@link TemplateCatalog} for this generation call. Hardcoded to
-     * {@link #TRANSITION_TEMPLATES} for now; a config-driven loader (per
-     * {@link TemplateCatalog}'s class doc) is deferred until the list is long
-     * enough to justify it. Templates that fail to load are silently skipped
-     * (planner falls back to its synthetic placeholder if none load).
-     */
-    private static TemplateCatalog buildCatalog(StructureTemplateManager templateManager) {
-        TemplateCatalog catalog = new TemplateCatalog();
-        for (ResourceLocation id : TRANSITION_TEMPLATES) {
-            Vec3i size = TemplateLoader.size(templateManager, id);
-            if (size.getX() > 0 && size.getZ() > 0) {
-                catalog.add(TemplateCatalog.Category.TRANSITION,
-                        new TemplateEntry(id.toString(), size.getX(), size.getZ(), size.getY()));
-            }
-        }
-        return catalog;
-    }
-
-    /**
-     * Scans the assembled entrance pieces for {@code dungeons2:door} jigsaw markers
-     * and returns their world cells + the door-carrying piece(s)' XZ extent +
-     * floor-0 walking-plane Y. Returns {@code null} if no door markers are found
-     * (e.g. assembly produced nothing), signalling the synthetic fallback.
+     * Scans the assembled entrance pieces for {@code dungeons2:door} and
+     * {@code dungeons2:connector} jigsaw markers and returns their world cells +
+     * the marker-carrying piece(s)' XZ extent + floor-0 walking-plane Y. Returns
+     * {@code null} if no markers are found at all (e.g. assembly produced
+     * nothing), signalling the synthetic fallback.
      */
     private static EntranceGeometry scanEntranceGeometry(List<StructurePiece> pieces,
                                                          StructureTemplateManager templateManager, long seed) {
         List<Integer> doorsX = new ArrayList<>();
         List<Integer> doorsZ = new ArrayList<>();
+        List<Integer> premadeX = new ArrayList<>();
+        List<Integer> premadeZ = new ArrayList<>();
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
         Integer floor0Y = null;
-        // Shuffle order is irrelevant (we take every door marker); seed only for
+        // Shuffle order is irrelevant (we take every marker); seed only for
         // determinism hygiene.
         RandomSource random = RandomSource.create(seed);
 
@@ -238,18 +283,27 @@ public class DungeonStructure extends Structure {
             }
             List<StructureTemplate.StructureBlockInfo> jigsaws = pool.getElement()
                     .getShuffledJigsawBlocks(templateManager, pool.getPosition(), pool.getRotation(), random);
-            boolean carriesDoor = false;
+            boolean carriesMarker = false;
             for (StructureTemplate.StructureBlockInfo info : jigsaws) {
                 CompoundTag nbt = info.nbt();
-                if (nbt != null && DOOR_JIGSAW_NAME.equals(nbt.getString("name"))) {
-                    BlockPos p = info.pos();
+                if (nbt == null) {
+                    continue;
+                }
+                String name = nbt.getString("name");
+                BlockPos p = info.pos();
+                if (DOOR_JIGSAW_NAME.equals(name)) {
                     doorsX.add(p.getX());
                     doorsZ.add(p.getZ());
                     floor0Y = (floor0Y == null) ? p.getY() : Math.min(floor0Y, p.getY());
-                    carriesDoor = true;
+                    carriesMarker = true;
+                } else if (CONNECTOR_JIGSAW_NAME.equals(name)) {
+                    premadeX.add(p.getX());
+                    premadeZ.add(p.getZ());
+                    floor0Y = (floor0Y == null) ? p.getY() : Math.min(floor0Y, p.getY());
+                    carriesMarker = true;
                 }
             }
-            if (carriesDoor) {
+            if (carriesMarker) {
                 BoundingBox bb = pool.getBoundingBox();
                 minX = Math.min(minX, bb.minX());
                 maxX = Math.max(maxX, bb.maxX());
@@ -260,11 +314,12 @@ public class DungeonStructure extends Structure {
         if (floor0Y == null) {
             return null;
         }
-        return new EntranceGeometry(doorsX, doorsZ, minX, minZ, maxX, maxZ, floor0Y);
+        return new EntranceGeometry(doorsX, doorsZ, premadeX, premadeZ, minX, minZ, maxX, maxZ, floor0Y);
     }
 
-    /** World geometry read off the assembled entrance's door jigsaw markers. */
+    /** World geometry read off the assembled entrance's door/connector jigsaw markers. */
     private record EntranceGeometry(List<Integer> doorsX, List<Integer> doorsZ,
+                                    List<Integer> premadeX, List<Integer> premadeZ,
                                     int minX, int minZ, int maxX, int maxZ, int floor0Y) {
     }
 
@@ -294,6 +349,131 @@ public class DungeonStructure extends Structure {
                 ENTRANCE_MAX_DISTANCE);
 
         return stub.map(s -> s.getPiecesBuilder().build().pieces()).orElse(List.of());
+    }
+
+    /**
+     * Runs vanilla {@link JigsawPlacement#addPieces} from the transitions start
+     * pool at {@code position} (the candidate the planner picked). Same shape as
+     * {@link #assembleEntrance}, just parameterized on the transition pool/depth/
+     * distance and callable more than once per chunk (once per inter-floor link).
+     */
+    private static List<StructurePiece> assembleTransition(GenerationContext context, BlockPos position) {
+        Registry<StructureTemplatePool> poolRegistry =
+                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
+                ResourceKey.create(Registries.TEMPLATE_POOL, TRANSITION_START_POOL));
+        if (startPool.isEmpty()) {
+            return List.of();
+        }
+
+        Optional<GenerationStub> stub = JigsawPlacement.addPieces(
+                context,
+                startPool.get(),
+                Optional.empty(),
+                TRANSITION_MAX_DEPTH,
+                position,
+                false,
+                Optional.empty(),
+                TRANSITION_MAX_DISTANCE);
+
+        return stub.map(s -> s.getPiecesBuilder().build().pieces()).orElse(List.of());
+    }
+
+    /**
+     * Scans assembled transition pieces for {@code dungeons2:door} and
+     * {@code dungeons2:connector} jigsaw markers, bucketing each into the upper
+     * floor's candidates vs. the lower floor's, plus the combined XZ footprint
+     * across every piece in the chain. Unlike the entrance (one anchor Y), a
+     * transition has markers at BOTH ends, many blocks apart -- splitting at the
+     * midpoint between the lowest and highest marker Y (across door AND connector
+     * markers together) unambiguously separates the two floors' candidates
+     * regardless of how many pieces (or which roles) the chain assembled from.
+     *
+     * <p>Returns {@code null} if no markers are found at all (assembly produced
+     * nothing, or the pool is absent), signalling the planner's synthetic
+     * fallback -- same convention as {@link #scanEntranceGeometry}.</p>
+     */
+    private static TransitionGeometry scanTransitionGeometry(List<StructurePiece> pieces,
+                                                             StructureTemplateManager templateManager,
+                                                             long seed, int placementY) {
+        int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
+        boolean any = false;
+        RandomSource random = RandomSource.create(seed);
+        List<BlockPos> doorPositions = new ArrayList<>();
+        List<BlockPos> premadePositions = new ArrayList<>();
+
+        for (StructurePiece piece : pieces) {
+            if (!(piece instanceof PoolElementStructurePiece pool)) {
+                continue;
+            }
+            any = true;
+            BoundingBox bb = pool.getBoundingBox();
+            minX = Math.min(minX, bb.minX());
+            maxX = Math.max(maxX, bb.maxX());
+            minZ = Math.min(minZ, bb.minZ());
+            maxZ = Math.max(maxZ, bb.maxZ());
+            minY = Math.min(minY, bb.minY());
+            maxY = Math.max(maxY, bb.maxY());
+
+            List<StructureTemplate.StructureBlockInfo> jigsaws = pool.getElement()
+                    .getShuffledJigsawBlocks(templateManager, pool.getPosition(), pool.getRotation(), random);
+            for (StructureTemplate.StructureBlockInfo info : jigsaws) {
+                CompoundTag nbt = info.nbt();
+                if (nbt == null) {
+                    continue;
+                }
+                String name = nbt.getString("name");
+                if (DOOR_JIGSAW_NAME.equals(name)) {
+                    doorPositions.add(info.pos());
+                } else if (CONNECTOR_JIGSAW_NAME.equals(name)) {
+                    premadePositions.add(info.pos());
+                }
+            }
+        }
+        if (!any || (doorPositions.isEmpty() && premadePositions.isEmpty())) {
+            return null;
+        }
+
+        int minMarkerY = Integer.MAX_VALUE, maxMarkerY = Integer.MIN_VALUE;
+        for (BlockPos p : doorPositions) {
+            minMarkerY = Math.min(minMarkerY, p.getY());
+            maxMarkerY = Math.max(maxMarkerY, p.getY());
+        }
+        for (BlockPos p : premadePositions) {
+            minMarkerY = Math.min(minMarkerY, p.getY());
+            maxMarkerY = Math.max(maxMarkerY, p.getY());
+        }
+        int splitY = (minMarkerY + maxMarkerY) / 2;
+
+        List<Coords2D> topDoors = new ArrayList<>();
+        List<Coords2D> bottomDoors = new ArrayList<>();
+        for (BlockPos p : doorPositions) {
+            (p.getY() >= splitY ? topDoors : bottomDoors).add(new Coords2D(p.getX(), p.getZ()));
+        }
+        List<Coords2D> topPremade = new ArrayList<>();
+        List<Coords2D> bottomPremade = new ArrayList<>();
+        for (BlockPos p : premadePositions) {
+            (p.getY() >= splitY ? topPremade : bottomPremade).add(new Coords2D(p.getX(), p.getZ()));
+        }
+
+        int realizedHeight = maxY - minY + 1;
+        if (realizedHeight != EXPECTED_TRANSITION_HEIGHT) {
+            Dungeons.LOGGER.warn(
+                    "assembled transition height {} != expected {} at placementY={} -- top/bottom pieces "
+                            + "won't meet the adjacent floors' planes exactly; check the authored template heights",
+                    realizedHeight, EXPECTED_TRANSITION_HEIGHT, placementY);
+        }
+
+        Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
+        return new TransitionGeometry(worldFootprint, topDoors, bottomDoors, topPremade, bottomPremade);
+    }
+
+    /** World geometry read off an assembled transition's door/connector jigsaw markers. */
+    private record TransitionGeometry(Rectangle2D worldFootprint, List<Coords2D> topDoorWorldCells,
+                                      List<Coords2D> bottomDoorWorldCells, List<Coords2D> topPremadeWorldCells,
+                                      List<Coords2D> bottomPremadeWorldCells) {
     }
 
     @Override

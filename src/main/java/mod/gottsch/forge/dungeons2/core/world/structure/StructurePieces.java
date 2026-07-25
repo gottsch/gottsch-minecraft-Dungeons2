@@ -49,18 +49,12 @@ public final class StructurePieces {
             (context, tag) -> new DungeonCorridorPiece(context, tag);
     public static final StructurePieceType DOOR =
             (context, tag) -> new DungeonDoorPiece(context, tag);
-    public static final StructurePieceType ENTRANCE =
-            (context, tag) -> new DungeonEntrancePiece(context, tag);
-    public static final StructurePieceType TRANSITION =
-            (context, tag) -> new DungeonTransitionPiece(context, tag);
 
     /** Registers all piece types. Call from common setup's enqueued work. */
     public static void register() {
         register("dungeon_room", ROOM);
         register("dungeon_corridor", CORRIDOR);
         register("dungeon_door", DOOR);
-        register("dungeon_entrance", ENTRANCE);
-        register("dungeon_transition", TRANSITION);
         Dungeons.LOGGER.debug("registered dungeon structure piece types");
     }
 

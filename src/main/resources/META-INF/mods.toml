@@ -70,6 +70,6 @@ side="BOTH"
 [[dependencies.dungeons2]]
 modId="dungeonblocks"
 mandatory=true
-versionRange="[2.0.0,)"
+versionRange="[2.4.0,)"
 ordering="BEFORE"
 side="BOTH"

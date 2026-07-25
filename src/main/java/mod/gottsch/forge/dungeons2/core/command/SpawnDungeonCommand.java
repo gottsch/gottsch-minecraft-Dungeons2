@@ -2,6 +2,7 @@ package mod.gottsch.forge.dungeons2.core.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -82,6 +83,7 @@ public class SpawnDungeonCommand {
                     seed, anchor, surfaceY, "classic", new TemplateCatalog())
                     .withSize(DungeonSize.SMALL)
                     .withFloorCount(1)
+                    .withCorridorWidth(DungeonGenerationConfigHelper.get(level.registryAccess()).corridorWidth())
                     .plan();
 
             if (result.isEmpty()) {

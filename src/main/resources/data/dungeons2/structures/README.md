@@ -5,14 +5,14 @@ creative world with Structure Blocks, **SAVE**, then copy the `.nbt` here.
 
 ```
 data/dungeons2/structures/
-  entrances/    surface → floor-0 entrance pieces           (Phase 4)
-  transitions/  2-story floor-to-floor links                (Phase 4)
+  entrances/    surface → floor-0 entrance pieces           (Phase 4b, jigsaw-assembled)
+  transitions/  floor-to-floor links                        (jigsaw-assembled, see below)
   rooms/        pooled room prefabs                          (Phase 8)
   corridors/    themed corridor prefabs                      (Phase 8)
 ```
 
-Jigsaw `template_pool` JSONs for the assembled entrance live separately under
-`data/dungeons2/worldgen/template_pool/entrance/`.
+Jigsaw `template_pool` JSONs for the assembled entrance and transitions live separately under
+`data/dungeons2/worldgen/template_pool/entrance/` and `.../transitions/` respectively.
 
 **Conventions (all templates):** author facing **north** (the planner rolls a 0/90/180/270
 rotation and rotates markers with it); footprint **odd** in X and Z; local origin =
@@ -27,11 +27,21 @@ roll their height up to 10.) The "5" you see below is **not** a room height — 
 height of the engine's **corridors** (`DungeonCorridorPiece`), which only matters at the
 doorway interface, not for your room's walls or ceiling.
 
+**Transitions specifically** span floor-to-floor: local Y=0 is the *lower* floor's walking
+plane, and the whole assembled chain must reach exactly `floorHeight*2 + gapBetweenFloors`
+(currently **22**) to land cleanly on both floors' planes — e.g. a monolithic template like
+`ladder1.nbt`/`stairs_1.nbt` is built to that full height in one piece. If you're instead
+composing a chain from multiple pieces (top room + descent segment + bottom room, see the
+jigsaw pools section below), **you're responsible for making any combination of pieces you
+build sum to exactly that total** — the engine doesn't enforce or adjust for it, and a
+mismatch leaves a gap or overlap at whichever end is off (a warning is logged when the
+realized height doesn't match, to catch this at test time rather than in-game).
+
 ---
 
 ## Jigsaw blocks — exact data
 
-There are **two roles**, both `minecraft:jigsaw` blocks, told apart **by the `name` field**.
+There are **three roles**, all `minecraft:jigsaw` blocks, told apart **by the `name` field**.
 Fields below are the in-game Jigsaw Block GUI fields (= the block-entity NBT keys).
 
 ### 1. Door candidate — the maze attaches here (this is what you asked about)
@@ -87,14 +97,17 @@ pieces (entrance/transition) follow the same pattern once Phase 4b is wired:
    0       JIGSAW block                   corridor / door sill
 ```
 
-**Phase 4b (not yet implemented) does the opening/closing — not the author:**
-- **Chosen candidate:** Phase 4b overwrites the column (sill, two halves, lintel) with an open
-  door, the same job `DungeonDoorPiece` already does for procedural rooms — the connecting
+**The engine does the opening/closing — not the author. Implemented for both the entrance and
+transitions** (both are now assembled via real vanilla `JigsawPlacement`; see the "Assembly
+joint" and "Transition jigsaw pools" sections below):
+- **Chosen candidate:** the maze's `DungeonDoorPiece` overwrites the column (sill, two halves,
+  lintel) with an open door, placed after the assembled pieces so it wins — the connecting
   corridor butts its own 5-tall wall against it.
-- **Unchosen candidate:** the jigsaw block converts to its own `final_state` value — same
-  mechanism vanilla uses to resolve orphaned jigsaws in a structure (§ below) — and nothing
-  else about the wall changes. Worst case is a single-cell pocket where the jigsaw sat, never
-  a breach.
+- **Unchosen candidate:** the jigsaw block converts to its own `final_state` value automatically
+  — this is inherent vanilla behavior for any real `PoolElementStructurePiece` (every
+  `dungeons2:door` candidate has `target`/`pool` = `minecraft:empty`, so it never matches
+  anything and always resolves as "unconnected"), not custom code. Worst case is a single-cell
+  pocket where the jigsaw sat, never a breach.
 
 Raw block-entity NBT (1.20.1), for reference:
 
@@ -112,20 +125,54 @@ Raw block-entity NBT (1.20.1), for reference:
 > 1.20.1 jigsaw block entities have exactly these five fields. `selection_priority` /
 > `placement_priority` do **not** exist until 1.20.5 — don't add them.
 
-**Phase 4b design note — self-conversion, vanilla-style.** Today, nothing converts these
-markers: `DungeonTemplatePiece` extends vanilla `TemplateStructurePiece` directly and never
-overrides `postProcess`, so placement goes through plain `template.placeInWorld(...)`, which
-has no jigsaw awareness (that logic lives only in vanilla's `PoolElementStructurePiece`/jigsaw
-assembly path). So placing this template today leaves a literal, un-converted jigsaw block
-sitting in the wall — expected, not a bug, until Phase 4b exists. When Phase 4b is built, an
-unchosen `dungeons2:door` jigsaw must **self-convert to its `final_state` value**, exactly like
-vanilla resolves any orphaned jigsaw in a placed structure — Phase 4b owns doing this
-explicitly (read the marker's `final_state`, swap the block), it does not happen for free.
+**Design note — self-conversion is free, but only for real jigsaw pieces.** This only works
+because the entrance and transitions are placed via real vanilla `JigsawPlacement`, producing
+genuine `PoolElementStructurePiece`s — vanilla's own jigsaw machinery does the `final_state`
+conversion as part of normal jigsaw postProcess, no custom code required. It would **not** work
+for a plain `TemplateStructurePiece` (no jigsaw awareness at all in that placement path) — this
+is why both the entrance and transitions are jigsaw-assembled rather than flat single templates.
 
-### 2. Assembly joint — snaps entrance pieces together (Phase 4b, vanilla `JigsawPlacement`)
+### 2. Premade door / connector — a candidate that's already a real, built door
 
-Used only inside the **jigsaw-assembled entrance** (surface building → descent → …). These
-have a **real pool** so vanilla connects them; our planner ignores them (name ≠ `dungeons2:door`).
+Same idea as a door candidate (the maze may attach a corridor here), but for a doorway you've
+**already built** — a real door frame/opening, not solid wall. Use this when you want a
+specific, hand-decorated doorway (an ornate archway, a portcullis, whatever) to be the one the
+maze connects to, instead of letting the generic door piece carve a plain opening later.
+
+| Jigsaw GUI field | NBT key      | Value for a premade door |
+|------------------|--------------|----------------------------|
+| Name             | `name`       | `dungeons2:connector`      |
+| Target Name      | `target`     | `minecraft:empty`          |
+| Target Pool      | `pool`       | `minecraft:empty`          |
+| Turns into       | `final_state`| `minecraft:air`            |
+| Joint Type       | `joint`      | `rollable` (ignored — never assembled by vanilla) |
+
+Same placement rules as a door candidate (local Y=0, ≥2 cells from every corner, front faces
+outward per the same orientation table) with **one key difference**: **build the actual door
+here — do not author it as solid wall.** The jigsaw block sits at the sill of a doorway you've
+already fully constructed.
+
+**Behavior:** `dungeons2:connector` cells participate in the maze's normal candidate-doorway
+selection exactly like `dungeons2:door` — the maze may pick one as a real connection (a corridor
+routes to it, counts toward the room's `degrees`) or leave it unpicked. The difference is what
+happens when it's picked: **no `DungeonDoorPiece` is generated for it.** Your prebuilt door is
+left completely untouched either way — chosen or not. This is why it's a *connector*, not a
+*door candidate*: it never gets door geometry written over it, because it already has real door
+geometry.
+
+**Authoring caveat:** if a `dungeons2:connector` isn't picked by the maze, nothing connects to it
+— it remains a decorative, already-open doorway with whatever's behind it (unrendered terrain,
+if nothing else fills that space). Same tradeoff regular unchosen `dungeons2:door` candidates
+accept (README's role 1 above: "worst case is a single-cell pocket"), just via a different
+mechanism (a real open door leading nowhere, vs. a jigsaw block self-converting to `final_state`
+in a solid wall). Place premade doors only where you're fine with that outcome if unchosen, same
+guidance as regular candidates.
+
+### 3. Assembly joint — snaps entrance/transition pieces together (vanilla `JigsawPlacement`)
+
+Used inside the **jigsaw-assembled entrance** (surface building → descent → …) and **transitions**
+(see below). These have a **real pool** so vanilla connects them; our planner ignores them
+(name ≠ `dungeons2:door`).
 
 | Field        | Surface building → descent          | Descent top (mates upward)        |
 |--------------|-------------------------------------|-----------------------------------|
@@ -142,6 +189,33 @@ each variant in a `template_pool` JSON under
 it never recurses into the dungeon. The descent piece carries the `dungeons2:door` candidates
 (role 1 above) on its floor-0 walking plane — **their Y defines floor 0's walking plane** and
 their cells become the START room's `candidateDoorways`.
+
+### Transition jigsaw pools
+
+Transitions assemble **bottom-anchored** — the opposite direction from the entrance. The planner
+places the start pool at the *lower* floor's walking plane (local Y=0, per the convention above)
+and chains **upward**; the terminal piece must land exactly at the *upper* floor's walking plane
+(see "Transitions specifically" above for the fixed-height requirement this implies). This
+matches how `ladder1.nbt`/`stairs_1.nbt` are already authored (built upward from their own floor
+at local Y=0) — don't flip this without re-authoring those templates.
+
+Pools live under `data/dungeons2/worldgen/template_pool/transitions/`:
+
+| Pool | Role | Contents |
+|------|------|----------|
+| `dungeons2:transitions/shaft_bottom` | **start pool** (what the planner assembles from, at the lower floor's plane) | Either a **complete, self-contained piece** with no outgoing joint — this is exactly what `ladder1.nbt`/`stairs_1.nbt` already are, registered here unchanged — or a **bottom segment**: `dungeons2:door` candidates at its own (lower) floor level + one **upward** assembly joint (`up_north`) into `shaft_segment`. |
+| `dungeons2:transitions/shaft_segment` | optional, repeatable middle piece(s) | Down joint (`down_south`, mates to whatever sent the connection up) + up joint (`up_north`, continues further) — no doors, corridor/decoration between the two ends. Only needed once you're authoring segmented chains; doesn't need to exist otherwise. |
+| `dungeons2:transitions/shaft_top` | terminal piece | `dungeons2:door` candidates at the *upper* floor's level + one **downward** joint (`down_south`, mates to whatever's below it), no further upward connection. |
+
+Both self-contained pieces and segmented chains can coexist as weighted alternatives in the same
+`shaft_bottom` pool — nothing stops you from mixing monolithic and composed styles. All pieces
+that participate in one chain should share the same XZ footprint so walls line up.
+
+`dungeons2:door` candidates from **both** ends get read back after assembly (bucketed by Y, so
+which pool contributed them doesn't matter) and become that floor's `candidateDoorways` — the
+bottom piece's candidates restrict the lower floor's START room, the top piece's restrict the
+upper floor's END room, exactly mirroring how the entrance's descent candidates drive floor 0's
+START room.
 
 ---
 

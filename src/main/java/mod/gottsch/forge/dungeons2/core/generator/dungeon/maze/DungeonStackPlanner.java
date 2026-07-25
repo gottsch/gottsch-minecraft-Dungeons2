@@ -42,6 +42,7 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -102,13 +103,18 @@ public class DungeonStackPlanner {
     private int gapBetweenFloors = DEFAULT_GAP_BETWEEN_FLOORS;
     private int entranceDrop = DEFAULT_ENTRANCE_DROP;
     /**
-     * Corridor width in cells. 2 = 2-wide via dilation (re-enabled Jul 23 after the
-     * Z-mirror render bug fix and re-verified dilation-safety regression tests, see
-     * RoomCorridorAdjacencyTest#dilatedCorridorsAreStillNeverAdjacentToRooms and
-     * CorridorRoomSealTest#dilatedCorridorsStillDoNotReachRoomInteriors). 1 = classic
-     * 1-wide, still available via withCorridorWidth(1).
+     * Corridor width in cells, achieved via dilation. This default (3) only
+     * applies to callers that never call {@link #withCorridorWidth(int)} (e.g.
+     * tests); production worldgen ({@code DungeonStructure}) and the debug
+     * command ({@code SpawnDungeonCommand}) both override it from the
+     * datapack-driven {@code DungeonGenerationConfigHelper} (backed by the
+     * {@code dungeons2:generation_config} registry), making this config-driven
+     * (bumped 2->3 Jul 24; both widths verified safe by the same regression
+     * tests, see RoomCorridorAdjacencyTest#dilatedCorridorsAreStillNeverAdjacentToRooms
+     * and CorridorRoomSealTest#dilatedCorridorsStillDoNotReachRoomInteriors). 1 =
+     * classic 1-wide, still available via withCorridorWidth(1).
      */
-    private int corridorCells = 2;
+    private int corridorCells = 3;
 
     // -------- Phase 4b: assembled-entrance overrides (all-or-nothing) --------
     // When set (see withAssembledEntrance), floor 0 is driven by the jigsaw-
@@ -119,6 +125,7 @@ public class DungeonStackPlanner {
     // the resulting world anchor back via DungeonLayout#getAnchor.
     private Rectangle2D assembledEntranceWorldRect;   // world (minX, minZ, w, d)
     private List<Coords2D> assembledDoorWorldCells;   // world (x, z) of dungeons2:door markers
+    private List<Coords2D> assembledPremadeWorldCells; // world (x, z) of dungeons2:connector markers
     private Integer assembledFloor0Y;                 // world Y of the walking plane
     /** Routing cells reserved around the entrance on each side of floor 0. */
     private static final int ENTRANCE_MARGIN = 8;
@@ -192,14 +199,74 @@ public class DungeonStackPlanner {
      */
     public DungeonStackPlanner withAssembledEntrance(Rectangle2D entranceWorldRect,
                                                      List<Coords2D> doorWorldCells, int floor0WalkingPlaneY) {
+        return withAssembledEntrance(entranceWorldRect, doorWorldCells, List.of(), floor0WalkingPlaneY);
+    }
+
+    /**
+     * Full form of {@link #withAssembledEntrance(Rectangle2D, List, int)}, adding
+     * {@code dungeons2:connector} ("premade door") marker cells: candidates that
+     * participate in the maze's normal candidate-doorway selection exactly like
+     * {@code dungeons2:door}, but whose template already has a fully-built door in
+     * place, so no {@code DungeonDoorPiece} is generated for whichever ones the
+     * maze picks (see {@link #convertLevel}).
+     */
+    public DungeonStackPlanner withAssembledEntrance(Rectangle2D entranceWorldRect, List<Coords2D> doorWorldCells,
+                                                     List<Coords2D> premadeWorldCells, int floor0WalkingPlaneY) {
         this.assembledEntranceWorldRect = entranceWorldRect;
         this.assembledDoorWorldCells = doorWorldCells;
+        this.assembledPremadeWorldCells = premadeWorldCells;
         this.assembledFloor0Y = floor0WalkingPlaneY;
         return this;
     }
 
     private boolean hasAssembledEntrance() {
         return assembledEntranceWorldRect != null;
+    }
+
+    // -------- jigsaw-assembled transitions (optional) --------
+    private TransitionAssembler transitionAssembler;
+
+    /**
+     * Supplies a callback that assembles a transition (via real vanilla
+     * {@code JigsawPlacement}, in the Forge shell) at a candidate world position
+     * and returns its real geometry. Kept as a mod-owned-types-only interface so
+     * the planner stays a pure POJO &mdash; the Minecraft-facing implementation
+     * lives in {@code DungeonStructure}. When absent (or when a specific call
+     * returns empty), the planner falls back to its synthetic placeholder
+     * footprint, the same graceful degradation {@link #hasAssembledEntrance()}
+     * already has for the entrance.
+     */
+    public DungeonStackPlanner withTransitionAssembler(TransitionAssembler assembler) {
+        this.transitionAssembler = assembler;
+        return this;
+    }
+
+    @FunctionalInterface
+    public interface TransitionAssembler {
+        Optional<AssembledTransition> assemble(int worldX, int worldY, int worldZ, Random random);
+    }
+
+    /**
+     * Real geometry read back from an assembled transition; world-space.
+     * {@code topPremadeWorldCells}/{@code bottomPremadeWorldCells} are
+     * {@code dungeons2:connector} ("premade door") markers -- treated as extra
+     * candidate doorways the maze may pick, but any it does pick get no
+     * {@code DungeonDoorPiece} (see {@link #convertLevel}), since the template
+     * already has a real door built in at that cell.
+     */
+    public record AssembledTransition(Rectangle2D worldFootprint,
+                                      List<Coords2D> topDoorWorldCells,
+                                      List<Coords2D> bottomDoorWorldCells,
+                                      List<Coords2D> topPremadeWorldCells,
+                                      List<Coords2D> bottomPremadeWorldCells) {
+    }
+
+    private static List<Coords2D> toLocalCells(List<Coords2D> worldCells, ICoords planAnchor) {
+        List<Coords2D> local = new ArrayList<>(worldCells.size());
+        for (Coords2D c : worldCells) {
+            local.add(new Coords2D(c.getX() - planAnchor.getX(), c.getY() - planAnchor.getZ()));
+        }
+        return local;
     }
 
     private static int makeOdd(int v) {
@@ -238,6 +305,7 @@ public class DungeonStackPlanner {
         // present; otherwise from the catalog pick (or a synthetic fallback).
         Rectangle2D entranceLocalFootprint;
         List<Coords2D> assembledCandidateCells = null;   // grid space, floor 0 only
+        Set<Coords2D> assembledPremadeLocalCells = Set.of(); // grid space subset of the above; no DungeonDoorPiece
         ICoords planAnchor = anchor;                      // world anchor for the layout
         int[] floorCeilings = new int[floorCount];
         int[] floorFloors = new int[floorCount];
@@ -261,10 +329,17 @@ public class DungeonStackPlanner {
             int worldAnchorZ = assembledEntranceWorldRect.getMinY() - startMinZ;
             planAnchor = new Coords(worldAnchorX, 0, worldAnchorZ);
 
-            assembledCandidateCells = new ArrayList<>(assembledDoorWorldCells.size());
+            assembledCandidateCells = new ArrayList<>(assembledDoorWorldCells.size() + assembledPremadeWorldCells.size());
             for (Coords2D d : assembledDoorWorldCells) {
                 assembledCandidateCells.add(new Coords2D(d.getX() - worldAnchorX, d.getY() - worldAnchorZ));
             }
+            Set<Coords2D> premadeSet = new HashSet<>();
+            for (Coords2D d : assembledPremadeWorldCells) {
+                Coords2D local = new Coords2D(d.getX() - worldAnchorX, d.getY() - worldAnchorZ);
+                assembledCandidateCells.add(local);
+                premadeSet.add(local);
+            }
+            assembledPremadeLocalCells = premadeSet;
 
             // The door markers' Y is floor 0's walking plane; ceiling is one
             // floor-height above it. Lower floors still stack downward below.
@@ -292,18 +367,29 @@ public class DungeonStackPlanner {
             floorFloors[i] = floorCeilings[i] - floorHeight + 1;
         }
 
-        // Pick transition templates up front for floors 0..N-2 (each link).
-        // A transition's XZ rect must fit in BOTH its upper and lower floor grids
-        // (since the same rect is reused as floor i's END and floor i+1's START).
-        // Constrain placement to the intersection footprint.
-        List<TemplateEntry> transitionTemplates = new ArrayList<>(floorCount - 1);
+        // Resolve transitions up front for floors 0..N-2 (each link). A transition's
+        // XZ rect must fit in BOTH its upper and lower floor grids (since the same
+        // rect is reused as floor i's END and floor i+1's START).
+        //
+        // When a transitionAssembler is supplied, the candidate rect below is only
+        // a rough anchor/overlap-avoidance guess (fixed 7x7) used to pick a world
+        // position to assemble AT; the real, jigsaw-assembled footprint (whatever
+        // size the actual template turns out to be) is authoritative once known.
+        // Falls back to the guessed placeholder rect itself when no assembler is
+        // set, or a specific transition fails to assemble (mirrors
+        // hasAssembledEntrance()'s graceful degradation).
+        final int fallbackTransitionSize = 7;
         List<Rectangle2D> transitionLocalFootprints = new ArrayList<>(floorCount - 1);
+        List<List<Coords2D>> transitionTopDoorLocalCells = new ArrayList<>(floorCount - 1);
+        List<List<Coords2D>> transitionBottomDoorLocalCells = new ArrayList<>(floorCount - 1);
+        // Premade ("dungeons2:connector") cells are a subset of the door lists above --
+        // real candidates the maze may pick, but never given a DungeonDoorPiece
+        // (see convertLevel). Tracked separately per floor-side so convertLevel
+        // knows which chosen doors to skip.
+        List<Set<Coords2D>> transitionTopPremadeLocalCells = new ArrayList<>(floorCount - 1);
+        List<Set<Coords2D>> transitionBottomPremadeLocalCells = new ArrayList<>(floorCount - 1);
+        List<String> transitionTemplateIds = new ArrayList<>(floorCount - 1);
         for (int i = 0; i < floorCount - 1; i++) {
-            TemplateEntry tt = catalog.pick(
-                    TemplateCatalog.Category.TRANSITION, motifValue, size, random);
-            int tw = tt != null ? tt.getWidth() : 7;
-            int td = tt != null ? tt.getDepth() : 7;
-            transitionTemplates.add(tt);
             int boundW = Math.min(footprints.get(i).getWidth(), footprints.get(i + 1).getWidth());
             int boundH = Math.min(footprints.get(i).getHeight(), footprints.get(i + 1).getHeight());
             Rectangle2D placementBound = new Rectangle2D(0, 0, boundW, boundH);
@@ -311,11 +397,61 @@ public class DungeonStackPlanner {
             // directly usable as a reservation for floor i's overlap check.
             Rectangle2D startReserved = (i == 0) ? entranceLocalFootprint
                     : transitionLocalFootprints.get(i - 1);
-            Rectangle2D end = placeAvoidingStart(placementBound, tw, td, startReserved, random);
-            if (end == null) {
+            Rectangle2D candidate = placeAvoidingStart(
+                    placementBound, fallbackTransitionSize, fallbackTransitionSize, startReserved, random);
+            if (candidate == null) {
                 return Optional.empty();
             }
-            transitionLocalFootprints.add(end);
+
+            Rectangle2D finalFootprint = candidate;
+            List<Coords2D> topDoors = List.of();
+            List<Coords2D> bottomDoors = List.of();
+            Set<Coords2D> topPremade = Set.of();
+            Set<Coords2D> bottomPremade = Set.of();
+            String templateId = "dungeons2:transitions/synthetic";
+
+            if (transitionAssembler != null) {
+                int worldX = planAnchor.getX() + candidate.getMinX();
+                int worldZ = planAnchor.getZ() + candidate.getMinY();
+                // Anchor at the LOWER floor's walking plane (floorFloors[i + 1]),
+                // not the upper floor's -- ladder1/stairs_1 are authored with local
+                // Y=0 at the lower floor's plane (confirmed working in-game before
+                // this migration), so assembly must start there and chain UPWARD,
+                // not start at the upper floor and chain down.
+                Optional<AssembledTransition> assembled =
+                        transitionAssembler.assemble(worldX, floorFloors[i + 1], worldZ, random);
+                if (assembled.isPresent()) {
+                    AssembledTransition at = assembled.get();
+                    Rectangle2D wf = at.worldFootprint();
+                    Rectangle2D realFootprint = new Rectangle2D(
+                            wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
+                            wf.getWidth(), wf.getHeight());
+                    if (startReserved == null || !realFootprint.intersects(startReserved)) {
+                        finalFootprint = realFootprint;
+                        List<Coords2D> topPremadeLocal = toLocalCells(at.topPremadeWorldCells(), planAnchor);
+                        List<Coords2D> bottomPremadeLocal = toLocalCells(at.bottomPremadeWorldCells(), planAnchor);
+                        List<Coords2D> topDoorsMerged = new ArrayList<>(toLocalCells(at.topDoorWorldCells(), planAnchor));
+                        topDoorsMerged.addAll(topPremadeLocal);
+                        List<Coords2D> bottomDoorsMerged = new ArrayList<>(toLocalCells(at.bottomDoorWorldCells(), planAnchor));
+                        bottomDoorsMerged.addAll(bottomPremadeLocal);
+                        topDoors = topDoorsMerged;
+                        bottomDoors = bottomDoorsMerged;
+                        topPremade = new HashSet<>(topPremadeLocal);
+                        bottomPremade = new HashSet<>(bottomPremadeLocal);
+                        templateId = "dungeons2:transitions/assembled";
+                    }
+                    // else: the real footprint collided with the reserved start
+                    // slot (an authored template unexpectedly large for this
+                    // footprint) -- keep the synthetic placeholder computed above.
+                }
+            }
+
+            transitionLocalFootprints.add(finalFootprint);
+            transitionTopDoorLocalCells.add(topDoors);
+            transitionBottomDoorLocalCells.add(bottomDoors);
+            transitionTopPremadeLocalCells.add(topPremade);
+            transitionBottomPremadeLocalCells.add(bottomPremade);
+            transitionTemplateIds.add(templateId);
         }
 
         // Run the maze per floor.
@@ -366,10 +502,15 @@ public class DungeonStackPlanner {
             // a door was built -> orphaned room).
             startRoom.setDegrees(3);
             // Floor 0's START room restricts its doorways to the assembled
-            // entrance's dungeons2:door marker cells; the maze opens up to
-            // getDegrees() of them and walls off the rest.
+            // entrance's dungeons2:door marker cells; other floors' START rooms
+            // (inherited from the upstairs transition) do the same using that
+            // transition's real bottom-floor door markers, when it assembled via
+            // real jigsaw placement -- the maze opens up to getDegrees() of them
+            // and walls off the rest.
             if (i == 0 && assembledCandidateCells != null) {
                 startRoom.setCandidateDoorways(assembledCandidateCells);
+            } else if (i > 0 && !transitionBottomDoorLocalCells.get(i - 1).isEmpty()) {
+                startRoom.setCandidateDoorways(transitionBottomDoorLocalCells.get(i - 1));
             }
             IRoom2D endRoom = new Room2D(endFootprint);
             endRoom.setEnd(true);
@@ -377,6 +518,11 @@ public class DungeonStackPlanner {
             // Reachability is guaranteed by MazeLevelGenerator2D's connectivity pass,
             // not by adding extra doors.
             endRoom.setDegrees(1);
+            // Non-bottom floors' END room is the downstairs transition; restrict its
+            // doorways to that transition's real top-floor door markers the same way.
+            if (i < floorCount - 1 && !transitionTopDoorLocalCells.get(i).isEmpty()) {
+                endRoom.setCandidateDoorways(transitionTopDoorLocalCells.get(i));
+            }
 
             final int floorIndex = i;
             final IRoom2D startRef = startRoom;
@@ -398,25 +544,44 @@ public class DungeonStackPlanner {
                 return Optional.empty();
             }
 
+            // Cells the maze may open as a door but must NOT get a DungeonDoorPiece,
+            // because the assembled template already has a real, pre-built door
+            // there (dungeons2:connector markers) -- this floor's START slot (from
+            // the entrance, floor 0 only, or the incoming transition's bottom side)
+            // plus its END slot (the outgoing transition's top side).
+            Set<Coords2D> premadeCells = new HashSet<>();
+            if (i == 0) {
+                premadeCells.addAll(assembledPremadeLocalCells);
+            } else {
+                premadeCells.addAll(transitionBottomPremadeLocalCells.get(i - 1));
+            }
+            if (i < floorCount - 1) {
+                premadeCells.addAll(transitionTopPremadeLocalCells.get(i));
+            }
+
             FloorLayout floor = convertLevel(
                     levelOpt.get(), i, floorFloors[i], floorCeilings[i],
-                    footprint, random);
+                    footprint, random, premadeCells);
             layout.getFloors().add(floor);
         }
 
-        // TransitionData (one per inter-floor link).
+        // TransitionData (one per inter-floor link). Metadata only now -- the real
+        // assembled pieces (when transitionAssembler produced one) are added to the
+        // worldgen builder directly by DungeonStructure, the same way the assembled
+        // entrance's pieces bypass DungeonPieceEmitter. Rotation is baked into
+        // those pieces already (vanilla JigsawPlacement picks it), so it's not
+        // tracked here anymore.
         for (int i = 0; i < floorCount - 1; i++) {
-            TemplateEntry tt = transitionTemplates.get(i);
             // Transition's XZ in lower floor's coords = same XZ as in upper floor
             // (the planner inherits the same footprint rect across the two grids).
             TransitionData transition = new TransitionData(
-                    tt != null ? tt.getId() : "dungeons2:transitions/synthetic",
+                    transitionTemplateIds.get(i),
                     i,
                     i + 1,
                     transitionLocalFootprints.get(i),
                     floorFloors[i],
                     floorFloors[i + 1],
-                    rollRotation(random));
+                    0);
             layout.getTransitions().add(transition);
         }
 
@@ -533,9 +698,16 @@ public class DungeonStackPlanner {
         return null;
     }
 
-    /** Walks the planned level and emits a populated {@link FloorLayout}. */
+    /**
+     * Walks the planned level and emits a populated {@link FloorLayout}.
+     *
+     * @param premadeCells door cells (floor-local grid coords) that must NOT get a
+     *                     {@code DoorData}/{@code DungeonDoorPiece} even if the
+     *                     maze opened a door there -- {@code dungeons2:connector}
+     *                     markers, whose template already has a real door built in.
+     */
     private FloorLayout convertLevel(ILevel2D level, int floorIndex, int floorY, int ceilingY,
-                                      Rectangle2D footprint, Random random) {
+                                      Rectangle2D footprint, Random random, Set<Coords2D> premadeCells) {
         FloorLayout floor = new FloorLayout(floorIndex, floorY, ceilingY, footprint);
         // Stash the maze grid (transient) so the renderer's corridor builder can
         // resolve neighbor wall cells. Not serialized; see FloorLayout#grid.
@@ -609,6 +781,13 @@ public class DungeonStackPlanner {
         // Doors: figure out which two regions each connects by looking at neighbors.
         for (int[] dc : doorCells) {
             int x = dc[0], z = dc[1];
+            if (premadeCells.contains(new Coords2D(x, z))) {
+                // dungeons2:connector cell -- the maze treated it as a real door for
+                // connectivity/region-merging purposes, but the assembled template
+                // already has a real door built in here; no DoorData means no
+                // DungeonDoorPiece overwrites it.
+                continue;
+            }
             int northId = z > 0 ? grid.get(x, z - 1).getRegionId() : -1;
             int southId = z < grid.getHeight() - 1 ? grid.get(x, z + 1).getRegionId() : -1;
             int eastId = x < grid.getWidth() - 1 ? grid.get(x + 1, z).getRegionId() : -1;

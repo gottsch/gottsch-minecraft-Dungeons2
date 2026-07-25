@@ -82,8 +82,8 @@ class DungeonStructureEmitterTest {
 
     @Test
     void sameSeedEmitsIdenticalPieceList() {
-        List<StructurePiece> a = DungeonPieceEmitter.emit(plan(), ANCHOR_X, ANCHOR_Z, null);
-        List<StructurePiece> b = DungeonPieceEmitter.emit(plan(), ANCHOR_X, ANCHOR_Z, null);
+        List<StructurePiece> a = DungeonPieceEmitter.emit(plan(), ANCHOR_X, ANCHOR_Z);
+        List<StructurePiece> b = DungeonPieceEmitter.emit(plan(), ANCHOR_X, ANCHOR_Z);
 
         assertFalse(a.isEmpty(), "emitter produced no pieces");
         assertEquals(a.size(), b.size(), "piece count differs across identical plans");
@@ -98,7 +98,7 @@ class DungeonStructureEmitterTest {
     @Test
     void everyPieceStaysWithinDungeonBounds() {
         DungeonLayout layout = plan();
-        List<StructurePiece> pieces = DungeonPieceEmitter.emit(layout, ANCHOR_X, ANCHOR_Z, null);
+        List<StructurePiece> pieces = DungeonPieceEmitter.emit(layout, ANCHOR_X, ANCHOR_Z);
 
         int minX = layout.getBboxMin().getX() - XZ_MARGIN;
         int maxX = layout.getBboxMax().getX() + XZ_MARGIN;
