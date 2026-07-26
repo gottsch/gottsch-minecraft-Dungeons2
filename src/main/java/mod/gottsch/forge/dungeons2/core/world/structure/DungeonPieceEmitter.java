@@ -45,9 +45,11 @@ import java.util.List;
  * <p>{@link RoomRole#START} / {@link RoomRole#END} rooms are <em>not</em> emitted
  * as procedural room pieces here &mdash; those slots are covered by the assembled
  * entrance and transition jigsaw pieces respectively (see {@link RoomData}'s role
- * doc), which {@link DungeonStructure} adds to the worldgen builder directly since
- * they're real vanilla {@code PoolElementStructurePiece}s, not something this
- * class constructs.</p>
+ * doc). Likewise, a {@link RoomRole#NORMAL} room whose {@link RoomData#getTemplateId()}
+ * is non-null (Phase 8: jigsaw-assembled interior room) is skipped too. In every
+ * such case {@link DungeonStructure} adds the real assembled pieces to the worldgen
+ * builder directly since they're real vanilla {@code PoolElementStructurePiece}s,
+ * not something this class constructs.</p>
  *
  * @author Mark Gottschling on Jun 19, 2026
  */
@@ -70,7 +72,9 @@ public final class DungeonPieceEmitter {
             int floorY = floor.getFloorY();
             for (RoomData room : floor.getRooms()) {
                 // START / END slots are the template pieces' job; skip them here.
-                if (room.getRole() == RoomRole.NORMAL) {
+                // Same for a NORMAL room that got a Phase 8 jigsaw-assembled prefab
+                // instead of a procedural build (templateId non-null).
+                if (room.getRole() == RoomRole.NORMAL && room.getTemplateId() == null) {
                     pieces.add(new DungeonRoomPiece(room, motif, floorY, anchorX, anchorZ));
                 }
             }

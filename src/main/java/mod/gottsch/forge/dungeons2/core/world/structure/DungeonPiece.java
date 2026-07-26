@@ -39,6 +39,7 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Base for the three procedural Phase 3 pieces ({@link DungeonRoomPiece},
@@ -206,6 +207,25 @@ public abstract class DungeonPiece extends StructurePiece {
         } catch (Exception e) {
             Dungeons.LOGGER.warn("Failed to apply block-entity data {} at {}: {}",
                     data, pos, e.getMessage());
+        }
+    }
+
+    /**
+     * Builds placements (via {@code placementsSupplier}, which runs the Phase 2
+     * builder) and writes them, logging and rethrowing any exception through our
+     * own logger first. Vanilla's command dispatcher (e.g. {@code /place
+     * structure}) swallows an exception thrown mid-command with just a generic
+     * chat message and nothing in the logs, so without this, a bug in a builder
+     * (wall/floor/ceiling generator, etc.) is nearly impossible to diagnose from
+     * a live game session.
+     */
+    protected void safePlaceAll(WorldGenLevel level, BoundingBox box, Supplier<List<BlockPlacement>> placementsSupplier) {
+        try {
+            placeAll(level, box, placementsSupplier.get());
+        } catch (RuntimeException e) {
+            Dungeons.LOGGER.error("{} postProcess threw at anchor=({},{}) floorY={} box={}",
+                    getClass().getSimpleName(), anchorX, anchorZ, floorY, box, e);
+            throw e;
         }
     }
 

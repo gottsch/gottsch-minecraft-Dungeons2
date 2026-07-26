@@ -312,6 +312,189 @@ class DungeonStackPlannerTest {
                 "The maze should open at least one entrance door candidate across seeds");
     }
 
+    // -------- Phase 8: jigsaw-assembled interior rooms --------
+
+    /** Always succeeds with a fixed 7x7 footprint at the requested world position. */
+    private static final DungeonStackPlanner.RoomAssembler FAKE_ROOM_ASSEMBLER = (worldX, worldY, worldZ, rand) -> {
+        Rectangle2D worldFootprint = new Rectangle2D(worldX, worldZ, 7, 7);
+        List<Coords2D> doors = List.of(
+                new Coords2D(worldX, worldZ + 3),
+                new Coords2D(worldX + 6, worldZ + 3));
+        return Optional.of(new DungeonStackPlanner.AssembledRoom(worldFootprint, doors, List.of()));
+    };
+
+    @Test
+    void roomAssemblerTagsRoomsWithTemplateId() {
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(DungeonSize.MEDIUM)
+                .withRoomAssembler(FAKE_ROOM_ASSEMBLER)
+                .plan().orElseThrow();
+
+        boolean anyTemplated = layout.getFloors().stream()
+                .flatMap(f -> f.getRooms().stream())
+                .anyMatch(r -> r.getTemplateId() != null);
+        assertTrue(anyTemplated,
+                "At least one room should be tagged with a template id when a RoomAssembler is supplied");
+    }
+
+    @Test
+    void noRoomAssemblerLeavesRoomsUntemplated() {
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(DungeonSize.MEDIUM)
+                .plan().orElseThrow();
+
+        boolean anyTemplated = layout.getFloors().stream()
+                .flatMap(f -> f.getRooms().stream())
+                .anyMatch(r -> r.getTemplateId() != null);
+        assertFalse(anyTemplated,
+                "Without a RoomAssembler, no room should ever be tagged with a template id");
+    }
+
+    @Test
+    void roomFlushAgainstFloorBoundaryIsRejected() {
+        // A real in-game crash traced to a room's real assembled footprint landing
+        // flush against the floor's own grid boundary (min corner at local 0,0) --
+        // its door candidates then sit on the boundary row/column, which used to
+        // crash MazeLevelGenerator2D.generateConnector's unbounded neighbor lookup
+        // (fixed there too; this asserts the planner also never hands such a
+        // footprint to the maze in the first place).
+        DungeonStackPlanner.RoomAssembler flushAgainstOrigin = (worldX, worldY, worldZ, rand) ->
+                Optional.of(new DungeonStackPlanner.AssembledRoom(
+                        new Rectangle2D(planAnchorX(), planAnchorZ(), 7, 7), List.of(), List.of()));
+
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(DungeonSize.MEDIUM)
+                .withRoomAssembler(flushAgainstOrigin)
+                .plan().orElseThrow();
+
+        boolean anyTemplated = layout.getFloors().stream()
+                .flatMap(f -> f.getRooms().stream())
+                .anyMatch(r -> r.getTemplateId() != null);
+        assertFalse(anyTemplated,
+                "A room footprint flush against the floor's boundary must never be accepted as templated");
+    }
+
+    /** The planner's world anchor for a synthetic (non-assembled-entrance) layout is just {@code ANCHOR}. */
+    private static int planAnchorX() {
+        return ANCHOR.getX();
+    }
+
+    private static int planAnchorZ() {
+        return ANCHOR.getZ();
+    }
+
+    @Test
+    void assemblerlessRoomAttemptDoesNotBreakPlanning() {
+        // An assembler that always refuses must degrade gracefully -- planning still
+        // succeeds, just with zero templated rooms (ordinary procedural fill instead).
+        DungeonStackPlanner.RoomAssembler refusing = (worldX, worldY, worldZ, rand) -> Optional.empty();
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(DungeonSize.MEDIUM)
+                .withRoomAssembler(refusing)
+                .plan().orElseThrow();
+
+        assertFalse(layout.getFloors().isEmpty());
+        boolean anyTemplated = layout.getFloors().stream()
+                .flatMap(f -> f.getRooms().stream())
+                .anyMatch(r -> r.getTemplateId() != null);
+        assertFalse(anyTemplated, "A refusing RoomAssembler should never produce a templated room");
+    }
+
+    @Test
+    void roomAssemblerFootprintOutsideGridBoundsIsSkippedGracefully() {
+        // Reproduces an in-game failure: vanilla is free to rotate the first piece
+        // of a jigsaw assembly, which can shift the REAL bounding box's min-corner
+        // away from the requested world XZ -- here simulated by returning a
+        // footprint wildly offset from where it was asked to assemble. Must be
+        // skipped (not treated as authoritative), never handed to the maze as-is.
+        DungeonStackPlanner.RoomAssembler rotatedOffscreen = (worldX, worldY, worldZ, rand) ->
+                Optional.of(new DungeonStackPlanner.AssembledRoom(
+                        new Rectangle2D(worldX - 1000, worldZ - 1000, 7, 7), List.of(), List.of()));
+
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(DungeonSize.MEDIUM)
+                .withRoomAssembler(rotatedOffscreen)
+                .plan().orElseThrow();
+
+        assertFalse(layout.getFloors().isEmpty());
+        boolean anyTemplated = layout.getFloors().stream()
+                .flatMap(f -> f.getRooms().stream())
+                .anyMatch(r -> r.getTemplateId() != null);
+        assertFalse(anyTemplated,
+                "An out-of-bounds RoomAssembler result must never produce a templated room");
+    }
+
+    @Test
+    void transitionAssemblerFootprintOutsideGridBoundsFallsBackGracefully() {
+        // Same failure mode as above, but for transitions -- a rotated real
+        // footprint landing outside the floor's grid must NOT be handed to
+        // MazeLevelGenerator2D as the fixed END/START room slot (that would abort
+        // the entire floor's maze, and thus the whole dungeon's planning).
+        DungeonStackPlanner.TransitionAssembler rotatedOffscreen = (worldX, worldY, worldZ, rand) ->
+                Optional.of(new DungeonStackPlanner.AssembledTransition(
+                        new Rectangle2D(worldX - 1000, worldZ - 1000, 9, 9),
+                        List.of(), List.of(), List.of(), List.of()));
+
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withFloorCount(3)
+                .withTransitionAssembler(rotatedOffscreen)
+                .plan().orElseThrow();
+
+        assertEquals(3, layout.getFloors().size());
+        assertEquals(2, layout.getTransitions().size());
+        for (FloorLayout floor : layout.getFloors()) {
+            int fw = floor.getFootprint().getWidth();
+            int fd = floor.getFootprint().getHeight();
+            for (RoomData room : floor.getRooms()) {
+                assertTrue(room.getOriginX() >= 0 && room.getOriginZ() >= 0,
+                        "Room must never have a negative local origin");
+                assertTrue(room.getOriginX() + room.getWidth() <= fw
+                                && room.getOriginZ() + room.getDepth() <= fd,
+                        "Room must stay within its floor's footprint");
+            }
+        }
+    }
+
+    @Test
+    void templatedRoomsStayWithinFloorFootprint() {
+        // NOTE: this only checks templated rooms against the floor's own bounds --
+        // it does NOT assert general non-overlap between all rooms on a floor.
+        // Exploration while writing this test found that plain procedural fill
+        // rooms can already overlap an existing room (reproducible with zero
+        // RoomAssembler involvement -- a pre-existing MazeLevelGenerator2D issue,
+        // out of scope for Phase 8; flagged separately).
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(DungeonSize.LARGE)
+                .withRoomAssembler(FAKE_ROOM_ASSEMBLER)
+                .plan().orElseThrow();
+
+        for (FloorLayout floor : layout.getFloors()) {
+            int fw = floor.getFootprint().getWidth();
+            int fd = floor.getFootprint().getHeight();
+            for (RoomData room : floor.getRooms()) {
+                if (room.getTemplateId() == null) {
+                    continue;
+                }
+                assertTrue(room.getOriginX() + room.getWidth() <= fw,
+                        "Templated room extends past floor width");
+                assertTrue(room.getOriginZ() + room.getDepth() <= fd,
+                        "Templated room extends past floor depth");
+            }
+        }
+    }
+
+    @Test
+    void sameSeedWithRoomAssemblerProducesIdenticalLayout() {
+        TemplateCatalog catalog = buildCatalog();
+        DungeonLayout a = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", catalog)
+                .withSize(DungeonSize.MEDIUM).withRoomAssembler(FAKE_ROOM_ASSEMBLER).plan().orElseThrow();
+        DungeonLayout b = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", catalog)
+                .withSize(DungeonSize.MEDIUM).withRoomAssembler(FAKE_ROOM_ASSEMBLER).plan().orElseThrow();
+
+        assertEquals(a.describe(), b.describe(),
+                "Same seed + same RoomAssembler behavior must produce byte-identical layout");
+    }
+
     @Test
     void noRoomDataPositionExceedsFloorFootprint() {
         DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())

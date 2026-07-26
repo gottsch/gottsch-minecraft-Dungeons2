@@ -97,6 +97,25 @@ class MazeCandidateDoorwayTest {
         assertTrue(exercised > 0, "expected at least one seed to exercise candidate restriction");
     }
 
+    @Test
+    void candidateDoorwayFlushAgainstGridBoundaryDoesNotCrash() {
+        // Reproduces a real in-game crash: a candidate doorway cell sitting on the
+        // grid's own boundary row/column (x=0) made generateConnector's unbounded
+        // neighbor lookup (get(x-1, y)) throw ArrayIndexOutOfBoundsException. A
+        // room spanning [0,0]..[6,6] with its west-wall door candidate at (0,3)
+        // reproduces this directly, regardless of what places such a room there
+        // (Phase 8's jigsaw room-template placement is one real caller).
+        IRoom2D start = new Room2D(new Rectangle2D(0, 0, 7, 7));
+        start.setStart(true);
+        start.setDegrees(3);
+        start.setCandidateDoorways(new ArrayList<>(List.of(new Coords2D(0, 3))));
+
+        // Must complete without throwing; whether it opens the edge candidate or
+        // not is irrelevant here (a boundary cell has no valid neighbor on one
+        // side and would legitimately never open) -- the point is no crash.
+        run(0L, start, endRoom());
+    }
+
     private static IRoom2D startRoom() {
         IRoom2D room = new Room2D(new Rectangle2D(2, 2, 7, 7));
         room.setStart(true);

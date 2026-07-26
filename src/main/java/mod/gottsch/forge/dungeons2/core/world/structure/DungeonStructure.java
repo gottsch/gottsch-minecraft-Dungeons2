@@ -90,6 +90,18 @@ public class DungeonStructure extends Structure {
      * building; vanilla {@link JigsawPlacement} chains it down into the descent
      * pool(s). {@code maxDepth} is kept small so assembly never recurses into
      * the dungeon body.
+     *
+     * <p><strong>Not motif-parametrized (unlike transitions/rooms below).</strong>
+     * {@code surface_exit.nbt}/{@code descent_1.nbt} have their own jigsaw
+     * assembly-joint {@code pool}/{@code target} fields baked into their NBT,
+     * cross-referencing each other by exact resource-location string
+     * ({@code dungeons2:entrance/descent}, {@code .../descent_top},
+     * {@code .../surface_exit}). Moving this pool under a motif subfolder would
+     * require rewriting those embedded strings too -- safe to do by re-saving the
+     * jigsaw blocks in-game (Target Pool field), not something to blind-edit in
+     * compressed NBT. Rooms/transitions don't have this problem: their current
+     * content has no cross-pool references at all (see each's own doc below), so
+     * only the entrance is held back from motif support this pass.</p>
      */
     private static final ResourceLocation ENTRANCE_START_POOL =
             new ResourceLocation(Dungeons.MOD_ID, "entrance/surface_exit");
@@ -120,20 +132,54 @@ public class DungeonStructure extends Structure {
      * pools" section of {@code data/dungeons2/structures/README.md}. {@code
      * maxDepth} is a safety cap only, not a design constraint: real chain length
      * is bounded by whatever the author actually builds into the pools, not by us.
+     *
+     * <p>Motif-parametrized: {@code ladder1.nbt}/{@code stairs_1.nbt} are complete,
+     * self-contained pieces with no outgoing joint, so they carry no cross-pool
+     * references -- safe to relocate under a motif subfolder, unlike the entrance
+     * (see its doc above). A future chained (segmented) transition author is
+     * responsible for pointing their own joint at whatever motif-scoped pool name
+     * they're building against, same as any other authoring hygiene.</p>
      */
-    private static final ResourceLocation TRANSITION_START_POOL =
-            new ResourceLocation(Dungeons.MOD_ID, "transitions/shaft_bottom");
+    private static ResourceLocation transitionStartPool(String motifValue) {
+        return new ResourceLocation(Dungeons.MOD_ID, "transitions/" + motifValue + "/shaft_bottom");
+    }
     private static final int TRANSITION_MAX_DEPTH = 6;
     private static final int TRANSITION_MAX_DISTANCE = 32;
 
     /**
-     * Matches {@code DungeonStackPlanner}'s default {@code floorHeight*2 +
-     * gapBetweenFloors} (10*2+2). Diagnostic only, for the height-mismatch
-     * warning in {@link #scanTransitionGeometry} -- kept in sync by hand since
-     * this class doesn't have a live reference to the planner's (currently
-     * un-customized) floor constants.
+     * Phase 8: jigsaw-assembled interior ("NORMAL") room prefabs. Unlike transitions,
+     * a room is a single self-contained piece at one Y anchor (the floor's own
+     * walking plane) -- no chaining, so {@code maxDepth} is a safety cap only, not a
+     * design constraint the author needs to size a chain against.
+     *
+     * <p>Motif-parametrized: a room is never chained (no outgoing joint at all,
+     * by design -- see the Phase 8 plan), so there's no cross-pool reference risk
+     * moving it under a motif subfolder.</p>
      */
-    private static final int EXPECTED_TRANSITION_HEIGHT = 22;
+    private static ResourceLocation roomStartPool(String motifValue) {
+        return new ResourceLocation(Dungeons.MOD_ID, "rooms/" + motifValue + "/normal");
+    }
+    private static final int ROOM_MAX_DEPTH = 1;
+    private static final int ROOM_MAX_DISTANCE = 16;
+
+    /**
+     * Valid range for an assembled transition's realized height. Diagnostic only,
+     * for the height-mismatch warning in {@link #scanTransitionGeometry} -- kept
+     * in sync by hand since this class doesn't have a live reference to the
+     * planner's (currently un-customized) floor constants.
+     *
+     * <p>The floor-to-floor pitch a transition bridges is {@code floorHeight +
+     * gapBetweenFloors} (10+2=12 with current defaults) -- that's the MINIMUM a
+     * transition must reach to actually connect the two floor planes. It can be
+     * taller than that, up to {@code floorHeight*2 + gapBetweenFloors} (10*2+2=22):
+     * the transition's own footprint is reserved as the upper floor's START room,
+     * which already budgets a full {@code floorHeight} of vertical room at that XZ
+     * column regardless of what's built there, so the transition can use any of
+     * that slack without overflowing into unreserved territory. 22 is a max, not
+     * an exact target -- a shorter (but still &ge; 12) transition is fine.</p>
+     */
+    private static final int MIN_TRANSITION_HEIGHT = 12;
+    private static final int MAX_TRANSITION_HEIGHT = 22;
 
     public DungeonStructure(Structure.StructureSettings settings) {
         super(settings);
@@ -182,7 +228,7 @@ public class DungeonStructure extends Structure {
             // piece.move(0, k - l, 0) = move(0, -1, 0). Request one block higher so
             // the piece's real local Y=0 lands exactly at worldY after that shift.
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
-            List<StructurePiece> assembled = assembleTransition(context, candidatePos);
+            List<StructurePiece> assembled = assembleTransition(context, candidatePos, motifValue);
             TransitionGeometry tgeo = scanTransitionGeometry(assembled, templateManager, seed, worldY);
             if (tgeo == null) {
                 return Optional.empty();
@@ -191,6 +237,25 @@ public class DungeonStructure extends Structure {
             return Optional.of(new DungeonStackPlanner.AssembledTransition(
                     tgeo.worldFootprint(), tgeo.topDoorWorldCells(), tgeo.bottomDoorWorldCells(),
                     tgeo.topPremadeWorldCells(), tgeo.bottomPremadeWorldCells()));
+        };
+
+        // Phase 8: interior rooms assemble lazily too, one attempt per candidate
+        // slot the planner tries per floor -- same accumulate-then-add-directly
+        // pattern as transitionPieces.
+        List<StructurePiece> roomPieces = new ArrayList<>();
+        DungeonStackPlanner.RoomAssembler roomAssembler = (worldX, worldY, worldZ, rand) -> {
+            // Same SinglePoolElement.getGroundLevelDelta()==1 compensation as
+            // transitions (see transitionAssembler above) -- request one block
+            // higher so the piece's real local Y=0 lands exactly at worldY.
+            BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
+            List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue);
+            RoomGeometry rgeo = scanRoomGeometry(assembled, templateManager, seed);
+            if (rgeo == null) {
+                return Optional.empty();
+            }
+            roomPieces.addAll(assembled);
+            return Optional.of(new DungeonStackPlanner.AssembledRoom(
+                    rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells()));
         };
 
         // Hand the entrance's world geometry to the planner, which sizes floor 0's
@@ -203,6 +268,7 @@ public class DungeonStructure extends Structure {
                         surfaceY, motifValue, new TemplateCatalog());
         planner.withCorridorWidth(DungeonGenerationConfigHelper.get(context.registryAccess()).corridorWidth());
         planner.withTransitionAssembler(transitionAssembler);
+        planner.withRoomAssembler(roomAssembler);
         if (geo != null) {
             Rectangle2D entranceWorldRect = new Rectangle2D(geo.minX(), geo.minZ(),
                     geo.maxX() - geo.minX() + 1, geo.maxZ() - geo.minZ() + 1);
@@ -217,7 +283,18 @@ public class DungeonStructure extends Structure {
             planner.withAssembledEntrance(entranceWorldRect, doorWorldCells, premadeWorldCells, geo.floor0Y());
         }
 
-        Optional<DungeonLayout> layoutOpt = planner.plan();
+        Optional<DungeonLayout> layoutOpt;
+        try {
+            layoutOpt = planner.plan();
+        } catch (RuntimeException e) {
+            // Vanilla's command dispatcher swallows exceptions thrown while
+            // executing /place structure (or any command) with just a generic
+            // chat message -- nothing reaches the logs otherwise. Log the real
+            // exception here (our own logger, which does hit logs/debug.log)
+            // before rethrowing so the user-visible behavior is unchanged.
+            Dungeons.LOGGER.error("DungeonStackPlanner.plan() threw for chunk {}", chunkPos, e);
+            throw e;
+        }
         if (layoutOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -230,30 +307,39 @@ public class DungeonStructure extends Structure {
         final int emitAnchorZ = layout.getAnchor().getZ();
 
         return Optional.of(new GenerationStub(position, builder -> {
-            List<StructurePiece> allPieces = new ArrayList<>(entrancePieces);
-            allPieces.addAll(transitionPieces);
-            allPieces.addAll(DungeonPieceEmitter.emit(layout, emitAnchorX, emitAnchorZ));
+            try {
+                List<StructurePiece> allPieces = new ArrayList<>(entrancePieces);
+                allPieces.addAll(transitionPieces);
+                allPieces.addAll(roomPieces);
+                allPieces.addAll(DungeonPieceEmitter.emit(layout, emitAnchorX, emitAnchorZ));
 
-            // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
-            // full chunk range every piece's bounding box says it should touch, so
-            // it can be diffed against DungeonPiece's [D2-TOUCH] lines (every chunk
-            // that ACTUALLY got a postProcess call) to find a chunk that's expected
-            // but was silently skipped by vanilla's /place-into-already-generated-
-            // chunk handling. Remove once resolved.
-            int minCx = Integer.MAX_VALUE, maxCx = Integer.MIN_VALUE;
-            int minCz = Integer.MAX_VALUE, maxCz = Integer.MIN_VALUE;
-            for (StructurePiece p : allPieces) {
-                BoundingBox bb = p.getBoundingBox();
-                minCx = Math.min(minCx, bb.minX() >> 4);
-                maxCx = Math.max(maxCx, bb.maxX() >> 4);
-                minCz = Math.min(minCz, bb.minZ() >> 4);
-                maxCz = Math.max(maxCz, bb.maxZ() >> 4);
+                // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
+                // full chunk range every piece's bounding box says it should touch, so
+                // it can be diffed against DungeonPiece's [D2-TOUCH] lines (every chunk
+                // that ACTUALLY got a postProcess call) to find a chunk that's expected
+                // but was silently skipped by vanilla's /place-into-already-generated-
+                // chunk handling. Remove once resolved.
+                int minCx = Integer.MAX_VALUE, maxCx = Integer.MIN_VALUE;
+                int minCz = Integer.MAX_VALUE, maxCz = Integer.MIN_VALUE;
+                for (StructurePiece p : allPieces) {
+                    BoundingBox bb = p.getBoundingBox();
+                    minCx = Math.min(minCx, bb.minX() >> 4);
+                    maxCx = Math.max(maxCx, bb.maxX() >> 4);
+                    minCz = Math.min(minCz, bb.minZ() >> 4);
+                    maxCz = Math.max(maxCz, bb.maxZ() >> 4);
+                }
+                Dungeons.LOGGER.warn(
+                        "[D2-EXPECT] anchor=({},{}) pieceCount={} expectedChunkRange=x[{}..{}] z[{}..{}]",
+                        emitAnchorX, emitAnchorZ, allPieces.size(), minCx, maxCx, minCz, maxCz);
+
+                allPieces.forEach(builder::addPiece);
+            } catch (RuntimeException e) {
+                // Same rationale as the planner.plan() try/catch above -- log through
+                // our own logger before rethrowing so a bug here is actually visible.
+                Dungeons.LOGGER.error("Piece-building lambda threw for chunk {} anchor=({},{})",
+                        chunkPos, emitAnchorX, emitAnchorZ, e);
+                throw e;
             }
-            Dungeons.LOGGER.warn(
-                    "[D2-EXPECT] anchor=({},{}) pieceCount={} expectedChunkRange=x[{}..{}] z[{}..{}]",
-                    emitAnchorX, emitAnchorZ, allPieces.size(), minCx, maxCx, minCz, maxCz);
-
-            allPieces.forEach(builder::addPiece);
         }));
     }
 
@@ -357,11 +443,12 @@ public class DungeonStructure extends Structure {
      * {@link #assembleEntrance}, just parameterized on the transition pool/depth/
      * distance and callable more than once per chunk (once per inter-floor link).
      */
-    private static List<StructurePiece> assembleTransition(GenerationContext context, BlockPos position) {
+    private static List<StructurePiece> assembleTransition(GenerationContext context, BlockPos position,
+                                                            String motifValue) {
         Registry<StructureTemplatePool> poolRegistry =
                 context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
         Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
-                ResourceKey.create(Registries.TEMPLATE_POOL, TRANSITION_START_POOL));
+                ResourceKey.create(Registries.TEMPLATE_POOL, transitionStartPool(motifValue)));
         if (startPool.isEmpty()) {
             return List.of();
         }
@@ -459,11 +546,17 @@ public class DungeonStructure extends Structure {
         }
 
         int realizedHeight = maxY - minY + 1;
-        if (realizedHeight != EXPECTED_TRANSITION_HEIGHT) {
+        if (realizedHeight < MIN_TRANSITION_HEIGHT) {
             Dungeons.LOGGER.warn(
-                    "assembled transition height {} != expected {} at placementY={} -- top/bottom pieces "
-                            + "won't meet the adjacent floors' planes exactly; check the authored template heights",
-                    realizedHeight, EXPECTED_TRANSITION_HEIGHT, placementY);
+                    "assembled transition height {} < minimum {} at placementY={} -- too short to bridge "
+                            + "the two floor planes; check the authored template heights",
+                    realizedHeight, MIN_TRANSITION_HEIGHT, placementY);
+        } else if (realizedHeight > MAX_TRANSITION_HEIGHT) {
+            Dungeons.LOGGER.warn(
+                    "assembled transition height {} > maximum {} at placementY={} -- taller than the upper "
+                            + "floor's own reserved room-height budget at that XZ column; check the authored "
+                            + "template heights",
+                    realizedHeight, MAX_TRANSITION_HEIGHT, placementY);
         }
 
         Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
@@ -474,6 +567,94 @@ public class DungeonStructure extends Structure {
     private record TransitionGeometry(Rectangle2D worldFootprint, List<Coords2D> topDoorWorldCells,
                                       List<Coords2D> bottomDoorWorldCells, List<Coords2D> topPremadeWorldCells,
                                       List<Coords2D> bottomPremadeWorldCells) {
+    }
+
+    /**
+     * Runs vanilla {@link JigsawPlacement#addPieces} from the Phase 8 rooms start
+     * pool at {@code position}. Same shape as {@link #assembleTransition}, just
+     * parameterized on the rooms pool/depth/distance and callable more than once
+     * per chunk (once per candidate interior-room slot the planner tries).
+     */
+    private static List<StructurePiece> assembleRoom(GenerationContext context, BlockPos position,
+                                                     String motifValue) {
+        Registry<StructureTemplatePool> poolRegistry =
+                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
+                ResourceKey.create(Registries.TEMPLATE_POOL, roomStartPool(motifValue)));
+        if (startPool.isEmpty()) {
+            return List.of();
+        }
+
+        Optional<GenerationStub> stub = JigsawPlacement.addPieces(
+                context,
+                startPool.get(),
+                Optional.empty(),
+                ROOM_MAX_DEPTH,
+                position,
+                false,
+                Optional.empty(),
+                ROOM_MAX_DISTANCE);
+
+        return stub.map(s -> s.getPiecesBuilder().build().pieces()).orElse(List.of());
+    }
+
+    /**
+     * Scans assembled room pieces for {@code dungeons2:door} and
+     * {@code dungeons2:connector} jigsaw markers, plus the combined XZ footprint
+     * across every piece. Unlike a transition (markers at both ends, many blocks
+     * apart), a room has a single Y anchor, so there's no top/bottom split --
+     * every marker just becomes a candidate doorway for this one room. Returns
+     * {@code null} if no markers are found at all (assembly produced nothing, or
+     * the pool is absent), signalling the planner to skip this candidate slot --
+     * same convention as {@link #scanTransitionGeometry}.
+     */
+    private static RoomGeometry scanRoomGeometry(List<StructurePiece> pieces,
+                                                 StructureTemplateManager templateManager, long seed) {
+        int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        boolean any = false;
+        RandomSource random = RandomSource.create(seed);
+        List<Coords2D> doorCells = new ArrayList<>();
+        List<Coords2D> premadeCells = new ArrayList<>();
+
+        for (StructurePiece piece : pieces) {
+            if (!(piece instanceof PoolElementStructurePiece pool)) {
+                continue;
+            }
+            any = true;
+            BoundingBox bb = pool.getBoundingBox();
+            minX = Math.min(minX, bb.minX());
+            maxX = Math.max(maxX, bb.maxX());
+            minZ = Math.min(minZ, bb.minZ());
+            maxZ = Math.max(maxZ, bb.maxZ());
+
+            List<StructureTemplate.StructureBlockInfo> jigsaws = pool.getElement()
+                    .getShuffledJigsawBlocks(templateManager, pool.getPosition(), pool.getRotation(), random);
+            for (StructureTemplate.StructureBlockInfo info : jigsaws) {
+                CompoundTag nbt = info.nbt();
+                if (nbt == null) {
+                    continue;
+                }
+                String name = nbt.getString("name");
+                BlockPos p = info.pos();
+                if (DOOR_JIGSAW_NAME.equals(name)) {
+                    doorCells.add(new Coords2D(p.getX(), p.getZ()));
+                } else if (CONNECTOR_JIGSAW_NAME.equals(name)) {
+                    premadeCells.add(new Coords2D(p.getX(), p.getZ()));
+                }
+            }
+        }
+        if (!any || (doorCells.isEmpty() && premadeCells.isEmpty())) {
+            return null;
+        }
+
+        Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
+        return new RoomGeometry(worldFootprint, doorCells, premadeCells);
+    }
+
+    /** World geometry read off an assembled room's door/connector jigsaw markers. */
+    private record RoomGeometry(Rectangle2D worldFootprint, List<Coords2D> doorWorldCells,
+                                List<Coords2D> premadeWorldCells) {
     }
 
     @Override

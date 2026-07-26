@@ -43,6 +43,7 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -261,6 +262,46 @@ public class DungeonStackPlanner {
                                       List<Coords2D> bottomPremadeWorldCells) {
     }
 
+    // -------- Phase 8: jigsaw-assembled interior ("NORMAL") rooms (optional) --------
+    private RoomAssembler roomAssembler;
+
+    /**
+     * Supplies a callback that assembles an interior-room prefab (via real vanilla
+     * {@code JigsawPlacement}, in the Forge shell) at a candidate world position and
+     * returns its real geometry. Mirrors {@link #withTransitionAssembler} exactly,
+     * except a room has a single Y anchor (the floor's own walking plane) and no
+     * top/bottom split &mdash; it's a single, self-contained piece, not a chain.
+     * When absent (or a specific attempt returns empty), that candidate slot is
+     * simply skipped and covered by an ordinary procedural fill room instead, the
+     * same graceful degradation {@link #hasAssembledEntrance()} already has.
+     */
+    public DungeonStackPlanner withRoomAssembler(RoomAssembler assembler) {
+        this.roomAssembler = assembler;
+        return this;
+    }
+
+    @FunctionalInterface
+    public interface RoomAssembler {
+        Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ, Random random);
+    }
+
+    /**
+     * Real geometry read back from an assembled room; world-space.
+     * {@code premadeWorldCells} are {@code dungeons2:connector} markers &mdash;
+     * extra candidate doorways the maze may pick, but any it does pick get no
+     * {@code DungeonDoorPiece} (see {@link #convertLevel}), since the template
+     * already has a real door built in at that cell.
+     */
+    public record AssembledRoom(Rectangle2D worldFootprint,
+                               List<Coords2D> doorWorldCells,
+                               List<Coords2D> premadeWorldCells) {
+    }
+
+    /** Attempts per floor to place a jigsaw-assembled room before falling back to procedural fill rooms. */
+    private static final int ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR = 2;
+    private static final int ROOM_TEMPLATE_MIN_SIZE = 7;
+    private static final int ROOM_TEMPLATE_MAX_SIZE = 15;
+
     private static List<Coords2D> toLocalCells(List<Coords2D> worldCells, ICoords planAnchor) {
         List<Coords2D> local = new ArrayList<>(worldCells.size());
         for (Coords2D c : worldCells) {
@@ -426,7 +467,8 @@ public class DungeonStackPlanner {
                     Rectangle2D realFootprint = new Rectangle2D(
                             wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
                             wf.getWidth(), wf.getHeight());
-                    if (startReserved == null || !realFootprint.intersects(startReserved)) {
+                    if (withinLocalBounds(realFootprint, placementBound)
+                            && (startReserved == null || !realFootprint.intersects(startReserved))) {
                         finalFootprint = realFootprint;
                         List<Coords2D> topPremadeLocal = toLocalCells(at.topPremadeWorldCells(), planAnchor);
                         List<Coords2D> bottomPremadeLocal = toLocalCells(at.bottomPremadeWorldCells(), planAnchor);
@@ -441,8 +483,9 @@ public class DungeonStackPlanner {
                         templateId = "dungeons2:transitions/assembled";
                     }
                     // else: the real footprint collided with the reserved start
-                    // slot (an authored template unexpectedly large for this
-                    // footprint) -- keep the synthetic placeholder computed above.
+                    // slot, or (e.g. vanilla rotated the assembled piece) landed
+                    // outside the floor's own grid bounds -- keep the synthetic
+                    // placeholder computed above.
                 }
             }
 
@@ -524,9 +567,80 @@ public class DungeonStackPlanner {
                 endRoom.setCandidateDoorways(transitionTopDoorLocalCells.get(i));
             }
 
+            // Phase 8: try to place a few jigsaw-assembled interior rooms before the
+            // maze runs, feeding them in as MazeLevelGenerator2D's suppliedRooms --
+            // a mechanism the maze already supports generically (validated against
+            // boundary/overlap and folded into the region graph exactly like any
+            // other room; see MazeLevelGenerator2D's suppliedRooms handling). Each
+            // successfully-placed template room becomes a reservation for the next
+            // attempt, on top of this floor's start/end footprints. Graceful
+            // degradation: no assembler, or a failed/colliding attempt, just skips
+            // that slot -- ordinary procedural fill rooms cover the gap as today.
+            List<IRoom2D> templateRooms = new ArrayList<>();
+            Map<IRoom2D, String> templateIdByRoom = new IdentityHashMap<>();
+            Set<Coords2D> templateRoomPremadeLocalCells = new HashSet<>();
+            if (roomAssembler != null) {
+                List<Rectangle2D> roomReserved = new ArrayList<>();
+                roomReserved.add(startFootprint);
+                roomReserved.add(endFootprint);
+                for (int attempt = 0; attempt < ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR; attempt++) {
+                    int rw = oddInRange(random, ROOM_TEMPLATE_MIN_SIZE, ROOM_TEMPLATE_MAX_SIZE);
+                    int rd = oddInRange(random, ROOM_TEMPLATE_MIN_SIZE, ROOM_TEMPLATE_MAX_SIZE);
+                    Rectangle2D roomCandidate = placeAvoidingReserved(footprint, rw, rd, roomReserved, random);
+                    if (roomCandidate == null) {
+                        continue;
+                    }
+                    int worldX = planAnchor.getX() + roomCandidate.getMinX();
+                    int worldZ = planAnchor.getZ() + roomCandidate.getMinY();
+                    Optional<AssembledRoom> assembledRoom = roomAssembler.assemble(worldX, floorFloors[i], worldZ, random);
+                    if (assembledRoom.isEmpty()) {
+                        continue;
+                    }
+                    AssembledRoom ar = assembledRoom.get();
+                    Rectangle2D wf = ar.worldFootprint();
+                    Rectangle2D realFootprint = new Rectangle2D(
+                            wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
+                            wf.getWidth(), wf.getHeight());
+                    // Reject a footprint flush against the floor's own outer boundary
+                    // (min edge touching 0, or max edge touching the floor's own
+                    // width/height) -- a door candidate on that room's edge would then
+                    // sit exactly on the grid's boundary row/column, which used to crash
+                    // MazeLevelGenerator2D.generateConnector's unbounded neighbor lookup
+                    // (now fixed defensively there too, but a room shouldn't visually
+                    // abut the raw map edge regardless).
+                    boolean touchesFloorEdge = realFootprint.getMinX() <= 0 || realFootprint.getMinY() <= 0
+                            || realFootprint.getMinX() + realFootprint.getWidth() >= footprint.getWidth()
+                            || realFootprint.getMinY() + realFootprint.getHeight() >= footprint.getHeight();
+                    if (!withinLocalBounds(realFootprint, footprint) || touchesFloorEdge
+                            || !noIntersections(realFootprint, roomReserved)) {
+                        // Real footprint (whatever size/position the actual template
+                        // turned out to be, e.g. if vanilla rotated it) either landed
+                        // outside this floor's grid (or flush against its boundary) or
+                        // collided with an existing reservation -- skip this slot.
+                        continue;
+                    }
+
+                    List<Coords2D> premadeLocal = toLocalCells(ar.premadeWorldCells(), planAnchor);
+                    List<Coords2D> doorsLocal = new ArrayList<>(toLocalCells(ar.doorWorldCells(), planAnchor));
+                    doorsLocal.addAll(premadeLocal);
+
+                    IRoom2D templateRoom = new Room2D(realFootprint);
+                    // A few candidate doors so the room can branch, mirroring the
+                    // entrance's startRoom.setDegrees(3) rationale.
+                    templateRoom.setDegrees(3);
+                    templateRoom.setCandidateDoorways(doorsLocal);
+
+                    templateRooms.add(templateRoom);
+                    templateIdByRoom.put(templateRoom, "dungeons2:rooms/assembled");
+                    templateRoomPremadeLocalCells.addAll(premadeLocal);
+                    roomReserved.add(realFootprint);
+                }
+            }
+
             final int floorIndex = i;
             final IRoom2D startRef = startRoom;
             final IRoom2D endRef = endRoom;
+            final List<IRoom2D> suppliedTemplateRooms = templateRooms;
             MazeLevelGenerator2D mazeGen = new MazeLevelGenerator2D.Builder()
                     .with($ -> {
                         $.width = footprint.getWidth();
@@ -534,6 +648,7 @@ public class DungeonStackPlanner {
                         $.numberOfRooms = pickNumberOfRooms(size, footprint);
                         $.startRoom = startRef;
                         $.endRoom = endRef;
+                        $.suppliedRooms = suppliedTemplateRooms;
                     })
                     .corridorWidth(corridorCells)
                     .seed(mixSeed(seed, floorIndex))
@@ -547,8 +662,9 @@ public class DungeonStackPlanner {
             // Cells the maze may open as a door but must NOT get a DungeonDoorPiece,
             // because the assembled template already has a real, pre-built door
             // there (dungeons2:connector markers) -- this floor's START slot (from
-            // the entrance, floor 0 only, or the incoming transition's bottom side)
-            // plus its END slot (the outgoing transition's top side).
+            // the entrance, floor 0 only, or the incoming transition's bottom side),
+            // its END slot (the outgoing transition's top side), plus any
+            // jigsaw-assembled interior rooms placed above.
             Set<Coords2D> premadeCells = new HashSet<>();
             if (i == 0) {
                 premadeCells.addAll(assembledPremadeLocalCells);
@@ -558,10 +674,11 @@ public class DungeonStackPlanner {
             if (i < floorCount - 1) {
                 premadeCells.addAll(transitionTopPremadeLocalCells.get(i));
             }
+            premadeCells.addAll(templateRoomPremadeLocalCells);
 
             FloorLayout floor = convertLevel(
                     levelOpt.get(), i, floorFloors[i], floorCeilings[i],
-                    footprint, random, premadeCells);
+                    footprint, random, premadeCells, templateIdByRoom);
             layout.getFloors().add(floor);
         }
 
@@ -670,6 +787,19 @@ public class DungeonStackPlanner {
      */
     private Rectangle2D placeAvoidingStart(Rectangle2D footprint, int w, int d,
                                             Rectangle2D reserved, Random random) {
+        return placeAvoidingReserved(footprint, w, d,
+                reserved == null ? List.of() : List.of(reserved), random);
+    }
+
+    /**
+     * Generalized form of {@link #placeAvoidingStart} that avoids a whole list of
+     * reserved rects at once &mdash; needed when placing more than one jigsaw-
+     * assembled room per floor, where each successfully-placed room becomes a new
+     * reservation for the next attempt (see the Phase 8 room-template loop in
+     * {@link #plan()}).
+     */
+    private Rectangle2D placeAvoidingReserved(Rectangle2D footprint, int w, int d,
+                                               List<Rectangle2D> reserved, Random random) {
         int xRange = footprint.getWidth() - w;
         int zRange = footprint.getHeight() - d;
         if (xRange < 0 || zRange < 0) return null;
@@ -682,7 +812,7 @@ public class DungeonStackPlanner {
             if (x < 0) x = 0;
             if (z < 0) z = 0;
             Rectangle2D candidate = new Rectangle2D(x, z, w, d);
-            if (reserved == null || !candidate.intersects(reserved)) {
+            if (noIntersections(candidate, reserved)) {
                 return candidate;
             }
         }
@@ -690,12 +820,39 @@ public class DungeonStackPlanner {
         for (int x = 0; x <= xRange; x += 2) {
             for (int z = 0; z <= zRange; z += 2) {
                 Rectangle2D candidate = new Rectangle2D(x, z, w, d);
-                if (reserved == null || !candidate.intersects(reserved)) {
+                if (noIntersections(candidate, reserved)) {
                     return candidate;
                 }
             }
         }
         return null;
+    }
+
+    private static boolean noIntersections(Rectangle2D candidate, List<Rectangle2D> reserved) {
+        for (Rectangle2D r : reserved) {
+            if (r != null && candidate.intersects(r)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * True if {@code rect} lies entirely within {@code [0,0]..bounds.getWidth()/
+     * getHeight()}. A jigsaw-assembled piece's REAL footprint isn't guaranteed to
+     * land with its min-corner at the requested world XZ &mdash; vanilla is free
+     * to rotate the first piece of an assembly, which shifts the bounding box's
+     * min-corner relative to the pivot. Without this check, a rotated piece can
+     * produce a footprint with a negative local origin (or one that overruns the
+     * floor's grid on the far side), which the maze's own START/END-room
+     * validation then rejects outright, aborting the entire floor instead of
+     * gracefully falling back to the synthetic placeholder. Must be checked
+     * alongside (not instead of) the existing reserved-rect overlap check.
+     */
+    private static boolean withinLocalBounds(Rectangle2D rect, Rectangle2D bounds) {
+        return rect.getMinX() >= 0 && rect.getMinY() >= 0
+                && rect.getMinX() + rect.getWidth() <= bounds.getWidth()
+                && rect.getMinY() + rect.getHeight() <= bounds.getHeight();
     }
 
     /**
@@ -705,9 +862,15 @@ public class DungeonStackPlanner {
      *                     {@code DoorData}/{@code DungeonDoorPiece} even if the
      *                     maze opened a door there -- {@code dungeons2:connector}
      *                     markers, whose template already has a real door built in.
+     * @param templateIdByRoom identity-keyed map from a jigsaw-assembled room's
+     *                         {@link IRoom2D} (as supplied to the maze) to its
+     *                         template id; identity-keyed because the maze may
+     *                         lazily assign the room's id (see suppliedRooms
+     *                         handling), so it can't be looked up by id here.
      */
     private FloorLayout convertLevel(ILevel2D level, int floorIndex, int floorY, int ceilingY,
-                                      Rectangle2D footprint, Random random, Set<Coords2D> premadeCells) {
+                                      Rectangle2D footprint, Random random, Set<Coords2D> premadeCells,
+                                      Map<IRoom2D, String> templateIdByRoom) {
         FloorLayout floor = new FloorLayout(floorIndex, floorY, ceilingY, footprint);
         // Stash the maze grid (transient) so the renderer's corridor builder can
         // resolve neighbor wall cells. Not serialized; see FloorLayout#grid.
@@ -728,6 +891,10 @@ public class DungeonStackPlanner {
                     depth,
                     height,
                     role);
+            String templateId = templateIdByRoom.get(room2D);
+            if (templateId != null) {
+                rd.setTemplateId(templateId);
+            }
             // Copy doorways defensively.
             for (Coords2D door : room2D.getDoorways()) {
                 rd.getDoorways().add(new Coords2D(door));

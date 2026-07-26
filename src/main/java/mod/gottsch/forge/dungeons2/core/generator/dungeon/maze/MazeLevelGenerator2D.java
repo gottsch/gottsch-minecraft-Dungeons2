@@ -140,6 +140,7 @@ public class MazeLevelGenerator2D {
 
         this.startRoom = builder.startRoom;
         this.endRoom = builder.endRoom;
+        this.suppliedRooms = builder.suppliedRooms;
 
         if (builder.random != null) {
             this.random = builder.random;
@@ -981,11 +982,20 @@ public class MazeLevelGenerator2D {
         if (level.getGrid().get(x, y).getType() != CellType.WALL) {
             return true;
         }
-        int northId = level.getGrid().get(x, y-1).getRegionId();
-        int southId = level.getGrid().get(x, y+1).getRegionId();
+        // Bounds-checked: the generic wall-scan caller only ever passes x/y from
+        // [1, width-2]/[1, height-2] so its neighbors are always in-bounds, but the
+        // candidateDoorways callers (room.getCandidateDoorways(), e.g. a jigsaw-
+        // assembled room/transition/entrance marker) hand this whatever grid
+        // position the marker mapped to -- including, in principle, a cell flush
+        // against the grid's own boundary (x=0/z=0/width-1/height-1), whose
+        // neighbor would be out of bounds. Treat an out-of-bounds neighbor the
+        // same as an unassigned cell (regionId 0, always < idGenerator.getStart()),
+        // matching isFrameOpen's existing OOB-is-not-open convention below.
+        int northId = regionIdAt(level.getGrid(), x, y - 1);
+        int southId = regionIdAt(level.getGrid(), x, y + 1);
         // test east and west
-        int eastId = level.getGrid().get(x+1, y).getRegionId();
-        int westId = level.getGrid().get(x-1, y).getRegionId();
+        int eastId = regionIdAt(level.getGrid(), x + 1, y);
+        int westId = regionIdAt(level.getGrid(), x - 1, y);
 
         if (ignoreIds != null && (ignoreIds.contains((int)northId) || ignoreIds.contains((int)southId) ||
                 ignoreIds.contains((int)eastId) || ignoreIds.contains((int)westId))) {
@@ -1081,8 +1091,23 @@ public class MazeLevelGenerator2D {
      * unmodified terrain.
      */
     private boolean isRenderedRegionCell(Grid2D grid, int x, int y) {
+        if (x < 0 || y < 0 || x >= grid.getWidth() || y >= grid.getHeight()) {
+            return false;
+        }
         CellType t = grid.get(x, y).getType();
         return t == CellType.CORRIDOR || t == CellType.ROOM;
+    }
+
+    /**
+     * Bounds-checked region-id lookup: an out-of-bounds cell returns {@code 0},
+     * matching an unassigned {@link Cell}'s default {@code regionId} (always
+     * {@code < idGenerator.getStart()}, so it's never mistaken for a real region).
+     */
+    private int regionIdAt(Grid2D grid, int x, int y) {
+        if (x < 0 || y < 0 || x >= grid.getWidth() || y >= grid.getHeight()) {
+            return 0;
+        }
+        return grid.get(x, y).getRegionId();
     }
 
     /**

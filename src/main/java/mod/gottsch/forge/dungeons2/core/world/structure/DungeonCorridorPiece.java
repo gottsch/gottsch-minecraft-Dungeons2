@@ -98,7 +98,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
         logChunkTouch(level, chunkPos, box);
         // Render from a piece-stable seed, not the chunk-seeded `random`.
-        placeAll(level, box, renderPlacements());
+        safePlaceAll(level, box, this::renderPlacements);
     }
 
     /** Builds this corridor's placements deterministically (no external RNG). */

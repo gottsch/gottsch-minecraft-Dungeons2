@@ -1,5 +1,5 @@
 {
-  "name": "dungeons2:transitions/shaft_bottom",
+  "name": "dungeons2:transitions/classic/shaft_bottom",
   "fallback": "minecraft:empty",
   "elements": [
     {

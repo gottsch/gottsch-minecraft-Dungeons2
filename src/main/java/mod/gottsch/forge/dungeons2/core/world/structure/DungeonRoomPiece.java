@@ -86,7 +86,7 @@ public class DungeonRoomPiece extends DungeonPiece {
         logChunkTouch(level, chunkPos, box);
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
-        placeAll(level, box, renderPlacements());
+        safePlaceAll(level, box, this::renderPlacements);
     }
 
     /** Builds this room's placements deterministically (no external RNG). */

@@ -74,7 +74,7 @@ public class DungeonDoorPiece extends DungeonPiece {
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
         // Render from a piece-stable seed, not the chunk-seeded `random`.
-        placeAll(level, box, renderPlacements());
+        safePlaceAll(level, box, this::renderPlacements);
     }
 
     /** Builds this door's placements deterministically (no external RNG). */

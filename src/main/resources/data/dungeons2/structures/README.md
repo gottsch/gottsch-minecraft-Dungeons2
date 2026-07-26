@@ -7,12 +7,26 @@ creative world with Structure Blocks, **SAVE**, then copy the `.nbt` here.
 data/dungeons2/structures/
   entrances/    surface → floor-0 entrance pieces           (Phase 4b, jigsaw-assembled)
   transitions/  floor-to-floor links                        (jigsaw-assembled, see below)
-  rooms/        pooled room prefabs                          (Phase 8)
-  corridors/    themed corridor prefabs                      (Phase 8)
+  rooms/        pooled room prefabs                          (Phase 8, jigsaw-assembled, see below)
+  corridors/    themed corridor prefabs                      (Phase 8, not started)
 ```
 
-Jigsaw `template_pool` JSONs for the assembled entrance and transitions live separately under
-`data/dungeons2/worldgen/template_pool/entrance/` and `.../transitions/` respectively.
+Jigsaw `template_pool` JSONs for the assembled entrance, transitions, and rooms live separately
+under `data/dungeons2/worldgen/template_pool/{entrance,transitions,rooms}/`.
+
+**Motif/theme naming (transitions & rooms only):** the start pool a dungeon assembles from is
+selected by motif, one folder per theme: `transitions/<motif>/shaft_bottom.json`,
+`rooms/<motif>/normal.json` (e.g. `rooms/desert/normal.json` for a `DESERT`-themed room pool).
+Motif selection itself is still hardcoded to `classic` (see `DungeonStructure.findGenerationPoint`)
+— this is just the naming mechanism, ready for whenever motif selection varies for real. A
+missing themed pool degrades gracefully to plain procedural generation for that
+floor/room/transition, same as an empty pool always has; a smarter two-tier fallback (missing
+theme → shared/classic pool instead of straight to procedural) is a possible future phase, not
+implemented. **The entrance is the one exception** — `entrance/surface_exit.json`/`descent.json`
+stay unparametrized for now, because `surface_exit.nbt`/`descent_1.nbt` have jigsaw assembly-joint
+`pool`/`target` fields baked into their NBT that cross-reference each other by exact resource
+location; moving them under a motif subfolder needs those fields updated too (safest done by
+re-saving the jigsaw blocks in-game with the new Target Pool value), not a blind file move.
 
 **Conventions (all templates):** author facing **north** (the planner rolls a 0/90/180/270
 rotation and rotates markers with it); footprint **odd** in X and Z; local origin =
@@ -28,14 +42,18 @@ height of the engine's **corridors** (`DungeonCorridorPiece`), which only matter
 doorway interface, not for your room's walls or ceiling.
 
 **Transitions specifically** span floor-to-floor: local Y=0 is the *lower* floor's walking
-plane, and the whole assembled chain must reach exactly `floorHeight*2 + gapBetweenFloors`
-(currently **22**) to land cleanly on both floors' planes — e.g. a monolithic template like
-`ladder1.nbt`/`stairs_1.nbt` is built to that full height in one piece. If you're instead
+plane, and the whole assembled chain must reach **between `floorHeight + gapBetweenFloors`
+(currently **12**, the minimum needed to actually bridge the two floor planes) and
+`floorHeight*2 + gapBetweenFloors` (currently **22**, the maximum before it overflows the
+upper floor's own reserved room-height budget at that XZ column)** — anywhere in that range
+lands cleanly; it does not need to hit 22 exactly. A monolithic template like
+`ladder1.nbt`/`stairs_1.nbt` just needs to fall somewhere in that range. If you're instead
 composing a chain from multiple pieces (top room + descent segment + bottom room, see the
-jigsaw pools section below), **you're responsible for making any combination of pieces you
-build sum to exactly that total** — the engine doesn't enforce or adjust for it, and a
-mismatch leaves a gap or overlap at whichever end is off (a warning is logged when the
-realized height doesn't match, to catch this at test time rather than in-game).
+jigsaw pools section below), **you're responsible for keeping any combination of pieces you
+build within that range** — the engine doesn't enforce or adjust for it, and going under the
+minimum (or over the maximum) leaves a gap or overlap at whichever end is off (a warning is
+logged when the realized height falls outside the range, to catch this at test time rather
+than in-game).
 
 ---
 
@@ -199,13 +217,14 @@ and chains **upward**; the terminal piece must land exactly at the *upper* floor
 matches how `ladder1.nbt`/`stairs_1.nbt` are already authored (built upward from their own floor
 at local Y=0) — don't flip this without re-authoring those templates.
 
-Pools live under `data/dungeons2/worldgen/template_pool/transitions/`:
+Pools live under `data/dungeons2/worldgen/template_pool/transitions/<motif>/` (currently only
+`classic/` is authored; see the motif-naming note above).
 
 | Pool | Role | Contents |
 |------|------|----------|
-| `dungeons2:transitions/shaft_bottom` | **start pool** (what the planner assembles from, at the lower floor's plane) | Either a **complete, self-contained piece** with no outgoing joint — this is exactly what `ladder1.nbt`/`stairs_1.nbt` already are, registered here unchanged — or a **bottom segment**: `dungeons2:door` candidates at its own (lower) floor level + one **upward** assembly joint (`up_north`) into `shaft_segment`. |
-| `dungeons2:transitions/shaft_segment` | optional, repeatable middle piece(s) | Down joint (`down_south`, mates to whatever sent the connection up) + up joint (`up_north`, continues further) — no doors, corridor/decoration between the two ends. Only needed once you're authoring segmented chains; doesn't need to exist otherwise. |
-| `dungeons2:transitions/shaft_top` | terminal piece | `dungeons2:door` candidates at the *upper* floor's level + one **downward** joint (`down_south`, mates to whatever's below it), no further upward connection. |
+| `dungeons2:transitions/<motif>/shaft_bottom` | **start pool** (what the planner assembles from, at the lower floor's plane) | Either a **complete, self-contained piece** with no outgoing joint — this is exactly what `ladder1.nbt`/`stairs_1.nbt` already are, registered here unchanged — or a **bottom segment**: `dungeons2:door` candidates at its own (lower) floor level + one **upward** assembly joint (`up_north`) into `shaft_segment`. |
+| `dungeons2:transitions/<motif>/shaft_segment` | optional, repeatable middle piece(s) | Down joint (`down_south`, mates to whatever sent the connection up) + up joint (`up_north`, continues further) — no doors, corridor/decoration between the two ends. Only needed once you're authoring segmented chains; doesn't need to exist otherwise. |
+| `dungeons2:transitions/<motif>/shaft_top` | terminal piece | `dungeons2:door` candidates at the *upper* floor's level + one **downward** joint (`down_south`, mates to whatever's below it), no further upward connection. |
 
 Both self-contained pieces and segmented chains can coexist as weighted alternatives in the same
 `shaft_bottom` pool — nothing stops you from mixing monolithic and composed styles. All pieces
@@ -216,6 +235,35 @@ which pool contributed them doesn't matter) and become that floor's `candidateDo
 bottom piece's candidates restrict the lower floor's START room, the top piece's restrict the
 upper floor's END room, exactly mirroring how the entrance's descent candidates drive floor 0's
 START room.
+
+### Room jigsaw pool
+
+Ordinary interior ("NORMAL") rooms can also be hand-authored prefabs instead of always
+procedural. Much simpler than transitions: **one pool, no chaining, one Y anchor.**
+
+Lives under `data/dungeons2/worldgen/template_pool/rooms/<motif>/` (currently only `classic/`
+is authored; see the motif-naming note above — e.g. a desert theme would add
+`rooms/desert/normal.json`).
+
+| Pool | Role | Contents |
+|------|------|----------|
+| `dungeons2:rooms/<motif>/normal` | the only pool | Complete, self-contained pieces (`minecraft:single_pool_element`, like `ladder1.nbt`/`stairs_1.nbt`) with `dungeons2:door` (and optionally `dungeons2:connector`) candidates around the perimeter at local Y=0, the room's own walking plane. No assembly joints, no segments, no top/bottom split — a room is never chained. |
+
+Per floor, the planner tries a small, fixed number of candidate slots (currently 2) at a
+rolled footprint size, assembles a piece there via real jigsaw placement, and — if it fits
+without colliding with the floor's other reserved slots — hands its real footprint and door
+markers to the maze as one of `MazeLevelGenerator2D`'s **supplied rooms**, restricted to
+those candidate doorways exactly like the entrance/transition START/END rooms are. A failed
+or colliding attempt is simply skipped; ordinary procedural fill rooms cover the gap, same
+graceful degradation as an empty entrance/transition catalog. There's no height-budget
+constraint like transitions have — a room is whatever height you build it to, same as any
+other authored room.
+
+Add real content by creating `data/dungeons2/worldgen/template_pool/rooms/<motif>/normal.json`
+(same shape as `transitions/<motif>/shaft_bottom.json`, just `single_pool_element` entries with
+no outgoing joint) plus the `.nbt` files it references — nothing else needs to change, the
+mechanism already reads whatever pool entries exist. `classic/normal.json` is the only one
+authored today.
 
 ---
 
