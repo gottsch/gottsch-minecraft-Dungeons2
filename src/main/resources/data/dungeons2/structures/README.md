@@ -267,6 +267,46 @@ authored today.
 
 ---
 
+## Weathering / decoration (`worldgen/processor_list/<motif>_weathering.json`)
+
+Aging (mossy, cracked, crumbled-to-cobble) is a **vanilla
+`minecraft:worldgen/processor_list`**, and the same file decorates both halves of a
+dungeon:
+
+- **Prefabs** — each pool element's `"processors"` field points at it, the ordinary
+  vanilla way (`"processors": "dungeons2:classic_weathering"`).
+- **Procedural rooms / corridors / doors** — `DungeonPiece.placeAll` runs the same list
+  over its own blocks via `PieceProcessors`, using vanilla's `processBlockInfos` with no
+  template involved.
+
+So a hand-authored prefab and the procedural room next to it weather identically, from
+one file. Adding a theme's weathering is pure data: create
+`data/dungeons2/worldgen/processor_list/<motif>_weathering.json`. A motif with no such
+file simply generates undecorated — the same graceful degradation a missing pool has.
+
+**Two rules for authoring these, both about chunk-safety:**
+
+1. **`minecraft:rule` processors only.** A procedural piece is re-rendered once per chunk
+   it overlaps, so each block is processed more than once and must resolve the same way
+   every time. `RuleProcessor` is safe: it seeds its random from the block's absolute
+   world position. Anything that decides from the whole block list at once
+   (`minecraft:capped`, or any processor overriding `finalizeProcessing`) sees only the
+   current chunk's slice of the piece and would decide differently per chunk. A test
+   enforces this (`WeatheringProcessorListTest`).
+2. **Probabilities are conditional, not absolute.** One rule produces one output state —
+   there is no weighted variant list. Several variants of the same source block are
+   consecutive rules, first match wins, and each rule only rolls after the previous one
+   missed. So three variants at 10% each are authored `0.1`, `0.1111`, `0.125`, not
+   `0.1, 0.1, 0.1`. (Rules for a *different* source block don't interfere — the block
+   check short-circuits before the roll.) `WeatheringProcessorListTest` asserts the
+   composed absolute rates, so if you edit the numbers, update the expectations there.
+
+> `entrance/surface_exit.json` is deliberately left on `minecraft:empty` — it's the
+> above-ground building, with no procedural neighbour to look inconsistent against, so
+> whether it should weather is a purely stylistic call rather than a consistency fix.
+
+---
+
 ## DATA structure-block markers (content / vertical links)
 
 Type the string into the DATA structure block's text field. The block is cleared to air on

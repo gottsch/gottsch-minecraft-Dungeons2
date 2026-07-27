@@ -34,11 +34,25 @@ import java.util.Map;
  * eligible blocks for weathered variants (cracked / mossy / rubble), per a
  * per-motif {@link Rule} table.
  *
- * <p>This is the procedural-side analogue of a vanilla {@code StructureProcessor}.
- * Vanilla processors run only inside {@code StructureTemplate.placeInWorld}, so they
- * never see our procedural room / corridor / door pieces (those write blocks directly
- * via {@link mod.gottsch.forge.dungeons2.core.world.structure.DungeonPiece#placeAll}).
- * This class fills that gap without touching the template path.</p>
+ * <h2>SUPERSEDED &mdash; no longer called by the render path (Jul 26)</h2>
+ * <p>Weathering now runs through a real vanilla {@code worldgen/processor_list}
+ * ({@code dungeons2:<motif>_weathering}) for both procedural pieces and jigsaw
+ * prefabs &mdash; see
+ * {@link mod.gottsch.forge.dungeons2.core.world.structure.PieceProcessors}. Vanilla's
+ * {@code RuleProcessor} provides the same absolute-world-position determinism this
+ * class hand-rolled a SplitMix hash for, so the two are equivalent in behaviour but
+ * the vanilla one also applies to authored {@code .nbt} content.</p>
+ *
+ * <p>This class, its {@code substitution/*.json} format, and
+ * {@code SubstitutionReloadListener} are kept only so the old and new decoration can
+ * be compared in game (swap the call back in at the one call site in
+ * {@code DungeonPiece.placeAll}). They are slated for deletion once that comparison
+ * is done &mdash; do not build anything new on them.</p>
+ *
+ * <p>Historical note on why it existed: vanilla processors run only inside
+ * {@code StructureTemplate.placeInWorld}, so they appeared not to be usable for
+ * procedural pieces. In fact {@code StructureTemplate.processBlockInfos} is public and
+ * template-free, which is what {@code PieceProcessors} uses.</p>
  *
  * <h2>Chunk-safety / determinism (the whole point)</h2>
  * <p>A procedural piece re-runs its builder and clips to the chunk box <em>once per

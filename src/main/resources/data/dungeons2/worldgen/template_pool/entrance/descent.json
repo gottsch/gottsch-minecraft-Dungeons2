@@ -6,7 +6,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:entrances/descent_1",
-        "processors": "minecraft:empty",
+        "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },
       "weight": 1

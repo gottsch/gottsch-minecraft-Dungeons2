@@ -457,12 +457,8 @@ class DungeonStackPlannerTest {
 
     @Test
     void templatedRoomsStayWithinFloorFootprint() {
-        // NOTE: this only checks templated rooms against the floor's own bounds --
-        // it does NOT assert general non-overlap between all rooms on a floor.
-        // Exploration while writing this test found that plain procedural fill
-        // rooms can already overlap an existing room (reproducible with zero
-        // RoomAssembler involvement -- a pre-existing MazeLevelGenerator2D issue,
-        // out of scope for Phase 8; flagged separately).
+        // Templated rooms specifically, against the floor's own bounds. General
+        // pairwise room separation is covered by roomInteriorsNeverOverlap below.
         DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
                 .withSize(DungeonSize.LARGE)
                 .withRoomAssembler(FAKE_ROOM_ASSEMBLER)
@@ -493,6 +489,67 @@ class DungeonStackPlannerTest {
 
         assertEquals(a.describe(), b.describe(),
                 "Same seed + same RoomAssembler behavior must produce byte-identical layout");
+    }
+
+    /** Shared cells between two rooms along X (0 = disjoint, 1 = one shared wall column). */
+    private static int sharedCellsX(RoomData a, RoomData b) {
+        return Math.min(a.getOriginX() + a.getWidth(), b.getOriginX() + b.getWidth())
+                - Math.max(a.getOriginX(), b.getOriginX());
+    }
+
+    private static int sharedCellsZ(RoomData a, RoomData b) {
+        return Math.min(a.getOriginZ() + a.getDepth(), b.getOriginZ() + b.getDepth())
+                - Math.max(a.getOriginZ(), b.getOriginZ());
+    }
+
+    @Test
+    void roomInteriorsNeverOverlap() {
+        // A room's footprint INCLUDES its 1-cell wall ring, so two rooms sharing a
+        // single wall line (exactly 1 shared cell on one axis) is normal and
+        // deliberate -- MazeLevelGenerator2D.placeFillRooms scans a void grid that
+        // counts WALL cells as free precisely so fill rooms pack wall-to-wall
+        // against their neighbours, and a shared wall is where the door between
+        // them goes. What must NEVER happen is two rooms eating into each other's
+        // interiors: more than one shared cell on BOTH axes at once.
+        //
+        // Swept across every size tier, many seeds, with and without a
+        // RoomAssembler, because the earlier "procedural rooms can overlap"
+        // report turned out to be this shared-wall case counted as an overlap by
+        // a plain box-intersects check. Keep the >1-on-both-axes criterion.
+        for (DungeonSize size : DungeonSize.values()) {
+            for (int s = 0; s < 25; s++) {
+                assertNoInteriorOverlaps(size, SEED + s, false);
+                assertNoInteriorOverlaps(size, SEED + s, true);
+            }
+        }
+    }
+
+    private void assertNoInteriorOverlaps(DungeonSize size, long seed, boolean withRoomAssembler) {
+        DungeonStackPlanner planner = new DungeonStackPlanner(seed, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withSize(size);
+        if (withRoomAssembler) {
+            planner.withRoomAssembler(FAKE_ROOM_ASSEMBLER);
+        }
+        DungeonLayout layout = planner.plan().orElseThrow();
+
+        for (FloorLayout floor : layout.getFloors()) {
+            List<RoomData> rooms = floor.getRooms();
+            for (int i = 0; i < rooms.size(); i++) {
+                for (int j = i + 1; j < rooms.size(); j++) {
+                    RoomData a = rooms.get(i);
+                    RoomData b = rooms.get(j);
+                    boolean interiorsOverlap = sharedCellsX(a, b) > 1 && sharedCellsZ(a, b) > 1;
+                    assertFalse(interiorsOverlap,
+                            "Rooms " + a.getId() + " and " + b.getId() + " overlap beyond a shared wall"
+                                    + " (size=" + size + ", seed=" + seed
+                                    + ", assembler=" + withRoomAssembler
+                                    + ", floor=" + floor.getFloorIndex() + "): "
+                                    + a.getOriginX() + "," + a.getOriginZ() + " " + a.getWidth() + "x" + a.getDepth()
+                                    + " vs "
+                                    + b.getOriginX() + "," + b.getOriginZ() + " " + b.getWidth() + "x" + b.getDepth());
+                }
+            }
+        }
     }
 
     @Test
