@@ -230,6 +230,35 @@ Both self-contained pieces and segmented chains can coexist as weighted alternat
 `shaft_bottom` pool — nothing stops you from mixing monolithic and composed styles. All pieces
 that participate in one chain should share the same XZ footprint so walls line up.
 
+**Wiring a chain — which jigsaw carries what.** Vanilla's `JigsawBlock.canAttach` connects two
+jigsaws when their fronts are opposite, their tops match (for `aligned`), and **the first's
+`target` equals the second's `name`**. So:
+
+- `name` is *this* jigsaw's own identity — what other pieces aim at.
+- `target` is the name of the jigsaw it wants to meet.
+- `pool` is the pool to draw that next piece from.
+
+Only the **outgoing** (upward) side of each joint needs `pool` + `target`; the receiving
+(downward) side just needs its `name` set, with `pool`/`target` left `minecraft:empty`. Because
+assembly runs bottom-up, the piece in `shaft_bottom` **must** be the one carrying a `pool` — a
+bottom piece with `pool: minecraft:empty` is a dead end and the chain silently stops at one piece.
+Worked example, the three-piece `stairs_2` chain:
+
+| Piece | Joint | Name | Target Pool | Target Name |
+|---|---|---|---|---|
+| `stairs_2_bottom` | up | `dungeons2:stairs_2/bottom_up` | `dungeons2:transitions/classic/shaft_segment` | `dungeons2:stairs_2/mid_down` |
+| `stairs_2_mid` | down | `dungeons2:stairs_2/mid_down` | `minecraft:empty` | `minecraft:empty` |
+| `stairs_2_mid` | up | `dungeons2:stairs_2/mid_up` | `dungeons2:transitions/classic/shaft_top` | `dungeons2:stairs_2/top_down` |
+| `stairs_2_top` | down | `dungeons2:stairs_2/top_down` | `minecraft:empty` | `minecraft:empty` |
+
+A jigsaw `name` must be unique to its role — two pieces sharing a name makes which one gets
+attached ambiguous.
+
+> **A chain with no `dungeons2:door` or `dungeons2:connector` markers anywhere is discarded.**
+> `scanTransitionGeometry` returns `null` when it finds no markers at all, and the planner falls
+> back to the synthetic placeholder — so an otherwise perfectly assembled chain renders as
+> nothing. Doors go on the bottom and top pieces; middle segments don't need any.
+
 `dungeons2:door` candidates from **both** ends get read back after assembly (bucketed by Y, so
 which pool contributed them doesn't matter) and become that floor's `candidateDoorways` — the
 bottom piece's candidates restrict the lower floor's START room, the top piece's restrict the
@@ -284,26 +313,66 @@ one file. Adding a theme's weathering is pure data: create
 `data/dungeons2/worldgen/processor_list/<motif>_weathering.json`. A motif with no such
 file simply generates undecorated — the same graceful degradation a missing pool has.
 
+### Which processor to use
+
+The shipped list runs two, deliberately split by what each can express:
+
+| Processor | Use it for | Why |
+|---|---|---|
+| `minecraft:rule` (vanilla) | plain full cubes — `stone_bricks`, `cobblestone`, `polished_andesite` | Standard vanilla, nothing custom needed. |
+| `dungeons2:aging` (ours) | **shaped blocks** — stairs, slabs, walls, fences, pillars | A vanilla `ProcessorRule` emits one fixed `output_state` and **drops the input's properties**, so ageing a stair with it silently resets facing/half/shape. `dungeons2:aging` copies every property the source and replacement share, so one rule ages a whole family. It also supports multi-stage decay chains. |
+
+`dungeons2:aging` entries look like:
+
+```json
+{
+  "processor_type": "dungeons2:aging",
+  "agings": 2,
+  "rules": [
+    { "block": "minecraft:stone_brick_stairs",
+      "output_blocks": [
+        { "block": "minecraft:mossy_stone_brick_stairs", "probability": 0.3 },
+        { "block": "minecraft:cobblestone_stairs",       "probability": 0.3 }
+      ] }
+  ]
+}
+```
+
+`output_blocks` is a **chain**: a stage is only reachable if the stage before it was
+rolled, so the example gives 30% mossy of which 30% decay further to cobblestone.
+`agings` caps how many stages may be applied (default `1` = first stage only) — read it
+as how many rounds of decay the structure has been through. Two rules with the same
+`block` act as alternative chains; the first that decays at all wins.
+
+**These files may contain comments.** Minecraft loads datapack registry JSON through
+`RegistryDataLoader` &rarr; `JsonParser.parseReader`, which puts Gson in lenient mode, and
+lenient Gson skips `//`, `#` and `/* */`. `classic_weathering.json` uses `//` comments to
+record the conditional-probability rule below at the point of use. (Two caveats: strict
+JSON tooling &mdash; including PowerShell's `ConvertFrom-Json` &mdash; will choke on them,
+and this leniency is *not* guaranteed for every JSON file in the mod. It holds for vanilla
+datapack **registry** files like `worldgen/processor_list`; a custom
+`SimpleJsonResourceReloadListener` may parse strictly.)
+
 **Two rules for authoring these, both about chunk-safety:**
 
-1. **`minecraft:rule` processors only.** A procedural piece is re-rendered once per chunk
-   it overlaps, so each block is processed more than once and must resolve the same way
-   every time. `RuleProcessor` is safe: it seeds its random from the block's absolute
-   world position. Anything that decides from the whole block list at once
-   (`minecraft:capped`, or any processor overriding `finalizeProcessing`) sees only the
-   current chunk's slice of the piece and would decide differently per chunk. A test
-   enforces this (`WeatheringProcessorListTest`).
-2. **Probabilities are conditional, not absolute.** One rule produces one output state —
-   there is no weighted variant list. Several variants of the same source block are
-   consecutive rules, first match wins, and each rule only rolls after the previous one
-   missed. So three variants at 10% each are authored `0.1`, `0.1111`, `0.125`, not
+1. **Per-block processors only.** A procedural piece is re-rendered once per chunk it
+   overlaps, so each block is processed more than once and must resolve the same way
+   every time. `minecraft:rule` and `dungeons2:aging` are both safe: each seeds its
+   random from the block's absolute world position. Anything that decides from the whole
+   block list at once (`minecraft:capped`, or any processor overriding
+   `finalizeProcessing`) sees only the current chunk's slice of the piece and would
+   decide differently per chunk. A test enforces this (`WeatheringProcessorListTest`).
+2. **Probabilities are conditional, not absolute** — in both processors. A vanilla rule
+   produces one output state with no weighted variant list, so several variants of the
+   same source block are consecutive rules, first match wins, each rolling only after the
+   previous missed. Three variants at 10% each are authored `0.1`, `0.1111`, `0.125`, not
    `0.1, 0.1, 0.1`. (Rules for a *different* source block don't interfere — the block
-   check short-circuits before the roll.) `WeatheringProcessorListTest` asserts the
-   composed absolute rates, so if you edit the numbers, update the expectations there.
+   check short-circuits before the roll.) The same applies down an aging chain.
+   `WeatheringProcessorListTest` asserts the composed absolute rates, so if you edit the
+   numbers, update the expectations there.
 
-> `entrance/surface_exit.json` is deliberately left on `minecraft:empty` — it's the
-> above-ground building, with no procedural neighbour to look inconsistent against, so
-> whether it should weather is a purely stylistic call rather than a consistency fix.
+All four pools — entrance (`surface_exit` + `descent`), transitions, and rooms — point at
+the weathering list, so every authored prefab ages by default.
 
 ---
 

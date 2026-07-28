@@ -19,15 +19,19 @@ package mod.gottsch.forge.dungeons2.core.event;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.loader.BlockProviderReloadListener;
-import mod.gottsch.forge.dungeons2.core.loader.SubstitutionReloadListener;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
  * Registers the mod's datapack reload listeners onto the server resource manager:
- * the block-provider palette and the block-substitution (weathering) tables. Both
- * are server-data driven, so they reload on world load and on {@code /reload}.
+ * currently just the block-provider palette, which is server-data driven and so
+ * reloads on world load and on {@code /reload}.
+ *
+ * <p>Weathering is <em>not</em> here &mdash; it is a vanilla
+ * {@code worldgen/processor_list} registry entry ({@code dungeons2:<motif>_weathering}),
+ * loaded by vanilla's own datapack registry machinery. See
+ * {@link mod.gottsch.forge.dungeons2.core.world.structure.PieceProcessors}.</p>
  *
  * @author Mark Gottschling on Jul 20, 2026
  */
@@ -37,6 +41,5 @@ public class DataPackEvents {
     @SubscribeEvent
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener(new BlockProviderReloadListener());
-        event.addListener(new SubstitutionReloadListener());
     }
 }

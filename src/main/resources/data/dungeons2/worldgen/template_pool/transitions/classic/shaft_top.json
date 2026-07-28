@@ -1,11 +1,11 @@
 {
-  "name": "dungeons2:entrance/surface_exit",
+  "name": "dungeons2:transitions/classic/shaft_top",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:entrances/surface_exit",
+        "location": "dungeons2:transitions/stairs_2_top",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

@@ -23,7 +23,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.decorator.data.BlockProviderDefinition;
-import mod.gottsch.forge.dungeons2.core.decorator.data.SubstitutionDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -62,8 +61,7 @@ class DatapackResourcesParseTest {
         }
     }
 
-    @Test
-    void substitutionFilesDecode() {
-        assertParses("/data/dungeons2/substitution/global.json", SubstitutionDefinition.CODEC);
-    }
+    // The shipped worldgen/processor_list file (weathering) is guarded by
+    // WeatheringProcessorListTest instead -- decoding it needs BuiltInRegistries, and
+    // this class deliberately stays Minecraft-bootstrap-free.
 }

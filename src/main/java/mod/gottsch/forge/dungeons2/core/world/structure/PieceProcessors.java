@@ -55,8 +55,8 @@ import java.util.Optional;
  *   <li><strong>Per-block, position-keyed processors are safe.</strong> Vanilla's
  *       {@code RuleProcessor} seeds {@code RandomSource.create(Mth.getSeed(pos))}
  *       from the block's absolute world position, so it is already deterministic
- *       per position and identical across the seam. This is the same property the
- *       procedural-side {@code BlockSubstitutor} hand-rolled a positional hash for.</li>
+ *       per position and identical across the seam &mdash; which is the whole reason
+ *       vanilla's own processors can be reused here at all.</li>
  *   <li><strong>Whole-list processors are NOT safe.</strong> Anything that counts,
  *       caps, or otherwise decides from the block list as a whole (a processor
  *       overriding {@code finalizeProcessing}, e.g. {@code CappedProcessor}) sees

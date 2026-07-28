@@ -20,11 +20,13 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.AgingProcessor;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleProcessor;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +35,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -55,6 +58,9 @@ class WeatheringProcessorListTest {
 
     private static final String RESOURCE =
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json";
+
+    /** The aging processor's dispatch key as authored in the JSON. */
+    private static final String AGING_TYPE = "dungeons2:aging";
 
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
@@ -79,29 +85,78 @@ class WeatheringProcessorListTest {
     }
 
     @Test
-    void shippedListDecodesWithTheVanillaCodec() {
-        // Catches a typo'd predicate_type / block id / processor_type, which would
-        // otherwise only show up as "no dungeon is ever decorated" at runtime.
-        StructureProcessorList list = StructureProcessorType.DIRECT_CODEC
-                .parse(JsonOps.INSTANCE, readJson())
-                .getOrThrow(false, msg -> {
-                    throw new AssertionError("classic_weathering.json failed to decode: " + msg);
-                });
+    void everyProcessorInTheShippedListDecodes() {
+        // Catches a typo'd predicate_type or block id, which would otherwise only show
+        // up as "no dungeon is ever decorated" at runtime.
+        //
+        // Each processor is decoded with its own codec rather than through
+        // StructureProcessorType.DIRECT_CODEC, because that dispatches on
+        // BuiltInRegistries.STRUCTURE_PROCESSOR -- which Forge only populates at
+        // runtime, and which Bootstrap.bootStrap() freezes, so a test cannot inject
+        // dungeons2:aging into it. Decoding the bodies directly validates the same
+        // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
+        JsonArray processors = readJson().getAsJsonArray("processors");
+        assertEquals(2, processors.size(),
+                "Expected the vanilla rule processor plus the aging processor");
 
-        assertEquals(1, list.list().size(), "Expected a single rule processor");
+        for (var element : processors) {
+            JsonObject processor = element.getAsJsonObject();
+            String type = processor.get("processor_type").getAsString();
+            Codec<? extends StructureProcessor> codec = switch (type) {
+                case "minecraft:rule" -> RuleProcessor.CODEC;
+                case AGING_TYPE -> AgingProcessor.CODEC;
+                default -> throw new AssertionError("Unhandled processor_type " + type);
+            };
+            codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
+                throw new AssertionError(type + " failed to decode: " + msg);
+            });
+        }
     }
 
     @Test
-    void noWholeListProcessorsAreUsed() {
+    void processorTypeMatchesTheRegisteredName() {
+        // The JSON's dispatch key and the name Registration registers must agree, or
+        // the list silently fails to load in game with nothing in the test suite to say so.
+        assertEquals("dungeons2:" + AgingProcessor.NAME, AGING_TYPE);
+        assertTrue(readJson().getAsJsonArray("processors").asList().stream()
+                        .anyMatch(e -> AGING_TYPE.equals(
+                                e.getAsJsonObject().get("processor_type").getAsString())),
+                "Shipped list should use the aging processor");
+    }
+
+    @Test
+    void onlyChunkSafeProcessorsAreUsed() {
         // PieceProcessors runs per chunk-slice of a piece, so a processor that decides
         // from the whole block list (minecraft:capped and friends, via
         // finalizeProcessing) would decide differently in each chunk the piece spans.
-        // Rule processors are position-keyed and safe; nothing else is vetted.
+        // Both processors below decide per block from the block's world position.
+        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
-            assertEquals("minecraft:rule",
-                    element.getAsJsonObject().get("processor_type").getAsString(),
-                    "Only minecraft:rule is chunk-safe for procedural pieces -- see PieceProcessors");
+            String type = element.getAsJsonObject().get("processor_type").getAsString();
+            assertTrue(chunkSafe.contains(type),
+                    type + " is not vetted as chunk-safe for procedural pieces -- see PieceProcessors");
         }
+    }
+
+    @Test
+    void shapedBlocksAreAgedRatherThanRuleMatched() {
+        // The division of labour between the two processors, and the reason the aging
+        // one exists: a vanilla ProcessorRule emits a fixed output_state and drops the
+        // input's properties, so it cannot age stairs/slabs/walls without enumerating
+        // every facing/half/shape combination. Those blocks (which the shipped prefabs
+        // really do use) must therefore be handled by dungeons2:aging, never by rules.
+        Set<String> shaped = Set.of(
+                "minecraft:stone_brick_stairs",
+                "minecraft:stone_brick_slab",
+                "minecraft:stone_brick_wall");
+
+        for (RuleEntry rule : ruleProcessorEntries()) {
+            assertFalse(shaped.contains(rule.source),
+                    rule.source + " is a shaped block -- aging it with minecraft:rule would"
+                            + " silently reset its facing/half/shape");
+        }
+        assertTrue(agingSourceBlocks().containsAll(shaped),
+                "Shaped blocks used by the prefabs should all have an aging rule");
     }
 
     @Test
@@ -138,7 +193,7 @@ class WeatheringProcessorListTest {
         // its intended 30% (or, in the limit, 100%).
         Map<String, Double> perSource = new LinkedHashMap<>();
         Map<String, Double> remaining = new LinkedHashMap<>();
-        for (RuleEntry rule : rules()) {
+        for (RuleEntry rule : ruleProcessorEntries()) {
             double left = remaining.getOrDefault(rule.source, 1.0);
             perSource.merge(rule.source, left * rule.probability, Double::sum);
             remaining.put(rule.source, left * (1.0 - rule.probability));
@@ -151,11 +206,15 @@ class WeatheringProcessorListTest {
     /** One parsed rule: which block it consumes, at what conditional probability, to what. */
     private record RuleEntry(String source, double probability, String output) {}
 
-    private static java.util.List<RuleEntry> rules() {
+    /** Rules belonging to the vanilla {@code minecraft:rule} processor only. */
+    private static java.util.List<RuleEntry> ruleProcessorEntries() {
         java.util.List<RuleEntry> out = new java.util.ArrayList<>();
-        JsonArray processors = readJson().getAsJsonArray("processors");
-        for (var processor : processors) {
-            for (var element : processor.getAsJsonObject().getAsJsonArray("rules")) {
+        for (var processor : readJson().getAsJsonArray("processors")) {
+            JsonObject processorObject = processor.getAsJsonObject();
+            if (!"minecraft:rule".equals(processorObject.get("processor_type").getAsString())) {
+                continue;
+            }
+            for (var element : processorObject.getAsJsonArray("rules")) {
                 JsonObject rule = element.getAsJsonObject();
                 JsonObject input = rule.getAsJsonObject("input_predicate");
                 out.add(new RuleEntry(
@@ -167,11 +226,26 @@ class WeatheringProcessorListTest {
         return out;
     }
 
+    /** Source blocks the {@code dungeons2:aging} processor has a chain for. */
+    private static Set<String> agingSourceBlocks() {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        for (var processor : readJson().getAsJsonArray("processors")) {
+            JsonObject processorObject = processor.getAsJsonObject();
+            if (!AGING_TYPE.equals(processorObject.get("processor_type").getAsString())) {
+                continue;
+            }
+            for (var element : processorObject.getAsJsonArray("rules")) {
+                out.add(element.getAsJsonObject().get("block").getAsString());
+            }
+        }
+        return out;
+    }
+
     /** Absolute probability each output state is produced, composing the rule chain. */
     private static Map<String, Double> composedRates() {
         Map<String, Double> rates = new LinkedHashMap<>();
         Map<String, Double> remaining = new LinkedHashMap<>();
-        for (RuleEntry rule : rules()) {
+        for (RuleEntry rule : ruleProcessorEntries()) {
             double left = remaining.getOrDefault(rule.source, 1.0);
             rates.merge(rule.output, left * rule.probability, Double::sum);
             remaining.put(rule.source, left * (1.0 - rule.probability));

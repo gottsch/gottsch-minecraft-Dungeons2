@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.setup;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.AgingProcessor;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -27,6 +28,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.levelgen.structure.StructureType;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -59,6 +61,17 @@ public class Registration {
 	public static final RegistryObject<StructureType<DungeonStructure>> DUNGEON =
 			STRUCTURE_TYPES.register("dungeon", () -> () -> DungeonStructure.CODEC);
 
+	/*
+	 * structure processor types (vanilla registry) -- referenced by
+	 * worldgen/processor_list JSONs via their "processor_type" field.
+	 */
+	public static final DeferredRegister<StructureProcessorType<?>> STRUCTURE_PROCESSORS =
+			DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, Dungeons.MOD_ID);
+
+	/** Multi-stage block aging that preserves state properties. See {@link AgingProcessor}. */
+	public static final RegistryObject<StructureProcessorType<AgingProcessor>> AGING_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(AgingProcessor.NAME, () -> () -> AgingProcessor.CODEC);
+
 	/**
 	 *
 	 */
@@ -70,6 +83,7 @@ public class Registration {
 		ENTITIES.register(eventBus);
 		PARTICLES.register(eventBus);
 		STRUCTURE_TYPES.register(eventBus);
+		STRUCTURE_PROCESSORS.register(eventBus);
 
 		ConfiguredFeatures.register(eventBus);
 	}

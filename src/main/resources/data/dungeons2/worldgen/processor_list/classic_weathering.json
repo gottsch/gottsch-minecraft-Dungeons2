@@ -1,6 +1,364 @@
+// Weathering for the CLASSIC motif. Applied to BOTH the procedural rooms/corridors
+// (via PieceProcessors) and the authored .nbt prefabs (via the pool JSONs'
+// "processors" field), so they age identically.
+//
+// PROBABILITIES ARE CONDITIONAL, NOT ABSOLUTE -- in both processors below.
+//
+//   * Down a chain ("output_blocks"): a stage only rolls if the stage before it hit.
+//   * Across chains: when one source block has several rules, they are alternatives
+//     tried in order, and a later one only rolls if the earlier ones missed.
+//
+// So two alternative chains that should each fire 30% of the time are authored
+// 0.3 and 0.43 (0.3 / 0.7), not 0.3 and 0.3. A third at 20% is then 0.5.
+// Rules for DIFFERENT source blocks never interfere.
+//
+// Only per-block, position-keyed processors belong here (minecraft:rule and
+// dungeons2:aging). Anything that decides from the whole block list at once
+// (minecraft:capped, or any processor overriding finalizeProcessing) would decide
+// differently in each chunk a procedural piece spans. See PieceProcessors.
 {
   "processors": [
     {
+      // dungeons2:aging -- for SHAPED blocks (stairs, slabs, walls). Unlike a vanilla
+      // rule, it carries the source block's properties (facing/half/shape/waterlogged)
+      // onto the replacement, and supports multi-stage decay chains.
+      // "agings" caps how many stages of a chain may apply.
+      "processor_type": "dungeons2:aging",
+      "agings": 2,
+      "rules": [
+        {
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_left_large_stone_brick",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            {
+              "block": "minecraft:cobblestone",
+              "probability": 0.43
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_right_large_stone_brick",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            {
+              "block": "minecraft:cobblestone",
+              "probability": 0.43
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:left_large_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_left_large_brick",
+              "probability": 0.3
+            },
+            {
+              "block": "dungeonblocks:mossy_cobblestone_brick",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:left_large_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:cobblestone_brick",
+              "probability": 0.43
+            },
+            {
+              "block": "dungeonblocks:mossy_cobblestone_brick",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:right_large_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_right_large_brick",
+              "probability": 0.3
+            },
+            {
+              "block": "dungeonblocks:mossy_cobblestone_brick",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:right_large_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:cobblestone_brick",
+              "probability": 0.43
+            },
+            {
+              "block": "dungeonblocks:mossy_cobblestone_brick",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_square_brick",
+              "probability": 0.3
+            },
+            {
+              "block": "dungeonblocks:mossy_cobblestone_brick",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:cobblestone_brick",
+              "probability": 0.43
+            },
+            {
+              "block": "dungeonblocks:mossy_cobblestone_brick",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_square_stone_brick",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            {
+              "block": "minecraft:cobblestone",
+              "probability": 0.43
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "minecraft:brick_stairs",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_brick_stairs",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:air",
+              "probability": 0.1
+            }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            {
+              "block": "minecraft:mossy_stone_brick_stairs",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:mossy_cobblestone_stairs",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            {
+              "block": "minecraft:cobblestone_stairs",
+              "probability": 0.43
+            },
+            {
+              "block": "minecraft:dirt",
+              "probability": 0.05
+            }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            {
+              "block": "minecraft:polished_andesite_stairs",
+              "probability": 0.5
+            },
+            {
+              "block": "minecraft:dirt",
+              "probability": 0.05
+            }
+          ]
+        },
+        {
+          "block": "minecraft:cobblestone_stairs",
+          "output_blocks": [
+            {
+              "block": "minecraft:andesite_stairs",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:gravel",
+              "probability": 0.05
+            }
+          ]
+        },
+        {
+          "block": "minecraft:polished_andesite_stairs",
+          "output_blocks": [
+            {
+              "block": "minecraft:andesite_stairs",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:gravel",
+              "probability": 0.05
+            }
+          ]
+        },
+        {
+          "block": "minecraft:andesite_stairs",
+          "output_blocks": [
+            {
+              "block": "minecraft:gravel",
+              "probability": 0.1
+            },
+            {
+              "block": "minecraft:air",
+              "probability": 0.05
+            }
+          ]
+        },
+
+        {
+          "block": "dungeonblocks:large_bricks",
+          "output_blocks": [
+            {
+              "block": "dungeonblocks:mossy_large_bricks",
+              "probability": 0.3
+            },
+            {
+              "block": "dungeonblocks:mossy_bricks",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "dungeonblocks:large_bricks",
+          "output_blocks": [
+            {
+              "block": "minecraft:bricks",
+              "probability": 0.43
+            },
+            {
+              "block": "dungeonblocks:mossy_bricks",
+              "probability": 0.1
+            }
+          ]
+        },
+
+        {
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            {
+              "block": "minecraft:cracked_stone_bricks",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:cobblestone",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            {
+              "block": "minecraft:mossy_stone_bricks",
+              "probability": 0.43
+            },
+            {
+              "block": "minecraft:mossy_cobblestone",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_slab",
+          "output_blocks": [
+            {
+              "block": "minecraft:mossy_stone_brick_slab",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:cobblestone_slab",
+              "probability": 0.3
+            }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_wall",
+          "output_blocks": [
+            {
+              "block": "minecraft:mossy_stone_brick_wall",
+              "probability": 0.3
+            },
+            {
+              "block": "minecraft:cobblestone_wall",
+              "probability": 0.3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      // minecraft:rule (vanilla) -- for plain FULL CUBES only. A vanilla rule emits a
+      // fixed output_state and DROPS the input's properties, so never point one at a
+      // stair/slab/wall: it would silently reset facing/half/shape. Use aging for those.
       "processor_type": "minecraft:rule",
       "rules": [
         {

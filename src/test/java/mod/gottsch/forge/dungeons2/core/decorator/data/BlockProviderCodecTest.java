@@ -24,15 +24,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Phase A round-trip tests for the datapack-JSON block-provider / substitution
- * Codec models. Pure POJO &mdash; block ids stay as {@link ResourceLocation} so no
- * Minecraft bootstrap is required.
+ * Phase A round-trip tests for the datapack-JSON block-provider Codec models.
+ * Pure POJO &mdash; block ids stay as {@link ResourceLocation} so no Minecraft
+ * bootstrap is required.
  *
  * @author Mark Gottschling on Jul 20, 2026
  */
@@ -74,52 +72,4 @@ class BlockProviderCodecTest {
         assertEquals(2, back.patterns().get("floor_border_pattern").size());
     }
 
-    @Test
-    void substitutionRuleRoundTripsWithOptionalFields() {
-        SubstitutionRule full = new SubstitutionRule(
-                mc("stone_bricks"),
-                List.of(mc("mossy_stone_bricks"), mc("cracked_stone_bricks"), mc("cobblestone")),
-                Optional.of(0.25),
-                Optional.of(List.of(3, 2, 1)));
-
-        JsonElement json = SubstitutionRule.CODEC.encodeStart(JsonOps.INSTANCE, full).result().orElseThrow();
-        SubstitutionRule back = SubstitutionRule.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-
-        assertEquals(full, back);
-    }
-
-    @Test
-    void substitutionRuleOmitsAbsentOptionals() {
-        SubstitutionRule minimal = new SubstitutionRule(
-                mc("cobblestone"),
-                List.of(mc("mossy_cobblestone"), mc("gravel")),
-                Optional.empty(),
-                Optional.empty());
-
-        JsonElement json = SubstitutionRule.CODEC.encodeStart(JsonOps.INSTANCE, minimal).result().orElseThrow();
-        assertFalseHas(json, "chance");
-        assertFalseHas(json, "weights");
-
-        SubstitutionRule back = SubstitutionRule.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-        assertEquals(minimal, back);
-    }
-
-    @Test
-    void substitutionDefinitionRoundTrips() {
-        SubstitutionDefinition def = new SubstitutionDefinition(List.of(
-                new SubstitutionRule(mc("stone_bricks"),
-                        List.of(mc("mossy_stone_bricks")), Optional.empty(), Optional.empty()),
-                new SubstitutionRule(mc("polished_andesite"),
-                        List.of(mc("andesite")), Optional.of(0.5), Optional.empty())));
-
-        JsonElement json = SubstitutionDefinition.CODEC.encodeStart(JsonOps.INSTANCE, def).result().orElseThrow();
-        SubstitutionDefinition back = SubstitutionDefinition.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-
-        assertEquals(def, back);
-    }
-
-    private static void assertFalseHas(JsonElement json, String field) {
-        assertTrue(json.isJsonObject() && !json.getAsJsonObject().has(field),
-                "absent optional should not be serialized: " + field);
-    }
 }
