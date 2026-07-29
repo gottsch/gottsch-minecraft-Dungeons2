@@ -23,6 +23,8 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleProcessor;
@@ -62,6 +64,9 @@ class WeatheringProcessorListTest {
     /** The aging processor's dispatch key as authored in the JSON. */
     private static final String AGING_TYPE = "dungeons2:aging";
 
+    /** The decoration processor's dispatch key as authored in the JSON. */
+    private static final String DECORATION_TYPE = "dungeons2:decoration";
+
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
      * to 4 decimal places, which is worth ~1e-4 on the composed result.
@@ -96,8 +101,8 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(2, processors.size(),
-                "Expected the vanilla rule processor plus the aging processor");
+        assertEquals(3, processors.size(),
+                "Expected the vanilla rule processor plus the aging and decoration processors");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -105,6 +110,7 @@ class WeatheringProcessorListTest {
             Codec<? extends StructureProcessor> codec = switch (type) {
                 case "minecraft:rule" -> RuleProcessor.CODEC;
                 case AGING_TYPE -> AgingProcessor.CODEC;
+                case DECORATION_TYPE -> DecorationProcessor.CODEC;
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -118,24 +124,64 @@ class WeatheringProcessorListTest {
         // The JSON's dispatch key and the name Registration registers must agree, or
         // the list silently fails to load in game with nothing in the test suite to say so.
         assertEquals("dungeons2:" + AgingProcessor.NAME, AGING_TYPE);
-        assertTrue(readJson().getAsJsonArray("processors").asList().stream()
-                        .anyMatch(e -> AGING_TYPE.equals(
-                                e.getAsJsonObject().get("processor_type").getAsString())),
-                "Shipped list should use the aging processor");
+        assertEquals("dungeons2:" + DecorationProcessor.NAME, DECORATION_TYPE);
+
+        Set<String> used = new java.util.LinkedHashSet<>();
+        readJson().getAsJsonArray("processors")
+                .forEach(e -> used.add(e.getAsJsonObject().get("processor_type").getAsString()));
+        assertTrue(used.contains(AGING_TYPE), "Shipped list should use the aging processor");
+        assertTrue(used.contains(DECORATION_TYPE), "Shipped list should use the decoration processor");
     }
 
     @Test
     void onlyChunkSafeProcessorsAreUsed() {
-        // PieceProcessors runs per chunk-slice of a piece, so a processor that decides
-        // from the whole block list (minecraft:capped and friends, via
-        // finalizeProcessing) would decide differently in each chunk the piece spans.
-        // Both processors below decide per block from the block's world position.
-        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE);
+        // A procedural piece is processed once per chunk it overlaps, so every processor
+        // here has to be vetted for one of PieceProcessors' two passes: either keyed on
+        // the block's world position so the repeat is harmless (minecraft:rule), or
+        // marked LevelIndependentProcessor so it gets the whole piece unclipped
+        // (dungeons2:aging, dungeons2:decoration). Anything else -- minecraft:capped, or
+        // any other unmarked processor overriding finalizeProcessing -- would land in the
+        // clipped pass and decide differently in each chunk the piece spans.
+        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),
                     type + " is not vetted as chunk-safe for procedural pieces -- see PieceProcessors");
         }
+    }
+
+    @Test
+    void ourProcessorsAreMarkedLevelIndependent() {
+        // The allowlist above is a datapack-side check; this is the code-side one it
+        // relies on.
+        //
+        // For DecorationProcessor the marker is load-bearing: unmarked, it would move to
+        // the clipped pass and start deciding from chunk slices in isolation, which is
+        // exactly the seam artifact the whole split exists to prevent.
+        //
+        // For AgingProcessor it is about ORDER: marked, it shares a pass with decoration
+        // and keeps the order the datapack authored, so decoration sees the air and dirt
+        // aging produced -- as it would for a jigsaw prefab, where vanilla runs both from
+        // one unsplit list.
+        assertTrue(LevelIndependentProcessor.class.isAssignableFrom(DecorationProcessor.class),
+                "DecorationProcessor must be a LevelIndependentProcessor or PieceProcessors"
+                        + " will clip its input to the current chunk");
+        assertTrue(LevelIndependentProcessor.class.isAssignableFrom(AgingProcessor.class),
+                "AgingProcessor reads nothing from the level; unmarked it would run after"
+                        + " decoration instead of before it");
+    }
+
+    @Test
+    void theAgingProcessorIsAuthoredBeforeTheDecorationProcessor() {
+        // Both are level-independent, so they run in the order this file lists them.
+        // Decoration keys off air, solidity and block identity -- all things aging
+        // changes -- so aging has to come first or growth decides from the un-aged room.
+        java.util.List<String> types = new java.util.ArrayList<>();
+        readJson().getAsJsonArray("processors")
+                .forEach(e -> types.add(e.getAsJsonObject().get("processor_type").getAsString()));
+
+        assertTrue(types.indexOf(AGING_TYPE) < types.indexOf(DECORATION_TYPE),
+                "dungeons2:aging must be authored before dungeons2:decoration, got " + types);
     }
 
     @Test

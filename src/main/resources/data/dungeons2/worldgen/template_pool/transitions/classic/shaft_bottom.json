@@ -14,7 +14,7 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/stairs_1",
+        "location": "dungeons2:transitions/classic/stairs_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

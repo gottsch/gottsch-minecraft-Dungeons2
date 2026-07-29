@@ -52,10 +52,27 @@ import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WAL
  * corridor; cross-corridor wall duplication is acceptable (the renderer
  * idempotently overwrites).</p>
  *
+ * <p>A <strong>door</strong> neighbor gets that same column with the two
+ * door-half levels left as air &mdash; see {@link #DOOR_HALF_LOW}.</p>
+ *
  * @author Mark Gottschling on Dec 5, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicCorridorGenerator implements ICorridorGenerator {
     private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    /**
+     * Y offsets (above the floor surface) that {@code BasicDoorGenerator} fills
+     * with the two door halves. A corridor bordering a door cell must not emit a
+     * solid block there: the corridor's decoration pass runs before
+     * {@code DungeonDoorPiece} carves the door, so a full cube in the door cell
+     * anchors glow lichen in the corridor air beside it, facing the door cell.
+     * Glow lichen is a MultifaceBlock and renders flush against its anchor's
+     * face, so once the door lands it appears plastered onto the door. The door
+     * belongs to a different piece, so no processor can see it coming. Mirrors
+     * {@code BasicWallGenerator}'s handling on the room side.
+     */
+    private static final int DOOR_HALF_LOW = 1;
+    private static final int DOOR_HALF_HIGH = 2;
 
     @Override
     public void build(CorridorData corridor, Grid2D grid, int floorY,
@@ -76,7 +93,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                     int nz = z + dz;
                     Coords2D neighbor = new Coords2D(nx, nz);
                     if (wallsEmitted.contains(neighbor)) continue;
-                    if (isWallElement(grid, nx, nz)) {
+                    if (isDoorElement(grid, nx, nz)) {
+                        emitDoorwayColumn(nx, nz, floorY, palette, out);
+                        wallsEmitted.add(neighbor);
+                    } else if (isWallElement(grid, nx, nz)) {
                         emitWallColumn(nx, nz, floorY, palette, out);
                         wallsEmitted.add(neighbor);
                     }
@@ -99,6 +119,9 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         for (Coords2D wall : corridor.getWallCells()) {
             emitWallColumn(wall.getX(), wall.getY(), floorY, palette, out);
         }
+        for (Coords2D door : corridor.getDoorCells()) {
+            emitDoorwayColumn(door.getX(), door.getY(), floorY, palette, out);
+        }
     }
 
     /**
@@ -117,6 +140,22 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     private static void emitWallColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
         for (int yOffset = 0; yOffset < 5; yOffset++) {
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.wall));
+        }
+    }
+
+    /**
+     * A wall column with the two door-half levels left as air, so the doorway is
+     * walkable and carries no full cube for the decoration pass to anchor to.
+     * The sill ({@code floorY}) and lintel ({@code floorY+3}) levels stay solid:
+     * they are full cubes in the finished doorway anyway, and keeping them means
+     * a door piece that never runs leaves a 2-block gap rather than a full-height
+     * hole in the corridor wall.
+     */
+    private static void emitDoorwayColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
+        for (int yOffset = 0; yOffset < 5; yOffset++) {
+            BlockState state = (yOffset == DOOR_HALF_LOW || yOffset == DOOR_HALF_HIGH)
+                    ? palette.air : palette.wall;
+            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, state));
         }
     }
 
@@ -145,6 +184,18 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         CellType type = grid.get(x, z).getType();
         return type == CellType.ROCK || type == CellType.WALL
                 || type == CellType.DOOR || type == CellType.CONNECTOR;
+    }
+
+    /**
+     * True if the cell at (x,z) is an opened doorway. CONNECTOR is deliberately
+     * NOT included: an unopened connector is reverted to a plain wall and has no
+     * door piece behind it, so piercing it would leave a hole.
+     */
+    private static boolean isDoorElement(Grid2D grid, int x, int z) {
+        if (x < 0 || z < 0 || x >= grid.getWidth() || z >= grid.getHeight()) {
+            return false;
+        }
+        return grid.get(x, z).getType() == CellType.DOOR;
     }
 
     /** Resolved block states for one corridor render pass. */

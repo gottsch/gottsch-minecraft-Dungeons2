@@ -60,7 +60,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
         this.corridor = PieceNbt.readCorridor(tag.getCompound("Corridor"));
     }
 
-    /** World bounding box: covers every corridor cell and wall cell; Y = floor .. floor+4. */
+    /** World bounding box: covers every corridor, wall and door cell; Y = floor .. floor+4. */
     private static BoundingBox computeBox(CorridorData corridor, int floorY, int anchorX, int anchorZ) {
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
@@ -81,9 +81,11 @@ public class DungeonCorridorPiece extends DungeonPiece {
     }
 
     private static List<Coords2D> allCells(CorridorData corridor) {
-        List<Coords2D> all = new ArrayList<>(corridor.getCells().size() + corridor.getWallCells().size());
+        List<Coords2D> all = new ArrayList<>(corridor.getCells().size()
+                + corridor.getWallCells().size() + corridor.getDoorCells().size());
         all.addAll(corridor.getCells());
         all.addAll(corridor.getWallCells());
+        all.addAll(corridor.getDoorCells());
         return all;
     }
 

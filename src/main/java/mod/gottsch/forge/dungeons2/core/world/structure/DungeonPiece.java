@@ -64,10 +64,11 @@ import java.util.function.Supplier;
  * {@code pieceBox.maxZ() - worldZ}, not a min-offset (see {@link #placeAll}).</p>
  *
  * <p><strong>Chunk-safety invariant:</strong> {@code postProcess} never reads or
- * writes outside {@code box}. {@link #placeAll} drops any placement whose world
- * position is outside the chunk box <em>before</em> anything else looks at it, so
- * the decoration pass ({@link PieceProcessors}, which may read the existing world
- * block) is never handed a position outside the current region.</p>
+ * writes outside {@code box}. {@link #placeAll} hands the piece's <em>whole</em>
+ * placement list to {@link PieceProcessors#decorate}, which clips between its two
+ * passes: the neighbour-aware half needs the whole piece and is contractually barred
+ * from reading the level, while the half that may read the existing world block
+ * (vanilla's {@code RuleProcessor}) only ever sees positions inside {@code box}.</p>
  *
  * @author Mark Gottschling on Jun 16, 2026
  */
@@ -158,20 +159,16 @@ public abstract class DungeonPiece extends StructurePiece {
         // own `origin + relative` gives back exactly the world position below.
         BlockPos origin = new BlockPos(anchorX, floorY, anchorZ);
 
+        // Deliberately UNCLIPPED: the neighbour-aware half of the decoration pass has to
+        // see the whole piece or it decorates the two sides of a chunk seam differently.
+        // PieceProcessors.decorate clips between its two passes, before the half that
+        // may read the existing world block (RuleProcessor's location_predicate does,
+        // and reading outside the current WorldGenRegion during worldgen is illegal).
         List<StructureTemplate.StructureBlockInfo> infos = new ArrayList<>(placements.size());
         for (BlockPlacement p : placements) {
             int worldX = anchorX + p.getX();
             int worldY = p.getY();
             int worldZ = anchorZ + p.getZ();
-            BlockPos worldPos = new BlockPos(worldX, worldY, worldZ);
-
-            // Clip to the chunk box HERE, before processing -- not at placeBlock time
-            // as this used to. A processor may read the existing world block at a
-            // position (RuleProcessor's location_predicate does), and reading outside
-            // the current WorldGenRegion during worldgen is illegal.
-            if (!box.isInside(worldPos)) {
-                continue;
-            }
 
             BlockState state = BlockStateCodec.resolve(p);
             BlockEntityData be = p.getBlockEntityNbt();
@@ -179,7 +176,12 @@ public abstract class DungeonPiece extends StructurePiece {
                 // Block-entity placements (chests / spawners / signs) bypass the
                 // processor pass entirely, preserving the guarantee the procedural
                 // decorator pass always had: authored container content is never
-                // swapped out from under itself.
+                // swapped out from under itself. They are written straight out, so they
+                // are the one thing still clipped here.
+                BlockPos worldPos = new BlockPos(worldX, worldY, worldZ);
+                if (!box.isInside(worldPos)) {
+                    continue;
+                }
                 placeBlock(level, state, worldX - pieceBox.minX(), worldY - pieceBox.minY(),
                         pieceBox.maxZ() - worldZ, box);
                 applyBlockEntity(level, worldPos, be);
@@ -194,9 +196,7 @@ public abstract class DungeonPiece extends StructurePiece {
         // and the procedural room next to it weather identically. Absent list = no
         // decoration, matching the "pool absent" degradation convention.
         List<StructureTemplate.StructureBlockInfo> processed =
-                PieceProcessors.weatheringList(level, motifValue)
-                        .map(list -> PieceProcessors.process(level, origin, infos, list))
-                        .orElse(infos.isEmpty() ? List.of() : withWorldPositions(infos, origin));
+                PieceProcessors.decorate(level, origin, box, infos, motifValue);
 
         for (StructureTemplate.StructureBlockInfo info : processed) {
             BlockPos worldPos = info.pos();
@@ -209,21 +209,6 @@ public abstract class DungeonPiece extends StructurePiece {
             int localZ = pieceBox.maxZ() - worldPos.getZ();
             placeBlock(level, info.state(), localX, localY, localZ, box);
         }
-    }
-
-    /**
-     * Offsets {@code infos} from origin-relative to world space &mdash; the same
-     * translation {@link StructureTemplate#processBlockInfos} applies, for the case
-     * where there is no processor list to run and it is never called.
-     */
-    private static List<StructureTemplate.StructureBlockInfo> withWorldPositions(
-            List<StructureTemplate.StructureBlockInfo> infos, BlockPos origin) {
-        List<StructureTemplate.StructureBlockInfo> out = new ArrayList<>(infos.size());
-        for (StructureTemplate.StructureBlockInfo info : infos) {
-            out.add(new StructureTemplate.StructureBlockInfo(
-                    info.pos().offset(origin), info.state(), info.nbt()));
-        }
-        return out;
     }
 
     /**

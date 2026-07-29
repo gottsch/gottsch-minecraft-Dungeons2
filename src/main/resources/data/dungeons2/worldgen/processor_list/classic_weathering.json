@@ -1,4 +1,4 @@
-// Weathering for the CLASSIC motif. Applied to BOTH the procedural rooms/corridors
+﻿// Weathering for the CLASSIC motif. Applied to BOTH the procedural rooms/corridors
 // (via PieceProcessors) and the authored .nbt prefabs (via the pool JSONs'
 // "processors" field), so they age identically.
 //
@@ -12,10 +12,12 @@
 // 0.3 and 0.43 (0.3 / 0.7), not 0.3 and 0.3. A third at 20% is then 0.5.
 // Rules for DIFFERENT source blocks never interfere.
 //
-// Only per-block, position-keyed processors belong here (minecraft:rule and
-// dungeons2:aging). Anything that decides from the whole block list at once
-// (minecraft:capped, or any processor overriding finalizeProcessing) would decide
-// differently in each chunk a procedural piece spans. See PieceProcessors.
+// Only processors vetted for a procedural piece belong here. That means either
+// per-block and position-keyed (minecraft:rule, dungeons2:aging), or neighbour-aware
+// AND marked NeighbourAwareProcessor so PieceProcessors runs it over the whole piece
+// instead of one chunk's slice (dungeons2:decoration). Anything else --
+// minecraft:capped, say -- decides differently in each chunk a piece spans.
+// See PieceProcessors.
 {
   "processors": [
     {
@@ -24,7 +26,10 @@
       // onto the replacement, and supports multi-stage decay chains.
       // "agings" caps how many stages of a chain may apply.
       "processor_type": "dungeons2:aging",
-      "agings": 2,
+      // 3, so the DEEP DECAY chains at the bottom of this list can reach their third stage.
+      // The two-stage chains above them are unaffected -- a chain only ever applies as many
+      // stages as it actually lists.
+      "agings": 3,
       "rules": [
         {
           "block": "dungeonblocks:left_large_stone_brick",
@@ -352,6 +357,110 @@
               "probability": 0.3
             }
           ]
+        },
+
+        // ===================================================================================
+        // DEEP DECAY -- the chains that take a plain wall/floor/ceiling block down to rubble:
+        //
+        //     <wall block> -> cobblestone -> dirt -> gravel
+        //
+        // This is the ONLY source of dirt in a classic dungeon, and floor_growth /
+        // hanging_growth (below) have nothing to sprout from without it. Nothing authored in
+        // block_provider/classic.json is ever dirt.
+        //
+        // GRAVEL IS DELIBERATELY THE LAST STAGE, not the first. This chain is applied to the
+        // WALL, the FLOOR and the CEILING alike -- classic.json uses minecraft:stone_bricks
+        // for all three, and a processor only ever sees the block, never the surface it
+        // belongs to. Gravel falls when the block under it is air, which is harmless in a
+        // wall or floor but rains debris onto the floor from a ceiling. Putting it two stages
+        // deep makes it ~9x rarer than it would be as the first stage, which keeps the
+        // occasional spill of rubble without carpeting the room.
+        //
+        // AIR IS ABSENT for the same shared-block reason. A hole is fine in a floor, but a
+        // hole in an outer WALL breaches the dungeon shell, and any water in the terrain
+        // behind it then flows into the room. Placing the room's air cannot prevent that: the
+        // room is filled once at generation and the water arrives afterwards, through the
+        // hole.
+        //
+        // To scope either properly, give the surfaces DISTINCT BLOCKS in
+        // block_provider/<motif>.json -- a ceiling block no wall uses can carry its own
+        // rules, and so can a floor block. That is the only lever there is; the processor has
+        // nothing else to discriminate on.
+        //
+        // MIND THE CONDITIONAL PROBABILITIES. Each block below already has two chains above,
+        // at 0.3 and 0.43, so a third chain is only reached when BOTH of those missed:
+        // 0.7 x 0.57 = 0.399 of the time. The 0.2 first stage is therefore worth
+        // 0.2 x 0.399 = 8% absolute, and the stages after it compound from there:
+        //
+        //     cobblestone  5.6%      dirt  1.8%      gravel  0.6%
+        //
+        // To make the dungeon more ruinous, raise the FIRST stage (0.2). To trade dirt for
+        // rubble, raise the last. AgingChainRatesTest asserts these composed rates -- and
+        // asserts that none of these chains reaches air -- so update it if you retune.
+        // ===================================================================================
+        {
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:left_large_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:right_large_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:large_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:gravel", "probability": 0.25 }
+          ]
         }
       ]
     },
@@ -416,6 +525,102 @@
           "output_state": { "Name": "minecraft:andesite" }
         }
       ]
+    },
+    {
+      // dungeons2:decoration -- the NEIGHBOUR-aware pass. Everything above decides one
+      // block at a time; this one decides from a block's surroundings, which is what
+      // cobwebs (air with a wall beside it) and creeping growth need.
+      //
+      // Its probabilities are ABSOLUTE, not conditional -- one roll per candidate
+      // position, unlike the rule/aging chains above.
+      //
+      // It only ever writes into a cell the piece itself places as AIR (bar underwater
+      // growth, which replaces the piece's own water). Nothing here can touch terrain.
+      "processor_type": "dungeons2:decoration",
+
+      // Air with at least one horizontally adjacent solid block. Corners and wall faces
+      // web up; the middle of a room stays clear.
+      "cobwebs": {
+        "probability": 0.02,
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // Growth in the air beside a wall, attached to the wall's face. "probability" is
+      // the chance with nothing already growing next to the spot; each of the 6
+      // neighbours that IS growth adds "bonus", capped at "max", and the spot inherits
+      // its neighbour's species. That's what makes it spread in patches rather than an
+      // even speckle -- turn "bonus" up for bigger, blotchier patches. Blocks should be
+      // multiface (glow-lichen-like) to take a face; anything else is placed as-is.
+      "wall_growth": {
+        "probability": 0.04,
+        "bonus": 0.22,
+        "max": 0.55,
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // What counts as dirt for floor_growth/hanging_growth below. Classic dungeons are
+      // not authored with dirt -- this catches the dirt the AGING processor above makes
+      // out of decayed stairs, which is exactly where a tuft of growth belongs.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+      // On top of a dirt block, where the cell above it is air. All single-block plants that
+      // survive in the dark: mushrooms need darkness, and grass/fern/moss only need light to
+      // SPREAD, not to stay put, so none of these pop off in an unlit dungeon.
+      // (No tall_grass or large_fern -- those are two blocks high and only the lower half
+      // would be placed.)
+      "floor_growth": {
+        "probability": 0.35,
+        "blocks": [
+          "minecraft:brown_mushroom",
+          "minecraft:red_mushroom",
+          "minecraft:moss_carpet",
+          "minecraft:grass",
+          "minecraft:fern",
+          "minecraft:dead_bush"
+        ]
+      },
+      // Underneath a dirt block, where the cell below it is air.
+      "hanging_growth": {
+        "probability": 0.3,
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // Architectural blocks that delete themselves once the wall behind them is gone --
+      // a corbel or ledge left hanging in the air after what it was bracketed onto
+      // crumbled away. Structural, so no probability: it either has a wall or it doesn't.
+      //
+      // A block with a "facing" property is held up from BEHIND and by nothing else: it
+      // GIVES support to what sits on top of it, it doesn't TAKE support from there, nor
+      // from below, nor from whatever happens to sit beside it. Only the neighbour at
+      // facing.getOpposite() is consulted.
+      //
+      // Deliberately generous otherwise, since a false positive deletes authored
+      // architecture: any non-air block behind counts (a ledge mounted on a stair or on
+      // another ledge stays put), and so does a neighbour that simply isn't part of this
+      // piece -- absent means "nothing placed here", not "nothing is here".
+      //
+      // It follows that this fires only where weathering actually produced air, so how
+      // often you see it is really a property of the aging rules above.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+
+      // -----------------------------------------------------------------------------
+      // Water growth is OFF for classic -- classic dungeons have no standing water.
+      // Copy this into a motif that does. Water on a solid floor becomes seagrass; the
+      // air on top of water gets lily pads:
+      //
+      //   "underwater_growth": { "probability": 0.15, "blocks": ["minecraft:seagrass"] },
+      //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
+      // -----------------------------------------------------------------------------
     }
   ]
 }

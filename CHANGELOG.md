@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dungeon hallways can now be made wider, so corridors feel roomier to walk through instead of being a single block wide.
 - Dungeon rooms can now be hand-built prefab structures instead of always being generated procedurally, the same way staircases between floors already work. Rooms and staircases can also be organized by theme (e.g. desert-style rooms), so new themed content can be added without any code changes.
 - Weathering (moss, cracks, crumbling stone) now ages **stairs, slabs and walls** as well as plain blocks, keeping the block's facing and shape intact instead of resetting it. Ageing can also happen in stages, so a block can decay progressively rather than in one jump.
+- Dungeons now grow **cobwebs in corners and creeping lichen on their walls**. The lichen spreads in patches — a patch is more likely to grow next to lichen that's already there, and keeps to a single species — rather than being sprinkled evenly over every wall. Both are datapack-controlled alongside the rest of a theme's weathering.
+- Where the stonework has decayed all the way down to dirt, **mushrooms and moss now sprout on top of it and roots hang down underneath**, so a crumbled patch looks overgrown rather than just discoloured.
+- **Ledges and corbels now crumble away** when the wall they jutted out of has decayed out from under them, instead of being left hanging in mid-air. One only goes if there is genuinely nothing left touching it.
+- **Seagrass and lily pads** on standing water — unused by the classic dungeon, but available to themes that have water.
 
 ### Changed
 
@@ -22,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Creeping lichen no longer appears plastered across doors. The doorway was still a solid wall when the lichen grew, so the lichen latched onto it and stayed there once the door was cut in; rooms and corridors now leave the doorway open at door height from the start.
 - Corridors no longer render cutting straight through the middle of nearby rooms. The corridor and room geometry was being placed at the wrong position along one axis; both now line up correctly.
 - Fixed a crash that could occur when placing a dungeon with certain room layouts.
 - Fixed a dependency version mismatch that could crash the game on startup when Dungeon Blocks was also installed.

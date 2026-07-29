@@ -927,6 +927,7 @@ public class DungeonStackPlanner {
         // 8-neighbor wall test BasicCorridorGenerator applies against the grid.
         for (CorridorData cd : corridorMap.values()) {
             Set<Coords2D> walls = new LinkedHashSet<>();
+            Set<Coords2D> doors = new LinkedHashSet<>();
             for (Coords2D cell : cd.getCells()) {
                 int x = cell.getX();
                 int z = cell.getY();
@@ -935,13 +936,19 @@ public class DungeonStackPlanner {
                         if (dx == 0 && dz == 0) continue;
                         int nx = x + dx;
                         int nz = z + dz;
-                        if (isCorridorWallCell(grid, nx, nz)) {
+                        // Doors first: they are wall cells too, but render pierced
+                        // at the door-half levels. Keeping the two sets disjoint
+                        // is what stops a solid column overwriting the pierced one.
+                        if (isCorridorDoorCell(grid, nx, nz)) {
+                            doors.add(new Coords2D(nx, nz));
+                        } else if (isCorridorWallCell(grid, nx, nz)) {
                             walls.add(new Coords2D(nx, nz));
                         }
                     }
                 }
             }
             cd.getWallCells().addAll(walls);
+            cd.getDoorCells().addAll(doors);
         }
         floor.getCorridors().addAll(corridorMap.values());
 
@@ -989,6 +996,18 @@ public class DungeonStackPlanner {
         CellType type = grid.get(x, z).getType();
         return type == CellType.ROCK || type == CellType.WALL
                 || type == CellType.DOOR || type == CellType.CONNECTOR;
+    }
+
+    /**
+     * True if the cell at (x,z) is an opened doorway bordering a corridor.
+     * Kept in sync with {@code BasicCorridorGenerator.isDoorElement}: out-of-bounds
+     * is not a door, and CONNECTOR is deliberately excluded.
+     */
+    private static boolean isCorridorDoorCell(Grid2D grid, int x, int z) {
+        if (x < 0 || z < 0 || x >= grid.getWidth() || z >= grid.getHeight()) {
+            return false;
+        }
+        return grid.get(x, z).getType() == CellType.DOOR;
     }
 
     private int pickRoomHeight(Random random, int width, int depth) {

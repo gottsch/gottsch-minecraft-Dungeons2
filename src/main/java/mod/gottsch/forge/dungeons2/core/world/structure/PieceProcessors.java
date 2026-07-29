@@ -18,16 +18,20 @@
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -47,27 +51,44 @@ import java.util.Optional;
  * The {@code template} argument is nullable &mdash; vanilla's own deprecated
  * overload passes {@code null} for it.</p>
  *
- * <h2>Chunk-safety: which processors are safe here</h2>
+ * <h2>Chunk-safety: the two passes</h2>
  * <p>A procedural piece re-runs and re-renders <em>once per chunk it overlaps</em>,
  * so a block in a chunk seam is processed twice in two separate passes and MUST
- * resolve identically both times. Two consequences:</p>
- * <ul>
- *   <li><strong>Per-block, position-keyed processors are safe.</strong> Vanilla's
- *       {@code RuleProcessor} seeds {@code RandomSource.create(Mth.getSeed(pos))}
- *       from the block's absolute world position, so it is already deterministic
- *       per position and identical across the seam &mdash; which is the whole reason
- *       vanilla's own processors can be reused here at all.</li>
- *   <li><strong>Whole-list processors are NOT safe.</strong> Anything that counts,
- *       caps, or otherwise decides from the block list as a whole (a processor
- *       overriding {@code finalizeProcessing}, e.g. {@code CappedProcessor}) sees
- *       only the current chunk's slice of the piece, and would make a different
- *       decision per chunk. Don't put those in a dungeon processor list.</li>
- * </ul>
+ * resolve identically both times. The motif's processor list is therefore split on
+ * one question &mdash; <em>does this processor read the level?</em> &mdash; answered by
+ * {@link LevelIndependentProcessor}:</p>
+ * <ol>
+ *   <li><strong>Level-independent pass &mdash; unclipped.</strong> Processors marked
+ *       {@link LevelIndependentProcessor} get the whole piece, in authored order. Being
+ *       unclipped is <em>required</em> for a neighbour-aware processor (a neighbour map
+ *       built from one chunk's slice is missing everything across the seam) and
+ *       <em>beneficial</em> for a per-block one, since it keeps it in the same pass and
+ *       so in the same relative order as the rest.</li>
+ *   <li><strong>Level-reading pass &mdash; clipped.</strong> Everything else. Vanilla's
+ *       {@code RuleProcessor} calls {@code level.getBlockState} for its
+ *       {@code location_predicate}, and reading outside the current
+ *       {@code WorldGenRegion} during worldgen is illegal, so these only ever see
+ *       blocks inside the chunk box. They survive the double pass because each seeds
+ *       its random from the block's absolute world position ({@code Mth.getSeed(pos)})
+ *       &mdash; the whole reason vanilla's own processors can be reused here at all.</li>
+ * </ol>
  *
- * <p>The caller must clip to the chunk box <em>before</em> calling
- * {@link #process} &mdash; not after. {@code RuleProcessor} reads the existing
- * world block at each position ({@code location_predicate}), and reading outside
- * the current {@code WorldGenRegion} during worldgen is illegal.</p>
+ * <p>Splitting on "reads the level" rather than "is neighbour-aware" is deliberate: it
+ * keeps {@code dungeons2:aging} and {@code dungeons2:decoration} together in pass 1, in
+ * the order the datapack authored them, so decoration sees what aging did &mdash;
+ * cobwebs in a gap a crumbled stair left, growth on dirt aging produced. That is what a
+ * jigsaw prefab gets from vanilla's single unsplit list.</p>
+ *
+ * <p>What still differs from a prefab is where the level-reading processors land: vanilla
+ * runs them <em>before</em> any {@code finalizeProcessing}, this runs them after. For the
+ * shipped list that is invisible, because its {@code minecraft:rule} entries only swap one
+ * full cube for another and so never change what decoration keys off (air, solidity,
+ * block identity).</p>
+ *
+ * <p>An unmarked processor that decides from the whole block list (e.g.
+ * {@code minecraft:capped}, which counts across it) belongs in neither pass and must not
+ * be put in a dungeon processor list &mdash; it would land in the clipped pass and cap per
+ * chunk. {@code WeatheringProcessorListTest} enforces that on the shipped file.</p>
  *
  * @author Mark Gottschling on Jul 26, 2026
  */
@@ -95,26 +116,82 @@ public final class PieceProcessors {
     }
 
     /**
-     * Runs every processor in {@code list} over {@code relativeInfos}, returning the
-     * surviving blocks at absolute world positions.
+     * Runs the motif's processor list over a procedural piece's blocks, in the two
+     * passes described in the class doc, and returns the surviving blocks at absolute
+     * world positions, clipped to {@code chunkBox}.
+     *
+     * <p>A motif with no processor list still round-trips through here: the result is
+     * {@code relativeInfos} offset to world space and clipped, i.e. an undecorated
+     * piece.</p>
      *
      * @param origin        world position {@code relativeInfos} are relative to;
      *                      vanilla offsets each info by this and hands it to the
      *                      processors as the block's world position.
-     * @param relativeInfos blocks in {@code origin}-relative space, already clipped
-     *                      to the chunk box (see the class doc &mdash; clipping after
-     *                      processing is not an option).
+     * @param chunkBox      the chunk box {@code postProcess} was handed. Clipping
+     *                      happens <em>between</em> the two passes &mdash; see the class
+     *                      doc; neither "clip everything first" nor "clip at the end"
+     *                      is an option.
+     * @param relativeInfos the piece's blocks in {@code origin}-relative space,
+     *                      <strong>unclipped</strong>.
      */
-    public static List<StructureTemplate.StructureBlockInfo> process(
+    public static List<StructureTemplate.StructureBlockInfo> decorate(
+            WorldGenLevel level, BlockPos origin, BoundingBox chunkBox,
+            List<StructureTemplate.StructureBlockInfo> relativeInfos, String motifValue) {
+
+        List<StructureProcessor> levelIndependent = new ArrayList<>();
+        List<StructureProcessor> levelReading = new ArrayList<>();
+        for (StructureProcessor processor : weatheringList(level, motifValue)
+                .map(StructureProcessorList::list).orElse(List.of())) {
+            (processor instanceof LevelIndependentProcessor ? levelIndependent : levelReading)
+                    .add(processor);
+        }
+
+        // Pass 1, over the WHOLE piece.
+        List<StructureTemplate.StructureBlockInfo> decorated = levelIndependent.isEmpty()
+                ? toWorld(relativeInfos, origin)
+                : process(level, origin, relativeInfos, levelIndependent);
+
+        // Clip, and go back to origin-relative so pass 2 can offset them again.
+        List<StructureTemplate.StructureBlockInfo> clipped = new ArrayList<>(decorated.size());
+        for (StructureTemplate.StructureBlockInfo info : decorated) {
+            if (chunkBox.isInside(info.pos())) {
+                clipped.add(new StructureTemplate.StructureBlockInfo(
+                        info.pos().subtract(origin), info.state(), info.nbt()));
+            }
+        }
+
+        // Pass 2, over this chunk's slice only.
+        return levelReading.isEmpty()
+                ? toWorld(clipped, origin)
+                : process(level, origin, clipped, levelReading);
+    }
+
+    /** One pass of vanilla's processing loop, with no template involved. */
+    private static List<StructureTemplate.StructureBlockInfo> process(
             WorldGenLevel level, BlockPos origin,
             List<StructureTemplate.StructureBlockInfo> relativeInfos,
-            StructureProcessorList list) {
+            List<StructureProcessor> processors) {
 
         // Rotation/mirror stay at their NONE defaults: procedural pieces are always
         // built NORTH-oriented, so calculateRelativePosition is the identity and each
         // info's world position is exactly origin + its relative position.
         StructurePlaceSettings settings = new StructurePlaceSettings();
-        list.list().forEach(settings::addProcessor);
+        processors.forEach(settings::addProcessor);
         return StructureTemplate.processBlockInfos(level, origin, origin, settings, relativeInfos, null);
+    }
+
+    /**
+     * Offsets {@code infos} from origin-relative to world space &mdash; the same
+     * translation {@link StructureTemplate#processBlockInfos} applies, for the passes
+     * with no processor to run and so no call to make.
+     */
+    private static List<StructureTemplate.StructureBlockInfo> toWorld(
+            List<StructureTemplate.StructureBlockInfo> infos, BlockPos origin) {
+        List<StructureTemplate.StructureBlockInfo> out = new ArrayList<>(infos.size());
+        for (StructureTemplate.StructureBlockInfo info : infos) {
+            out.add(new StructureTemplate.StructureBlockInfo(
+                    info.pos().offset(origin), info.state(), info.nbt()));
+        }
+        return out;
     }
 }

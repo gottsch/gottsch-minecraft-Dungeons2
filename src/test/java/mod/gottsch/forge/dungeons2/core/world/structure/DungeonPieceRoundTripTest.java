@@ -104,6 +104,9 @@ class DungeonPieceRoundTripTest {
         corridor.getWallCells().add(new Coords2D(4, 5));
         corridor.getWallCells().add(new Coords2D(6, 5));
         corridor.getWallCells().add(new Coords2D(-1, 7)); // out-of-bounds wall is legal
+        // Door cells drive the pierced-column render, so they must survive too --
+        // the deserialized piece has no grid to re-derive them from.
+        corridor.getDoorCells().add(new Coords2D(6, 7));
 
         DungeonCorridorPiece original = new DungeonCorridorPiece(corridor, MOTIF, FLOOR_Y, ANCHOR_X, ANCHOR_Z);
         DungeonCorridorPiece loaded = new DungeonCorridorPiece(null, save(original));
@@ -112,6 +115,7 @@ class DungeonPieceRoundTripTest {
         assertEquals(original.getCorridor().getId(), loaded.getCorridor().getId());
         assertEquals(original.getCorridor().getCells(), loaded.getCorridor().getCells(), "cells");
         assertEquals(original.getCorridor().getWallCells(), loaded.getCorridor().getWallCells(), "wall cells");
+        assertEquals(original.getCorridor().getDoorCells(), loaded.getCorridor().getDoorCells(), "door cells");
     }
 
     @Test

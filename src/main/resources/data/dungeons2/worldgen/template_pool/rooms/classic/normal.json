@@ -5,8 +5,37 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:rooms/7x7_t_int",
+        "location": "dungeons2:rooms/classic/7x7_t_int",
         "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/7x7_junction_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/7x7_junction_2",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/7x7_hall_1",
+        "processors": "dungeons2:classic_weathering",
+
+
         "projection": "rigid"
       },
       "weight": 1

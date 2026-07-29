@@ -78,9 +78,15 @@ import java.util.Map;
  * {@link PieceProcessors}, where a procedural piece is re-processed once per chunk it
  * overlaps and a block on a chunk seam must resolve the same way in both passes.</p>
  *
+ * <p>{@code processBlock} also never touches the {@code LevelReader}, hence
+ * {@link LevelIndependentProcessor}. That puts it in {@code PieceProcessors}' unclipped
+ * pass alongside {@link DecorationProcessor}, so decoration sees what aging did &mdash;
+ * cobwebs in a gap a crumbled stair left, growth on dirt aging produced &mdash; exactly as
+ * it would for a jigsaw prefab, where vanilla runs both from one list.</p>
+ *
  * @author Mark Gottschling on Jul 27, 2026
  */
-public class AgingProcessor extends StructureProcessor {
+public class AgingProcessor extends StructureProcessor implements LevelIndependentProcessor {
 
     /**
      * Registry name, so the {@code processor_type} authored in a processor_list JSON

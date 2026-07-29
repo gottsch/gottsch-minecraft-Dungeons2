@@ -84,6 +84,7 @@ public final class PieceNbt {
         tag.putInt("Id", corridor.getId());
         tag.putIntArray("Cells", flatten(corridor.getCells()));
         tag.putIntArray("Walls", flatten(corridor.getWallCells()));
+        tag.putIntArray("DoorCells", flatten(corridor.getDoorCells()));
         if (corridor.getTemplateId() != null) {
             tag.putString("Template", corridor.getTemplateId());
         }
@@ -94,6 +95,7 @@ public final class PieceNbt {
         CorridorData corridor = new CorridorData(tag.getInt("Id"));
         corridor.setCells(unflatten(tag.getIntArray("Cells")));
         corridor.setWallCells(unflatten(tag.getIntArray("Walls")));
+        corridor.setDoorCells(unflatten(tag.getIntArray("DoorCells")));
         if (tag.contains("Template")) {
             corridor.setTemplateId(tag.getString("Template"));
         }

@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
@@ -135,6 +136,68 @@ class BasicWallGeneratorTest {
         }
         assertTrue(sawAir, "Room interior should contribute air placements");
         assertTrue(sawNonAir, "Wall edges should contribute non-air placements");
+    }
+
+    /**
+     * The lichen-on-doors fix. A solid block in the door cell is what the room's
+     * decoration pass anchors glow lichen to; the door piece then replaces it and
+     * the lichen renders plastered onto the door. Removing the anchor is the only
+     * fix reachable from here — the door belongs to a different piece.
+     */
+    @Test
+    void aDoorwayCellIsAirAtTheTwoDoorHalfLevels() {
+        BasicWallGenerator gen = new BasicWallGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        RoomData room = smallRoom();
+        int floorY = 60;
+        // Mid-point of the room's north edge (z = originZ), a real doorway position.
+        Coords2D doorway = new Coords2D(room.getOriginX() + 3, room.getOriginZ());
+        room.getDoorways().add(doorway);
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
+
+        for (BlockPlacement bp : out) {
+            if (bp.getX() != doorway.getX() || bp.getZ() != doorway.getY()) continue;
+            int offset = bp.getY() - floorY;
+            if (offset == 1 || offset == 2) {
+                assertEquals("minecraft:air", bp.getBlockId(),
+                        "door-half level " + offset + " must be air: " + bp);
+            } else {
+                assertFalse("minecraft:air".equals(bp.getBlockId()),
+                        "sill/lintel level " + offset + " must stay solid: " + bp);
+            }
+        }
+    }
+
+    /** Without the doorway the same column is solid all the way up. */
+    @Test
+    void thatSameColumnIsSolidWithoutTheDoorway() {
+        BasicWallGenerator gen = new BasicWallGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        RoomData room = smallRoom();
+        int floorY = 60;
+        int doorX = room.getOriginX() + 3;
+        int doorZ = room.getOriginZ();
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
+
+        for (BlockPlacement bp : out) {
+            if (bp.getX() != doorX || bp.getZ() != doorZ) continue;
+            assertFalse("minecraft:air".equals(bp.getBlockId()),
+                    "no doorway declared, so the whole column stays wall: " + bp);
+        }
+    }
+
+    /** Piercing swaps a block state, it never adds or drops a placement. */
+    @Test
+    void aDoorwayDoesNotChangeThePlacementCount() {
+        BasicWallGenerator gen = new BasicWallGenerator();
+        List<BlockPlacement> withDoor = new ArrayList<>();
+        List<BlockPlacement> without = new ArrayList<>();
+        RoomData room = smallRoom();
+        room.getDoorways().add(new Coords2D(room.getOriginX() + 3, room.getOriginZ()));
+        gen.build(room, 60, DungeonMotif.CLASSIC, RandomSource.create(42L), withDoor);
+        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(42L), without);
+
+        assertEquals(without.size(), withDoor.size());
     }
 
     @Test

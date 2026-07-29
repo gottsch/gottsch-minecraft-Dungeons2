@@ -302,6 +302,10 @@ Aging (mossy, cracked, crumbled-to-cobble) is a **vanilla
 `minecraft:worldgen/processor_list`**, and the same file decorates both halves of a
 dungeon:
 
+> The file is called *weathering* even though it also grows lichen and hangs cobwebs,
+> because in a dungeon those **are** weathering — mold, lichen and cobwebs all say the
+> same thing about the place's age as a cracked brick does. One motif, one file.
+
 - **Prefabs** — each pool element's `"processors"` field points at it, the ordinary
   vanilla way (`"processors": "dungeons2:classic_weathering"`).
 - **Procedural rooms / corridors / doors** — `DungeonPiece.placeAll` runs the same list
@@ -315,12 +319,13 @@ file simply generates undecorated — the same graceful degradation a missing po
 
 ### Which processor to use
 
-The shipped list runs two, deliberately split by what each can express:
+The shipped list runs three, deliberately split by what each can express:
 
 | Processor | Use it for | Why |
 |---|---|---|
 | `minecraft:rule` (vanilla) | plain full cubes — `stone_bricks`, `cobblestone`, `polished_andesite` | Standard vanilla, nothing custom needed. |
 | `dungeons2:aging` (ours) | **shaped blocks** — stairs, slabs, walls, fences, pillars | A vanilla `ProcessorRule` emits one fixed `output_state` and **drops the input's properties**, so ageing a stair with it silently resets facing/half/shape. `dungeons2:aging` copies every property the source and replacement share, so one rule ages a whole family. It also supports multi-stage decay chains. |
+| `dungeons2:decoration` (ours) | anything decided by a block's **neighbours** — cobwebs, creeping growth | The other two decide one block at a time and can't see what's next to it. This one gets the whole block list. |
 
 `dungeons2:aging` entries look like:
 
@@ -344,6 +349,100 @@ rolled, so the example gives 30% mossy of which 30% decay further to cobblestone
 as how many rounds of decay the structure has been through. Two rules with the same
 `block` act as alternative chains; the first that decays at all wins.
 
+A `dungeons2:decoration` entry is a set of independent behaviours, **all off by default**.
+Each is an object, not a bare number, so a behaviour carries its own palette:
+
+```json
+{
+  "processor_type": "dungeons2:decoration",
+  "cobwebs":     { "probability": 0.02, "blocks": ["minecraft:cobweb"] },
+  "wall_growth": { "probability": 0.04, "bonus": 0.22, "max": 0.55,
+                   "blocks": ["minecraft:glow_lichen", "dungeonblocks:lichen"] },
+
+  "dirt":           { "tags": ["minecraft:dirt"] },
+  "floor_growth":   { "probability": 0.35, "blocks": ["minecraft:brown_mushroom"] },
+  "hanging_growth": { "probability": 0.3,  "blocks": ["minecraft:hanging_roots"] },
+
+  "underwater_growth": { "probability": 0.15, "blocks": ["minecraft:seagrass"] },
+  "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] },
+
+  "unsupported": { "tags": ["dungeonblocks:corbels", "dungeonblocks:ledges"] }
+}
+```
+
+| Behaviour | Fires on | Writes to |
+|---|---|---|
+| `cobwebs` | air with a **horizontally adjacent solid** — corners and wall faces, not open floor | that cell |
+| `wall_growth` | air beside a solid block | that cell, attached to the wall's face |
+| `floor_growth` | a `dirt` block with air above | the cell above |
+| `hanging_growth` | a `dirt` block with air below | the cell below |
+| `underwater_growth` | water with a **solid floor** under it | that cell (replacing the water) |
+| `floating_growth` | water with air above | the cell above |
+| `unsupported` | a matching block whose **wall behind it** has become air | clears it to air |
+
+Every behaviour takes `probability` (absolute — one roll per candidate position, *not*
+conditional like the rule/aging chains) and `blocks` (a palette, picked from uniformly).
+`wall_growth` adds two more:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `bonus` | `0.0` | Added **per already-grown neighbour** (all 6 directions). This is what makes growth spread in patches instead of an even speckle — turn it up for bigger, blotchier patches. |
+| `max` | `1.0` | Cap on `probability + n × bonus`. |
+
+A candidate **inherits the species of the growth touching it**, so a patch is one
+organism, not a mosaic. Give `wall_growth` multiface (glow-lichen-like) blocks so the face
+attaches; anything else is placed in its default state.
+
+`dirt` and `unsupported` say which blocks a behaviour applies *to* (rather than what it
+places), and take `blocks` and/or `tags` — the union of both. Prefer tags: `minecraft:dirt`
+already covers the whole family, and DungeonBlocks ships `dungeonblocks:corbels` /
+`dungeonblocks:ledges` covering one variant per stone type.
+
+### How `unsupported` decides
+
+**A block that faces somewhere is held up from behind, and by nothing else.** A corbel or a
+ledge is bracketed onto a wall and juts out from it — it *gives* support to whatever sits on
+top of it, it doesn't *take* support from there, nor from the block below, nor from whatever
+happens to be beside it. So for any block with a `facing` property exactly one neighbour is
+consulted: the one at `facing.getOpposite()`. Lose the wall, lose the corbel, regardless of
+what else is around it.
+
+That's the right neighbour because DungeonBlocks' corbels and ledges put their backing plate
+on the face *opposite* FACING (a north-facing corbel's post occupies the south of its cell),
+and set FACING from the placing player's direction reversed — the same convention vanilla's
+ladder uses.
+
+A block with **no** `facing` has no "behind", so a looser rule stands for it: kept unless air
+is seen on *every* side including below. Both paths err towards **keeping** the block, since a
+false positive deletes architecture somebody authored:
+
+- **Support is "not air", not "is a full cube."** The behaviour is for a ledge whose wall
+  *crumbled away*, and crumbling produces air. A ledge mounted on a stair, a slab or another
+  ledge stays put.
+- **A neighbour that isn't part of the piece counts as support.** Absent means "this piece
+  places nothing here", not "here is nothing" — the wall may belong to the adjoining piece,
+  or lie outside a prefab's bounds.
+
+It follows that `unsupported` only ever fires where weathering actually produced air, so how
+often you see it is really a property of the aging rules, not of this setting.
+
+**The behaviours are independent, not a chain.** A dirt block is both "dirt" and "solid",
+so it can sprout mushrooms above *and* grow lichen on its side. Where two behaviours want
+the same cell, the first one reached takes it.
+
+> **Everything writes into air.** A behaviour only ever replaces a cell **the piece itself
+> places as air** — the two exceptions being `underwater_growth`, which replaces the piece's
+> own water, and `unsupported`, which clears its own block. Nothing here can touch the
+> terrain around the dungeon. Procedural rooms and corridors emit their interior air, and
+> every shipped `.nbt` is authored with real `minecraft:air` — but a prefab whose interior
+> is `minecraft:structure_void` **will not decorate**, because a void is neither air nor
+> solid.
+
+> **`floor_growth` / `hanging_growth` work on aged dirt too.** Classic dungeons author no
+> dirt at all; the dirt they grow on is what `dungeons2:aging` makes out of decayed stairs.
+> That works because aging and decoration share a pass and run in the order this file lists
+> them — so **keep `dungeons2:aging` above `dungeons2:decoration`**. A test enforces it.
+
 **These files may contain comments.** Minecraft loads datapack registry JSON through
 `RegistryDataLoader` &rarr; `JsonParser.parseReader`, which puts Gson in lenient mode, and
 lenient Gson skips `//`, `#` and `/* */`. `classic_weathering.json` uses `//` comments to
@@ -355,14 +454,35 @@ datapack **registry** files like `worldgen/processor_list`; a custom
 
 **Two rules for authoring these, both about chunk-safety:**
 
-1. **Per-block processors only.** A procedural piece is re-rendered once per chunk it
+1. **Only vetted processors.** A procedural piece is re-rendered once per chunk it
    overlaps, so each block is processed more than once and must resolve the same way
-   every time. `minecraft:rule` and `dungeons2:aging` are both safe: each seeds its
-   random from the block's absolute world position. Anything that decides from the whole
-   block list at once (`minecraft:capped`, or any processor overriding
-   `finalizeProcessing`) sees only the current chunk's slice of the piece and would
-   decide differently per chunk. A test enforces this (`WeatheringProcessorListTest`).
-2. **Probabilities are conditional, not absolute** — in both processors. A vanilla rule
+   every time. `PieceProcessors` therefore runs the list in **two passes**, split on one
+   question — *does this processor read the level?*
+
+   - **Level-independent, unclipped.** `dungeons2:aging` and `dungeons2:decoration`, and
+     anything else implementing the `LevelIndependentProcessor` marker in code. These get
+     the piece's **whole** block list, in the order this file lists them. Decoration
+     *needs* that (a neighbour map built from one chunk's slice would be missing
+     everything across the seam); aging is there so the two stay in authored order.
+   - **Level-reading, clipped.** `minecraft:rule`, which reads the existing world block
+     for its `location_predicate` — and reading outside the current region during
+     worldgen is illegal, so it only ever sees the part of the piece inside the chunk.
+     It survives the repeat because it seeds its random from the block's absolute world
+     position.
+
+   A third-party processor is in **neither** category and must not be added:
+   `minecraft:capped`, for instance, counts across the block list, isn't marked, and so
+   would land in the clipped pass and cap per chunk. A test enforces the allowlist and
+   the markers (`WeatheringProcessorListTest`).
+
+   One consequence worth knowing: vanilla runs a **prefab** through the unsplit list, so
+   `minecraft:rule` gets to go before anything neighbour-aware; on a **procedural piece**
+   it goes last. That's invisible for the shipped list, whose rules only swap one full
+   cube for another and so never change what decoration keys off (air, solidity, block
+   identity). Keep it that way: a rule that turns a block into **air** would show the
+   difference.
+2. **Probabilities are conditional, not absolute** — in `minecraft:rule` and
+   `dungeons2:aging` (but *not* `dungeons2:decoration`). A vanilla rule
    produces one output state with no weighted variant list, so several variants of the
    same source block are consecutive rules, first match wins, each rolling only after the
    previous missed. Three variants at 10% each are authored `0.1`, `0.1111`, `0.125`, not

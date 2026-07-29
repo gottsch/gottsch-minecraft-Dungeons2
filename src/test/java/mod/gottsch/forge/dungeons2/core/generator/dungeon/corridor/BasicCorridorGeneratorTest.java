@@ -101,6 +101,76 @@ class BasicCorridorGeneratorTest {
                 "Expected a wall column to the west of corridor at (1,*,3)");
     }
 
+    /**
+     * The corridor half of the lichen-on-doors fix: a bordering DOOR cell must
+     * not carry a full cube at the two door-half levels, or the corridor's
+     * decoration pass anchors lichen there facing the door cell and the lichen
+     * ends up rendered onto the door {@code DungeonDoorPiece} carves in later.
+     */
+    @Test
+    void aBorderingDoorCellIsPiercedAtTheTwoDoorHalfLevels() {
+        Grid2D grid = simpleGrid();
+        grid.get(1, 3).setType(CellType.DOOR); // west end of the corridor run
+
+        BasicCorridorGenerator gen = new BasicCorridorGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(simpleCorridor(), grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertColumnIsPierced(out, 1, 3, 60);
+    }
+
+    /** A CONNECTOR is still a plain wall — no door piece follows it, so no hole. */
+    @Test
+    void aBorderingConnectorCellStaysSolid() {
+        Grid2D grid = simpleGrid();
+        grid.get(1, 3).setType(CellType.CONNECTOR);
+
+        BasicCorridorGenerator gen = new BasicCorridorGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(simpleCorridor(), grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        for (BlockPlacement bp : out) {
+            if (bp.getX() == 1 && bp.getZ() == 3) {
+                assertEquals(false, "minecraft:air".equals(bp.getBlockId()),
+                        "connector column must stay solid: " + bp);
+            }
+        }
+    }
+
+    /**
+     * The grid-free overload (what the deserialized piece uses) must agree with
+     * the grid-based one, reading door cells off {@code CorridorData}.
+     */
+    @Test
+    void theGridFreeOverloadPiercesDoorCellsToo() {
+        CorridorData corridor = simpleCorridor();
+        corridor.getDoorCells().add(new Coords2D(1, 3));
+
+        BasicCorridorGenerator gen = new BasicCorridorGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(corridor, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertColumnIsPierced(out, 1, 3, 60);
+    }
+
+    /** Air at floorY+1 / floorY+2, solid at floorY / +3 / +4, exactly 5 blocks. */
+    private static void assertColumnIsPierced(List<BlockPlacement> out, int x, int z, int floorY) {
+        int seen = 0;
+        for (BlockPlacement bp : out) {
+            if (bp.getX() != x || bp.getZ() != z) continue;
+            seen++;
+            int offset = bp.getY() - floorY;
+            if (offset == 1 || offset == 2) {
+                assertEquals("minecraft:air", bp.getBlockId(),
+                        "door-half level " + offset + " must be air: " + bp);
+            } else {
+                assertTrue(!"minecraft:air".equals(bp.getBlockId()),
+                        "level " + offset + " must stay solid: " + bp);
+            }
+        }
+        assertEquals(5, seen, "a doorway column is still a full 5-block column");
+    }
+
     @Test
     void corridorBuilderIsDeterministic() {
         BasicCorridorGenerator gen = new BasicCorridorGenerator();

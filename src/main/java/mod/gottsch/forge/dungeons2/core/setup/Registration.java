@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -71,6 +72,10 @@ public class Registration {
 	/** Multi-stage block aging that preserves state properties. See {@link AgingProcessor}. */
 	public static final RegistryObject<StructureProcessorType<AgingProcessor>> AGING_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(AgingProcessor.NAME, () -> () -> AgingProcessor.CODEC);
+
+	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
+	public static final RegistryObject<StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(DecorationProcessor.NAME, () -> () -> DecorationProcessor.CODEC);
 
 	/**
 	 *

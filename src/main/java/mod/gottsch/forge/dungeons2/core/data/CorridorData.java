@@ -38,6 +38,12 @@ import java.util.List;
  * null after NBT deserialization). This resolves the grid round-trip TODO noted
  * on {@code FloorLayout.grid}.</p>
  *
+ * <p>{@code doorCells} is the subset of those bordering cells whose grid type is
+ * {@code DOOR}. They are held separately from {@code wallCells} (and are NOT
+ * repeated in it) because they render as a wall column pierced at the two
+ * door-half levels rather than a solid one &mdash; see
+ * {@code BasicCorridorGenerator}.</p>
+ *
  * <p>{@code templateId} is reserved for the future Phase 8 mixed-mode templated
  * corridor segments; null in v1.</p>
  *
@@ -55,6 +61,12 @@ public class CorridorData {
      * builder emits walls for out-of-bounds neighbors too).
      */
     private List<Coords2D> wallCells = new ArrayList<>();
+    /**
+     * Bordering grid cells of type DOOR. Disjoint from {@link #wallCells}; these
+     * render as a wall column with the two door-half levels left as air so the
+     * decoration pass never anchors growth facing a door cell.
+     */
+    private List<Coords2D> doorCells = new ArrayList<>();
     /** Phase 8 hook: non-null when this corridor is rendered from a template prefab. */
     private String templateId;
 
@@ -83,6 +95,12 @@ public class CorridorData {
         return wallCells;
     }
     public void setWallCells(List<Coords2D> wallCells) { this.wallCells = wallCells; }
+
+    public List<Coords2D> getDoorCells() {
+        if (doorCells == null) doorCells = new ArrayList<>();
+        return doorCells;
+    }
+    public void setDoorCells(List<Coords2D> doorCells) { this.doorCells = doorCells; }
 
     public String getTemplateId() { return templateId; }
     public void setTemplateId(String templateId) { this.templateId = templateId; }
