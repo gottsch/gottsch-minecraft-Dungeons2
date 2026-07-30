@@ -1577,6 +1577,189 @@ public class MazeLevelGenerator2D {
     }
 
     /**
+     * Connectivity <em>through an authored doorway</em>, tried before
+     * {@link #forceConnect} resorts to punching a fresh hole in a wall.
+     *
+     * <h2>The problem this exists for</h2>
+     * <p>An authored doorway ({@code dungeons2:door} / {@code dungeons2:connector}
+     * markers, arriving as {@link IRoom2D#getCandidateDoorways()}) is a <em>fixed
+     * point</em>: it only becomes a door if a carved region happens to end up on its
+     * far side, because that is what {@link #generateConnector} requires. Nothing in
+     * the maze routes a corridor <em>to</em> it. A procedural room does not care
+     * &mdash; the perimeter scan finds whichever of its many wall cells a corridor
+     * did reach &mdash; but a template room's doors are wherever the author put
+     * them, and a transition ships as few as two adjacent cells on one edge.</p>
+     *
+     * <p>When no candidate connects, the room is isolated, {@code forceConnect}
+     * tunnels into it through the nearest rock, and the result in game is a fully
+     * built double door standing in a wall with nothing on the other side, plus a
+     * rough hole punched somewhere else. Measured 2026-07-30 against the real
+     * {@code stairs_2} geometry: <strong>16% of transition ends</strong>.</p>
+     *
+     * <h2>What it does</h2>
+     * <p>For each authored candidate of a room that has no doorway yet, take the
+     * cell immediately <em>outside</em> it and try to reach the start component from
+     * there &mdash; either it already is reachable (nothing to carve) or a tunnel is
+     * carved from it, exactly as {@code forceConnect} would, but arriving at the door
+     * instead of at an arbitrary stretch of wall. The candidate is then opened as a
+     * real doorway together with its whole authored run, so a 2-wide door opens both
+     * halves (same rule as {@link #authoredRunSiblings}).</p>
+     *
+     * @return true if a doorway was opened and connectivity established
+     */
+    private boolean forceConnectViaAuthoredDoorway(ILevel2D level, IRoom2D start, IRoom2D end) {
+        // Both ends are template slots in a planner-driven dungeon -- the entrance or
+        // incoming transition is START, the outgoing transition is END -- so either
+        // can be the isolated one, and both are worth opening: a sealed door at the
+        // bottom of a staircase strands you just as thoroughly as one at the top.
+        //
+        // Each room's door is aimed at the OTHER room's component, which is what
+        // actually joins the two. Aiming a room's own door at its own component would
+        // be trivially satisfiable and would connect nothing.
+        boolean opened = openAuthoredDoorwayTowards(level, end, start);
+        opened |= openAuthoredDoorwayTowards(level, start, end);
+        return opened;
+    }
+
+    /**
+     * Opens one authored doorway of {@code room} onto {@code target}'s component,
+     * carving a tunnel from just outside that doorway if need be. No-op when
+     * {@code room} already has a doorway or was never given authored candidates.
+     */
+    private boolean openAuthoredDoorwayTowards(ILevel2D level, IRoom2D room, IRoom2D target) {
+        if (!room.getDoorways().isEmpty()
+                || room.getCandidateDoorways() == null || room.getCandidateDoorways().isEmpty()) {
+            return false;
+        }
+        Grid2D grid = level.getGrid();
+        // Recomputed per call: carving for the first room grows the component the
+        // second one aims at.
+        Set<Long> targetComponent = floodPassable(grid,
+                target.getOrigin().getX() + target.getWidth() / 2,
+                target.getOrigin().getY() + target.getHeight() / 2);
+        if (targetComponent.isEmpty()) {
+            return false;
+        }
+        // Sorted so the chosen doorway, and therefore the carved tunnel, is
+        // deterministic; a Set's iteration order is not.
+        List<Coords2D> candidates = room.getCandidateDoorways().stream()
+                .sorted(Comparator.comparingInt(Coords2D::getX).thenComparingInt(Coords2D::getY))
+                .toList();
+        for (Coords2D candidate : candidates) {
+            Coords2D outside = outsideNeighbor(room, candidate);
+            if (outside == null
+                    || outside.getX() < 1 || outside.getY() < 1
+                    || outside.getX() >= grid.getWidth() - 1 || outside.getY() >= grid.getHeight() - 1) {
+                // No cell on the far side (the doorway is flush against the level's
+                // own border), so nothing can ever come through it.
+                continue;
+            }
+            if (!tunnelToComponent(grid, targetComponent, outside, target, room)) {
+                continue;
+            }
+            openAuthoredRun(level, room, candidate);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * The cell just outside {@code room} from one of its own perimeter cells, i.e.
+     * the one a corridor would have to occupy to reach that doorway. Returns null if
+     * the cell is not on the room's perimeter ring, so "outside" is undefined.
+     */
+    private static Coords2D outsideNeighbor(IRoom2D room, Coords2D cell) {
+        int minX = room.getOrigin().getX();
+        int minY = room.getOrigin().getY();
+        int maxX = minX + room.getWidth() - 1;
+        int maxY = minY + room.getHeight() - 1;
+        if (cell.getY() == minY) return new Coords2D(cell.getX(), minY - 1);
+        if (cell.getY() == maxY) return new Coords2D(cell.getX(), maxY + 1);
+        if (cell.getX() == minX) return new Coords2D(minX - 1, cell.getY());
+        if (cell.getX() == maxX) return new Coords2D(maxX + 1, cell.getY());
+        return null;
+    }
+
+    /**
+     * Makes {@code from} reachable from {@code targetComponent}, carving a tunnel
+     * through rock if it is not already. Same BFS and same carving as
+     * {@link #forceConnect}, just seeded from a single cell rather than from a whole
+     * flooded cluster.
+     *
+     * @return true if {@code from} is now connected to the target component
+     */
+    private boolean tunnelToComponent(Grid2D grid, Set<Long> targetComponent, Coords2D from,
+                                      IRoom2D start, IRoom2D end) {
+        long fromKey = packKey(from.getX(), from.getY());
+        if (targetComponent.contains(fromKey)) {
+            // Already reachable: the network does arrive at this doorway, it just
+            // never produced a connector across it. Nothing to carve.
+            return true;
+        }
+        Map<Long, Long> parent = new HashMap<>();
+        ArrayDeque<int[]> queue = new ArrayDeque<>();
+        parent.put(fromKey, fromKey);
+        queue.add(new int[]{from.getX(), from.getY()});
+
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        while (!queue.isEmpty()) {
+            int[] c = queue.poll();
+            long ck = packKey(c[0], c[1]);
+            for (int[] d : dirs) {
+                int nx = c[0] + d[0];
+                int ny = c[1] + d[1];
+                if (nx < 1 || ny < 1 || nx >= grid.getWidth() - 1 || ny >= grid.getHeight() - 1) {
+                    continue;
+                }
+                long nk = packKey(nx, ny);
+                if (targetComponent.contains(nk)) {
+                    carveTunnel(grid, parent, ck, start, end);
+                    return true;
+                }
+                if (!parent.containsKey(nk)) {
+                    parent.put(nk, ck);
+                    queue.add(new int[]{nx, ny});
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Opens {@code candidate} and every authored cell contiguous with it as real
+     * doorways of {@code room}. Flooding the run is what makes a 2-wide authored door
+     * open both halves instead of one &mdash; the same rule, and the same reason, as
+     * {@link #authoredRunSiblings}, which does it for the connector-driven path.
+     */
+    private void openAuthoredRun(ILevel2D level, IRoom2D room, Coords2D candidate) {
+        Set<Coords2D> authored = new HashSet<>(room.getCandidateDoorways());
+        Set<Coords2D> run = new LinkedHashSet<>();
+        Deque<Coords2D> pending = new ArrayDeque<>();
+        pending.add(candidate);
+        while (!pending.isEmpty()) {
+            Coords2D cell = pending.poll();
+            if (!run.add(cell)) {
+                continue;
+            }
+            for (Coords2D step : List.of(
+                    new Coords2D(cell.getX() + 1, cell.getY()),
+                    new Coords2D(cell.getX() - 1, cell.getY()),
+                    new Coords2D(cell.getX(), cell.getY() + 1),
+                    new Coords2D(cell.getX(), cell.getY() - 1))) {
+                if (authored.contains(step) && !run.contains(step)) {
+                    pending.add(step);
+                }
+            }
+        }
+        for (Coords2D cell : run) {
+            level.getGrid().get(cell.getX(), cell.getY()).setType(CellType.DOOR);
+            if (!room.getDoorways().contains(cell)) {
+                room.getDoorways().add(cell);
+            }
+        }
+    }
+
+    /**
      * Last-resort connectivity: carves a brand-new corridor through solid rock
      * from the end room's cluster to the start room's cluster.
      *
@@ -1588,8 +1771,15 @@ public class MazeLevelGenerator2D {
      * to corridor, which makes the route walkable. Cells already passable along
      * the way are left as-is, so the tunnel naturally stitches through any
      * intermediate pockets too.</p>
+     *
+     * <p><strong>An authored doorway is tried first</strong> &mdash; see
+     * {@link #forceConnectViaAuthoredDoorway}. Punching a hole through the wall of a
+     * room that ships its own built door is the wrong answer for a template.</p>
      */
     private void forceConnect(ILevel2D level, IRoom2D start, IRoom2D end) {
+        if (forceConnectViaAuthoredDoorway(level, start, end)) {
+            return;
+        }
         Grid2D grid = level.getGrid();
         // Cells already reachable from the start room (our BFS target set).
         Set<Long> startComponent = floodPassable(grid,

@@ -225,6 +225,9 @@ public class DungeonStackPlanner {
     }
 
     // -------- jigsaw-assembled transitions (optional) --------
+    // See the PARITY NOTE on roomAssembler below before changing anything here: the
+    // two paths share a pipeline, and every fault found in one has so far existed in
+    // the other too.
     private TransitionAssembler transitionAssembler;
 
     /**
@@ -296,6 +299,26 @@ public class DungeonStackPlanner {
     }
 
     // -------- Phase 8: jigsaw-assembled interior ("NORMAL") rooms (optional) --------
+    //
+    // PARITY NOTE. This and the transition path above are two instances of ONE
+    // pipeline: measure a prefab, reserve a slot, place it, hand its authored door
+    // markers to the maze, connect it up. Every fault found in either during 2026-07
+    // turned out to exist in the other as well -- a guessed slot size, a rejected
+    // prefab still being built, a prefab flush against the grid boundary, and an
+    // authored door nothing ever routed a corridor to. Each was found on one side by
+    // accident of which one was being looked at.
+    //
+    // So: when changing one, check the other. Neither fault class announces itself --
+    // a dropped prefab is quietly replaced by procedural fill, and a sealed door
+    // still leaves a reachable dungeon.
+    //
+    // They do genuinely differ in three ways, so don't copy blindly: a transition has
+    // TWO ends at different Y (and its footprint serves as the upper floor's END and
+    // the lower floor's START, so connectivity must be checked at both), a transition
+    // can be a multi-piece chain whose union sprawls while a room is always one piece
+    // displaced only by rotation, and rooms additionally reject a footprint touching
+    // the floor edge. The entrance is a THIRD variant and is not part of this parity:
+    // it has no assembler and drives the layout anchor rather than fitting a slot.
     private RoomAssembler roomAssembler;
 
     /**
@@ -368,12 +391,19 @@ public class DungeonStackPlanner {
     // itself, so the planner never guesses how big a prefab is.
 
     /**
-     * How far a jigsaw-assembled interior room is kept clear of its floor's own
-     * outer boundary. Must be EVEN (see {@link #placeAvoidingReserved}); 2 is the
-     * smallest value that keeps the room's own edge — and therefore any door
-     * candidate on it — off the grid's boundary row/column.
+     * How far a jigsaw-assembled slot (interior room or transition) is kept clear
+     * of its floor's own outer boundary. Must be EVEN (see
+     * {@link #placeAvoidingReserved}); 2 is the smallest value that keeps the
+     * reserved rect's own edge — and therefore any authored door candidate on it —
+     * off the grid's boundary row/column.
+     *
+     * <p>A candidate flush against the boundary has <strong>no cell on its far
+     * side</strong>, so it can never bridge two regions and never becomes a door:
+     * the template's authored doorway is simply sealed. Measured 2026-07-30, before
+     * transitions got this margin, 15% of adopted transitions sat flush against the
+     * boundary and a third of those ended up with no doorway at all.</p>
      */
-    private static final int ROOM_EDGE_MARGIN = 2;
+    private static final int PREFAB_EDGE_MARGIN = 2;
 
     private static List<Coords2D> toLocalCells(List<Coords2D> worldCells, ICoords planAnchor) {
         List<Coords2D> local = new ArrayList<>(worldCells.size());
@@ -564,8 +594,10 @@ public class DungeonStackPlanner {
 
                 // Reserve using the real, measured size. placeAvoidingStart also
                 // even-aligns the origin, which the maze requires of any room.
-                Rectangle2D slot = placeAvoidingStart(placementBound,
-                        probeRect.getWidth(), probeRect.getHeight(), startReserved, random);
+                Rectangle2D slot = placeAvoidingReserved(placementBound,
+                        probeRect.getWidth(), probeRect.getHeight(),
+                        startReserved == null ? List.of() : List.of(startReserved),
+                        random, PREFAB_EDGE_MARGIN);
                 if (slot == null) {
                     // This assembly simply cannot fit this link alongside the start
                     // slot. Retrying re-rolls the pool pick, so a cramped link gets
@@ -722,7 +754,7 @@ public class DungeonStackPlanner {
                     int offsetX = probeRect.getMinX() - probeWorldX;
                     int offsetZ = probeRect.getMinY() - probeWorldZ;
 
-                    // Reserve at the real size, ROOM_EDGE_MARGIN clear of the floor's
+                    // Reserve at the real size, PREFAB_EDGE_MARGIN clear of the floor's
                     // own outer boundary -- a door candidate on a room's edge would
                     // otherwise sit exactly on the grid's boundary row/column, which
                     // used to crash MazeLevelGenerator2D.generateConnector's unbounded
@@ -730,7 +762,7 @@ public class DungeonStackPlanner {
                     // shouldn't visually abut the raw map edge regardless).
                     Rectangle2D slot = placeAvoidingReserved(footprint,
                             probeRect.getWidth(), probeRect.getHeight(), roomReserved, random,
-                            ROOM_EDGE_MARGIN);
+                            PREFAB_EDGE_MARGIN);
                     if (slot == null) {
                         continue;
                     }

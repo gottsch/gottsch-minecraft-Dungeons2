@@ -27,9 +27,11 @@ import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.data.BlockMatch;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.data.DecorationRule;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.data.WallGrowthRule;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.BlockMatch;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationRule;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.WallGrowthRule;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.Bootstrap;
@@ -65,6 +67,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Mark Gottschling on Jul 28, 2026
  */
 class DecorationOnRealRoomTest {
+
+    /** No processor is ever serialized here, so the type is never asked for. */
+    private static final java.util.function.Supplier<
+            net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType<?>> NO_TYPE = () -> null;
 
     /** The values shipped in {@code classic_weathering.json}. */
     private static final float COBWEBS = 0.02F;
@@ -103,7 +109,7 @@ class DecorationOnRealRoomTest {
     void aRealRoomComesOutDecorated() {
         // Deliberately the SHIPPED probabilities, not certainties: this is also a check
         // that 0.02 / 0.04+0.22 are not so low that a room-sized piece gets nothing.
-        DecorationProcessor processor = new DecorationProcessor(
+        DecorationProcessor processor = new DecorationProcessor(NO_TYPE, 
                 new DecorationRule(COBWEBS, List.of(Blocks.COBWEB)),
                 new WallGrowthRule(WALL_GROWTH, WALL_GROWTH_BONUS, WALL_GROWTH_MAX,
                         List.of(Blocks.GLOW_LICHEN)),
@@ -135,7 +141,7 @@ class DecorationOnRealRoomTest {
         // The reason it works at all: a room's interior air ring touches the wall ring, so
         // the growth candidates are exactly the cells beside a wall. If a builder ever
         // stopped emitting interior air this would go to zero and say so.
-        DecorationProcessor certain = new DecorationProcessor(
+        DecorationProcessor certain = new DecorationProcessor(NO_TYPE, 
                 DecorationRule.NONE,
                 new WallGrowthRule(1.0F, 0.0F, 1.0F, List.of(Blocks.GLOW_LICHEN)),
                 BlockMatch.NONE, DecorationRule.NONE, DecorationRule.NONE, DecorationRule.NONE,
@@ -199,7 +205,7 @@ class DecorationOnRealRoomTest {
             filtered.add("agings", aging.get("agings"));
             filtered.add("rules", stoneBrickRules);
 
-            return AgingProcessor.CODEC.parse(JsonOps.INSTANCE, filtered)
+            return AgingProcessor.codec(NO_TYPE).parse(JsonOps.INSTANCE, filtered)
                     .getOrThrow(false, msg -> {
                         throw new AssertionError("aging rules failed to decode: " + msg);
                     });
@@ -222,7 +228,7 @@ class DecorationOnRealRoomTest {
         // pass runs them: every processBlock first, then each finalizeProcessing.
         StructurePlaceSettings settings = new StructurePlaceSettings();
         settings.addProcessor(shippedStoneBrickAging());
-        settings.addProcessor(new DecorationProcessor(
+        settings.addProcessor(new DecorationProcessor(NO_TYPE, 
                 new DecorationRule(COBWEBS, List.of(Blocks.COBWEB)),
                 new WallGrowthRule(WALL_GROWTH, WALL_GROWTH_BONUS, WALL_GROWTH_MAX,
                         List.of(Blocks.GLOW_LICHEN)),

@@ -18,7 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.LevelIndependentProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;

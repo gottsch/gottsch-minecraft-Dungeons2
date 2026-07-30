@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2023 Mark Gottschling (gottsch)
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +19,9 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.maze;
 
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
+import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.data.TransitionData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
@@ -139,6 +142,81 @@ class TransitionAssemblyPlacementTest {
 
         assertEquals(2, committed.size(),
                 "a 3-floor dungeon has 2 inter-floor links, so exactly 2 assemblies may be committed");
+    }
+
+
+    /**
+     * A transition ships its own built doors, so the maze has to <em>use</em> them.
+     *
+     * <p>An authored doorway only becomes a real door if a carved region happens to
+     * end up on its far side; nothing routes a corridor to it. A transition offers as
+     * few as two adjacent cells on one edge, so when that gamble lost, the room was
+     * isolated and the connectivity fallback punched a hole through its wall
+     * somewhere else &mdash; leaving a fully built double door with nothing behind
+     * it, which is exactly what showed up in game on 2026-07-30.</p>
+     *
+     * <p>Measured over 300 seeds before the fix: <strong>113 of 600</strong>
+     * transition ends had no doorway at all (37 of those flush against the floor's
+     * boundary, where a doorway has no far side to begin with, and 76 well inside
+     * it). Both ends are asserted &mdash; a sealed door at the bottom of a staircase
+     * strands you just as thoroughly as one at the top.</p>
+     */
+    @Test
+    void bothEndsOfAChainedTransitionAlwaysGetTheirAuthoredDoorway() {
+        int topMissing = 0;
+        int bottomMissing = 0;
+        int flush = 0;
+        int checked = 0;
+
+        for (long seed = 0; seed < 300; seed++) {
+            Optional<DungeonLayout> opt = new DungeonStackPlanner(
+                    seed, new Coords(128, 0, 256), 72, "classic", new TemplateCatalog())
+                    .withSize(DungeonSize.MEDIUM)
+                    .withFloorCount(3)
+                    .withTransitionAssembler(STAIRS_2_CHAIN)
+                    .plan();
+            if (opt.isEmpty()) {
+                continue;
+            }
+            DungeonLayout layout = opt.get();
+            for (TransitionData t : layout.getTransitions()) {
+                if (t.getTemplateId() == null || !t.getTemplateId().contains("assembled")) {
+                    continue;
+                }
+                checked++;
+                FloorLayout upper = layout.getFloors().get(t.getUpperFloorIndex());
+                FloorLayout lower = layout.getFloors().get(t.getLowerFloorIndex());
+                Rectangle2D fp = t.getFootprint();
+                if (fp.getMinX() <= 0 || fp.getMinY() <= 0
+                        || fp.getMinX() + fp.getWidth() >= upper.getFootprint().getWidth()
+                        || fp.getMinY() + fp.getHeight() >= upper.getFootprint().getHeight()) {
+                    flush++;
+                }
+                topMissing += countDoorless(upper, RoomRole.END);
+                bottomMissing += countDoorless(lower, RoomRole.START);
+            }
+        }
+
+        assertTrue(checked > 0, "no chained transition was adopted, so nothing was actually checked");
+        assertEquals(0, flush,
+                "a transition flush against the floor's boundary has no cell outside its doorway, so "
+                        + "that doorway can never open -- PREFAB_EDGE_MARGIN keeps it clear");
+        assertEquals(0, topMissing,
+                "a transition's upper end was left with no doorway: its authored door is sealed and "
+                        + "the maze punched into it somewhere else instead");
+        assertEquals(0, bottomMissing,
+                "a transition's lower end was left with no doorway: you would arrive at the foot of "
+                        + "the staircase with no way out onto the floor");
+    }
+
+    private static int countDoorless(FloorLayout floor, RoomRole role) {
+        int missing = 0;
+        for (RoomData room : floor.getRooms()) {
+            if (room.getRole() == role && room.getDoorways().isEmpty()) {
+                missing++;
+            }
+        }
+        return missing;
     }
 
     private record Tally(int adopted, int synthetic, int plannedOk, int planFailed) {

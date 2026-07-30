@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2023 Mark Gottschling (gottsch)
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -104,6 +104,7 @@ class RoomAssemblyPlacementTest {
             {-6, -6},  // 180
             {0, -6},   // CCW 90
     };
+
 
     /**
      * Models a real shipped room prefab: 7x7 (all four of

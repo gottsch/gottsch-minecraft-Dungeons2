@@ -17,11 +17,12 @@
  */
 package mod.gottsch.forge.dungeons2.core.setup;
 
+import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.AgingProcessor;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -69,13 +70,47 @@ public class Registration {
 	public static final DeferredRegister<StructureProcessorType<?>> STRUCTURE_PROCESSORS =
 			DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, Dungeons.MOD_ID);
 
-	/** Multi-stage block aging that preserves state properties. See {@link AgingProcessor}. */
+	/*
+	 * Both processors live in GottschCore, which deliberately registers no
+	 * StructureProcessorType of its own -- most mods depending on it never touch structure
+	 * processors. Each consuming mod registers its own type under its own namespace and
+	 * binds it into the codec via a Supplier, which keeps the codec<->type circle lazy: the
+	 * codec only asks for the type when an instance is serialized, long after registration.
+	 *
+	 * The registered names are the "processor_type" values authored in our
+	 * worldgen/processor_list JSONs, so they stay dungeons2:aging / dungeons2:decoration --
+	 * the whole point of the per-mod registration model. Held as constants so the JSON's
+	 * value and the registered name can be asserted equal by a test (see
+	 * WeatheringProcessorListTest) rather than being two independent string literals.
+	 */
+
+	/** Registry name of {@link AgingProcessor} under this mod's namespace. */
+	public static final String AGING_PROCESSOR_NAME = "aging";
+
+	/** Registry name of {@link DecorationProcessor} under this mod's namespace. */
+	public static final String DECORATION_PROCESSOR_NAME = "decoration";
+
+	/**
+	 * Multi-stage block aging that preserves state properties. See {@link AgingProcessor}.
+	 *
+	 * <p>The codec is built inside the registration supplier so it is created exactly once,
+	 * when the type is registered, rather than per (de)serialization. Its own type supplier
+	 * is qualified ({@code Registration.AGING_PROCESSOR}) because a static field cannot refer
+	 * to itself by simple name from within its own initializer.</p>
+	 */
 	public static final RegistryObject<StructureProcessorType<AgingProcessor>> AGING_PROCESSOR =
-			STRUCTURE_PROCESSORS.register(AgingProcessor.NAME, () -> () -> AgingProcessor.CODEC);
+			STRUCTURE_PROCESSORS.register(AGING_PROCESSOR_NAME, () -> {
+				Codec<AgingProcessor> codec = AgingProcessor.codec(() -> Registration.AGING_PROCESSOR.get());
+				return () -> codec;
+			});
 
 	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
 	public static final RegistryObject<StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
-			STRUCTURE_PROCESSORS.register(DecorationProcessor.NAME, () -> () -> DecorationProcessor.CODEC);
+			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {
+				Codec<DecorationProcessor> codec =
+						DecorationProcessor.codec(() -> Registration.DECORATION_PROCESSOR.get());
+				return () -> codec;
+			});
 
 	/**
 	 *

@@ -22,9 +22,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.AgingProcessor;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationProcessor;
-import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.LevelIndependentProcessor;
+import mod.gottsch.forge.dungeons2.core.setup.Registration;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
+import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleProcessor;
@@ -57,6 +58,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Mark Gottschling on Jul 26, 2026
  */
 class WeatheringProcessorListTest {
+
+    /** These decodes never re-serialize, so the processor type is never asked for. */
+    private static final java.util.function.Supplier<
+            net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType<?>> NO_TYPE = () -> null;
 
     private static final String RESOURCE =
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json";
@@ -109,8 +114,8 @@ class WeatheringProcessorListTest {
             String type = processor.get("processor_type").getAsString();
             Codec<? extends StructureProcessor> codec = switch (type) {
                 case "minecraft:rule" -> RuleProcessor.CODEC;
-                case AGING_TYPE -> AgingProcessor.CODEC;
-                case DECORATION_TYPE -> DecorationProcessor.CODEC;
+                case AGING_TYPE -> AgingProcessor.codec(NO_TYPE);
+                case DECORATION_TYPE -> DecorationProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -123,8 +128,11 @@ class WeatheringProcessorListTest {
     void processorTypeMatchesTheRegisteredName() {
         // The JSON's dispatch key and the name Registration registers must agree, or
         // the list silently fails to load in game with nothing in the test suite to say so.
-        assertEquals("dungeons2:" + AgingProcessor.NAME, AGING_TYPE);
-        assertEquals("dungeons2:" + DecorationProcessor.NAME, DECORATION_TYPE);
+        // Both processors live in GottschCore, which registers no type of its own, so the
+        // name is ours -- Registration holds it as a constant precisely so this can compare
+        // it against the JSON instead of two independent string literals.
+        assertEquals("dungeons2:" + Registration.AGING_PROCESSOR_NAME, AGING_TYPE);
+        assertEquals("dungeons2:" + Registration.DECORATION_PROCESSOR_NAME, DECORATION_TYPE);
 
         Set<String> used = new java.util.LinkedHashSet<>();
         readJson().getAsJsonArray("processors")

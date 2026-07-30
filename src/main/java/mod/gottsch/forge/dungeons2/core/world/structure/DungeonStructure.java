@@ -261,6 +261,8 @@ public class DungeonStructure extends Structure {
                 // the world at the probe position if its footprint happened to match
                 // the one the planner ends up adopting.
                 stagedTransitions.add(new StagedTransition(tgeo.worldFootprint(), worldY, assembled));
+                Dungeons.LOGGER.debug("[D2-PREFAB] transition {} at ({},{},{})",
+                        describeElements(assembled), worldX, worldY, worldZ);
             }
             return Optional.of(new DungeonStackPlanner.AssembledTransition(
                     tgeo.worldFootprint(), tgeo.topDoorWorldCells(), tgeo.bottomDoorWorldCells(),
@@ -289,6 +291,8 @@ public class DungeonStructure extends Structure {
             }
             if (commit) {
                 stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
+                Dungeons.LOGGER.debug("[D2-PREFAB] room {} at ({},{},{})",
+                        describeElements(assembled), worldX, worldY, worldZ);
             }
             return Optional.of(new DungeonStackPlanner.AssembledRoom(
                     rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells()));
@@ -597,6 +601,37 @@ public class DungeonStructure extends Structure {
 
         Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
         return new TransitionGeometry(worldFootprint, topDoors, bottomDoors, topPremade, bottomPremade);
+    }
+
+    /**
+     * Which template(s) an assembly actually drew from the pool, for the log.
+     *
+     * <p>Exists because the planner tags every assembled piece with a single
+     * constant ({@code dungeons2:rooms/assembled} /
+     * {@code dungeons2:transitions/assembled}), so the finished layout cannot say
+     * <em>which</em> pool entry was placed. Without this there is no way to answer
+     * "why do I never see {@code 7x7_junction_1}?" other than by wandering the
+     * dungeon: pool selection, rotation and adoption are all invisible after the
+     * fact.</p>
+     *
+     * <p>1.20.1's {@code SinglePoolElement} exposes no accessor for its location —
+     * the field is a {@code protected Either<ResourceLocation, StructureTemplate>}
+     * reachable only through the codec — so this reads it out of {@code toString()},
+     * which renders as {@code Single[Left[namespace:path]]}. Diagnostic only;
+     * nothing branches on the result.</p>
+     */
+    private static String describeElements(List<StructurePiece> pieces) {
+        List<String> names = new ArrayList<>();
+        for (StructurePiece piece : pieces) {
+            if (!(piece instanceof PoolElementStructurePiece pool)) {
+                continue;
+            }
+            String raw = pool.getElement().toString();
+            int start = raw.indexOf('[');
+            int end = raw.lastIndexOf(']');
+            names.add(start >= 0 && end > start ? raw.substring(start + 1, end) : raw);
+        }
+        return String.join(" + ", names);
     }
 
     /**

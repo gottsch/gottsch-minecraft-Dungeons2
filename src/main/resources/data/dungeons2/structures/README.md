@@ -94,6 +94,14 @@ Block state (orientation): **front faces OUTWARD**, top faces up. Pick by which 
 | East wall               | east        | `east_up`                |
 | West wall               | west        | `west_up`                |
 
+> **An authored doorway is guaranteed to be connected.** A marked cell only becomes a real
+> door when a carved region ends up on its far side, and nothing in the maze routes a corridor
+> *to* a marker — so a piece offering only one or two candidates used to end up sealed, with the
+> maze punching into it elsewhere instead. The connectivity pass now tunnels to an authored
+> doorway before it will punch a new hole, at both ends of a transition. You still want to mark
+> generously (more candidates = better-looking routes), but a lone marked door will no longer be
+> stranded.
+
 **Placement rules:**
 - At **local Y = 0** (the jigsaw block *is* the door sill / floor cell).
 - In the **perimeter wall cell** of the footprint (the outer ring the maze treats as wall) —
@@ -492,7 +500,9 @@ datapack **registry** files like `worldgen/processor_list`; a custom
    question — *does this processor read the level?*
 
    - **Level-independent, unclipped.** `dungeons2:aging` and `dungeons2:decoration`, and
-     anything else implementing the `LevelIndependentProcessor` marker in code. These get
+     anything else implementing GottschCore's `LevelIndependentProcessor` marker in code
+     (both processors themselves live in GottschCore; only the registered *names* are
+     ours, which is why the `processor_type` values are still `dungeons2:`). These get
      the piece's **whole** block list, in the order this file lists them. Decoration
      *needs* that (a neighbour map built from one chunk's slice would be missing
      everything across the seam); aging is there so the two stay in authored order.
