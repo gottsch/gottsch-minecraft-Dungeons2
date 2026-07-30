@@ -1015,16 +1015,15 @@ public class MazeLevelGenerator2D {
                 return false;
             }
 
-            // test that x,y is valid position on the x-axis (east-west) ie away from corners
-            if (region1.getType() == RegionType.ROOM) {
-                if (x < region1.getBox().getMinX() + 2 || x > region1.getBox().getMaxX() - 2) {
-                    return false;
-                }
+            // test that x,y is valid position on the x-axis (east-west) ie away from corners.
+            // Only for the generic perimeter scan -- see awayFromRoomCorner.
+            if (requireFrame && region1.getType() == RegionType.ROOM
+                    && !awayFromRoomCorner(x, region1.getBox().getMinX(), region1.getBox().getMaxX())) {
+                return false;
             }
-            if (region2.getType() == RegionType.ROOM) {
-                if (x < region2.getBox().getMinX() + 2 || x > region2.getBox().getMaxX() - 2) {
-                    return false;
-                }
+            if (requireFrame && region2.getType() == RegionType.ROOM
+                    && !awayFromRoomCorner(x, region2.getBox().getMinX(), region2.getBox().getMaxX())) {
+                return false;
             }
 
             // frame axis is east-west (perpendicular to the north-south split)
@@ -1050,15 +1049,13 @@ public class MazeLevelGenerator2D {
                 return false;
             }
 
-            if (region1.getType() == RegionType.ROOM) {
-                if (y < region1.getBox().getMinY() + 2 || y > region1.getBox().getMaxY() - 2) {
-                    return false;
-                }
+            if (requireFrame && region1.getType() == RegionType.ROOM
+                    && !awayFromRoomCorner(y, region1.getBox().getMinY(), region1.getBox().getMaxY())) {
+                return false;
             }
-            if (region2.getType() == RegionType.ROOM) {
-                if (y < region2.getBox().getMinY() + 2 || y > region2.getBox().getMaxY() - 2) {
-                    return false;
-                }
+            if (requireFrame && region2.getType() == RegionType.ROOM
+                    && !awayFromRoomCorner(y, region2.getBox().getMinY(), region2.getBox().getMaxY())) {
+                return false;
             }
 
             // frame axis is north-south (perpendicular to the east-west split)
@@ -1074,6 +1071,95 @@ public class MazeLevelGenerator2D {
             level.getGrid().get(connector.getCoords()).setType(CellType.CONNECTOR);
         }
         return true;
+    }
+
+    /**
+     * The other open connectors belonging to the same <strong>authored doorway</strong>
+     * as {@code connector} — i.e. cells a template marked with
+     * {@code dungeons2:door} / {@code dungeons2:connector} that form one contiguous
+     * run with this one. Empty for an ordinary maze-scanned connector, and empty for
+     * an authored marker that stands alone, so this only ever widens what a template
+     * explicitly asked for.
+     *
+     * <p>Authored cells arrive as {@link IRoom2D#getCandidateDoorways()} (every
+     * caller in {@code DungeonStackPlanner} uses that setter), which is also why
+     * {@code getDoorways()} can't be used to identify them — {@link #addDoor}
+     * appends to it, so it stops being a record of what the author marked.</p>
+     *
+     * <p>Flood-filled over 4-adjacency rather than just taking immediate neighbours,
+     * so a 3-cell-wide authored opening works whichever of its cells the maze
+     * happens to pick first.</p>
+     *
+     * <p><strong>Degree accounting:</strong> each cell of the run is a separate entry
+     * in {@code getDoorways()}, so a 2-wide door counts as 2 against the room's
+     * {@code degrees}. That is deliberate — a wide opening is more connection — but
+     * it does mean a room needs {@code degrees} headroom for the width, not just the
+     * count of doorways.</p>
+     */
+    private List<Connector2D> authoredRunSiblings(Connector2D connector, Map<Integer, IRoom2D> roomMap) {
+        Set<Coords2D> run = new LinkedHashSet<>();
+        for (Region2D region : Arrays.asList(connector.getRegion1(), connector.getRegion2())) {
+            IRoom2D room = roomMap.get(region.getId());
+            if (room == null || room.getCandidateDoorways() == null) {
+                continue;
+            }
+            Set<Coords2D> authored = new HashSet<>(room.getCandidateDoorways());
+            if (!authored.contains(connector.getCoords())) {
+                continue;
+            }
+            // Flood from this cell through the room's own authored cells only, so
+            // two different rooms' runs can never be joined into one.
+            Deque<Coords2D> pending = new ArrayDeque<>();
+            pending.add(connector.getCoords());
+            while (!pending.isEmpty()) {
+                Coords2D cell = pending.poll();
+                if (!run.add(cell)) {
+                    continue;
+                }
+                for (Coords2D step : List.of(
+                        new Coords2D(cell.getX() + 1, cell.getY()),
+                        new Coords2D(cell.getX() - 1, cell.getY()),
+                        new Coords2D(cell.getX(), cell.getY() + 1),
+                        new Coords2D(cell.getX(), cell.getY() - 1))) {
+                    if (authored.contains(step) && !run.contains(step)) {
+                        pending.add(step);
+                    }
+                }
+            }
+        }
+        if (run.size() <= 1) {
+            return List.of();
+        }
+        return getConnectors().stream()
+                .filter(c -> !c.getCoords().equals(connector.getCoords()))
+                .filter(c -> run.contains(c.getCoords()))
+                .toList();
+    }
+
+    /**
+     * A door must sit at least 2 cells in from a room's corner along the wall it
+     * is on, or the doorway has no wall beside it to frame against.
+     *
+     * <p><strong>Only applied to the generic perimeter scan.</strong> The
+     * author-supplied paths ({@code room.getDoorways()} /
+     * {@code getCandidateDoorways()}, i.e. {@code dungeons2:door} and
+     * {@code dungeons2:connector} jigsaw markers) are exempt, alongside the two
+     * checks that were already gated the same way ({@link #hasSolidDoorFrame} and
+     * {@link #claimRoomCorners}).
+     *
+     * <p><strong>Why the exemption is necessary, not just permissive:</strong> a
+     * marker's position is authored relative to <em>its own template piece</em>,
+     * but the reserved region a multi-piece jigsaw chain produces is the
+     * <em>union</em> bounding rect of every piece in that chain. Those differ, and
+     * the author cannot know the union in advance — it depends on which pieces
+     * the chain happened to assemble. The `stairs_2` transition is the worked
+     * example (2026-07-29): its double doors sit mid-wall on the 4-wide bottom and
+     * top pieces, but the 3-piece chain sprawls sideways to a 7-wide union, which
+     * left exactly one cell of each pair 1 short of the corner margin. A double
+     * door needs both cells, so both ends came out sealed.
+     */
+    private static boolean awayFromRoomCorner(int along, int min, int max) {
+        return along >= min + 2 && along <= max - 2;
     }
 
     /**
@@ -1255,6 +1341,20 @@ public class MazeLevelGenerator2D {
 
             // remove the door connector first so that it remains a door and not set to wall.
             getConnectors().remove(connector);
+
+            // An AUTHORED doorway may be more than one cell wide -- a template's
+            // double door is two adjacent dungeons2:door / dungeons2:connector
+            // markers. The anti-side-by-side culling further down would wall one
+            // half of it, leaving a two-cell opening with only one cell connected.
+            // Open the whole authored run as a single doorway, and do it BEFORE the
+            // degree check below so a `continue` can never leave one half-open.
+            for (Connector2D sibling : authoredRunSiblings(connector, roomMap)) {
+                addDoor(level, sibling, roomMap);
+                sibling.getRegion1().setMerged(true);
+                sibling.getRegion2().setMerged(true);
+                getConnectors().remove(sibling);
+            }
+
             // to prevent room connections to exceed degrees, cull all connectors
             // from each region if # of doors > degrees.
             if (cullRegionsConnectors(level, roomMap, region1, region2)) {

@@ -116,6 +116,111 @@ class MazeCandidateDoorwayTest {
         run(0L, start, endRoom());
     }
 
+    /**
+     * A double door authored near the edge of a jigsaw chain's reserved rect must
+     * still be able to open BOTH its cells.
+     *
+     * <p>Reproduces the real {@code stairs_2} failure (2026-07-29). The chain's
+     * bottom and top pieces are each 4 wide and carry a 2-cell double door at
+     * their own local x=1/x=2 — comfortably mid-wall on the piece. But the
+     * assembled 3-piece chain sprawls sideways into a <strong>7-wide union</strong>
+     * bounding rect, and that union is what gets reserved as the room. Measured
+     * against it, the bottom pair lands at relative x=4,5 and the top pair at
+     * x=1,2 — so the old "≥2 cells from the corner" rule rejected exactly one cell
+     * of each pair. A double door needs both, so both ends came out sealed: the
+     * top read as "doors closed in", the bottom as "didn't join to a corridor".</p>
+     */
+    @Test
+    void aDoubleDoorNearTheReservedRectsEdgeOpensBothCells() {
+        // The union rect the real chain produces: 7 wide, 12 deep.
+        Rectangle2D union = new Rectangle2D(2, 2, 7, 12);
+        // The two door pairs, at the union-relative offsets computed from the NBTs.
+        List<Coords2D> northPair = List.of(new Coords2D(2 + 4, 2), new Coords2D(2 + 5, 2));
+        List<Coords2D> southPair = List.of(new Coords2D(2 + 1, 2), new Coords2D(2 + 2, 2));
+
+        int opened = 0;
+        for (long seed = 0; seed < 40; seed++) {
+            IRoom2D start = new Room2D(union);
+            start.setStart(true);
+            start.setDegrees(4);
+            List<Coords2D> candidates = new ArrayList<>(northPair);
+            candidates.addAll(southPair);
+            start.setCandidateDoorways(candidates);
+
+            Optional<ILevel2D> level = run(seed, start, endRoom());
+            if (level.isEmpty()) {
+                continue;
+            }
+            Set<Coords2D> doors = new LinkedHashSet<>(start.getDoorways());
+            // Every cell the corner rule used to veto outright must be reachable.
+            for (Coords2D nearCorner : List.of(northPair.get(1), southPair.get(0))) {
+                if (doors.contains(nearCorner)) {
+                    opened++;
+                }
+            }
+        }
+
+        assertTrue(opened > 0,
+                "no seed ever opened a door 1 cell short of the reserved rect's corner margin -- "
+                        + "an authored marker must not be vetoed on the union rect's geometry, "
+                        + "which the template author cannot see");
+    }
+
+    /**
+     * An authored doorway two cells wide must open BOTH cells or neither.
+     *
+     * <p>The maze culls connectors immediately adjacent to one it just doored, so
+     * two side-by-side doors never appear — right for single doors, wrong for a
+     * template's double door, where it left a 2-cell opening with only one cell
+     * connected and the other reverted to wall. Found in the `stairs_2` chain,
+     * 2026-07-29: every seed opened exactly one cell of each pair.</p>
+     */
+    @Test
+    void anAuthoredDoubleDoorOpensBothCellsOrNeither() {
+        int bothOpen = 0;
+        int exactlyOneOpen = 0;
+
+        for (long seed = 0; seed < 60; seed++) {
+            // Room degrees 4 so width has headroom -- each cell of a run counts
+            // separately against degrees.
+            IRoom2D start = new Room2D(new Rectangle2D(2, 2, 9, 9));
+            start.setStart(true);
+            start.setDegrees(4);
+            // One 2-wide doorway mid-way along the north wall, plus a 1-wide one on
+            // the south wall so the room is not forced to use the pair.
+            Coords2D pairLeft = new Coords2D(5, 2);
+            Coords2D pairRight = new Coords2D(6, 2);
+            start.setCandidateDoorways(new ArrayList<>(
+                    List.of(pairLeft, pairRight, new Coords2D(6, 10))));
+
+            if (run(seed, start, endRoom()).isEmpty()) {
+                continue;
+            }
+            Set<Coords2D> doors = new LinkedHashSet<>(start.getDoorways());
+            boolean left = doors.contains(pairLeft);
+            boolean right = doors.contains(pairRight);
+            if (left && right) {
+                bothOpen++;
+            } else if (left ^ right) {
+                exactlyOneOpen++;
+            }
+        }
+
+        // Before the fix this was both=0, one=54: the culling split EVERY pair.
+        // It is now both=52, one=2. The small tail is legitimate and not the culling:
+        // a candidate only becomes a connector at all if something rendered was
+        // carved on its far side, so one cell of a pair can simply never be openable;
+        // and forceConnect's fallback rock tunnel opens a single cell directly.
+        // Asserting dominance rather than zero keeps the guard strong (it fails
+        // outright on the old behaviour) without encoding those two escape hatches.
+        assertTrue(bothOpen > 0,
+                "the 2-wide authored doorway never opened as a unit across 60 seeds");
+        assertTrue(bothOpen > exactlyOneOpen,
+                "authored double doors are being split more often than opened as a unit "
+                        + "(both=" + bothOpen + ", half-open=" + exactlyOneOpen + ") -- the "
+                        + "adjacent-connector culling is splitting authored runs again");
+    }
+
     private static IRoom2D startRoom() {
         IRoom2D room = new Room2D(new Rectangle2D(2, 2, 7, 7));
         room.setStart(true);

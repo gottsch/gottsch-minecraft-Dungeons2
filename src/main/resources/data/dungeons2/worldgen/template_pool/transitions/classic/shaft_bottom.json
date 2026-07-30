@@ -5,7 +5,7 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/ladder1",
+        "location": "dungeons2:transitions/classic/ladder1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },
@@ -23,7 +23,7 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/stairs_2_bottom",
+        "location": "dungeons2:transitions/classic/stairs_2_bottom",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

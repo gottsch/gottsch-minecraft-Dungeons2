@@ -21,7 +21,10 @@ import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
+import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
+import mod.gottsch.forge.dungeons2.core.data.TransitionData;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
@@ -49,8 +52,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The dungeon's worldgen {@link Structure} &mdash; the Phase 4 planning entry
@@ -216,8 +221,25 @@ public class DungeonStructure extends Structure {
         // TransitionAssembler. Real pieces accumulate here (mirroring
         // entrancePieces) so they can be added to the builder directly, the same
         // way the assembled entrance bypasses DungeonPieceEmitter.
-        List<StructurePiece> transitionPieces = new ArrayList<>();
-        DungeonStackPlanner.TransitionAssembler transitionAssembler = (worldX, worldY, worldZ, rand) -> {
+        // STAGED, not committed: the planner may reject the geometry we hand back
+        // (out of the floor's grid bounds, or overlapping the reserved start slot)
+        // and fall back to its synthetic placeholder. A rejected transition is one
+        // the maze knows nothing about -- no reserved footprint, and none of its
+        // dungeons2:connector cells registered -- so if its pieces were placed
+        // anyway, corridors and rooms would be carved straight through the built
+        // template. Keyed by world footprint so accepted groups can be picked out
+        // once plan() has decided; see commitStagedTransitions.
+        List<StagedTransition> stagedTransitions = new ArrayList<>();
+        DungeonStackPlanner.TransitionAssembler transitionAssembler = (worldX, worldY, worldZ, assemblySeed, commit) -> {
+            // Seed the WorldgenRandom that JigsawPlacement.addPieces draws EVERY
+            // choice from -- the start template, the rotation, the shuffled child
+            // templates and their rotations. Without this the context's random just
+            // advances call to call, and the planner could not measure a chain's
+            // footprint with one call and then reproduce that same chain with
+            // another (see TransitionAssembler's contract). Reseeding also makes
+            // assembly independent of how many calls came before it, which is what
+            // keeps the whole dungeon deterministic for a given chunk seed.
+            context.random().setSeed(assemblySeed);
             // Vanilla's SinglePoolElement.getGroundLevelDelta() defaults to 1 (never
             // overridden for our single_pool_element entries), and JigsawPlacement.
             // addPieces uses it to move the placed piece DOWN by exactly 1 block
@@ -233,17 +255,29 @@ public class DungeonStructure extends Structure {
             if (tgeo == null) {
                 return Optional.empty();
             }
-            transitionPieces.addAll(assembled);
+            if (commit) {
+                // A measuring probe (commit == false) is read for its geometry and
+                // discarded -- staging it would put a second copy of the chain in
+                // the world at the probe position if its footprint happened to match
+                // the one the planner ends up adopting.
+                stagedTransitions.add(new StagedTransition(tgeo.worldFootprint(), worldY, assembled));
+            }
             return Optional.of(new DungeonStackPlanner.AssembledTransition(
                     tgeo.worldFootprint(), tgeo.topDoorWorldCells(), tgeo.bottomDoorWorldCells(),
                     tgeo.topPremadeWorldCells(), tgeo.bottomPremadeWorldCells()));
         };
 
-        // Phase 8: interior rooms assemble lazily too, one attempt per candidate
-        // slot the planner tries per floor -- same accumulate-then-add-directly
-        // pattern as transitionPieces.
-        List<StructurePiece> roomPieces = new ArrayList<>();
-        DungeonStackPlanner.RoomAssembler roomAssembler = (worldX, worldY, worldZ, rand) -> {
+        // Phase 8: interior rooms assemble lazily too, two attempts per floor --
+        // and are STAGED rather than placed outright, for exactly the reasons
+        // stagedTransitions are (see above). The planner may still reject a
+        // committed prefab, and a prefab room the maze reserved nothing for gets
+        // corridors and other rooms carved straight through it.
+        List<StagedRoom> stagedRooms = new ArrayList<>();
+        DungeonStackPlanner.RoomAssembler roomAssembler = (worldX, worldY, worldZ, assemblySeed, commit) -> {
+            // Same reseeding as transitions -- it is what lets the planner measure a
+            // prefab (including whichever rotation vanilla picked) with one call and
+            // then reproduce that same prefab with another.
+            context.random().setSeed(assemblySeed);
             // Same SinglePoolElement.getGroundLevelDelta()==1 compensation as
             // transitions (see transitionAssembler above) -- request one block
             // higher so the piece's real local Y=0 lands exactly at worldY.
@@ -253,7 +287,9 @@ public class DungeonStructure extends Structure {
             if (rgeo == null) {
                 return Optional.empty();
             }
-            roomPieces.addAll(assembled);
+            if (commit) {
+                stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
+            }
             return Optional.of(new DungeonStackPlanner.AssembledRoom(
                     rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells()));
         };
@@ -309,8 +345,8 @@ public class DungeonStructure extends Structure {
         return Optional.of(new GenerationStub(position, builder -> {
             try {
                 List<StructurePiece> allPieces = new ArrayList<>(entrancePieces);
-                allPieces.addAll(transitionPieces);
-                allPieces.addAll(roomPieces);
+                allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
+                allPieces.addAll(commitStagedRooms(stagedRooms, layout));
                 allPieces.addAll(DungeonPieceEmitter.emit(layout, emitAnchorX, emitAnchorZ));
 
                 // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
@@ -561,6 +597,128 @@ public class DungeonStructure extends Structure {
 
         Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
         return new TransitionGeometry(worldFootprint, topDoors, bottomDoors, topPremade, bottomPremade);
+    }
+
+    /**
+     * An assembled transition chain held back until the planner accepts its
+     * footprint. {@code assemblyY} is the lower floor's walking plane the chain was
+     * anchored at — part of the identity because two links can legitimately reserve
+     * the same XZ slot on different floors, and only one of them may have been
+     * adopted.
+     */
+    private record StagedTransition(Rectangle2D worldFootprint, int assemblyY, List<StructurePiece> pieces) {
+    }
+
+    /**
+     * Keeps only the staged transition chains the planner actually adopted.
+     *
+     * <p>{@code DungeonStackPlanner} asks the assembler for real geometry, then
+     * <strong>may reject it</strong> — if the assembled footprint falls outside the
+     * floor's own grid bounds (vanilla can rotate a chain into a very different
+     * XZ extent) or overlaps the reserved start slot, it keeps its synthetic
+     * placeholder instead. A rejected chain is invisible to the maze: no reserved
+     * footprint, and none of its {@code dungeons2:connector} cells registered as
+     * premade. Placing it anyway means corridors and rooms get carved straight
+     * through a fully built staircase — doors walled over, nothing attached.
+     *
+     * <p>An adopted transition is tagged {@code .../assembled} and carries the real
+     * footprint in floor-local coords, so world = layout anchor + local recovers
+     * exactly what the assembler handed back. Anything with no match was rejected
+     * and must not be placed.</p>
+     */
+    private static List<StructurePiece> commitStagedTransitions(List<StagedTransition> staged,
+                                                                DungeonLayout layout) {
+        if (staged.isEmpty()) {
+            return List.of();
+        }
+        int anchorX = layout.getAnchor().getX();
+        int anchorZ = layout.getAnchor().getZ();
+        Set<String> adopted = new HashSet<>();
+        for (TransitionData t : layout.getTransitions()) {
+            Rectangle2D fp = t.getFootprint();
+            if (fp == null || t.getTemplateId() == null || !t.getTemplateId().contains("assembled")) {
+                continue;
+            }
+            adopted.add(footprintKey(anchorX + fp.getMinX(), anchorZ + fp.getMinY(),
+                    fp.getWidth(), fp.getHeight(), t.getLowerY()));
+        }
+
+        List<StructurePiece> out = new ArrayList<>();
+        for (StagedTransition s : staged) {
+            Rectangle2D fp = s.worldFootprint();
+            if (adopted.contains(footprintKey(fp.getMinX(), fp.getMinY(), fp.getWidth(), fp.getHeight(),
+                    s.assemblyY()))) {
+                out.addAll(s.pieces());
+            } else {
+                Dungeons.LOGGER.debug(
+                        "discarding assembled transition at world ({},{},{}) {}x{} -- the planner did not "
+                                + "adopt this footprint, so the maze reserved nothing for it",
+                        fp.getMinX(), s.assemblyY(), fp.getMinY(), fp.getWidth(), fp.getHeight());
+            }
+        }
+        return out;
+    }
+
+    private static String footprintKey(int minX, int minZ, int width, int height, int assemblyY) {
+        return minX + "," + minZ + "," + width + "," + height + "@" + assemblyY;
+    }
+
+    /**
+     * An assembled interior-room prefab held back until the planner accepts its
+     * footprint. {@code assemblyY} is the floor's walking plane it was anchored at
+     * — part of the identity because two floors can legitimately place a prefab at
+     * the same XZ, and only one of them may have been adopted.
+     */
+    private record StagedRoom(Rectangle2D worldFootprint, int assemblyY, List<StructurePiece> pieces) {
+    }
+
+    /**
+     * Keeps only the staged room prefabs the planner actually adopted &mdash; the
+     * room-side counterpart of {@link #commitStagedTransitions}, and needed for the
+     * same reason.
+     *
+     * <p>The planner rejects a committed prefab only when the assembler broke its
+     * contract (the placement came back a different shape than the measuring probe,
+     * so it missed the slot reserved for it), but the consequence of placing one
+     * anyway is severe and silent: the maze reserved nothing at that footprint, so
+     * corridors and other rooms get carved straight through a fully built prefab.</p>
+     *
+     * <p>An adopted prefab is a {@code NORMAL} room carrying a non-null
+     * {@code templateId}; its floor's {@code floorY} is the same walking plane the
+     * prefab was assembled at, and is part of the key because two floors can
+     * legitimately place a prefab at the same XZ.</p>
+     */
+    private static List<StructurePiece> commitStagedRooms(List<StagedRoom> staged, DungeonLayout layout) {
+        if (staged.isEmpty()) {
+            return List.of();
+        }
+        int anchorX = layout.getAnchor().getX();
+        int anchorZ = layout.getAnchor().getZ();
+        Set<String> adopted = new HashSet<>();
+        for (FloorLayout floor : layout.getFloors()) {
+            for (RoomData room : floor.getRooms()) {
+                if (room.getTemplateId() == null) {
+                    continue;
+                }
+                adopted.add(footprintKey(anchorX + room.getOriginX(), anchorZ + room.getOriginZ(),
+                        room.getWidth(), room.getDepth(), floor.getFloorY()));
+            }
+        }
+
+        List<StructurePiece> out = new ArrayList<>();
+        for (StagedRoom s : staged) {
+            Rectangle2D fp = s.worldFootprint();
+            if (adopted.contains(footprintKey(fp.getMinX(), fp.getMinY(),
+                    fp.getWidth(), fp.getHeight(), s.assemblyY()))) {
+                out.addAll(s.pieces());
+            } else {
+                Dungeons.LOGGER.debug(
+                        "discarding assembled room at world ({},{},{}) {}x{} -- the planner did not "
+                                + "adopt this footprint, so the maze reserved nothing for it",
+                        fp.getMinX(), s.assemblyY(), fp.getMinY(), fp.getWidth(), fp.getHeight());
+            }
+        }
+        return out;
     }
 
     /** World geometry read off an assembled transition's door/connector jigsaw markers. */

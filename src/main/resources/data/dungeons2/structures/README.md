@@ -5,11 +5,18 @@ creative world with Structure Blocks, **SAVE**, then copy the `.nbt` here.
 
 ```
 data/dungeons2/structures/
-  entrances/    surface → floor-0 entrance pieces           (Phase 4b, jigsaw-assembled)
-  transitions/  floor-to-floor links                        (jigsaw-assembled, see below)
-  rooms/        pooled room prefabs                          (Phase 8, jigsaw-assembled, see below)
-  corridors/    themed corridor prefabs                      (Phase 8, not started)
+  entrances/          surface → floor-0 entrance pieces     (Phase 4b, jigsaw-assembled)
+  transitions/<motif>/ floor-to-floor links                 (jigsaw-assembled, see below)
+  rooms/<motif>/      pooled room prefabs                    (Phase 8, jigsaw-assembled, see below)
+  corridors/          themed corridor prefabs                (Phase 8, not started)
 ```
+
+The `.nbt` files themselves are filed under a motif folder, mirroring the pools — a second theme's
+files never sit next to classic's with only a filename prefix telling them apart. **Moving an
+`.nbt` is safe** in a way moving a *pool* is not: the only reference to an nbt path anywhere is the
+plain-text `location` field in the pool JSONs, so a move is "move the file, update `location`,
+done". No Java code hardcodes a structure path. (`entrances/` is not motif-scoped — see the
+exception at the end of this section.)
 
 Jigsaw `template_pool` JSONs for the assembled entrance, transitions, and rooms live separately
 under `data/dungeons2/worldgen/template_pool/{entrance,transitions,rooms}/`.
@@ -265,6 +272,22 @@ bottom piece's candidates restrict the lower floor's START room, the top piece's
 upper floor's END room, exactly mirroring how the entrance's descent candidates drive floor 0's
 START room.
 
+**A chain's footprint sprawls, and the planner measures it rather than guessing.** Vanilla places
+the chain's *first* piece where it's asked to and lets the rest sprawl outward from there, so a
+chain's real (union) footprint is bigger than any single piece and its min corner is **offset**
+from the assembly point by a rotation-dependent amount — `stairs_2`'s union is 7×12 sitting up to
+11 blocks negative of where the chain was anchored. The planner handles this by assembling twice:
+once to *measure* the union (nothing is kept), then again with the same seed anchored so the union
+lands on a slot reserved at that measured size. Two consequences for authoring:
+
+- **Every element in a transition pool must be `"projection": "rigid"`.** A `terrain_matching`
+  entry snaps to the heightmap, so the measured shape wouldn't survive being re-anchored, and
+  the planner's guard would reject the transition every time — it would silently never generate.
+- **Union size is what has to fit**, not piece size. A chain whose union is too big to fit the
+  link's placement bound alongside the reserved start slot just re-rolls the pool; author a
+  smaller self-contained alternative into `shaft_bottom` so cramped links have somewhere to land
+  (`ladder1` / `stairs_1` serve this purpose today).
+
 ### Room jigsaw pool
 
 Ordinary interior ("NORMAL") rooms can also be hand-authored prefabs instead of always
@@ -278,15 +301,24 @@ is authored; see the motif-naming note above — e.g. a desert theme would add
 |------|------|----------|
 | `dungeons2:rooms/<motif>/normal` | the only pool | Complete, self-contained pieces (`minecraft:single_pool_element`, like `ladder1.nbt`/`stairs_1.nbt`) with `dungeons2:door` (and optionally `dungeons2:connector`) candidates around the perimeter at local Y=0, the room's own walking plane. No assembly joints, no segments, no top/bottom split — a room is never chained. |
 
-Per floor, the planner tries a small, fixed number of candidate slots (currently 2) at a
-rolled footprint size, assembles a piece there via real jigsaw placement, and — if it fits
-without colliding with the floor's other reserved slots — hands its real footprint and door
-markers to the maze as one of `MazeLevelGenerator2D`'s **supplied rooms**, restricted to
-those candidate doorways exactly like the entrance/transition START/END rooms are. A failed
-or colliding attempt is simply skipped; ordinary procedural fill rooms cover the gap, same
-graceful degradation as an empty entrance/transition catalog. There's no height-budget
-constraint like transitions have — a room is whatever height you build it to, same as any
-other authored room.
+Per floor, the planner tries a small, fixed number of candidate slots (currently 2). For each
+it assembles the prefab once to **measure** it, reserves a slot at that real size (kept clear
+of the floor's own boundary), then assembles it again anchored so it lands exactly there, and
+hands its footprint and door markers to the maze as one of `MazeLevelGenerator2D`'s **supplied
+rooms**, restricted to those candidate doorways exactly like the entrance/transition START/END
+rooms are. A failed or colliding attempt is simply skipped; ordinary procedural fill rooms
+cover the gap, same graceful degradation as an empty entrance/transition catalog. There's no
+height-budget constraint like transitions have — a room is whatever height you build it to,
+same as any other authored room.
+
+**Rooms need `"projection": "rigid"` for the same reason transitions do** (see the sprawl note
+in the transition section above). Vanilla is free to *rotate* a prefab, which moves its
+bounding box's min corner off the position it was asked for — all four shipped 7x7 prefabs get
+displaced 6 blocks west and/or north in three of the four rotations — so the planner has to
+measure the displacement before it can reserve anything. Measuring only works if re-anchoring
+the prefab translates it and changes nothing else, which `terrain_matching` would break.
+(Before this was measured, 2026-07-30, **44% of all prefab room slots were being silently
+dropped** and covered by procedural fill.)
 
 Add real content by creating `data/dungeons2/worldgen/template_pool/rooms/<motif>/normal.json`
 (same shape as `transitions/<motif>/shaft_bottom.json`, just `single_pool_element` entries with

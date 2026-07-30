@@ -244,7 +244,40 @@ public class DungeonStackPlanner {
 
     @FunctionalInterface
     public interface TransitionAssembler {
-        Optional<AssembledTransition> assemble(int worldX, int worldY, int worldZ, Random random);
+        /**
+         * Assembles a transition anchored at the given world position.
+         *
+         * <p><strong>Contract the planner relies on.</strong> The planner calls this
+         * twice per attempt: once to <em>measure</em> ({@code commit == false}) and
+         * once to <em>place</em> ({@code commit == true}). For that to work the
+         * implementation must guarantee two things:</p>
+         * <ol>
+         *   <li><strong>Reproducible from the seed.</strong> The same
+         *       {@code assemblySeed} must produce the same assembly &mdash; same
+         *       templates, same rotation, same relative arrangement of the pieces.
+         *       The Minecraft-facing implementation gets this by seeding the
+         *       {@code WorldgenRandom} that {@code JigsawPlacement} draws from.</li>
+         *   <li><strong>Translation-invariant.</strong> Changing only the requested
+         *       position must translate the whole result and change nothing else.
+         *       True for {@code rigid} projection (which every transition pool entry
+         *       uses); a {@code terrain_matching} entry would break it, because the
+         *       heightmap it snaps to varies with position.</li>
+         * </ol>
+         *
+         * <p>Together these let the planner discover a chain's <em>real</em>
+         * footprint before committing to a slot for it &mdash; see the
+         * probe/measure/reserve/place loop in {@link #plan()}.</p>
+         *
+         * @param assemblySeed seeds the assembly; the same value must reproduce the
+         *                     same shape
+         * @param commit       {@code false} for the measuring probe: the result is
+         *                     read for its geometry and thrown away, so the
+         *                     implementation must NOT keep (stage, place, or
+         *                     otherwise remember) the pieces it built.
+         *                     {@code true} for the real placement.
+         */
+        Optional<AssembledTransition> assemble(int worldX, int worldY, int worldZ,
+                                               long assemblySeed, boolean commit);
     }
 
     /**
@@ -282,7 +315,22 @@ public class DungeonStackPlanner {
 
     @FunctionalInterface
     public interface RoomAssembler {
-        Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ, Random random);
+        /**
+         * Assembles an interior-room prefab anchored at the given world position.
+         * Same measure-then-place protocol, and the same two guarantees required of
+         * the implementation, as {@link TransitionAssembler#assemble} &mdash; see
+         * there for the reasoning.
+         *
+         * <p>A room can't sprawl the way a transition chain can (it's one piece),
+         * but vanilla still <em>rotates</em> it, and rotation moves the bounding
+         * box's min corner off the requested position: all four shipped prefabs are
+         * 7x7, so three of the four rotations displace the footprint 6 blocks west
+         * and/or north. Measured 2026-07-30 across 200 seeds, choosing the slot
+         * before knowing where the footprint would land cost <strong>44% of all
+         * prefab room slots</strong>.</p>
+         */
+        Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ,
+                                         long assemblySeed, boolean commit);
     }
 
     /**
@@ -299,8 +347,33 @@ public class DungeonStackPlanner {
 
     /** Attempts per floor to place a jigsaw-assembled room before falling back to procedural fill rooms. */
     private static final int ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR = 2;
-    private static final int ROOM_TEMPLATE_MIN_SIZE = 7;
-    private static final int ROOM_TEMPLATE_MAX_SIZE = 15;
+
+    /**
+     * Assembly attempts per inter-floor transition. Each attempt draws a fresh
+     * {@code assemblySeed}, so it re-rolls which template(s) the start pool hands
+     * back as well as the rotation.
+     *
+     * <p>With the probe/measure/reserve/place loop in {@link #plan()} the first
+     * attempt almost always succeeds, because the slot is now sized and positioned
+     * from the real assembled footprint rather than validated against a guess.
+     * Retries cover the one case that remains genuinely unsatisfiable: an assembly
+     * whose real footprint <em>cannot fit</em> in this link's placement bound
+     * alongside the reserved start slot at all. Re-rolling then naturally settles a
+     * cramped link on a smaller, self-contained single-piece transition — so no
+     * per-pool-entry size bookkeeping is needed.
+     */
+    private static final int TRANSITION_ASSEMBLY_ATTEMPTS = 12;
+    // ROOM_TEMPLATE_MIN_SIZE / MAX_SIZE used to roll a guessed room size to place
+    // before assembling. Gone: the slot is now sized from the assembled prefab
+    // itself, so the planner never guesses how big a prefab is.
+
+    /**
+     * How far a jigsaw-assembled interior room is kept clear of its floor's own
+     * outer boundary. Must be EVEN (see {@link #placeAvoidingReserved}); 2 is the
+     * smallest value that keeps the room's own edge — and therefore any door
+     * candidate on it — off the grid's boundary row/column.
+     */
+    private static final int ROOM_EDGE_MARGIN = 2;
 
     private static List<Coords2D> toLocalCells(List<Coords2D> worldCells, ICoords planAnchor) {
         List<Coords2D> local = new ArrayList<>(worldCells.size());
@@ -412,13 +485,11 @@ public class DungeonStackPlanner {
         // XZ rect must fit in BOTH its upper and lower floor grids (since the same
         // rect is reused as floor i's END and floor i+1's START).
         //
-        // When a transitionAssembler is supplied, the candidate rect below is only
-        // a rough anchor/overlap-avoidance guess (fixed 7x7) used to pick a world
-        // position to assemble AT; the real, jigsaw-assembled footprint (whatever
-        // size the actual template turns out to be) is authoritative once known.
-        // Falls back to the guessed placeholder rect itself when no assembler is
-        // set, or a specific transition fails to assemble (mirrors
-        // hasAssembledEntrance()'s graceful degradation).
+        // When a transitionAssembler is supplied, the real footprint is measured
+        // BEFORE a slot is reserved for it (see the probe/measure/reserve/place loop
+        // below), so the size below is only the synthetic placeholder used when no
+        // assembler is set or every attempt fails to assemble — the same graceful
+        // degradation hasAssembledEntrance() has.
         final int fallbackTransitionSize = 7;
         List<Rectangle2D> transitionLocalFootprints = new ArrayList<>(floorCount - 1);
         List<List<Coords2D>> transitionTopDoorLocalCells = new ArrayList<>(floorCount - 1);
@@ -451,42 +522,92 @@ public class DungeonStackPlanner {
             Set<Coords2D> bottomPremade = Set.of();
             String templateId = "dungeons2:transitions/synthetic";
 
-            if (transitionAssembler != null) {
-                int worldX = planAnchor.getX() + candidate.getMinX();
-                int worldZ = planAnchor.getZ() + candidate.getMinY();
+            // MEASURE FIRST, THEN RESERVE. A transition's real footprint is only
+            // knowable after it assembles: vanilla places the chain's FIRST piece at
+            // the position we ask for and lets the rest sprawl outward, so a chain's
+            // union rect is both bigger than any guess we could make AND offset from
+            // the assembly point by a rotation-dependent amount (the real 3-piece
+            // stairs_2 reaches 11 blocks negative). Reserving a slot up front and
+            // validating the real footprint against it afterwards therefore fails
+            // essentially always for a chain, and even when it happens to pass, the
+            // resulting origin is not even-aligned, which MazeLevelGenerator2D
+            // rejects outright (isRoomValid) and the whole floor dies with it.
+            //
+            // So: assemble once to MEASURE (nothing is kept -- commit == false),
+            // reserve a slot that fits what was measured, then assemble again with
+            // the SAME seed anchored so the footprint lands exactly on that slot.
+            // The assembler's contract (same seed => same shape, position only
+            // translates) is what makes the second assembly land where computed;
+            // see TransitionAssembler. Retries -- see TRANSITION_ASSEMBLY_ATTEMPTS.
+            for (int attempt = 0; transitionAssembler != null
+                    && attempt < TRANSITION_ASSEMBLY_ATTEMPTS; attempt++) {
+                long assemblySeed = random.nextLong();
                 // Anchor at the LOWER floor's walking plane (floorFloors[i + 1]),
                 // not the upper floor's -- ladder1/stairs_1 are authored with local
                 // Y=0 at the lower floor's plane (confirmed working in-game before
                 // this migration), so assembly must start there and chain UPWARD,
                 // not start at the upper floor and chain down.
-                Optional<AssembledTransition> assembled =
-                        transitionAssembler.assemble(worldX, floorFloors[i + 1], worldZ, random);
-                if (assembled.isPresent()) {
-                    AssembledTransition at = assembled.get();
-                    Rectangle2D wf = at.worldFootprint();
-                    Rectangle2D realFootprint = new Rectangle2D(
-                            wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
-                            wf.getWidth(), wf.getHeight());
-                    if (withinLocalBounds(realFootprint, placementBound)
-                            && (startReserved == null || !realFootprint.intersects(startReserved))) {
-                        finalFootprint = realFootprint;
-                        List<Coords2D> topPremadeLocal = toLocalCells(at.topPremadeWorldCells(), planAnchor);
-                        List<Coords2D> bottomPremadeLocal = toLocalCells(at.bottomPremadeWorldCells(), planAnchor);
-                        List<Coords2D> topDoorsMerged = new ArrayList<>(toLocalCells(at.topDoorWorldCells(), planAnchor));
-                        topDoorsMerged.addAll(topPremadeLocal);
-                        List<Coords2D> bottomDoorsMerged = new ArrayList<>(toLocalCells(at.bottomDoorWorldCells(), planAnchor));
-                        bottomDoorsMerged.addAll(bottomPremadeLocal);
-                        topDoors = topDoorsMerged;
-                        bottomDoors = bottomDoorsMerged;
-                        topPremade = new HashSet<>(topPremadeLocal);
-                        bottomPremade = new HashSet<>(bottomPremadeLocal);
-                        templateId = "dungeons2:transitions/assembled";
-                    }
-                    // else: the real footprint collided with the reserved start
-                    // slot, or (e.g. vanilla rotated the assembled piece) landed
-                    // outside the floor's own grid bounds -- keep the synthetic
-                    // placeholder computed above.
+                final int assemblyY = floorFloors[i + 1];
+                // The probe's XZ is arbitrary (grid-local 0,0 for tidiness) -- only
+                // the DELTA between what we ask for and what comes back is read off
+                // it, and that delta is position-independent by contract.
+                int probeWorldX = planAnchor.getX();
+                int probeWorldZ = planAnchor.getZ();
+                Optional<AssembledTransition> probe = transitionAssembler.assemble(
+                        probeWorldX, assemblyY, probeWorldZ, assemblySeed, false);
+                if (probe.isEmpty()) {
+                    continue;
                 }
+                Rectangle2D probeRect = probe.get().worldFootprint();
+                int offsetX = probeRect.getMinX() - probeWorldX;
+                int offsetZ = probeRect.getMinY() - probeWorldZ;
+
+                // Reserve using the real, measured size. placeAvoidingStart also
+                // even-aligns the origin, which the maze requires of any room.
+                Rectangle2D slot = placeAvoidingStart(placementBound,
+                        probeRect.getWidth(), probeRect.getHeight(), startReserved, random);
+                if (slot == null) {
+                    // This assembly simply cannot fit this link alongside the start
+                    // slot. Retrying re-rolls the pool pick, so a cramped link gets
+                    // a chance to settle on a smaller single-piece transition.
+                    continue;
+                }
+
+                Optional<AssembledTransition> assembled = transitionAssembler.assemble(
+                        planAnchor.getX() + slot.getMinX() - offsetX, assemblyY,
+                        planAnchor.getZ() + slot.getMinY() - offsetZ, assemblySeed, true);
+                if (assembled.isEmpty()) {
+                    continue;
+                }
+                AssembledTransition at = assembled.get();
+                Rectangle2D wf = at.worldFootprint();
+                Rectangle2D realFootprint = new Rectangle2D(
+                        wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
+                        wf.getWidth(), wf.getHeight());
+                if (!withinLocalBounds(realFootprint, placementBound)
+                        || (startReserved != null && realFootprint.intersects(startReserved))) {
+                    // Only reachable if the assembler did NOT honour its contract
+                    // (the placement came back as a different shape than the probe,
+                    // so it missed the slot). Kept as a hard guard rather than an
+                    // assertion: adopting a footprint the maze never reserved is the
+                    // fault that had corridors carved straight through a built
+                    // template. Try again; if every attempt fails, the synthetic
+                    // placeholder computed above stands.
+                    continue;
+                }
+                finalFootprint = realFootprint;
+                List<Coords2D> topPremadeLocal = toLocalCells(at.topPremadeWorldCells(), planAnchor);
+                List<Coords2D> bottomPremadeLocal = toLocalCells(at.bottomPremadeWorldCells(), planAnchor);
+                List<Coords2D> topDoorsMerged = new ArrayList<>(toLocalCells(at.topDoorWorldCells(), planAnchor));
+                topDoorsMerged.addAll(topPremadeLocal);
+                List<Coords2D> bottomDoorsMerged = new ArrayList<>(toLocalCells(at.bottomDoorWorldCells(), planAnchor));
+                bottomDoorsMerged.addAll(bottomPremadeLocal);
+                topDoors = topDoorsMerged;
+                bottomDoors = bottomDoorsMerged;
+                topPremade = new HashSet<>(topPremadeLocal);
+                bottomPremade = new HashSet<>(bottomPremadeLocal);
+                templateId = "dungeons2:transitions/assembled";
+                break;
             }
 
             transitionLocalFootprints.add(finalFootprint);
@@ -583,16 +704,40 @@ public class DungeonStackPlanner {
                 List<Rectangle2D> roomReserved = new ArrayList<>();
                 roomReserved.add(startFootprint);
                 roomReserved.add(endFootprint);
+                // MEASURE FIRST, THEN RESERVE -- exactly as for transitions above, and
+                // for the same reason: vanilla may ROTATE the prefab, which moves its
+                // bounding box's min corner off the position we asked for (6 blocks,
+                // for the 7x7 prefabs that ship). A slot picked before that is known
+                // is a guess, and 44% of them were being thrown away.
                 for (int attempt = 0; attempt < ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR; attempt++) {
-                    int rw = oddInRange(random, ROOM_TEMPLATE_MIN_SIZE, ROOM_TEMPLATE_MAX_SIZE);
-                    int rd = oddInRange(random, ROOM_TEMPLATE_MIN_SIZE, ROOM_TEMPLATE_MAX_SIZE);
-                    Rectangle2D roomCandidate = placeAvoidingReserved(footprint, rw, rd, roomReserved, random);
-                    if (roomCandidate == null) {
+                    long assemblySeed = random.nextLong();
+                    int probeWorldX = planAnchor.getX();
+                    int probeWorldZ = planAnchor.getZ();
+                    Optional<AssembledRoom> probe = roomAssembler.assemble(
+                            probeWorldX, floorFloors[i], probeWorldZ, assemblySeed, false);
+                    if (probe.isEmpty()) {
                         continue;
                     }
-                    int worldX = planAnchor.getX() + roomCandidate.getMinX();
-                    int worldZ = planAnchor.getZ() + roomCandidate.getMinY();
-                    Optional<AssembledRoom> assembledRoom = roomAssembler.assemble(worldX, floorFloors[i], worldZ, random);
+                    Rectangle2D probeRect = probe.get().worldFootprint();
+                    int offsetX = probeRect.getMinX() - probeWorldX;
+                    int offsetZ = probeRect.getMinY() - probeWorldZ;
+
+                    // Reserve at the real size, ROOM_EDGE_MARGIN clear of the floor's
+                    // own outer boundary -- a door candidate on a room's edge would
+                    // otherwise sit exactly on the grid's boundary row/column, which
+                    // used to crash MazeLevelGenerator2D.generateConnector's unbounded
+                    // neighbor lookup (now fixed defensively there too, but a room
+                    // shouldn't visually abut the raw map edge regardless).
+                    Rectangle2D slot = placeAvoidingReserved(footprint,
+                            probeRect.getWidth(), probeRect.getHeight(), roomReserved, random,
+                            ROOM_EDGE_MARGIN);
+                    if (slot == null) {
+                        continue;
+                    }
+
+                    Optional<AssembledRoom> assembledRoom = roomAssembler.assemble(
+                            planAnchor.getX() + slot.getMinX() - offsetX, floorFloors[i],
+                            planAnchor.getZ() + slot.getMinY() - offsetZ, assemblySeed, true);
                     if (assembledRoom.isEmpty()) {
                         continue;
                     }
@@ -601,22 +746,16 @@ public class DungeonStackPlanner {
                     Rectangle2D realFootprint = new Rectangle2D(
                             wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
                             wf.getWidth(), wf.getHeight());
-                    // Reject a footprint flush against the floor's own outer boundary
-                    // (min edge touching 0, or max edge touching the floor's own
-                    // width/height) -- a door candidate on that room's edge would then
-                    // sit exactly on the grid's boundary row/column, which used to crash
-                    // MazeLevelGenerator2D.generateConnector's unbounded neighbor lookup
-                    // (now fixed defensively there too, but a room shouldn't visually
-                    // abut the raw map edge regardless).
                     boolean touchesFloorEdge = realFootprint.getMinX() <= 0 || realFootprint.getMinY() <= 0
                             || realFootprint.getMinX() + realFootprint.getWidth() >= footprint.getWidth()
                             || realFootprint.getMinY() + realFootprint.getHeight() >= footprint.getHeight();
                     if (!withinLocalBounds(realFootprint, footprint) || touchesFloorEdge
                             || !noIntersections(realFootprint, roomReserved)) {
-                        // Real footprint (whatever size/position the actual template
-                        // turned out to be, e.g. if vanilla rotated it) either landed
-                        // outside this floor's grid (or flush against its boundary) or
-                        // collided with an existing reservation -- skip this slot.
+                        // Only reachable if the assembler did NOT honour its contract
+                        // (see RoomAssembler): the committed prefab came back a
+                        // different shape than the probe, so it missed the slot
+                        // reserved for it. Skip it -- a prefab room the maze reserved
+                        // nothing for gets corridors carved straight through it.
                         continue;
                     }
 
@@ -800,8 +939,26 @@ public class DungeonStackPlanner {
      */
     private Rectangle2D placeAvoidingReserved(Rectangle2D footprint, int w, int d,
                                                List<Rectangle2D> reserved, Random random) {
-        int xRange = footprint.getWidth() - w;
-        int zRange = footprint.getHeight() - d;
+        return placeAvoidingReserved(footprint, w, d, reserved, random, 0);
+    }
+
+    /**
+     * Variant that also keeps the rect {@code margin} cells clear of the footprint's
+     * own outer boundary on every side.
+     *
+     * <p>Used for jigsaw-assembled interior rooms, which must not sit flush against
+     * the grid edge (a door candidate on such a room's edge lands on the grid's
+     * boundary row/column). Building that into the placement means the slot is
+     * <em>born</em> valid instead of being placed and then thrown away &mdash; which
+     * matters now that choosing a slot costs a real assembly to measure.</p>
+     *
+     * <p>{@code margin} must be EVEN: the maze rejects odd-origin rooms, and the
+     * origins this returns are the even-aligned offsets shifted by {@code margin}.</p>
+     */
+    private Rectangle2D placeAvoidingReserved(Rectangle2D footprint, int w, int d,
+                                               List<Rectangle2D> reserved, Random random, int margin) {
+        int xRange = footprint.getWidth() - w - 2 * margin;
+        int zRange = footprint.getHeight() - d - 2 * margin;
         if (xRange < 0 || zRange < 0) return null;
         // Phase 1: random attempts.
         for (int attempt = 0; attempt < PLACEMENT_ATTEMPTS; attempt++) {
@@ -811,7 +968,7 @@ public class DungeonStackPlanner {
             if ((z & 1) != 0) z--;
             if (x < 0) x = 0;
             if (z < 0) z = 0;
-            Rectangle2D candidate = new Rectangle2D(x, z, w, d);
+            Rectangle2D candidate = new Rectangle2D(x + margin, z + margin, w, d);
             if (noIntersections(candidate, reserved)) {
                 return candidate;
             }
@@ -819,7 +976,7 @@ public class DungeonStackPlanner {
         // Phase 2: exhaustive even-aligned scan (deterministic, finds a slot if any exists).
         for (int x = 0; x <= xRange; x += 2) {
             for (int z = 0; z <= zRange; z += 2) {
-                Rectangle2D candidate = new Rectangle2D(x, z, w, d);
+                Rectangle2D candidate = new Rectangle2D(x + margin, z + margin, w, d);
                 if (noIntersections(candidate, reserved)) {
                     return candidate;
                 }
@@ -936,6 +1093,18 @@ public class DungeonStackPlanner {
                         if (dx == 0 && dz == 0) continue;
                         int nx = x + dx;
                         int nz = z + dz;
+                        // A premade (dungeons2:connector) cell gets NOTHING from the
+                        // corridor -- not a wall column, not a pierced one. Its
+                        // template already built a real door there, and assembled
+                        // pieces are added to the builder BEFORE procedural ones
+                        // (see DungeonStructure), so anything emitted here lands on
+                        // top of that door. An ordinary DOOR cell survives the same
+                        // treatment only because a DungeonDoorPiece runs last and
+                        // rebuilds sill/door/lintel over it; a premade cell has no
+                        // such piece by design, so the damage would be permanent.
+                        if (premadeCells.contains(new Coords2D(nx, nz))) {
+                            continue;
+                        }
                         // Doors first: they are wall cells too, but render pierced
                         // at the door-half levels. Keeping the two sets disjoint
                         // is what stops a solid column overwriting the pierced one.

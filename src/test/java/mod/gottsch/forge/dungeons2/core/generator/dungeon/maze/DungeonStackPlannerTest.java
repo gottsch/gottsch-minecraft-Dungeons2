@@ -24,6 +24,7 @@ import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.data.TemplateEntry;
+import mod.gottsch.forge.dungeons2.core.data.TransitionData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -269,6 +270,60 @@ class DungeonStackPlannerTest {
         }
     }
 
+    /**
+     * A {@code dungeons2:connector} (premade-door) cell must get NOTHING from a
+     * neighbouring corridor -- no wall column and no pierced doorway column.
+     * The template already built a real door there, and {@code DungeonStructure}
+     * adds assembled pieces BEFORE procedural ones, so anything a corridor emits
+     * lands on top of that door. An ordinary DOOR cell tolerates this only
+     * because a {@code DungeonDoorPiece} runs last and rebuilds over it; a
+     * premade cell has no such piece by design.
+     */
+    @Test
+    void aPremadeDoorCellGetsNothingFromAneighbouringCorridor() {
+        boolean sawAdjacentCorridor = false;
+
+        for (long seed = 0; seed < 40; seed++) {
+            DungeonLayout layout = new DungeonStackPlanner(
+                    seed, ANCHOR, SURFACE_Y, "classic", new TemplateCatalog())
+                    .withSize(DungeonSize.MEDIUM).withFloorCount(1)
+                    // All three markers are premade doors this time, not plain doors.
+                    .withAssembledEntrance(ASM_ENTRANCE_WORLD_RECT, List.of(),
+                            ASM_DOOR_WORLD_CELLS, ASM_FLOOR0_Y)
+                    .plan().orElseThrow();
+
+            int anchorX = layout.getAnchor().getX();
+            int anchorZ = layout.getAnchor().getZ();
+            Set<Coords2D> premadeLocal = ASM_DOOR_WORLD_CELLS.stream()
+                    .map(c -> new Coords2D(c.getX() - anchorX, c.getY() - anchorZ))
+                    .collect(Collectors.toSet());
+
+            FloorLayout floor0 = layout.getFloors().get(0);
+            for (var corridor : floor0.getCorridors()) {
+                for (Coords2D premade : premadeLocal) {
+                    assertFalse(corridor.getWallCells().contains(premade),
+                            "seed " + seed + ": corridor walled over premade door " + premade);
+                    assertFalse(corridor.getDoorCells().contains(premade),
+                            "seed " + seed + ": corridor pierced premade door " + premade);
+                }
+                // Track whether this test is actually exercising the skip: a corridor
+                // cell 8-adjacent to a premade cell is what would have emitted a column.
+                for (Coords2D cell : corridor.getCells()) {
+                    for (Coords2D premade : premadeLocal) {
+                        if (Math.abs(cell.getX() - premade.getX()) <= 1
+                                && Math.abs(cell.getY() - premade.getY()) <= 1) {
+                            sawAdjacentCorridor = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        assertTrue(sawAdjacentCorridor,
+                "no seed put a corridor next to a premade door -- the assertion above never "
+                        + "had anything to catch, so this test would pass vacuously");
+    }
+
     @Test
     void assembledEntranceGivesFloorZeroComparableRoomDensity() {
         // Floor 0's grid must scale with the size tier (not shrink to the entrance),
@@ -315,7 +370,7 @@ class DungeonStackPlannerTest {
     // -------- Phase 8: jigsaw-assembled interior rooms --------
 
     /** Always succeeds with a fixed 7x7 footprint at the requested world position. */
-    private static final DungeonStackPlanner.RoomAssembler FAKE_ROOM_ASSEMBLER = (worldX, worldY, worldZ, rand) -> {
+    private static final DungeonStackPlanner.RoomAssembler FAKE_ROOM_ASSEMBLER = (worldX, worldY, worldZ, seed, commit) -> {
         Rectangle2D worldFootprint = new Rectangle2D(worldX, worldZ, 7, 7);
         List<Coords2D> doors = List.of(
                 new Coords2D(worldX, worldZ + 3),
@@ -358,7 +413,13 @@ class DungeonStackPlannerTest {
         // crash MazeLevelGenerator2D.generateConnector's unbounded neighbor lookup
         // (fixed there too; this asserts the planner also never hands such a
         // footprint to the maze in the first place).
-        DungeonStackPlanner.RoomAssembler flushAgainstOrigin = (worldX, worldY, worldZ, rand) ->
+        //
+        // The planner now reserves room slots ROOM_EDGE_MARGIN clear of the
+        // boundary, so an assembler that HONOURS its contract can no longer land
+        // there at all. What this stub does instead is ignore the position it is
+        // asked for -- a contract violation -- which is the only remaining way to
+        // reach the boundary, and must still be caught.
+        DungeonStackPlanner.RoomAssembler flushAgainstOrigin = (worldX, worldY, worldZ, seed, commit) ->
                 Optional.of(new DungeonStackPlanner.AssembledRoom(
                         new Rectangle2D(planAnchorX(), planAnchorZ(), 7, 7), List.of(), List.of()));
 
@@ -387,7 +448,7 @@ class DungeonStackPlannerTest {
     void assemblerlessRoomAttemptDoesNotBreakPlanning() {
         // An assembler that always refuses must degrade gracefully -- planning still
         // succeeds, just with zero templated rooms (ordinary procedural fill instead).
-        DungeonStackPlanner.RoomAssembler refusing = (worldX, worldY, worldZ, rand) -> Optional.empty();
+        DungeonStackPlanner.RoomAssembler refusing = (worldX, worldY, worldZ, seed, commit) -> Optional.empty();
         DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
                 .withSize(DungeonSize.MEDIUM)
                 .withRoomAssembler(refusing)
@@ -401,13 +462,14 @@ class DungeonStackPlannerTest {
     }
 
     @Test
-    void roomAssemblerFootprintOutsideGridBoundsIsSkippedGracefully() {
-        // Reproduces an in-game failure: vanilla is free to rotate the first piece
-        // of a jigsaw assembly, which can shift the REAL bounding box's min-corner
-        // away from the requested world XZ -- here simulated by returning a
-        // footprint wildly offset from where it was asked to assemble. Must be
-        // skipped (not treated as authoritative), never handed to the maze as-is.
-        DungeonStackPlanner.RoomAssembler rotatedOffscreen = (worldX, worldY, worldZ, rand) ->
+    void aRoomPrefabOffsetFromItsAssemblyPointIsCompensatedFor() {
+        // Vanilla is free to ROTATE a prefab, which shifts the real bounding box's
+        // min-corner away from the requested world XZ -- here exaggerated to 1000
+        // blocks. This used to mean the slot was simply dropped (measured: 44% of
+        // all room slots lost). The planner now measures that displacement with a
+        // probe and anchors the real placement to compensate for it, so an offset
+        // prefab is adopted rather than thrown away.
+        DungeonStackPlanner.RoomAssembler rotatedOffscreen = (worldX, worldY, worldZ, seed, commit) ->
                 Optional.of(new DungeonStackPlanner.AssembledRoom(
                         new Rectangle2D(worldX - 1000, worldZ - 1000, 7, 7), List.of(), List.of()));
 
@@ -420,24 +482,40 @@ class DungeonStackPlannerTest {
         boolean anyTemplated = layout.getFloors().stream()
                 .flatMap(f -> f.getRooms().stream())
                 .anyMatch(r -> r.getTemplateId() != null);
-        assertFalse(anyTemplated,
-                "An out-of-bounds RoomAssembler result must never produce a templated room");
+        assertTrue(anyTemplated,
+                "A prefab offset from its assembly point must be compensated for, not dropped");
+
+        // Compensated, not merely accepted: it still has to land inside the floor.
+        for (FloorLayout floor : layout.getFloors()) {
+            for (RoomData room : floor.getRooms()) {
+                if (room.getTemplateId() == null) {
+                    continue;
+                }
+                assertTrue(room.getOriginX() > 0 && room.getOriginZ() > 0
+                                && room.getOriginX() + room.getWidth() < floor.getFootprint().getWidth()
+                                && room.getOriginZ() + room.getDepth() < floor.getFootprint().getHeight(),
+                        "A compensated prefab must land inside the floor, clear of its boundary");
+            }
+        }
     }
 
     @Test
-    void transitionAssemblerFootprintOutsideGridBoundsFallsBackGracefully() {
-        // Same failure mode as above, but for transitions -- a rotated real
-        // footprint landing outside the floor's grid must NOT be handed to
-        // MazeLevelGenerator2D as the fixed END/START room slot (that would abort
-        // the entire floor's maze, and thus the whole dungeon's planning).
-        DungeonStackPlanner.TransitionAssembler rotatedOffscreen = (worldX, worldY, worldZ, rand) ->
+    void transitionAssemblerFootprintTooLargeForTheGridFallsBackGracefully() {
+        // Same failure mode as above, but for transitions. Note that a merely
+        // OFFSET footprint is no longer a failure: the planner measures the offset
+        // with a probe and compensates for it (that is how a chained transition
+        // gets placed at all). What can still fail is a footprint too big to
+        // reserve anywhere in the link's placement bound. It must NOT be handed to
+        // MazeLevelGenerator2D as the fixed END/START room slot -- that would abort
+        // the entire floor's maze, and thus the whole dungeon's planning.
+        DungeonStackPlanner.TransitionAssembler tooBig = (worldX, worldY, worldZ, seed, commit) ->
                 Optional.of(new DungeonStackPlanner.AssembledTransition(
-                        new Rectangle2D(worldX - 1000, worldZ - 1000, 9, 9),
+                        new Rectangle2D(worldX, worldZ, 1000, 1000),
                         List.of(), List.of(), List.of(), List.of()));
 
         DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
                 .withFloorCount(3)
-                .withTransitionAssembler(rotatedOffscreen)
+                .withTransitionAssembler(tooBig)
                 .plan().orElseThrow();
 
         assertEquals(3, layout.getFloors().size());
@@ -452,6 +530,32 @@ class DungeonStackPlannerTest {
                                 && room.getOriginZ() + room.getDepth() <= fd,
                         "Room must stay within its floor's footprint");
             }
+        }
+    }
+
+    @Test
+    void aTransitionAssemblerThatIgnoresItsSeedIsNeverAdopted() {
+        // The planner reserves the slot from what the measuring probe reported, then
+        // relies on the commit call reproducing that same shape (TransitionAssembler's
+        // contract) to land on it. An implementation that doesn't -- a pool switched
+        // to terrain_matching projection, say, or a future refactor that stops
+        // seeding the WorldgenRandom -- must be caught by the planner's guard and
+        // dropped to the synthetic placeholder. Adopting a footprint the maze never
+        // reserved is the fault that had corridors carved through a built template.
+        DungeonStackPlanner.TransitionAssembler unstable = (worldX, worldY, worldZ, seed, commit) ->
+                Optional.of(new DungeonStackPlanner.AssembledTransition(
+                        commit ? new Rectangle2D(worldX - 1000, worldZ - 1000, 9, 9)
+                               : new Rectangle2D(worldX, worldZ, 9, 9),
+                        List.of(), List.of(), List.of(), List.of()));
+
+        DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
+                .withFloorCount(3)
+                .withTransitionAssembler(unstable)
+                .plan().orElseThrow();
+
+        for (TransitionData t : layout.getTransitions()) {
+            assertFalse(t.getTemplateId() != null && t.getTemplateId().contains("assembled"),
+                    "A transition whose commit call contradicted its probe must not be adopted");
         }
     }
 
