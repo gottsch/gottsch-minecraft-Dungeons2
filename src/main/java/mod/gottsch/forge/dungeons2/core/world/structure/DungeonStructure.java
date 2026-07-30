@@ -75,7 +75,7 @@ import java.util.Set;
  *
  * <h2>Phase 4b &mdash; jigsaw-assembled entrance</h2>
  * <p>The entrance is assembled up front by vanilla {@link JigsawPlacement} from
- * the {@code dungeons2:entrance/surface_exit} start pool. Its {@code dungeons2:door}
+ * the {@code dungeons2:entrance/surface_entrance} start pool. Its {@code dungeons2:door}
  * jigsaw markers are read back off the assembled pieces and drive floor 0's
  * walking-plane Y, reserved START footprint, and candidate doorways &mdash; all fed
  * into the planner via {@link DungeonStackPlanner#withAssembledEntrance}. The
@@ -101,7 +101,7 @@ public class DungeonStructure extends Structure {
      * assembly-joint {@code pool}/{@code target} fields baked into their NBT,
      * cross-referencing each other by exact resource-location string
      * ({@code dungeons2:entrance/descent}, {@code .../descent_top},
-     * {@code .../surface_exit}). Moving this pool under a motif subfolder would
+     * {@code .../surface_entrance}). Moving this pool under a motif subfolder would
      * require rewriting those embedded strings too -- safe to do by re-saving the
      * jigsaw blocks in-game (Target Pool field), not something to blind-edit in
      * compressed NBT. Rooms/transitions don't have this problem: their current
@@ -109,7 +109,7 @@ public class DungeonStructure extends Structure {
      * only the entrance is held back from motif support this pass.</p>
      */
     private static final ResourceLocation ENTRANCE_START_POOL =
-            new ResourceLocation(Dungeons.MOD_ID, "entrance/surface_exit");
+            new ResourceLocation(Dungeons.MOD_ID, "entrance/surface_entrance");
     private static final int ENTRANCE_MAX_DEPTH = 5;
     private static final int ENTRANCE_MAX_DISTANCE = 116;
 

@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2;
 
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigRegistries;
+import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfigRegistries;
 import mod.gottsch.forge.dungeons2.core.setup.CommonSetup;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -55,5 +56,6 @@ public class Dungeons {
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		eventBus.addListener(CommonSetup::common);
 		eventBus.register(DungeonGenerationConfigRegistries.class);
+		eventBus.register(FloorPatternConfigRegistries.class);
 	}
 }

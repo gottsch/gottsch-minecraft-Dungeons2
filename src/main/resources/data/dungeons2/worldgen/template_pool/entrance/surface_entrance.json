@@ -1,11 +1,11 @@
 {
-  "name": "dungeons2:entrance/surface_exit",
+  "name": "dungeons2:entrance/surface_entrance",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:entrances/surface_exit",
+        "location": "dungeons2:entrances/classic/entrance_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

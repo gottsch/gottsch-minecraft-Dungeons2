@@ -29,7 +29,7 @@ Motif selection itself is still hardcoded to `classic` (see `DungeonStructure.fi
 missing themed pool degrades gracefully to plain procedural generation for that
 floor/room/transition, same as an empty pool always has; a smarter two-tier fallback (missing
 theme → shared/classic pool instead of straight to procedural) is a possible future phase, not
-implemented. **The entrance is the one exception** — `entrance/surface_exit.json`/`descent.json`
+implemented. **The entrance is the one exception** — `entrance/surface_entrance.json`/`descent.json`
 stay unparametrized for now, because `surface_exit.nbt`/`descent_1.nbt` have jigsaw assembly-joint
 `pool`/`target` fields baked into their NBT that cross-reference each other by exact resource
 location; moving them under a motif subfolder needs those fields updated too (safest done by
@@ -216,12 +216,46 @@ Used inside the **jigsaw-assembled entrance** (surface building → descent → 
 | `joint`      | `aligned`                           | `aligned`                         |
 | orientation  | front = **down** → `down_south`     | front = **up** → `up_north`       |
 
+> The **start pool** id is `dungeons2:entrance/surface_entrance` (renamed from `surface_exit` —
+> from the player's perspective, this piece is what they discover and enter to begin the descent,
+> not something they exit through). The shipped `surface_exit.nbt`'s own jigsaw-joint identity
+> string above is unchanged and still literally `dungeons2:entrance/surface_exit`; that string is
+> just this joint's local matching identifier, not the pool id, and it's unused for this piece's
+> own placement (it's the assembly root, so nothing targets it) — so the mismatch is harmless. New
+> pieces authored going forward should use `dungeons2:entrance/surface_entrance` for this joint's
+> identity to keep the two in sync.
+
 Vertical joints are supported (trial chambers / ancient cities chain vertically). Register
 each variant in a `template_pool` JSON under
 `data/dungeons2/worldgen/template_pool/entrance/` and assemble with a small `max_depth` so
 it never recurses into the dungeon. The descent piece carries the `dungeons2:door` candidates
 (role 1 above) on its floor-0 walking plane — **their Y defines floor 0's walking plane** and
 their cells become the START room's `candidateDoorways`.
+
+**Worked example, the three-piece `classic` entrance chain (2026-07-30, confirmed in game):**
+each piece independently swappable later (e.g. a future `entrance_ladder_2` alternative in the
+same pool), unlike the old monolithic `surface_exit.nbt`/`descent_1.nbt` pair.
+
+| Piece | Role | Joint | Name | Target Pool | Target Name |
+|---|---|---|---|---|---|
+| `entrance_1` | root — surface building | bottom (outgoing) | `dungeons2:entrance/surface_entrance` | `dungeons2:entrance/descent_ladder` | `dungeons2:entrance/ladder_top` |
+| `entrance_ladder_1` | middle — vertical shaft | top (incoming) | `dungeons2:entrance/ladder_top` | `minecraft:empty` | `minecraft:empty` |
+| `entrance_ladder_1` | middle — vertical shaft | bottom (outgoing) | `dungeons2:entrance/ladder_bottom` | `dungeons2:entrance/descent` | `dungeons2:entrance/room_top` |
+| `entrance_exit_1` | terminal — floor-0 room, carries the `dungeons2:door` candidates | top (incoming) | `dungeons2:entrance/room_top` | `minecraft:empty` | `minecraft:empty` |
+
+Registered as `entrance/surface_entrance.json` (root) → `entrance/descent_ladder.json` (new) →
+`entrance/descent.json` (repointed at `entrance_exit_1`, replacing the old test piece). A
+`dungeons2:connector` (role 2) spanning a **3-wide** opening was authored into this chain and
+confirmed working — multi-cell-wide connectors generalize the same way single-cell ones already
+did.
+
+> **Trap worth knowing:** a structure block's **Save** always serializes from the world's live
+> block-entity state, not from whatever's on disk — so hand-patching an exported `.nbt`'s jigsaw
+> fields (e.g. with a script) gets silently reverted the next time Save is pressed in-game, because
+> the in-world jigsaw blocks still hold the old values. Fix: copy the corrected `.nbt` into
+> `<world save>/generated/dungeons2/structures/...` and use **Load** (not Save) in the structure
+> block — that syncs the world's block entities to the corrected data, so a later Save round-trips
+> cleanly.
 
 ### Transition jigsaw pools
 
@@ -333,6 +367,60 @@ Add real content by creating `data/dungeons2/worldgen/template_pool/rooms/<motif
 no outgoing joint) plus the `.nbt` files it references — nothing else needs to change, the
 mechanism already reads whatever pool entries exist. `classic/normal.json` is the only one
 authored today.
+
+---
+
+## Floor patterns (`dungeons2/floor_pattern_config/<name>.json`)
+
+Ordinary procedural rooms can decorate their floor with a hand-designed pattern instead of the
+plain/alternating default, picked per room by a **datapack-driven, weighted roll** — same codec
++ registry shape as `dungeons2/generation_config/<name>.json` (the `corridorWidth` knob). This is
+orthogonal to the room jigsaw pool above: it decorates a *procedural* room's floor, not a
+hand-authored prefab (a prefab is whatever you built it as, floor included).
+
+Entries live at `data/dungeons2/dungeons2/floor_pattern_config/<name>.json` (there's currently
+one shipped entry, `default`). Each entry is a weighted list:
+
+```json
+{
+  "elements": [
+    { "type": "empty", "weight": 3 },
+    { "type": "border", "weight": 1, "inset": 2 }
+  ]
+}
+```
+
+`type` is a plain string, not an enum — `"empty"` (or any unrecognized type) means no special
+pattern, same graceful degradation an absent/empty pool always has elsewhere; `"border"` selects
+the decorative frame described below, with `inset` (default 2) as its only tunable. A missing
+`floor_pattern_config` registry, or a config with no elements or non-positive total weight, also
+falls back to `"empty"`. The roll happens once per room, using that room's own deterministic
+seed (`DungeonRoomPiece#deterministicRandom`) — so it stays the same across the repeated
+`postProcess` calls a piece gets per overlapping chunk, exactly like every other per-room roll in
+this pipeline.
+
+### The `border` pattern
+
+Reverse-engineered from a hand-authored reference structure (`dungeonblocks:left_large_stone_brick`
+/ `right_large_stone_brick`, a picture-frame ring inset from the floor's edge) and generalized to
+**any** floor width/depth in `FloorBorderPatternProvider`:
+
+- The ring is the perimeter of the rectangle `[inset, size-1-inset]` on each axis.
+- Each of the **4 corners** is a `RIGHT` block, facing the cardinal direction reached walking the
+  ring clockwise from north (NW→north, NE→east, SE→south, SW→west).
+- Each **straight run** between two corners alternates `LEFT`/`RIGHT` starting with `LEFT`, facing
+  outward along that edge's own cardinal direction (so a longer edge just keeps alternating —
+  there's no fixed run length).
+- Everywhere else — outside the ring, and inside it — is plain floor.
+- **Degenerate sizes degrade gracefully**: if the floor is too small to fit a ring at the
+  requested `inset` (fewer than 2 cells of ring width on either axis), the whole floor is plain.
+
+The geometry (`FloorBorderPatternProvider.plan`) is pure data — no `BlockState`, no Forge
+registry — specifically so it's unit-testable without a running Forge instance;
+`dungeonblocks:*` blocks only resolve once Forge has actually loaded that mod, which a bare
+`Bootstrap.bootStrap()` JUnit environment never does (same limitation `DecorationOnRealRoomTest`
+already documents for a different block). `FloorBorderPatternProviderTest` checks the geometry
+against the reference structure's exact palette instead.
 
 ---
 
@@ -533,7 +621,7 @@ datapack **registry** files like `worldgen/processor_list`; a custom
    `WeatheringProcessorListTest` asserts the composed absolute rates, so if you edit the
    numbers, update the expectations there.
 
-All four pools — entrance (`surface_exit` + `descent`), transitions, and rooms — point at
+All four pools — entrance (`surface_entrance` + `descent`), transitions, and rooms — point at
 the weathering list, so every authored prefab ages by default.
 
 ---

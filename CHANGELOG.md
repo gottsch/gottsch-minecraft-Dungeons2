@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Where the stonework has decayed all the way down to dirt, **mushrooms and moss now sprout on top of it and roots hang down underneath**, so a crumbled patch looks overgrown rather than just discoloured.
 - **Ledges and corbels now crumble away** when the wall they jutted out of has decayed out from under them, instead of being left hanging in mid-air. One only goes if there is genuinely nothing left touching it.
 - **Seagrass and lily pads** on standing water — unused by the classic dungeon, but available to themes that have water.
+- **Room floors can now show a decorative bordered pattern** instead of always being plain, with a picture-frame ring inset from the floor's edge. How often it shows up (and how far the ring sits from the edge) is datapack-controlled, same as the rest of a theme's look.
+- The surface entrance is now built from three separate, independently swappable pieces (the building above ground, the shaft down, and the room below) instead of one fixed pair, so new entrance variants can be added later without replacing the whole thing.
 
 ### Changed
 

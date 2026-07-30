@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfig;
+import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
@@ -84,15 +86,22 @@ public class DungeonRoomPiece extends DungeonPiece {
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
         logChunkTouch(level, chunkPos, box);
+        FloorPatternConfig floorPatternConfig = FloorPatternConfigHelper.get(level.registryAccess());
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
-        safePlaceAll(level, box, this::renderPlacements);
+        safePlaceAll(level, box, () -> renderPlacements(floorPatternConfig));
+    }
+
+    /** Builds this room's placements deterministically (no external RNG), always plain floor. */
+    public List<BlockPlacement> renderPlacements() {
+        return renderPlacements(FloorPatternConfig.DEFAULT);
     }
 
     /** Builds this room's placements deterministically (no external RNG). */
-    public List<BlockPlacement> renderPlacements() {
+    public List<BlockPlacement> renderPlacements(FloorPatternConfig floorPatternConfig) {
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicRoomGenerator().build(room, floorY, motif(), deterministicRandom(room.getId()), out);
+        new BasicRoomGenerator().withFloorPatternConfig(floorPatternConfig)
+                .build(room, floorY, motif(), deterministicRandom(room.getId()), out);
         return out;
     }
 

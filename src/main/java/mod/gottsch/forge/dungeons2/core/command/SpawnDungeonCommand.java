@@ -3,6 +3,7 @@ package mod.gottsch.forge.dungeons2.core.command;
 import com.mojang.brigadier.CommandDispatcher;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
+import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -14,9 +15,10 @@ import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.DungeonLayoutRenderer;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor.BasicCorridorGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.BasicDoorGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.maze.DungeonStackPlanner;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.IRoomGenerator;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.commands.CommandSourceStack;
@@ -103,7 +105,8 @@ public class SpawnDungeonCommand {
             // Synthetic START/END room boxes FIRST so the renderer's corridors and
             // doors (which come last) win at any shared perimeter cells. These stand
             // in for the entrance / transition templates until .nbt files exist.
-            IRoomGenerator roomGen = new BasicRoomGenerator();
+            BasicRoomGenerator roomGen = new BasicRoomGenerator()
+                    .withFloorPatternConfig(FloorPatternConfigHelper.get(level.registryAccess()));
             for (FloorLayout floor : layout.getFloors()) {
                 for (RoomData room : floor.getRooms()) {
                     if (room.getRole() != RoomRole.NORMAL) {
@@ -112,7 +115,8 @@ public class SpawnDungeonCommand {
                 }
             }
             // Procedural rooms / corridors / doors.
-            placements.addAll(new DungeonLayoutRenderer().render(layout, random));
+            placements.addAll(new DungeonLayoutRenderer(
+                    roomGen, new BasicCorridorGenerator(), new BasicDoorGenerator()).render(layout, random));
 
             // Write everything (floor-local XZ + world origin; Y already absolute).
             int written = 0;
