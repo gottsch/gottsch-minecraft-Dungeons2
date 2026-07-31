@@ -21,15 +21,16 @@ exception at the end of this section.)
 Jigsaw `template_pool` JSONs for the assembled entrance, transitions, and rooms live separately
 under `data/dungeons2/worldgen/template_pool/{entrance,transitions,rooms}/`.
 
-**Motif/theme naming (transitions & rooms only):** the start pool a dungeon assembles from is
-selected by motif, one folder per theme: `transitions/<motif>/shaft_bottom.json`,
-`rooms/<motif>/normal.json` (e.g. `rooms/desert/normal.json` for a `DESERT`-themed room pool).
-Motif selection itself is still hardcoded to `classic` (see `DungeonStructure.findGenerationPoint`)
-— this is just the naming mechanism, ready for whenever motif selection varies for real. A
-missing themed pool degrades gracefully to plain procedural generation for that
-floor/room/transition, same as an empty pool always has; a smarter two-tier fallback (missing
-theme → shared/classic pool instead of straight to procedural) is a possible future phase, not
-implemented. **The entrance is the one exception** — `entrance/surface_entrance.json`/`descent.json`
+**Motif/theme naming (transitions & rooms only; floor patterns follow the same idea, see below):**
+the start pool a dungeon assembles from is selected by motif, one folder per theme:
+`transitions/<motif>/shaft_bottom.json`, `rooms/<motif>/normal.json` (e.g.
+`rooms/desert/normal.json` for a `DESERT`-themed room pool). Motif selection itself is still
+hardcoded to `classic` (see `DungeonStructure.findGenerationPoint`) — this is just the naming
+mechanism, ready for whenever motif selection varies for real. A missing themed pool degrades
+gracefully to plain procedural generation for that floor/room/transition, same as an empty pool
+always has; a smarter two-tier fallback (missing theme → shared/classic pool instead of straight
+to procedural) is a possible future phase, not implemented. **The entrance is the one
+exception** — `entrance/surface_entrance.json`/`descent.json`
 stay unparametrized for now, because `surface_exit.nbt`/`descent_1.nbt` have jigsaw assembly-joint
 `pool`/`target` fields baked into their NBT that cross-reference each other by exact resource
 location; moving them under a motif subfolder needs those fields updated too (safest done by
@@ -370,7 +371,7 @@ authored today.
 
 ---
 
-## Floor patterns (`dungeons2/floor_pattern_config/<name>.json`)
+## Floor patterns (`dungeons2/floor_pattern_config/<motif>.json`)
 
 Ordinary procedural rooms can decorate their floor with a hand-designed pattern instead of the
 plain/alternating default, picked per room by a **datapack-driven, weighted roll** — same codec
@@ -378,26 +379,39 @@ plain/alternating default, picked per room by a **datapack-driven, weighted roll
 orthogonal to the room jigsaw pool above: it decorates a *procedural* room's floor, not a
 hand-authored prefab (a prefab is whatever you built it as, floor included).
 
-Entries live at `data/dungeons2/dungeons2/floor_pattern_config/<name>.json` (there's currently
-one shipped entry, `default`). Each entry is a weighted list:
+**Motif-scoped**, same naming convention as `rooms/<motif>/normal.json`/
+`transitions/<motif>/shaft_bottom.json` above and the weathering processor lists: entries live at
+`data/dungeons2/dungeons2/floor_pattern_config/<motif>.json` (there's currently one shipped
+entry, `classic`). A motif with no entry (or a missing registry entirely) degrades to always
+plain, the same graceful degradation an absent template pool always has — **no two-tier fallback**
+to a shared/classic config, matching the rooms/transitions motif-naming note above. Each entry is
+a weighted list:
 
 ```json
 {
   "elements": [
     { "type": "empty", "weight": 3 },
-    { "type": "border", "weight": 1, "inset": 2 }
+    { "type": "border", "weight": 1, "inset": 2 },
+    {
+      "type": "border",
+      "weight": 1,
+      "inset": 2,
+      "cornerBlock": "minecraft:andesite",
+      "edgeLeftBlock": "minecraft:polished_andesite",
+      "edgeRightBlock": "minecraft:polished_andesite"
+    }
   ]
 }
 ```
 
 `type` is a plain string, not an enum — `"empty"` (or any unrecognized type) means no special
 pattern, same graceful degradation an absent/empty pool always has elsewhere; `"border"` selects
-the decorative frame described below, with `inset` (default 2) as its only tunable. A missing
-`floor_pattern_config` registry, or a config with no elements or non-positive total weight, also
-falls back to `"empty"`. The roll happens once per room, using that room's own deterministic
-seed (`DungeonRoomPiece#deterministicRandom`) — so it stays the same across the repeated
-`postProcess` calls a piece gets per overlapping chunk, exactly like every other per-room roll in
-this pipeline.
+the decorative frame described below, with `inset` (default 2) and the three block-substitution
+fields (see below) as its tunables. A missing `floor_pattern_config` registry, or a config with
+no elements or non-positive total weight, also falls back to `"empty"`. The roll happens once per
+room, using that room's own deterministic seed (`DungeonRoomPiece#deterministicRandom`) — so it
+stays the same across the repeated `postProcess` calls a piece gets per overlapping chunk, exactly
+like every other per-room roll in this pipeline.
 
 ### The `border` pattern
 
@@ -406,21 +420,42 @@ Reverse-engineered from a hand-authored reference structure (`dungeonblocks:left
 **any** floor width/depth in `FloorBorderPatternProvider`:
 
 - The ring is the perimeter of the rectangle `[inset, size-1-inset]` on each axis.
-- Each of the **4 corners** is a `RIGHT` block, facing the cardinal direction reached walking the
-  ring clockwise from north (NW→north, NE→east, SE→south, SW→west).
-- Each **straight run** between two corners alternates `LEFT`/`RIGHT` starting with `LEFT`, facing
-  outward along that edge's own cardinal direction (so a longer edge just keeps alternating —
-  there's no fixed run length).
+- Each of the **4 corners** is the *corner block*, facing the cardinal direction reached walking
+  the ring clockwise from north (NW→north, NE→east, SE→south, SW→west).
+- Each **straight run** between two corners alternates the *left*/*right edge blocks* starting
+  with left, facing outward along that edge's own cardinal direction (so a longer edge just keeps
+  alternating — there's no fixed run length).
 - Everywhere else — outside the ring, and inside it — is plain floor.
 - **Degenerate sizes degrade gracefully**: if the floor is too small to fit a ring at the
   requested `inset` (fewer than 2 cells of ring width on either axis), the whole floor is plain.
+
+**The three blocks are substitutable per config entry**, not hardcoded to
+`dungeonblocks:left_large_stone_brick`/`right_large_stone_brick` — that pair is only the
+*default* for whichever of `cornerBlock`/`edgeLeftBlock`/`edgeRightBlock` a `border` entry leaves
+unset. Each is a plain resource-location string, resolved independently — you don't need to
+override all three to change one, and an id that doesn't resolve (typo, unloaded mod) just falls
+back to that slot's own default rather than breaking the whole entry. Set `edgeLeftBlock` and
+`edgeRightBlock` to the **same** id for a single-block edge with no left/right texture
+variant (the `classic.json` example above does exactly this with `minecraft:polished_andesite`,
+plus a plain `minecraft:andesite` accent at the corners) — the alternation still happens
+internally, it's just invisible when both slots resolve to the same block.
+
+**Orientation is applied generically**, not just to `dungeonblocks` pieces: a substituted block
+only gets a facing set if its blockstate actually has one (`IFacingBlock.FACING` or vanilla's
+`HorizontalDirectionalBlock.FACING`, checked in that order) — a plain cube like polished andesite
+has neither, so it's placed as-is with no orientation attempt. This means substituting in *any*
+block (plain cubes, stairs, vanilla directional blocks, another mod's `dungeonblocks`-style
+paired pieces) works without extra configuration.
 
 The geometry (`FloorBorderPatternProvider.plan`) is pure data — no `BlockState`, no Forge
 registry — specifically so it's unit-testable without a running Forge instance;
 `dungeonblocks:*` blocks only resolve once Forge has actually loaded that mod, which a bare
 `Bootstrap.bootStrap()` JUnit environment never does (same limitation `DecorationOnRealRoomTest`
-already documents for a different block). `FloorBorderPatternProviderTest` checks the geometry
-against the reference structure's exact palette instead.
+already documents for a different block). Block *substitution*, correspondingly, isn't resolved
+until `build()` actually runs — constructing a `FloorBorderPatternProvider` never touches a
+registry by itself. `FloorBorderPatternProviderTest` checks the geometry against the reference
+structure's exact palette, and checks substitution end-to-end using vanilla blocks (which *do*
+resolve under a bare bootstrap, unlike `dungeonblocks:*`).
 
 ---
 

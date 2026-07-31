@@ -106,7 +106,8 @@ public class SpawnDungeonCommand {
             // doors (which come last) win at any shared perimeter cells. These stand
             // in for the entrance / transition templates until .nbt files exist.
             BasicRoomGenerator roomGen = new BasicRoomGenerator()
-                    .withFloorPatternConfig(FloorPatternConfigHelper.get(level.registryAccess()));
+                    .withFloorPatternConfig(FloorPatternConfigHelper.get(
+                            level.registryAccess(), DungeonMotif.CLASSIC.getValue()));
             for (FloorLayout floor : layout.getFloors()) {
                 for (RoomData room : floor.getRooms()) {
                     if (room.getRole() != RoomRole.NORMAL) {

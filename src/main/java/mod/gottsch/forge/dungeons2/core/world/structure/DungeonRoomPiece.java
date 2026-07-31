@@ -86,7 +86,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
         logChunkTouch(level, chunkPos, box);
-        FloorPatternConfig floorPatternConfig = FloorPatternConfigHelper.get(level.registryAccess());
+        FloorPatternConfig floorPatternConfig = FloorPatternConfigHelper.get(level.registryAccess(), motifValue);
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
         safePlaceAll(level, box, () -> renderPlacements(floorPatternConfig));

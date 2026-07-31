@@ -1,6 +1,0 @@
-{
-  "elements": [
-    { "type": "empty", "weight": 3 },
-    { "type": "border", "weight": 1, "inset": 2 }
-  ]
-}

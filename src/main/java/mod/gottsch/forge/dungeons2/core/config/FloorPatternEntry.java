@@ -21,6 +21,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorBorderPatternProvider;
 
+import java.util.Optional;
+
 /**
  * One weighted option in a {@link FloorPatternConfig}. {@code type} is a plain string
  * discriminator rather than an enum &mdash; deliberately, matching the reasoning already written
@@ -31,16 +33,37 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorBorder
  * generator falls back to the plain/alternating {@code BasicFloorGenerator}, same as an absent
  * config entry always degrades gracefully elsewhere in this codebase. {@code "border"} selects
  * {@link mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorBorderPatternProvider},
- * using {@code inset} (only meaningful for that type).</p>
+ * using {@code inset} and the three optional block-id fields below (only meaningful for that
+ * type).</p>
+ *
+ * <p>{@code cornerBlock}/{@code edgeLeftBlock}/{@code edgeRightBlock} are resource-location
+ * strings (e.g. {@code "minecraft:polished_andesite"}) substituting the border pattern's default
+ * {@code dungeonblocks:left_large_stone_brick}/{@code right_large_stone_brick} pieces per slot.
+ * Any left absent (or pointing at an id that doesn't resolve) falls back to that slot's default
+ * independently &mdash; you don't have to specify all three to override one. Set
+ * {@code edgeLeftBlock} and {@code edgeRightBlock} to the <em>same</em> id for a single-block
+ * edge with no left/right texture variant (e.g. a plain stone type); leave {@code cornerBlock}
+ * unset to have corners match {@code edgeRightBlock} automatically.</p>
  *
  * @author Mark Gottschling on Jul 30, 2026
  */
-public record FloorPatternEntry(String type, int weight, int inset) {
+public record FloorPatternEntry(String type, int weight, int inset,
+                                 Optional<String> cornerBlock,
+                                 Optional<String> edgeLeftBlock,
+                                 Optional<String> edgeRightBlock) {
+
+    /** Convenience for entries that don't need block substitution (e.g. {@code "empty"}). */
+    public FloorPatternEntry(String type, int weight, int inset) {
+        this(type, weight, inset, Optional.empty(), Optional.empty(), Optional.empty());
+    }
 
     public static final Codec<FloorPatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("type").forGetter(FloorPatternEntry::type),
             Codec.intRange(1, Integer.MAX_VALUE).fieldOf("weight").forGetter(FloorPatternEntry::weight),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("inset", FloorBorderPatternProvider.DEFAULT_INSET)
-                    .forGetter(FloorPatternEntry::inset)
+                    .forGetter(FloorPatternEntry::inset),
+            Codec.STRING.optionalFieldOf("cornerBlock").forGetter(FloorPatternEntry::cornerBlock),
+            Codec.STRING.optionalFieldOf("edgeLeftBlock").forGetter(FloorPatternEntry::edgeLeftBlock),
+            Codec.STRING.optionalFieldOf("edgeRightBlock").forGetter(FloorPatternEntry::edgeRightBlock)
     ).apply(instance, FloorPatternEntry::new));
 }

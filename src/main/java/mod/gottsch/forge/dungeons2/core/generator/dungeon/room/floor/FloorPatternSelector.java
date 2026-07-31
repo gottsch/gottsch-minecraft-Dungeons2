@@ -19,10 +19,15 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Weighted pick from a {@link FloorPatternConfig}, mapping the chosen {@link FloorPatternEntry}
@@ -64,8 +69,32 @@ public final class FloorPatternSelector {
 
     private static IDungeonFloorGenerator toGenerator(FloorPatternEntry entry) {
         return switch (entry.type().trim().toLowerCase(Locale.ROOT)) {
-            case "border" -> new FloorBorderPatternProvider(entry.inset());
+            case "border" -> new FloorBorderPatternProvider(entry.inset(),
+                    resolveBlock(entry.cornerBlock()),
+                    resolveBlock(entry.edgeLeftBlock()),
+                    resolveBlock(entry.edgeRightBlock()));
             default -> new BasicFloorGenerator(); // "empty" or unrecognized
         };
+    }
+
+    /**
+     * Resolves an optional block-id string to a {@link Block}, or {@code null} (meaning "use
+     * this slot's own default") when absent, malformed, or not a registered block id -- the same
+     * graceful degradation the rest of this selector already applies, just per-slot instead of
+     * per-entry.
+     */
+    private static Block resolveBlock(Optional<String> id) {
+        if (id.isEmpty()) {
+            return null;
+        }
+        Block block;
+        try {
+            block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(id.get()));
+        } catch (RuntimeException malformed) {
+            return null;
+        }
+        // BLOCKS is a defaulted registry (falls back to minecraft:air for an unknown id rather
+        // than null); either way an unresolved id should fall back to the slot's own default.
+        return (block == null || block == Blocks.AIR) ? null : block;
     }
 }

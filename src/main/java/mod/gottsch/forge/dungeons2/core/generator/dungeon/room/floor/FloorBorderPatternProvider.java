@@ -25,24 +25,39 @@ import mod.gottsch.forge.dungeonblocks.core.block.ModBlocks;
 import mod.gottsch.forge.gottschcore.block.IFacingBlock;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
 /**
  * Reproduces the hand-authored {@code floor_border_pattern_1.nbt} reference (a plain floor with a
- * decorative picture-frame ring of {@code dungeonblocks:left_large_stone_brick}/
- * {@code right_large_stone_brick} inset from the edge) for a floor of <strong>any</strong>
- * width/depth, rather than a single fixed-size template.
+ * decorative picture-frame ring inset from the edge) for a floor of <strong>any</strong>
+ * width/depth, rather than a single fixed-size template. The three blocks used (corner, left
+ * edge, right edge) are substitutable per instance &mdash; see {@link #FloorBorderPatternProvider(
+ * int, Block, Block, Block)} &mdash; defaulting to the reference's own
+ * {@code dungeonblocks:left_large_stone_brick}/{@code right_large_stone_brick} when not
+ * overridden. {@code FloorPatternSelector} is what actually threads datapack-configured block
+ * ids in from {@code floor_pattern_config} (see {@code FloorPatternEntry}'s {@code cornerBlock}/
+ * {@code edgeLeftBlock}/{@code edgeRightBlock} fields).
  *
  * <p>Reverse-engineered from the reference NBT (9x9 floor, ring inset 2 from each edge): the ring
  * is the perimeter of the rectangle {@code [inset, size-1-inset]} on each axis. Each of the 4
- * corners is a {@code RIGHT} block facing the cardinal direction reached by walking the ring
+ * corners is the corner block, facing the cardinal direction reached by walking the ring
  * clockwise from north (NW&rarr;north, NE&rarr;east, SE&rarr;south, SW&rarr;west). Each straight
- * run between two corners alternates {@code LEFT}/{@code RIGHT} starting with {@code LEFT},
- * facing outward along that edge's own cardinal direction. Everywhere else (outside the ring,
- * and inside it) is plain floor.</p>
+ * run between two corners alternates the left/right edge blocks starting with left, facing
+ * outward along that edge's own cardinal direction &mdash; if both are the same block (e.g. a
+ * single plain block like {@code minecraft:polished_andesite}), the alternation is simply
+ * invisible, which is exactly what you want for a pattern with no left/right texture variant.
+ * Everywhere else (outside the ring, and inside it) is plain floor.</p>
+ *
+ * <p><strong>Orientation is applied generically, not just to {@code dungeonblocks} pieces.</strong>
+ * A substituted block only gets a facing set if its blockstate actually has one ({@link
+ * IFacingBlock#FACING} or vanilla's {@link HorizontalDirectionalBlock#FACING}, checked in that
+ * order) &mdash; a plain cube like polished andesite has neither, so it's placed as-is with no
+ * orientation attempt.</p>
  *
  * <p>Degenerate sizes degrade gracefully: if the floor is too small to fit a ring at the
  * requested inset (fewer than 2 cells on either axis between the two insets), the whole floor is
@@ -52,7 +67,9 @@ import java.util.List;
  * {@code BlockState}/registry involved) specifically so it's unit-testable without a running
  * Forge instance &mdash; {@code dungeonblocks:*} blocks only resolve once Forge has actually
  * loaded that mod (see {@code DecorationOnRealRoomTest}'s note on the same limitation), which a
- * bare {@code Bootstrap.bootStrap()} JUnit environment never does.</p>
+ * bare {@code Bootstrap.bootStrap()} JUnit environment never does. For the same reason, block
+ * substitution is resolved to {@code null} (meaning "use the default") rather than touching the
+ * registry until {@link #build} actually runs.</p>
  *
  * @author Mark Gottschling on Jul 30, 2026
  */
@@ -63,17 +80,38 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator {
     private static final BlockState PLAIN = Blocks.STONE_BRICKS.defaultBlockState();
 
     private final int inset;
+    /** {@code null} means "use the {@code dungeonblocks} default for this slot". */
+    private final Block cornerBlock;
+    private final Block edgeLeftBlock;
+    private final Block edgeRightBlock;
 
     public FloorBorderPatternProvider() {
         this(DEFAULT_INSET);
     }
 
     public FloorBorderPatternProvider(int inset) {
-        this.inset = inset;
+        this(inset, null, null, null);
     }
 
-    /** One ring cell's block/orientation, independent of any Minecraft registry. */
-    record RingCell(boolean left, Direction facing) {
+    /**
+     * @param cornerBlock    block for the 4 ring corners, or {@code null} for the default
+     *                       ({@code dungeonblocks:right_large_stone_brick})
+     * @param edgeLeftBlock  block for the "left" half of each straight run's alternation, or
+     *                       {@code null} for the default ({@code dungeonblocks:left_large_stone_brick})
+     * @param edgeRightBlock block for the "right" half of each straight run's alternation, or
+     *                       {@code null} for the default ({@code dungeonblocks:right_large_stone_brick}).
+     *                       Pass the same block as {@code edgeLeftBlock} for a single-block edge
+     *                       with no visible alternation.
+     */
+    public FloorBorderPatternProvider(int inset, Block cornerBlock, Block edgeLeftBlock, Block edgeRightBlock) {
+        this.inset = inset;
+        this.cornerBlock = cornerBlock;
+        this.edgeLeftBlock = edgeLeftBlock;
+        this.edgeRightBlock = edgeRightBlock;
+    }
+
+    /** One ring cell's role/orientation, independent of any Minecraft registry. */
+    record RingCell(boolean corner, boolean left, Direction facing) {
     }
 
     @Override
@@ -111,27 +149,46 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator {
             return grid;
         }
 
-        // Corners: always RIGHT, facing the direction reached walking the ring clockwise from north.
-        grid[xMin][zMin] = new RingCell(false, Direction.NORTH);
-        grid[xMax][zMin] = new RingCell(false, Direction.EAST);
-        grid[xMax][zMax] = new RingCell(false, Direction.SOUTH);
-        grid[xMin][zMax] = new RingCell(false, Direction.WEST);
+        // Corners, facing the direction reached walking the ring clockwise from north.
+        grid[xMin][zMin] = new RingCell(true, false, Direction.NORTH);
+        grid[xMax][zMin] = new RingCell(true, false, Direction.EAST);
+        grid[xMax][zMax] = new RingCell(true, false, Direction.SOUTH);
+        grid[xMin][zMax] = new RingCell(true, false, Direction.WEST);
 
         // North/south straight runs (excluding corners), alternating LEFT/RIGHT starting with LEFT.
         for (int x = xMin + 1, i = 0; x < xMax; x++, i++) {
-            grid[x][zMin] = new RingCell(i % 2 == 0, Direction.NORTH);
-            grid[x][zMax] = new RingCell(i % 2 == 0, Direction.SOUTH);
+            grid[x][zMin] = new RingCell(false, i % 2 == 0, Direction.NORTH);
+            grid[x][zMax] = new RingCell(false, i % 2 == 0, Direction.SOUTH);
         }
         // West/east straight runs (excluding corners), alternating LEFT/RIGHT starting with LEFT.
         for (int z = zMin + 1, i = 0; z < zMax; z++, i++) {
-            grid[xMin][z] = new RingCell(i % 2 == 0, Direction.WEST);
-            grid[xMax][z] = new RingCell(i % 2 == 0, Direction.EAST);
+            grid[xMin][z] = new RingCell(false, i % 2 == 0, Direction.WEST);
+            grid[xMax][z] = new RingCell(false, i % 2 == 0, Direction.EAST);
         }
         return grid;
     }
 
-    private static BlockState toBlockState(RingCell cell) {
-        var block = cell.left() ? ModBlocks.LEFT_LARGE_STONE_BRICK : ModBlocks.RIGHT_LARGE_STONE_BRICK;
-        return block.get().defaultBlockState().setValue(IFacingBlock.FACING, cell.facing());
+    private BlockState toBlockState(RingCell cell) {
+        Block block;
+        if (cell.corner()) {
+            block = cornerBlock != null ? cornerBlock : ModBlocks.RIGHT_LARGE_STONE_BRICK.get();
+        } else if (cell.left()) {
+            block = edgeLeftBlock != null ? edgeLeftBlock : ModBlocks.LEFT_LARGE_STONE_BRICK.get();
+        } else {
+            block = edgeRightBlock != null ? edgeRightBlock : ModBlocks.RIGHT_LARGE_STONE_BRICK.get();
+        }
+        return orient(block, cell.facing());
+    }
+
+    /** Sets a facing property only if the block actually has one; otherwise placed as-is. */
+    private static BlockState orient(Block block, Direction facing) {
+        BlockState state = block.defaultBlockState();
+        if (state.hasProperty(IFacingBlock.FACING)) {
+            return state.setValue(IFacingBlock.FACING, facing);
+        }
+        if (state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return state.setValue(HorizontalDirectionalBlock.FACING, facing);
+        }
+        return state;
     }
 }

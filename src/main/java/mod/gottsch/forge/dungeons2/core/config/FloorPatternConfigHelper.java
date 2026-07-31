@@ -21,27 +21,39 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.Locale;
+
 /**
  * Static lookup helpers for the {@link FloorPatternConfigRegistries#FLOOR_PATTERN_CONFIG}
  * datapack registry.
+ *
+ * <p>Motif-scoped, same convention as {@code rooms/<motif>/normal.json}/
+ * {@code transitions/<motif>/shaft_bottom.json} and the weathering processor lists
+ * ({@code PieceProcessors#weatheringList}) &mdash; entries live at
+ * {@code data/dungeons2/dungeons2/floor_pattern_config/<motif>.json}, one shipped entry today,
+ * {@code classic}. A motif with no such entry (or no registry at all) degrades gracefully to
+ * {@link FloorPatternConfig#DEFAULT} (always plain), same as an absent template pool always has
+ * elsewhere in this codebase &mdash; no two-tier fallback to a shared/classic config, matching
+ * the rooms/transitions motif-naming note in {@code structures/README.md}.</p>
  *
  * @author Mark Gottschling on Jul 30, 2026
  */
 public class FloorPatternConfigHelper {
 
-    /** The single shipped entry: {@code data/dungeons2/dungeons2/floor_pattern_config/default.json}. */
-    public static final ResourceLocation DEFAULT_ID = new ResourceLocation(Dungeons.MOD_ID, "default");
-
     private FloorPatternConfigHelper() {}
 
     /**
-     * Looks up the {@code default} floor-pattern config, returning
-     * {@link FloorPatternConfig#DEFAULT} when no entry (or no registry) is present so callers
-     * never deal with null.
+     * Looks up the floor-pattern config for {@code motifValue}, returning
+     * {@link FloorPatternConfig#DEFAULT} when no entry (or no registry, or a blank motif) is
+     * present so callers never deal with null.
      */
-    public static FloorPatternConfig get(RegistryAccess registryAccess) {
+    public static FloorPatternConfig get(RegistryAccess registryAccess, String motifValue) {
+        if (motifValue == null || motifValue.isBlank()) {
+            return FloorPatternConfig.DEFAULT;
+        }
+        ResourceLocation id = new ResourceLocation(Dungeons.MOD_ID, motifValue.trim().toLowerCase(Locale.ROOT));
         return registryAccess.registry(FloorPatternConfigRegistries.FLOOR_PATTERN_CONFIG)
-                .map(registry -> registry.get(DEFAULT_ID))
+                .map(registry -> registry.get(id))
                 .map(config -> config != null ? config : FloorPatternConfig.DEFAULT)
                 .orElse(FloorPatternConfig.DEFAULT);
     }

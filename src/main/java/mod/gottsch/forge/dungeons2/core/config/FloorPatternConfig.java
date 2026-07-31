@@ -24,9 +24,12 @@ import java.util.List;
 
 /**
  * Datapack-driven, codec-backed weighted list of floor patterns, resolved once per room. Entries
- * live at {@code data/dungeons2/dungeons2/floor_pattern_config/<name>.json}. There is currently
- * one shipped entry, {@code default}, looked up via {@link FloorPatternConfigHelper#get}. Same
- * datapack-registry + {@link Codec} pattern as {@link DungeonGenerationConfig}.
+ * are motif-scoped, same convention as {@code rooms/<motif>/normal.json}/
+ * {@code transitions/<motif>/shaft_bottom.json}: they live at
+ * {@code data/dungeons2/dungeons2/floor_pattern_config/<motif>.json} and are looked up via
+ * {@link FloorPatternConfigHelper#get}, which degrades to {@link #DEFAULT} for a motif with no
+ * entry. There is currently one shipped entry, {@code classic}. Same datapack-registry +
+ * {@link Codec} pattern as {@link DungeonGenerationConfig}.
  *
  * <p>The actual weighted pick and type-&gt;generator mapping lives in
  * {@code mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatternSelector}, not

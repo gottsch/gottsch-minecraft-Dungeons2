@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Where the stonework has decayed all the way down to dirt, **mushrooms and moss now sprout on top of it and roots hang down underneath**, so a crumbled patch looks overgrown rather than just discoloured.
 - **Ledges and corbels now crumble away** when the wall they jutted out of has decayed out from under them, instead of being left hanging in mid-air. One only goes if there is genuinely nothing left touching it.
 - **Seagrass and lily pads** on standing water — unused by the classic dungeon, but available to themes that have water.
-- **Room floors can now show a decorative bordered pattern** instead of always being plain, with a picture-frame ring inset from the floor's edge. How often it shows up (and how far the ring sits from the edge) is datapack-controlled, same as the rest of a theme's look.
+- **Room floors can now show a decorative bordered pattern** instead of always being plain, with a picture-frame ring inset from the floor's edge. How often it shows up, how far the ring sits from the edge, and which blocks it's built from (the corners can even use a different block than the edges) are all datapack-controlled, and each theme can have its own set of floor patterns.
 - The surface entrance is now built from three separate, independently swappable pieces (the building above ground, the shaft down, and the room below) instead of one fixed pair, so new entrance variants can be added later without replacing the whole thing.
 
 ### Changed
@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corridor ceilings now use the dungeon's motif ceiling block instead of a black concrete placeholder.
 - Hand-built structures — the surface entrance, the staircases down, and prefab rooms — are now weathered to match the dungeon around them. Previously only the procedurally generated rooms and corridors aged, so authored pieces stood out as conspicuously pristine.
 - Weathering is now defined in vanilla Minecraft's standard `worldgen/processor_list` datapack format instead of a Dungeons2-specific one, so a single file controls both the generated dungeon and the hand-built pieces inside it. **Datapack authors:** the old `data/dungeons2/substitution/*.json` files no longer do anything and can be deleted; see `data/dungeons2/structures/README.md` for the replacement.
+- **Datapack authors:** floor pattern config is now organized by theme, the same way room and staircase pools already are — rename `floor_pattern_config/default.json` to `floor_pattern_config/<theme>.json` (e.g. `classic.json`). A theme with no such file simply gets plain floors, same as before this feature existed.
 
 ### Fixed
 

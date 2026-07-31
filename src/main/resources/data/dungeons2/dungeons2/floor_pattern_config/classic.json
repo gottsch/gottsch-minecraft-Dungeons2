@@ -1,0 +1,14 @@
+{
+  "elements": [
+    { "type": "empty", "weight": 3 },
+    { "type": "border", "weight": 1, "inset": 2 },
+    {
+      "type": "border",
+      "weight": 1,
+      "inset": 2,
+      "cornerBlock": "minecraft:andesite",
+      "edgeLeftBlock": "minecraft:polished_andesite",
+      "edgeRightBlock": "minecraft:polished_andesite"
+    }
+  ]
+}

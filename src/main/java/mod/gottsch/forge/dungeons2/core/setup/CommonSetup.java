@@ -22,25 +22,14 @@ import mod.gottsch.forge.dungeons2.api.DungeonsApi;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
 import mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns;
-import mod.gottsch.forge.dungeons2.core.decorator.floor.DefaultFloorDecorator;
-import mod.gottsch.forge.dungeons2.core.decorator.floor.DefaultFloorDrainageDecorator;
-import mod.gottsch.forge.dungeons2.core.decorator.floor.border.CrossBorderDecorator;
-import mod.gottsch.forge.dungeons2.core.decorator.floor.border.DefaultBorderDecorator;
-import mod.gottsch.forge.dungeons2.core.decorator.floor.border.DefaultPaddedBorderDecorator;
-import mod.gottsch.forge.dungeons2.core.decorator.wall.DefaultWallDecorator;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
-import mod.gottsch.forge.dungeons2.core.enums.FloorElementType;
-import mod.gottsch.forge.dungeons2.core.enums.WallElementType;
 import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CorridorCeilingPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.door.DoorPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorDrainagePattern;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.border.FloorBorderPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
 import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
-import mod.gottsch.forge.dungeons2.core.registry.DecoratorRegistry;
 import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -81,12 +70,6 @@ public class CommonSetup {
 		Arrays.stream(FloorPattern.values()).sequential().forEach(e -> {
 			DungeonsApi.registerPattern(DungeonRoomPatterns.FLOOR_PATTERN, e);
 		});
-		Arrays.stream(FloorBorderPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.FLOOR_BORDER_PATTERN, e);
-		});
-		Arrays.stream(FloorDrainagePattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.FLOOR_DRAINAGE_PATTERN, e);
-		});
 		Arrays.stream(CorridorFloorPattern.values()).sequential().forEach(e -> {
 			DungeonsApi.registerPattern(DungeonRoomPatterns.CORRIDOR_FLOOR_PATTERN, e);
 		});
@@ -110,22 +93,6 @@ public class CommonSetup {
 		Arrays.stream(DungeonMotif.values()).sequential().forEach(e -> {
 			BlockProivderRegistry.register(e, new BlockProvider());
 		});
-
-		// register decorators
-		DecoratorRegistry.register(FloorElementType.FLOOR, new DefaultFloorDecorator());
-		DecoratorRegistry.register(FloorElementType.FLOOR_BORDER, new DefaultBorderDecorator());
-		DecoratorRegistry.register(FloorElementType.FLOOR_BORDER, new CrossBorderDecorator());
-		DecoratorRegistry.register(FloorElementType.FLOOR_PADDED_BORDER, new DefaultPaddedBorderDecorator());
-//		DecoratorRegistry.register(FloorElementType.FLOOR_CORNER, new DefaultFloorCornerDecorator());
-		DecoratorRegistry.register(FloorElementType.FLOOR_DRAINAGE, new DefaultFloorDrainageDecorator());
-
-		DecoratorRegistry.register(WallElementType.WALL, new DefaultWallDecorator());
-
-		// TODO register all
-
-
-
-
 	}
 
 }
