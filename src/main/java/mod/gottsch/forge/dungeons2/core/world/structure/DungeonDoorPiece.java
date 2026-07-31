@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.BasicDoorGenerator;
@@ -73,14 +75,21 @@ public class DungeonDoorPiece extends DungeonPiece {
     @Override
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
+        MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue);
         // Render from a piece-stable seed, not the chunk-seeded `random`.
-        safePlaceAll(level, box, this::renderPlacements);
+        safePlaceAll(level, box, () -> renderPlacements(motifConfig));
+    }
+
+    /** Builds this door's placements deterministically (no external RNG), motif defaults. */
+    public List<BlockPlacement> renderPlacements() {
+        return renderPlacements(MotifConfig.DEFAULT);
     }
 
     /** Builds this door's placements deterministically (no external RNG). */
-    public List<BlockPlacement> renderPlacements() {
+    public List<BlockPlacement> renderPlacements(MotifConfig motifConfig) {
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicDoorGenerator().build(door, floorY, motif(), deterministicRandom(doorDiscriminator()), out);
+        new BasicDoorGenerator().withMotifConfig(motifConfig)
+                .build(door, floorY, motif(), deterministicRandom(doorDiscriminator()), out);
         return out;
     }
 

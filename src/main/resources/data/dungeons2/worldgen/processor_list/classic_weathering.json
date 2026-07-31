@@ -366,7 +366,7 @@
         //
         // This is the ONLY source of dirt in a classic dungeon, and floor_growth /
         // hanging_growth (below) have nothing to sprout from without it. Nothing authored in
-        // block_provider/classic.json is ever dirt.
+        // motif_config/classic.json is ever dirt.
         //
         // GRAVEL IS DELIBERATELY THE LAST STAGE, not the first. This chain is applied to the
         // WALL, the FLOOR and the CEILING alike -- classic.json uses minecraft:stone_bricks
@@ -383,7 +383,7 @@
         // hole.
         //
         // To scope either properly, give the surfaces DISTINCT BLOCKS in
-        // block_provider/<motif>.json -- a ceiling block no wall uses can carry its own
+        // motif_config/<motif>.json -- a ceiling block no wall uses can carry its own
         // rules, and so can a floor block. That is the only lever there is; the processor has
         // nothing else to discriminate on.
         //

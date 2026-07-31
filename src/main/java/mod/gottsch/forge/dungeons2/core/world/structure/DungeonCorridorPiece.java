@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
@@ -99,14 +101,21 @@ public class DungeonCorridorPiece extends DungeonPiece {
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
         logChunkTouch(level, chunkPos, box);
+        MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue);
         // Render from a piece-stable seed, not the chunk-seeded `random`.
-        safePlaceAll(level, box, this::renderPlacements);
+        safePlaceAll(level, box, () -> renderPlacements(motifConfig));
+    }
+
+    /** Builds this corridor's placements deterministically (no external RNG), motif defaults. */
+    public List<BlockPlacement> renderPlacements() {
+        return renderPlacements(MotifConfig.DEFAULT);
     }
 
     /** Builds this corridor's placements deterministically (no external RNG). */
-    public List<BlockPlacement> renderPlacements() {
+    public List<BlockPlacement> renderPlacements(MotifConfig motifConfig) {
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicCorridorGenerator().build(corridor, floorY, motif(), deterministicRandom(corridor.getId()), out);
+        new BasicCorridorGenerator().withMotifConfig(motifConfig)
+                .build(corridor, floorY, motif(), deterministicRandom(corridor.getId()), out);
         return out;
     }
 

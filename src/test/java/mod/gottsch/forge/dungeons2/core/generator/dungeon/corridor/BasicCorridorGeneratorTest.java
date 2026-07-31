@@ -19,18 +19,15 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
+import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
-import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -177,32 +174,32 @@ class BasicCorridorGeneratorTest {
     }
 
     /**
-     * Regression test for the bug fixed alongside this: {@code palette()} used to resolve the
-     * corridor floor from the WALL_PATTERN BlockSet using a CorridorFloorPattern.FLOOR key --
-     * since BlockSet is keyed by enum instance, not name, that BlockSet (populated only with
-     * WallPattern constants) never actually had that key, so the corridor floor always silently
-     * fell through to the DEFAULT stone_bricks regardless of what block_provider's
-     * corridor_floor_pattern authored. Registers a fake {@code BlockProvider} directly (bypassing
-     * datapack JSON loading, which needs a running Forge instance) under a motif no other test
-     * touches, and confirms the corridor floor now actually reflects it.
+     * Regression test for a bug this outlived two refactors. Pre-merge, {@code palette()}
+     * resolved the corridor floor from the WALL_PATTERN BlockSet using a CorridorFloorPattern key
+     * -- and since BlockSet was keyed by enum instance rather than name, that BlockSet (populated
+     * only with WallPattern constants) never had the key, so the corridor floor always silently
+     * fell through to a hardcoded stone_bricks regardless of what the datapack authored. The merged
+     * MotifConfig makes that class of bug unexpressible: the corridor's blocks are named record
+     * fields. Asserts the authored floor pair actually reaches the world.
      */
     @Test
-    void corridorFloorIsSourcedFromItsOwnCorridorFloorPatternBlockSet() {
-        BlockSet floorBlockSet = new BlockSet("default");
-        floorBlockSet.set(CorridorFloorPattern.FLOOR, Blocks.GRANITE);
-        floorBlockSet.set(CorridorFloorPattern.ALTERNATE_FLOOR, Blocks.DIORITE);
-        BlockProvider provider = new BlockProvider();
-        provider.register("corridor_floor_pattern", floorBlockSet);
-        BlockProivderRegistry.register(DungeonMotif.DESERT, provider);
+    void corridorFloorComesFromTheMotifsCorridorSection() {
+        MotifConfig motifConfig = new MotifConfig(
+                MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
+                new CorridorConfig("minecraft:granite", "minecraft:diorite", "minecraft:andesite"),
+                MotifConfig.DEFAULT.floor());
 
-        BasicCorridorGenerator gen = new BasicCorridorGenerator();
         List<BlockPlacement> out = new ArrayList<>();
-        gen.build(simpleCorridor(), simpleGrid(), 60, DungeonMotif.DESERT, RandomSource.create(7L), out);
+        new BasicCorridorGenerator().withMotifConfig(motifConfig)
+                .build(simpleCorridor(), simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
-        boolean sawConfiguredFloor = out.stream().anyMatch(bp -> bp.getY() == 60
+        boolean sawAuthoredFloor = out.stream().anyMatch(bp -> bp.getY() == 60
                 && ("minecraft:granite".equals(bp.getBlockId()) || "minecraft:diorite".equals(bp.getBlockId())));
-        assertTrue(sawConfiguredFloor,
-                "corridor floor should reflect the registered corridor_floor_pattern, not fall back to DEFAULT");
+        assertTrue(sawAuthoredFloor, "corridor floor should come from CorridorConfig, not a hardcoded default");
+
+        boolean sawAuthoredCeiling = out.stream()
+                .anyMatch(bp -> bp.getY() == 64 && "minecraft:andesite".equals(bp.getBlockId()));
+        assertTrue(sawAuthoredCeiling, "corridor ceiling should come from CorridorConfig too");
     }
 
     @Test

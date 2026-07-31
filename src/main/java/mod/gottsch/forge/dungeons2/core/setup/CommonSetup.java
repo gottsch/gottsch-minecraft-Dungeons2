@@ -20,16 +20,7 @@ package mod.gottsch.forge.dungeons2.core.setup;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.api.DungeonsApi;
 import mod.gottsch.forge.dungeons2.core.config.Config;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
-import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CorridorCeilingPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.door.DoorPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
-import mod.gottsch.forge.dungeons2.core.registry.BlockProivderRegistry;
 import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -63,36 +54,10 @@ public class CommonSetup {
 		// register all motifs (doesn't have to be restricted to the enum's values)
 		Arrays.stream(DungeonMotif.values()).sequential().forEach(DungeonsApi::registerMotif);
 
-		// register all pattern elements
-		Arrays.stream(WallPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.WALL_PATTERN, e);
-		});
-		Arrays.stream(FloorPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.FLOOR_PATTERN, e);
-		});
-		Arrays.stream(CorridorFloorPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.CORRIDOR_FLOOR_PATTERN, e);
-		});
-		Arrays.stream(CeilingPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.CEILING_PATTERN, e);
-		});
-		Arrays.stream(CorridorCeilingPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.CORRIDOR_CEILING_PATTERN, e);
-		});
-		Arrays.stream(DoorPattern.values()).sequential().forEach(e -> {
-			DungeonsApi.registerPattern(DungeonRoomPatterns.DOOR_PATTERN, e);
-		});
-
-		// TODO register all patterns with block providers
-
-		// TEMP block provider would be initialized and loaded by a toml file
-		// register block providers.
-		// OR block providers are registered here, but loaded by the toml file.
-		// this ensures that the motif that is read from the toml is registered.
-		// -- can't be loaded here from toml since it won't be loaded at this point.
-		Arrays.stream(DungeonMotif.values()).sequential().forEach(e -> {
-			BlockProivderRegistry.register(e, new BlockProvider());
-		});
+		// Block palettes are datapack-driven: one MotifConfig per motif, loaded by
+		// Forge's datapack-registry machinery (see MotifConfigRegistries). Nothing to
+		// register here -- the string->enum PatternRegistry indirection this used to
+		// need went away with the block_provider system it served.
 	}
 
 }

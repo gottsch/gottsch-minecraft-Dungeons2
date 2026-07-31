@@ -25,22 +25,28 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.DataPackRegistryEvent;
 
 /**
- * Registers Dungeons2's datapack-driven floor-pattern registry. Registered onto the mod event
- * bus from the {@link Dungeons} constructor.
+ * Registers Dungeons2's datapack-driven motif registry. Registered onto the mod event bus from the
+ * {@link Dungeons} constructor.
  *
- * @author Mark Gottschling on Jul 30, 2026
+ * @author Mark Gottschling on Jul 31, 2026
  */
-public class FloorPatternConfigRegistries {
+public class MotifConfigRegistries {
 
     /**
-     * Floor-pattern config registry. Entries live at
-     * {@code data/dungeons2/dungeons2/floor_pattern_config/<name>.json}.
+     * Motif config registry. Entries live at
+     * {@code data/dungeons2/dungeons2/motif_config/<motif>.json}.
+     *
+     * <p>The doubled {@code dungeons2/dungeons2} is not a mistake: a datapack registry's folder is
+     * {@code data/<pack namespace>/<registry key namespace>/<registry key path>/}, and both
+     * namespaces here are this mod's own id. Forge does not permit a mod to register a custom
+     * registry under any namespace but its own, so every mod-defined datapack registry looks like
+     * this. Compare {@link DungeonGenerationConfigRegistries}, which has the same shape.</p>
      */
-    public static final ResourceKey<Registry<FloorPatternConfig>> FLOOR_PATTERN_CONFIG =
-            ResourceKey.createRegistryKey(new ResourceLocation(Dungeons.MOD_ID, "floor_pattern_config"));
+    public static final ResourceKey<Registry<MotifConfig>> MOTIF_CONFIG =
+            ResourceKey.createRegistryKey(new ResourceLocation(Dungeons.MOD_ID, "motif_config"));
 
     @SubscribeEvent
     public static void onNewDataPackRegistry(DataPackRegistryEvent.NewRegistry event) {
-        event.dataPackRegistry(FLOOR_PATTERN_CONFIG, FloorPatternConfig.CODEC, FloorPatternConfig.CODEC);
+        event.dataPackRegistry(MOTIF_CONFIG, MotifConfig.CODEC, MotifConfig.CODEC);
     }
 }

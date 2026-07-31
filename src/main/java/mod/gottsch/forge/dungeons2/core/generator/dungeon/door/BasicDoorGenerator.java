@@ -17,14 +17,12 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.door;
 
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Direction2D;
-import mod.gottsch.forge.dungeons2.core.pattern.door.DoorPattern;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -33,8 +31,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 import java.util.List;
-
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.DOOR_PATTERN;
 
 /**
  * Builds one doorway as a 4-block column of {@link BlockPlacement}s.
@@ -56,25 +52,28 @@ import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.DOO
  * @author Mark Gottschling on Dev 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicDoorGenerator implements IDoorGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
+
+    /** See {@code BasicWallGenerator#withMotifConfig}. */
+    public BasicDoorGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
+        return this;
+    }
 
     @Override
     public void build(DoorData door, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
-        BlockSet blockSet = BlockProvider.get(motif, DOOR_PATTERN, random);
-
         int x = door.getX();
         int z = door.getZ();
 
         // Sill (floor) and lintel (top).
-        out.add(BlockStateCodec.placement(x, floorY, z,
-                blockSet.get(DoorPattern.FLOOR).orElse(DEFAULT)));
-        out.add(BlockStateCodec.placement(x, floorY + 3, z,
-                blockSet.get(DoorPattern.LINTEL).orElse(DEFAULT)));
+        out.add(BlockStateCodec.placement(x, floorY, z, motifConfig.door().floorState()));
+        out.add(BlockStateCodec.placement(x, floorY + 3, z, motifConfig.door().lintelState()));
 
         // Door halves.
         Direction direction = toMcDirection(door.getFacing());
-        BlockState doorBase = blockSet.get(DoorPattern.DOOR).orElse(Blocks.OAK_DOOR.defaultBlockState());
+        BlockState doorBase = motifConfig.door().doorState();
         if (direction != null) {
             BlockState lower = doorBase.setValue(DoorBlock.FACING, direction)
                     .setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);

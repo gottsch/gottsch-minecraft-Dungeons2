@@ -17,14 +17,12 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall;
 
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
-import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,8 +30,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
 
 /**
  * Builds the four walls of a {@link RoomData}, plus interior air, as
@@ -52,7 +48,18 @@ import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WAL
  * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicWallGenerator implements IDungeonWallGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
+
+    /**
+     * Injects the resolved motif config. Same "resolve once where {@code RegistryAccess} is
+     * available, inject the resolved value" shape the rest of this pipeline uses; left at
+     * {@link MotifConfig#DEFAULT} (plain stone_bricks) when not supplied.
+     */
+    public BasicWallGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
+        return this;
+    }
 
     /**
      * Y offsets (above the floor surface) that {@code BasicDoorGenerator} fills
@@ -73,8 +80,7 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
-        BlockSet blockSet = BlockProvider.get(motif, WALL_PATTERN, random);
-        BlockState wallState = blockSet.get(WallPattern.WALL).orElse(DEFAULT);
+        BlockState wallState = motifConfig.wall().wallState();
         BlockState airState = Blocks.AIR.defaultBlockState();
 
         int width = room.getWidth();

@@ -17,7 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
-import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -42,22 +42,24 @@ import java.util.List;
  * with motif-aware lookups stubbed (returning a {@code Basic*} for every
  * motif). Real per-motif specialization happens in a later phase.</p>
  *
- * <p>The floor sub-builder is the one exception: {@link #selectFloorGenerator} rolls a weighted
- * pick from a {@link FloorPatternConfig} (default: always plain, see
- * {@link FloorPatternConfig#DEFAULT}) via {@link #withFloorPatternConfig}, resolved by the caller
- * from the datapack registry &mdash; same "resolve once where {@code RegistryAccess} is
- * available, inject the resolved value" shape as {@code DungeonStackPlanner#withCorridorWidth}.
- * The roll uses this room's own {@code random}, so it stays deterministic across the repeated
- * {@code postProcess} calls a piece gets per overlapping chunk.</p>
+ * <p>All three sub-builders draw their blocks from a {@link MotifConfig} (default: all plain
+ * stone_bricks, see {@link MotifConfig#DEFAULT}) injected via {@link #withMotifConfig}, resolved by
+ * the caller from the datapack registry &mdash; same "resolve once where {@code RegistryAccess} is
+ * available, inject the resolved value" shape as {@code DungeonStackPlanner#withCorridorWidth}.</p>
+ *
+ * <p>The floor sub-builder additionally rolls a weighted decorative pattern from that config's
+ * floor section ({@link #selectFloorGenerator}). The roll uses this room's own {@code random}, so
+ * it stays deterministic across the repeated {@code postProcess} calls a piece gets per
+ * overlapping chunk.</p>
  *
  * @author Mark Gottschling on Dec 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicRoomGenerator implements IRoomGenerator {
 
-    private FloorPatternConfig floorPatternConfig = FloorPatternConfig.DEFAULT;
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
 
-    public BasicRoomGenerator withFloorPatternConfig(FloorPatternConfig floorPatternConfig) {
-        this.floorPatternConfig = floorPatternConfig;
+    public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
         return this;
     }
 
@@ -80,14 +82,14 @@ public class BasicRoomGenerator implements IRoomGenerator {
     }
 
     public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif) {
-        return new BasicWallGenerator();
+        return new BasicWallGenerator().withMotifConfig(motifConfig);
     }
 
     public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RandomSource random) {
-        return FloorPatternSelector.select(floorPatternConfig, random);
+        return FloorPatternSelector.select(motifConfig.floor(), random);
     }
 
     public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif) {
-        return new BasicCeilingGenerator();
+        return new BasicCeilingGenerator().withMotifConfig(motifConfig);
     }
 }

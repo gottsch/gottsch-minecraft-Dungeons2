@@ -17,20 +17,15 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling;
 
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
-
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CEILING_PATTERN;
 
 /**
  * Builds the ceiling of a {@link RoomData} as {@link BlockPlacement}s.
@@ -41,13 +36,19 @@ import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CEI
  * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
+
+    /** See {@code BasicWallGenerator#withMotifConfig}. */
+    public BasicCeilingGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
+        return this;
+    }
 
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
-        BlockSet blockSet = BlockProvider.get(motif, CEILING_PATTERN, random);
-        BlockState ceilingState = blockSet.get(CeilingPattern.CEILING).orElse(DEFAULT);
+        BlockState ceilingState = motifConfig.ceiling().ceilingState();
 
         int width = room.getWidth();
         int depth = room.getDepth();

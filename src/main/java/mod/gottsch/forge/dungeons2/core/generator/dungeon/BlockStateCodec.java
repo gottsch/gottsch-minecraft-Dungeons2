@@ -109,6 +109,41 @@ public final class BlockStateCodec {
         return state;
     }
 
+    /**
+     * Resolves a namespaced block-id string (e.g. {@code "minecraft:stone_bricks"}) to its
+     * {@link Block}, or {@code null} when the id is absent, blank, malformed, or not registered.
+     *
+     * <p>Callers decide what an unresolved id means. A decorative pattern degrades the whole
+     * entry to plain floor (see {@code FloorPatternSelector}); a structural element substitutes
+     * its motif default (see {@link #block}). Note {@code ForgeRegistries.BLOCKS} is a
+     * <em>defaulted</em> registry &mdash; an unknown id yields {@code minecraft:air} rather than
+     * {@code null} &mdash; so air is treated as "didn't resolve" too. That does mean a datapack
+     * cannot deliberately author {@code minecraft:air} here, which is intended: every slot these
+     * configs feed is a solid architectural block.</p>
+     */
+    public static Block blockOrNull(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+        Block block;
+        try {
+            block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(id.trim()));
+        } catch (RuntimeException malformed) {
+            return null;
+        }
+        return (block == null || block == Blocks.AIR) ? null : block;
+    }
+
+    /**
+     * As {@link #blockOrNull}, substituting {@code fallback} when the id doesn't resolve. Used by
+     * the structural motif config slots (wall/ceiling/door/corridor), where there is no
+     * "render nothing" option &mdash; a room with no wall block is a hole in the dungeon.
+     */
+    public static BlockState block(String id, Block fallback) {
+        Block block = blockOrNull(id);
+        return (block != null ? block : fallback).defaultBlockState();
+    }
+
     // -- private helpers --
 
     @SuppressWarnings({"unchecked", "rawtypes"})

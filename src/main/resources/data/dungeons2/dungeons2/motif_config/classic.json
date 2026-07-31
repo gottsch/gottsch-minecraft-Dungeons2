@@ -1,0 +1,88 @@
+{
+  "wall": {
+    "wall": "minecraft:stone_bricks"
+  },
+  "ceiling": {
+    "ceiling": "minecraft:stone_bricks"
+  },
+  "door": {
+    "door": "dungeonblocks:spruce_dungeon_door",
+    "lintel": "minecraft:polished_andesite",
+    "floor": "minecraft:polished_andesite"
+  },
+  "corridor": {
+    "floor": "minecraft:cobblestone",
+    "alternateFloor": "minecraft:gravel",
+    "ceiling": "minecraft:stone_bricks"
+  },
+  "floor": {
+    "base": "minecraft:stone_bricks",
+    "alternateBase": "minecraft:stone_bricks",
+    "patterns": [
+      { "type": "empty", "weight": 8 },
+      {
+        "type": "border",
+        "weight": 1,
+        "inset": 2,
+        "cornerBlock": "dungeonblocks:right_large_stone_brick",
+        "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
+        "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
+      },
+      {
+        "type": "border",
+        "weight": 1,
+        "inset": 2,
+        "cornerBlock": "minecraft:andesite",
+        "edgeLeftBlock": "minecraft:polished_andesite",
+        "edgeRightBlock": "minecraft:polished_andesite"
+      },
+      {
+        "type": "border",
+        "weight": 1,
+        "inset": 1,
+        "cornerBlock": "minecraft:chiseled_stone_bricks",
+        "edgeLeftBlock": "minecraft:polished_andesite",
+        "edgeRightBlock": "minecraft:polished_andesite"
+      },
+      {
+        "type": "border",
+        "weight": 1,
+        "inset": 1,
+        "cornerBlock": "dungeonblocks:dark_iron_grate",
+        "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
+        "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
+      },
+      {
+        "type": "checkerboard",
+        "weight": 1,
+        "primaryBlock": "dungeonblocks:square_stone_brick",
+        "secondaryBlock": "minecraft:polished_andesite"
+      },
+      {
+        "type": "composite",
+        "weight": 1,
+        "generators": [
+          {
+            "type": "checkerboard",
+            "primaryBlock": "dungeonblocks:square_stone_brick",
+            "secondaryBlock": "minecraft:polished_andesite"
+          },
+          {
+            "type": "border",
+            "inset": 2,
+            "cornerBlock": "minecraft:andesite",
+            "edgeLeftBlock": "minecraft:polished_andesite",
+            "edgeRightBlock": "minecraft:polished_andesite"
+          }
+        ]
+      },
+      {
+        "type": "speckle",
+        "weight": 1,
+        "primaryBlock": "minecraft:stone_bricks",
+        "secondaryBlock": "minecraft:chiseled_stone_bricks",
+        "probability": 0.08
+      }
+    ]
+  }
+}

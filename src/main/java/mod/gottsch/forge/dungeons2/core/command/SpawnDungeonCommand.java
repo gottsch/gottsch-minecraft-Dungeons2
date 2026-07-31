@@ -3,7 +3,8 @@ package mod.gottsch.forge.dungeons2.core.command;
 import com.mojang.brigadier.CommandDispatcher;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
-import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfigHelper;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -105,9 +106,9 @@ public class SpawnDungeonCommand {
             // Synthetic START/END room boxes FIRST so the renderer's corridors and
             // doors (which come last) win at any shared perimeter cells. These stand
             // in for the entrance / transition templates until .nbt files exist.
-            BasicRoomGenerator roomGen = new BasicRoomGenerator()
-                    .withFloorPatternConfig(FloorPatternConfigHelper.get(
-                            level.registryAccess(), DungeonMotif.CLASSIC.getValue()));
+            MotifConfig motifConfig = MotifConfigHelper.get(
+                    level.registryAccess(), DungeonMotif.CLASSIC.getValue());
+            BasicRoomGenerator roomGen = new BasicRoomGenerator().withMotifConfig(motifConfig);
             for (FloorLayout floor : layout.getFloors()) {
                 for (RoomData room : floor.getRooms()) {
                     if (room.getRole() != RoomRole.NORMAL) {
@@ -117,7 +118,9 @@ public class SpawnDungeonCommand {
             }
             // Procedural rooms / corridors / doors.
             placements.addAll(new DungeonLayoutRenderer(
-                    roomGen, new BasicCorridorGenerator(), new BasicDoorGenerator()).render(layout, random));
+                    roomGen,
+                    new BasicCorridorGenerator().withMotifConfig(motifConfig),
+                    new BasicDoorGenerator().withMotifConfig(motifConfig)).render(layout, random));
 
             // Write everything (floor-local XZ + world origin; Y already absolute).
             int written = 0;

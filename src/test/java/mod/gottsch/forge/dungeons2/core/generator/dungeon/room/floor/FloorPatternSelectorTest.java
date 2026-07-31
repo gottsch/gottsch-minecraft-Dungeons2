@@ -1,6 +1,6 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
-import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfig;
+import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
@@ -15,6 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FloorPatternSelectorTest {
+
+    /** A FloorConfig with the given patterns over plain stone_bricks base blocks. */
+    private static FloorConfig floorConfig(List<FloorPatternEntry> patterns) {
+        return new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", patterns);
+    }
 
     @BeforeAll
     static void bootstrap() {
@@ -51,27 +56,27 @@ class FloorPatternSelectorTest {
 
     @Test
     void emptyElementListFallsBackToBasic() {
-        FloorPatternConfig config = new FloorPatternConfig(List.of());
+        FloorConfig config = floorConfig(List.of());
         assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
     }
 
     @Test
     void unrecognizedTypeFallsBackToBasic() {
-        FloorPatternConfig config = new FloorPatternConfig(List.of(new FloorPatternEntry("nonsense", 1, 0)));
+        FloorConfig config = floorConfig(List.of(new FloorPatternEntry("nonsense", 1, 0)));
         assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
     }
 
     @Test
     void borderEntryWithoutBlocksFallsBackToBasic() {
-        // No Java-side default for any of the three block slots -- floor_pattern_config must
+        // No Java-side default for any of the three block slots -- the motif config must
         // supply them, or the entry degrades to plain rather than guessing a block.
-        FloorPatternConfig config = new FloorPatternConfig(List.of(new FloorPatternEntry("border", 1, 2)));
+        FloorConfig config = floorConfig(List.of(new FloorPatternEntry("border", 1, 2)));
         assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
     }
 
     @Test
     void singleBorderEntryAlwaysSelectsBorder() {
-        FloorPatternConfig config = new FloorPatternConfig(List.of(borderEntry(1, 2)));
+        FloorConfig config = floorConfig(List.of(borderEntry(1, 2)));
         for (long seed = 0; seed < 20; seed++) {
             assertInstanceOf(FloorBorderPatternProvider.class,
                     FloorPatternSelector.select(config, RandomSource.create(seed)));
@@ -80,7 +85,7 @@ class FloorPatternSelectorTest {
 
     @Test
     void singleCheckerboardEntryAlwaysSelectsCheckerboard() {
-        FloorPatternConfig config = new FloorPatternConfig(List.of(checkerboardEntry(1)));
+        FloorConfig config = floorConfig(List.of(checkerboardEntry(1)));
         for (long seed = 0; seed < 20; seed++) {
             assertInstanceOf(CheckerboardFloorPatternProvider.class,
                     FloorPatternSelector.select(config, RandomSource.create(seed)));
@@ -89,7 +94,7 @@ class FloorPatternSelectorTest {
 
     @Test
     void singleSpeckleEntryAlwaysSelectsSpeckle() {
-        FloorPatternConfig config = new FloorPatternConfig(List.of(speckleEntry(1)));
+        FloorConfig config = floorConfig(List.of(speckleEntry(1)));
         for (long seed = 0; seed < 20; seed++) {
             assertInstanceOf(RandomSpeckleFloorPatternProvider.class,
                     FloorPatternSelector.select(config, RandomSource.create(seed)));
@@ -98,7 +103,7 @@ class FloorPatternSelectorTest {
 
     @Test
     void compositeEntryWithNoGeneratorsFallsBackToBasic() {
-        FloorPatternConfig config = new FloorPatternConfig(
+        FloorConfig config = floorConfig(
                 List.of(new FloorPatternEntry("composite", 1, 0)));
         assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
     }
@@ -113,7 +118,7 @@ class FloorPatternSelectorTest {
                 List.of(checkerboardLayer, borderLayer));
 
         IDungeonFloorGenerator generator =
-                FloorPatternSelector.select(new FloorPatternConfig(List.of(composite)), RandomSource.create(1));
+                FloorPatternSelector.select(floorConfig(List.of(composite)), RandomSource.create(1));
         assertInstanceOf(CompositeFloorPatternProvider.class, generator);
     }
 
@@ -130,13 +135,13 @@ class FloorPatternSelectorTest {
                 List.of(base, notOverlayable));
 
         IDungeonFloorGenerator generator =
-                FloorPatternSelector.select(new FloorPatternConfig(List.of(composite)), RandomSource.create(1));
+                FloorPatternSelector.select(floorConfig(List.of(composite)), RandomSource.create(1));
         assertInstanceOf(CompositeFloorPatternProvider.class, generator);
     }
 
     @Test
     void weightedPickReturnsBothTypesOverManyRolls() {
-        FloorPatternConfig config = new FloorPatternConfig(List.of(
+        FloorConfig config = floorConfig(List.of(
                 new FloorPatternEntry("empty", 1, 0),
                 borderEntry(1, 2)));
         RandomSource random = RandomSource.create(42);

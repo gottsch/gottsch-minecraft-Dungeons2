@@ -57,7 +57,7 @@ public class WorldEvents {
 					FeatureCaches.initialize();
 
 					// Block providers are datapack-driven now — populated by
-					// BlockProviderReloadListener (see DataPackEvents), not here.
+					// loaded by Forge's datapack-registry machinery, not here.
 				}
 			}
 

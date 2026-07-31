@@ -17,18 +17,14 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
-import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
-import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
 import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -37,10 +33,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CORRIDOR_CEILING_PATTERN;
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CORRIDOR_FLOOR_PATTERN;
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
 
 /**
  * Builds one corridor region as {@link BlockPlacement}s.
@@ -60,7 +52,14 @@ import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WAL
  * @author Mark Gottschling on Dec 5, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicCorridorGenerator implements ICorridorGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
+
+    /** See {@code BasicWallGenerator#withMotifConfig}. */
+    public BasicCorridorGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
+        return this;
+    }
 
     /**
      * Y offsets (above the floor surface) that {@code BasicDoorGenerator} fills
@@ -165,25 +164,17 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /**
-     * Resolves the floor / wall / air / ceiling block states once per build call. The wall comes
-     * from the WALL_PATTERN BlockSet; the floor from its own CORRIDOR_FLOOR_PATTERN BlockSet
-     * (previously this queried CorridorFloorPattern.FLOOR against the WALL_PATTERN BlockSet, which
-     * -- since BlockSet keys by enum instance, not name -- was a guaranteed miss: WALL_PATTERN is
-     * only ever populated with WallPattern constants, never CorridorFloorPattern ones, so the
-     * corridor floor always silently fell through to DEFAULT regardless of what block_provider's
-     * corridor_floor_pattern actually authored); the ceiling comes from its own
-     * CORRIDOR_CEILING_PATTERN BlockSet, mirroring {@code BasicCeilingGenerator}'s room ceiling.
+     * Resolves the floor / wall / air / ceiling block states once per build call. The corridor has
+     * its own floor pair and ceiling ({@code CorridorConfig}) but shares the room's wall block
+     * ({@code WallConfig}), matching the pre-merge {@code block_provider} split.
      */
-    private static Palette palette(IDungeonMotif motif, RandomSource random) {
-        BlockSet wallBlockSet = BlockProvider.get(motif, WALL_PATTERN, random);
-        BlockSet floorBlockSet = BlockProvider.get(motif, CORRIDOR_FLOOR_PATTERN, random);
-        BlockSet ceilingBlockSet = BlockProvider.get(motif, CORRIDOR_CEILING_PATTERN, random);
+    private Palette palette(IDungeonMotif motif, RandomSource random) {
         return new Palette(
-                floorBlockSet.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT),
-                floorBlockSet.get(CorridorFloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT),
-                wallBlockSet.get(WallPattern.WALL).orElse(DEFAULT),
+                motifConfig.corridor().floorState(),
+                motifConfig.corridor().alternateFloorState(),
+                motifConfig.wall().wallState(),
                 Blocks.AIR.defaultBlockState(),
-                ceilingBlockSet.get(CeilingPattern.CEILING).orElse(DEFAULT));
+                motifConfig.corridor().ceilingState());
     }
 
     /** True if the cell at (x,z) is a wall-equivalent for corridor-wall placement. */

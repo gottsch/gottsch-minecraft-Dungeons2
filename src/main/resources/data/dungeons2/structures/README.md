@@ -21,7 +21,7 @@ exception at the end of this section.)
 Jigsaw `template_pool` JSONs for the assembled entrance, transitions, and rooms live separately
 under `data/dungeons2/worldgen/template_pool/{entrance,transitions,rooms}/`.
 
-**Motif/theme naming (transitions & rooms only; floor patterns follow the same idea, see below):**
+**Motif/theme naming (transitions & rooms only; the motif config follows the same idea, see below):**
 the start pool a dungeon assembles from is selected by motif, one folder per theme:
 `transitions/<motif>/shaft_bottom.json`, `rooms/<motif>/normal.json` (e.g.
 `rooms/desert/normal.json` for a `DESERT`-themed room pool). Motif selection itself is still
@@ -371,47 +371,106 @@ authored today.
 
 ---
 
-## Floor patterns (`dungeons2/floor_pattern_config/<motif>.json`)
+## Motif config (`dungeons2/motif_config/<motif>.json`)
 
-Ordinary procedural rooms can decorate their floor with a hand-designed pattern instead of the
-plain/alternating default, picked per room by a **datapack-driven, weighted roll** — same codec
-+ registry shape as `dungeons2/generation_config/<name>.json` (the `corridorWidth` knob). This is
-orthogonal to the room jigsaw pool above: it decorates a *procedural* room's floor, not a
-hand-authored prefab (a prefab is whatever you built it as, floor included).
+Everything a motif renders with — the base architectural block for each element, plus the room
+floor's optional decorative patterns — lives in **one file per motif**, a codec-backed datapack
+registry entry with the same shape as `dungeons2/generation_config/<name>.json` (the
+`corridorWidth` knob).
+
+> **Migrated Jul 2026.** This replaced two separate systems: `data/dungeons2/block_provider/<motif>.json`
+> (base blocks, loaded by a reload listener into `BlockProvider`/`BlockSet` maps keyed by enum
+> instance) and `dungeons2/floor_pattern_config/<motif>.json` (floor decoration). Both answered
+> "which block does this motif use here?" through different machinery, and the `block_provider`
+> half's string→enum→map-key indirection silently swallowed lookup misses — which cost two real
+> bugs. If you have a datapack using either old path, move it into `motif_config/<motif>.json`
+> using the shape below; the old folders are no longer read.
 
 **Motif-scoped**, same naming convention as `rooms/<motif>/normal.json`/
 `transitions/<motif>/shaft_bottom.json` above and the weathering processor lists: entries live at
-`data/dungeons2/dungeons2/floor_pattern_config/<motif>.json` (there's currently one shipped
-entry, `classic`). A motif with no entry (or a missing registry entirely) degrades to always
-plain, the same graceful degradation an absent template pool always has — **no two-tier fallback**
-to a shared/classic config, matching the rooms/transitions motif-naming note above. Each entry is
-a weighted list:
+`data/dungeons2/dungeons2/motif_config/<motif>.json` (shipped: `classic`, `catacombs`,
+`deep_slate`). A motif with no entry (or a missing registry entirely) degrades to plain
+stone_bricks throughout, the same graceful degradation an absent template pool always has —
+**no two-tier fallback** to a shared/classic config, matching the rooms/transitions motif-naming
+note above.
 
 ```json
 {
-  "elements": [
-    { "type": "empty", "weight": 3 },
-    { "type": "border", "weight": 1, "inset": 2 },
-    {
-      "type": "border",
-      "weight": 1,
-      "inset": 2,
-      "cornerBlock": "minecraft:andesite",
-      "edgeLeftBlock": "minecraft:polished_andesite",
-      "edgeRightBlock": "minecraft:polished_andesite"
-    }
-  ]
+  "wall":     { "wall": "minecraft:stone_bricks" },
+  "ceiling":  { "ceiling": "minecraft:stone_bricks" },
+  "door":     { "door": "dungeonblocks:spruce_dungeon_door",
+                "lintel": "minecraft:polished_andesite",
+                "floor": "minecraft:polished_andesite" },
+  "corridor": { "floor": "minecraft:cobblestone",
+                "alternateFloor": "minecraft:gravel",
+                "ceiling": "minecraft:stone_bricks" },
+  "floor": {
+    "base": "minecraft:stone_bricks",
+    "alternateBase": "minecraft:stone_bricks",
+    "patterns": [
+      { "type": "empty", "weight": 8 },
+      { "type": "border", "weight": 1, "inset": 2,
+        "cornerBlock": "minecraft:andesite",
+        "edgeLeftBlock": "minecraft:polished_andesite",
+        "edgeRightBlock": "minecraft:polished_andesite" }
+    ]
+  }
 }
 ```
 
+**Every section is optional; every field inside a section it uses is required.** Omit `door`
+entirely and you get the default oak door — but a `door` section with only `door` and no `lintel`
+**fails to load, loudly**. That asymmetry is deliberate: it is exactly the silent-fallthrough the
+old system was retired for. (It needs `Codecs.strictOptionalFieldOf`, because DFU's own
+`optionalFieldOf` cannot tell "absent" from "malformed" and returns the default for both.)
+
+Corridors deliberately have no `patterns` list — a border ring or checkerboard needs a room-sized
+rectangle. Corridor *walls* come from the shared `wall` section. Room `base`/`alternateBase` are
+rolled per interior cell at 45/55; `classic` sets both to the same block so the floor is uniform
+before weathering (the weathering processor list already produces the stone_bricks → cracked/mossy
+→ cobblestone → dirt → gravel spread, and pre-baking a second block here both duplicated it and
+skipped the deeper decay stages).
+
+### Floor patterns
+
+The `floor.patterns` list is a weighted roll for a decorative treatment laid over the base floor.
+This is orthogonal to the room jigsaw pool above: it decorates a *procedural* room's floor, not a
+hand-authored prefab (a prefab is whatever you built it as, floor included).
+
 `type` is a plain string, not an enum — `"empty"` (or any unrecognized type) means no special
-pattern, same graceful degradation an absent/empty pool always has elsewhere; `"border"` selects
-the decorative frame described below, with `inset` (default 2) and the three block-substitution
-fields (see below) as its tunables. A missing `floor_pattern_config` registry, or a config with
-no elements or non-positive total weight, also falls back to `"empty"`. The roll happens once per
-room, using that room's own deterministic seed (`DungeonRoomPiece#deterministicRandom`) — so it
-stays the same across the repeated `postProcess` calls a piece gets per overlapping chunk, exactly
-like every other per-room roll in this pipeline.
+pattern, just the base blocks; `"border"`, `"checkerboard"`, `"speckle"` and `"composite"` are
+described below. An empty list, a non-positive total weight, **or a pattern whose block ids fail
+to resolve**, all fall back to plain — there is deliberately no Java-side default block for any
+pattern's material slots, so a typo'd id degrades that entry to plain rather than silently
+rendering a guessed block. The roll happens once per room, using that room's own deterministic
+seed (`DungeonRoomPiece#deterministicRandom`) — so it stays the same across the repeated
+`postProcess` calls a piece gets per overlapping chunk, exactly like every other per-room roll in
+this pipeline.
+
+> **Choosing an accent block: mind what weathering does to it.** The test is *not* "does this id
+> appear in `worldgen/processor_list/<motif>_weathering.json`" — it is "does this block's decay
+> keep the pattern legible". Two distinct ways that fails:
+>
+> - **Redundant from the start.** The accent is an *output* of the floor's own base block, so
+>   weathering would scatter it there anyway and the pattern carries no information. Speckle
+>   originally used `minecraft:cracked_stone_bricks` over a `minecraft:stone_bricks` base — which
+>   is precisely one of stone brick's own decay products.
+> - **Converges with the base over time.** The accent is weathered *away* at a high rate into the
+>   generic rubble palette (`cobblestone`/`mossy_cobblestone`/`dirt`/`gravel`) that the base also
+>   decays to, so the two blur together and the pattern dissolves.
+>   `dungeonblocks:square_stone_brick` (the checkerboard's primary) has three aging chains and only
+>   ~32% survives — `0.7 x 0.57 x 0.8`, per the conditional-probability convention documented in
+>   the weathering file itself.
+>
+> An accent with an **in-family** chain is fine, and arguably ideal: one that ages into a
+> recognisable variant of *itself* (`chiseled_stone_bricks` → a future
+> `mossy_chiseled_stone_bricks`) rather than into shared rubble. The pattern's silhouette survives,
+> it just gets older. So a high conversion rate is fine when the destination stays in-family, and a
+> generic destination is fine when the rate is low — it is the *combination* that erases a pattern.
+>
+> `classic` uses `minecraft:chiseled_stone_bricks` for speckle: today it has no chains at all, so a
+> speckled floor gains contrast as the stone around it ages, and it becomes the in-family case
+> unchanged if a mossy variant is added to `dungeonblocks` later.
 
 ### The `border` pattern
 

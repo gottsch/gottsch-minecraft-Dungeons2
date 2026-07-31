@@ -43,7 +43,7 @@ class CheckerboardFloorPatternProviderTest {
 
     @Test
     void neitherSlotHasAJavaSideDefault() {
-        // No motif-scoped fallback block for either slot -- floor_pattern_config is the single
+        // No motif-scoped fallback block for either slot -- the motif config is the single
         // source of truth, so a missing block is a construction-time error, not a silent guess.
         assertThrows(NullPointerException.class,
                 () -> new CheckerboardFloorPatternProvider(null, Blocks.DIORITE));

@@ -17,41 +17,44 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
+import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.BlockSet;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import mod.gottsch.forge.dungeons2.core.pattern.floor.FloorPattern;
 import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
-import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.FLOOR_PATTERN;
-
 /**
- * Builds the floor surface of a {@link RoomData} as {@link BlockPlacement}s.
+ * Builds the floor surface of a {@link RoomData} as {@link BlockPlacement}s &mdash; the plain
+ * floor, i.e. what a {@code "empty"} floor pattern selects.
  *
- * <p>Floor sits at world Y={@code floorY}. The border cells (1 inset from the
- * room edge) use the primary FLOOR block; interior cells alternate between
- * FLOOR and ALTERNATE_FLOOR via a 45% probability roll for visual variety,
- * matching the original Forge 1.20.1 behavior.</p>
+ * <p>Floor sits at world Y={@code floorY}. The border cells (1 inset from the room edge) use the
+ * primary base block; interior cells alternate between base and alternate-base via a 45%
+ * probability roll for visual variety, matching the original Forge 1.20.1 behavior. Both blocks
+ * come from the motif's {@link FloorConfig}; {@code classic} deliberately sets them to the same
+ * block so the floor is uniform pre-weathering (see {@code FloorConfig}'s javadoc for why).</p>
  *
  * @author Mark Gottschling on March 1, 2024 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicFloorGenerator implements IDungeonFloorGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    private FloorConfig floorConfig = FloorConfig.DEFAULT;
+
+    /** See {@code BasicWallGenerator#withMotifConfig}. */
+    public BasicFloorGenerator withFloorConfig(FloorConfig floorConfig) {
+        this.floorConfig = floorConfig;
+        return this;
+    }
 
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
-        BlockSet blockSet = BlockProvider.get(motif, FLOOR_PATTERN, random);
-        BlockState floorState = blockSet.get(FloorPattern.FLOOR).orElse(DEFAULT);
-        BlockState alternateState = blockSet.get(FloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT);
+        BlockState floorState = floorConfig.baseState();
+        BlockState alternateState = floorConfig.alternateBaseState();
 
         int width = room.getWidth();
         int depth = room.getDepth();
