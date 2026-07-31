@@ -21,7 +21,6 @@ import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import mod.gottsch.forge.dungeonblocks.core.block.ModBlocks;
 import mod.gottsch.forge.gottschcore.block.IFacingBlock;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -31,17 +30,19 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Reproduces the hand-authored {@code floor_border_pattern_1.nbt} reference (a plain floor with a
  * decorative picture-frame ring inset from the edge) for a floor of <strong>any</strong>
  * width/depth, rather than a single fixed-size template. The three blocks used (corner, left
- * edge, right edge) are substitutable per instance &mdash; see {@link #FloorBorderPatternProvider(
- * int, Block, Block, Block)} &mdash; defaulting to the reference's own
- * {@code dungeonblocks:left_large_stone_brick}/{@code right_large_stone_brick} when not
- * overridden. {@code FloorPatternSelector} is what actually threads datapack-configured block
- * ids in from {@code floor_pattern_config} (see {@code FloorPatternEntry}'s {@code cornerBlock}/
- * {@code edgeLeftBlock}/{@code edgeRightBlock} fields).
+ * edge, right edge) are required per instance &mdash; see {@link #FloorBorderPatternProvider(
+ * int, Block, Block, Block)} &mdash; there is deliberately no Java-side default block for any of
+ * the three slots. {@code floor_pattern_config} (via {@code FloorPatternEntry}'s {@code
+ * cornerBlock}/{@code edgeLeftBlock}/{@code edgeRightBlock} fields) is the single source of truth
+ * for which blocks a {@code "border"} entry renders; {@code FloorPatternSelector} degrades the
+ * whole entry to plain floor (see {@code BasicFloorGenerator}) rather than constructing this class
+ * with a guessed block when any slot fails to resolve.
  *
  * <p>Reverse-engineered from the reference NBT (9x9 floor, ring inset 2 from each edge): the ring
  * is the perimeter of the rectangle {@code [inset, size-1-inset]} on each axis. Each of the 4
@@ -63,51 +64,44 @@ import java.util.List;
  * requested inset (fewer than 2 cells on either axis between the two insets), the whole floor is
  * plain &mdash; same as an empty pattern always has elsewhere in this codebase.</p>
  *
+ * <p>Also implements {@link IFloorOverlayGenerator}: {@link #overlay} emits only the ring cells
+ * (no plain-floor fill), so this can be layered on top of another generator's own fill (e.g.
+ * {@link CheckerboardFloorPatternProvider}) inside a {@code "composite"} {@code
+ * floor_pattern_config} entry, via {@link CompositeFloorPatternProvider}.</p>
+ *
  * <p>The ring's geometry is computed by {@link #plan} as plain data ({@link RingCell}, no
  * {@code BlockState}/registry involved) specifically so it's unit-testable without a running
  * Forge instance &mdash; {@code dungeonblocks:*} blocks only resolve once Forge has actually
  * loaded that mod (see {@code DecorationOnRealRoomTest}'s note on the same limitation), which a
- * bare {@code Bootstrap.bootStrap()} JUnit environment never does. For the same reason, block
- * substitution is resolved to {@code null} (meaning "use the default") rather than touching the
- * registry until {@link #build} actually runs.</p>
+ * bare {@code Bootstrap.bootStrap()} JUnit environment never does. For the same reason, {@code
+ * plan} never touches the registry; only {@link #build}/{@link #overlay} do, once the three
+ * blocks are already resolved {@link Block} instances.</p>
  *
  * @author Mark Gottschling on Jul 30, 2026
  */
-public class FloorBorderPatternProvider implements IDungeonFloorGenerator {
+public class FloorBorderPatternProvider implements IDungeonFloorGenerator, IFloorOverlayGenerator {
     /** Matches the reference NBT: the ring's outer edge sits 2 cells in from the floor edge. */
     public static final int DEFAULT_INSET = 2;
 
     private static final BlockState PLAIN = Blocks.STONE_BRICKS.defaultBlockState();
 
     private final int inset;
-    /** {@code null} means "use the {@code dungeonblocks} default for this slot". */
     private final Block cornerBlock;
     private final Block edgeLeftBlock;
     private final Block edgeRightBlock;
 
-    public FloorBorderPatternProvider() {
-        this(DEFAULT_INSET);
-    }
-
-    public FloorBorderPatternProvider(int inset) {
-        this(inset, null, null, null);
-    }
-
     /**
-     * @param cornerBlock    block for the 4 ring corners, or {@code null} for the default
-     *                       ({@code dungeonblocks:right_large_stone_brick})
-     * @param edgeLeftBlock  block for the "left" half of each straight run's alternation, or
-     *                       {@code null} for the default ({@code dungeonblocks:left_large_stone_brick})
-     * @param edgeRightBlock block for the "right" half of each straight run's alternation, or
-     *                       {@code null} for the default ({@code dungeonblocks:right_large_stone_brick}).
-     *                       Pass the same block as {@code edgeLeftBlock} for a single-block edge
-     *                       with no visible alternation.
+     * @param cornerBlock    block for the 4 ring corners
+     * @param edgeLeftBlock  block for the "left" half of each straight run's alternation
+     * @param edgeRightBlock block for the "right" half of each straight run's alternation. Pass
+     *                       the same block as {@code edgeLeftBlock} for a single-block edge with
+     *                       no visible alternation.
      */
     public FloorBorderPatternProvider(int inset, Block cornerBlock, Block edgeLeftBlock, Block edgeRightBlock) {
         this.inset = inset;
-        this.cornerBlock = cornerBlock;
-        this.edgeLeftBlock = edgeLeftBlock;
-        this.edgeRightBlock = edgeRightBlock;
+        this.cornerBlock = Objects.requireNonNull(cornerBlock, "cornerBlock");
+        this.edgeLeftBlock = Objects.requireNonNull(edgeLeftBlock, "edgeLeftBlock");
+        this.edgeRightBlock = Objects.requireNonNull(edgeRightBlock, "edgeRightBlock");
     }
 
     /** One ring cell's role/orientation, independent of any Minecraft registry. */
@@ -121,14 +115,35 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator {
 
     /**
      * Builds the pattern for a floor of the given size at the given origin, independent of
-     * {@link RoomData} (e.g. for use outside the room pipeline).
+     * {@link RoomData} (e.g. for use outside the room pipeline). Fills every cell &mdash; ring
+     * cells with the ring's blocks, everywhere else plain floor.
      */
     public void build(int width, int depth, int originX, int originZ, int floorY, List<BlockPlacement> out) {
+        emit(width, depth, originX, originZ, floorY, out, true);
+    }
+
+    /**
+     * As a {@link IFloorOverlayGenerator}: emits <strong>only</strong> the ring cells, leaving
+     * everything else untouched so this can be layered over another generator's own full fill
+     * (e.g. {@link CheckerboardFloorPatternProvider}) inside a {@code "composite"} entry.
+     */
+    @Override
+    public void overlay(RoomData room, int floorY, IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
+        emit(room.getWidth(), room.getDepth(), room.getOriginX(), room.getOriginZ(), floorY, out, false);
+    }
+
+    private void emit(int width, int depth, int originX, int originZ, int floorY, List<BlockPlacement> out,
+                       boolean includePlain) {
         RingCell[][] grid = plan(width, depth, inset);
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < depth; z++) {
-                BlockState state = grid[x][z] == null ? PLAIN : toBlockState(grid[x][z]);
-                out.add(BlockStateCodec.placement(originX + x, floorY, originZ + z, state));
+                if (grid[x][z] == null) {
+                    if (includePlain) {
+                        out.add(BlockStateCodec.placement(originX + x, floorY, originZ + z, PLAIN));
+                    }
+                    continue;
+                }
+                out.add(BlockStateCodec.placement(originX + x, floorY, originZ + z, toBlockState(grid[x][z])));
             }
         }
     }
@@ -171,11 +186,11 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator {
     private BlockState toBlockState(RingCell cell) {
         Block block;
         if (cell.corner()) {
-            block = cornerBlock != null ? cornerBlock : ModBlocks.RIGHT_LARGE_STONE_BRICK.get();
+            block = cornerBlock;
         } else if (cell.left()) {
-            block = edgeLeftBlock != null ? edgeLeftBlock : ModBlocks.LEFT_LARGE_STONE_BRICK.get();
+            block = edgeLeftBlock;
         } else {
-            block = edgeRightBlock != null ? edgeRightBlock : ModBlocks.RIGHT_LARGE_STONE_BRICK.get();
+            block = edgeRightBlock;
         }
         return orient(block, cell.facing());
     }

@@ -11,7 +11,7 @@ public class DungeonRoomPatterns {
     public static final String DOOR_PATTERN = "door_pattern";
     public static final String WALL_PATTERN = "wall_pattern";
     public static final String FLOOR_PATTERN = "floor_pattern";
-    public static final String CORRIDOR_FLOOR_PATTERN = "corridor_ceiling_pattern";
+    public static final String CORRIDOR_FLOOR_PATTERN = "corridor_floor_pattern";
     public static final String CEILING_PATTERN = "ceiling_pattern";
     public static final String CORRIDOR_CEILING_PATTERN = "corridor_ceiling_pattern";
 }

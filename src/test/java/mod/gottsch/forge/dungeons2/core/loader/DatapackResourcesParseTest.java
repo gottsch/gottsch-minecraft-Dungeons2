@@ -22,6 +22,7 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.dungeons2.core.config.FloorPatternConfig;
 import mod.gottsch.forge.dungeons2.core.decorator.data.BlockProviderDefinition;
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +60,11 @@ class DatapackResourcesParseTest {
         for (String motif : new String[]{"classic", "catacombs", "deep_slate"}) {
             assertParses("/data/dungeons2/block_provider/" + motif + ".json", BlockProviderDefinition.CODEC);
         }
+    }
+
+    @Test
+    void floorPatternConfigFilesDecode() {
+        assertParses("/data/dungeons2/dungeons2/floor_pattern_config/classic.json", FloorPatternConfig.CODEC);
     }
 
     // The shipped worldgen/processor_list file (weathering) is guarded by

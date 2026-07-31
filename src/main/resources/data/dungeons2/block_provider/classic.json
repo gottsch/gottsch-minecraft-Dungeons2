@@ -15,11 +15,7 @@
         "id": "default",
         "elements": {
           "floor": "minecraft:stone_bricks",
-          "alternate_floor": "minecraft:cobblestone",
-          "corner": "minecraft:polished_andesite",
-          "alternate_corner": "minecraft:chiseled_stone_bricks",
-          "center": "minecraft:polished_andesite",
-          "alternate_center": "minecraft:chiseled_stone_bricks"
+          "alternate_floor": "minecraft:stone_bricks"
         }
       }
     ],
@@ -29,35 +25,6 @@
         "elements": {
           "floor": "minecraft:cobblestone",
           "alternate_floor": "minecraft:gravel"
-        }
-      }
-    ],
-    "floor_border_pattern": [
-      {
-        "id": "default",
-        "elements": {
-          "border": "minecraft:polished_andesite",
-          "center": "minecraft:chiseled_stone_bricks"
-        }
-      },
-      {
-        "id": "greek",
-        "elements": {
-          "border": "dungeonblocks:stone_greek_block",
-          "center": "minecraft:chiseled_stone_bricks"
-        }
-      }
-    ],
-    "floor_drainage_pattern": [
-      {
-        "id": "default",
-        "elements": {
-          "corner": "dungeonblocks:dark_iron_grate",
-          "alternate_corner": "dungeonblocks:weathered_copper_grate",
-          "center": "dungeonblocks:dark_iron_grate",
-          "alternate_center": "dungeonblocks:weathered_copper_grate",
-          "gutter": "dungeonblocks:weathered_copper_sewer_block",
-          "alternate_gutter": "dungeonblocks:terracotta_copper_sewer_block"
         }
       }
     ],

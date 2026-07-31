@@ -29,6 +29,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
 import mod.gottsch.forge.dungeons2.core.pattern.ceiling.CeilingPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.floor.CorridorFloorPattern;
 import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
+import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Set;
 
 import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CORRIDOR_CEILING_PATTERN;
+import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.CORRIDOR_FLOOR_PATTERN;
 import static mod.gottsch.forge.dungeons2.core.decorator.DungeonRoomPatterns.WALL_PATTERN;
 
 /**
@@ -83,7 +85,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         for (Coords2D cell : corridor.getCells()) {
             int x = cell.getX();
             int z = cell.getY();
-            emitCorridorColumn(x, z, floorY, palette, out);
+            emitCorridorColumn(x, z, floorY, palette, random, out);
 
             // 8-neighbor wall columns, sourced live from the grid.
             for (int dx = -1; dx <= 1; dx++) {
@@ -114,7 +116,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         // are disjoint within a single corridor, so order is immaterial; the
         // placements match the grid-based overload as a set.
         for (Coords2D cell : corridor.getCells()) {
-            emitCorridorColumn(cell.getX(), cell.getY(), floorY, palette, out);
+            emitCorridorColumn(cell.getX(), cell.getY(), floorY, palette, random, out);
         }
         for (Coords2D wall : corridor.getWallCells()) {
             emitWallColumn(wall.getX(), wall.getY(), floorY, palette, out);
@@ -125,11 +127,14 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /**
-     * A floor block at {@code floorY}, 3 air blocks above, and a ceiling block at
+     * A floor block at {@code floorY} (45% {@code floor}, 55% {@code alternateFloor}, matching
+     * {@code BasicFloorGenerator}'s room-floor split), 3 air blocks above, and a ceiling block at
      * {@code floorY+4} (the top of the 5-tall corridor walls), closing the corridor.
      */
-    private static void emitCorridorColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
-        out.add(BlockStateCodec.placement(x, floorY, z, palette.floor));
+    private static void emitCorridorColumn(int x, int z, int floorY, Palette palette, RandomSource random,
+                                            List<BlockPlacement> out) {
+        BlockState floor = RandomHelper.checkProbability(random, 45) ? palette.floor : palette.alternateFloor;
+        out.add(BlockStateCodec.placement(x, floorY, z, floor));
         for (int yOffset = 1; yOffset < 4; yOffset++) {
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.air));
         }
@@ -160,18 +165,23 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /**
-     * Resolves the floor / wall / air / ceiling block states once per build call.
-     * Wall and corridor-floor blocks come from the same WALL_PATTERN BlockSet
-     * (matching the original behavior; FLOOR is a slot inside the wall pattern);
-     * the ceiling comes from its own CORRIDOR_CEILING_PATTERN BlockSet, mirroring
-     * {@code BasicCeilingGenerator}'s room ceiling.
+     * Resolves the floor / wall / air / ceiling block states once per build call. The wall comes
+     * from the WALL_PATTERN BlockSet; the floor from its own CORRIDOR_FLOOR_PATTERN BlockSet
+     * (previously this queried CorridorFloorPattern.FLOOR against the WALL_PATTERN BlockSet, which
+     * -- since BlockSet keys by enum instance, not name -- was a guaranteed miss: WALL_PATTERN is
+     * only ever populated with WallPattern constants, never CorridorFloorPattern ones, so the
+     * corridor floor always silently fell through to DEFAULT regardless of what block_provider's
+     * corridor_floor_pattern actually authored); the ceiling comes from its own
+     * CORRIDOR_CEILING_PATTERN BlockSet, mirroring {@code BasicCeilingGenerator}'s room ceiling.
      */
     private static Palette palette(IDungeonMotif motif, RandomSource random) {
-        BlockSet blockSet = BlockProvider.get(motif, WALL_PATTERN, random);
+        BlockSet wallBlockSet = BlockProvider.get(motif, WALL_PATTERN, random);
+        BlockSet floorBlockSet = BlockProvider.get(motif, CORRIDOR_FLOOR_PATTERN, random);
         BlockSet ceilingBlockSet = BlockProvider.get(motif, CORRIDOR_CEILING_PATTERN, random);
         return new Palette(
-                blockSet.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT),
-                blockSet.get(WallPattern.WALL).orElse(DEFAULT),
+                floorBlockSet.get(CorridorFloorPattern.FLOOR).orElse(DEFAULT),
+                floorBlockSet.get(CorridorFloorPattern.ALTERNATE_FLOOR).orElse(DEFAULT),
+                wallBlockSet.get(WallPattern.WALL).orElse(DEFAULT),
                 Blocks.AIR.defaultBlockState(),
                 ceilingBlockSet.get(CeilingPattern.CEILING).orElse(DEFAULT));
     }
@@ -199,5 +209,6 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /** Resolved block states for one corridor render pass. */
-    private record Palette(BlockState floor, BlockState wall, BlockState air, BlockState ceiling) {}
+    private record Palette(BlockState floor, BlockState alternateFloor, BlockState wall, BlockState air,
+                            BlockState ceiling) {}
 }
