@@ -187,7 +187,7 @@ class BasicCorridorGeneratorTest {
         MotifConfig motifConfig = new MotifConfig(
                 MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
                 new CorridorConfig("minecraft:granite", "minecraft:diorite", "minecraft:andesite"),
-                MotifConfig.DEFAULT.floor());
+                MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
 
         List<BlockPlacement> out = new ArrayList<>();
         new BasicCorridorGenerator().withMotifConfig(motifConfig)

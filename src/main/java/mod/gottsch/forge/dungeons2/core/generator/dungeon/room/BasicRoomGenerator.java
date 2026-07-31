@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -47,10 +48,13 @@ import java.util.List;
  * the caller from the datapack registry &mdash; same "resolve once where {@code RegistryAccess} is
  * available, inject the resolved value" shape as {@code DungeonStackPlanner#withCorridorWidth}.</p>
  *
- * <p>The floor sub-builder additionally rolls a weighted decorative pattern from that config's
- * floor section ({@link #selectFloorGenerator}). The roll uses this room's own {@code random}, so
- * it stays deterministic across the repeated {@code postProcess} calls a piece gets per
- * overlapping chunk.</p>
+ * <p>Decoration comes from a single {@link RoomScheme} rolled once per room by
+ * {@link RoomSchemeSelector}, which each sub-builder then reads its own slot from. One roll rather
+ * than one per element is what keeps a room's floor, walls and ceiling parts of the same authored
+ * style instead of three independent draws. The roll uses this room's own {@code random}, so it
+ * stays deterministic across the repeated {@code postProcess} calls a piece gets per overlapping
+ * chunk &mdash; which is also why it must happen exactly once, here, and be passed down rather than
+ * re-rolled by any sub-builder.</p>
  *
  * @author Mark Gottschling on Dec 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
@@ -66,9 +70,11 @@ public class BasicRoomGenerator implements IRoomGenerator {
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
-        IDungeonWallGenerator wallGen = selectWallGenerator(motif);
-        IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, random);
-        IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif);
+        RoomScheme scheme = selectScheme(room, random);
+
+        IDungeonWallGenerator wallGen = selectWallGenerator(motif, scheme);
+        IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme);
+        IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif, scheme);
 
         // Order matters when the renderer iterates the list in sequence
         // and a later placement overwrites an earlier one (e.g., interior
@@ -81,15 +87,23 @@ public class BasicRoomGenerator implements IRoomGenerator {
         ceilingGen.build(room, floorY, motif, random, out);
     }
 
-    public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif) {
+    /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */
+    public RoomScheme selectScheme(RoomData room, RandomSource random) {
+        return RoomSchemeSelector.select(motifConfig.schemes(),
+                room.getWidth(), room.getDepth(), room.getHeight(), random);
+    }
+
+    /** Takes no slot from the scheme yet &mdash; wall treatments have no providers behind them. */
+    public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme) {
         return new BasicWallGenerator().withMotifConfig(motifConfig);
     }
 
-    public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RandomSource random) {
-        return FloorPatternSelector.select(motifConfig.floor(), random);
+    public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RoomScheme scheme) {
+        return FloorPatternSelector.generatorFor(scheme.floor(), motifConfig.floor());
     }
 
-    public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif) {
+    /** Takes no slot from the scheme yet &mdash; see {@link #selectWallGenerator}. */
+    public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme) {
         return new BasicCeilingGenerator().withMotifConfig(motifConfig);
     }
 }

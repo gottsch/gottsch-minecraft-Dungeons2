@@ -4,7 +4,6 @@ import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -12,14 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FloorPatternSelectorTest {
 
-    /** A FloorConfig with the given patterns over plain stone_bricks base blocks. */
-    private static FloorConfig floorConfig(List<FloorPatternEntry> patterns) {
-        return new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", patterns);
-    }
+    /** Plain stone_bricks base blocks -- what an unmarked cell renders as. */
+    private static final FloorConfig CONFIG =
+            new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks");
 
     @BeforeAll
     static void bootstrap() {
@@ -33,7 +30,9 @@ class FloorPatternSelectorTest {
                 "border", weight, inset,
                 Optional.of("minecraft:andesite"), Optional.of("minecraft:polished_andesite"),
                 Optional.of("minecraft:polished_andesite"), Optional.empty(), Optional.empty(),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY, List.of());
+                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
+                List.of());
     }
 
     /** A "checkerboard" entry with both required blocks filled in with valid vanilla ids. */
@@ -42,7 +41,9 @@ class FloorPatternSelectorTest {
                 "checkerboard", weight, 0,
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.of("minecraft:granite"), Optional.of("minecraft:diorite"),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY, List.of());
+                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
+                List.of());
     }
 
     /** A "speckle" entry with both required blocks filled in with valid vanilla ids. */
@@ -51,61 +52,105 @@ class FloorPatternSelectorTest {
                 "speckle", weight, 0,
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.of("minecraft:granite"), Optional.of("minecraft:diorite"),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY, List.of());
+                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
+                List.of());
     }
 
+    /** A scheme with no floor slot renders the undecorated floor, not a hardcoded fallback. */
     @Test
-    void emptyElementListFallsBackToBasic() {
-        FloorConfig config = floorConfig(List.of());
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
+    void absentFloorSlotFallsBackToBasic() {
+        assertInstanceOf(BasicFloorGenerator.class,
+                FloorPatternSelector.generatorFor(Optional.empty(), CONFIG));
     }
 
     @Test
     void unrecognizedTypeFallsBackToBasic() {
-        FloorConfig config = floorConfig(List.of(new FloorPatternEntry("nonsense", 1, 0)));
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
+        FloorPatternEntry entry = new FloorPatternEntry("nonsense", 1, 0);
+        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.toGenerator(entry, CONFIG));
     }
 
     @Test
     void borderEntryWithoutBlocksFallsBackToBasic() {
         // No Java-side default for any of the three block slots -- the motif config must
         // supply them, or the entry degrades to plain rather than guessing a block.
-        FloorConfig config = floorConfig(List.of(new FloorPatternEntry("border", 1, 2)));
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
+        FloorPatternEntry entry = new FloorPatternEntry("border", 1, 2);
+        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.toGenerator(entry, CONFIG));
     }
 
     @Test
-    void singleBorderEntryAlwaysSelectsBorder() {
-        FloorConfig config = floorConfig(List.of(borderEntry(1, 2)));
-        for (long seed = 0; seed < 20; seed++) {
-            assertInstanceOf(FloorBorderPatternProvider.class,
-                    FloorPatternSelector.select(config, RandomSource.create(seed)));
+    void borderEntryMapsToBorderProvider() {
+        FloorPatternEntry entry = borderEntry(1, 2);
+        assertInstanceOf(FloorBorderPatternProvider.class,
+                FloorPatternSelector.toGenerator(entry, CONFIG));
+    }
+
+    @Test
+    void checkerboardEntryMapsToCheckerboardProvider() {
+        FloorPatternEntry entry = checkerboardEntry(1);
+        assertInstanceOf(CheckerboardFloorPatternProvider.class,
+                FloorPatternSelector.toGenerator(entry, CONFIG));
+    }
+
+    @Test
+    void speckleEntryMapsToSpeckleProvider() {
+        FloorPatternEntry entry = speckleEntry(1);
+        assertInstanceOf(RandomSpeckleFloorPatternProvider.class,
+                FloorPatternSelector.toGenerator(entry, CONFIG));
+    }
+
+    /** An entry with one accent block, filled in with a valid vanilla id. */
+    private static FloorPatternEntry oneBlockEntry(String type, int weight) {
+        return new FloorPatternEntry(
+                type, weight, 0, Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of("minecraft:chiseled_stone_bricks"), Optional.empty(),
+                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
+                List.of());
+    }
+
+    @Test
+    void crossEntryMapsToCrossProvider() {
+        FloorPatternEntry entry = oneBlockEntry("cross", 1);
+        assertInstanceOf(CrossFloorPatternProvider.class,
+                FloorPatternSelector.toGenerator(entry, CONFIG));
+    }
+
+    @Test
+    void spokesEntryMapsToSpokesProvider() {
+        FloorPatternEntry entry = oneBlockEntry("spokes", 1);
+        assertInstanceOf(RadialSpokesFloorPatternProvider.class,
+                FloorPatternSelector.toGenerator(entry, CONFIG));
+    }
+
+    @Test
+    void crossAndSpokesWithoutABlockFallBackToBasic() {
+        for (String type : new String[]{"cross", "spokes"}) {
+            FloorPatternEntry entry = new FloorPatternEntry(type, 1, 0);
+            assertInstanceOf(BasicFloorGenerator.class,
+                    FloorPatternSelector.toGenerator(entry, CONFIG),
+                    type + " with no primaryBlock should degrade to plain");
         }
     }
 
+    /** Both new patterns are overlay-capable, so they survive a composite's overlay slot. */
     @Test
-    void singleCheckerboardEntryAlwaysSelectsCheckerboard() {
-        FloorConfig config = floorConfig(List.of(checkerboardEntry(1)));
-        for (long seed = 0; seed < 20; seed++) {
-            assertInstanceOf(CheckerboardFloorPatternProvider.class,
-                    FloorPatternSelector.select(config, RandomSource.create(seed)));
-        }
-    }
-
-    @Test
-    void singleSpeckleEntryAlwaysSelectsSpeckle() {
-        FloorConfig config = floorConfig(List.of(speckleEntry(1)));
-        for (long seed = 0; seed < 20; seed++) {
-            assertInstanceOf(RandomSpeckleFloorPatternProvider.class,
-                    FloorPatternSelector.select(config, RandomSource.create(seed)));
+    void crossAndSpokesAreUsableAsCompositeOverlays() {
+        for (String type : new String[]{"cross", "spokes"}) {
+            FloorPatternEntry composite = new FloorPatternEntry(
+                    "composite", 1, 0, Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                    CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
+                    List.of(checkerboardEntry(1), oneBlockEntry(type, 1)));
+            assertInstanceOf(CompositeFloorPatternProvider.class,
+                    FloorPatternSelector.toGenerator(composite, CONFIG));
         }
     }
 
     @Test
     void compositeEntryWithNoGeneratorsFallsBackToBasic() {
-        FloorConfig config = floorConfig(
-                List.of(new FloorPatternEntry("composite", 1, 0)));
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.select(config, RandomSource.create(1)));
+        FloorPatternEntry entry = new FloorPatternEntry("composite", 1, 0);
+        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.toGenerator(entry, CONFIG));
     }
 
     @Test
@@ -115,10 +160,11 @@ class FloorPatternSelectorTest {
         FloorPatternEntry composite = new FloorPatternEntry(
                 "composite", 1, 0, Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
                 List.of(checkerboardLayer, borderLayer));
 
         IDungeonFloorGenerator generator =
-                FloorPatternSelector.select(floorConfig(List.of(composite)), RandomSource.create(1));
+                FloorPatternSelector.toGenerator(composite, CONFIG);
         assertInstanceOf(CompositeFloorPatternProvider.class, generator);
     }
 
@@ -132,27 +178,12 @@ class FloorPatternSelectorTest {
         FloorPatternEntry composite = new FloorPatternEntry(
                 "composite", 1, 0, Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
                 List.of(base, notOverlayable));
 
         IDungeonFloorGenerator generator =
-                FloorPatternSelector.select(floorConfig(List.of(composite)), RandomSource.create(1));
+                FloorPatternSelector.toGenerator(composite, CONFIG);
         assertInstanceOf(CompositeFloorPatternProvider.class, generator);
     }
 
-    @Test
-    void weightedPickReturnsBothTypesOverManyRolls() {
-        FloorConfig config = floorConfig(List.of(
-                new FloorPatternEntry("empty", 1, 0),
-                borderEntry(1, 2)));
-        RandomSource random = RandomSource.create(42);
-        boolean sawEmpty = false;
-        boolean sawBorder = false;
-        for (int i = 0; i < 200; i++) {
-            IDungeonFloorGenerator gen = FloorPatternSelector.select(config, random);
-            sawEmpty |= gen instanceof BasicFloorGenerator;
-            sawBorder |= gen instanceof FloorBorderPatternProvider;
-        }
-        assertTrue(sawEmpty, "should have rolled 'empty' at least once in 200 tries");
-        assertTrue(sawBorder, "should have rolled 'border' at least once in 200 tries");
-    }
 }

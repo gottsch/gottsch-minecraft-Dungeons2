@@ -23,19 +23,17 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.List;
-
 /**
- * The room floor section of a {@link MotifConfig}: the plain {@code base}/{@code alternateBase}
- * pair, plus the weighted {@code patterns} list of optional decorative treatments laid over it.
+ * The room floor <em>materials</em> of a {@link MotifConfig}: the plain {@code base}/{@code
+ * alternateBase} pair that {@code BasicFloorGenerator} rolls per cell at 45/55, and that every
+ * decorative floor pattern draws its unmarked cells from.
  *
- * <p>This is where the two pre-merge systems meet. {@code base}/{@code alternateBase} are the old
- * {@code block_provider} {@code floor_pattern} slots ({@code floor}/{@code alternate_floor}), read
- * by {@code BasicFloorGenerator} and rolled per cell at 45/55; {@code patterns} is the old
- * standalone {@code floor_pattern_config} registry's {@code elements} list, rolled once per room by
- * {@code FloorPatternSelector}. The link between them is the {@code "empty"} pattern type, which
- * selects {@code BasicFloorGenerator} &mdash; i.e. "no decoration, just the base pair" &mdash; so a
- * room that rolls {@code empty} renders exactly the base blocks named here.</p>
+ * <p>Decoration is <em>not</em> here. This record held a weighted {@code patterns} list until the
+ * scheme migration moved that roll up to {@link MotifConfig#schemes}, so that a room's floor,
+ * walls and ceiling are chosen together rather than independently &mdash; see {@link RoomScheme}.
+ * The split this leaves is a clean one and worth keeping to: the element sections of a motif config
+ * say what the motif is <em>made of</em>, and the scheme list says how a room is <em>dressed</em>.
+ * </p>
  *
  * <p>Setting {@code base} and {@code alternateBase} to the <em>same</em> block makes the floor
  * uniform before weathering, which is how {@code classic} ships: the weathering processor list
@@ -45,18 +43,15 @@ import java.util.List;
  *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record FloorConfig(String base, String alternateBase, List<FloorPatternEntry> patterns) {
+public record FloorConfig(String base, String alternateBase) {
 
-    /** Plain stone_bricks, no decorative patterns &mdash; the always-plain fallback. */
+    /** Plain stone_bricks &mdash; the always-plain fallback. */
     public static final FloorConfig DEFAULT = new FloorConfig(
-            "minecraft:stone_bricks", "minecraft:stone_bricks",
-            List.of(new FloorPatternEntry("empty", 1, 0)));
+            "minecraft:stone_bricks", "minecraft:stone_bricks");
 
     public static final Codec<FloorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("base").forGetter(FloorConfig::base),
-            Codec.STRING.fieldOf("alternateBase").forGetter(FloorConfig::alternateBase),
-            Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC.listOf(), "patterns", List.of())
-                    .forGetter(FloorConfig::patterns)
+            Codec.STRING.fieldOf("alternateBase").forGetter(FloorConfig::alternateBase)
     ).apply(instance, FloorConfig::new));
 
     public BlockState baseState() {

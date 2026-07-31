@@ -23,6 +23,8 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorBorderPatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.CrossFloorPatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.RadialSpokesFloorPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.RandomSpeckleFloorPatternProvider;
 
 import java.util.List;
@@ -30,7 +32,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * One weighted option in a {@link FloorPatternConfig}. {@code type} is a plain string
+ * One weighted option in a {@link FloorConfig}'s pattern list. {@code type} is a plain string
  * discriminator rather than an enum &mdash; deliberately, matching the reasoning already written
  * into {@code FloorBorderPattern}'s TODOs about not over-committing to an enum-per-decorator
  * shape before there's more than one real pattern to compare it against.
@@ -64,11 +66,23 @@ import java.util.function.Supplier;
  * as the per-cell chance of the accent block -- {@code probability} keeps its own default since
  * it's a pattern-shape knob, not a motif-scoped material.</p>
  *
+ * <p>{@code "cross"} selects {@link
+ * mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.CrossFloorPatternProvider} (an
+ * accent plus through the room's centre) using {@code primaryBlock} and {@code thickness}
+ * (default {@value mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.CrossFloorPatternProvider#DEFAULT_THICKNESS});
+ * {@code "spokes"} selects {@link
+ * mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.RadialSpokesFloorPatternProvider}
+ * (lines radiating from the centre) using {@code primaryBlock} and {@code spokes} (default
+ * {@value mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.RadialSpokesFloorPatternProvider#DEFAULT_SPOKES}).
+ * Both take one block, both are overlay-capable, and both degrade the entry to plain if that block
+ * fails to resolve.</p>
+ *
  * <p>{@code "composite"} layers several of the above into one pattern &mdash; e.g. a checkerboard
  * fill with a border ring on top &mdash; via its own {@code generators} list: an <em>ordered</em>
  * (not weighted) list of nested entries, applied in sequence. The first entry is the base full
  * fill; every entry after it overlays on top and only takes effect if its type is
- * overlay-capable ({@code "border"} today) &mdash; anything else there is silently skipped, same
+ * overlay-capable ({@code "border"}, {@code "cross"} and {@code "spokes"} today) &mdash; anything
+ * else there is silently skipped, same
  * graceful degradation an unrecognized top-level {@code type} already gets. {@code weight} on a
  * nested entry is ignored (defaults to {@code 1} if omitted); only the outer entry's own
  * {@code weight} matters for the roll.</p>
@@ -82,12 +96,15 @@ public record FloorPatternEntry(String type, int weight, int inset,
                                  Optional<String> primaryBlock,
                                  Optional<String> secondaryBlock,
                                  double probability,
+                                 int thickness,
+                                 int spokes,
                                  List<FloorPatternEntry> generators) {
 
     /** Convenience for entries that don't need block substitution (e.g. {@code "empty"}). */
     public FloorPatternEntry(String type, int weight, int inset) {
         this(type, weight, inset, Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
+                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
                 List.of());
     }
 
@@ -115,6 +132,12 @@ public record FloorPatternEntry(String type, int weight, int inset,
             Codec.doubleRange(0.0, 1.0)
                     .optionalFieldOf("probability", RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY)
                     .forGetter(FloorPatternEntry::probability),
+            Codec.intRange(0, Integer.MAX_VALUE)
+                    .optionalFieldOf("thickness", CrossFloorPatternProvider.DEFAULT_THICKNESS)
+                    .forGetter(FloorPatternEntry::thickness),
+            Codec.intRange(0, Integer.MAX_VALUE)
+                    .optionalFieldOf("spokes", RadialSpokesFloorPatternProvider.DEFAULT_SPOKES)
+                    .forGetter(FloorPatternEntry::spokes),
             lazyInitialized(() -> codecHolder).listOf().optionalFieldOf("generators", List.of())
                     .forGetter(FloorPatternEntry::generators)
     ).apply(instance, FloorPatternEntry::new));

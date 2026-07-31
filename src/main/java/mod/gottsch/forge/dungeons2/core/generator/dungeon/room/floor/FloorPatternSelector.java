@@ -20,7 +20,6 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 
 import java.util.ArrayList;
@@ -29,52 +28,40 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Weighted pick from a {@link FloorConfig}'s pattern list, mapping the chosen
- * {@link FloorPatternEntry} to a concrete {@link IDungeonFloorGenerator}. Kept separate from the
- * config records themselves (which stay pure data, same split {@code DungeonGenerationConfig} keeps
- * from the planner) since only this package needs to know what a {@code type} string actually
- * builds.
+ * Maps the {@link FloorPatternEntry} in a room scheme's floor slot to a concrete
+ * {@link IDungeonFloorGenerator}. Kept separate from the config records themselves (which stay pure
+ * data, same split {@code DungeonGenerationConfig} keeps from the planner) since only this package
+ * needs to know what a {@code type} string actually builds.
  *
- * <p>Every plain-floor outcome &mdash; the {@code "empty"} type, an unrecognized type, an empty
- * pattern list, or a pattern whose blocks failed to resolve &mdash; returns a
+ * <p><strong>This does not roll.</strong> It used to own a weighted pick over
+ * {@code FloorConfig.patterns}; that roll moved up to {@code RoomSchemeSelector} so that a room's
+ * floor is chosen together with its walls and ceiling rather than independently of them (see
+ * {@code RoomScheme}). What is left here is the part that was always floor-specific: turning one
+ * chosen entry into the generator that renders it.</p>
+ *
+ * <p>Every plain-floor outcome &mdash; the {@code "empty"} type, an unrecognized type, an absent
+ * floor slot, or a pattern whose blocks failed to resolve &mdash; returns a
  * {@link BasicFloorGenerator} carrying the same {@link FloorConfig}, so a room that renders plain
  * still uses the motif's own base blocks rather than reverting to the hardcoded stone_bricks
  * fallback.</p>
  *
- * @author Mark Gottschling on Jul 30, 2026
+ * @author Mark Gottschling on Jul 30, 2026 (roll extracted to RoomSchemeSelector Jul 31, 2026)
  */
 public final class FloorPatternSelector {
 
     private FloorPatternSelector() {}
 
     /**
-     * Rolls one weighted entry from {@code config}'s pattern list using {@code random} and returns
-     * the generator it maps to. An empty list or a non-positive total weight both degrade to plain
-     * floor &mdash; the same graceful degradation an absent/empty pool always has elsewhere in this
-     * codebase.
+     * The generator for a scheme's floor slot: the entry's own generator when present, plain floor
+     * when the slot is absent (an undecorated floor is what "no floor treatment in this scheme"
+     * means).
      */
-    public static IDungeonFloorGenerator select(FloorConfig config, RandomSource random) {
-        List<FloorPatternEntry> elements = config.patterns();
-        if (elements.isEmpty()) {
-            return plain(config);
-        }
-        int totalWeight = elements.stream().mapToInt(FloorPatternEntry::weight).sum();
-        if (totalWeight <= 0) {
-            return plain(config);
-        }
-        int roll = random.nextInt(totalWeight);
-        int cumulative = 0;
-        for (FloorPatternEntry entry : elements) {
-            cumulative += entry.weight();
-            if (roll < cumulative) {
-                return toGenerator(entry, config);
-            }
-        }
-        return plain(config); // unreachable: roll < totalWeight == cumulative sum
+    public static IDungeonFloorGenerator generatorFor(Optional<FloorPatternEntry> entry, FloorConfig config) {
+        return entry.map(e -> toGenerator(e, config)).orElseGet(() -> plain(config));
     }
 
     /** The plain floor, carrying the motif's own base blocks. */
-    private static IDungeonFloorGenerator plain(FloorConfig config) {
+    public static IDungeonFloorGenerator plain(FloorConfig config) {
         return new BasicFloorGenerator().withFloorConfig(config);
     }
 
@@ -86,7 +73,7 @@ public final class FloorPatternSelector {
      * required slot fails to resolve (absent, malformed, or an unregistered id), the whole entry
      * degrades to plain floor rather than silently substituting a guessed block.
      */
-    private static IDungeonFloorGenerator toGenerator(FloorPatternEntry entry, FloorConfig config) {
+    public static IDungeonFloorGenerator toGenerator(FloorPatternEntry entry, FloorConfig config) {
         return switch (entry.type().trim().toLowerCase(Locale.ROOT)) {
             case "border" -> {
                 Block corner = resolveBlock(entry.cornerBlock());
@@ -94,7 +81,8 @@ public final class FloorPatternSelector {
                 Block edgeRight = resolveBlock(entry.edgeRightBlock());
                 yield (corner == null || edgeLeft == null || edgeRight == null)
                         ? plain(config)
-                        : new FloorBorderPatternProvider(entry.inset(), corner, edgeLeft, edgeRight);
+                        : new FloorBorderPatternProvider(entry.inset(), corner, edgeLeft, edgeRight,
+                                config.baseState());
             }
             case "checkerboard" -> {
                 Block primary = resolveBlock(entry.primaryBlock());
@@ -110,6 +98,16 @@ public final class FloorPatternSelector {
                         ? plain(config)
                         : new RandomSpeckleFloorPatternProvider(entry.probability(), base, accent);
             }
+            case "cross" -> {
+                Block accent = resolveBlock(entry.primaryBlock());
+                yield accent == null ? plain(config)
+                        : new CrossFloorPatternProvider(entry.thickness(), accent, config.baseState());
+            }
+            case "spokes" -> {
+                Block accent = resolveBlock(entry.primaryBlock());
+                yield accent == null ? plain(config)
+                        : new RadialSpokesFloorPatternProvider(entry.spokes(), accent, config.baseState());
+            }
             case "composite" -> toComposite(entry.generators(), config);
             default -> plain(config); // "empty" or unrecognized
         };
@@ -117,8 +115,8 @@ public final class FloorPatternSelector {
 
     /**
      * The first nested entry becomes the base full fill; every entry after it is only kept if
-     * its generator is overlay-capable ({@link IFloorOverlayGenerator}, currently just {@code
-     * "border"}) &mdash; anything else in an overlay slot is silently skipped, same graceful
+     * its generator is overlay-capable ({@link IFloorOverlayGenerator}: {@code "border"},
+     * {@code "cross"} and {@code "spokes"}) &mdash; anything else in an overlay slot is silently skipped, same graceful
      * degradation an unrecognized top-level {@code type} already gets. An empty {@code
      * generators} list degrades to plain floor, same as an empty top-level pattern list.
      */

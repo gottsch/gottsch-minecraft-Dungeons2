@@ -373,10 +373,14 @@ authored today.
 
 ## Motif config (`dungeons2/motif_config/<motif>.json`)
 
-Everything a motif renders with — the base architectural block for each element, plus the room
-floor's optional decorative patterns — lives in **one file per motif**, a codec-backed datapack
-registry entry with the same shape as `dungeons2/generation_config/<name>.json` (the
+Everything a motif renders with — the base architectural block for each element, plus the weighted
+list of **room schemes** a room is decorated from — lives in **one file per motif**, a codec-backed
+datapack registry entry with the same shape as `dungeons2/generation_config/<name>.json` (the
 `corridorWidth` knob).
+
+The split to keep in mind while authoring: the element sections say what the motif is **made of**
+(one block per slot, no choices), and `schemes` says how a room is **dressed** (the only thing here
+that is rolled).
 
 > **Migrated Jul 2026.** This replaced two separate systems: `data/dungeons2/block_provider/<motif>.json`
 > (base blocks, loaded by a reload listener into `BlockProvider`/`BlockSet` maps keyed by enum
@@ -385,6 +389,12 @@ registry entry with the same shape as `dungeons2/generation_config/<name>.json` 
 > half's string→enum→map-key indirection silently swallowed lookup misses — which cost two real
 > bugs. If you have a datapack using either old path, move it into `motif_config/<motif>.json`
 > using the shape below; the old folders are no longer read.
+
+> **Schemes, Jul 2026 — a second breaking change.** `floor.patterns` moved out of the `floor`
+> section and became the top-level `schemes` list. Each old pattern entry becomes a scheme with that
+> entry in its `floor` slot, keeping its `weight` verbatim; add a `name`. Nothing else changes, and
+> a straight mechanical migration reproduces the old behaviour exactly. See **Room schemes** below
+> for why the roll moved.
 
 **Motif-scoped**, same naming convention as `rooms/<motif>/normal.json`/
 `transitions/<motif>/shaft_bottom.json` above and the weathering processor lists: entries live at
@@ -406,15 +416,16 @@ note above.
                 "ceiling": "minecraft:stone_bricks" },
   "floor": {
     "base": "minecraft:stone_bricks",
-    "alternateBase": "minecraft:stone_bricks",
-    "patterns": [
-      { "type": "empty", "weight": 8 },
-      { "type": "border", "weight": 1, "inset": 2,
-        "cornerBlock": "minecraft:andesite",
-        "edgeLeftBlock": "minecraft:polished_andesite",
-        "edgeRightBlock": "minecraft:polished_andesite" }
-    ]
-  }
+    "alternateBase": "minecraft:stone_bricks"
+  },
+  "schemes": [
+    { "name": "plain", "weight": 8 },
+    { "name": "andesite_border", "weight": 1, "minSize": 5,
+      "floor": { "type": "border", "inset": 2,
+                 "cornerBlock": "minecraft:andesite",
+                 "edgeLeftBlock": "minecraft:polished_andesite",
+                 "edgeRightBlock": "minecraft:polished_andesite" } }
+  ]
 }
 ```
 
@@ -424,28 +435,62 @@ entirely and you get the default oak door — but a `door` section with only `do
 old system was retired for. (It needs `Codecs.strictOptionalFieldOf`, because DFU's own
 `optionalFieldOf` cannot tell "absent" from "malformed" and returns the default for both.)
 
-Corridors deliberately have no `patterns` list — a border ring or checkerboard needs a room-sized
+Corridors are never dressed by a scheme — a border ring or checkerboard needs a room-sized
 rectangle. Corridor *walls* come from the shared `wall` section. Room `base`/`alternateBase` are
 rolled per interior cell at 45/55; `classic` sets both to the same block so the floor is uniform
 before weathering (the weathering processor list already produces the stone_bricks → cracked/mossy
 → cobblestone → dirt → gravel spread, and pre-baking a second block here both duplicated it and
 skipped the deeper decay stages).
 
-### Floor patterns
+### Room schemes
 
-The `floor.patterns` list is a weighted roll for a decorative treatment laid over the base floor.
-This is orthogonal to the room jigsaw pool above: it decorates a *procedural* room's floor, not a
-hand-authored prefab (a prefab is whatever you built it as, floor included).
+`schemes` is a weighted list of ways to dress a room. **One scheme is rolled per room and supplies
+every element's treatment** — today that means the floor; wall, ceiling and pillar slots land as
+they get providers behind them. This is orthogonal to the room jigsaw pool above: it decorates a
+*procedural* room, not a hand-authored prefab (a prefab is whatever you built it as).
+
+The roll is per room rather than per element on purpose. Independent per-element rolls guarantee
+combinations nobody chose — pilasters at an offset that does not line up with the vault they carry,
+a formal bordered floor under rough undecorated walls. An architectural style is one choice with
+several consequences, so it is made once. The cost is authoring redundancy: two schemes wanting the
+same floor border spell it out twice, with no way to reference a shared treatment. That is the same
+trade this file already makes by being one-file-per-motif.
+
+| field | meaning |
+|---|---|
+| `name` | **required.** Unique within the motif; what a log line can identify. |
+| `weight` | relative chance among *eligible* schemes (default 1). |
+| `minHeight` | skip this scheme in rooms shorter than this (default 0 = always eligible). |
+| `minSize` | skip it when the *smaller* of width/depth is below this (default 0). |
+| `floor` | optional floor treatment — one pattern entry, described below. |
+
+A scheme with nothing but a name is the undecorated room. An absent element slot means "plain for
+that element", so `{ "name": "plain", "weight": 8 }` is the whole no-decoration entry.
+
+**Eligibility is filtered before weights are totalled**, so an ineligible scheme's weight leaves the
+denominator entirely and the survivors keep their relative proportions in a small room. This matters
+more than it looks: room height is `min(rand(5..10), max(width, depth))`, so a room has only
+`height - 2` interior wall rows — between **3 and 8**. In a 5-high room rows 1 and 2 are the door
+halves and row 3 is the lintel, so there is nowhere to put a crown molding course. A vaulted ceiling
+is not a treatment that degrades gracefully in a short room; it is one that must not be rolled there,
+and `minHeight` is how you say so. Keep at least one unconstrained scheme in the list — a room
+matching none degrades to plain rather than being forced into an ill-fitting scheme.
+
+> Adding a `minHeight`/`minSize` to a shipped motif **changes existing seeds**. The roll draws one
+> value against the eligible total weight, so gating a scheme out shifts the whole downstream random
+> stream for that room.
+
+#### Floor treatments
 
 `type` is a plain string, not an enum — `"empty"` (or any unrecognized type) means no special
-pattern, just the base blocks; `"border"`, `"checkerboard"`, `"speckle"` and `"composite"` are
-described below. An empty list, a non-positive total weight, **or a pattern whose block ids fail
-to resolve**, all fall back to plain — there is deliberately no Java-side default block for any
+pattern, just the base blocks; `"border"`, `"checkerboard"`, `"speckle"`, `"cross"`, `"spokes"`
+and `"composite"` are described below. An absent `floor` slot **or a pattern whose block ids fail
+to resolve** both fall back to plain — there is deliberately no Java-side default block for any
 pattern's material slots, so a typo'd id degrades that entry to plain rather than silently
-rendering a guessed block. The roll happens once per room, using that room's own deterministic
-seed (`DungeonRoomPiece#deterministicRandom`) — so it stays the same across the repeated
-`postProcess` calls a piece gets per overlapping chunk, exactly like every other per-room roll in
-this pipeline.
+rendering a guessed block. A `weight` inside a `floor` slot is ignored; only the scheme's own
+weight is rolled on. The roll happens once per room, using that room's own deterministic seed
+(`DungeonRoomPiece#deterministicRandom`) — so it stays the same across the repeated `postProcess`
+calls a piece gets per overlapping chunk, exactly like every other per-room roll in this pipeline.
 
 > **Choosing an accent block: mind what weathering does to it.** The test is *not* "does this id
 > appear in `worldgen/processor_list/<motif>_weathering.json`" — it is "does this block's decay
@@ -471,6 +516,62 @@ this pipeline.
 > `classic` uses `minecraft:chiseled_stone_bricks` for speckle: today it has no chains at all, so a
 > speckled floor gains contrast as the stone around it ages, and it becomes the in-family case
 > unchanged if a mossy variant is added to `dungeonblocks` later.
+
+### The `checkerboard` and `speckle` patterns
+
+Two full-floor fills, each taking `primaryBlock` and `secondaryBlock` (both required):
+
+- **`checkerboard`** — alternates the two by `(x + z) % 2`, 1x1 cells, no inset. Setting both to
+  the same block makes it invisible, which is a legitimate way to disable it without deleting the
+  entry.
+- **`speckle`** — fills with `primaryBlock` and sprinkles `secondaryBlock` at `probability` per
+  cell (0-1, default 0.05). Unlike every other pattern here its output is *not* a pure function of
+  `(x, z)` — it consumes the room's own deterministic random, so it is still stable per room.
+
+Both are full fills rather than overlays, so in a `composite` they belong in the **first** slot.
+
+### The `composite` pattern
+
+Layers several patterns into one, via an ordered (not weighted) `generators` list of nested
+entries:
+
+```json
+{
+  "type": "composite",
+  "generators": [
+    { "type": "checkerboard", "primaryBlock": "...", "secondaryBlock": "..." },
+    { "type": "border", "inset": 2, "cornerBlock": "...", "edgeLeftBlock": "...", "edgeRightBlock": "..." }
+  ]
+}
+```
+
+The **first** entry is the base full fill; every entry after it is layered on top and only takes
+effect if its type is **overlay-capable** (`border`, `cross`, `spokes` — the ones that mark some
+cells and leave the rest). A full-fill type in an overlay slot is silently skipped rather than
+stomping the base. `weight` on a nested entry is ignored; only the enclosing scheme's weight
+matters for the roll. An empty `generators` list degrades to plain.
+
+Ordering is execution order, and later placements win the same cell — the same convention the
+`processor_list` files and the wall/floor/ceiling build order already use.
+
+### The `cross` and `spokes` patterns
+
+Two single-accent-block shapes, both taking `primaryBlock` and both **overlay-capable** (so either
+composes over a `checkerboard` base in a `composite`):
+
+- **`cross`** — an accent plus through the room's centre: a band of `thickness` columns at the
+  width's midpoint and a band of `thickness` rows at the depth's midpoint. `thickness` defaults to
+  1. Always both axes; a single-axis stripe is a different look with no second use yet, so it
+  doesn't get a knob until there is one.
+- **`spokes`** — `spokes` evenly-spaced lines radiating from the centre to the edges, like a
+  compass rose. Defaults to 8 (cardinals plus diagonals); 4 gives just the cardinals, and counts
+  that aren't divisors of 4 work fine, just stair-stepped. Arms are rasterised in half-cell steps
+  so they're never broken. Note every spoke starts at the centre, so a high count on a small floor
+  degenerates into a mostly-accent blob — author the count against the room sizes the motif
+  actually generates.
+
+Both fill non-pattern cells with the motif's `floor.base` when used standalone, and emit nothing
+there when used as an overlay.
 
 ### The `border` pattern
 

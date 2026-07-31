@@ -83,12 +83,11 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator, IFloo
     /** Matches the reference NBT: the ring's outer edge sits 2 cells in from the floor edge. */
     public static final int DEFAULT_INSET = 2;
 
-    private static final BlockState PLAIN = Blocks.STONE_BRICKS.defaultBlockState();
-
     private final int inset;
     private final Block cornerBlock;
     private final Block edgeLeftBlock;
     private final Block edgeRightBlock;
+    private final BlockState baseState;
 
     /**
      * @param cornerBlock    block for the 4 ring corners
@@ -98,6 +97,16 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator, IFloo
      *                       no visible alternation.
      */
     public FloorBorderPatternProvider(int inset, Block cornerBlock, Block edgeLeftBlock, Block edgeRightBlock) {
+        this(inset, cornerBlock, edgeLeftBlock, edgeRightBlock, Blocks.STONE_BRICKS.defaultBlockState());
+    }
+
+    /**
+     * @param baseState what non-ring cells get from {@link #build} (the motif's own floor base,
+     *                  supplied by {@code FloorPatternSelector}). Unused by {@link #overlay}.
+     */
+    public FloorBorderPatternProvider(int inset, Block cornerBlock, Block edgeLeftBlock, Block edgeRightBlock,
+                                      BlockState baseState) {
+        this.baseState = Objects.requireNonNull(baseState, "baseState");
         this.inset = inset;
         this.cornerBlock = Objects.requireNonNull(cornerBlock, "cornerBlock");
         this.edgeLeftBlock = Objects.requireNonNull(edgeLeftBlock, "edgeLeftBlock");
@@ -133,13 +142,13 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator, IFloo
     }
 
     private void emit(int width, int depth, int originX, int originZ, int floorY, List<BlockPlacement> out,
-                       boolean includePlain) {
+                       boolean includeBase) {
         RingCell[][] grid = plan(width, depth, inset);
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < depth; z++) {
                 if (grid[x][z] == null) {
-                    if (includePlain) {
-                        out.add(BlockStateCodec.placement(originX + x, floorY, originZ + z, PLAIN));
+                    if (includeBase) {
+                        out.add(BlockStateCodec.placement(originX + x, floorY, originZ + z, baseState));
                     }
                     continue;
                 }

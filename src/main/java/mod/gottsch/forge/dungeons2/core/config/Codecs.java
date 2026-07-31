@@ -24,6 +24,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -51,6 +52,34 @@ public final class Codecs {
      * indistinguishable from an absent one in any scheme without a closed schema, so that still
      * silently takes the default.</p>
      */
+    /**
+     * The no-fallback form: an absent field yields {@link Optional#empty()}, a present-but-malformed
+     * one propagates the error. Same rationale as the fallback overload below &mdash; used where
+     * "absent" is a meaningful state in its own right (a {@link RoomScheme} element slot left
+     * undecorated) rather than a stand-in for some default value.
+     */
+    public static <A> MapCodec<Optional<A>> strictOptionalFieldOf(Codec<A> codec, String name) {
+        return new MapCodec<>() {
+            @Override
+            public <T> DataResult<Optional<A>> decode(DynamicOps<T> ops, MapLike<T> input) {
+                T value = input.get(name);
+                return value == null
+                        ? DataResult.success(Optional.empty())
+                        : codec.parse(ops, value).map(Optional::of);
+            }
+
+            @Override
+            public <T> RecordBuilder<T> encode(Optional<A> input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
+                return input.isPresent() ? prefix.add(name, codec.encodeStart(ops, input.get())) : prefix;
+            }
+
+            @Override
+            public <T> Stream<T> keys(DynamicOps<T> ops) {
+                return Stream.of(ops.createString(name));
+            }
+        };
+    }
+
     public static <A> MapCodec<A> strictOptionalFieldOf(Codec<A> codec, String name, A fallback) {
         return new MapCodec<>() {
             @Override

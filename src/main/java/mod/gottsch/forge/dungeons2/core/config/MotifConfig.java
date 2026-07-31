@@ -20,9 +20,11 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import java.util.List;
+
 /**
  * Everything a single motif renders with: the base architectural blocks for each element, plus the
- * room floor's weighted decorative patterns. One entry per motif, at
+ * weighted list of {@link RoomScheme}s a room is dressed from. One entry per motif, at
  * {@code data/dungeons2/dungeons2/motif_config/<motif>.json}, looked up via
  * {@link MotifConfigHelper#get}.
  *
@@ -40,6 +42,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  *
  * <p>A codec over named record fields cannot express either bug: a field is present and typed or
  * the file fails to load, loudly. That is the whole reason for the merge.</p>
+ *
+ * <h2>Materials vs. decoration</h2>
+ * <p>The element sections ({@code wall}, {@code ceiling}, {@code door}, {@code corridor},
+ * {@code floor}) say what the motif is <em>made of</em> &mdash; one block per slot, no choices.
+ * {@code schemes} says how a room is <em>dressed</em>, and is the only thing here that is rolled.
+ * The roll is per room and covers every element at once, so a room's floor, walls and ceiling
+ * always come from one authored combination; see {@link RoomScheme} for why that is worth the
+ * authoring redundancy it costs.</p>
  *
  * <h2>Fallbacks</h2>
  * <p>Every section is optional, but every block field <em>within</em> a section it is
@@ -60,12 +70,12 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
-                          CorridorConfig corridor, FloorConfig floor) {
+                          CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes) {
 
     /** Used when a motif has no entry: stone_bricks everywhere, oak door, always-plain floor. */
     public static final MotifConfig DEFAULT = new MotifConfig(
             WallConfig.DEFAULT, CeilingConfig.DEFAULT, DoorConfig.DEFAULT,
-            CorridorConfig.DEFAULT, FloorConfig.DEFAULT);
+            CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(RoomScheme.PLAIN));
 
     public static final Codec<MotifConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codecs.strictOptionalFieldOf(WallConfig.CODEC, "wall", WallConfig.DEFAULT)
@@ -77,6 +87,8 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
             Codecs.strictOptionalFieldOf(CorridorConfig.CODEC, "corridor", CorridorConfig.DEFAULT)
                     .forGetter(MotifConfig::corridor),
             Codecs.strictOptionalFieldOf(FloorConfig.CODEC, "floor", FloorConfig.DEFAULT)
-                    .forGetter(MotifConfig::floor)
+                    .forGetter(MotifConfig::floor),
+            Codecs.strictOptionalFieldOf(RoomScheme.CODEC.listOf(), "schemes", List.of(RoomScheme.PLAIN))
+                    .forGetter(MotifConfig::schemes)
     ).apply(instance, MotifConfig::new));
 }

@@ -17,50 +17,71 @@
   },
   "floor": {
     "base": "minecraft:stone_bricks",
-    "alternateBase": "minecraft:stone_bricks",
-    "patterns": [
-      { "type": "empty", "weight": 8 },
-      {
+    "alternateBase": "minecraft:stone_bricks"
+  },
+  "schemes": [
+    {
+      "name": "plain",
+      "weight": 8
+    },
+    {
+      "name": "large_brick_border",
+      "weight": 1,
+      "floor": {
         "type": "border",
-        "weight": 1,
         "inset": 2,
         "cornerBlock": "dungeonblocks:right_large_stone_brick",
         "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
         "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
-      },
-      {
+      }
+    },
+    {
+      "name": "andesite_border",
+      "weight": 1,
+      "floor": {
         "type": "border",
-        "weight": 1,
         "inset": 2,
         "cornerBlock": "minecraft:andesite",
         "edgeLeftBlock": "minecraft:polished_andesite",
         "edgeRightBlock": "minecraft:polished_andesite"
-      },
-      {
+      }
+    },
+    {
+      "name": "chiseled_corner_border",
+      "weight": 1,
+      "floor": {
         "type": "border",
-        "weight": 1,
         "inset": 1,
         "cornerBlock": "minecraft:chiseled_stone_bricks",
         "edgeLeftBlock": "minecraft:polished_andesite",
         "edgeRightBlock": "minecraft:polished_andesite"
-      },
-      {
+      }
+    },
+    {
+      "name": "grate_corner_border",
+      "weight": 1,
+      "floor": {
         "type": "border",
-        "weight": 1,
         "inset": 1,
         "cornerBlock": "dungeonblocks:dark_iron_grate",
         "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
         "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
-      },
-      {
+      }
+    },
+    {
+      "name": "checkerboard",
+      "weight": 1,
+      "floor": {
         "type": "checkerboard",
-        "weight": 1,
         "primaryBlock": "dungeonblocks:square_stone_brick",
         "secondaryBlock": "minecraft:polished_andesite"
-      },
-      {
+      }
+    },
+    {
+      "name": "bordered_checkerboard",
+      "weight": 1,
+      "floor": {
         "type": "composite",
-        "weight": 1,
         "generators": [
           {
             "type": "checkerboard",
@@ -75,14 +96,36 @@
             "edgeRightBlock": "minecraft:polished_andesite"
           }
         ]
-      },
-      {
+      }
+    },
+    {
+      "name": "speckled",
+      "weight": 1,
+      "floor": {
         "type": "speckle",
-        "weight": 1,
         "primaryBlock": "minecraft:stone_bricks",
         "secondaryBlock": "minecraft:chiseled_stone_bricks",
         "probability": 0.08
       }
-    ]
-  }
+    },
+    {
+      "name": "cross",
+      "weight": 1,
+      "floor": {
+        "type": "cross",
+        "primaryBlock": "minecraft:chiseled_stone_bricks",
+        "thickness": 1
+      }
+    },
+    {
+      "name": "spokes",
+      "weight": 1,
+      "minSize": 7,
+      "floor": {
+        "type": "spokes",
+        "primaryBlock": "minecraft:chiseled_stone_bricks",
+        "spokes": 8
+      }
+    }
+  ]
 }
