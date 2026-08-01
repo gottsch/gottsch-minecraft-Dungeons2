@@ -19,19 +19,24 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import net.minecraft.util.RandomSource;
 
-import java.util.List;
-
 /**
- * Renders a single {@link RoomData} room as a list of {@link BlockPlacement}s
- * by orchestrating the wall, floor, and ceiling sub-builders.
+ * Renders a single {@link RoomData} room into a {@link RoomPlacements} by orchestrating the wall,
+ * floor, and ceiling sub-builders (plus any prop pass).
  *
  * <p>Phase 2 builder API: no {@code ServerLevel}, no direct block writes.
  * One piece of input = one room. The caller (Phase 3 piece renderer) handles
  * iterating rooms across a {@code FloorLayout}.</p>
+ *
+ * <p>Takes a {@link RoomPlacements} rather than a bare {@code List<}{@link BlockPlacement}{@code >}
+ * because a room now emits entities as well as blocks, and the two reach the world by different
+ * paths &mdash; blocks through the decoration/processor pass and idempotent, entities around it and
+ * emphatically not. The element sub-builders keep the plain list; only the orchestrator sees both.
+ * </p>
  */
 public interface IRoomGenerator {
-    void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random, List<BlockPlacement> out);
+    void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random, RoomPlacements out);
 }

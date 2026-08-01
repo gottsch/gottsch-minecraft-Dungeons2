@@ -29,9 +29,9 @@ class MotifConfigCodecTest {
                         "minecraft:polished_andesite", "minecraft:polished_andesite"),
                 new CorridorConfig("minecraft:cobblestone", "minecraft:gravel", "minecraft:stone_bricks"),
                 new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks"),
-                List.of(new RoomScheme("plain", 8, 0, 0, Optional.empty()),
+                List.of(new RoomScheme("plain", 8, 0, 0, Optional.empty(), Optional.empty()),
                         new RoomScheme("bordered", 1, 6, 5,
-                                Optional.of(new FloorPatternEntry("border", 1, 2)))));
+                                Optional.of(new FloorPatternEntry("border", 1, 2)), Optional.empty())));
 
         JsonElement json = MotifConfig.CODEC.encodeStart(JsonOps.INSTANCE, config).result().orElseThrow();
         MotifConfig back = MotifConfig.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();

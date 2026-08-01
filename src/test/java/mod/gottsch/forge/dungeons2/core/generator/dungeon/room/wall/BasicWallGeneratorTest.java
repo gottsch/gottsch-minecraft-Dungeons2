@@ -67,15 +67,16 @@ class BasicWallGeneratorTest {
         gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
 
         // 7x7 room, height=5, walls at y=1..3 (3 layers).
-        // Walls: 2*7*3 (x edges) + 2*7*3 (z edges) but corners double-count: 4*3.
-        // Net wall blocks: (28+28-12) = 44 per height layer? Actually code emits
-        // BOTH x edges and z edges including corners, so duplicate corners exist.
-        // Simpler check: at least the visible wall + air count is right.
-        // Walls: 2 x edges * depth=7 * height=3 = 42, plus 2 z edges * width=7 * height=3 = 42 = 84.
-        // Air interior: 5x5*3 = 75.
-        // Total: 84 + 75 = 159.
-        assertEquals(159, out.size(),
-                "Expected 84 wall + 75 air placements for a 7x7x5 room");
+        // 2 x-edges * depth=7 * 3 = 42, plus 2 z-edges * width=7 * 3 = 42 = 84.
+        // The four corner columns are emitted TWICE -- once by each loop -- so 12 of those 84 are
+        // duplicates that the renderer resolves last-write-wins. Harmless for a uniform wall;
+        // it is a real constraint for any wall pattern with horizontal rhythm, which will need a
+        // corner-ownership convention rather than relying on the second write matching the first.
+        //
+        // Interior air is NOT here: it belongs to RoomVolumeGenerator (75 placements for this
+        // room, asserted in RoomVolumeGeneratorTest).
+        assertEquals(84, out.size(),
+                "Expected 84 wall placements (corners double-emitted) for a 7x7x5 room");
     }
 
     @Test
@@ -90,7 +91,7 @@ class BasicWallGeneratorTest {
         int maxX = room.getOriginX() + room.getWidth() - 1;
         int minZ = room.getOriginZ();
         int maxZ = room.getOriginZ() + room.getDepth() - 1;
-        int minY = floorY + 1; // walls/air start above the floor
+        int minY = floorY + 1; // walls start above the floor
         int maxY = floorY + room.getHeight() - 2; // and below the ceiling
 
         for (BlockPlacement bp : out) {
@@ -118,24 +119,39 @@ class BasicWallGeneratorTest {
         }
     }
 
+    /**
+     * Every cell this generator emits is on the perimeter ring -- it no longer hollows the room
+     * out, so an interior cell here would be a wall block standing in open floor space.
+     */
     @Test
-    void wallsAreSolidBlocksAirIsAir() {
+    void emitsOnlyPerimeterCells() {
         BasicWallGenerator gen = new BasicWallGenerator();
         List<BlockPlacement> out = new ArrayList<>();
         RoomData room = smallRoom();
         gen.build(room, 60, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
 
-        boolean sawAir = false;
-        boolean sawNonAir = false;
         for (BlockPlacement bp : out) {
-            if ("minecraft:air".equals(bp.getBlockId())) {
-                sawAir = true;
-            } else {
-                sawNonAir = true;
-            }
+            int x = bp.getX() - room.getOriginX();
+            int z = bp.getZ() - room.getOriginZ();
+            assertTrue(x == 0 || x == room.getWidth() - 1 || z == 0 || z == room.getDepth() - 1,
+                    "wall generator emitted an interior cell: " + bp);
         }
-        assertTrue(sawAir, "Room interior should contribute air placements");
-        assertTrue(sawNonAir, "Wall edges should contribute non-air placements");
+    }
+
+    /**
+     * With the interior fill gone, the only air this generator emits is a door half -- and this
+     * room has no doorways. Anything else being air would be a hole punched in a wall.
+     */
+    @Test
+    void aDoorlessRoomsWallsAreEntirelySolid() {
+        BasicWallGenerator gen = new BasicWallGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
+
+        for (BlockPlacement bp : out) {
+            assertFalse("minecraft:air".equals(bp.getBlockId()),
+                    "a wall cell in a doorless room must be solid: " + bp);
+        }
     }
 
     /**

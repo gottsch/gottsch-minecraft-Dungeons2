@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomVolumeGenerator;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,13 +33,16 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Builds the four walls of a {@link RoomData}, plus interior air, as
- * {@link BlockPlacement}s.
+ * Builds the four walls of a {@link RoomData} as {@link BlockPlacement}s &mdash; the perimeter ring
+ * only. The interior air the room stands in is {@link RoomVolumeGenerator}'s job; this class emitted
+ * it too until Jul 2026, which conflated the wall <em>surface</em> with the room <em>volume</em> and
+ * left every future interior feature (pillars, vaults) having to work around wall code. See that
+ * class for the full reasoning.
  *
  * <p>Output coords are floor-local X/Z and absolute world Y. The room
  * occupies {@code [originX..originX+width-1] x [originZ..originZ+depth-1]}
- * on the floor; vertically it spans {@code [floorY+1..floorY+height-2]} for
- * walls/air (the floor block at Y=floorY and the ceiling at Y=floorY+height-1
+ * on the floor; vertically the walls span {@code [floorY+1..floorY+height-2]}
+ * (the floor block at Y=floorY and the ceiling at Y=floorY+height-1
  * are emitted by {@code BasicFloorGenerator} / {@code BasicCeilingGenerator}).</p>
  *
  * <p>Perimeter cells listed in {@link RoomData#getDoorways()} are emitted as
@@ -113,15 +117,6 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
                     out.add(BlockStateCodec.placement(
                             originX + x, floorY + y, originZ + z,
                             isDoorHalf(doorway, y) ? airState : wallState));
-                }
-            }
-        }
-        // Air filling the room interior (between the walls, above the floor).
-        for (int x = 1; x < width - 1; x++) {
-            for (int z = 1; z < depth - 1; z++) {
-                for (int y = 1; y < height - 1; y++) {
-                    out.add(BlockStateCodec.placement(
-                            originX + x, floorY + y, originZ + z, airState));
                 }
             }
         }

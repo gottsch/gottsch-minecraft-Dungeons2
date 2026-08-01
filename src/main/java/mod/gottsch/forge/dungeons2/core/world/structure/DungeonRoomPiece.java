@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -89,17 +90,31 @@ public class DungeonRoomPiece extends DungeonPiece {
         MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue);
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
-        safePlaceAll(level, box, () -> renderPlacements(motifConfig));
+        RoomPlacements placements = renderRoom(motifConfig);
+        safePlaceAll(level, box, placements::getBlocks);
+        // Entities are spawned separately and clipped to the chunk box -- unlike blocks they are
+        // not idempotent across the per-chunk postProcess re-runs. See DungeonPiece#placeEntities.
+        placeEntities(level, box, placements.getEntities());
     }
 
-    /** Builds this room's placements deterministically (no external RNG), always plain floor. */
+    /** Builds this room's block placements deterministically (no external RNG), always plain floor. */
     public List<BlockPlacement> renderPlacements() {
         return renderPlacements(MotifConfig.DEFAULT);
     }
 
-    /** Builds this room's placements deterministically (no external RNG). */
+    /** Builds this room's block placements deterministically (no external RNG). */
     public List<BlockPlacement> renderPlacements(MotifConfig motifConfig) {
-        List<BlockPlacement> out = new ArrayList<>();
+        return renderRoom(motifConfig).getBlocks();
+    }
+
+    /**
+     * Builds this room's full output -- blocks and entities -- deterministically. Seeded from
+     * chunk-independent piece state, so every per-chunk re-run produces an identical plan; the
+     * entity half depends on that far more than the block half does (see
+     * {@code DungeonPiece#placeEntities}).
+     */
+    public RoomPlacements renderRoom(MotifConfig motifConfig) {
+        RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(motifConfig)
                 .build(room, floorY, motif(), deterministicRandom(room.getId()), out);
         return out;

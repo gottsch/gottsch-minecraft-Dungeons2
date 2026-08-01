@@ -463,6 +463,7 @@ trade this file already makes by being one-file-per-motif.
 | `minHeight` | skip this scheme in rooms shorter than this (default 0 = always eligible). |
 | `minSize` | skip it when the *smaller* of width/depth is below this (default 0). |
 | `floor` | optional floor treatment — one pattern entry, described below. |
+| `pots` | optional loot pots standing on the floor — described below. |
 
 A scheme with nothing but a name is the undecorated room. An absent element slot means "plain for
 that element", so `{ "name": "plain", "weight": 8 }` is the whole no-decoration entry.
@@ -479,6 +480,47 @@ matching none degrades to plain rather than being forced into an ill-fitting sch
 > Adding a `minHeight`/`minSize` to a shipped motif **changes existing seeds**. The roll draws one
 > value against the eligible total weight, so gating a scheme out shifts the whole downstream random
 > stream for that room.
+
+#### Loot pots (`pots`)
+
+Scatters `dungeonblocks` pots across the room's floor, each carrying a loot table.
+
+```json
+"pots": {
+  "minCount": 1,
+  "maxCount": 3,
+  "lootTable": "dungeons2:pots/classic",
+  "variants": [
+    { "entity": "dungeonblocks:pot", "weight": 2 },
+    { "entity": "dungeonblocks:squat_clay_pot", "weight": 2 },
+    { "entity": "dungeonblocks:thin_clay_pot", "weight": 1 }
+  ]
+}
+```
+
+`lootTable` and `variants` are **required**; `minCount`/`maxCount` default to 1 and 3. A count is
+rolled per room from that inclusive range, then that many distinct cells are drawn — a room with
+fewer eligible cells than the rolled count just gets fewer pots.
+
+**Pots are entities, not blocks**, and that has consequences worth knowing before authoring:
+
+- **`lootTable` is required for a reason.** `PotEntity` drops nothing at all when its table id is
+  null or `minecraft:empty`, and it does **not** fall back to the entity type's own table — the
+  ones `dungeonblocks` ships for its three pot types are empty stubs with no pools. A missing or
+  typo'd id is a pot that shatters into thin air with no error anywhere. The id must resolve to a
+  file this mod ships; `DatapackResourcesParseTest` fails the build if it doesn't.
+- **The table must be `"type": "minecraft:entity"`.** The drop path builds its `LootParams` with the
+  ENTITY parameter set. A chest-style (`minecraft:chest`) table will not work.
+- **Each pot gets a non-zero `LootTableSeed`**, so its contents are fixed when the dungeon generates
+  rather than rolled when a player breaks it — the same treatment vanilla gives a structure chest.
+- **A creative-mode player gets no drops.** There is an explicit early return for it. Easy to
+  mistake for broken loot when testing.
+
+Placement is not configurable and is deliberately narrow: pots go on **interior floor cells that
+touch a wall**, never on the cell immediately inside a doorway. Pots have gravity and a fall-break
+distance, so one placed over anything but solid floor falls and shatters before a player ever sees
+it; and a pot alone in the middle of an open floor reads as dropped rather than placed. Use
+`minSize` on the scheme to keep pot schemes out of rooms too cramped to hold them.
 
 #### Floor treatments
 

@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.BasicCeilingGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.IDungeonCeilingGenerator;
@@ -69,22 +70,32 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
-                      RandomSource random, List<BlockPlacement> out) {
+                      RandomSource random, RoomPlacements out) {
         RoomScheme scheme = selectScheme(room, random);
+        List<BlockPlacement> blocks = out.getBlocks();
 
         IDungeonWallGenerator wallGen = selectWallGenerator(motif, scheme);
         IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme);
         IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif, scheme);
 
-        // Order matters when the renderer iterates the list in sequence
-        // and a later placement overwrites an earlier one (e.g., interior
-        // air from the wall step gets the final say over anything the
-        // floor step happens to put in the same cell). Keeping walls last
-        // here would lose the interior air; we do walls FIRST so the floor
-        // step has the final word at Y=floorY and ceiling at Y=floorY+height-1.
-        wallGen.build(room, floorY, motif, random, out);
-        floorGen.build(room, floorY, motif, random, out);
-        ceilingGen.build(room, floorY, motif, random, out);
+        // The renderer iterates this list in sequence and a later placement overwrites an earlier
+        // one in the same cell, so order here is a layering order. Hollowing first establishes
+        // "the room is empty" as a precondition the rest build on top of, which is what lets a
+        // future interior feature (pillar, vault) simply run later and win the cells it needs
+        // rather than having to coordinate with the step that emitted the air.
+        //
+        // The four steps below this one do not actually overlap -- volume is strictly interior,
+        // walls are strictly the perimeter ring, floor is Y=floorY and ceiling Y=floorY+height-1 --
+        // so their relative order is currently free. Do not rely on that when adding a step.
+        RoomVolumeGenerator.hollow(room, floorY, blocks);
+        wallGen.build(room, floorY, motif, random, blocks);
+        floorGen.build(room, floorY, motif, random, blocks);
+        ceilingGen.build(room, floorY, motif, random, blocks);
+
+        // Props last: they stand ON the finished floor, and unlike the four steps above they emit
+        // entities, which the piece writes to the world by a different route entirely.
+        scheme.pots().ifPresent(pots ->
+                RoomPropGenerator.placePots(room, floorY, pots, random, out.getEntities()));
     }
 
     /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */

@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import net.minecraft.SharedConstants;
@@ -55,13 +56,15 @@ class BasicRoomGeneratorTest {
     @Test
     void orchestratorEmitsWallFloorAndCeilingPlacements() {
         BasicRoomGenerator gen = new BasicRoomGenerator();
-        List<BlockPlacement> out = new ArrayList<>();
-        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), out);
+        RoomPlacements outPlacements = new RoomPlacements();
+        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
+        List<BlockPlacement> out = outPlacements.getBlocks();
 
-        // Walls + air = 159 (from BasicWallGeneratorTest).
+        // Interior air = 75 (RoomVolumeGeneratorTest) + walls = 84 (BasicWallGeneratorTest).
         // Floor: border 2x5 (x edges, depth-2) + 2x3 (z edges, width-4) + interior 3x3 = 10 + 6 + 9 = 25.
         // Ceiling: 5x5 = 25.
-        // Total: 159 + 25 + 25 = 209.
+        // Total: 75 + 84 + 25 + 25 = 209 -- unchanged by extracting the hollow step out of the
+        // wall generator, which is the point: the same cells are emitted, by a different step.
         assertEquals(209, out.size(),
                 "Room orchestrator should produce wall + floor + ceiling placements");
     }
@@ -69,10 +72,11 @@ class BasicRoomGeneratorTest {
     @Test
     void floorIsAtFloorYAndCeilingIsAtFloorYPlusHeightMinusOne() {
         BasicRoomGenerator gen = new BasicRoomGenerator();
-        List<BlockPlacement> out = new ArrayList<>();
+        RoomPlacements outPlacements = new RoomPlacements();
         RoomData room = smallRoom();
         int floorY = 60;
-        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(99L), out);
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
+        List<BlockPlacement> out = outPlacements.getBlocks();
 
         int expectedCeilingY = floorY + room.getHeight() - 1; // = 64
         boolean sawFloorY = false;
@@ -91,14 +95,25 @@ class BasicRoomGeneratorTest {
     @Test
     void roomOrchestrationIsDeterministic() {
         BasicRoomGenerator gen = new BasicRoomGenerator();
-        List<BlockPlacement> a = new ArrayList<>();
-        List<BlockPlacement> b = new ArrayList<>();
-        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), a);
-        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), b);
+        RoomPlacements first = new RoomPlacements();
+        RoomPlacements second = new RoomPlacements();
+        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), first);
+        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), second);
+
+        List<BlockPlacement> a = first.getBlocks();
+        List<BlockPlacement> b = second.getBlocks();
         assertEquals(a.size(), b.size());
         for (int i = 0; i < a.size(); i++) {
             assertEquals(a.get(i).toString(), b.get(i).toString(),
                     "Mismatch at placement " + i);
+        }
+
+        // The entity channel has to be deterministic too -- more so, since the piece relies on
+        // every per-chunk re-run producing the same plan to spawn each prop exactly once.
+        assertEquals(first.getEntities().size(), second.getEntities().size());
+        for (int i = 0; i < first.getEntities().size(); i++) {
+            assertEquals(first.getEntities().get(i).toString(), second.getEntities().get(i).toString(),
+                    "Mismatch at entity " + i);
         }
     }
 }

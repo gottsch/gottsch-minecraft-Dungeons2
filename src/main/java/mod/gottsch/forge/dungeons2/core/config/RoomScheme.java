@@ -46,6 +46,11 @@ import java.util.Optional;
  * scheme's own {@link #weight} matters. An absent slot means "plain for that element", so a scheme
  * with no slots at all is the undecorated room.</p>
  *
+ * <p>{@code pots} holds a {@link PotConfig} &mdash; loot pots scattered on the room's floor. This
+ * is the one slot whose output is not a block: {@code dungeonblocks}' pots are entities, so they
+ * travel to the world on {@code RoomPlacements}' entity channel rather than through the block and
+ * decoration pass.</p>
+ *
  * <p>Slots for {@code wall}, {@code ceiling} and {@code pillars} are deliberately <em>not</em>
  * declared yet: they are additive optional codec fields, and there are no providers behind them to
  * give them meaning. The load-bearing decision is that this container exists and owns the roll, not
@@ -73,17 +78,19 @@ import java.util.Optional;
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record RoomScheme(String name, int weight, int minHeight, int minSize,
-                         Optional<FloorPatternEntry> floor) {
+                         Optional<FloorPatternEntry> floor, Optional<PotConfig> pots) {
 
-    /** The undecorated room: plain floor, plain walls, plain ceiling, eligible everywhere. */
-    public static final RoomScheme PLAIN = new RoomScheme("plain", 1, 0, 0, Optional.empty());
+    /** The undecorated room: plain floor, plain walls, plain ceiling, no props, eligible everywhere. */
+    public static final RoomScheme PLAIN =
+            new RoomScheme("plain", 1, 0, 0, Optional.empty(), Optional.empty());
 
     public static final Codec<RoomScheme> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("name").forGetter(RoomScheme::name),
             Codec.intRange(1, Integer.MAX_VALUE).optionalFieldOf("weight", 1).forGetter(RoomScheme::weight),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minHeight", 0).forGetter(RoomScheme::minHeight),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minSize", 0).forGetter(RoomScheme::minSize),
-            Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "floor").forGetter(RoomScheme::floor)
+            Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "floor").forGetter(RoomScheme::floor),
+            Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots)
     ).apply(instance, RoomScheme::new));
 
     /**

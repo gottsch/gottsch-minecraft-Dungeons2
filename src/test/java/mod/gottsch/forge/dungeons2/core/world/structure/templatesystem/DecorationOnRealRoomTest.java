@@ -23,6 +23,7 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
@@ -92,9 +93,10 @@ class DecorationOnRealRoomTest {
      */
     private static List<StructureTemplate.StructureBlockInfo> buildRoom(int width, int depth, int height) {
         RoomData room = new RoomData(1, 0, 0, width, depth, height, RoomRole.NORMAL);
-        List<BlockPlacement> placements = new ArrayList<>();
+        RoomPlacements roomPlacements = new RoomPlacements();
         new BasicRoomGenerator().build(room, FLOOR_Y, DungeonMotif.CLASSIC,
-                RandomSource.create(1234L), placements);
+                RandomSource.create(1234L), roomPlacements);
+        List<BlockPlacement> placements = roomPlacements.getBlocks();
 
         List<StructureTemplate.StructureBlockInfo> infos = new ArrayList<>(placements.size());
         for (BlockPlacement placement : placements) {

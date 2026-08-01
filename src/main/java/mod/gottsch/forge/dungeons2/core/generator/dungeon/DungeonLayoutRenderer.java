@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -87,7 +88,16 @@ public final class DungeonLayoutRenderer {
 
     /** Renders every floor of the layout into one combined placement list. */
     public List<BlockPlacement> render(DungeonLayout layout, RandomSource random) {
-        List<BlockPlacement> out = new ArrayList<>();
+        return renderAll(layout, random).getBlocks();
+    }
+
+    /**
+     * Renders blocks <em>and</em> entities. {@link #render} is the block-only view of this, kept
+     * because most callers (and every geometry test) only care about blocks; anything that actually
+     * writes to a world should use this one, or a room's pots are silently dropped.
+     */
+    public RoomPlacements renderAll(DungeonLayout layout, RandomSource random) {
+        RoomPlacements out = new RoomPlacements();
         IDungeonMotif motif = resolveMotif(layout.getMotifValue());
         for (FloorLayout floor : layout.getFloors()) {
             renderFloor(floor, motif, random, out);
@@ -95,9 +105,18 @@ public final class DungeonLayoutRenderer {
         return out;
     }
 
-    /** Renders one floor's normal rooms, corridors, and doors into {@code out}. */
+    /** Block-only overload, for callers that render geometry and nothing else. */
     public void renderFloor(FloorLayout floor, IDungeonMotif motif,
                             RandomSource random, List<BlockPlacement> out) {
+        RoomPlacements placements = new RoomPlacements();
+        renderFloor(floor, motif, random, placements);
+        out.addAll(placements.getBlocks());
+    }
+
+    /** Renders one floor's normal rooms, corridors, and doors into {@code placements}. */
+    public void renderFloor(FloorLayout floor, IDungeonMotif motif,
+                            RandomSource random, RoomPlacements placements) {
+        List<BlockPlacement> out = placements.getBlocks();
         int floorY = floor.getFloorY();
 
         for (RoomData room : floor.getRooms()) {
@@ -106,7 +125,7 @@ public final class DungeonLayoutRenderer {
             if (room.getRole() != RoomRole.NORMAL) {
                 continue;
             }
-            roomGenerator.build(room, floorY, motif, random, out);
+            roomGenerator.build(room, floorY, motif, random, placements);
         }
 
         Grid2D grid = floor.getGrid();

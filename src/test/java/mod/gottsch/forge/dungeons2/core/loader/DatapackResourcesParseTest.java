@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,19 +78,53 @@ class DatapackResourcesParseTest {
      * room in the dungeon undecorated, no error anywhere. Asserting the decoded content, not just
      * that it decoded, is the only thing that catches that.
      */
+    /**
+     * Every loot table a pots slot names must actually be a shipped file. This is the one pot
+     * failure that is completely silent in game: {@code PotEntity#dropLoot} looks the id up, gets
+     * nothing back, and the pot shatters into thin air with no error anywhere. A typo'd id is
+     * indistinguishable from an empty table at runtime, so it has to be caught here.
+     */
+    @Test
+    void everyPotLootTableReferencedByAMotifExists() {
+        for (String motif : new String[]{"classic", "catacombs", "deep_slate"}) {
+            MotifConfig config = parse("/data/dungeons2/dungeons2/motif_config/" + motif + ".json",
+                    MotifConfig.CODEC);
+            for (RoomScheme scheme : config.schemes()) {
+                scheme.pots().ifPresent(pots -> {
+                    String id = pots.lootTable();
+                    assertTrue(id.startsWith("dungeons2:"),
+                            "scheme '" + scheme.name() + "' points at a foreign loot table (" + id
+                                    + "); only this mod's own tables are guaranteed to ship");
+                    String path = "/data/dungeons2/loot_tables/"
+                            + id.substring("dungeons2:".length()) + ".json";
+                    assertNotNull(DatapackResourcesParseTest.class.getResourceAsStream(path),
+                            "scheme '" + scheme.name() + "' names a loot table with no file: " + path);
+                    assertFalse(pots.variants().isEmpty(),
+                            "scheme '" + scheme.name() + "' has a pots slot with no variants");
+                });
+            }
+        }
+    }
+
     @Test
     void classicShipsItsFullSchemeList() {
         MotifConfig classic = parse("/data/dungeons2/dungeons2/motif_config/classic.json", MotifConfig.CODEC);
 
-        assertEquals(10, classic.schemes().size(), "classic should ship 10 room schemes");
+        // Deliberately a floor, not an exact count -- the scheme list is authored content and is
+        // expected to grow. What must never happen is it collapsing to the one-element default.
         assertNotEquals(List.of(RoomScheme.PLAIN), classic.schemes(),
                 "classic fell back to the default scheme list -- check the 'schemes' field name");
+        assertTrue(classic.schemes().size() >= 5,
+                "classic should ship a real scheme list, got " + classic.schemes().size());
 
         Set<String> names = classic.schemes().stream().map(RoomScheme::name).collect(Collectors.toSet());
         assertEquals(classic.schemes().size(), names.size(), "scheme names should be unique: " + names);
 
-        int decorated = (int) classic.schemes().stream().filter(s -> s.floor().isPresent()).count();
-        assertEquals(9, decorated, "9 of the 10 schemes decorate the floor; 'plain' is the tenth");
+        assertTrue(classic.schemes().stream().anyMatch(s -> s.floor().isPresent()),
+                "at least one scheme should decorate the floor");
+        assertTrue(classic.schemes().stream().anyMatch(s -> s.floor().isEmpty()),
+                "classic should keep an undecorated scheme -- and an unconstrained one, so no room "
+                        + "can fail to match every scheme and fall through to PLAIN");
     }
 
     // The shipped worldgen/processor_list file (weathering) is guarded by

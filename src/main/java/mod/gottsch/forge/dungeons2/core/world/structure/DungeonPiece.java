@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
@@ -208,6 +209,46 @@ public abstract class DungeonPiece extends StructurePiece {
             int localY = worldPos.getY() - pieceBox.minY();
             int localZ = pieceBox.maxZ() - worldPos.getZ();
             placeBlock(level, info.state(), localX, localY, localZ, box);
+        }
+    }
+
+    /**
+     * Spawns entity placements, <strong>clipped to the chunk box</strong>.
+     *
+     * <h2>The clip is the whole point</h2>
+     * <p>A piece's {@code postProcess} is invoked once for every chunk its bounding box overlaps,
+     * and the placement plan is identical on each of those runs by construction (see
+     * {@code DungeonPiece#deterministicRandom}). For blocks that is harmless &mdash; each run
+     * rewrites the same states, and the ones outside the current chunk are skipped downstream. For
+     * entities it is not: {@code addFreshEntity} has no such idempotence, so an unclipped spawn
+     * would add one copy of every entity per overlapping chunk and a room spanning four chunks
+     * would end up with four pots stacked in each spot.</p>
+     *
+     * <p>Testing {@code box.isInside} on the entity's <em>cell</em> gives each placement exactly one
+     * owning chunk, because chunk boxes partition the world by whole blocks. Deriving the test from
+     * the fractional entity position instead would put a cell-centre coordinate on a boundary and
+     * make ownership depend on rounding. This mirrors the same guard {@link #placeAll} already
+     * applies to block-entity placements.</p>
+     *
+     * <p>Failures are logged and skipped rather than thrown: an unresolvable entity id is a
+     * datapack problem, and losing a decorative pot is not worth aborting a dungeon over. Same
+     * degrade-don't-abort convention an unresolved block id gets.</p>
+     */
+    protected void placeEntities(WorldGenLevel level, BoundingBox box, List<EntityPlacement> placements) {
+        for (EntityPlacement placement : placements) {
+            int worldX = anchorX + placement.getX();
+            int worldY = placement.getY();
+            int worldZ = anchorZ + placement.getZ();
+
+            if (!box.isInside(new BlockPos(worldX, worldY, worldZ))) {
+                continue;
+            }
+            try {
+                EntitySpawner.spawn(level, placement, worldX, worldY, worldZ);
+            } catch (Exception e) {
+                Dungeons.LOGGER.warn("Failed to spawn {} at ({},{},{}): {}",
+                        placement.getEntityId(), worldX, worldY, worldZ, e.getMessage());
+            }
         }
     }
 

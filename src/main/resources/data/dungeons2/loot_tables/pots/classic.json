@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:entity",
+  "random_sequence": "dungeons2:pots/classic",
+  "pools": [
+    {
+      "rolls": { "min": 0.0, "max": 2.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:bone", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:string", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:rotten_flesh", "weight": 15,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gunpowder", "weight": 10 },
+        { "type": "minecraft:item", "name": "minecraft:coal", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_nugget", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:flint", "weight": 8 },
+        { "type": "minecraft:item", "name": "minecraft:iron_ingot", "weight": 4 },
+        { "type": "minecraft:item", "name": "minecraft:lapis_lazuli", "weight": 4,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:empty", "weight": 30 }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [ { "condition": "minecraft:random_chance", "chance": 0.02 } ],
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 6 },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 3,
+          "functions": [ { "function": "minecraft:enchant_randomly" } ] }
+      ]
+    }
+  ]
+}

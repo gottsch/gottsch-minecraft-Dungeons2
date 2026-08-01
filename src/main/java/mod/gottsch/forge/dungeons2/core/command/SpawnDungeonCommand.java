@@ -6,6 +6,9 @@ import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
+import mod.gottsch.forge.dungeons2.core.world.structure.EntitySpawner;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
@@ -101,7 +104,8 @@ public class SpawnDungeonCommand {
             int worldOriginZ = pos.getZ() - ent.getCenterY();
 
             RandomSource random = RandomSource.create(seed);
-            List<BlockPlacement> placements = new ArrayList<>();
+            RoomPlacements roomPlacements = new RoomPlacements();
+            List<BlockPlacement> placements = roomPlacements.getBlocks();
 
             // Synthetic START/END room boxes FIRST so the renderer's corridors and
             // doors (which come last) win at any shared perimeter cells. These stand
@@ -112,15 +116,18 @@ public class SpawnDungeonCommand {
             for (FloorLayout floor : layout.getFloors()) {
                 for (RoomData room : floor.getRooms()) {
                     if (room.getRole() != RoomRole.NORMAL) {
-                        roomGen.build(room, floor.getFloorY(), DungeonMotif.CLASSIC, random, placements);
+                        roomGen.build(room, floor.getFloorY(), DungeonMotif.CLASSIC, random, roomPlacements);
                     }
                 }
             }
-            // Procedural rooms / corridors / doors.
-            placements.addAll(new DungeonLayoutRenderer(
+            // Procedural rooms / corridors / doors. renderAll, not render: this command writes to
+            // a real world, so dropping the entity half would make it useless for testing props.
+            RoomPlacements rendered = new DungeonLayoutRenderer(
                     roomGen,
                     new BasicCorridorGenerator().withMotifConfig(motifConfig),
-                    new BasicDoorGenerator().withMotifConfig(motifConfig)).render(layout, random));
+                    new BasicDoorGenerator().withMotifConfig(motifConfig)).renderAll(layout, random);
+            placements.addAll(rendered.getBlocks());
+            roomPlacements.getEntities().addAll(rendered.getEntities());
 
             // Write everything (floor-local XZ + world origin; Y already absolute).
             int written = 0;
@@ -129,6 +136,14 @@ public class SpawnDungeonCommand {
                         worldOriginX + p.getX(), p.getY(), worldOriginZ + p.getZ());
                 level.setBlock(worldPos, BlockStateCodec.resolve(p), Block.UPDATE_CLIENTS);
                 written++;
+            }
+
+            // Entities after the blocks, so a pot always lands on a floor that already exists.
+            // No chunk-box clipping here: unlike a StructurePiece this command runs exactly once,
+            // so there is nothing to deduplicate against.
+            for (EntityPlacement e : roomPlacements.getEntities()) {
+                EntitySpawner.spawn(level, e,
+                        worldOriginX + e.getX(), e.getY(), worldOriginZ + e.getZ());
             }
 
             int floor0Y = layout.getFloors().get(0).getFloorY();
