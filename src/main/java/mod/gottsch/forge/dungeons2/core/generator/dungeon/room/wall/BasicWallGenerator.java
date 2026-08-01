@@ -21,11 +21,12 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomVolumeGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.WallSurface;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashSet;
@@ -34,26 +35,29 @@ import java.util.Set;
 
 /**
  * Builds the four walls of a {@link RoomData} as {@link BlockPlacement}s &mdash; the perimeter ring
- * only. The interior air the room stands in is {@link RoomVolumeGenerator}'s job; this class emitted
- * it too until Jul 2026, which conflated the wall <em>surface</em> with the room <em>volume</em> and
- * left every future interior feature (pillars, vaults) having to work around wall code. See that
- * class for the full reasoning.
+ * only. The interior air the room stands in is {@link RoomVolumeGenerator}'s job.
  *
- * <p>Output coords are floor-local X/Z and absolute world Y. The room
- * occupies {@code [originX..originX+width-1] x [originZ..originZ+depth-1]}
- * on the floor; vertically the walls span {@code [floorY+1..floorY+height-2]}
- * (the floor block at Y=floorY and the ceiling at Y=floorY+height-1
- * are emitted by {@code BasicFloorGenerator} / {@code BasicCeilingGenerator}).</p>
+ * <p>Geometry lives in {@link WallSurface}: this class works out the wall height and the doorway
+ * set, then hands each of the four runs a {@link SurfacePlan} to render. The plan here is empty, so
+ * every cell falls through to the motif's plain wall block &mdash; which is exactly what a room
+ * with no wall treatment should be. A wall pattern is then a provider that fills cells of that
+ * plan, with no change to this class beyond asking one for it.</p>
  *
- * <p>Perimeter cells listed in {@link RoomData#getDoorways()} are emitted as
- * <strong>air</strong> at the two door-half levels ({@code floorY+1} /
- * {@code floorY+2}) instead of wall &mdash; see {@link #DOOR_HALF_LOW}.</p>
+ * <p>Output coords are floor-local X/Z and absolute world Y. The room occupies
+ * {@code [originX..originX+width-1] x [originZ..originZ+depth-1]} on the floor; vertically the
+ * walls span {@code [floorY+1..floorY+height-2]} (the floor block at Y=floorY and the ceiling at
+ * Y=floorY+height-1 are emitted by {@code BasicFloorGenerator} / {@code BasicCeilingGenerator}).
+ * That gives a wall {@code height - 2} rows tall &mdash; between <strong>3 and 8</strong>, since
+ * {@code DungeonStackPlanner#pickRoomHeight} rolls {@code min(rand(5..10), max(width, depth))}. Any
+ * pattern measured from the top has to cope with the low end of that.</p>
  *
- * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026)
+ * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026; surface frame Aug 1, 2026)
  */
 public class BasicWallGenerator implements IDungeonWallGenerator {
 
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
+    /** Null means no wall treatment: every cell falls through to the plain wall block. */
+    private ISurfacePatternProvider wallPattern;
 
     /**
      * Injects the resolved motif config. Same "resolve once where {@code RegistryAccess} is
@@ -66,64 +70,42 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
     }
 
     /**
-     * Y offsets (above the floor surface) that {@code BasicDoorGenerator} fills
-     * with the two door halves. The wall must NOT emit a solid block here: the
-     * room's decoration pass runs before {@code DungeonDoorPiece} carves the door,
-     * so a full cube in the door cell anchors glow lichen in the room air beside
-     * it, facing the door cell. The door is then placed into that cell and the
-     * lichen &mdash; a MultifaceBlock, rendered flush against its anchor's face
-     * &mdash; ends up plastered onto the door. The door piece belongs to a
-     * different piece entirely, so nothing on the processor side can see this
-     * coming; removing the anchor is the only fix. The sill ({@code floorY}) and
-     * lintel ({@code floorY+3}) stay solid &mdash; they are full cubes in the
-     * finished doorway, so lichen against them is ordinary wall growth.
+     * Injects the wall treatment for this room, already chosen by the room's scheme (see
+     * {@code WallPatternSelector}). Null &mdash; the default &mdash; is a plain wall.
      */
-    private static final int DOOR_HALF_LOW = 1;
-    private static final int DOOR_HALF_HIGH = 2;
+    public BasicWallGenerator withWallPattern(ISurfacePatternProvider wallPattern) {
+        this.wallPattern = wallPattern;
+        return this;
+    }
 
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
         BlockState wallState = motifConfig.wall().wallState();
-        BlockState airState = Blocks.AIR.defaultBlockState();
 
-        int width = room.getWidth();
-        int depth = room.getDepth();
-        int height = room.getHeight();
-        int originX = room.getOriginX();
-        int originZ = room.getOriginZ();
+        // Interior rows only: the floor and ceiling planes belong to their own generators.
+        int wallHeight = room.getHeight() - 2;
 
-        // Doorway cells are floor-local grid coords, the same space as originX/originZ.
+        // Doorway cells are floor-local grid coords, the same space as the surfaces' xAt/zAt.
         Set<Coords2D> doorways = new HashSet<>(room.getDoorways());
 
-        // Walls along the two x-axis edges (x=0 and x=width-1).
-        int[] xEdges = {0, width - 1};
-        for (int x : xEdges) {
-            for (int z = 0; z < depth; z++) {
-                boolean doorway = doorways.contains(new Coords2D(originX + x, originZ + z));
-                for (int y = 1; y < height - 1; y++) {
-                    out.add(BlockStateCodec.placement(
-                            originX + x, floorY + y, originZ + z,
-                            isDoorHalf(doorway, y) ? airState : wallState));
-                }
-            }
-        }
-        // Walls along the two z-axis edges (z=0 and z=depth-1).
-        int[] zEdges = {0, depth - 1};
-        for (int z : zEdges) {
-            for (int x = 0; x < width; x++) {
-                boolean doorway = doorways.contains(new Coords2D(originX + x, originZ + z));
-                for (int y = 1; y < height - 1; y++) {
-                    out.add(BlockStateCodec.placement(
-                            originX + x, floorY + y, originZ + z,
-                            isDoorHalf(doorway, y) ? airState : wallState));
-                }
-            }
+        for (WallSurface surface : WallSurface.forRoom(room)) {
+            SurfacePlan plan = planFor(surface, wallHeight);
+            surface.emit(plan, floorY, doorways, wallState, out);
         }
     }
 
-    /** True when (doorway cell, wall-relative Y) is one of the two door-half levels. */
-    private static boolean isDoorHalf(boolean doorway, int y) {
-        return doorway && (y == DOOR_HALF_LOW || y == DOOR_HALF_HIGH);
+    /**
+     * The pattern for one wall run. With no provider injected this is an all-null plan, so every
+     * cell renders as the motif's wall block &mdash; a room with no wall treatment.
+     *
+     * <p>Each run is planned separately and handed its own {@code facing}, which is the whole point
+     * of the {@code (u, v)} frame: one authored pattern comes out correctly oriented on all four
+     * walls without the provider knowing anything about the room.</p>
+     */
+    protected SurfacePlan planFor(WallSurface surface, int wallHeight) {
+        return wallPattern == null
+                ? SurfacePlan.of(surface.length(), wallHeight)
+                : wallPattern.plan(surface.length(), wallHeight, surface.facing());
     }
 }

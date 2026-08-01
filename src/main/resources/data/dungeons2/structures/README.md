@@ -463,6 +463,7 @@ trade this file already makes by being one-file-per-motif.
 | `minHeight` | skip this scheme in rooms shorter than this (default 0 = always eligible). |
 | `minSize` | skip it when the *smaller* of width/depth is below this (default 0). |
 | `floor` | optional floor treatment — one pattern entry, described below. |
+| `wall` | optional wall treatment — horizontal courses, described below. |
 | `pots` | optional loot pots standing on the floor — described below. |
 
 A scheme with nothing but a name is the undecorated room. An absent element slot means "plain for
@@ -480,6 +481,53 @@ matching none degrades to plain rather than being forced into an ill-fitting sch
 > Adding a `minHeight`/`minSize` to a shipped motif **changes existing seeds**. The roll draws one
 > value against the eligible total weight, so gating a scheme out shifts the whole downstream random
 > stream for that room.
+
+#### Wall courses (`wall`)
+
+Horizontal bands across all four walls — plinth, chair rail, string course, crown molding. They are
+all the same feature at a different height, which is why one pattern type covers them.
+
+```json
+"wall": {
+  "type": "courses",
+  "courses": [
+    { "block": "minecraft:polished_andesite" },
+    { "block": "minecraft:andesite", "anchor": "top", "offset": 1 },
+    { "block": "minecraft:chiseled_stone_bricks", "anchor": "top" }
+  ]
+}
+```
+
+`block` is required. `anchor` is `"bottom"` (default) or `"top"`, and `offset` (default 0) counts
+rows away from it — so `bottom`/0 is a plinth on the lowest wall row and `top`/0 a crown on the
+highest. A misspelled anchor **fails to load**; it is not defaulted, because silently reading
+`"topp"` as `bottom` would put the crown molding on the floor with no error anywhere.
+
+**Anchoring from the top is the point.** A wall is `height - 2` rows tall and room height is
+`min(rand(5..10), max(width, depth))` — so a course measured from the floor drifts away from the
+ceiling as rooms vary, while a top-anchored one stays put.
+
+**Mind the height budget.** That leaves only **3 to 8** wall rows. A course that resolves outside
+the wall is silently dropped rather than clamped (a crown squashed onto the plinth row reads worse
+than no crown), but relying on that gives you rooms with half a scheme. Use the scheme's `minHeight`
+instead: roughly `minHeight: 6` for a plinth alone, `7` for a plinth plus a crown, more if you want
+plain wall left between them. The shipped `classic` schemes are authored that way.
+
+Two other things a course cannot do anything about, both handled for you:
+
+- **Doorways win.** The two door-half rows of a doorway cell are always air, whatever the pattern
+  says — a solid block there is the lichen-on-doors bug. A pattern is authored in the wall's own
+  coordinates and cannot see doors, so the rule is enforced after it.
+- **Courses never break at corners.** A band sits at a constant height, so it rings the room
+  unbroken regardless of how the corner columns are divided between wall runs.
+
+One unresolvable block id degrades the **whole** entry to plain wall, not just its own course —
+same rule as the floor patterns, and for the same reason: a crown with no plinth under it reads as
+a bug, where a plain wall reads as a plain wall.
+
+> The accent-block rule above applies with more force here than on floors. Walls are what a player
+> actually looks at — and `classic` renders wall, floor and ceiling from the same
+> `minecraft:stone_bricks`, so trim in anything close to that block is invisible.
 
 #### Loot pots (`pots`)
 

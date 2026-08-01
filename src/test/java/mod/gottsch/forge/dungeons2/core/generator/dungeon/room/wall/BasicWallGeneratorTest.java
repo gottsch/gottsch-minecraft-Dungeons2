@@ -16,12 +16,14 @@
  * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
@@ -29,7 +31,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,16 +71,126 @@ class BasicWallGeneratorTest {
         gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
 
         // 7x7 room, height=5, walls at y=1..3 (3 layers).
-        // 2 x-edges * depth=7 * 3 = 42, plus 2 z-edges * width=7 * 3 = 42 = 84.
-        // The four corner columns are emitted TWICE -- once by each loop -- so 12 of those 84 are
-        // duplicates that the renderer resolves last-write-wins. Harmless for a uniform wall;
-        // it is a real constraint for any wall pattern with horizontal rhythm, which will need a
-        // corner-ownership convention rather than relying on the second write matching the first.
+        // Distinct perimeter cells per layer: 2*7 + 2*7 - 4 shared corners = 24. Times 3 = 72.
+        //
+        // This was 84 before the surface frame, because both edge loops ran at full length and
+        // emitted the four corner columns twice over. WallSurface gives the corners to the Z-edge
+        // runs and shortens the X-edge runs to the interior depth, so each cell is written once.
+        // No visual change -- both writes were the same wall block -- but a pattern with any
+        // horizontal rhythm would have had its corners decided by whichever loop ran last.
         //
         // Interior air is NOT here: it belongs to RoomVolumeGenerator (75 placements for this
         // room, asserted in RoomVolumeGeneratorTest).
-        assertEquals(84, out.size(),
-                "Expected 84 wall placements (corners double-emitted) for a 7x7x5 room");
+        assertEquals(72, out.size(),
+                "Expected 72 wall placements (24 perimeter cells x 3 rows) for a 7x7x5 room");
+    }
+
+    /**
+     * The corner-ownership invariant, stated directly rather than inferred from a count. Any wall
+     * pattern with horizontal rhythm depends on it: two runs writing the same column would let
+     * whichever ran last silently decide what the corner looks like.
+     */
+    @Test
+    void noCellIsEmittedTwice() {
+        BasicWallGenerator gen = new BasicWallGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
+
+        Set<String> seen = new HashSet<>();
+        for (BlockPlacement bp : out) {
+            assertTrue(seen.add(bp.getX() + "," + bp.getY() + "," + bp.getZ()),
+                    "cell written twice: " + bp);
+        }
+    }
+
+    /** Every perimeter cell of every wall row is covered -- ownership must not leave a gap. */
+    @Test
+    void everyPerimeterCellIsCovered() {
+        BasicWallGenerator gen = new BasicWallGenerator();
+        List<BlockPlacement> out = new ArrayList<>();
+        RoomData room = smallRoom();
+        int floorY = 60;
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(42L), out);
+
+        Set<String> seen = new HashSet<>();
+        for (BlockPlacement bp : out) {
+            seen.add(bp.getX() + "," + bp.getY() + "," + bp.getZ());
+        }
+        for (int x = 0; x < room.getWidth(); x++) {
+            for (int z = 0; z < room.getDepth(); z++) {
+                if (x != 0 && x != room.getWidth() - 1 && z != 0 && z != room.getDepth() - 1) {
+                    continue;
+                }
+                for (int v = 0; v < room.getHeight() - 2; v++) {
+                    String key = (room.getOriginX() + x) + "," + (floorY + 1 + v) + ","
+                            + (room.getOriginZ() + z);
+                    assertTrue(seen.contains(key), "perimeter cell never written: " + key);
+                }
+            }
+        }
+    }
+
+    /**
+     * End to end through the surface frame: one authored course comes out on all four walls, at the
+     * same world Y, in one unbroken ring. That continuity is what makes courses the right first
+     * wall pattern -- a band is at constant v, so corner ownership cannot break it.
+     */
+    @Test
+    void aCrownCourseFormsAnUnbrokenRingOnEveryWall() {
+        RoomData room = smallRoom(); // 7x7x5 -> 3 wall rows, so a top-anchored crown is at v=2
+        int floorY = 60;
+        BasicWallGenerator gen = new BasicWallGenerator().withWallPattern(
+                new CoursesWallPatternProvider(List.of(new CoursesWallPatternProvider.Course(
+                        Blocks.CHISELED_STONE_BRICKS.defaultBlockState(),
+                        WallPatternEntry.CourseAnchor.TOP, 0))));
+
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
+
+        Set<String> crown = new HashSet<>();
+        for (BlockPlacement bp : out) {
+            if ("minecraft:chiseled_stone_bricks".equals(bp.getBlockId())) {
+                assertEquals(floorY + room.getHeight() - 2, bp.getY(),
+                        "the crown must sit on the top wall row: " + bp);
+                crown.add(bp.getX() + "," + bp.getZ());
+            }
+        }
+        // Every perimeter cell, exactly once: 2*7 + 2*7 - 4 = 24.
+        assertEquals(24, crown.size(), "crown should ring the whole room once");
+        for (int x = 0; x < room.getWidth(); x++) {
+            for (int z = 0; z < room.getDepth(); z++) {
+                boolean perimeter = x == 0 || x == room.getWidth() - 1
+                        || z == 0 || z == room.getDepth() - 1;
+                if (perimeter) {
+                    assertTrue(crown.contains((room.getOriginX() + x) + "," + (room.getOriginZ() + z)),
+                            "gap in the crown ring at " + x + "," + z);
+                }
+            }
+        }
+    }
+
+    /** A wall pattern must not reopen the lichen-on-doors bug by filling a door cell. */
+    @Test
+    void aWallPatternCannotFillADoorway() {
+        RoomData room = smallRoom();
+        room.getDoorways().add(new Coords2D(room.getOriginX() + 3, room.getOriginZ()));
+        int floorY = 60;
+        // A plinth on the lowest row -- exactly where the lower door half is.
+        BasicWallGenerator gen = new BasicWallGenerator().withWallPattern(
+                new CoursesWallPatternProvider(List.of(new CoursesWallPatternProvider.Course(
+                        Blocks.POLISHED_ANDESITE.defaultBlockState(),
+                        WallPatternEntry.CourseAnchor.BOTTOM, 0))));
+
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
+
+        for (BlockPlacement bp : out) {
+            if (bp.getX() == room.getOriginX() + 3 && bp.getZ() == room.getOriginZ()
+                    && (bp.getY() == floorY + 1 || bp.getY() == floorY + 2)) {
+                assertEquals("minecraft:air", bp.getBlockId(),
+                        "door half filled by a wall pattern: " + bp);
+            }
+        }
     }
 
     @Test

@@ -225,6 +225,66 @@
           }
         ]
       }
+    },
+    {
+      "name": "andesite_plinth",
+      "weight": 3,
+      "minHeight": 6,
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite"
+          }
+        ]
+      }
+    },
+    {
+      "name": "andesite_trim",
+      "weight": 3,
+      "minHeight": 7,
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite"
+          },
+          {
+            "block": "minecraft:chiseled_stone_bricks",
+            "anchor": "top"
+          }
+        ]
+      }
+    },
+    {
+      "name": "andesite_hall",
+      "weight": 2,
+      "minHeight": 7,
+      "minSize": 7,
+      "floor": {
+        "type": "border",
+        "inset": 2,
+        "cornerBlock": "minecraft:andesite",
+        "edgeLeftBlock": "minecraft:polished_andesite",
+        "edgeRightBlock": "minecraft:polished_andesite"
+      },
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite"
+          },
+          {
+            "block": "minecraft:andesite",
+            "anchor": "top",
+            "offset": 1
+          },
+          {
+            "block": "minecraft:chiseled_stone_bricks",
+            "anchor": "top"
+          }
+        ]
+      }
     }
   ]
 }

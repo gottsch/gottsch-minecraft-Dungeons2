@@ -29,6 +29,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatter
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.BasicWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.IDungeonWallGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.WallPatternSelector;
 import net.minecraft.util.RandomSource;
 
 import java.util.List;
@@ -104,9 +105,10 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 room.getWidth(), room.getDepth(), room.getHeight(), random);
     }
 
-    /** Takes no slot from the scheme yet &mdash; wall treatments have no providers behind them. */
     public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme) {
-        return new BasicWallGenerator().withMotifConfig(motifConfig);
+        return new BasicWallGenerator()
+                .withMotifConfig(motifConfig)
+                .withWallPattern(WallPatternSelector.providerFor(scheme.wall()));
     }
 
     public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RoomScheme scheme) {

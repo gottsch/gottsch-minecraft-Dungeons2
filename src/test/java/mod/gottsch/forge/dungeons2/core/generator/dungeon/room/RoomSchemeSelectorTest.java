@@ -23,11 +23,11 @@ class RoomSchemeSelectorTest {
 
     /** A scheme with no dimensional constraints. */
     private static RoomScheme scheme(String name, int weight) {
-        return new RoomScheme(name, weight, 0, 0, Optional.empty(), Optional.empty());
+        return new RoomScheme(name, weight, 0, 0, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private static RoomScheme gated(String name, int weight, int minHeight, int minSize) {
-        return new RoomScheme(name, weight, minHeight, minSize, Optional.empty(), Optional.empty());
+        return new RoomScheme(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /** A roomy room: nothing is gated out of a 15x15x10. */
@@ -106,7 +106,7 @@ class RoomSchemeSelectorTest {
     @Test
     void theChosenSchemeCarriesItsFloorSlotThrough() {
         FloorPatternEntry border = new FloorPatternEntry("border", 1, 2);
-        RoomScheme only = new RoomScheme("bordered", 1, 0, 0, Optional.of(border), Optional.empty());
+        RoomScheme only = new RoomScheme("bordered", 1, 0, 0, Optional.of(border), Optional.empty(), Optional.empty());
         assertEquals(Optional.of(border), select(List.of(only), RandomSource.create(1)).floor());
     }
 

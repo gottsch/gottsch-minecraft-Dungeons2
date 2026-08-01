@@ -60,12 +60,13 @@ class BasicRoomGeneratorTest {
         gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
         List<BlockPlacement> out = outPlacements.getBlocks();
 
-        // Interior air = 75 (RoomVolumeGeneratorTest) + walls = 84 (BasicWallGeneratorTest).
+        // Interior air = 75 (RoomVolumeGeneratorTest) + walls = 72 (BasicWallGeneratorTest).
         // Floor: border 2x5 (x edges, depth-2) + 2x3 (z edges, width-4) + interior 3x3 = 10 + 6 + 9 = 25.
         // Ceiling: 5x5 = 25.
-        // Total: 75 + 84 + 25 + 25 = 209 -- unchanged by extracting the hollow step out of the
-        // wall generator, which is the point: the same cells are emitted, by a different step.
-        assertEquals(209, out.size(),
+        // Total: 75 + 72 + 25 + 25 = 197. Was 209 until the surface frame gave the four wall runs
+        // a corner-ownership rule; the 12 lost placements were duplicate corner columns, not
+        // missing geometry (everyPerimeterCellIsCovered guards that).
+        assertEquals(197, out.size(),
                 "Room orchestrator should produce wall + floor + ceiling placements");
     }
 

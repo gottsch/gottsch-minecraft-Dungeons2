@@ -51,10 +51,14 @@ import java.util.Optional;
  * travel to the world on {@code RoomPlacements}' entity channel rather than through the block and
  * decoration pass.</p>
  *
- * <p>Slots for {@code wall}, {@code ceiling} and {@code pillars} are deliberately <em>not</em>
- * declared yet: they are additive optional codec fields, and there are no providers behind them to
- * give them meaning. The load-bearing decision is that this container exists and owns the roll, not
- * that it is populated up front.</p>
+ * <p>{@code wall} holds a {@link WallPatternEntry} &mdash; today, horizontal courses (plinth, chair
+ * rail, crown molding). Unlike the floor slot it is drawn in the wall's own {@code (u, v)} space and
+ * applied to all four runs, so one authored pattern comes out correctly oriented on each.</p>
+ *
+ * <p>Slots for {@code ceiling} and {@code pillars} are deliberately <em>not</em> declared yet: they
+ * are additive optional codec fields, and there are no providers behind them to give them meaning.
+ * The load-bearing decision is that this container exists and owns the roll, not that it is
+ * populated up front.</p>
  *
  * <h2>Eligibility</h2>
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
@@ -78,11 +82,12 @@ import java.util.Optional;
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record RoomScheme(String name, int weight, int minHeight, int minSize,
-                         Optional<FloorPatternEntry> floor, Optional<PotConfig> pots) {
+                         Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                         Optional<PotConfig> pots) {
 
     /** The undecorated room: plain floor, plain walls, plain ceiling, no props, eligible everywhere. */
     public static final RoomScheme PLAIN =
-            new RoomScheme("plain", 1, 0, 0, Optional.empty(), Optional.empty());
+            new RoomScheme("plain", 1, 0, 0, Optional.empty(), Optional.empty(), Optional.empty());
 
     public static final Codec<RoomScheme> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("name").forGetter(RoomScheme::name),
@@ -90,6 +95,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minHeight", 0).forGetter(RoomScheme::minHeight),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minSize", 0).forGetter(RoomScheme::minSize),
             Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "floor").forGetter(RoomScheme::floor),
+            Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "wall").forGetter(RoomScheme::wall),
             Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots)
     ).apply(instance, RoomScheme::new));
 
