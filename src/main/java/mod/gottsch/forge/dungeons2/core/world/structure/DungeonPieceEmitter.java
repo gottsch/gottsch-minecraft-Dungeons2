@@ -70,6 +70,25 @@ public final class DungeonPieceEmitter {
 
         for (FloorLayout floor : layout.getFloors()) {
             int floorY = floor.getFloorY();
+            // Corridors BEFORE rooms, and that order is load-bearing. A room's perimeter is
+            // CellType.WALL, so a corridor beside it emits a wall column over the very same
+            // cells -- unconditionally, with the motif's plain wall block and no knowledge of
+            // the room's scheme. Pieces are written in this order, last writer wins, so with
+            // rooms first the corridor erased the room's own wall: measured across SMALL,
+            // MEDIUM and LARGE, only ~35% of room wall sides were owned by their own room and
+            // corridors owned ~50%. Reversing it takes the room's share to ~85%.
+            //
+            // This is narrower than it looks. A room only ever writes inside its own box and a
+            // corridor never writes a room's interior (that is CellType.ROOM, which
+            // isWallElement rejects), so the cells in contention are exactly the room's own
+            // perimeter. The rule this encodes is just "a room owns its own wall".
+            //
+            // Doors stay last: both sides deliberately leave the two door-half rows as air, but
+            // from different sources (RoomData#getDoorways vs the grid's DOOR cells), and the
+            // door piece is what actually hangs the door.
+            for (CorridorData corridor : floor.getCorridors()) {
+                pieces.add(new DungeonCorridorPiece(corridor, motif, floorY, anchorX, anchorZ));
+            }
             for (RoomData room : floor.getRooms()) {
                 // START / END slots are the template pieces' job; skip them here.
                 // Same for a NORMAL room that got a Phase 8 jigsaw-assembled prefab
@@ -77,9 +96,6 @@ public final class DungeonPieceEmitter {
                 if (room.getRole() == RoomRole.NORMAL && room.getTemplateId() == null) {
                     pieces.add(new DungeonRoomPiece(room, motif, floorY, anchorX, anchorZ));
                 }
-            }
-            for (CorridorData corridor : floor.getCorridors()) {
-                pieces.add(new DungeonCorridorPiece(corridor, motif, floorY, anchorX, anchorZ));
             }
             for (DoorData door : floor.getDoors()) {
                 pieces.add(new DungeonDoorPiece(door, motif, floorY, anchorX, anchorZ));

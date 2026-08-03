@@ -119,15 +119,11 @@ public final class DungeonLayoutRenderer {
         List<BlockPlacement> out = placements.getBlocks();
         int floorY = floor.getFloorY();
 
-        for (RoomData room : floor.getRooms()) {
-            // START/END rooms are covered by the entrance/transition template
-            // (or a synthetic placeholder); skip them here.
-            if (room.getRole() != RoomRole.NORMAL) {
-                continue;
-            }
-            roomGenerator.build(room, floorY, motif, random, placements);
-        }
-
+        // Corridors, then rooms, then doors -- deliberately the same order
+        // DungeonPieceEmitter uses, so that this renderer and the piece pipeline resolve a
+        // shared cell identically. See the comment there for why a room must win its own
+        // perimeter; if that order ever changes, it has to change in both places or the
+        // debug command and every renderer-based test quietly stop matching what generates.
         Grid2D grid = floor.getGrid();
         if (grid != null) {
             for (CorridorData corridor : floor.getCorridors()) {
@@ -138,6 +134,15 @@ public final class DungeonLayoutRenderer {
             // renders. Phase 3 will carry wall cells on CorridorData instead.
             LOGGER.warn("FloorLayout {} has no transient grid; skipping corridor rendering",
                     floor.getFloorIndex());
+        }
+
+        for (RoomData room : floor.getRooms()) {
+            // START/END rooms are covered by the entrance/transition template
+            // (or a synthetic placeholder); skip them here.
+            if (room.getRole() != RoomRole.NORMAL) {
+                continue;
+            }
+            roomGenerator.build(room, floorY, motif, random, placements);
         }
 
         for (DoorData door : floor.getDoors()) {

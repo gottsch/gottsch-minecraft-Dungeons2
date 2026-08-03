@@ -107,9 +107,9 @@ public class SpawnDungeonCommand {
             RoomPlacements roomPlacements = new RoomPlacements();
             List<BlockPlacement> placements = roomPlacements.getBlocks();
 
-            // Synthetic START/END room boxes FIRST so the renderer's corridors and
-            // doors (which come last) win at any shared perimeter cells. These stand
-            // in for the entrance / transition templates until .nbt files exist.
+            // Synthetic START/END room boxes FIRST so everything the renderer writes
+            // afterwards wins at any shared perimeter cells. These stand in for the
+            // entrance / transition templates until .nbt files exist.
             MotifConfig motifConfig = MotifConfigHelper.get(
                     level.registryAccess(), DungeonMotif.CLASSIC.getValue());
             BasicRoomGenerator roomGen = new BasicRoomGenerator().withMotifConfig(motifConfig);
