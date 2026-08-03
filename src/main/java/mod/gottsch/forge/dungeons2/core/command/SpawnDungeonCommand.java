@@ -90,6 +90,7 @@ public class SpawnDungeonCommand {
                     .withSize(DungeonSize.SMALL)
                     .withFloorCount(1)
                     .withCorridorWidth(DungeonGenerationConfigHelper.get(level.registryAccess()).corridorWidth())
+                    .withCorridorHeight(MotifConfigHelper.get(level.registryAccess(), "classic").corridor().height())
                     .plan();
 
             if (result.isEmpty()) {

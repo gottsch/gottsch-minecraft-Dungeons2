@@ -41,7 +41,7 @@ class MotifConfigCodecTest {
                 Optional.of(new DoorConfig("dungeonblocks:spruce_dungeon_door",
                         "minecraft:polished_andesite", "minecraft:polished_andesite")),
                 Optional.of(new CorridorConfig("minecraft:cobblestone", "minecraft:gravel",
-                        "minecraft:stone_bricks")),
+                        "minecraft:stone_bricks", CorridorConfig.DEFAULT_HEIGHT)),
                 Optional.of(new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks")),
                 List.of(new RoomScheme("plain", 8, 0, 0),
                         new RoomScheme("bordered", 1, 6, 5,
@@ -92,6 +92,39 @@ class MotifConfigCodecTest {
         assertEquals("minecraft:bricks", config.wall().wall(),
                 "a schemes-only fragment must leave the base file's wall alone");
         assertNotEquals(List.of(RoomScheme.PLAIN), config.schemes());
+    }
+
+    // -------- corridor height --------
+
+    private static final String CORRIDOR = "{\"corridor\": {\"floor\": \"minecraft:stone_bricks\","
+            + "\"alternateFloor\": \"minecraft:stone_bricks\",\"ceiling\": \"minecraft:stone_bricks\"%s}}";
+
+    /** A corridor section that authors no height generates exactly what it did before. */
+    @Test
+    void aCorridorWithNoAuthoredHeightKeepsTheHistoricalFive() {
+        assertEquals(CorridorConfig.DEFAULT_HEIGHT,
+                fragment(String.format(CORRIDOR, "")).corridor().orElseThrow().height());
+    }
+
+    @Test
+    void anAuthoredCorridorHeightIsRead() {
+        assertEquals(7, fragment(String.format(CORRIDOR, ",\"height\": 7")).corridor().orElseThrow().height());
+    }
+
+    /**
+     * The rule the plan is explicit about: an over-tall corridor is a <em>load error</em>, not a
+     * silent clamp back to 5. This is exactly what DFU's {@code optionalFieldOf} gets wrong &mdash;
+     * it cannot tell "absent" from "present but out of range" and hands back the default for both,
+     * which would let a datapack ask for 12 and generate 5 with no complaint anywhere.
+     */
+    @Test
+    void anOutOfRangeCorridorHeightIsALoadErrorNotASilentClamp() {
+        assertTrue(fails(String.format(CORRIDOR, ",\"height\": 12")),
+                "a height above the cap must fail to load");
+        assertTrue(fails(String.format(CORRIDOR, ",\"height\": 3")),
+                "a height that would swallow the door column must fail to load");
+        assertTrue(fails(String.format(CORRIDOR, ",\"height\": \"tall\"")),
+                "a non-numeric height must fail to load");
     }
 
     /** Later fragment wins a section outright; sections are whole, never merged field by field. */

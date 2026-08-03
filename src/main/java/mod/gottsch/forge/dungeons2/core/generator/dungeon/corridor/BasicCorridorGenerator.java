@@ -37,14 +37,21 @@ import java.util.Set;
 /**
  * Builds one corridor region as {@link BlockPlacement}s.
  *
- * <p>For each cell in the corridor: emits a floor block at Y={@code floorY},
- * 3 air blocks above (Y={@code floorY+1..floorY+3}), and a motif ceiling block
- * at Y={@code floorY+4}. For each grid cell <em>neighboring</em> the corridor
- * that is rock / wall / door / connector / out-of-bounds, emits a 5-block
- * wall column (Y={@code floorY..floorY+4}). Walls are deduped per builder
+ * <p>The corridor's wall height {@code h} comes from {@link CorridorData#getWallHeight()}
+ * (the planner resolved it from the motif's {@code CorridorConfig}); the whole corridor is
+ * {@code floorY .. floorY+h-1}. For each cell in the corridor: emits a floor block at
+ * Y={@code floorY}, {@code h-2} air blocks above, and a motif ceiling block at
+ * Y={@code floorY+h-1}. For each grid cell <em>neighboring</em> the corridor
+ * that is rock / wall / door / connector / out-of-bounds, emits an {@code h}-block
+ * wall column. Walls are deduped per builder
  * call so the same neighbor cell isn't emitted multiple times for a single
  * corridor; cross-corridor wall duplication is acceptable (the renderer
  * idempotently overwrites).</p>
+ *
+ * <p><strong>Height is not free above the doorway rows.</strong> {@code BasicDoorGenerator}
+ * owns {@code floorY .. floorY+3} (sill / lower / upper / lintel) and both wall generators
+ * pierce a door cell at {@code +1}/{@code +2}. Those four rows are identical at every height;
+ * only what sits above them varies.</p>
  *
  * <p>A <strong>door</strong> neighbor gets that same column with the two
  * door-half levels left as air &mdash; see {@link #DOOR_HALF_LOW}.</p>
@@ -79,12 +86,13 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     public void build(CorridorData corridor, Grid2D grid, int floorY,
                       IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
         Palette palette = palette(motif, random);
+        int height = corridor.getWallHeight();
 
         Set<Coords2D> wallsEmitted = new HashSet<>();
         for (Coords2D cell : corridor.getCells()) {
             int x = cell.getX();
             int z = cell.getY();
-            emitCorridorColumn(x, z, floorY, palette, random, out);
+            emitCorridorColumn(x, z, floorY, height, palette, random, out);
 
             // 8-neighbor wall columns, sourced live from the grid.
             for (int dx = -1; dx <= 1; dx++) {
@@ -95,10 +103,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                     Coords2D neighbor = new Coords2D(nx, nz);
                     if (wallsEmitted.contains(neighbor)) continue;
                     if (isDoorElement(grid, nx, nz)) {
-                        emitDoorwayColumn(nx, nz, floorY, palette, out);
+                        emitDoorwayColumn(nx, nz, floorY, height, palette, out);
                         wallsEmitted.add(neighbor);
                     } else if (isWallElement(grid, nx, nz)) {
-                        emitWallColumn(nx, nz, floorY, palette, out);
+                        emitWallColumn(nx, nz, floorY, height, palette, out);
                         wallsEmitted.add(neighbor);
                     }
                 }
@@ -110,39 +118,41 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     public void build(CorridorData corridor, int floorY,
                       IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
         Palette palette = palette(motif, random);
+        int height = corridor.getWallHeight();
 
         // Corridor columns first, then the pre-computed wall cells. The two sets
         // are disjoint within a single corridor, so order is immaterial; the
         // placements match the grid-based overload as a set.
         for (Coords2D cell : corridor.getCells()) {
-            emitCorridorColumn(cell.getX(), cell.getY(), floorY, palette, random, out);
+            emitCorridorColumn(cell.getX(), cell.getY(), floorY, height, palette, random, out);
         }
         for (Coords2D wall : corridor.getWallCells()) {
-            emitWallColumn(wall.getX(), wall.getY(), floorY, palette, out);
+            emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, out);
         }
         for (Coords2D door : corridor.getDoorCells()) {
-            emitDoorwayColumn(door.getX(), door.getY(), floorY, palette, out);
+            emitDoorwayColumn(door.getX(), door.getY(), floorY, height, palette, out);
         }
     }
 
     /**
      * A floor block at {@code floorY} (45% {@code floor}, 55% {@code alternateFloor}, matching
-     * {@code BasicFloorGenerator}'s room-floor split), 3 air blocks above, and a ceiling block at
-     * {@code floorY+4} (the top of the 5-tall corridor walls), closing the corridor.
+     * {@code BasicFloorGenerator}'s room-floor split), {@code height-2} air blocks above, and a
+     * ceiling block at {@code floorY+height-1} (the top of the corridor walls), closing the corridor.
      */
-    private static void emitCorridorColumn(int x, int z, int floorY, Palette palette, RandomSource random,
-                                            List<BlockPlacement> out) {
+    private static void emitCorridorColumn(int x, int z, int floorY, int height, Palette palette,
+                                            RandomSource random, List<BlockPlacement> out) {
         BlockState floor = RandomHelper.checkProbability(random, 45) ? palette.floor : palette.alternateFloor;
         out.add(BlockStateCodec.placement(x, floorY, z, floor));
-        for (int yOffset = 1; yOffset < 4; yOffset++) {
+        for (int yOffset = 1; yOffset < height - 1; yOffset++) {
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.air));
         }
-        out.add(BlockStateCodec.placement(x, floorY + 4, z, palette.ceiling));
+        out.add(BlockStateCodec.placement(x, floorY + height - 1, z, palette.ceiling));
     }
 
-    /** A 5-block wall column (Y = floorY .. floorY+4). */
-    private static void emitWallColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
-        for (int yOffset = 0; yOffset < 5; yOffset++) {
+    /** A wall column {@code height} blocks tall (Y = floorY .. floorY+height-1). */
+    private static void emitWallColumn(int x, int z, int floorY, int height, Palette palette,
+                                       List<BlockPlacement> out) {
+        for (int yOffset = 0; yOffset < height; yOffset++) {
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.wall));
         }
     }
@@ -154,9 +164,13 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * they are full cubes in the finished doorway anyway, and keeping them means
      * a door piece that never runs leaves a 2-block gap rather than a full-height
      * hole in the corridor wall.
+     *
+     * <p>The pierced rows stay at exactly {@code +1}/{@code +2} whatever {@code height} is: the
+     * doorway is the door piece's fixed 4-row column, not a fraction of the corridor.</p>
      */
-    private static void emitDoorwayColumn(int x, int z, int floorY, Palette palette, List<BlockPlacement> out) {
-        for (int yOffset = 0; yOffset < 5; yOffset++) {
+    private static void emitDoorwayColumn(int x, int z, int floorY, int height, Palette palette,
+                                          List<BlockPlacement> out) {
+        for (int yOffset = 0; yOffset < height; yOffset++) {
             BlockState state = (yOffset == DOOR_HALF_LOW || yOffset == DOOR_HALF_HIGH)
                     ? palette.air : palette.wall;
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, state));

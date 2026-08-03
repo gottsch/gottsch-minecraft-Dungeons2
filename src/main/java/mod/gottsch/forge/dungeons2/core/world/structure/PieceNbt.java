@@ -85,6 +85,7 @@ public final class PieceNbt {
         tag.putIntArray("Cells", flatten(corridor.getCells()));
         tag.putIntArray("Walls", flatten(corridor.getWallCells()));
         tag.putIntArray("DoorCells", flatten(corridor.getDoorCells()));
+        tag.putInt("WallHeight", corridor.getWallHeight());
         if (corridor.getTemplateId() != null) {
             tag.putString("Template", corridor.getTemplateId());
         }
@@ -96,6 +97,11 @@ public final class PieceNbt {
         corridor.setCells(unflatten(tag.getIntArray("Cells")));
         corridor.setWallCells(unflatten(tag.getIntArray("Walls")));
         corridor.setDoorCells(unflatten(tag.getIntArray("DoorCells")));
+        // Absent on a save written before corridor height was configurable; the field's
+        // own default is the 5 those saves were generated with, so leave it alone.
+        if (tag.contains("WallHeight")) {
+            corridor.setWallHeight(tag.getInt("WallHeight"));
+        }
         if (tag.contains("Template")) {
             corridor.setTemplateId(tag.getString("Template"));
         }

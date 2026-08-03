@@ -434,7 +434,8 @@ motif-naming note above.
                 "probability": 0.7 },
   "corridor": { "floor": "minecraft:cobblestone",
                 "alternateFloor": "minecraft:gravel",
-                "ceiling": "minecraft:stone_bricks" },
+                "ceiling": "minecraft:stone_bricks",
+                "height": 5 },
   "floor": {
     "base": "minecraft:stone_bricks",
     "alternateBase": "minecraft:stone_bricks"
@@ -463,6 +464,18 @@ on every single opening reads as a building someone still maintains, which is th
 thing being generated; `classic` uses 0.7, so about a third of its doorways stand open. **A doorless
 opening still gets its sill and lintel**, so it reads as a framed opening rather than as a hole, and
 it is the same four-block column a doored one is.
+
+The other non-block field is `corridor.height` (5–8, default 5): the corridor's wall height in
+blocks, so the passage runs `floorY .. floorY + height - 1` — floor row at the bottom, ceiling row
+at the top, `height - 2` rows of air between. It is dungeon-wide; per-floor variation is not a
+thing yet.
+
+The range is not arbitrary at either end. Below 5 the ceiling would land inside the doorway, which
+is a fixed four-block column (sill / two door halves / lintel) at every height — a taller corridor
+only ever adds rows *above* the door. Above 8 the corridor stops fitting in the 10-block slab a
+floor gets. An out-of-range value **fails to load** rather than clamping back to 5, for the same
+reason a `door` section missing its `lintel` does: a datapack that asks for 12 and silently gets 5
+is the failure mode this whole config was rebuilt to make impossible.
 
 Corridors are never dressed by a scheme — a border ring or checkerboard needs a room-sized
 rectangle. Corridor *walls* come from the shared `wall` section. Room `base`/`alternateBase` are

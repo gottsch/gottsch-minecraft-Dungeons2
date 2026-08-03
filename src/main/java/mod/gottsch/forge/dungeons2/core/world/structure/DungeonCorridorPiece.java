@@ -46,9 +46,6 @@ import java.util.List;
  */
 public class DungeonCorridorPiece extends DungeonPiece {
 
-    /** Corridor walls are 5 blocks tall (floorY .. floorY+4). */
-    private static final int CORRIDOR_WALL_HEIGHT = 5;
-
     private CorridorData corridor;
 
     public DungeonCorridorPiece(CorridorData corridor, String motifValue, int floorY, int anchorX, int anchorZ) {
@@ -62,8 +59,16 @@ public class DungeonCorridorPiece extends DungeonPiece {
         this.corridor = PieceNbt.readCorridor(tag.getCompound("Corridor"));
     }
 
-    /** World bounding box: covers every corridor, wall and door cell; Y = floor .. floor+4. */
+    /**
+     * World bounding box: covers every corridor, wall and door cell;
+     * Y = {@code floorY .. floorY + wallHeight - 1}.
+     *
+     * <p>The box and what {@link BasicCorridorGenerator} emits must agree exactly &mdash; a block
+     * outside the piece's box is silently clipped by vanilla &mdash; so both read the height off
+     * the same {@link CorridorData#getWallHeight()}, which the planner resolved from the motif.</p>
+     */
     private static BoundingBox computeBox(CorridorData corridor, int floorY, int anchorX, int anchorZ) {
+        int top = floorY + corridor.getWallHeight() - 1;
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
         for (Coords2D c : allCells(corridor)) {
@@ -74,12 +79,11 @@ public class DungeonCorridorPiece extends DungeonPiece {
         }
         if (minX == Integer.MAX_VALUE) {
             // Degenerate empty corridor: a unit box at the anchor avoids an invalid bbox.
-            return new BoundingBox(anchorX, floorY, anchorZ,
-                    anchorX, floorY + CORRIDOR_WALL_HEIGHT - 1, anchorZ);
+            return new BoundingBox(anchorX, floorY, anchorZ, anchorX, top, anchorZ);
         }
         return new BoundingBox(
                 anchorX + minX, floorY, anchorZ + minZ,
-                anchorX + maxX, floorY + CORRIDOR_WALL_HEIGHT - 1, anchorZ + maxZ);
+                anchorX + maxX, top, anchorZ + maxZ);
     }
 
     private static List<Coords2D> allCells(CorridorData corridor) {

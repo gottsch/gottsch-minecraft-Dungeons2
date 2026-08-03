@@ -155,8 +155,12 @@ class BasicCorridorGeneratorTest {
         assertColumnIsPierced(out, 1, 3, 60);
     }
 
-    /** Air at floorY+1 / floorY+2, solid at floorY / +3 / +4, exactly 5 blocks. */
+    /** Air at floorY+1 / floorY+2, solid everywhere else, exactly {@code height} blocks. */
     private static void assertColumnIsPierced(List<BlockPlacement> out, int x, int z, int floorY) {
+        assertColumnIsPierced(out, x, z, floorY, CorridorData.DEFAULT_WALL_HEIGHT);
+    }
+
+    private static void assertColumnIsPierced(List<BlockPlacement> out, int x, int z, int floorY, int height) {
         int seen = 0;
         for (BlockPlacement bp : out) {
             if (bp.getX() != x || bp.getZ() != z) continue;
@@ -170,7 +174,7 @@ class BasicCorridorGeneratorTest {
                         "level " + offset + " must stay solid: " + bp);
             }
         }
-        assertEquals(5, seen, "a doorway column is still a full 5-block column");
+        assertEquals(height, seen, "a doorway column is a full " + height + "-block column");
     }
 
     /**
@@ -186,7 +190,8 @@ class BasicCorridorGeneratorTest {
     void corridorFloorComesFromTheMotifsCorridorSection() {
         MotifConfig motifConfig = new MotifConfig(
                 MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
-                new CorridorConfig("minecraft:granite", "minecraft:diorite", "minecraft:andesite"),
+                new CorridorConfig("minecraft:granite", "minecraft:diorite", "minecraft:andesite",
+                        CorridorConfig.DEFAULT_HEIGHT),
                 MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
 
         List<BlockPlacement> out = new ArrayList<>();
@@ -200,6 +205,82 @@ class BasicCorridorGeneratorTest {
         boolean sawAuthoredCeiling = out.stream()
                 .anyMatch(bp -> bp.getY() == 64 && "minecraft:andesite".equals(bp.getBlockId()));
         assertTrue(sawAuthoredCeiling, "corridor ceiling should come from CorridorConfig too");
+    }
+
+    // -------- variable corridor height --------
+
+    /**
+     * A corridor's air gap grows with its height and the ceiling moves with it: at {@code h} the
+     * cell is floor at {@code floorY}, {@code h-2} air rows, ceiling at {@code floorY+h-1}.
+     */
+    @Test
+    void aTallerCorridorGetsMoreAirAndAHigherCeiling() {
+        CorridorData corridor = simpleCorridor();
+        corridor.setWallHeight(7);
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator()
+                .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        long airInMiddleCell = out.stream()
+                .filter(bp -> bp.getX() == 3 && bp.getZ() == 3 && "minecraft:air".equals(bp.getBlockId()))
+                .count();
+        assertEquals(5, airInMiddleCell, "a 7-high corridor has 5 air rows");
+
+        boolean ceilingAtTop = out.stream()
+                .anyMatch(bp -> bp.getX() == 3 && bp.getZ() == 3 && bp.getY() == 66
+                        && !"minecraft:air".equals(bp.getBlockId()));
+        assertTrue(ceilingAtTop, "the ceiling should sit at floorY+height-1 = 66");
+
+        long westWallColumn = out.stream().filter(bp -> bp.getX() == 1 && bp.getZ() == 3).count();
+        assertEquals(7, westWallColumn, "wall columns should be as tall as the corridor");
+    }
+
+    /**
+     * The one thing height must not touch. {@code BasicDoorGenerator} owns
+     * {@code floorY..floorY+3} and both wall generators pierce a door cell at {@code +1}/{@code +2};
+     * a taller corridor may only add rows <em>above</em> that. If this ever drifts, doors are
+     * either walled shut or hung in a hole.
+     */
+    @Test
+    void aTallerCorridorStillPiercesExactlyTheTwoDoorHalfRows() {
+        Grid2D grid = simpleGrid();
+        grid.get(1, 3).setType(CellType.DOOR);
+
+        CorridorData corridor = simpleCorridor();
+        corridor.setWallHeight(8);
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator()
+                .build(corridor, grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertColumnIsPierced(out, 1, 3, 60, 8);
+    }
+
+    /** The grid-free overload reads the same height off the data, so both paths still agree. */
+    @Test
+    void bothOverloadsAgreeAtANonDefaultHeight() {
+        CorridorData gridBased = simpleCorridor();
+        gridBased.setWallHeight(6);
+        List<BlockPlacement> a = new ArrayList<>();
+        new BasicCorridorGenerator()
+                .build(gridBased, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), a);
+
+        CorridorData gridFree = simpleCorridor();
+        gridFree.setWallHeight(6);
+        for (BlockPlacement bp : a) {
+            if (bp.getZ() != 3 || bp.getX() < 2 || bp.getX() > 4) {
+                Coords2D cell = new Coords2D(bp.getX(), bp.getZ());
+                if (!gridFree.getWallCells().contains(cell)) {
+                    gridFree.getWallCells().add(cell);
+                }
+            }
+        }
+        List<BlockPlacement> b = new ArrayList<>();
+        new BasicCorridorGenerator()
+                .build(gridFree, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), b);
+
+        assertEquals(a.size(), b.size(), "the two overloads should emit the same number of blocks");
     }
 
     @Test

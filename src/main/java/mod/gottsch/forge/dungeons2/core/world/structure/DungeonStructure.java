@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -307,6 +308,8 @@ public class DungeonStructure extends Structure {
                 new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
                         surfaceY, motifValue, new TemplateCatalog());
         planner.withCorridorWidth(DungeonGenerationConfigHelper.get(context.registryAccess()).corridorWidth());
+        planner.withCorridorHeight(
+                MotifConfigHelper.get(context.registryAccess(), motifValue).corridor().height());
         planner.withTransitionAssembler(transitionAssembler);
         planner.withRoomAssembler(roomAssembler);
         if (geo != null) {

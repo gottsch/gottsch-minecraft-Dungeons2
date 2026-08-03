@@ -44,6 +44,13 @@ import java.util.List;
  * door-half levels rather than a solid one &mdash; see
  * {@code BasicCorridorGenerator}.</p>
  *
+ * <p>{@code wallHeight} is the corridor's wall height in blocks, resolved from the
+ * motif's {@code CorridorConfig} at plan time and carried here for the same reason
+ * {@code wallCells} is: the piece needs it at <em>construction</em> time to size its
+ * bounding box, and it cannot reach the datapack registry until {@code postProcess}.
+ * Riding on the data means it travels through NBT for free and the piece stays
+ * self-describing after deserialization.</p>
+ *
  * <p>{@code templateId} is reserved for the future Phase 8 mixed-mode templated
  * corridor segments; null in v1.</p>
  *
@@ -52,6 +59,15 @@ import java.util.List;
  * @author Mark Gottschling on May 25, 2026
  */
 public class CorridorData {
+    /**
+     * Fallback wall height for a corridor nobody injected one into (tests, and any
+     * pre-height save deserialized by {@code PieceNbt}). Deliberately a plain literal
+     * rather than a reference to {@code CorridorConfig.DEFAULT_HEIGHT}, which is the
+     * canonical value but lives on the Minecraft-importing config side of the fence;
+     * this class is a pure POJO. Keep the two in step.
+     */
+    public static final int DEFAULT_WALL_HEIGHT = 5;
+
     private int id;
     private List<Coords2D> cells = new ArrayList<>();
     /**
@@ -67,6 +83,11 @@ public class CorridorData {
      * decoration pass never anchors growth facing a door cell.
      */
     private List<Coords2D> doorCells = new ArrayList<>();
+    /**
+     * Wall height in blocks: the column runs {@code floorY .. floorY + wallHeight - 1}.
+     * Injected by {@code DungeonStackPlanner} from the motif's {@code CorridorConfig}.
+     */
+    private int wallHeight = DEFAULT_WALL_HEIGHT;
     /** Phase 8 hook: non-null when this corridor is rendered from a template prefab. */
     private String templateId;
 
@@ -101,6 +122,9 @@ public class CorridorData {
         return doorCells;
     }
     public void setDoorCells(List<Coords2D> doorCells) { this.doorCells = doorCells; }
+
+    public int getWallHeight() { return wallHeight; }
+    public void setWallHeight(int wallHeight) { this.wallHeight = wallHeight; }
 
     public String getTemplateId() { return templateId; }
     public void setTemplateId(String templateId) { this.templateId = templateId; }

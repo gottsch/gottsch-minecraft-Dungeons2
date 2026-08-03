@@ -9,7 +9,7 @@
     "door": "dungeonblocks:spruce_dungeon_door",
     "lintel": "minecraft:polished_andesite",
     "floor": "minecraft:polished_andesite",
-    "probability": 0.6
+    "probability": 0.5
   },
   "corridor": {
     "floor": "minecraft:cobblestone",

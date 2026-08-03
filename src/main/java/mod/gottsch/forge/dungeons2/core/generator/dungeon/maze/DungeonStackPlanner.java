@@ -116,6 +116,15 @@ public class DungeonStackPlanner {
      * classic 1-wide, still available via withCorridorWidth(1).
      */
     private int corridorCells = 3;
+    /**
+     * Corridor wall height in blocks, stamped onto every {@link CorridorData} this planner
+     * produces. Same "resolve where RegistryAccess is available, inject the value" shape as
+     * {@link #corridorCells}: production worldgen and the debug command read it from the motif's
+     * {@code CorridorConfig}, tests keep the historical 5. It has to be decided here rather than
+     * at render time because {@code DungeonCorridorPiece} sizes its bounding box from it at
+     * construction, long before it can reach a datapack registry.
+     */
+    private int corridorHeight = CorridorData.DEFAULT_WALL_HEIGHT;
     private int minRoomGap = 0;
 
     // -------- Phase 4b: assembled-entrance overrides (all-or-nothing) --------
@@ -183,6 +192,17 @@ public class DungeonStackPlanner {
      */
     public DungeonStackPlanner withCorridorWidth(int cells) {
         this.corridorCells = Math.max(1, cells);
+        return this;
+    }
+
+    /**
+     * Override corridor wall height in blocks (floor row + air + ceiling row). The caller is
+     * expected to hand over an already-validated value &mdash; {@code CorridorConfig}'s codec is
+     * where an out-of-range height becomes a load error, so there is deliberately no clamp here
+     * that could quietly turn a bad datapack into a subtly wrong dungeon.
+     */
+    public DungeonStackPlanner withCorridorHeight(int blocks) {
+        this.corridorHeight = blocks;
         return this;
     }
 
@@ -1132,6 +1152,7 @@ public class DungeonStackPlanner {
         // (which is null after NBT deserialization). This mirrors exactly the
         // 8-neighbor wall test BasicCorridorGenerator applies against the grid.
         for (CorridorData cd : corridorMap.values()) {
+            cd.setWallHeight(corridorHeight);
             Set<Coords2D> walls = new LinkedHashSet<>();
             Set<Coords2D> doors = new LinkedHashSet<>();
             for (Coords2D cell : cd.getCells()) {

@@ -22,6 +22,7 @@ Output lands in `build/floorplan/floorplan-<seed>.html` — one file, no assets,
 | `-Pmotif` | `classic` | motif value, read from the shipped datapack JSON |
 | `-Pfloors` | — | floor-count override; omit to let the size tier roll it |
 | `-PcorridorWidth` | `3` | dilation width, matching the shipped generation config |
+| `-PcorridorHeight` | the motif's own `corridor.height` | corridor wall height in blocks (5-8) |
 | `-PminRoomGap` | `0` | minimum clear cells between rooms; `0` is shipped behaviour |
 | `-Px` / `-Pz` | `0` | world XZ the planner is anchored at |
 | `-PsurfaceY` | `72` | surface Y the stack hangs from |

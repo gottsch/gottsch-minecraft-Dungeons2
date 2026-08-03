@@ -56,6 +56,7 @@ import java.util.Optional;
  *   <tr><td>{@code --motif}</td><td>motif value, read from the shipped datapack JSON (default classic)</td></tr>
  *   <tr><td>{@code --floors}</td><td>floor count override; omit to let the size tier roll it</td></tr>
  *   <tr><td>{@code --corridorWidth}</td><td>dilation width 1-3 (default 3, matching the shipped generation config)</td></tr>
+ *   <tr><td>{@code --corridorHeight}</td><td>corridor wall height in blocks; default is the motif's own {@code corridor.height}</td></tr>
  *   <tr><td>{@code --x} / {@code --z}</td><td>world XZ the planner is anchored at (default 0,0)</td></tr>
  *   <tr><td>{@code --surfaceY}</td><td>surface Y the stack hangs from (default 72)</td></tr>
  *   <tr><td>{@code --order}</td><td>{@code EMIT} (production: rooms, corridors, doors) or {@code CORRIDORS_FIRST}</td></tr>
@@ -94,10 +95,18 @@ public final class FloorPlanTool {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
 
+        // Loaded before planning, not just for rendering: corridor height is resolved from the
+        // motif and injected into the planner, the same way DungeonStructure does it, so the plan
+        // this tool draws is the plan production would build.
+        MotifConfig motifConfig = MotifConfigs.load(motif);
+        int corridorHeight = Integer.parseInt(opts.getOrDefault("corridorHeight",
+                String.valueOf(motifConfig.corridor().height())));
+
         DungeonStackPlanner planner = new DungeonStackPlanner(
                 seed, new Coords(worldX, 0, worldZ), surfaceY, motif, new TemplateCatalog())
                 .withSize(size)
                 .withCorridorWidth(corridorWidth)
+                .withCorridorHeight(corridorHeight)
                 .withMinRoomGap(minRoomGap);
         if (opts.containsKey("floors")) {
             planner.withFloorCount(Integer.parseInt(opts.get("floors")));
@@ -110,7 +119,6 @@ public final class FloorPlanTool {
             return;
         }
         DungeonLayout layout = planned.get();
-        MotifConfig motifConfig = MotifConfigs.load(motif);
 
         FloorPlanExporter exporter = new FloorPlanExporter(layout, motifConfig)
                 .withOrder(FloorPlanExporter.PieceOrder.valueOf(
