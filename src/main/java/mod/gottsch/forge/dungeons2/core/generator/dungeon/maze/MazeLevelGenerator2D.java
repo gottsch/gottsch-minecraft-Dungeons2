@@ -2192,8 +2192,14 @@ public class MazeLevelGenerator2D {
         List<PrimsTile2D> activeList = new ArrayList<>();
         // Scratch maps (per iteration): the eligible next cell in each direction
         // and the passage cell bridging to it.
-        Map<Direction2D, PrimsTile2D> neighbors = new HashMap<>();
-        Map<Direction2D, PrimsTile2D> passages = new HashMap<>();
+        //
+        // EnumMap, and that is load-bearing: the direction is chosen by INDEX into
+        // neighbors.keySet() below. An enum inherits Object.hashCode (identity), so a
+        // HashMap here iterates in an order that varies between JVM runs -- which made
+        // the same seed plan a different dungeon roughly one run in sixteen. EnumMap
+        // iterates in ordinal order, which is fixed. Do not "simplify" this back.
+        Map<Direction2D, PrimsTile2D> neighbors = new EnumMap<>(Direction2D.class);
+        Map<Direction2D, PrimsTile2D> passages = new EnumMap<>(Direction2D.class);
         // Random length cap for this corridor region.
         int maxRun = random.nextInt(maxCorridorSize - minCorridorSize) + minCorridorSize;
         // create tile
@@ -2293,7 +2299,9 @@ public class MazeLevelGenerator2D {
                 passage = passages.get(active.getDirection());
             }
             else {
-                // randomly select a direction
+                // randomly select a direction. Selection is by index, so this is only
+                // reproducible because `neighbors` iterates in a fixed order -- see the
+                // EnumMap note where it is declared.
                 List<Direction2D> directions = neighbors.keySet().stream().toList();
                 Direction2D direction = directions.get(random.nextInt(directions.size()));
                 if (direction != null) {
