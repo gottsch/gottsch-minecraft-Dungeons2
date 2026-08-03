@@ -23,15 +23,24 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -50,6 +59,50 @@ class DatapackResourcesParseTest {
 
     private static final Gson GSON = new Gson();
 
+    private static final String MOTIF_DIR = "/data/dungeons2/dungeons2/motif_config/";
+
+    /** The motifs this mod ships. Each is either a flat {@code <motif>.json} or a folder of files. */
+    private static final String[] MOTIFS = {"classic", "catacombs", "deep_slate"};
+
+    /**
+     * A shipped motif, assembled exactly the way {@code MotifConfigHelper} assembles it in game:
+     * the flat {@code <motif>.json} if there is one, then every file under {@code <motif>/}, in id
+     * order. Reading the folder rather than a fixed file list is the point &mdash; a new
+     * {@code schemes_*.json} that fails to decode must fail the build without anyone remembering to
+     * add it here.
+     */
+    private static MotifConfig motif(String name) {
+        List<MotifConfigFragment> fragments = new ArrayList<>();
+        if (DatapackResourcesParseTest.class.getResource(MOTIF_DIR + name + ".json") != null) {
+            fragments.add(parse(MOTIF_DIR + name + ".json", MotifConfigFragment.CODEC));
+        }
+        for (String file : filesIn(MOTIF_DIR + name)) {
+            fragments.add(parse(MOTIF_DIR + name + "/" + file, MotifConfigFragment.CODEC));
+        }
+        assertFalse(fragments.isEmpty(), "motif '" + name + "' ships no files at all");
+        return MotifConfigFragment.resolve(fragments);
+    }
+
+    /** The .json file names directly under a resource directory, sorted; empty if there is no such directory. */
+    private static List<String> filesIn(String resourceDir) {
+        URL url = DatapackResourcesParseTest.class.getResource(resourceDir);
+        if (url == null) {
+            return List.of();
+        }
+        try {
+            Path dir = Paths.get(url.toURI());
+            try (Stream<Path> entries = Files.list(dir)) {
+                return entries.filter(Files::isRegularFile)
+                        .map(path -> path.getFileName().toString())
+                        .filter(file -> file.endsWith(".json"))
+                        .sorted(Comparator.naturalOrder())
+                        .toList();
+            }
+        } catch (Exception e) {
+            throw new AssertionError("error listing " + resourceDir, e);
+        }
+    }
+
     private static <T> T parse(String resourcePath, Codec<T> codec) {
         try (InputStream in = DatapackResourcesParseTest.class.getResourceAsStream(resourcePath)) {
             assertTrue(in != null, "missing datapack resource on classpath: " + resourcePath);
@@ -65,8 +118,8 @@ class DatapackResourcesParseTest {
 
     @Test
     void motifConfigFilesDecode() {
-        for (String motif : new String[]{"classic", "catacombs", "deep_slate"}) {
-            parse("/data/dungeons2/dungeons2/motif_config/" + motif + ".json", MotifConfig.CODEC);
+        for (String name : MOTIFS) {
+            motif(name);
         }
     }
 
@@ -86,9 +139,8 @@ class DatapackResourcesParseTest {
      */
     @Test
     void everyPotLootTableReferencedByAMotifExists() {
-        for (String motif : new String[]{"classic", "catacombs", "deep_slate"}) {
-            MotifConfig config = parse("/data/dungeons2/dungeons2/motif_config/" + motif + ".json",
-                    MotifConfig.CODEC);
+        for (String name : MOTIFS) {
+            MotifConfig config = motif(name);
             for (RoomScheme scheme : config.schemes()) {
                 scheme.pots().ifPresent(pots -> {
                     String id = pots.lootTable();
@@ -106,9 +158,102 @@ class DatapackResourcesParseTest {
         }
     }
 
+    /**
+     * A bottom-anchored projecting course occupies the interior cells that touch a wall, at exactly
+     * the height loot pots stand at -- so a scheme carrying both puts a pot inside a block. Neither
+     * side can see the other (the wall pattern is authored in the wall's own coordinates, the pots
+     * are placed by a different generator against the room), so the only place to catch the
+     * combination is here, against the authored content.
+     */
+    @Test
+    void noSchemeCombinesPotsWithAFloorLevelProjectingCourse() {
+        for (String name : MOTIFS) {
+            MotifConfig config = motif(name);
+            for (RoomScheme scheme : config.schemes()) {
+                if (scheme.pots().isEmpty() || scheme.wall().isEmpty()) {
+                    continue;
+                }
+                // Element gates make this conditional. The two slots only ever occupy the same
+                // cells in a room that draws both, so a wall gated to tall rooms and pots gated to
+                // short ones is a legitimate scheme, not a collision. Without the overlap check
+                // this rule would reject content that can never actually fail.
+                if (!scheme.wall().get().gate().overlaps(scheme.pots().get().gate())) {
+                    continue;
+                }
+                for (WallPatternEntry.CourseEntry course : scheme.wall().get().courses()) {
+                    boolean collides = course.projection() > 0
+                            && course.anchor() == WallPatternEntry.CourseAnchor.BOTTOM
+                            && course.offset() == 0;
+                    assertFalse(collides, "scheme '" + scheme.name()
+                            + "' has pots and a floor-level projecting course; a pot would spawn "
+                            + "inside the trim. Project the top (a cornice), or drop the pots slot.");
+                }
+            }
+        }
+    }
+
+    /**
+     * A sill (and its double-sill sibling) is a ledge: it only reads correctly standing out from the
+     * wall. Set flush in the wall plane it renders as a recessed panel, which is not what the block
+     * is for. Matched on the id because the rule belongs to that block family, not to the pattern
+     * type -- a naming heuristic, but the alternative is a per-block table nobody would maintain.
+     */
+    @Test
+    void sillBlocksAreAlwaysProjected() {
+        for (String name : MOTIFS) {
+            MotifConfig config = motif(name);
+            for (RoomScheme scheme : config.schemes()) {
+                if (scheme.wall().isEmpty()) {
+                    continue;
+                }
+                for (WallPatternEntry.CourseEntry course : scheme.wall().get().courses()) {
+                    if (course.block().contains("sill")) {
+                        assertTrue(course.projection() > 0, "scheme '" + scheme.name()
+                                + "' uses " + course.block() + " flush in the wall; a sill is a "
+                                + "ledge and needs \"projection\": 1");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * {@code dungeonblocks}' directional trim blocks are <strong>facing-inverted relative to
+     * vanilla</strong>: the same {@code facing} value points their solid side the opposite way from
+     * a vanilla stair. So a cornice built from vanilla stairs wants {@code toward_wall} and the same
+     * cornice built from a dungeonblocks moulding wants {@code toward_room}, and a scheme that uses
+     * one value for both has one of them inside-out.
+     *
+     * <p>Not derivable from the block ids at runtime -- it is a property of how that mod models its
+     * blocks -- so it is pinned here against the shipped content instead.</p>
+     */
+    @Test
+    void projectedTrimIsOrientedForItsBlockFamily() {
+        for (String name : MOTIFS) {
+            MotifConfig config = motif(name);
+            for (RoomScheme scheme : config.schemes()) {
+                if (scheme.wall().isEmpty()) {
+                    continue;
+                }
+                for (WallPatternEntry.CourseEntry course : scheme.wall().get().courses()) {
+                    if (course.projection() == 0) {
+                        continue;
+                    }
+                    boolean vanilla = course.block().startsWith("minecraft:");
+                    WallPatternEntry.CourseOrient expected = vanilla
+                            ? WallPatternEntry.CourseOrient.TOWARD_WALL
+                            : WallPatternEntry.CourseOrient.TOWARD_ROOM;
+                    assertEquals(expected, course.orient(), "scheme '" + scheme.name() + "': "
+                            + course.block() + " projects, so it needs orient=" + expected
+                            + " -- dungeonblocks trim faces opposite to vanilla");
+                }
+            }
+        }
+    }
+
     @Test
     void classicShipsItsFullSchemeList() {
-        MotifConfig classic = parse("/data/dungeons2/dungeons2/motif_config/classic.json", MotifConfig.CODEC);
+        MotifConfig classic = motif("classic");
 
         // Deliberately a floor, not an exact count -- the scheme list is authored content and is
         // expected to grow. What must never happen is it collapsing to the one-element default.
@@ -125,6 +270,112 @@ class DatapackResourcesParseTest {
         assertTrue(classic.schemes().stream().anyMatch(s -> s.floor().isEmpty()),
                 "classic should keep an undecorated scheme -- and an unconstrained one, so no room "
                         + "can fail to match every scheme and fall through to PLAIN");
+    }
+
+    /**
+     * Every room the planner can build must match at least one scheme.
+     *
+     * <p>This became possible to get wrong the moment {@code maxHeight}/{@code maxSize} existed.
+     * With lower bounds only, a single unconstrained scheme guarantees coverage and no arrangement
+     * of the others can break it. With upper bounds, a band of room sizes can fall through every
+     * scheme at once — and the failure is silent: {@code RoomSchemeSelector} degrades to an
+     * undecorated room, which looks exactly like a room that rolled the plain scheme. Nobody would
+     * notice a hole until they wondered why 11-wide rooms are always bare.</p>
+     *
+     * <p>Swept over what the planner actually produces, not over every integer pair: rooms are odd,
+     * 5..17 on a side, and height is {@code min(rand(5..10), max(width, depth))}, so a 5x5 room can
+     * never be 10 high. Testing impossible shapes would force authors to cover rooms that do not
+     * exist.</p>
+     */
+    @Test
+    void everyRoomThePlannerCanBuildMatchesAScheme() {
+        for (String name : MOTIFS) {
+            List<RoomScheme> schemes = motif(name).schemes();
+            for (int width = 5; width <= 17; width += 2) {
+                for (int depth = 5; depth <= 17; depth += 2) {
+                    int tallest = Math.min(10, Math.max(width, depth));
+                    for (int height = 5; height <= tallest; height++) {
+                        int w = width;
+                        int d = depth;
+                        int h = height;
+                        assertTrue(schemes.stream().anyMatch(scheme -> scheme.fits(w, d, h)),
+                                "motif '" + name + "' has no scheme for a " + width + "x" + depth
+                                        + " room " + height + " high; such rooms would silently "
+                                        + "generate undecorated");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A scheme that fills element slots must actually draw <em>somewhere</em> in its own range.
+     *
+     * <p>Element gates make dead content possible: a wall slot gated to {@code minHeight 9} inside a
+     * scheme capped at {@code maxHeight 7} is authored, loads cleanly, and can never render. Nothing
+     * else notices — the scheme still wins rooms and the by-scheme counts look healthy.</p>
+     *
+     * <p><strong>Drawing nothing in part of a range is fine, and is the point of the feature.</strong>
+     * The shipped {@code plain} scheme carries a cornice gated at height 6, so in a 5-high room it
+     * deliberately renders an undecorated room; that is one scheme doing what used to take two. So
+     * the bar is "at least one eligible room shape draws something", not "every eligible room does".
+     * An earlier version of this check counted bare rooms globally and failed on exactly that
+     * legitimate case.</p>
+     *
+     * <p>Schemes with no slots at all are skipped: rendering nothing is their entire job.</p>
+     */
+    @Test
+    void everySchemeThatDecoratesDrawsSomethingSomewhereInItsRange() {
+        for (String name : MOTIFS) {
+            for (RoomScheme scheme : motif(name).schemes()) {
+                if (!scheme.declaresAnySlot()) {
+                    continue;
+                }
+                boolean everDraws = false;
+                for (int width = 5; width <= 17 && !everDraws; width += 2) {
+                    for (int depth = 5; depth <= 17 && !everDraws; depth += 2) {
+                        int tallest = Math.min(10, Math.max(width, depth));
+                        for (int height = 5; height <= tallest; height++) {
+                            if (scheme.fits(width, depth, height)
+                                    && scheme.drawsAnything(width, depth, height)) {
+                                everDraws = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                assertTrue(everDraws, "motif '" + name + "', scheme '" + scheme.name()
+                        + "' fills element slots but every one of them gates out of every room it "
+                        + "is eligible for -- it can never render anything");
+            }
+        }
+    }
+
+    /**
+     * The one thing splitting a motif into a folder made possible to get wrong. A duplicate scheme
+     * name is a deliberate <em>override</em> in the merge (that is how an addon retunes a shipped
+     * scheme), which means two of this mod's own files reusing a name silently drops one of them --
+     * a scheme that stops appearing in game with no error anywhere. Checked per file rather than on
+     * the merged result, because the merge is exactly what hides it.
+     */
+    @Test
+    void noMotifAuthorsTheSameSchemeNameInTwoFiles() {
+        for (String name : MOTIFS) {
+            List<String> files = new ArrayList<>();
+            if (DatapackResourcesParseTest.class.getResource(MOTIF_DIR + name + ".json") != null) {
+                files.add(name + ".json");
+            }
+            filesIn(MOTIF_DIR + name).forEach(file -> files.add(name + "/" + file));
+
+            Set<String> seen = new java.util.HashSet<>();
+            for (String file : files) {
+                for (RoomScheme scheme : parse(MOTIF_DIR + file, MotifConfigFragment.CODEC).schemes()) {
+                    assertTrue(seen.add(scheme.name()), "scheme '" + scheme.name() + "' is authored "
+                            + "twice in motif '" + name + "' (again in " + file + "); the second "
+                            + "would silently replace the first");
+                }
+            }
+        }
     }
 
     // The shipped worldgen/processor_list file (weathering) is guarded by

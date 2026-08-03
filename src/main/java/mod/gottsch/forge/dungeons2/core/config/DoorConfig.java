@@ -33,17 +33,38 @@ import net.minecraft.world.level.block.state.BlockState;
  * stone_bricks the other slots use, since a non-door block there would silently lose those
  * properties.</p>
  *
+ * <h2>probability &mdash; not every opening carries a door</h2>
+ * <p>{@link #probability} is the chance a doorway gets an actual door block; the rest are open
+ * doorways. A dungeon where every single opening is hung with a working door reads as a building
+ * that is still maintained, which is the opposite of the thing being generated: some doors have
+ * rotted off their hinges. The sill and lintel are placed either way, so a doorless opening is
+ * still a <em>framed</em> opening and still reads as deliberate architecture rather than as a hole.
+ * </p>
+ *
+ * <p>Defaults to 1.0 (every opening doored), which is what the field did before it existed. The
+ * roll is made from the door piece's own stable seed, so a doorway does not gain or lose its door
+ * between chunk loads &mdash; see {@code DungeonDoorPiece#renderPlacements}.</p>
+ *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record DoorConfig(String door, String lintel, String floor) {
+public record DoorConfig(String door, String lintel, String floor, double probability) {
 
     public static final DoorConfig DEFAULT =
             new DoorConfig("minecraft:oak_door", "minecraft:stone_bricks", "minecraft:stone_bricks");
 
+    /** Every opening gets a door, the behaviour before {@code probability} existed. */
+    public DoorConfig(String door, String lintel, String floor) {
+        this(door, lintel, floor, 1.0);
+    }
+
     public static final Codec<DoorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("door").forGetter(DoorConfig::door),
             Codec.STRING.fieldOf("lintel").forGetter(DoorConfig::lintel),
-            Codec.STRING.fieldOf("floor").forGetter(DoorConfig::floor)
+            Codec.STRING.fieldOf("floor").forGetter(DoorConfig::floor),
+            // Optional, unlike its siblings: it is a shape knob rather than a material, so there is
+            // a meaningful default to fall back on. The blocks have none on purpose.
+            Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0, 1.0), "probability", 1.0)
+                    .forGetter(DoorConfig::probability)
     ).apply(instance, DoorConfig::new));
 
     public BlockState doorState() {

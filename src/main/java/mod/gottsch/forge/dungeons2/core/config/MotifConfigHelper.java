@@ -17,17 +17,20 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
-import mod.gottsch.forge.dungeons2.Dungeons;
+import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.ResourceLocation;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * Static lookup helper for the {@link MotifConfigRegistries#MOTIF_CONFIG} datapack registry.
+ * Static lookup helper for the {@link MotifConfigRegistries#MOTIF_CONFIG} datapack registry, and
+ * the place a motif's folder of files becomes one {@link MotifConfig}.
  *
  * <p>Motif-scoped, same convention as {@code rooms/<motif>/normal.json} and the weathering
- * processor lists ({@code PieceProcessors#weatheringList}). A motif with no entry (or no registry,
+ * processor lists ({@code PieceProcessors#weatheringList}). A motif with no files (or no registry,
  * or a blank motif) degrades to {@link MotifConfig#DEFAULT} so callers never deal with null.</p>
  *
  * <p>Callers resolve once where {@code RegistryAccess} is available and inject the resolved value
@@ -44,10 +47,40 @@ public class MotifConfigHelper {
         if (motifValue == null || motifValue.isBlank()) {
             return MotifConfig.DEFAULT;
         }
-        ResourceLocation id = new ResourceLocation(Dungeons.MOD_ID, motifValue.trim().toLowerCase(Locale.ROOT));
+        String motif = motifValue.trim().toLowerCase(Locale.ROOT);
         return registryAccess.registry(MotifConfigRegistries.MOTIF_CONFIG)
-                .map(registry -> registry.get(id))
-                .map(config -> config != null ? config : MotifConfig.DEFAULT)
+                .map(registry -> resolve(registry, motif))
                 .orElse(MotifConfig.DEFAULT);
+    }
+
+    /**
+     * Every fragment belonging to {@code motif}, folded in id order.
+     *
+     * <h2>Matched on path, not on the full id</h2>
+     * <p>An entry's namespace is the namespace of the <em>pack</em> that shipped the file, so
+     * matching {@code dungeons2:classic/...} exactly would mean only this mod could ever contribute
+     * to classic. Matching the path lets a datapack drop
+     * {@code data/<its ns>/dungeons2/motif_config/classic/more_schemes.json} in and have it land in
+     * classic, which is the whole point of splitting a motif across files.</p>
+     *
+     * <p>Sorted by the full id string so the fold is a function of what is installed and not of
+     * registry iteration order. Two useful consequences fall out of plain lexicographic order: the
+     * flat {@code <motif>.json} sorts before everything in {@code <motif>/} (it is a prefix of
+     * them), so it reads as the base layer; and a foreign namespace sorts on its own name, so
+     * whether an addon wins against {@code dungeons2:} is at least stable and inspectable rather
+     * than arbitrary.</p>
+     */
+    static MotifConfig resolve(Registry<MotifConfigFragment> registry, String motif) {
+        String folder = motif + "/";
+        List<MotifConfigFragment> fragments = registry.entrySet().stream()
+                .filter(entry -> {
+                    String path = entry.getKey().location().getPath();
+                    return path.equals(motif) || path.startsWith(folder);
+                })
+                .sorted(Comparator.comparing(entry -> entry.getKey().location().toString()))
+                .map(Map.Entry::getValue)
+                .toList();
+
+        return fragments.isEmpty() ? MotifConfig.DEFAULT : MotifConfigFragment.resolve(fragments);
     }
 }

@@ -24,6 +24,7 @@ import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.BasicCeilingGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.IDungeonCeilingGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
@@ -75,9 +76,15 @@ public class BasicRoomGenerator implements IRoomGenerator {
         RoomScheme scheme = selectScheme(room, random);
         List<BlockPlacement> blocks = out.getBlocks();
 
-        IDungeonWallGenerator wallGen = selectWallGenerator(motif, scheme);
-        IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme);
-        IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif, scheme);
+        // Room dims are passed to the selectors because a scheme's element slots carry their own
+        // size gates -- a slot the room fails is dropped while the rest of the scheme still draws.
+        int width = room.getWidth();
+        int depth = room.getDepth();
+        int height = room.getHeight();
+
+        IDungeonWallGenerator wallGen = selectWallGenerator(motif, scheme, width, depth, height);
+        IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme, width, depth, height);
+        IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif, scheme, width, depth, height);
 
         // The renderer iterates this list in sequence and a later placement overwrites an earlier
         // one in the same cell, so order here is a layering order. Hollowing first establishes
@@ -85,9 +92,15 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // future interior feature (pillar, vault) simply run later and win the cells it needs
         // rather than having to coordinate with the step that emitted the air.
         //
-        // The four steps below this one do not actually overlap -- volume is strictly interior,
-        // walls are strictly the perimeter ring, floor is Y=floorY and ceiling Y=floorY+height-1 --
-        // so their relative order is currently free. Do not rely on that when adding a step.
+        // Their planes do not overlap -- walls are the perimeter ring, floor Y=floorY, ceiling
+        // Y=floorY+height-1 -- but two of them reach INTO the volume: a wall's projecting trim (a
+        // cornice) and a ceiling's projecting ribs (a coffer) both land in interior cells that
+        // hollow() has just cleared. So running after hollow() is load-bearing for those two.
+        //
+        // Those two layers can also want the SAME cells, where a rib meets the cornice ring, so
+        // ceiling-after-wall is load-bearing as well: the ceiling is meant to win, a rib running
+        // into the cornice and interrupting it rather than stopping short of it. Floor is still
+        // free to move.
         RoomVolumeGenerator.hollow(room, floorY, blocks);
         wallGen.build(room, floorY, motif, random, blocks);
         floorGen.build(room, floorY, motif, random, blocks);
@@ -95,7 +108,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.
-        scheme.pots().ifPresent(pots ->
+        scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, random, out.getEntities()));
     }
 
@@ -105,18 +118,24 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 room.getWidth(), room.getDepth(), room.getHeight(), random);
     }
 
-    public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme) {
+    public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                    int width, int depth, int height) {
         return new BasicWallGenerator()
                 .withMotifConfig(motifConfig)
-                .withWallPattern(WallPatternSelector.providerFor(scheme.wall()));
+                .withWallPattern(WallPatternSelector.providerFor(
+                        scheme.wallFor(width, depth, height), width, depth, height));
     }
 
-    public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RoomScheme scheme) {
-        return FloorPatternSelector.generatorFor(scheme.floor(), motifConfig.floor());
+    public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                      int width, int depth, int height) {
+        return FloorPatternSelector.generatorFor(scheme.floorFor(width, depth, height), motifConfig.floor());
     }
 
-    /** Takes no slot from the scheme yet &mdash; see {@link #selectWallGenerator}. */
-    public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme) {
-        return new BasicCeilingGenerator().withMotifConfig(motifConfig);
+    public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                          int width, int depth, int height) {
+        return new BasicCeilingGenerator()
+                .withMotifConfig(motifConfig)
+                .withCeilingPattern(CeilingPatternSelector.providerFor(
+                        scheme.ceilingFor(width, depth, height)));
     }
 }

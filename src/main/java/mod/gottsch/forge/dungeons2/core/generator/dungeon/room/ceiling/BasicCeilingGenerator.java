@@ -21,23 +21,32 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CeilingSurface;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Builds the ceiling of a {@link RoomData} as {@link BlockPlacement}s.
  *
  * <p>Ceiling occupies the interior cells (1 inset from the walls) at world
- * Y={@code floorY + height - 1}.</p>
+ * Y={@code floorY + height - 1}. Geometry lives in {@link CeilingSurface}; this class resolves the
+ * block and hands the surface a {@link SurfacePlan} to render, exactly as
+ * {@code BasicWallGenerator} does for its four runs. With no provider injected the plan is empty
+ * and every cell falls through to the motif's plain ceiling block.</p>
  *
  * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
 
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
+    /** Null means no ceiling treatment: every cell falls through to the plain ceiling block. */
+    private ISurfacePatternProvider ceilingPattern;
 
     /** See {@code BasicWallGenerator#withMotifConfig}. */
     public BasicCeilingGenerator withMotifConfig(MotifConfig motifConfig) {
@@ -45,22 +54,37 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
         return this;
     }
 
+    /**
+     * Injects the ceiling treatment for this room, already chosen and composed by
+     * {@code CeilingPatternSelector}. Null &mdash; the default &mdash; is a plain ceiling.
+     */
+    public BasicCeilingGenerator withCeilingPattern(ISurfacePatternProvider ceilingPattern) {
+        this.ceilingPattern = ceilingPattern;
+        return this;
+    }
+
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif,
                       RandomSource random, List<BlockPlacement> out) {
         BlockState ceilingState = motifConfig.ceiling().ceilingState();
+        CeilingSurface surface = CeilingSurface.forRoom(room, floorY);
 
-        int width = room.getWidth();
-        int depth = room.getDepth();
-        int height = room.getHeight();
-        int originX = room.getOriginX();
-        int originZ = room.getOriginZ();
-        int ceilingY = floorY + height - 1;
+        SurfacePlan plan = ceilingPattern == null
+                ? SurfacePlan.of(surface.uSize(), surface.vSize())
+                : ceilingPattern.plan(surface.uSize(), surface.vSize(), surface.facing(), random);
 
-        for (int x = 1; x < width - 1; x++) {
-            for (int z = 1; z < depth - 1; z++) {
-                out.add(BlockStateCodec.placement(
-                        originX + x, ceilingY, originZ + z, ceilingState));
+        surface.emit(plan, ceilingState, out);
+
+        // Ribs that hang below the ceiling land in the room's interior air, which
+        // RoomVolumeGenerator has already cleared -- so they run after the ceiling plane and simply
+        // win those cells. Same shape as BasicWallGenerator's projecting trim, and they win against
+        // that too: the room generator runs the ceiling last on purpose, so a rib meeting a
+        // projecting cornice interrupts it rather than dodging it.
+        if (ceilingPattern instanceof IProjectingPatternProvider projecting) {
+            Map<Integer, SurfacePlan> projected = projecting.projectedPlans(
+                    surface.uSize(), surface.vSize(), surface.facing(), random);
+            for (Map.Entry<Integer, SurfacePlan> layer : projected.entrySet()) {
+                surface.emitProjected(layer.getValue(), layer.getKey(), out);
             }
         }
     }

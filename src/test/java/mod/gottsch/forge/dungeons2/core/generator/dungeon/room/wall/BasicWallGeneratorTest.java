@@ -193,6 +193,109 @@ class BasicWallGeneratorTest {
         }
     }
 
+    /** A projecting cornice: one cell INTO the room, on all four walls, correctly oriented. */
+    @Test
+    void aProjectingCorniceLandsInsideTheRoomAndFacesTheWall() {
+        RoomData room = new RoomData(1, 10, 20, 9, 9, 8, RoomRole.NORMAL); // 6 wall rows
+        int floorY = 60;
+        BasicWallGenerator gen = new BasicWallGenerator().withWallPattern(
+                new CoursesWallPatternProvider(List.of(new CoursesWallPatternProvider.Course(
+                        Blocks.STONE_BRICK_STAIRS.defaultBlockState()
+                                .setValue(net.minecraft.world.level.block.StairBlock.HALF,
+                                        net.minecraft.world.level.block.state.properties.Half.TOP),
+                        WallPatternEntry.CourseAnchor.TOP, 0, 1,
+                        WallPatternEntry.CourseOrient.TOWARD_WALL))));
+
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
+
+        int corniceY = floorY + room.getHeight() - 2;
+        int found = 0;
+        for (BlockPlacement bp : out) {
+            if (!"minecraft:stone_brick_stairs".equals(bp.getBlockId())) {
+                continue;
+            }
+            found++;
+            assertEquals(corniceY, bp.getY(), "cornice should sit on the top wall row: " + bp);
+            int x = bp.getX() - room.getOriginX();
+            int z = bp.getZ() - room.getOriginZ();
+            // One cell inside the wall ring -- never ON it, that is the whole point.
+            assertTrue(x >= 1 && x <= room.getWidth() - 2 && z >= 1 && z <= room.getDepth() - 2,
+                    "cornice must be inside the room, not in the wall plane: " + bp);
+            assertTrue(x == 1 || x == room.getWidth() - 2 || z == 1 || z == room.getDepth() - 2,
+                    "cornice must hug a wall: " + bp);
+            assertEquals("top", bp.getProperties().get("half"), "authored property lost: " + bp);
+        }
+        // 9x9 room: the ring one cell in is 7x7 minus its interior 5x5 = 24 cells.
+        assertEquals(24, found, "cornice should ring the room one cell in");
+    }
+
+    /** A projecting course must not stand in a doorway -- it would block the way through. */
+    @Test
+    void aProjectingCourseIsSkippedInFrontOfADoorway() {
+        RoomData room = new RoomData(1, 10, 20, 9, 9, 8, RoomRole.NORMAL);
+        Coords2D door = new Coords2D(room.getOriginX() + 4, room.getOriginZ());
+        room.getDoorways().add(door);
+        int floorY = 60;
+        // Bottom-anchored projection, i.e. right where a player walks in.
+        BasicWallGenerator gen = new BasicWallGenerator().withWallPattern(
+                new CoursesWallPatternProvider(List.of(new CoursesWallPatternProvider.Course(
+                        Blocks.POLISHED_ANDESITE.defaultBlockState(),
+                        WallPatternEntry.CourseAnchor.BOTTOM, 0, 1,
+                        WallPatternEntry.CourseOrient.NONE))));
+
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
+
+        for (BlockPlacement bp : out) {
+            if ("minecraft:polished_andesite".equals(bp.getBlockId())) {
+                assertFalse(bp.getX() == door.getX() && bp.getZ() == door.getY() + 1
+                                && bp.getY() == floorY + 1,
+                        "projecting course blocking the doorway: " + bp);
+            }
+        }
+    }
+
+    /**
+     * A cornice ring is emitted with shape=straight; the mitred corners are settled later by
+     * DungeonPiece#settleJoinShapes using vanilla's own neighbour derivation. What this pins is the
+     * precondition that pass needs: every ring cell is present and adjacent to its neighbours, so a
+     * corner actually has both arms to mitre against.
+     */
+    @Test
+    void theProjectedRingIsContiguousSoCornersHaveBothArms() {
+        RoomData room = new RoomData(1, 10, 20, 9, 9, 8, RoomRole.NORMAL);
+        int floorY = 60;
+        BasicWallGenerator gen = new BasicWallGenerator().withWallPattern(
+                new CoursesWallPatternProvider(List.of(new CoursesWallPatternProvider.Course(
+                        Blocks.STONE_BRICK_STAIRS.defaultBlockState(),
+                        WallPatternEntry.CourseAnchor.TOP, 0, 1,
+                        WallPatternEntry.CourseOrient.TOWARD_ROOM))));
+
+        List<BlockPlacement> out = new ArrayList<>();
+        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
+
+        Set<String> ring = new HashSet<>();
+        for (BlockPlacement bp : out) {
+            if ("minecraft:stone_brick_stairs".equals(bp.getBlockId())) {
+                ring.add(bp.getX() + "," + bp.getZ());
+            }
+        }
+        // Every cell of the inset-1 ring, and every one of them has two ring neighbours.
+        for (String cell : ring) {
+            String[] parts = cell.split(",");
+            int x = Integer.parseInt(parts[0]);
+            int z = Integer.parseInt(parts[1]);
+            int neighbours = 0;
+            for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                if (ring.contains((x + d[0]) + "," + (z + d[1]))) {
+                    neighbours++;
+                }
+            }
+            assertEquals(2, neighbours, "ring cell " + cell + " should have exactly two neighbours");
+        }
+    }
+
     @Test
     void coordsStayWithinRoomFootprint() {
         BasicWallGenerator gen = new BasicWallGenerator();

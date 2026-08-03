@@ -17,16 +17,17 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
 import java.util.List;
 
 /**
  * Everything a single motif renders with: the base architectural blocks for each element, plus the
- * weighted list of {@link RoomScheme}s a room is dressed from. One entry per motif, at
- * {@code data/dungeons2/dungeons2/motif_config/<motif>.json}, looked up via
+ * weighted list of {@link RoomScheme}s a room is dressed from. Looked up via
  * {@link MotifConfigHelper#get}.
+ *
+ * <p>This is the <em>resolved</em> value and has no codec of its own. A motif is authored as a
+ * folder of files under {@code data/dungeons2/dungeons2/motif_config/<motif>/}, each decoded as a
+ * {@link MotifConfigFragment} and folded together by {@link MotifConfigFragment#resolve}; see that
+ * class for why the two types are separate.</p>
  *
  * <h2>Why this replaced two systems</h2>
  * <p>Until Jul 2026 the base blocks lived in {@code data/dungeons2/block_provider/<motif>.json},
@@ -52,17 +53,17 @@ import java.util.List;
  * authoring redundancy it costs.</p>
  *
  * <h2>Fallbacks</h2>
- * <p>Every section is optional, but every block field <em>within</em> a section it is
+ * <p>Every section is optional, but every block field <em>within</em> a section is
  * <strong>required</strong> &mdash; there are no per-slot defaults, so a half-authored section
  * fails to load loudly rather than silently rendering someone else's block. That needs
  * {@link Codecs#strictOptionalFieldOf} rather than DFU's own {@code optionalFieldOf}, which
  * swallows decode errors and would reintroduce the very failure mode this merge removed.</p>
  *
- * <p>{@link #DEFAULT} covers only the coarse case of a motif with no entry at all (or no
+ * <p>{@link #DEFAULT} covers only the coarse case of a motif with no files at all (or no
  * registry), and reproduces the pre-merge hardcoded fallbacks exactly: stone_bricks everywhere, an
- * oak door, and an always-plain floor. An individual block <em>id</em> that doesn't resolve at
- * render time (a typo, or a block from an uninstalled mod) falls back per-slot &mdash; see
- * {@code BlockStateCodec#block}.</p>
+ * oak door, and an always-plain floor. The same per-section values fill any section a motif's files
+ * never author. An individual block <em>id</em> that doesn't resolve at render time (a typo, or a
+ * block from an uninstalled mod) falls back per-slot &mdash; see {@code BlockStateCodec#block}.</p>
  *
  * <p>No two-tier fallback to a shared/classic config, matching the rooms/transitions motif-naming
  * convention documented in {@code structures/README.md}.</p>
@@ -72,23 +73,8 @@ import java.util.List;
 public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                           CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes) {
 
-    /** Used when a motif has no entry: stone_bricks everywhere, oak door, always-plain floor. */
+    /** Used when a motif has no files: stone_bricks everywhere, oak door, always-plain floor. */
     public static final MotifConfig DEFAULT = new MotifConfig(
             WallConfig.DEFAULT, CeilingConfig.DEFAULT, DoorConfig.DEFAULT,
             CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(RoomScheme.PLAIN));
-
-    public static final Codec<MotifConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(WallConfig.CODEC, "wall", WallConfig.DEFAULT)
-                    .forGetter(MotifConfig::wall),
-            Codecs.strictOptionalFieldOf(CeilingConfig.CODEC, "ceiling", CeilingConfig.DEFAULT)
-                    .forGetter(MotifConfig::ceiling),
-            Codecs.strictOptionalFieldOf(DoorConfig.CODEC, "door", DoorConfig.DEFAULT)
-                    .forGetter(MotifConfig::door),
-            Codecs.strictOptionalFieldOf(CorridorConfig.CODEC, "corridor", CorridorConfig.DEFAULT)
-                    .forGetter(MotifConfig::corridor),
-            Codecs.strictOptionalFieldOf(FloorConfig.CODEC, "floor", FloorConfig.DEFAULT)
-                    .forGetter(MotifConfig::floor),
-            Codecs.strictOptionalFieldOf(RoomScheme.CODEC.listOf(), "schemes", List.of(RoomScheme.PLAIN))
-                    .forGetter(MotifConfig::schemes)
-    ).apply(instance, MotifConfig::new));
 }

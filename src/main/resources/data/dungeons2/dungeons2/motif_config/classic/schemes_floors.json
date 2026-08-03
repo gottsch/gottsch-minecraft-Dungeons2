@@ -1,38 +1,25 @@
 {
-  "wall": {
-    "wall": "minecraft:stone_bricks"
-  },
-  "ceiling": {
-    "ceiling": "minecraft:stone_bricks"
-  },
-  "door": {
-    "door": "dungeonblocks:spruce_dungeon_door",
-    "lintel": "minecraft:polished_andesite",
-    "floor": "minecraft:polished_andesite"
-  },
-  "corridor": {
-    "floor": "minecraft:cobblestone",
-    "alternateFloor": "minecraft:stone_bricks",
-    "ceiling": "minecraft:stone_bricks"
-  },
-  "floor": {
-    "base": "minecraft:stone_bricks",
-    "alternateBase": "minecraft:stone_bricks"
-  },
   "schemes": [
     {
-      "name": "plain",
-      "weight": 12
-    },
-    {
       "name": "large_brick_border",
-      "weight": 1,
+      "weight": 5,
       "floor": {
         "type": "border",
         "inset": 1,
         "cornerBlock": "dungeonblocks:right_large_stone_brick",
         "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
         "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
+      },
+      "wall": {
+        "type": "courses",
+        "minHeight": 6,
+        "courses": [
+          {
+            "block": "dungeonblocks:square_stone_brick",
+            "cornerBlock": "minecraft:chiseled_stone_bricks",
+            "anchor": "top"
+          }
+        ]
       }
     },
     {
@@ -48,13 +35,24 @@
     },
     {
       "name": "andesite_border",
-      "weight": 1,
+      "weight": 5,
       "floor": {
         "type": "border",
         "inset": 2,
         "cornerBlock": "minecraft:andesite",
         "edgeLeftBlock": "minecraft:polished_andesite",
         "edgeRightBlock": "minecraft:polished_andesite"
+      },
+      "wall": {
+        "type": "courses",
+        "minHeight": 6,
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
       }
     },
     {
@@ -114,16 +112,27 @@
     },
     {
       "name": "checkerboard",
-      "weight": 1,
+      "weight": 5,
       "floor": {
         "type": "checkerboard",
         "primaryBlock": "dungeonblocks:square_stone_brick",
         "secondaryBlock": "minecraft:polished_andesite"
+      },
+      "wall": {
+        "type": "courses",
+        "minHeight": 6,
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
       }
     },
     {
       "name": "bordered_checkerboard",
-      "weight": 1,
+      "weight": 5,
       "floor": {
         "type": "composite",
         "generators": [
@@ -140,6 +149,17 @@
             "edgeRightBlock": "minecraft:polished_andesite"
           }
         ]
+      },
+      "wall": {
+        "type": "courses",
+        "minHeight": 6,
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
       }
     },
     {
@@ -154,136 +174,32 @@
     },
     {
       "name": "cross",
-      "weight": 1,
+      "weight": 5,
       "floor": {
         "type": "cross",
-        "primaryBlock": "minecraft:chiseled_stone_bricks",
+        "primaryBlock": "minecraft:polished_andesite",
         "thickness": 1
+      },
+      "wall": {
+        "type": "courses",
+        "minHeight": 6,
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
       }
     },
     {
-      "name": "spokes",
+      "name": "polished_andesite_spokes",
       "weight": 1,
       "minSize": 7,
       "floor": {
         "type": "spokes",
-        "primaryBlock": "minecraft:chiseled_stone_bricks",
+        "primaryBlock": "minecraft:polished_andesite",
         "spokes": 8
-      }
-    },
-    {
-      "name": "plain_pots",
-      "weight": 4,
-      "minSize": 5,
-      "pots": {
-        "minCount": 1,
-        "maxCount": 3,
-        "lootTable": "dungeons2:pots/classic",
-        "variants": [
-          {
-            "entity": "dungeonblocks:pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_clay_pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:thin_clay_pot",
-            "weight": 1
-          }
-        ]
-      }
-    },
-    {
-      "name": "andesite_border_pots",
-      "weight": 2,
-      "minSize": 7,
-      "floor": {
-        "type": "border",
-        "inset": 2,
-        "cornerBlock": "minecraft:andesite",
-        "edgeLeftBlock": "minecraft:polished_andesite",
-        "edgeRightBlock": "minecraft:polished_andesite"
-      },
-      "pots": {
-        "minCount": 1,
-        "maxCount": 3,
-        "lootTable": "dungeons2:pots/classic",
-        "variants": [
-          {
-            "entity": "dungeonblocks:pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_clay_pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:thin_clay_pot",
-            "weight": 1
-          }
-        ]
-      }
-    },
-    {
-      "name": "andesite_plinth",
-      "weight": 3,
-      "minHeight": 6,
-      "wall": {
-        "type": "courses",
-        "courses": [
-          {
-            "block": "minecraft:polished_andesite"
-          }
-        ]
-      }
-    },
-    {
-      "name": "andesite_trim",
-      "weight": 3,
-      "minHeight": 7,
-      "wall": {
-        "type": "courses",
-        "courses": [
-          {
-            "block": "minecraft:polished_andesite"
-          },
-          {
-            "block": "minecraft:chiseled_stone_bricks",
-            "anchor": "top"
-          }
-        ]
-      }
-    },
-    {
-      "name": "andesite_hall",
-      "weight": 2,
-      "minHeight": 7,
-      "minSize": 7,
-      "floor": {
-        "type": "border",
-        "inset": 2,
-        "cornerBlock": "minecraft:andesite",
-        "edgeLeftBlock": "minecraft:polished_andesite",
-        "edgeRightBlock": "minecraft:polished_andesite"
-      },
-      "wall": {
-        "type": "courses",
-        "courses": [
-          {
-            "block": "minecraft:polished_andesite"
-          },
-          {
-            "block": "minecraft:andesite",
-            "anchor": "top",
-            "offset": 1
-          },
-          {
-            "block": "minecraft:chiseled_stone_bricks",
-            "anchor": "top"
-          }
-        ]
       }
     }
   ]

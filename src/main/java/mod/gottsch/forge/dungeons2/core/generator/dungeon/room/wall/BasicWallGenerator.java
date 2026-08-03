@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomVolumeGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.WallSurface;
@@ -31,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -90,8 +92,20 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
         Set<Coords2D> doorways = new HashSet<>(room.getDoorways());
 
         for (WallSurface surface : WallSurface.forRoom(room)) {
-            SurfacePlan plan = planFor(surface, wallHeight);
+            SurfacePlan plan = planFor(surface, wallHeight, random);
             surface.emit(plan, floorY, doorways, wallState, out);
+
+            // Trim that stands out from the wall (a cornice, a moulding) lands in the room's
+            // interior air, which RoomVolumeGenerator has already cleared -- so it runs after the
+            // wall plane and simply wins those cells. Emitting it here rather than as a separate
+            // room step keeps it with the surface that decides its orientation.
+            if (wallPattern instanceof IProjectingPatternProvider projecting) {
+                Map<Integer, SurfacePlan> projected = projecting.projectedPlans(
+                        surface.length(), wallHeight, surface.facing(), random);
+                for (Map.Entry<Integer, SurfacePlan> layer : projected.entrySet()) {
+                    surface.emitProjected(layer.getValue(), layer.getKey(), floorY, doorways, out);
+                }
+            }
         }
     }
 
@@ -103,9 +117,9 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
      * of the {@code (u, v)} frame: one authored pattern comes out correctly oriented on all four
      * walls without the provider knowing anything about the room.</p>
      */
-    protected SurfacePlan planFor(WallSurface surface, int wallHeight) {
+    protected SurfacePlan planFor(WallSurface surface, int wallHeight, RandomSource random) {
         return wallPattern == null
                 ? SurfacePlan.of(surface.length(), wallHeight)
-                : wallPattern.plan(surface.length(), wallHeight, surface.facing());
+                : wallPattern.plan(surface.length(), wallHeight, surface.facing(), random);
     }
 }

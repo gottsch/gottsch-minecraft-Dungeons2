@@ -144,6 +144,29 @@ public final class BlockStateCodec {
         return (block != null ? block : fallback).defaultBlockState();
     }
 
+    /**
+     * Applies string-keyed property values to a state, ignoring names the block does not have and
+     * values that do not parse &mdash; the same lenient handling {@link #resolve} gives a
+     * {@code BlockPlacement}'s property map, so a datapack that names {@code half} on a block with
+     * no {@code half} keeps the block rather than failing.
+     *
+     * <p>Used by wall patterns, which need to orient a stairs or cornice block per wall run and
+     * therefore build states rather than just naming blocks.</p>
+     */
+    public static BlockState withProperties(BlockState state, Map<String, String> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return state;
+        }
+        BlockState result = state;
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            Property<?> property = result.getBlock().getStateDefinition().getProperty(entry.getKey());
+            if (property != null) {
+                result = applyProperty(result, property, entry.getValue());
+            }
+        }
+        return result;
+    }
+
     // -- private helpers --
 
     @SuppressWarnings({"unchecked", "rawtypes"})

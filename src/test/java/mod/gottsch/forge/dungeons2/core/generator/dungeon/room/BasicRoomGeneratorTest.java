@@ -17,6 +17,17 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
+import mod.gottsch.forge.dungeons2.core.config.CeilingConfig;
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
+import mod.gottsch.forge.dungeons2.core.config.DoorConfig;
+import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.WallConfig;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry.CourseAnchor;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry.CourseOrient;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
@@ -29,7 +40,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -116,5 +130,63 @@ class BasicRoomGeneratorTest {
             assertEquals(first.getEntities().get(i).toString(), second.getEntities().get(i).toString(),
                     "Mismatch at entity " + i);
         }
+    }
+
+    /**
+     * A hanging coffer rib and a projecting cornice both want the ring of interior cells against
+     * the wall, at the top of the room. <strong>The ceiling wins</strong> -- the rib runs into the
+     * cornice and interrupts it, which is what coffering does where it meets one, rather than
+     * stopping a block short and leaving a gap of plain ceiling around the lattice.
+     *
+     * <p>The mechanism is nothing but emission order: {@code build} runs the ceiling after the
+     * walls, and a later placement in the list overwrites an earlier one in the same cell. That
+     * makes the order load-bearing, so this pins it.</p>
+     */
+    @Test
+    void aHangingCofferOverridesTheWallsCorniceWhereTheyMeet() {
+        RoomScheme scheme = new RoomScheme("cornice_and_coffers", 1, 0, 0,
+                Optional.empty(),
+                Optional.of(new WallPatternEntry("courses", List.of(
+                        new WallPatternEntry.CourseEntry("minecraft:stone_brick_stairs",
+                                Optional.empty(), Optional.empty(), CourseAnchor.TOP, 0, 1,
+                                CourseOrient.TOWARD_WALL, Map.of())))),
+                Optional.of(new CeilingPatternEntry(List.of(
+                        new CeilingPatternEntry.SurfacePatternEntry("coffers",
+                                Optional.of("minecraft:polished_andesite"), Optional.empty(),
+                                0, 3, 1, 1)))),
+                Optional.empty());
+
+        MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,
+                DoorConfig.DEFAULT, CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(scheme));
+
+        RoomData room = new RoomData(1, 0, 0, 11, 11, 7, RoomRole.NORMAL);
+        int floorY = 60;
+        RoomPlacements out = new RoomPlacements();
+        new BasicRoomGenerator().withMotifConfig(config)
+                .build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(4L), out);
+
+        // Both layers live here: the cornice hangs off the top wall row, the ribs one below the
+        // ceiling, and for a 7-high room those are the same Y.
+        int contestedY = floorY + room.getHeight() - 2;
+
+        // Last writer per cell is what the world ends up with.
+        Map<String, String> finalBlock = new LinkedHashMap<>();
+        boolean sawCornice = false;
+        for (BlockPlacement bp : out.getBlocks()) {
+            if (bp.getY() != contestedY) {
+                continue;
+            }
+            String cell = bp.getX() + "," + bp.getZ();
+            if ("minecraft:stone_brick_stairs".equals(bp.getBlockId())) {
+                sawCornice = true;
+            }
+            finalBlock.put(cell, bp.getBlockId());
+        }
+
+        assertTrue(sawCornice, "the cornice should have been emitted at all");
+        assertTrue(finalBlock.containsValue("minecraft:polished_andesite"),
+                "ribs should reach the contested ring and win cells in it, got " + finalBlock);
+        assertTrue(finalBlock.containsValue("minecraft:stone_brick_stairs"),
+                "the cornice should survive everywhere a rib does not land, got " + finalBlock);
     }
 }

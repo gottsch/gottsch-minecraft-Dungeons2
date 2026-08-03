@@ -371,11 +371,11 @@ authored today.
 
 ---
 
-## Motif config (`dungeons2/motif_config/<motif>.json`)
+## Motif config (`dungeons2/motif_config/<motif>/`)
 
 Everything a motif renders with — the base architectural block for each element, plus the weighted
-list of **room schemes** a room is decorated from — lives in **one file per motif**, a codec-backed
-datapack registry entry with the same shape as `dungeons2/generation_config/<name>.json` (the
+list of **room schemes** a room is decorated from — lives in **one folder per motif**, a codec-backed
+datapack registry with the same shape as `dungeons2/generation_config/<name>.json` (the
 `corridorWidth` knob).
 
 The split to keep in mind while authoring: the element sections say what the motif is **made of**
@@ -396,13 +396,33 @@ that is rolled).
 > a straight mechanical migration reproduces the old behaviour exactly. See **Room schemes** below
 > for why the roll moved.
 
+> **A motif became a folder, Aug 2026.** Everything under
+> `data/dungeons2/dungeons2/motif_config/<motif>/` is read and combined into that motif's config, so
+> a motif can be split across as many files as suits it — shipped `classic` is `base.json`,
+> `schemes_floors.json`, `schemes_walls.json`, `schemes_ceilings.json`, `schemes_props.json`. A flat
+> `motif_config/<motif>.json` is **still valid** (shipped `catacombs` and `deep_slate` are one file
+> each); if both exist the flat file is the base layer. Nothing about the shape below changed —
+> every file is the same schema, just not obliged to carry all of it.
+
+**Combining rule.** Files are folded in id order, which for one namespace is plain file-name order
+(and puts `<motif>.json` before anything in `<motif>/`, since it sorts as a prefix).
+
+- **Sections** (`wall`, `ceiling`, `door`, `corridor`, `floor`) are taken **whole** from the last
+  file that writes one. Not merged field by field — a section is already all-or-nothing (see below),
+  and a file that says nothing about walls leaves the earlier file's walls alone.
+- **`schemes` lists append**, in file order — except that a scheme whose `name` matches an earlier
+  one **replaces it in place**, keeping its position. That is what makes a scheme addressable: an
+  add-on can retune shipped `plain`'s weight with a three-line file. Within one datapack, though,
+  two files using the same scheme name is a mistake, and one of the two silently disappears.
+
 **Motif-scoped**, same naming convention as `rooms/<motif>/normal.json`/
-`transitions/<motif>/shaft_bottom.json` above and the weathering processor lists: entries live at
-`data/dungeons2/dungeons2/motif_config/<motif>.json` (shipped: `classic`, `catacombs`,
-`deep_slate`). A motif with no entry (or a missing registry entirely) degrades to plain
-stone_bricks throughout, the same graceful degradation an absent template pool always has —
-**no two-tier fallback** to a shared/classic config, matching the rooms/transitions motif-naming
-note above.
+`transitions/<motif>/shaft_bottom.json` above and the weathering processor lists (shipped:
+`classic`, `catacombs`, `deep_slate`). Matching is on the **path**, not the full id, so a datapack
+of your own namespace can add `data/<yourpack>/dungeons2/motif_config/classic/extra_schemes.json`
+and have it land in `classic`. A motif with no files at all (or a missing registry entirely)
+degrades to plain stone_bricks throughout, the same graceful degradation an absent template pool
+always has — **no two-tier fallback** to a shared/classic config, matching the rooms/transitions
+motif-naming note above.
 
 ```json
 {
@@ -410,7 +430,8 @@ note above.
   "ceiling":  { "ceiling": "minecraft:stone_bricks" },
   "door":     { "door": "dungeonblocks:spruce_dungeon_door",
                 "lintel": "minecraft:polished_andesite",
-                "floor": "minecraft:polished_andesite" },
+                "floor": "minecraft:polished_andesite",
+                "probability": 0.7 },
   "corridor": { "floor": "minecraft:cobblestone",
                 "alternateFloor": "minecraft:gravel",
                 "ceiling": "minecraft:stone_bricks" },
@@ -429,11 +450,19 @@ note above.
 }
 ```
 
-**Every section is optional; every field inside a section it uses is required.** Omit `door`
+**Every section is optional; every *block* inside a section it uses is required.** Omit `door`
 entirely and you get the default oak door — but a `door` section with only `door` and no `lintel`
 **fails to load, loudly**. That asymmetry is deliberate: it is exactly the silent-fallthrough the
 old system was retired for. (It needs `Codecs.strictOptionalFieldOf`, because DFU's own
 `optionalFieldOf` cannot tell "absent" from "malformed" and returns the default for both.)
+
+The one non-block field is `door.probability` (0.0–1.0, default 1.0): the chance a doorway is hung
+with an actual door. It is optional precisely *because* it is not a material — there is a sensible
+default to fall back on, where for a block there deliberately is not. A dungeon with a working door
+on every single opening reads as a building someone still maintains, which is the opposite of the
+thing being generated; `classic` uses 0.7, so about a third of its doorways stand open. **A doorless
+opening still gets its sill and lintel**, so it reads as a framed opening rather than as a hole, and
+it is the same four-block column a doored one is.
 
 Corridors are never dressed by a scheme — a border ring or checkerboard needs a room-sized
 rectangle. Corridor *walls* come from the shared `wall` section. Room `base`/`alternateBase` are
@@ -462,8 +491,11 @@ trade this file already makes by being one-file-per-motif.
 | `weight` | relative chance among *eligible* schemes (default 1). |
 | `minHeight` | skip this scheme in rooms shorter than this (default 0 = always eligible). |
 | `minSize` | skip it when the *smaller* of width/depth is below this (default 0). |
+| `maxHeight` | skip it in rooms *taller* than this (default: no bound). Inclusive. |
+| `maxSize` | skip it when the *smaller* of width/depth is above this (default: no bound). Inclusive. |
 | `floor` | optional floor treatment — one pattern entry, described below. |
 | `wall` | optional wall treatment — horizontal courses, described below. |
+| `ceiling` | optional ceiling treatment — an ordered list of patterns, described below. |
 | `pots` | optional loot pots standing on the floor — described below. |
 
 A scheme with nothing but a name is the undecorated room. An absent element slot means "plain for
@@ -478,97 +510,104 @@ is not a treatment that degrades gracefully in a short room; it is one that must
 and `minHeight` is how you say so. Keep at least one unconstrained scheme in the list — a room
 matching none degrades to plain rather than being forced into an ill-fitting scheme.
 
-> Adding a `minHeight`/`minSize` to a shipped motif **changes existing seeds**. The roll draws one
+**`maxHeight`/`maxSize` are the other half of that, and they do something minimums cannot.** A
+minimum can push a scheme up the size range but can never confine it to the bottom, so without an
+upper bound every modest scheme stays eligible in the largest rooms — and the grand schemes are
+permanently a minority of the eligible weight there. Raising a grand scheme's weight does not fix
+it, because weight cannot remove a competitor; capping the modest ones is the only lever that makes
+a big room reliably feel big. Same argument for detail that does not scale: a `centre` boss of size
+1 is a lonely dot in a 15-wide ceiling.
+
+```json
+{ "name": "cosy_alcove", "weight": 6, "maxSize": 7 }
+```
+
+Both bounds are **inclusive** and measured against the same numbers their minimums are (full height;
+the *smaller* of width and depth). Absent means unbounded — there is no "0 means no limit" rule,
+because `"maxHeight": 0` would then be indistinguishable from a typo that silently disables the
+scheme. A bound below its own minimum is a **load error**, not a clamp: it fits no room at all, and
+at generation time that looks exactly like a scheme that merely never won its roll.
+
+> **Upper bounds make it possible to leave a hole.** With minimums only, one unconstrained scheme
+> guarantees every room matches something. With bounds, a band of room sizes can fall through every
+> scheme at once and silently generate undecorated. `DatapackResourcesParseTest` sweeps every room
+> shape the planner can build (odd sides 5–17, height `min(rand(5..10), max(width, depth))`) and
+> fails if any of them matches nothing.
+
+> Adding any of the four gates to a shipped motif **changes existing seeds**. The roll draws one
 > value against the eligible total weight, so gating a scheme out shifts the whole downstream random
 > stream for that room.
 
-#### Wall courses (`wall`)
+### The same four gates, on a single element
 
-Horizontal bands across all four walls — plinth, chair rail, string course, crown molding. They are
-all the same feature at a different height, which is why one pattern type covers them.
+Any element slot may carry `minHeight`/`minSize`/`maxHeight`/`maxSize` of its own. A slot the room
+fails is **dropped**, and the rest of the scheme still draws:
+
+```json
+{ "name": "andesite_border", "weight": 5,
+  "floor": { "type": "border", "inset": 2, "cornerBlock": "minecraft:andesite",
+             "edgeLeftBlock": "minecraft:polished_andesite",
+             "edgeRightBlock": "minecraft:polished_andesite" },
+  "wall":  { "minHeight": 6, "type": "courses",
+             "courses": [ { "block": "minecraft:polished_andesite",
+                            "cornerBlock": "minecraft:andesite", "anchor": "top" } ] } }
+```
+
+A 5-high room gets the bordered floor and plain walls; a 6-high room gets both. **That is one scheme
+where there used to be two** — `classic` previously shipped `andesite_border` and
+`crowned_andesite_border` as separate entries, identical but for the wall slot and a `minHeight`.
+
+The two levels do different things, and the difference is the whole point:
+
+| | Decides | Effect on the roll |
+|---|---|---|
+| gate on the **scheme** | whether it enters the roll | re-totals every weight |
+| gate on an **element** | whether that slot is drawn, after the scheme won | **none** |
+
+An element gate never redistributes weight. A scheme whose wall drops out in half your rooms still
+fires at its full weight there — you just get plain walls.
+
+Collapsing a pair of schemes this way also removes an inconsistency the pair had. With two competing
+entries, a tall room would sometimes roll the *un*crowned one, so a fraction of tall bordered rooms
+came out with no trim for no authored reason. Gated, a tall room gets the crown whenever the scheme
+fires — measured, that moved top trim in tall rooms from 75.3% to 79.2% with no weight change.
+
+**A scheme drawing nothing in part of its range is the feature, not a bug.** Shipped `plain` carries
+a cornice gated at height 6, so in a 5-high room it deliberately renders an undecorated room — one
+scheme doing what `plain` + `plain_6` used to take two to do.
+
+> **The real hazard is dead content:** a slot gated *outside* its own scheme's range — a wall at
+> `minHeight: 9` inside a scheme capped at `maxHeight: 7` — loads cleanly, wins rooms, and can never
+> render. `DatapackResourcesParseTest` checks per scheme that at least one eligible room shape draws
+> something, and names the offender. `SchemeIncidenceTest` also reports a "no decoration drawn"
+> percentage, but does not fail on it: barring that number would forbid exactly the legitimate case
+> above.
+
+**A single course can be gated too**, which is the case a slot gate cannot reach: a plinth belongs
+on every wall in the dungeon, while the crown above it needs headroom a 5-high room does not have.
+One `wall` slot, two fates:
 
 ```json
 "wall": {
   "type": "courses",
   "courses": [
-    { "block": "minecraft:polished_andesite" },
-    { "block": "minecraft:andesite", "anchor": "top", "offset": 1 },
-    { "block": "minecraft:chiseled_stone_bricks", "anchor": "top" }
+    { "block": "dungeonblocks:left_large_stone_brick",
+      "alternateBlock": "dungeonblocks:right_large_stone_brick" },
+    { "block": "minecraft:stone_brick_stairs", "anchor": "top", "projection": 1,
+      "orient": "toward_wall", "properties": { "half": "top" },
+      "minHeight": 6 }
   ]
 }
 ```
 
-`block` is required. `anchor` is `"bottom"` (default) or `"top"`, and `offset` (default 0) counts
-rows away from it — so `bottom`/0 is a plinth on the lowest wall row and `top`/0 a crown on the
-highest. A misspelled anchor **fails to load**; it is not defaulted, because silently reading
-`"topp"` as `bottom` would put the crown molding on the floor with no error anywhere.
+This is *not* the same as relying on a course being clipped when its row falls outside the wall. A
+top course in a 5-high room lands on the **lintel** row and draws perfectly happily — it just looks
+cramped. Only a gate expresses that. Every course gating out leaves an empty list, which renders as
+a plain wall.
 
-**Anchoring from the top is the point.** A wall is `height - 2` rows tall and room height is
-`min(rand(5..10), max(width, depth))` — so a course measured from the floor drifts away from the
-ceiling as rooms vary, while a top-anchored one stays put.
-
-**Mind the height budget.** That leaves only **3 to 8** wall rows. A course that resolves outside
-the wall is silently dropped rather than clamped (a crown squashed onto the plinth row reads worse
-than no crown), but relying on that gives you rooms with half a scheme. Use the scheme's `minHeight`
-instead: roughly `minHeight: 6` for a plinth alone, `7` for a plinth plus a crown, more if you want
-plain wall left between them. The shipped `classic` schemes are authored that way.
-
-Two other things a course cannot do anything about, both handled for you:
-
-- **Doorways win.** The two door-half rows of a doorway cell are always air, whatever the pattern
-  says — a solid block there is the lichen-on-doors bug. A pattern is authored in the wall's own
-  coordinates and cannot see doors, so the rule is enforced after it.
-- **Courses never break at corners.** A band sits at a constant height, so it rings the room
-  unbroken regardless of how the corner columns are divided between wall runs.
-
-One unresolvable block id degrades the **whole** entry to plain wall, not just its own course —
-same rule as the floor patterns, and for the same reason: a crown with no plinth under it reads as
-a bug, where a plain wall reads as a plain wall.
-
-> The accent-block rule above applies with more force here than on floors. Walls are what a player
-> actually looks at — and `classic` renders wall, floor and ceiling from the same
-> `minecraft:stone_bricks`, so trim in anything close to that block is invisible.
-
-#### Loot pots (`pots`)
-
-Scatters `dungeonblocks` pots across the room's floor, each carrying a loot table.
-
-```json
-"pots": {
-  "minCount": 1,
-  "maxCount": 3,
-  "lootTable": "dungeons2:pots/classic",
-  "variants": [
-    { "entity": "dungeonblocks:pot", "weight": 2 },
-    { "entity": "dungeonblocks:squat_clay_pot", "weight": 2 },
-    { "entity": "dungeonblocks:thin_clay_pot", "weight": 1 }
-  ]
-}
-```
-
-`lootTable` and `variants` are **required**; `minCount`/`maxCount` default to 1 and 3. A count is
-rolled per room from that inclusive range, then that many distinct cells are drawn — a room with
-fewer eligible cells than the rolled count just gets fewer pots.
-
-**Pots are entities, not blocks**, and that has consequences worth knowing before authoring:
-
-- **`lootTable` is required for a reason.** `PotEntity` drops nothing at all when its table id is
-  null or `minecraft:empty`, and it does **not** fall back to the entity type's own table — the
-  ones `dungeonblocks` ships for its three pot types are empty stubs with no pools. A missing or
-  typo'd id is a pot that shatters into thin air with no error anywhere. The id must resolve to a
-  file this mod ships; `DatapackResourcesParseTest` fails the build if it doesn't.
-- **The table must be `"type": "minecraft:entity"`.** The drop path builds its `LootParams` with the
-  ENTITY parameter set. A chest-style (`minecraft:chest`) table will not work.
-- **Each pot gets a non-zero `LootTableSeed`**, so its contents are fixed when the dungeon generates
-  rather than rolled when a player breaks it — the same treatment vanilla gives a structure chest.
-- **A creative-mode player gets no drops.** There is an explicit early return for it. Easy to
-  mistake for broken loot when testing.
-
-Placement is not configurable and is deliberately narrow: pots go on **interior floor cells that
-touch a wall**, never on the cell immediately inside a doorway. Pots have gravity and a fall-break
-distance, so one placed over anything but solid floor falls and shatters before a player ever sees
-it; and a pot alone in the middle of an open floor reads as dropped rather than placed. Use
-`minSize` on the scheme to keep pot schemes out of rooms too cramped to hold them.
+Bounds on an element are validated exactly like a scheme's, and the error names the slot:
+`scheme 'x', wall slot: maxHeight 5 is below minHeight 7`. A gate on a nested `generators` entry of
+a `composite` floor does nothing — only a top-level slot is gated.
 
 #### Floor treatments
 
@@ -607,7 +646,7 @@ calls a piece gets per overlapping chunk, exactly like every other per-room roll
 > speckled floor gains contrast as the stone around it ages, and it becomes the in-family case
 > unchanged if a mossy variant is added to `dungeonblocks` later.
 
-### The `checkerboard` and `speckle` patterns
+#### The `checkerboard` and `speckle` patterns
 
 Two full-floor fills, each taking `primaryBlock` and `secondaryBlock` (both required):
 
@@ -620,7 +659,7 @@ Two full-floor fills, each taking `primaryBlock` and `secondaryBlock` (both requ
 
 Both are full fills rather than overlays, so in a `composite` they belong in the **first** slot.
 
-### The `composite` pattern
+#### The `composite` pattern
 
 Layers several patterns into one, via an ordered (not weighted) `generators` list of nested
 entries:
@@ -644,7 +683,7 @@ matters for the roll. An empty `generators` list degrades to plain.
 Ordering is execution order, and later placements win the same cell — the same convention the
 `processor_list` files and the wall/floor/ceiling build order already use.
 
-### The `cross` and `spokes` patterns
+#### The `cross` and `spokes` patterns
 
 Two single-accent-block shapes, both taking `primaryBlock` and both **overlay-capable** (so either
 composes over a `checkerboard` base in a `composite`):
@@ -663,7 +702,7 @@ composes over a `checkerboard` base in a `composite`):
 Both fill non-pattern cells with the motif's `floor.base` when used standalone, and emit nothing
 there when used as an overlay.
 
-### The `border` pattern
+#### The `border` pattern
 
 Reverse-engineered from a hand-authored reference structure (`dungeonblocks:left_large_stone_brick`
 / `right_large_stone_brick`, a picture-frame ring inset from the floor's edge) and generalized to
@@ -708,6 +747,254 @@ structure's exact palette, and checks substitution end-to-end using vanilla bloc
 resolve under a bare bootstrap, unlike `dungeonblocks:*`).
 
 ---
+
+#### Wall courses (`wall`)
+
+Horizontal bands across all four walls — plinth, chair rail, string course, crown molding. They are
+all the same feature at a different height, which is why one pattern type covers them.
+
+```json
+"wall": {
+  "type": "courses",
+  "courses": [
+    { "block": "minecraft:polished_andesite" },
+    { "block": "minecraft:andesite", "anchor": "top", "offset": 1 },
+    { "block": "minecraft:chiseled_stone_bricks", "anchor": "top" }
+  ]
+}
+```
+
+`block` is required. `anchor` is `"bottom"` (default) or `"top"`, and `offset` (default 0) counts
+rows away from it — so `bottom`/0 is a plinth on the lowest wall row and `top`/0 a crown on the
+highest. A misspelled anchor **fails to load**; it is not defaulted, because silently reading
+`"topp"` as `bottom` would put the crown molding on the floor with no error anywhere.
+
+**`alternateBlock` and `cornerBlock`** are the same two knobs the floor has, and **both default to
+`block`** — a course written with `block` alone is a uniform band, exactly as before they existed.
+
+```json
+{ "block": "minecraft:stone_bricks",
+  "alternateBlock": "dungeonblocks:square_stone_brick",
+  "cornerBlock": "minecraft:chiseled_stone_bricks" }
+```
+
+`alternateBlock` is mixed into the band per cell at the same 45/55 split the floor's
+`base`/`alternateBase` pair gets: a single block reads as a machined stripe, which is right for
+polished trim and wrong for a rough stone course.
+
+**`alternate` chooses how they mix** — `"random"` (the default, that 45/55 roll) or `"strict"`,
+every other cell starting from `block`. **A mirrored block pair needs `strict`.** A family like
+`left_large_stone_brick`/`right_large_stone_brick` is two halves of one wide brick; mixed randomly
+you get adjacent left-left runs and the halves stop pairing up, which is a texture bug rather than
+variety. Anything that is genuinely two *different* blocks wants `random`.
+
+```json
+{ "block": "dungeonblocks:left_large_stone_brick",
+  "alternateBlock": "dungeonblocks:right_large_stone_brick",
+  "alternate": "strict" }
+```
+
+`strict` consumes no randomness, so it renders identically for every seed. Parity is on the run's
+own `u`, which restarts at 0 on each of the four walls — so the sequence does not carry around a
+corner, and on an odd-length run the seam is visible there. Same consequence of per-run authoring
+noted above for asymmetric patterns. `cornerBlock` goes on the room's **four corner
+columns** — the quoin a real masonry course has. You do not need to think about which wall owns a
+corner; that is handled, including the fact that ownership flips for a projecting course (a cornice
+takes its ring corners from the short walls, a flush band from the long ones). `properties` applies
+to all three, since they are meant to be one block family.
+
+**Trim can stand out from the wall.** `projection: 1` moves a course off the wall plane into the
+interior cell in front of it — a real cornice or moulding rather than a flat band. `orient` then
+turns a block that has a `facing` property, per wall, so one authored course comes out correct on
+all four:
+
+```json
+{ "block": "minecraft:stone_brick_stairs",
+  "anchor": "top", "projection": 1, "orient": "toward_wall",
+  "properties": { "half": "top" } }
+```
+
+- `orient`: `toward_wall` puts a stair's **full-height half against the wall**, stepping down into
+  the room — that is a cornice. `toward_room` is the inverse. `none` (default) leaves `facing`
+  alone. (A stair's solid half sits on its own `facing` side, so `toward_wall` resolves to the
+  *opposite* of the wall's inward facing — which is exactly why this is named by intent rather than
+  by direction.)
+- `properties`: any other block-state values, applied literally — `half: top` for an upside-down
+  stair, or whatever a dedicated trim block needs. Unknown names and unparseable values are ignored
+  rather than failing, so a property a block doesn't have costs you nothing.
+- Projecting trim is **skipped in front of a doorway** at door height; it would stand in the opening.
+- Corners are handled twice over. The projected ring is a complete inset-1 ring with each cell owned
+  by exactly one wall, so no corner ever gets two conflicting facings; and after the room is written,
+  any block with a `shape` property (stairs, cornices, mouldings) is re-settled against its
+  neighbours using Minecraft's own derivation, so the four corners come out **mitred** rather than
+  as square notches. Nothing here reimplements that rule, and it works for any mod block that
+  follows the same contract.
+> **`dungeonblocks` trim faces the opposite way from vanilla.** `toward_wall` / `toward_room` are
+> named for where a *vanilla* block's solid side ends up. The `dungeonblocks` cornice, crown moulding
+> and sill blocks are modelled inverted, so the same visual result needs the opposite value: a
+> cornice of `minecraft:stone_brick_stairs` wants `toward_wall`, while
+> `dungeonblocks:*_crown_molding_block` wants `toward_room`. Getting this wrong renders the trim
+> inside-out and nothing errors, so the shipped schemes are checked against it by
+> `DatapackResourcesParseTest`.
+
+> **A `sill` or `double_sill` block always wants `projection: 1`.** It is a ledge; set flush in the
+> wall plane it reads as a recessed panel instead. Also checked against the shipped schemes.
+
+> **A `bottom`/0 projecting course collides with loot pots.** Pots stand on the interior cells that
+> touch a wall, at exactly that height, so a scheme with both puts a pot inside a block. Project the
+> top (a cornice), not the bottom, or leave `pots` off that scheme. `DatapackResourcesParseTest`
+> fails the build on a shipped scheme that combines them.
+
+**Anchoring from the top is the point.** A wall is `height - 2` rows tall and room height is
+`min(rand(5..10), max(width, depth))` — so a course measured from the floor drifts away from the
+ceiling as rooms vary, while a top-anchored one stays put.
+
+**Mind the height budget.** That leaves only **3 to 8** wall rows. A course that resolves outside
+the wall is silently dropped rather than clamped (a crown squashed onto the plinth row reads worse
+than no crown), but relying on that gives you rooms with half a scheme. Use the scheme's `minHeight`
+instead: roughly `minHeight: 6` for a plinth alone, `7` for a plinth plus a crown, more if you want
+plain wall left between them. The shipped `classic` schemes are authored that way.
+
+Two other things a course cannot do anything about, both handled for you:
+
+- **Doorways win.** The two door-half rows of a doorway cell are always air, whatever the pattern
+  says — a solid block there is the lichen-on-doors bug. A pattern is authored in the wall's own
+  coordinates and cannot see doors, so the rule is enforced after it.
+- **Courses never break at corners.** A band sits at a constant height, so it rings the room
+  unbroken regardless of how the corner columns are divided between wall runs.
+
+One unresolvable block id degrades the **whole** entry to plain wall, not just its own course —
+same rule as the floor patterns, and for the same reason: a crown with no plinth under it reads as
+a bug, where a plain wall reads as a plain wall.
+
+> The accent-block rule above applies with more force here than on floors. Walls are what a player
+> actually looks at — and `classic` renders wall, floor and ceiling from the same
+> `minecraft:stone_bricks`, so trim in anything close to that block is invisible.
+
+#### Ceiling patterns (`ceiling`)
+
+Treatments on the ceiling. Unlike the floor and wall slots this is an **ordered list**, applied in
+sequence with later patterns drawn on top:
+
+```json
+"ceiling": {
+  "patterns": [
+    { "type": "coffers", "block": "minecraft:polished_andesite", "spacing": 3, "projection": 1 },
+    { "type": "border", "block": "minecraft:andesite", "cornerBlock": "minecraft:chiseled_stone_bricks" },
+    { "type": "centre", "block": "minecraft:chiseled_stone_bricks", "size": 1 }
+  ]
+}
+```
+
+| `type` | shape | knobs |
+|---|---|---|
+| `coffers` | a lattice of ribs dividing the ceiling into panels | `spacing` (3) |
+| `border` | a ring following the walls, reading as a soffit | `inset` (0), `cornerBlock` |
+| `centre` | a square boss at the middle (`center` also accepted) | `size` (1) |
+
+Every type also takes **`projection`** (default 0), which hangs the treatment below the ceiling
+instead of drawing it flush in it — the same knob, the same meaning and the same cap as a wall
+course's.
+
+**This is the difference between a coffered ceiling and a coffered pattern**, and it is the reason
+`projection` exists here. Ribs drawn flush are in the same plane as the panels they are supposed to
+divide, so the lattice reads as texture painted on a flat ceiling. `"projection": 1` hangs them one
+cell down and the panels become genuinely recessed — an actual coffer. Like a wall's, a projecting
+treatment is *absent from the plane*, so the ceiling behind it stays the plain ceiling block, which
+is exactly what a recessed panel is.
+
+Two things to know before using it:
+
+- **A projecting ceiling wants a `minHeight`.** The rib eats a row of headroom, and in a 5-high room
+  that leaves two. `classic` gates its projecting coffers at 7 and keeps a flush variant
+  (`coffered_ceiling_flat`) for shorter rooms so ceiling decoration does not vanish from them.
+- **Where it meets projecting wall trim, the ceiling wins.** The ring of ceiling cells against the
+  walls is also where a projecting crown moulding hangs, so a scheme carrying both writes twice to
+  the cells where a rib meets that ring — and the ceiling is emitted last, so the rib takes them.
+  That is the intended look: the rib runs into the cornice and interrupts it, the way coffering
+  meets a cornice in a real ceiling. The cornice survives everywhere no rib lands. Ribs always run
+  the full width of the room; they never stop short of the wall.
+
+`block` is required by every type — there is no Java-side default for a pattern's material, so an
+absent or unregistered id skips that pattern rather than substituting a guess. `cornerBlock` is the
+one exception and not really one: absent, it falls back to `block`, which is another *authored*
+value rather than a guessed block.
+
+**There is no `composite` type here, and there will not be one.** Ceiling and wall patterns are
+*sparse* — a pattern leaves cells it does not care about untouched — so layering is just listing
+them in order. That is why the floor needs a `composite` wrapper and this does not: floor generators
+fill every cell, so layering them required a separate mechanism.
+
+Put the broad fill first and the accents after. A `centre` boss listed after `coffers` replaces the
+middle rib cell; listed before, the lattice would draw straight over it.
+
+Two differences from wall patterns worth knowing:
+
+- **The ceiling covers the interior only** (1 inset from the walls), so a pattern's extent is
+  `width-2` x `depth-2`, not the room footprint. Both `coffers` and `centre` are centred on that
+  interior, so they line up with the room's axes.
+- **One bad block id drops only its own pattern**, not the whole list — unlike a wall `courses`
+  entry, which degrades entirely. A ceiling list is several independent patterns, so a typo in the
+  boss should not silently strip the coffers with it.
+
+A flush ceiling pattern needs no minimum height (it sits on one plane), but `minSize` is worth
+setting: `coffers` needs roughly a 7x7 room before the lattice reads as panels rather than as noise.
+A projecting one needs both.
+
+#### Authoring for incidence, not for weight
+
+A room rolls **one** scheme for all of its elements, so making one element common necessarily makes
+the others rarer — raising wall-trim weights until trim was common would have squeezed floor
+patterns out of the dungeon. The way out is to author *combined* schemes: `classic` ships crowned
+variants of its floor, ceiling and pots schemes (`crowned_andesite_border`, `crowned_ceiling_boss`,
+`crowned_pots`, ...) beside the plain ones, gated at `minHeight` so short rooms still get the plain
+version. That is what lets **two thirds of rooms over 5 high** carry top trim while floor patterns
+stay at ~35% and ceilings at ~18%.
+
+`SchemeIncidenceTest` measures all of this against real planner output and fails the build if trim
+stops being common; it prints the full per-scheme breakdown, so retune against its numbers rather
+than against the weights on paper. The two are very different — see the gate warning above.
+
+#### Loot pots (`pots`)
+
+Scatters `dungeonblocks` pots across the room's floor, each carrying a loot table.
+
+```json
+"pots": {
+  "minCount": 1,
+  "maxCount": 3,
+  "lootTable": "dungeons2:pots/classic",
+  "variants": [
+    { "entity": "dungeonblocks:pot", "weight": 2 },
+    { "entity": "dungeonblocks:squat_clay_pot", "weight": 2 },
+    { "entity": "dungeonblocks:thin_clay_pot", "weight": 1 }
+  ]
+}
+```
+
+`lootTable` and `variants` are **required**; `minCount`/`maxCount` default to 1 and 3. A count is
+rolled per room from that inclusive range, then that many distinct cells are drawn — a room with
+fewer eligible cells than the rolled count just gets fewer pots.
+
+**Pots are entities, not blocks**, and that has consequences worth knowing before authoring:
+
+- **`lootTable` is required for a reason.** `PotEntity` drops nothing at all when its table id is
+  null or `minecraft:empty`, and it does **not** fall back to the entity type's own table — the
+  ones `dungeonblocks` ships for its three pot types are empty stubs with no pools. A missing or
+  typo'd id is a pot that shatters into thin air with no error anywhere. The id must resolve to a
+  file this mod ships; `DatapackResourcesParseTest` fails the build if it doesn't.
+- **The table must be `"type": "minecraft:entity"`.** The drop path builds its `LootParams` with the
+  ENTITY parameter set. A chest-style (`minecraft:chest`) table will not work.
+- **Each pot gets a non-zero `LootTableSeed`**, so its contents are fixed when the dungeon generates
+  rather than rolled when a player breaks it — the same treatment vanilla gives a structure chest.
+- **A creative-mode player gets no drops.** There is an explicit early return for it. Easy to
+  mistake for broken loot when testing.
+
+Placement is not configurable and is deliberately narrow: pots go on **interior floor cells that
+touch a wall**, never on the cell immediately inside a doorway. Pots have gravity and a fall-break
+distance, so one placed over anything but solid floor falls and shatters before a player ever sees
+it; and a pot alone in the middle of an open floor reads as dropped rather than placed. Use
+`minSize` on the scheme to keep pot schemes out of rooms too cramped to hold them.
 
 ## Weathering / decoration (`worldgen/processor_list/<motif>_weathering.json`)
 

@@ -29,6 +29,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -199,6 +200,7 @@ public abstract class DungeonPiece extends StructurePiece {
         List<StructureTemplate.StructureBlockInfo> processed =
                 PieceProcessors.decorate(level, origin, box, infos, motifValue);
 
+        List<BlockPos> jointed = new ArrayList<>();
         for (StructureTemplate.StructureBlockInfo info : processed) {
             BlockPos worldPos = info.pos();
             // Vanilla StructurePiece#getWorldZ mirrors Z for NORTH orientation
@@ -209,6 +211,47 @@ public abstract class DungeonPiece extends StructurePiece {
             int localY = worldPos.getY() - pieceBox.minY();
             int localZ = pieceBox.maxZ() - worldPos.getZ();
             placeBlock(level, info.state(), localX, localY, localZ, box);
+
+            if (hasJoinShape(info.state()) && box.isInside(worldPos)) {
+                jointed.add(worldPos.immutable());
+            }
+        }
+        settleJoinShapes(level, box, jointed);
+    }
+
+    /** True for blocks whose model corners depend on their neighbours (stairs, cornices, mouldings). */
+    private static boolean hasJoinShape(BlockState state) {
+        return state.getBlock().getStateDefinition().getProperty("shape") != null;
+    }
+
+    /**
+     * Reconciles corner shapes after the whole piece is written.
+     *
+     * <h2>Why this is not computed when the block is planned</h2>
+     * <p>A stairs-like block's {@code shape} (straight / inner_* / outer_*) is not a property of the
+     * block on its own &mdash; it is a function of its neighbours, which vanilla normally derives
+     * when a player places one. Writing block states straight into the world during worldgen skips
+     * that entirely, so an authored cornice ring comes out {@code straight} at every cell and its
+     * four corners render as notches instead of mitred joins.</p>
+     *
+     * <p>{@link Block#updateFromNeighbourShapes} is vanilla's own derivation, so using it here means
+     * the corner rule is never reimplemented (and never subtly wrong) on this side &mdash; and it
+     * works for any mod block that follows the same contract, not just vanilla stairs.</p>
+     *
+     * <p>Runs as a second pass because a cell's neighbours must already exist: a mitre needs both
+     * arms of the corner placed. Positions are pre-filtered to the chunk box, so this only reads
+     * around cells this chunk owns.</p>
+     */
+    private void settleJoinShapes(WorldGenLevel level, BoundingBox box, List<BlockPos> positions) {
+        for (BlockPos pos : positions) {
+            BlockState current = level.getBlockState(pos);
+            if (!hasJoinShape(current)) {
+                continue; // the decoration pass may have weathered it into something else
+            }
+            BlockState settled = Block.updateFromNeighbourShapes(current, level, pos);
+            if (settled != current) {
+                level.setBlock(pos, settled, Block.UPDATE_CLIENTS);
+            }
         }
     }
 

@@ -233,6 +233,11 @@ class WeatheringProcessorListTest {
         expected.put("minecraft:mossy_cobblestone", 0.15);
         expected.put("minecraft:gravel", 0.15);
         expected.put("minecraft:andesite", 0.30);
+        // Added Aug 2026: chiseled_stone_bricks is the accent used by the speckle/cross/spokes
+        // floors and the ceiling boss, and this chain converts it from "never ages" to the
+        // in-family case -- it ages into a recognisable variant of itself rather than into the
+        // shared rubble palette, so the pattern's silhouette survives weathering.
+        expected.put("dungeonblocks:mossy_chiseled_stone_bricks", 0.20);
 
         Map<String, Double> actual = composedRates();
         assertEquals(expected.keySet(), actual.keySet(), "Output states changed");

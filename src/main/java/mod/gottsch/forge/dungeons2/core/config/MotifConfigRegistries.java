@@ -33,8 +33,12 @@ import net.minecraftforge.registries.DataPackRegistryEvent;
 public class MotifConfigRegistries {
 
     /**
-     * Motif config registry. Entries live at
-     * {@code data/dungeons2/dungeons2/motif_config/<motif>.json}.
+     * Motif config registry. Entries live under
+     * {@code data/dungeons2/dungeons2/motif_config/}, one per <em>file</em> &mdash; which is why the
+     * registry holds {@link MotifConfigFragment} and not {@link MotifConfig}. A motif is a folder of
+     * files ({@code motif_config/classic/base.json}, {@code .../schemes_walls.json}, ...), and
+     * {@link MotifConfigHelper} is what turns the entries whose path sits under {@code classic/}
+     * back into the one config classic renders with.
      *
      * <p>The doubled {@code dungeons2/dungeons2} is not a mistake: a datapack registry's folder is
      * {@code data/<pack namespace>/<registry key namespace>/<registry key path>/}, and both
@@ -42,11 +46,11 @@ public class MotifConfigRegistries {
      * registry under any namespace but its own, so every mod-defined datapack registry looks like
      * this. Compare {@link DungeonGenerationConfigRegistries}, which has the same shape.</p>
      */
-    public static final ResourceKey<Registry<MotifConfig>> MOTIF_CONFIG =
+    public static final ResourceKey<Registry<MotifConfigFragment>> MOTIF_CONFIG =
             ResourceKey.createRegistryKey(new ResourceLocation(Dungeons.MOD_ID, "motif_config"));
 
     @SubscribeEvent
     public static void onNewDataPackRegistry(DataPackRegistryEvent.NewRegistry event) {
-        event.dataPackRegistry(MOTIF_CONFIG, MotifConfig.CODEC, MotifConfig.CODEC);
+        event.dataPackRegistry(MOTIF_CONFIG, MotifConfigFragment.CODEC, MotifConfigFragment.CODEC);
     }
 }

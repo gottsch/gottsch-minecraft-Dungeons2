@@ -461,6 +461,22 @@
             { "block": "minecraft:dirt", "probability": 0.3 },
             { "block": "minecraft:gravel", "probability": 0.25 }
           ]
+        },
+        {
+          "block": "dungeonblocks:polished_andesite_crown_molding_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:polished_andesite_crown_molding_block", "probability": 0.2 },
+            { "block": "dungeonblocks:mossy_cobblestone_crown_molding_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:polished_andesite_facade_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:polished_andesite_facade_block", "probability": 0.2 },
+            { "block": "dungeonblocks:mossy_cobblestone_facade_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
         }
       ]
     },
@@ -523,6 +539,15 @@
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:andesite" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:chiseled_stone_bricks",
+            "probability": 0.2
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "dungeonblocks:mossy_chiseled_stone_bricks" }
         }
       ]
     },

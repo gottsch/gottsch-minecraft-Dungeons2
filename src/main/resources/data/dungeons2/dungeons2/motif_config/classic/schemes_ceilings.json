@@ -1,0 +1,121 @@
+{
+  "schemes": [
+    {
+      "name": "coffered_ceiling",
+      "weight": 9,
+      "minSize": 7,
+      "minHeight": 7,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "coffers",
+            "block": "minecraft:polished_andesite",
+            "spacing": 3,
+            "projection": 1
+          }
+        ]
+      },
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
+      }
+    },
+    {
+      "name": "coffered_ceiling_flat",
+      "weight": 4,
+      "minSize": 7,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "coffers",
+            "block": "minecraft:polished_andesite",
+            "spacing": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "coffered_hall_ceiling",
+      "weight": 5,
+      "minSize": 9,
+      "minHeight": 7,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "border",
+            "block": "minecraft:andesite",
+            "cornerBlock": "minecraft:chiseled_stone_bricks",
+            "inset": 0
+          },
+          {
+            "type": "coffers",
+            "block": "minecraft:polished_andesite",
+            "spacing": 3,
+            "projection": 1
+          },
+          {
+            "type": "centre",
+            "block": "minecraft:chiseled_stone_bricks",
+            "size": 1,
+            "projection": 1
+          }
+        ]
+      },
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ceiling_boss",
+      "weight": 4,
+      "minSize": 5,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "centre",
+            "block": "minecraft:chiseled_stone_bricks",
+            "size": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "crowned_ceiling_boss",
+      "weight": 9,
+      "minSize": 5,
+      "minHeight": 6,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "centre",
+            "block": "minecraft:chiseled_stone_bricks",
+            "size": 1
+          }
+        ]
+      },
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
+      }
+    }
+  ]
+}

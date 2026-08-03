@@ -1,0 +1,94 @@
+{
+  "schemes": [
+    {
+      "name": "crowned_pots",
+      "weight": 6,
+      "minSize": 5,
+      "minHeight": 6,
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
+      },
+      "pots": {
+        "minCount": 1,
+        "maxCount": 3,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:thin_clay_pot",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "plain_pots",
+      "weight": 4,
+      "minSize": 5,
+      "pots": {
+        "minCount": 1,
+        "maxCount": 3,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:thin_clay_pot",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "andesite_border_pots",
+      "weight": 2,
+      "minSize": 7,
+      "floor": {
+        "type": "border",
+        "inset": 2,
+        "cornerBlock": "minecraft:andesite",
+        "edgeLeftBlock": "minecraft:polished_andesite",
+        "edgeRightBlock": "minecraft:polished_andesite"
+      },
+      "pots": {
+        "minCount": 1,
+        "maxCount": 3,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:thin_clay_pot",
+            "weight": 1
+          }
+        ]
+      }
+    }
+  ]
+}

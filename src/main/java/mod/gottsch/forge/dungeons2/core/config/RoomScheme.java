@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.Optional;
@@ -55,10 +56,14 @@ import java.util.Optional;
  * rail, crown molding). Unlike the floor slot it is drawn in the wall's own {@code (u, v)} space and
  * applied to all four runs, so one authored pattern comes out correctly oriented on each.</p>
  *
- * <p>Slots for {@code ceiling} and {@code pillars} are deliberately <em>not</em> declared yet: they
- * are additive optional codec fields, and there are no providers behind them to give them meaning.
- * The load-bearing decision is that this container exists and owns the roll, not that it is
- * populated up front.</p>
+ * <p>{@code ceiling} holds a {@link CeilingPatternEntry} &mdash; an ordered list of flat treatments
+ * (coffers, a soffit ring, a centre boss) layered over the plain ceiling. It is a list where the
+ * floor and wall slots are single entries because surface patterns are sparse and therefore compose
+ * for free; see that record for why no {@code "composite"} type is needed.</p>
+ *
+ * <p>A {@code pillars} slot is deliberately <em>not</em> declared yet: it is an additive optional
+ * codec field, and there is no provider behind it to give it meaning. The load-bearing decision is
+ * that this container exists and owns the roll, not that it is populated up front.</p>
  *
  * <h2>Eligibility</h2>
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
@@ -79,31 +84,174 @@ import java.util.Optional;
  * the list; if a room matches none, {@code RoomSchemeSelector} degrades to the undecorated room
  * rather than forcing an ineligible one.</p>
  *
+ * <h3>Upper bounds</h3>
+ * <p>{@link #maxHeight} and {@link #maxSize} are the mirror image, and they exist because minimums
+ * alone can only push a scheme <em>up</em> the size range, never confine it to the bottom. Without
+ * them every modest scheme stays eligible in the largest rooms, so the grand schemes are always a
+ * minority of the eligible weight there &mdash; and no amount of raising a grand scheme's weight
+ * fixes that, because weight cannot remove a competitor. Capping the modest ones is the only lever
+ * that makes a big room reliably feel big. The aesthetic case runs the same way: a
+ * {@code centre} boss of size 1 is a lonely dot in a 15-wide ceiling, and a one-block
+ * {@code cross} is a thread.</p>
+ *
+ * <p>Absent means unbounded, which is why they are {@link Optional} rather than an {@code int} with
+ * a sentinel: {@code maxHeight: 0} would otherwise read as a legitimate bound and silently disable
+ * the scheme everywhere. A bound below its matching minimum is rejected at load &mdash; it makes a
+ * scheme eligible nowhere, which is indistinguishable at generation time from a scheme that is
+ * merely unlucky.</p>
+ *
+ * <p><strong>Maxima make it possible to leave a gap.</strong> With minimums only, one unconstrained
+ * scheme guarantees every room matches something; with bounds, a whole band of room sizes can fall
+ * through to the undecorated fallback silently. {@code DatapackResourcesParseTest} sweeps the room
+ * dimensions the planner can actually produce and fails if any of them matches nothing.</p>
+ *
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record RoomScheme(String name, int weight, int minHeight, int minSize,
+                         Optional<Integer> maxHeight, Optional<Integer> maxSize,
                          Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
-                         Optional<PotConfig> pots) {
+                         Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
+
+    /**
+     * A scheme with no element slots filled &mdash; an undecorated room of the given weight and
+     * eligibility. Exists so that adding the next element slot does not churn every caller that
+     * only cares about the roll; the canonical constructor has already widened five times.
+     */
+    public RoomScheme(String name, int weight, int minHeight, int minSize) {
+        this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+    }
+
+    /** Element slots with lower bounds only &mdash; the shape before {@code max*} was added. */
+    public RoomScheme(String name, int weight, int minHeight, int minSize,
+                      Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                      Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
+        this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
+                floor, wall, ceiling, pots);
+    }
 
     /** The undecorated room: plain floor, plain walls, plain ceiling, no props, eligible everywhere. */
-    public static final RoomScheme PLAIN =
-            new RoomScheme("plain", 1, 0, 0, Optional.empty(), Optional.empty(), Optional.empty());
+    public static final RoomScheme PLAIN = new RoomScheme("plain", 1, 0, 0);
 
-    public static final Codec<RoomScheme> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    public static final Codec<RoomScheme> CODEC = RecordCodecBuilder.<RoomScheme>create(instance -> instance.group(
             Codec.STRING.fieldOf("name").forGetter(RoomScheme::name),
             Codec.intRange(1, Integer.MAX_VALUE).optionalFieldOf("weight", 1).forGetter(RoomScheme::weight),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minHeight", 0).forGetter(RoomScheme::minHeight),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minSize", 0).forGetter(RoomScheme::minSize),
+            // intRange(1, ..) not (0, ..): a bound of 0 fits no room the planner builds, so it can
+            // only ever be a mistake, and a range codec turns it into a load error for free.
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxHeight")
+                    .forGetter(RoomScheme::maxHeight),
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxSize")
+                    .forGetter(RoomScheme::maxSize),
             Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "floor").forGetter(RoomScheme::floor),
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "wall").forGetter(RoomScheme::wall),
+            Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "ceiling").forGetter(RoomScheme::ceiling),
             Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots)
-    ).apply(instance, RoomScheme::new));
+    ).apply(instance, RoomScheme::new)).flatXmap(RoomScheme::validate, RoomScheme::validate);
+
+    /**
+     * Rejects an inverted range. A codec cannot express "at least the value of that other field",
+     * so this is the one cross-field check that has to live outside the record's own field codecs.
+     *
+     * <p>Worth failing rather than clamping (which is what {@code PotConfig} does to its count
+     * range): a scheme with {@code minHeight} 7 and {@code maxHeight} 5 is eligible for nothing, and
+     * at generation time that is indistinguishable from a scheme that simply never won its roll --
+     * exactly the silent-nothing class of failure the strict codecs here exist to prevent. Clamping
+     * would instead invent a range the author never asked for.</p>
+     */
+    private static DataResult<RoomScheme> validate(RoomScheme scheme) {
+        if (scheme.maxHeight.isPresent() && scheme.maxHeight.get() < scheme.minHeight) {
+            return DataResult.error(() -> "scheme '" + scheme.name + "': maxHeight "
+                    + scheme.maxHeight.get() + " is below minHeight " + scheme.minHeight
+                    + ", so it fits no room at all");
+        }
+        if (scheme.maxSize.isPresent() && scheme.maxSize.get() < scheme.minSize) {
+            return DataResult.error(() -> "scheme '" + scheme.name + "': maxSize "
+                    + scheme.maxSize.get() + " is below minSize " + scheme.minSize
+                    + ", so it fits no room at all");
+        }
+        // The element gates are validated from here rather than from inside SizeGate's own map
+        // codec, because this is the level that knows the scheme's name and which slot it was --
+        // "maxHeight 5 is below minHeight 7" is not an actionable error message on its own.
+        DataResult<SizeGate> slots = DataResult.success(SizeGate.UNBOUNDED);
+        slots = chain(slots, scheme.floor.map(FloorPatternEntry::gate), scheme.name, "floor");
+        slots = chain(slots, scheme.wall.map(WallPatternEntry::gate), scheme.name, "wall");
+        slots = chain(slots, scheme.ceiling.map(CeilingPatternEntry::gate), scheme.name, "ceiling");
+        slots = chain(slots, scheme.pots.map(PotConfig::gate), scheme.name, "pots");
+        return slots.map(ignored -> scheme);
+    }
+
+    private static DataResult<SizeGate> chain(DataResult<SizeGate> soFar, Optional<SizeGate> gate,
+                                              String scheme, String slot) {
+        return soFar.flatMap(ignored -> gate
+                .map(g -> g.validate("scheme '" + scheme + "', " + slot + " slot"))
+                .orElseGet(() -> DataResult.success(SizeGate.UNBOUNDED)));
+    }
+
+    /**
+     * The element slots that a room of these dimensions actually renders.
+     *
+     * <p>A slot whose own {@link SizeGate} the room fails is dropped, while the rest of the scheme
+     * still applies &mdash; so one scheme can carry a crown moulding that simply is not there in a
+     * room too short for it, instead of needing a second scheme that is identical but for the wall.
+     * <strong>This does not change any probability</strong>: the scheme was already chosen, and it
+     * still fires at its full weight.</p>
+     *
+     * <p>These live here, next to the data, rather than being applied by {@code BasicRoomGenerator}
+     * at each call site. A gate that a caller can forget to check is a gate that will eventually be
+     * forgotten &mdash; and the failure would be silent, since a slot drawn where it does not fit
+     * looks like an authoring mistake rather than a missing check.</p>
+     */
+    public Optional<FloorPatternEntry> floorFor(int width, int depth, int height) {
+        return floor.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /** See {@link #floorFor}. */
+    public Optional<WallPatternEntry> wallFor(int width, int depth, int height) {
+        return wall.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /** See {@link #floorFor}. */
+    public Optional<CeilingPatternEntry> ceilingFor(int width, int depth, int height) {
+        return ceiling.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /** See {@link #floorFor}. */
+    public Optional<PotConfig> potsFor(int width, int depth, int height) {
+        return pots.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /**
+     * Whether this scheme fills any element slot at all. False for the deliberately undecorated
+     * room, which is a legitimate authored outcome rather than a mistake &mdash; the distinction
+     * that matters is between a scheme that <em>meant</em> to draw nothing and one whose slots all
+     * gated out, and only the second is a fault.
+     */
+    public boolean declaresAnySlot() {
+        return floor.isPresent() || wall.isPresent() || ceiling.isPresent() || pots.isPresent();
+    }
+
+    /** Whether this scheme draws anything at all in a room of these dimensions. */
+    public boolean drawsAnything(int width, int depth, int height) {
+        return floorFor(width, depth, height).isPresent()
+                || wallFor(width, depth, height).isPresent()
+                || ceilingFor(width, depth, height).isPresent()
+                || potsFor(width, depth, height).isPresent();
+    }
 
     /**
      * Whether this scheme may be rolled for a room of these dimensions. {@code height} is the full
      * room height; {@code width}/{@code depth} the full footprint, walls included.
+     *
+     * <p>Both bounds are <strong>inclusive</strong>, and both are measured against the same numbers
+     * their minimums are: full height, and the <em>smaller</em> of width and depth.</p>
      */
     public boolean fits(int width, int depth, int height) {
-        return height >= minHeight && Math.min(width, depth) >= minSize;
+        int size = Math.min(width, depth);
+        return height >= minHeight
+                && size >= minSize
+                && maxHeight.map(max -> height <= max).orElse(true)
+                && maxSize.map(max -> size <= max).orElse(true);
     }
 }

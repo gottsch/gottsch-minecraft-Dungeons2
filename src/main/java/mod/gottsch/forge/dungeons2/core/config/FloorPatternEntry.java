@@ -98,7 +98,8 @@ public record FloorPatternEntry(String type, int weight, int inset,
                                  double probability,
                                  int thickness,
                                  int spokes,
-                                 List<FloorPatternEntry> generators) {
+                                 List<FloorPatternEntry> generators,
+                                 SizeGate gate) {
 
     /** Convenience for entries that don't need block substitution (e.g. {@code "empty"}). */
     public FloorPatternEntry(String type, int weight, int inset) {
@@ -106,6 +107,16 @@ public record FloorPatternEntry(String type, int weight, int inset,
                 Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
                 CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
                 List.of());
+    }
+
+    /** An ungated treatment -- drawn whenever its scheme is rolled. */
+    public FloorPatternEntry(String type, int weight, int inset,
+                             Optional<String> cornerBlock, Optional<String> edgeLeftBlock,
+                             Optional<String> edgeRightBlock, Optional<String> primaryBlock,
+                             Optional<String> secondaryBlock, double probability, int thickness,
+                             int spokes, List<FloorPatternEntry> generators) {
+        this(type, weight, inset, cornerBlock, edgeLeftBlock, edgeRightBlock, primaryBlock,
+                secondaryBlock, probability, thickness, spokes, generators, SizeGate.UNBOUNDED);
     }
 
     /**
@@ -139,7 +150,11 @@ public record FloorPatternEntry(String type, int weight, int inset,
                     .optionalFieldOf("spokes", RadialSpokesFloorPatternProvider.DEFAULT_SPOKES)
                     .forGetter(FloorPatternEntry::spokes),
             lazyInitialized(() -> codecHolder).listOf().optionalFieldOf("generators", List.of())
-                    .forGetter(FloorPatternEntry::generators)
+                    .forGetter(FloorPatternEntry::generators),
+            // Meaningless on a nested `generators` entry -- only the outermost entry is a scheme
+            // slot, and only a scheme slot is gated. Harmless there, and factoring the field out of
+            // the shared record for that one case would cost more than it saves.
+            SizeGate.MAP_CODEC.forGetter(FloorPatternEntry::gate)
     ).apply(instance, FloorPatternEntry::new));
 
     static {

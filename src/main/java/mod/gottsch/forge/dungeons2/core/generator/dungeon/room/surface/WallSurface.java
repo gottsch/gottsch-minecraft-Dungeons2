@@ -106,6 +106,74 @@ public record WallSurface(int startX, int startZ, int stepX, int stepZ, int leng
     }
 
     /**
+     * Whether this run includes the room's corner columns &mdash; true for the Z-edge runs, which
+     * span the full width. Derived rather than stored: only those runs step in X.
+     */
+    public boolean spansCorners() {
+        return stepX != 0;
+    }
+
+    /**
+     * First {@code u} whose projection at {@code depth} lands on a cell this run should own.
+     *
+     * <h2>Why a projection cannot simply cover the whole run</h2>
+     * <p>Projecting moves a cell perpendicular to its own wall, which leaves the corner columns in
+     * the wrong place. A Z-edge run's cell at {@code u = 0} sits in the <em>X-edge wall's</em>
+     * column; pushing it into the room moves it along Z only, so it lands inside that wall rather
+     * than in the room. Emitting it would put a stair block in the middle of a wall.</p>
+     *
+     * <p>One step further in, at {@code u = depth}, the cell lands exactly where the X-edge run's
+     * own projection goes &mdash; correct, but owned by two runs with different facings, so the
+     * corner's orientation would be decided by whichever ran last. Ceding those columns to the
+     * X-edge runs gives every cell of the projected ring exactly one owner and one facing.</p>
+     *
+     * <p>The result is a complete ring: the X-edge runs supply the two side columns and the four
+     * corners, the Z-edge runs everything between. This is the corner-ownership rule of
+     * {@link #forRoom} applied one layer in &mdash; and it is why a flat course needs no such rule
+     * (it never leaves its own wall) while a projecting one does.</p>
+     */
+    private int projectableFrom(int depth) {
+        return spansCorners() ? depth + 1 : 0;
+    }
+
+    /** Last {@code u} whose projection at {@code depth} belongs to this run. See {@link #projectableFrom}. */
+    private int projectableTo(int depth) {
+        return spansCorners() ? length - 2 - depth : length - 1;
+    }
+
+    /**
+     * Writes a layer standing {@code depth} cells out from this wall into the room &mdash; a
+     * cornice, a moulding, a ledge.
+     *
+     * <p>Two rules, both of which a pattern authored in {@code (u, v)} cannot apply for itself:</p>
+     * <ul>
+     *   <li><strong>Only marked cells are written.</strong> Unlike {@link #emit}, a null cell here
+     *       is not "use the base block" &mdash; this layer is the room's open air, and filling it
+     *       would wall the room in.</li>
+     *   <li><strong>Nothing is placed in front of a doorway at door height.</strong> A block there
+     *       stands in the opening a player walks through. The wall plane can afford to merely leave
+     *       the door cell as air; a projecting course has to be skipped outright.</li>
+     * </ul>
+     */
+    public void emitProjected(SurfacePlan plan, int depth, int floorY, Set<Coords2D> doorways,
+                              List<BlockPlacement> out) {
+        for (int u = projectableFrom(depth); u <= projectableTo(depth); u++) {
+            int x = xAt(u) + facing.getStepX() * depth;
+            int z = zAt(u) + facing.getStepZ() * depth;
+            boolean doorway = doorways.contains(new Coords2D(xAt(u), zAt(u)));
+            for (int v = 0; v < plan.vSize(); v++) {
+                if (doorway && (v == DOOR_HALF_LOW_V || v == DOOR_HALF_HIGH_V)) {
+                    continue;
+                }
+                BlockState planned = plan.get(u, v);
+                if (planned != null) {
+                    out.add(BlockStateCodec.placement(x, floorY + 1 + v, z, planned));
+                }
+            }
+        }
+    }
+
+    /**
      * Writes this run out: {@code plan}'s non-null cells, the {@code base} block everywhere else,
      * and <strong>air at the two door-half rows of any doorway cell</strong>.
      *

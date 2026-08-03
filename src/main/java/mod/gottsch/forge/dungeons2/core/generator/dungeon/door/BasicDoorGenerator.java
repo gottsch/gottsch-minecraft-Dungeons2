@@ -49,6 +49,11 @@ import java.util.List;
  * halves. Doors with {@link Direction2D#NONE} facing emit air halves instead
  * of doors &mdash; the column is still walkable but has no actual door.</p>
  *
+ * <p>{@code DoorConfig#probability} produces the <em>same</em> outcome deliberately: an opening
+ * that loses its roll is exactly the doorless-but-framed column that a NONE facing already
+ * produced, so there is one code path for "no door here" rather than two. The sill and lintel are
+ * emitted before the roll, because they frame the opening whether or not anything hangs in it.</p>
+ *
  * @author Mark Gottschling on Dev 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicDoorGenerator implements IDoorGenerator {
@@ -71,10 +76,15 @@ public class BasicDoorGenerator implements IDoorGenerator {
         out.add(BlockStateCodec.placement(x, floorY, z, motifConfig.door().floorState()));
         out.add(BlockStateCodec.placement(x, floorY + 3, z, motifConfig.door().lintelState()));
 
-        // Door halves.
+        // Door halves. The roll happens even when it cannot change the outcome (probability 1.0, or
+        // no facing) so that the random advances identically either way -- this generator is called
+        // per door from a per-door seed, so it costs nothing, and it keeps a config change from
+        // silently reshuffling anything downstream that shares the sequence.
+        boolean hung = random.nextDouble() < motifConfig.door().probability();
+
         Direction direction = toMcDirection(door.getFacing());
         BlockState doorBase = motifConfig.door().doorState();
-        if (direction != null) {
+        if (direction != null && hung) {
             BlockState lower = doorBase.setValue(DoorBlock.FACING, direction)
                     .setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
             BlockState upper = doorBase.setValue(DoorBlock.FACING, direction)
@@ -82,7 +92,8 @@ public class BasicDoorGenerator implements IDoorGenerator {
             out.add(BlockStateCodec.placement(x, floorY + 1, z, lower));
             out.add(BlockStateCodec.placement(x, floorY + 2, z, upper));
         } else {
-            // No valid facing: emit air halves so the doorway is at least walkable.
+            // No valid facing, or this opening simply has no door: emit air halves so the doorway
+            // is at least walkable.
             BlockState airState = Blocks.AIR.defaultBlockState();
             out.add(BlockStateCodec.placement(x, floorY + 1, z, airState));
             out.add(BlockStateCodec.placement(x, floorY + 2, z, airState));

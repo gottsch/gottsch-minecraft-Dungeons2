@@ -49,7 +49,13 @@ import java.util.List;
  *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVariant> variants) {
+public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVariant> variants,
+                        SizeGate gate) {
+
+    /** Ungated props -- placed whenever the scheme is rolled. */
+    public PotConfig(int minCount, int maxCount, String lootTable, List<PotVariant> variants) {
+        this(minCount, maxCount, lootTable, variants, SizeGate.UNBOUNDED);
+    }
 
     /**
      * One weighted pot entity type. A separate record rather than a bare id list so a motif can say
@@ -66,7 +72,8 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minCount", 1).forGetter(PotConfig::minCount),
             Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("maxCount", 3).forGetter(PotConfig::maxCount),
             Codec.STRING.fieldOf("lootTable").forGetter(PotConfig::lootTable),
-            PotVariant.CODEC.listOf().fieldOf("variants").forGetter(PotConfig::variants)
+            PotVariant.CODEC.listOf().fieldOf("variants").forGetter(PotConfig::variants),
+            SizeGate.MAP_CODEC.forGetter(PotConfig::gate)
     ).apply(instance, PotConfig::new));
 
     /**
