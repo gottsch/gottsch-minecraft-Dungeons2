@@ -119,6 +119,50 @@ test {
     }
 }
 
+// Diagnostic: sweeps the minimum gap between rooms and reports what each setting costs
+// (rooms per floor, plan failures) and buys (corridor width, rooms not sharing a wall).
+// Planning only -- no rendering -- so it runs hundreds of dungeons per setting.
+//
+//   ./gradlew spacingSweep
+//   ./gradlew spacingSweep -Pseeds=200 -Psize=LARGE -Pgaps=0,2,4
+tasks.register('spacingSweep', JavaExec) {
+    group = 'diagnostic'
+    description = 'Measures the room-spacing / corridor-width trade-off across many seeds.'
+    dependsOn 'testClasses'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'mod.gottsch.forge.dungeons2.diagnostic.SpacingSweep'
+    // The planner logs a WARN per rejected room; at hundreds of dungeons that buries the report.
+    systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'error'
+    ['seeds', 'size', 'gaps', 'corridorWidth'].each { k ->
+        if (project.hasProperty(k)) {
+            args "--$k=${project.property(k)}"
+        }
+    }
+}
+
+// Diagnostic: plans a dungeon headlessly and writes a standalone interactive 2D floor-plan
+// viewer (one HTML file, no server, no game). Runs on the test runtime classpath because that
+// is where Minecraft and the diagnostic sources both live.
+//
+//   ./gradlew floorplan
+//   ./gradlew floorplan -Pseed=12345 -Psize=MEDIUM -Pfloors=2 -Popen=true
+//
+// See FloorPlanTool for the full option list.
+tasks.register('floorplan', JavaExec) {
+    group = 'diagnostic'
+    description = 'Writes an interactive 2D dungeon floor-plan viewer to build/floorplan/.'
+    dependsOn 'testClasses'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'mod.gottsch.forge.dungeons2.diagnostic.FloorPlanTool'
+    systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'error'
+    ['seed', 'size', 'motif', 'floors', 'corridorWidth', 'minRoomGap', 'x', 'z', 'surfaceY',
+     'order', 'out', 'open', 'describe'].each { k ->
+        if (project.hasProperty(k)) {
+            args "--$k=${project.property(k)}"
+        }
+    }
+}
+
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 // When "copyIdeResources" is enabled, this will also run before the game launches in IDE environments.

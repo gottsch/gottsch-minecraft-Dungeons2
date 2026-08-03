@@ -116,6 +116,7 @@ public class DungeonStackPlanner {
      * classic 1-wide, still available via withCorridorWidth(1).
      */
     private int corridorCells = 3;
+    private int minRoomGap = 0;
 
     // -------- Phase 4b: assembled-entrance overrides (all-or-nothing) --------
     // When set (see withAssembledEntrance), floor 0 is driven by the jigsaw-
@@ -182,6 +183,21 @@ public class DungeonStackPlanner {
      */
     public DungeonStackPlanner withCorridorWidth(int cells) {
         this.corridorCells = Math.max(1, cells);
+        return this;
+    }
+
+    /**
+     * Minimum clear cells required between rooms. {@code 0} (the default) is the historical
+     * behaviour, where rooms may overlap by one cell and share that column as a wall.
+     *
+     * <p>This is the only lever that lets a dilated corridor reach full width <em>between</em> two
+     * rooms: the maze runs on a 2-cell lattice, so room boxes always sit an even distance apart and
+     * the free cells between them are {@code gap - 1}. A 3-wide corridor therefore needs a gap of 4.
+     * It is not free -- space per room grows roughly with the square of the gap. See
+     * {@code SpacingSweep} in the test sources for the measured cost.</p>
+     */
+    public DungeonStackPlanner withMinRoomGap(int cells) {
+        this.minRoomGap = Math.max(0, cells);
         return this;
     }
 
@@ -821,6 +837,7 @@ public class DungeonStackPlanner {
                         $.endRoom = endRef;
                         $.suppliedRooms = suppliedTemplateRooms;
                     })
+                    .with($ -> $.minRoomGap = minRoomGap)
                     .corridorWidth(corridorCells)
                     .seed(mixSeed(seed, floorIndex))
                     .build();

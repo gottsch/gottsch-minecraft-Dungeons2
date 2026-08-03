@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dungeons2 — floor plan</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1c1f26;
+    --panel2: #23272f;
+    --line: #333844;
+    --fg: #dfe3ea;
+    --dim: #8d95a5;
+    --accent: #6fb3ff;
+    --warn: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column;
+    background: var(--bg); color: var(--fg);
+    font: 13px/1.45 Verdana, Arial, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  header h1 { margin: 0; font-size: 14px; letter-spacing: .04em; }
+  header .meta { color: var(--dim); font-size: 12px; }
+  header .meta b { color: var(--fg); font-weight: normal; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #side {
+    width: 310px; flex: none; overflow-y: auto;
+    background: var(--panel); border-right: 1px solid var(--line); padding: 12px;
+  }
+  #stage { flex: 1; position: relative; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  section { margin-bottom: 18px; }
+  section > h2 {
+    margin: 0 0 8px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--dim); font-weight: normal;
+  }
+  .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .row label { flex: 1; cursor: pointer; }
+  button, select {
+    background: var(--panel2); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 4px; padding: 4px 8px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--accent); }
+  button.on { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .seg { display: flex; gap: 4px; }
+  .seg button { flex: 1; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .kv { display: flex; justify-content: space-between; gap: 8px; color: var(--dim); font-size: 12px; }
+  .kv b { color: var(--fg); font-weight: normal; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li.item {
+    display: flex; align-items: center; gap: 7px; padding: 3px 4px;
+    border-radius: 3px; cursor: pointer; font-size: 12px;
+  }
+  li.item:hover { background: var(--panel2); }
+  li.item.sel { background: var(--panel2); outline: 1px solid var(--accent); }
+  .sw { width: 11px; height: 11px; flex: none; border-radius: 2px; border: 1px solid #0006; }
+  .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .num { color: var(--dim); font-size: 11px; font-family: Consolas, monospace; }
+  #tip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: #0d0f13ee; border: 1px solid var(--line); border-radius: 4px;
+    padding: 7px 9px; font-size: 12px; max-width: 320px;
+    font-family: Consolas, monospace; white-space: pre-line;
+  }
+  #tip .hl { color: var(--accent); }
+  #tip .bad { color: var(--warn); }
+  #legendList { max-height: 260px; overflow-y: auto; }
+  #roomList { max-height: 300px; overflow-y: auto; }
+  #detail { font-size: 12px; color: var(--dim); }
+  #detail table { width: 100%; border-collapse: collapse; font-family: Consolas, monospace; }
+  #detail td { padding: 1px 0; }
+  #detail td:last-child { text-align: right; color: var(--fg); }
+  .hint { color: var(--dim); font-size: 11px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>DUNGEONS2 FLOOR PLAN</h1>
+  <div class="meta">seed <b id="mSeed"></b> · <b id="mSize"></b> · motif <b id="mMotif"></b>
+    · anchor <b id="mAnchor"></b></div>
+  <div class="meta">floor <select id="floorSel"></select> <span id="mFloorY"></span></div>
+  <div class="meta" id="mCounts"></div>
+</header>
+<main>
+  <div id="side">
+    <section>
+      <h2>Colour by</h2>
+      <div class="seg">
+        <button data-mode="block" class="on">Block</button>
+        <button data-mode="owner">Owner</button>
+        <button data-mode="grid">Maze</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Level</h2>
+      <input type="range" id="ySlider" min="0" max="0" step="1">
+      <div class="kv"><span id="yLabel"></span><span id="yRole"></span></div>
+      <div class="seg" style="margin-top:6px">
+        <button id="yFloor">Floor</button>
+        <button id="yWall">Wall row</button>
+        <button id="yCeil">Ceiling</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Overlays</h2>
+      <div class="row"><input type="checkbox" id="oRooms" checked><label for="oRooms">Room outlines</label></div>
+      <div class="row"><input type="checkbox" id="oIds" checked><label for="oIds">Room labels</label></div>
+      <div class="row"><input type="checkbox" id="oDoors" checked><label for="oDoors">Doors</label></div>
+      <div class="row"><input type="checkbox" id="oShared"><label for="oShared">Contested cells</label></div>
+      <div class="row"><input type="checkbox" id="oEnt" checked><label for="oEnt">Entities (pots)</label></div>
+      <div class="row"><input type="checkbox" id="oGridLines"><label for="oGridLines">Cell grid</label></div>
+    </section>
+
+    <section>
+      <h2>Blocks on this level</h2>
+      <ul id="legendList"></ul>
+    </section>
+
+    <section>
+      <h2>Rooms</h2>
+      <ul id="roomList"></ul>
+    </section>
+
+    <section id="detailWrap" style="display:none">
+      <h2>Selected room</h2>
+      <div id="detail"></div>
+    </section>
+
+    <section>
+      <h2>Controls</h2>
+      <div class="hint">Wheel — zoom · drag — pan · double-click — fit<br>
+        Click a block in the legend to isolate it. Click a room to inspect its walls.</div>
+    </section>
+  </div>
+
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="tip"></div>
+  </div>
+</main>
+
+<script>
+const D = "__FLOORPLAN_DATA__";
+
+/* ---------- colours ---------------------------------------------------- */
+
+// Hand-picked for the blocks that carry the shipped motifs; everything else gets a
+// stable hashed hue so a new block never renders as "same grey as the wall".
+const BLOCK_COLOURS = {
+  'minecraft:air': null,
+  'minecraft:cave_air': null,
+  'minecraft:stone_bricks': '#8c8c8c',
+  'minecraft:cracked_stone_bricks': '#7a7873',
+  'minecraft:mossy_stone_bricks': '#6f7d68',
+  'minecraft:chiseled_stone_bricks': '#9a9a95',
+  'minecraft:stone_brick_stairs': '#a0a0a0',
+  'minecraft:stone_brick_slab': '#a8a8a8',
+  'minecraft:stone_brick_wall': '#909090',
+  'minecraft:cobblestone': '#6e6e6e',
+  'minecraft:mossy_cobblestone': '#5f6f56',
+  'minecraft:gravel': '#7d7773',
+  'minecraft:dirt': '#7b5a3f',
+  'minecraft:andesite': '#a4a4a2',
+  'minecraft:polished_andesite': '#c2c2bf',
+  'minecraft:stone': '#9d9d9d',
+  'minecraft:smooth_stone': '#b4b4b4',
+  'minecraft:deepslate': '#4b4b52',
+  'minecraft:polished_deepslate': '#57575e',
+  'minecraft:deepslate_bricks': '#4e4e57',
+  'minecraft:cobbled_deepslate': '#4a4a51',
+  'minecraft:oak_door': '#b08b4a',
+  'minecraft:iron_bars': '#c8ccd4',
+  'minecraft:torch': '#ffcf5c',
+  'minecraft:wall_torch': '#ffcf5c',
+  'minecraft:lantern': '#ffd97a',
+  'minecraft:water': '#3a6fd8',
+  'minecraft:lava': '#e07b2a',
+  'minecraft:glow_lichen': '#7fae6a',
+  'minecraft:vine': '#4f7a3a',
+  'minecraft:spawner': '#2b4a52',
+  'minecraft:chest': '#a06f2e'
+};
+
+function hashHue(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 360);
+}
+const colourCache = {};
+function blockColour(i) {
+  if (i in colourCache) return colourCache[i];
+  const id = D.palette[i];
+  let c;
+  if (id in BLOCK_COLOURS) c = BLOCK_COLOURS[id];
+  else c = 'hsl(' + hashHue(id) + ' 45% 55%)';
+  return colourCache[i] = c;
+}
+function ownerColour(o) {
+  const owner = F().owners[o];
+  if (!owner) return '#666';
+  if (owner.kind === 'corridor') return 'hsl(' + (30 + (owner.id * 37) % 40) + ' 30% 42%)';
+  if (owner.kind === 'door') return '#d8b34a';
+  return 'hsl(' + hashHue('r' + owner.id) + ' 55% 52%)';
+}
+const GRID_COLOURS = ['#1b1d22', '#4a4f5c', '#3c5a6e', '#c8a33e', '#3b4a3b', '#2f4356'];
+const GRID_NAMES = ['rock', 'wall', 'connector', 'door', 'corridor', 'room'];
+
+/* ---------- state ------------------------------------------------------ */
+
+const S = {
+  floor: 0, y: 0, mode: 'block',
+  isolate: -1, selRoom: -1,
+  scale: 6, ox: 0, oy: 0,
+  needsFit: true
+};
+const F = () => D.floors[S.floor];
+const layerAt = y => F().layers.find(l => l.y === y);
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const tip = document.getElementById('tip');
+
+/* ---------- per-layer index ------------------------------------------- */
+
+// Cells arrive as one flat [x, z, block, owner, writes] run per layer. The viewer needs
+// point lookup (hover, and the per-room wall audit), so each layer gets a sparse map from
+// packed XZ to its offset in that run -- built once, on first use.
+function layerIndex(layer) {
+  if (layer._idx) return layer._idx;
+  const m = new Map();
+  for (let i = 0; i < layer.d.length; i += 5) m.set(layer.d[i] * 100003 + layer.d[i + 1], i);
+  layer._idx = m;
+  return m;
+}
+function cellAt(layer, x, z) {
+  const i = layerIndex(layer).get(x * 100003 + z);
+  return i === undefined ? null : { block: layer.d[i + 2], owner: layer.d[i + 3], writes: layer.d[i + 4] };
+}
+function contestedAt(layer, x, z) {
+  if (!layer._con) {
+    layer._con = new Map();
+    for (const c of layer.contested) layer._con.set(c.x * 100003 + c.z, c.w);
+  }
+  return layer._con.get(x * 100003 + z) || null;
+}
+
+/* ---------- bounds / view --------------------------------------------- */
+
+function bounds() {
+  const f = F();
+  let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;
+  const grow = (x, z) => { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; };
+  if (f.grid) { grow(0, 0); grow(f.grid.w - 1, f.grid.h - 1); }
+  for (const r of f.rooms) { grow(r.x - 1, r.z - 1); grow(r.x + r.w, r.z + r.d); }
+  for (const l of f.layers) for (let i = 0; i < l.d.length; i += 5) grow(l.d[i], l.d[i + 1]);
+  if (x0 > x1) { x0 = z0 = 0; x1 = z1 = 10; }
+  return { x0, z0, x1, z1, w: x1 - x0 + 1, h: z1 - z0 + 1 };
+}
+
+function fit() {
+  const b = bounds();
+  const pad = 24;
+  S.scale = Math.max(1, Math.min((cv.width - pad * 2) / b.w, (cv.height - pad * 2) / b.h));
+  S.ox = (cv.width - b.w * S.scale) / 2 - b.x0 * S.scale;
+  S.oy = (cv.height - b.h * S.scale) / 2 - b.z0 * S.scale;
+  draw();
+}
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const r = cv.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  cv.width = Math.round(r.width * dpr);
+  cv.height = Math.round(r.height * dpr);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // The first layout pass happens after the script runs, so the fit selectFloor asked for was
+  // computed against a zero-width canvas. Defer it to the first resize that has real dimensions.
+  if (S.needsFit) { S.needsFit = false; fit(); } else { draw(); }
+}
+
+const sx = x => x * S.scale + S.ox;
+const sz = z => z * S.scale + S.oy;
+const gx = px => Math.floor((px - S.ox) / S.scale);
+const gz = pz => Math.floor((pz - S.oy) / S.scale);
+
+/* ---------- draw ------------------------------------------------------- */
+
+function draw() {
+  const f = F();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#0f1115';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+
+  const s = S.scale;
+  const layer = layerAt(S.y);
+
+  if (S.mode === 'grid') {
+    drawMaze(f);
+  } else if (layer) {
+    for (let i = 0; i < layer.d.length; i += 5) {
+      const b = layer.d[i + 2];
+      if (S.isolate >= 0 && b !== S.isolate) continue;
+      const c = S.mode === 'owner' ? ownerColour(layer.d[i + 3]) : blockColour(b);
+      if (!c) continue;
+      if (S.selRoom >= 0 && S.mode === 'owner') ctx.globalAlpha = 1;
+      ctx.fillStyle = c;
+      ctx.fillRect(sx(layer.d[i]), sz(layer.d[i + 1]), s + 0.5, s + 0.5);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (document.getElementById('oGridLines').checked && s >= 5) {
+    const b = bounds();
+    ctx.strokeStyle = '#ffffff10';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = b.x0; x <= b.x1 + 1; x++) { ctx.moveTo(sx(x), sz(b.z0)); ctx.lineTo(sx(x), sz(b.z1 + 1)); }
+    for (let z = b.z0; z <= b.z1 + 1; z++) { ctx.moveTo(sx(b.x0), sz(z)); ctx.lineTo(sx(b.x1 + 1), sz(z)); }
+    ctx.stroke();
+  }
+
+  if (document.getElementById('oShared').checked && layer) {
+    ctx.fillStyle = '#ff4d4d55';
+    ctx.strokeStyle = '#ff6b6b';
+    ctx.lineWidth = Math.max(1, s * 0.12);
+    for (const c of layer.contested) {
+      ctx.fillRect(sx(c.x), sz(c.z), s, s);
+      if (s >= 4) ctx.strokeRect(sx(c.x) + 0.5, sz(c.z) + 0.5, s - 1, s - 1);
+    }
+  }
+
+  if (document.getElementById('oRooms').checked) {
+    for (const r of f.rooms) {
+      const sel = r.id === S.selRoom;
+      ctx.lineWidth = sel ? 2.5 : 1;
+      ctx.strokeStyle = sel ? '#ffffff'
+        : r.role === 'NORMAL' ? '#ffffff55' : '#ffc45c';
+      ctx.strokeRect(sx(r.x) + 0.5, sz(r.z) + 0.5, r.w * S.scale - 1, r.d * S.scale - 1);
+    }
+  }
+
+  if (document.getElementById('oDoors').checked) {
+    for (const d of f.doors) {
+      ctx.fillStyle = '#ffd54a';
+      ctx.fillRect(sx(d.x) + s * 0.25, sz(d.z) + s * 0.25, s * 0.5, s * 0.5);
+    }
+  }
+
+  if (document.getElementById('oEnt').checked) {
+    ctx.fillStyle = '#ff9ad5';
+    for (const e of f.entities) {
+      if (e.y < S.y || e.y > S.y + 1) continue;
+      ctx.beginPath();
+      ctx.arc(sx(e.x) + s / 2, sz(e.z) + s / 2, Math.max(1.5, s * 0.22), 0, 6.284);
+      ctx.fill();
+    }
+  }
+
+  if (document.getElementById('oIds').checked && S.scale >= 4) {
+    ctx.fillStyle = '#ffffffcc';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const r of f.rooms) {
+      const cx = sx(r.x + r.w / 2), cz = sz(r.z + r.d / 2);
+      ctx.font = Math.max(9, S.scale * 1.1) + 'px Verdana, Arial, sans-serif';
+      ctx.fillStyle = '#000000aa';
+      const txt = r.role === 'NORMAL' ? String(r.id) : r.role[0] + r.id;
+      ctx.fillText(txt, cx + 1, cz + 1);
+      ctx.fillStyle = r.role === 'NORMAL' ? '#ffffffdd' : '#ffd08a';
+      ctx.fillText(txt, cx, cz);
+      if (S.scale >= 9 && r.scheme) {
+        ctx.font = Math.max(8, S.scale * 0.75) + 'px Verdana, Arial, sans-serif';
+        ctx.fillStyle = '#ffffff88';
+        ctx.fillText(r.scheme, cx, cz + S.scale * 1.15);
+      }
+    }
+  }
+}
+
+function drawMaze(f) {
+  if (!f.grid) return;
+  const s = S.scale;
+  for (let z = 0; z < f.grid.h; z++) {
+    for (let x = 0; x < f.grid.w; x++) {
+      const t = f.grid.cells.charCodeAt(z * f.grid.w + x) - 48;
+      if (t === 0) continue;
+      ctx.fillStyle = GRID_COLOURS[t] || '#555';
+      ctx.fillRect(sx(x), sz(z), s + 0.5, s + 0.5);
+    }
+  }
+}
+
+/* ---------- the wall audit -------------------------------------------- */
+
+// The question this tool was built for: a room's box shares its perimeter with its
+// neighbours', and the last piece rendered wins the whole column. For each side, who
+// actually owns the cells a player sees?
+function wallAudit(room) {
+  const layer = layerAt(S.y);
+  if (!layer) return null;
+  const sides = { north: [], south: [], west: [], east: [] };
+  for (let x = room.x; x < room.x + room.w; x++) {
+    sides.north.push([x, room.z]);
+    sides.south.push([x, room.z + room.d - 1]);
+  }
+  for (let z = room.z + 1; z < room.z + room.d - 1; z++) {
+    sides.west.push([room.x, z]);
+    sides.east.push([room.x + room.w - 1, z]);
+  }
+  const out = {};
+  for (const [name, cells] of Object.entries(sides)) {
+    const tally = new Map();
+    let empty = 0;
+    for (const [x, z] of cells) {
+      const c = cellAt(layer, x, z);
+      if (!c) { empty++; continue; }
+      tally.set(c.owner, (tally.get(c.owner) || 0) + 1);
+    }
+    const ranked = [...tally.entries()].sort((a, b) => b[1] - a[1]);
+    out[name] = { total: cells.length, empty, ranked };
+  }
+  return out;
+}
+
+function ownerLabel(i) {
+  const o = F().owners[i];
+  return o ? o.label : '?';
+}
+function ownsRoom(ownerIdx, roomId) {
+  const o = F().owners[ownerIdx];
+  return o && o.kind === 'room' && o.id === roomId;
+}
+
+function renderDetail() {
+  const wrap = document.getElementById('detailWrap');
+  const room = F().rooms.find(r => r.id === S.selRoom);
+  if (!room) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const audit = wallAudit(room);
+  let html = '<table>'
+    + '<tr><td>size</td><td>' + room.w + ' x ' + room.d + ' x ' + room.h + '</td></tr>'
+    + '<tr><td>role</td><td>' + room.role + '</td></tr>'
+    + '<tr><td>scheme</td><td>' + (room.scheme || '&mdash;') + '</td></tr>'
+    + '<tr><td>origin</td><td>' + room.x + ', ' + room.z + '</td></tr></table>';
+  if (audit) {
+    html += '<div style="margin-top:8px;color:var(--dim)">wall owners at Y ' + S.y + '</div><table>';
+    for (const [side, a] of Object.entries(audit)) {
+      const parts = a.ranked.map(([o, n]) => {
+        const mine = ownsRoom(o, room.id);
+        return '<span style="color:' + (mine ? 'var(--fg)' : 'var(--warn)') + '">'
+          + ownerLabel(o) + ' ' + n + '</span>';
+      });
+      if (a.empty) parts.push('<span style="color:var(--dim)">air ' + a.empty + '</span>');
+      html += '<tr><td>' + side + '</td><td>' + (parts.join(', ') || '&mdash;') + '</td></tr>';
+    }
+    html += '</table>';
+    const foreign = Object.values(audit)
+      .filter(a => a.ranked.length && !ownsRoom(a.ranked[0][0], room.id)).length;
+    html += '<div style="margin-top:6px;color:' + (foreign ? 'var(--warn)' : 'var(--dim)') + '">'
+      + foreign + ' of 4 sides mostly owned by something else</div>';
+  }
+  document.getElementById('detail').innerHTML = html;
+}
+
+/* ---------- panels ----------------------------------------------------- */
+
+function renderLegend() {
+  const layer = layerAt(S.y);
+  const counts = new Map();
+  if (layer) for (let i = 0; i < layer.d.length; i += 5) {
+    counts.set(layer.d[i + 2], (counts.get(layer.d[i + 2]) || 0) + 1);
+  }
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const ul = document.getElementById('legendList');
+  ul.innerHTML = '';
+  for (const [b, n] of ranked) {
+    const li = document.createElement('li');
+    li.className = 'item' + (S.isolate === b ? ' sel' : '');
+    li.innerHTML = '<span class="sw" style="background:' + (blockColour(b) || 'transparent') + '"></span>'
+      + '<span class="name">' + D.palette[b].replace(/^minecraft:/, '') + '</span>'
+      + '<span class="num">' + n + '</span>';
+    li.onclick = () => { S.isolate = S.isolate === b ? -1 : b; renderLegend(); draw(); };
+    ul.appendChild(li);
+  }
+  if (!ranked.length) ul.innerHTML = '<li class="hint">nothing rendered at this level</li>';
+}
+
+function renderRooms() {
+  const ul = document.getElementById('roomList');
+  ul.innerHTML = '';
+  for (const r of F().rooms) {
+    const li = document.createElement('li');
+    li.className = 'item' + (S.selRoom === r.id ? ' sel' : '');
+    li.innerHTML = '<span class="sw" style="background:hsl(' + hashHue('r' + r.id) + ' 55% 52%)"></span>'
+      + '<span class="name">' + r.id + (r.role === 'NORMAL' ? '' : ' · ' + r.role)
+      + (r.scheme ? ' · ' + r.scheme : '') + '</span>'
+      + '<span class="num">' + r.w + 'x' + r.d + 'x' + r.h + '</span>';
+    li.onclick = () => { S.selRoom = S.selRoom === r.id ? -1 : r.id; renderRooms(); renderDetail(); draw(); };
+    ul.appendChild(li);
+  }
+}
+
+function renderHeader() {
+  const f = F();
+  document.getElementById('mSeed').textContent = D.seed;
+  document.getElementById('mSize').textContent = D.size;
+  document.getElementById('mMotif').textContent = D.motif;
+  document.getElementById('mAnchor').textContent = D.anchor[0] + ', ' + D.anchor[1];
+  document.getElementById('mFloorY').textContent = 'Y ' + f.floorY + '–' + f.ceilingY;
+  const contested = f.layers.reduce((n, l) => n + l.contested.length, 0);
+  const blocks = f.layers.reduce((n, l) => n + l.d.length / 5, 0);
+  document.getElementById('mCounts').innerHTML =
+    f.rooms.length + ' rooms · ' + f.corridors.length + ' corridors · ' + f.doors.length
+    + ' doors · ' + blocks.toLocaleString() + ' cells · <b style="color:var(--warn)">'
+    + contested.toLocaleString() + '</b> contested';
+}
+
+function setY(y) {
+  const f = F();
+  const ys = f.layers.map(l => l.y);
+  if (!ys.length) return;
+  S.y = Math.min(Math.max(y, ys[0]), ys[ys.length - 1]);
+  const sl = document.getElementById('ySlider');
+  sl.min = ys[0]; sl.max = ys[ys.length - 1]; sl.value = S.y;
+  const rel = S.y - f.floorY;
+  document.getElementById('yLabel').textContent = 'Y ' + S.y + '  (floor+' + rel + ')';
+  document.getElementById('yRole').textContent =
+    rel === 0 ? 'floor' : S.y >= f.ceilingY ? 'ceiling' : 'wall row ' + rel;
+  renderLegend(); renderDetail(); draw();
+}
+
+function selectFloor(i) {
+  S.floor = i; S.selRoom = -1; S.isolate = -1;
+  renderHeader(); renderRooms();
+  setY(F().floorY);
+  fit();
+}
+
+/* ---------- interaction ------------------------------------------------ */
+
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const dpr = window.devicePixelRatio || 1;
+  const mx = e.offsetX * dpr, my = e.offsetY * dpr;
+  const k = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  const ns = Math.min(60, Math.max(0.6, S.scale * k));
+  S.ox = mx - (mx - S.ox) * (ns / S.scale);
+  S.oy = my - (my - S.oy) * (ns / S.scale);
+  S.scale = ns;
+  draw();
+}, { passive: false });
+
+let drag = null;
+cv.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY, ox: S.ox, oy: S.oy, moved: false }; });
+window.addEventListener('mouseup', e => {
+  if (drag && !drag.moved) pick(e);
+  drag = null;
+});
+window.addEventListener('mousemove', e => {
+  if (drag) {
+    const dpr = window.devicePixelRatio || 1;
+    const dx = (e.clientX - drag.x) * dpr, dy = (e.clientY - drag.y) * dpr;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    S.ox = drag.ox + dx; S.oy = drag.oy + dy;
+    draw();
+    return;
+  }
+  if (e.target === cv) hover(e); else tip.style.display = 'none';
+});
+cv.addEventListener('dblclick', fit);
+cv.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+function pick(e) {
+  if (e.target !== cv) return;
+  const dpr = window.devicePixelRatio || 1;
+  const x = gx(e.offsetX * dpr), z = gz(e.offsetY * dpr);
+  const hit = F().rooms.find(r => x >= r.x && x < r.x + r.w && z >= r.z && z < r.z + r.d);
+  S.selRoom = hit && hit.id !== S.selRoom ? hit.id : -1;
+  renderRooms(); renderDetail(); draw();
+}
+
+function hover(e) {
+  const dpr = window.devicePixelRatio || 1;
+  const x = gx(e.offsetX * dpr), z = gz(e.offsetY * dpr);
+  const f = F();
+  const layer = layerAt(S.y);
+  const lines = ['x ' + x + '  z ' + z + '  y ' + S.y];
+
+  if (f.grid && x >= 0 && z >= 0 && x < f.grid.w && z < f.grid.h) {
+    lines.push('maze: ' + GRID_NAMES[f.grid.cells.charCodeAt(z * f.grid.w + x) - 48]);
+  }
+  const cell = layer && cellAt(layer, x, z);
+  if (cell) {
+    lines.push('block: <span class="hl">' + D.palette[cell.block] + '</span>');
+    lines.push('written by: ' + ownerLabel(cell.owner));
+    const o = f.owners[cell.owner];
+    if (o && o.detail) lines.push('  ' + o.detail);
+    const writes = contestedAt(layer, x, z);
+    if (writes) {
+      lines.push('<span class="bad">contested — ' + (writes.length / 2) + ' writes:</span>');
+      for (let i = 0; i < writes.length; i += 2) {
+        const last = i === writes.length - 2;
+        lines.push('  ' + (last ? '→ ' : '  ') + ownerLabel(writes[i])
+          + ' : ' + D.palette[writes[i + 1]].replace(/^minecraft:/, ''));
+      }
+    }
+  }
+  const room = f.rooms.find(r => x >= r.x && x < r.x + r.w && z >= r.z && z < r.z + r.d);
+  if (room) lines.push('in room ' + room.id + (room.scheme ? ' (' + room.scheme + ')' : ''));
+
+  tip.innerHTML = lines.join('\n');
+  tip.style.display = 'block';
+  const r = cv.getBoundingClientRect();
+  tip.style.left = Math.min(e.offsetX + 16, r.width - 330) + 'px';
+  tip.style.top = (e.offsetY + 16) + 'px';
+}
+
+/* ---------- wiring ----------------------------------------------------- */
+
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-mode]').forEach(o => o.classList.toggle('on', o === b));
+  S.mode = b.dataset.mode;
+  draw();
+});
+document.getElementById('ySlider').oninput = e => setY(+e.target.value);
+document.getElementById('yFloor').onclick = () => setY(F().floorY);
+document.getElementById('yWall').onclick = () => setY(F().floorY + 2);
+document.getElementById('yCeil').onclick = () => setY(F().ceilingY);
+['oRooms', 'oIds', 'oDoors', 'oShared', 'oEnt', 'oGridLines']
+  .forEach(id => document.getElementById(id).onchange = draw);
+
+const floorSel = document.getElementById('floorSel');
+D.floors.forEach((f, i) => {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = f.index + '  (Y ' + f.floorY + ')';
+  floorSel.appendChild(opt);
+});
+floorSel.onchange = e => selectFloor(+e.target.value);
+
+window.addEventListener('resize', resize);
+new ResizeObserver(resize).observe(document.getElementById('stage'));
+selectFloor(0);
+resize();
+</script>
+</body>
+</html>

@@ -100,6 +100,15 @@ public class MazeLevelGenerator2D {
 
     private Random random = new Random();
 
+    /**
+     * Minimum clear cells required between a room and its neighbours. {@code 0} is the historical
+     * behaviour: rooms may overlap by one cell and share that column as a wall. Raising it costs
+     * rooms per floor (space per room grows roughly with the square of the gap) and is the only
+     * lever that lets a dilated corridor reach full width between two rooms -- see
+     * {@code SpacingSweep} in the test sources for the measured trade-off.
+     */
+    private int minRoomGap = 0;
+
     /*
      * An object to generate and keep track of ids.
      */
@@ -137,6 +146,7 @@ public class MazeLevelGenerator2D {
         this.fillAttempts = builder.fillAttempts;
         this.fillRoomsPerSize = builder.fillRoomsPerSize;
         this.corridorDilationPasses = builder.corridorDilationPasses;
+        this.minRoomGap = Math.max(0, builder.minRoomGap);
 
         this.startRoom = builder.startRoom;
         this.endRoom = builder.endRoom;
@@ -303,6 +313,8 @@ public class MazeLevelGenerator2D {
         if (suppliedRooms != null) {
             suppliedRooms.stream()
                     .filter(room -> isRoomValid(room, levelBoundary))
+                    // Supplied (prefab) rooms are position-constrained like the end room above, so
+                    // they are not gap-inflated either; later rooms still stand off from them.
                     .filter(room -> !hasIntersections(room.getBox(), rooms))
                     .forEach(room -> {
                 // don't add if they intersect with the start, end or other supplied rooms
@@ -399,7 +411,7 @@ public class MazeLevelGenerator2D {
             for (int maxAttempts = 0; maxAttempts < 5; maxAttempts++) {
                 room = generateRoom2(xRange, yRange, minSize, maxSize, levelBoundary, 1, 1, random);
                 if (isRoomValid(room, levelBoundary)) {
-                    if (!hasIntersections(room.getBox(), rooms)) {
+                    if (!hasIntersections(withGap(room.getBox()), rooms)) {
                         break;
                     }
                 }
@@ -416,6 +428,10 @@ public class MazeLevelGenerator2D {
                         levelBoundary, room.getBox());
                 return Optional.empty();
             }
+            // Deliberately NOT gap-inflated. A supplied end room's position is dictated by the
+            // transition it anchors, so it cannot be moved to satisfy minRoomGap -- inflating it
+            // here just fails the whole floor. Rooms placed afterwards still keep their distance
+            // from it, because they inflate themselves before testing against it.
             if (hasIntersections(room.getBox(), rooms)) {
                 LOGGER.warn("supplied end room intersects existing rooms: {}", room.getBox());
                 return Optional.empty();
@@ -445,7 +461,7 @@ public class MazeLevelGenerator2D {
 
             //ensure that the box doesn't overlap another existing box
             // NOTE this would be more efficient if using a Interval-BST
-            if (hasIntersections(room.getBox(), rooms)) {
+            if (hasIntersections(withGap(room.getBox()), rooms)) {
                 continue;
             }
 
@@ -522,10 +538,15 @@ public class MazeLevelGenerator2D {
                 // scan all the rectangles
                 for (Rectangle2D r : maximalRectangleList) {
 //                    LOGGER.debug("testing against rectangle -> {}x{}", r.getWidth(), r.getHeight());
-                    if (size.getX() <= r.getWidth() && size.getY() <= r.getHeight()) {
+                    // The rectangle runs onto the neighbours' wall cells (see isEmptyOrBorder), so
+                    // a room placed flush against its edge shares that wall. minRoomGap insets the
+                    // room from every edge instead, which is what buys clear cells between rooms --
+                    // and therefore the space a dilated corridor needs to reach full width.
+                    int inset = 2 * minRoomGap;
+                    if (size.getX() + inset <= r.getWidth() && size.getY() + inset <= r.getHeight()) {
                         // find the delta of x,y between size and r
-                        int dx = r.getWidth() - size.getX();
-                        int dy = r.getHeight() - size.getY();
+                        int dx = r.getWidth() - size.getX() - inset;
+                        int dy = r.getHeight() - size.getY() - inset;
 
                         // randomize an offset for the room
                         int ox = 0;
@@ -543,8 +564,12 @@ public class MazeLevelGenerator2D {
                             }
                         }
 
-                        // update supplied rooms coords
-                        suppliedRoom.getOrigin().setLocation(r.getMinX() + ox, r.getMinY() + oy);
+                        // update supplied rooms coords. The origin must stay even-aligned (the maze
+                        // carves on a 2-cell lattice), so the inset is applied in whole lattice
+                        // steps -- an odd inset would shift every room off-grid.
+                        int evenInset = minRoomGap % 2 == 0 ? minRoomGap : minRoomGap + 1;
+                        suppliedRoom.getOrigin().setLocation(
+                                r.getMinX() + evenInset + ox, r.getMinY() + evenInset + oy);
                         rooms.add(suppliedRoom);
 
                         LOGGER.debug("adding fill room -> {}", suppliedRoom);
@@ -775,11 +800,36 @@ public class MazeLevelGenerator2D {
      * @param y
      * @return
      */
+    /**
+     * Whether a cell may be covered when looking for space to drop a fill room into.
+     *
+     * <p><strong>{@link CellType#WALL} counting as empty is the shared-wall mechanism.</strong> A
+     * maximal empty rectangle therefore extends onto the perimeter of the rooms bounding it, and a
+     * fill room placed flush against that edge overlaps its neighbour's wall by exactly one cell --
+     * one column serving as both rooms' wall. That is deliberate and it is what packs the dungeon
+     * densely; see {@code minRoomGap} for the knob that backs it off.</p>
+     */
     private boolean isEmptyOrBorder(Grid2D grid, int x, int y) {
         if (grid.get(x, y).getType() == CellType.ROCK || (grid.get(x, y).getType() == CellType.WALL)) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * A copy of {@code box} grown by {@link #minRoomGap} cells on every side, used as the
+     * intersection test so a candidate room has to clear its neighbours by that much.
+     * {@code minRoomGap == 0} returns the box unchanged, which is the historical behaviour.
+     */
+    private Rectangle2D withGap(Rectangle2D box) {
+        if (minRoomGap <= 0) {
+            return box;
+        }
+        return new Rectangle2D(
+                box.getOrigin().getX() - minRoomGap,
+                box.getOrigin().getY() - minRoomGap,
+                box.getWidth() + 2 * minRoomGap,
+                box.getHeight() + 2 * minRoomGap);
     }
 
     private Coords2D generateRoomSize(int minSize, int maxSize) {
@@ -2699,6 +2749,7 @@ public class MazeLevelGenerator2D {
         public int fillAttempts = DEFAULT_FILL_ATTEMPTS;
         public int fillRoomsPerSize = DEFAULT_FILL_ROOMS_PER_SIZE;
         public int corridorDilationPasses = 0;
+        public int minRoomGap = 0;
 
         public IRoom2D startRoom;
         public IRoom2D endRoom;

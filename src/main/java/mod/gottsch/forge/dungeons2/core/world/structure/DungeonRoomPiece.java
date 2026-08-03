@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
+import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
@@ -118,6 +119,18 @@ public class DungeonRoomPiece extends DungeonPiece {
         new BasicRoomGenerator().withMotifConfig(motifConfig)
                 .build(room, floorY, motif(), deterministicRandom(room.getId()), out);
         return out;
+    }
+
+    /**
+     * The scheme this room rolls &mdash; the very same roll {@link #renderRoom} makes, off the same
+     * piece-stable seed, so it is exact rather than an estimate.
+     *
+     * <p>Diagnostics only (the floor-plan viewer labels rooms with it). Nothing in the render path
+     * calls this; {@code BasicRoomGenerator} rolls its own from the random it is handed.</p>
+     */
+    public RoomScheme rolledScheme(MotifConfig motifConfig) {
+        return new BasicRoomGenerator().withMotifConfig(motifConfig)
+                .selectScheme(room, deterministicRandom(room.getId()));
     }
 
     public RoomData getRoom() {
