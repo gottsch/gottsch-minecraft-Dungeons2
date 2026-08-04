@@ -497,15 +497,27 @@ no `lintel`. Silently defaulting it would put stone brick stairs in a deepslate 
 height 5 that is the doorway's lintel row, so the arch would stair-block every door.
 
 `corridor.narrowHeight` is the ceiling height for a cell that is only **one cell wide** — walls
-facing each other across it. It defaults to one course below `height` and never goes below 5, so a
-motif that never mentions it still behaves sensibly (at `height: 5` it is a no-op). Full height
-reads fine in a passage you can see across and reads as a slot canyon in one you cannot: the eye has
-nothing to judge the height against, so a 1-wide 7-high run just looks like a mistake. Around 15% of
-corridor cells are 1-wide at the shipped settings, so this is not a rare case.
+facing each other across it. It **defaults to no drop**, and dropping it is opt-in.
+
+That default was arrived at the hard way. Full height reads fine in a passage you can see across and
+reads as a slot canyon in one you cannot, so this originally defaulted to one course below `height`.
+But corridor width fluctuates cell by cell after dilation, so a per-cell drop made the ceiling
+staircase up and down along every run — visibly worse than the problem it solved. Author it for a
+motif whose corridors are uniformly narrow; do not expect it to behave on corridors that pinch and
+widen. (Doing the same thing per *run* rather than per cell is the version that would actually work,
+and is not built.)
 
 The rows between a dropped ceiling and the corridor's full height are **filled solid**, not left
 alone — the piece's bounding box covers them either way, and whatever the terrain happened to put
 there could be a cave, i.e. a hole in the corridor roof.
+
+**Corner shapes are decided by the generator, not by vanilla.** Normally a stairs block works out
+its own `straight`/`inner_*`/`outer_*` corner from its neighbours, and the piece renderer lets it.
+That cannot work here: vanilla looks for a neighbouring stair *in the direction the block faces* to
+recognise an outer corner, and a haunch faces into its own wall, so it only ever finds solid stone
+and every outer corner silently stays `straight` — a visible notch where the wall run ends. The
+generator knows the wall layout outright, so it authors the shape, and the renderer leaves any
+non-`straight` shape alone.
 
 A haunch only goes in a cell that has a wall on one side and open corridor on the other. That one
 condition is what makes narrow corridors degrade correctly — a 1-wide corridor has walls on *both*

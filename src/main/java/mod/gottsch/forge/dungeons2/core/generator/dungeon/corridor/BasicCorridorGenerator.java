@@ -177,9 +177,12 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         int ceilingHeight = isNarrow(x, z, isWall) ? narrowCeiling : height;
         // Re-checked per cell, not just per motif: a dropped ceiling can take a cell below the
         // height an arch needs even when the corridor as a whole cleared it at load time.
-        Direction haunch = ceilingHeight >= CorridorConfig.MIN_ARCHED_HEIGHT
-                ? haunchFacing(palette, x, z, isWall, isOpen) : null;
-        emitCorridorColumn(x, z, floorY, height, ceilingHeight, haunch, palette, random, out);
+        Haunch haunch = ceilingHeight >= CorridorConfig.MIN_ARCHED_HEIGHT
+                ? haunchFor(palette, x, z, isWall, isOpen) : null;
+        emitCorridorColumn(x, z, floorY, height, ceilingHeight,
+                haunch == null ? null : haunch.facing(),
+                haunch == null ? "straight" : haunch.shape(),
+                palette, random, out);
     }
 
     /**
@@ -188,14 +191,14 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * ceiling block at {@code floorY+height-1} (the top of the corridor walls), closing the corridor.
      */
     private static void emitCorridorColumn(int x, int z, int floorY, int height, int ceilingHeight,
-                                            Direction haunch, Palette palette, RandomSource random,
-                                            List<BlockPlacement> out) {
+                                            Direction haunch, String haunchShape, Palette palette,
+                                            RandomSource random, List<BlockPlacement> out) {
         BlockState floor = RandomHelper.checkProbability(random, 45) ? palette.floor : palette.alternateFloor;
         out.add(BlockStateCodec.placement(x, floorY, z, floor));
         int haunchRow = ceilingHeight - 2;
         for (int yOffset = 1; yOffset < ceilingHeight - 1; yOffset++) {
             BlockState state = (haunch != null && yOffset == haunchRow)
-                    ? haunchState(palette.arch, haunch) : palette.air;
+                    ? haunchState(palette.arch, haunch, haunchShape) : palette.air;
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, state));
         }
         out.add(BlockStateCodec.placement(x, floorY + ceilingHeight - 1, z, palette.ceiling));
@@ -227,10 +230,102 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * <p>Set through {@code withProperties} rather than {@code setValue} so a datapack that names a
      * non-stairs block gets that block placed square instead of a crash.</p>
      */
-    private static BlockState haunchState(BlockState arch, Direction facing) {
+    private static BlockState haunchState(BlockState arch, Direction facing, String shape) {
         return BlockStateCodec.withProperties(arch,
-                Map.of("half", "top", "facing", facing.getSerializedName()));
+                Map.of("half", "top", "facing", facing.getSerializedName(), "shape", shape));
     }
+
+    /**
+     * The haunch's corner shape, computed here rather than left to vanilla.
+     *
+     * <h2>Why vanilla cannot do this one</h2>
+     * <p>{@code StairBlock.getStairsShape} looks for a stair at {@code pos.relative(facing)} to
+     * decide OUTER, and at {@code pos.relative(facing.getOpposite())} to decide INNER. A haunch
+     * faces <em>into the wall</em>, so the first of those is always a solid wall block and the OUTER
+     * branch can never fire &mdash; while the second sometimes finds a perpendicular haunch across a
+     * narrow corridor and does fire. The result is inner corners that mitre and outer corners that
+     * never do, which is exactly the "outers not populating" this fixes. We know the wall layout
+     * outright, so we derive the shape from it instead of from what happens to be adjacent.</p>
+     *
+     * <p>{@code left}/{@code right} are along the wall run (perpendicular to {@code facing}).
+     * A wall carrying on around the corner on one side means the haunch has to cover that side too,
+     * which is an INNER; a wall that simply stops means the haunch tapers off, which is an OUTER.
+     * Both sides qualifying at once is a one-cell wall stub, and a stair has only one shape, so left
+     * wins &mdash; deterministically, not by iteration order.</p>
+     */
+    private static String haunchShape(int x, int z, Direction facing, CellTest isWall) {
+        Direction left = facing.getCounterClockWise();
+        Direction right = facing.getClockWise();
+        if (isWall.test(x + left.getStepX(), z + left.getStepZ())) {
+            return "inner_left";
+        }
+        if (isWall.test(x + right.getStepX(), z + right.getStepZ())) {
+            return "inner_right";
+        }
+        // The wall run ends here when the cell alongside has no wall behind it in turn.
+        if (!isWall.test(x + left.getStepX() + facing.getStepX(), z + left.getStepZ() + facing.getStepZ())) {
+            return "outer_left";
+        }
+        if (!isWall.test(x + right.getStepX() + facing.getStepX(), z + right.getStepZ() + facing.getStepZ())) {
+            return "outer_right";
+        }
+        return "straight";
+    }
+
+    /** One cell's haunch: which way it leans and which corner shape it takes. */
+    private record Haunch(Direction facing, String shape) {}
+
+    /**
+     * This cell's haunch, or {@code null} for none.
+     *
+     * <p>Two cases, and the second is easy to miss. The common one is a cell with a wall
+     * <em>orthogonally</em> beside it, which leans into that wall ({@link #haunchFacing}).</p>
+     *
+     * <p>The other is the cell that closes the chamfer <strong>around a convex corner</strong>. Where
+     * a wall corner juts into the passage, the cells along each face get their haunch normally, but
+     * the cell diagonally off the corner tip has no orthogonal wall at all &mdash; only a diagonal
+     * one. Left to the first rule it gets nothing, and the chamfer arrives from two directions and
+     * stops dead, leaving the notch that reads in game as "the corner is missing its outer block".
+     * That cell wants an {@code outer_*} stair covering just the quarter facing the tip.</p>
+     *
+     * <p>The diagonal is only a corner tip if <em>both</em> cells flanking it are open; if either
+     * were a wall this cell would have had an orthogonal wall and been handled above. Diagonals are
+     * tried in a fixed order so a cell touching two tips is still deterministic.</p>
+     */
+    private static Haunch haunchFor(Palette palette, int x, int z, CellTest isWall, CellTest isOpen) {
+        if (palette.arch == null) {
+            return null;
+        }
+        Direction facing = haunchFacing(palette, x, z, isWall, isOpen);
+        if (facing != null) {
+            return new Haunch(facing, haunchShape(x, z, facing, isWall));
+        }
+        for (Corner corner : CORNERS) {
+            if (!isWall.test(x + corner.dx, z + corner.dz)) {
+                continue;
+            }
+            if (isWall.test(x + corner.dx, z) || isWall.test(x, z + corner.dz)) {
+                continue; // not a tip -- a flanking wall means the orthogonal rule owned this cell
+            }
+            return new Haunch(corner.facing, corner.shape);
+        }
+        return null;
+    }
+
+    /**
+     * A diagonal wall corner and the stair that caps it. {@code facing}/{@code shape} are chosen so
+     * the solid quarter lands on the diagonal: with {@code half=top}, {@code outer_left} is the
+     * counter-clockwise side of {@code facing} and {@code outer_right} the clockwise side, matching
+     * vanilla's own reading of those values.
+     */
+    private record Corner(int dx, int dz, Direction facing, String shape) {}
+
+    private static final Corner[] CORNERS = {
+            new Corner(-1, -1, Direction.NORTH, "outer_left"),   // north-west
+            new Corner(1, -1, Direction.NORTH, "outer_right"),   // north-east
+            new Corner(-1, 1, Direction.SOUTH, "outer_right"),   // south-west
+            new Corner(1, 1, Direction.SOUTH, "outer_left"),     // south-east
+    };
 
     /**
      * Which way this cell's haunch leans, or {@code null} for none.

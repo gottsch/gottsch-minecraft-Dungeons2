@@ -15,7 +15,9 @@
     "floor": "minecraft:cobblestone",
     "alternateFloor": "minecraft:stone_bricks",
     "ceiling": "minecraft:stone_bricks",
-    "height": 7
+    "height": 7,
+    "profile": "arched",
+    "archBlock": "minecraft:stone_brick_stairs"
   },
   "floor": {
     "base": "minecraft:stone_bricks",

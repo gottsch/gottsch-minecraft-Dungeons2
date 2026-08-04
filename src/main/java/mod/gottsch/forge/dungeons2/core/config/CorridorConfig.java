@@ -124,14 +124,16 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
      * The ceiling height for a cell that is only one cell wide, which is 15% of corridor cells at
      * the shipped settings (measured across 40 MEDIUM dungeons at {@code corridorWidth} 3).
      *
-     * <p>Full height reads fine in a passage you can see across, and reads as a slot canyon in one
-     * you cannot &mdash; the eye has nothing to judge the height against, so a 1-wide 7-high run
-     * just looks like a mistake. So a narrow cell drops its top course. Defaults to one row below
-     * {@code height}, never below {@link #MIN_HEIGHT}, which means a motif that never mentions it
-     * still behaves sensibly at every height including 5 (where it is a no-op).</p>
+     * <p><strong>Defaults to no drop</strong>, i.e. {@code height}. Dropping it is opt-in, and that
+     * default was chosen the hard way: a narrow cell reads as a slot canyon at full height, so this
+     * originally defaulted to {@code height - 1} &mdash; but corridor width fluctuates cell by cell
+     * after dilation, so a per-cell drop made the ceiling staircase up and down along every run,
+     * which looked considerably worse than the problem it solved. Authoring it is still useful for a
+     * motif whose corridors are uniformly narrow; what does not work is applying it per cell to
+     * corridors that pinch and widen. Doing it per <em>run</em> is the unbuilt version of this idea.</p>
      */
     public int narrowCellHeight() {
-        return Math.max(MIN_HEIGHT, narrowHeight.orElse(height - 1));
+        return Math.max(MIN_HEIGHT, narrowHeight.orElse(height));
     }
 
     public static final CorridorConfig DEFAULT =

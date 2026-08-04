@@ -292,10 +292,15 @@ class BasicCorridorGeneratorTest {
 
     /** An arched motif at the given height, built from stone brick stairs. */
     private static MotifConfig arched(int height) {
+        return arched(height, Optional.empty());
+    }
+
+    private static MotifConfig arched(int height, Optional<Integer> narrowHeight) {
         return new MotifConfig(
                 MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
                 new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
-                        height, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs")),
+                        height, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs"),
+                        narrowHeight),
                 MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
     }
 
@@ -389,8 +394,8 @@ class BasicCorridorGeneratorTest {
         new BasicCorridorGenerator().withMotifConfig(arched(7))
                 .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
-        // A 1-wide run also drops its ceiling to 6, so its haunch row is 60 + 6 - 2 = 64.
-        assertEquals("minecraft:air", at(out, 3, 64, 3).getBlockId(),
+        // narrowHeight defaults to no drop, so the haunch row is the usual 60 + 7 - 2 = 65.
+        assertEquals("minecraft:air", at(out, 3, 65, 3).getBlockId(),
                 "the middle of a 1-wide run has no wall to spring from in any direction");
 
         for (BlockPlacement bp : out) {
@@ -434,12 +439,16 @@ class BasicCorridorGeneratorTest {
 
     // -------- narrow cells drop their top course --------
 
-    /** A flat motif at the given height, leaving narrowHeight to its default (height - 1). */
+    /** A flat motif at the given height; narrowHeight defaults to no drop. */
     private static MotifConfig flat(int height) {
+        return flat(height, Optional.empty());
+    }
+
+    private static MotifConfig flat(int height, Optional<Integer> narrowHeight) {
         return new MotifConfig(
                 MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
                 new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
-                        height),
+                        height, CorridorConfig.Profile.FLAT, Optional.empty(), narrowHeight),
                 MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
     }
 
@@ -455,7 +464,7 @@ class BasicCorridorGeneratorTest {
         corridor.setWallHeight(7);
 
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicCorridorGenerator().withMotifConfig(flat(7))
+        new BasicCorridorGenerator().withMotifConfig(flat(7, Optional.of(6)))
                 .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
         assertEquals("minecraft:air", at(out, 3, 64, 3).getBlockId(), "row 4 is still headroom");
@@ -472,7 +481,7 @@ class BasicCorridorGeneratorTest {
     @Test
     void aWideCellKeepsTheFullHeight() {
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicCorridorGenerator().withMotifConfig(flat(7))
+        new BasicCorridorGenerator().withMotifConfig(flat(7, Optional.of(6)))
                 .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
         assertEquals("minecraft:air", at(out, 3, 65, 3).getBlockId(),
@@ -494,7 +503,7 @@ class BasicCorridorGeneratorTest {
             grid.get(1, 3).setType(CellType.DOOR);
 
             List<BlockPlacement> out = new ArrayList<>();
-            new BasicCorridorGenerator().withMotifConfig(flat(height))
+            new BasicCorridorGenerator().withMotifConfig(flat(height, Optional.of(height - 1)))
                     .build(corridor, grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
             for (int y = 61; y <= 63; y++) {
@@ -511,11 +520,125 @@ class BasicCorridorGeneratorTest {
         corridor.setWallHeight(6); // narrow cells drop to 5, one below MIN_ARCHED_HEIGHT
 
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicCorridorGenerator().withMotifConfig(arched(6))
+        new BasicCorridorGenerator().withMotifConfig(arched(6, Optional.of(5)))
                 .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
         assertTrue(out.stream().noneMatch(bp -> bp.getBlockId().contains("stairs")),
                 "a cell dropped below the arch minimum must not be arched");
+    }
+
+    // -------- haunch corner shapes --------
+
+    private static String shapeOf(BlockPlacement bp) {
+        return BlockStateCodec.resolve(bp).getValue(StairBlock.SHAPE).getSerializedName();
+    }
+
+    /**
+     * The straight run: haunches along an unbroken wall must stay {@code straight}. This is the
+     * baseline the corner cases are measured against.
+     */
+    @Test
+    void haunchesAlongAStraightWallAreStraight() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        // Mid-run north-lane haunches, away from either end of the corridor.
+        for (int x = 2; x <= 4; x++) {
+            assertEquals("straight", shapeOf(at(out, x, 65, 2)),
+                    "haunch at x=" + x + " runs along an unbroken wall");
+        }
+    }
+
+    /** Where two walls meet, the haunch has to cover both faces — that is an inner corner. */
+    @Test
+    void twoWallsMeetingProduceAnInnerCorner() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        // (1,2) is the north-west corner cell: wall to the north AND wall to the west.
+        assertEquals("inner_left", shapeOf(at(out, 1, 65, 2)),
+                "where two walls meet, the haunch must cover both faces");
+    }
+
+    /**
+     * The bug this whole shape rule exists for, pinned on the case vanilla structurally cannot
+     * reach. {@code StairBlock.getStairsShape} looks for a stair at {@code pos.relative(facing)} to
+     * decide an outer corner — and a haunch faces into its wall, so that lookup always finds solid
+     * wall and the outer branch can <em>never</em> fire. Left to vanilla every outer corner stays
+     * {@code straight}, which is the notch that showed up in game.
+     *
+     * <p>A T-junction is the smallest shape that forces one: the north wall of the main run stops
+     * where the branch opens, so the haunch beside the opening has to taper instead of running on.</p>
+     */
+    @Test
+    void aWallRunEndingProducesAnOuterCorner() {
+        // Main run x=1..5 at z=2..4, plus a branch heading north out of x=3.
+        Grid2D grid = wideGrid();
+        CorridorData corridor = wideCorridor(7);
+        for (int z = 0; z <= 1; z++) {
+            grid.get(3, z).setType(CellType.CORRIDOR);
+            grid.get(3, z).setRegionId(10);
+            corridor.getCells().add(new Coords2D(3, z));
+        }
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(corridor, grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        // (2,2) faces the north wall; to its east that wall stops where the branch opens.
+        assertEquals("outer_right", shapeOf(at(out, 2, 65, 2)),
+                "the haunch must taper where the wall run ends, not carry on square");
+    }
+
+    /** A shape the generator authored must survive; vanilla would reset it to straight. */
+    @Test
+    void anAuthoredCornerShapeIsNotStraight() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        long shaped = out.stream()
+                .filter(bp -> "minecraft:stone_brick_stairs".equals(bp.getBlockId()))
+                .filter(bp -> !"straight".equals(shapeOf(bp)))
+                .count();
+        assertTrue(shaped > 0, "a corridor with corners should author at least one non-straight haunch");
+    }
+
+    /**
+     * The cell that closes the chamfer around a convex wall corner. It has <em>no</em> orthogonal
+     * wall — only a diagonal one — so the ordinary "wall on one side, corridor on the other" rule
+     * rejects it and it used to come out as air, leaving the notch reported in game as the corner
+     * missing its outer block. It needs an {@code outer_*} stair capping the quarter that faces the
+     * corner tip.
+     */
+    @Test
+    void aConvexWallCornerGetsItsOuterCap() {
+        // 7x7 grid; carve an L so a single wall cell juts into the passage at (2,2).
+        Grid2D grid = new Grid2D(7, 7);
+        CorridorData corridor = new CorridorData(10);
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 1; z <= 5; z++) {
+                if (x <= 2 && z <= 2) continue; // leave the north-west block solid
+                grid.get(x, z).setType(CellType.CORRIDOR);
+                grid.get(x, z).setRegionId(10);
+                corridor.getCells().add(new Coords2D(x, z));
+            }
+        }
+        corridor.setWallHeight(7);
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(corridor, grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        // (3,3) sits diagonally off the corner tip at (2,2): no orthogonal wall, wall to the NW.
+        BlockPlacement cap = at(out, 3, 65, 3);
+        assertEquals("minecraft:stone_brick_stairs", cap.getBlockId(),
+                "the cell diagonally off a convex corner must still carry a haunch");
+        assertEquals("outer_left", shapeOf(cap), "and it caps the corner rather than running square");
+        assertEquals("north", facingOf(cap));
+        assertEquals("top", halfOf(cap));
     }
 
     @Test

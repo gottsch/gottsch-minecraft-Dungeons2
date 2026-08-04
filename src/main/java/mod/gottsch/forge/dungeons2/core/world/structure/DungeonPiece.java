@@ -27,11 +27,13 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -230,6 +232,28 @@ public abstract class DungeonPiece extends StructurePiece {
     }
 
     /**
+     * True when the generator already set a corner shape deliberately, in which case vanilla's
+     * derivation must not get a vote.
+     *
+     * <p>Vanilla only reaches the right answer for blocks oriented the way a <em>player</em> would
+     * place them. A corridor arch haunch faces into its wall, so
+     * {@code StairBlock.getStairsShape} finds a solid wall where it looks for an outer corner and
+     * can never produce one &mdash; it would quietly reset an authored {@code outer_*} back to
+     * {@code straight}, which is the notch this check exists to stop. Anything still sitting at
+     * {@code straight} was placed without an opinion and is settled as before.</p>
+     */
+    private static boolean hasAuthoredShape(BlockState state) {
+        Property<?> shape = state.getBlock().getStateDefinition().getProperty("shape");
+        if (shape == null) {
+            return false;
+        }
+        Comparable<?> value = state.getValue(shape);
+        String name = value instanceof StringRepresentable named
+                ? named.getSerializedName() : String.valueOf(value);
+        return !"straight".equalsIgnoreCase(name);
+    }
+
+    /**
      * Reconciles corner shapes after the whole piece is written.
      *
      * <h2>Why this is not computed when the block is planned</h2>
@@ -264,6 +288,9 @@ public abstract class DungeonPiece extends StructurePiece {
             BlockState current = level.getBlockState(pos);
             if (!hasJoinShape(current)) {
                 continue; // the decoration pass may have weathered it into something else
+            }
+            if (hasAuthoredShape(current)) {
+                continue; // the generator already knew the answer -- see hasAuthoredShape
             }
             BlockState settled;
             try {

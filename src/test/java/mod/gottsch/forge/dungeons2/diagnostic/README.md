@@ -23,7 +23,7 @@ Output lands in `build/floorplan/floorplan-<seed>.html` — one file, no assets,
 | `-Pfloors` | — | floor-count override; omit to let the size tier roll it |
 | `-PcorridorWidth` | `3` | dilation width, matching the shipped generation config |
 | `-PcorridorHeight` | the motif's own `corridor.height` | corridor wall height in blocks (5-8) |
-| `-PnarrowHeight` | one course below `corridorHeight` | ceiling height for 1-wide cells |
+| `-PnarrowHeight` | the motif's own (default: no drop) | ceiling height for 1-wide cells |
 | `-Pprofile` | the motif's own `corridor.profile` | `flat` or `arched` |
 | `-ParchBlock` | `minecraft:stone_brick_stairs` | haunch stairs, when arching |
 | `-PminRoomGap` | `0` | minimum clear cells between rooms; `0` is shipped behaviour |
