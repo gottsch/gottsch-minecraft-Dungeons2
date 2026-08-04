@@ -16,6 +16,7 @@
     "alternateFloor": "minecraft:stone_bricks",
     "ceiling": "minecraft:stone_bricks",
     "height": 7,
+    "narrowHeight": 6,
     "profile": "arched",
     "archBlock": "minecraft:stone_brick_stairs"
   },
