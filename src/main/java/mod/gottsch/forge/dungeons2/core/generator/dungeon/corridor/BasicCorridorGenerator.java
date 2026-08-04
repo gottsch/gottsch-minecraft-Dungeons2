@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
+import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
@@ -26,12 +27,14 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
 import mod.gottsch.forge.gottschcore.random.RandomHelper;
+import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -55,6 +58,12 @@ import java.util.Set;
  *
  * <p>A <strong>door</strong> neighbor gets that same column with the two
  * door-half levels left as air &mdash; see {@link #DOOR_HALF_LOW}.</p>
+ *
+ * <h2>The ceiling is a profile, not a row</h2>
+ * <p>On {@code flat} it is one row of ceiling block at the top. On {@code arched} that crown row is
+ * unchanged and the row below it ({@code h-2}) carries stair haunches leaning into the walls, so an
+ * arch borrows a row rather than needing extra height. {@link #haunchFacing} decides which cells
+ * get one; both build overloads feed it the same rule from different sources.</p>
  *
  * @author Mark Gottschling on Dec 5, 2023 (Phase 2 rewrite May 25, 2026)
  */
@@ -87,12 +96,19 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                       IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
         Palette palette = palette(motif, random);
         int height = corridor.getWallHeight();
+        int narrowCeiling = Math.min(height, motifConfig.corridor().narrowCellHeight());
+
+        // The arch reads the same two questions off the grid that the grid-free overload reads off
+        // CorridorData, so both paths run one shared rule (see haunchFacing).
+        Set<Coords2D> corridorCells = new HashSet<>(corridor.getCells());
+        CellTest isWall = (cx, cz) -> isWallElement(grid, cx, cz);
+        CellTest isOpen = (cx, cz) -> corridorCells.contains(new Coords2D(cx, cz));
 
         Set<Coords2D> wallsEmitted = new HashSet<>();
         for (Coords2D cell : corridor.getCells()) {
             int x = cell.getX();
             int z = cell.getY();
-            emitCorridorColumn(x, z, floorY, height, palette, random, out);
+            emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, random, out);
 
             // 8-neighbor wall columns, sourced live from the grid.
             for (int dx = -1; dx <= 1; dx++) {
@@ -119,12 +135,27 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                       IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
         Palette palette = palette(motif, random);
         int height = corridor.getWallHeight();
+        int narrowCeiling = Math.min(height, motifConfig.corridor().narrowCellHeight());
+
+        // The grid is gone here, so wall adjacency comes from the cells the planner folded in.
+        // wallCells and doorCells together are exactly what isWallElement would have answered
+        // true for, with one known exception: a premade (connector) cell is deliberately absent
+        // from both (see DungeonStackPlanner.convertLevel), so a corridor cell facing one gets no
+        // haunch on that side where the grid-based overload would give it one. Only reachable via
+        // an assembled entrance, and it costs one stair.
+        Set<Coords2D> corridorCells = new HashSet<>(corridor.getCells());
+        Set<Coords2D> wallCells = new HashSet<>(corridor.getWallCells());
+        wallCells.addAll(corridor.getDoorCells());
+        CellTest isWall = (cx, cz) -> wallCells.contains(new Coords2D(cx, cz));
+        CellTest isOpen = (cx, cz) -> corridorCells.contains(new Coords2D(cx, cz));
 
         // Corridor columns first, then the pre-computed wall cells. The two sets
         // are disjoint within a single corridor, so order is immaterial; the
         // placements match the grid-based overload as a set.
         for (Coords2D cell : corridor.getCells()) {
-            emitCorridorColumn(cell.getX(), cell.getY(), floorY, height, palette, random, out);
+            int x = cell.getX();
+            int z = cell.getY();
+            emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, random, out);
         }
         for (Coords2D wall : corridor.getWallCells()) {
             emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, out);
@@ -135,18 +166,106 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /**
+     * One corridor cell: picks its ceiling height, then whether it gets an arch haunch, then emits.
+     *
+     * <p>Both build overloads route through here so the two cannot drift &mdash; the only thing that
+     * differs between them is where {@code isWall}/{@code isOpen} get their answers.</p>
+     */
+    private static void emitCellColumn(int x, int z, int floorY, int height, int narrowCeiling,
+                                       Palette palette, CellTest isWall, CellTest isOpen,
+                                       RandomSource random, List<BlockPlacement> out) {
+        int ceilingHeight = isNarrow(x, z, isWall) ? narrowCeiling : height;
+        // Re-checked per cell, not just per motif: a dropped ceiling can take a cell below the
+        // height an arch needs even when the corridor as a whole cleared it at load time.
+        Direction haunch = ceilingHeight >= CorridorConfig.MIN_ARCHED_HEIGHT
+                ? haunchFacing(palette, x, z, isWall, isOpen) : null;
+        emitCorridorColumn(x, z, floorY, height, ceilingHeight, haunch, palette, random, out);
+    }
+
+    /**
      * A floor block at {@code floorY} (45% {@code floor}, 55% {@code alternateFloor}, matching
      * {@code BasicFloorGenerator}'s room-floor split), {@code height-2} air blocks above, and a
      * ceiling block at {@code floorY+height-1} (the top of the corridor walls), closing the corridor.
      */
-    private static void emitCorridorColumn(int x, int z, int floorY, int height, Palette palette,
-                                            RandomSource random, List<BlockPlacement> out) {
+    private static void emitCorridorColumn(int x, int z, int floorY, int height, int ceilingHeight,
+                                            Direction haunch, Palette palette, RandomSource random,
+                                            List<BlockPlacement> out) {
         BlockState floor = RandomHelper.checkProbability(random, 45) ? palette.floor : palette.alternateFloor;
         out.add(BlockStateCodec.placement(x, floorY, z, floor));
-        for (int yOffset = 1; yOffset < height - 1; yOffset++) {
-            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.air));
+        int haunchRow = ceilingHeight - 2;
+        for (int yOffset = 1; yOffset < ceilingHeight - 1; yOffset++) {
+            BlockState state = (haunch != null && yOffset == haunchRow)
+                    ? haunchState(palette.arch, haunch) : palette.air;
+            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, state));
         }
-        out.add(BlockStateCodec.placement(x, floorY + height - 1, z, palette.ceiling));
+        out.add(BlockStateCodec.placement(x, floorY + ceilingHeight - 1, z, palette.ceiling));
+        // A dropped ceiling leaves rows between it and the corridor's full height. Fill them solid
+        // rather than leaving them unwritten: the piece's bounding box covers them either way, and
+        // whatever the terrain happened to put there could be a cave, i.e. a hole in the ceiling.
+        for (int yOffset = ceilingHeight; yOffset < height; yOffset++) {
+            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.wall));
+        }
+    }
+
+    /**
+     * True when this cell is only one cell wide on either axis &mdash; walls facing each other
+     * across it. Exactly the cells that get no arch (there is no direction with a wall one side and
+     * open corridor the other), and for the same underlying reason: there is no cross-section.
+     */
+    private static boolean isNarrow(int x, int z, CellTest isWall) {
+        return (isWall.test(x, z - 1) && isWall.test(x, z + 1))
+                || (isWall.test(x - 1, z) && isWall.test(x + 1, z));
+    }
+
+    /**
+     * The haunch's orientation. Verified against the real block shapes rather than reasoned about:
+     * a stair's <em>upper</em> half is solid on the side it {@code facing}s. So a haunch against a
+     * west wall is {@code facing=west}, putting its mass into the wall, and {@code half=top}, which
+     * joins it to the crown row above and leaves the cut-away quarter low and inboard &mdash; the
+     * ceiling springing off the wall, which is what an arch is.
+     *
+     * <p>Set through {@code withProperties} rather than {@code setValue} so a datapack that names a
+     * non-stairs block gets that block placed square instead of a crash.</p>
+     */
+    private static BlockState haunchState(BlockState arch, Direction facing) {
+        return BlockStateCodec.withProperties(arch,
+                Map.of("half", "top", "facing", facing.getSerializedName()));
+    }
+
+    /**
+     * Which way this cell's haunch leans, or {@code null} for none.
+     *
+     * <p>A haunch needs a wall to spring <em>from</em> and open corridor to spring <em>over</em>,
+     * so a direction qualifies only when the neighbour that way is a wall and the neighbour the
+     * opposite way is corridor. That single condition is what makes a 1-wide corridor degrade
+     * correctly: walls on both sides means neither direction qualifies, so it stays flat rather
+     * than arching itself shut.</p>
+     *
+     * <p>An inside corner has two qualifying directions; it takes the lowest {@link Direction}
+     * ordinal (N, S, W, E), the same deterministic tie-break the courses work uses for
+     * {@code orient}. Determinism matters more than which one wins &mdash; see the planner's
+     * EnumMap fix for what a JVM-dependent choice costs.</p>
+     */
+    private static Direction haunchFacing(Palette palette, int x, int z, CellTest isWall, CellTest isOpen) {
+        if (palette.arch == null) {
+            return null;
+        }
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            int wx = x + d.getStepX();
+            int wz = z + d.getStepZ();
+            int ox = x - d.getStepX();
+            int oz = z - d.getStepZ();
+            if (isWall.test(wx, wz) && isOpen.test(ox, oz)) {
+                return d;
+            }
+        }
+        return null;
+    }
+
+    /** "Is the cell at these grid coords a wall / open corridor?", answered per build overload. */
+    @FunctionalInterface
+    private interface CellTest {
+        boolean test(int x, int z);
     }
 
     /** A wall column {@code height} blocks tall (Y = floorY .. floorY+height-1). */
@@ -188,7 +307,8 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                 motifConfig.corridor().alternateFloorState(),
                 motifConfig.wall().wallState(),
                 Blocks.AIR.defaultBlockState(),
-                motifConfig.corridor().ceilingState());
+                motifConfig.corridor().ceilingState(),
+                motifConfig.corridor().archState());
     }
 
     /** True if the cell at (x,z) is a wall-equivalent for corridor-wall placement. */
@@ -213,7 +333,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         return grid.get(x, z).getType() == CellType.DOOR;
     }
 
-    /** Resolved block states for one corridor render pass. */
+    /** Resolved block states for one corridor render pass. {@code arch} is null on a flat profile. */
     private record Palette(BlockState floor, BlockState alternateFloor, BlockState wall, BlockState air,
-                            BlockState ceiling) {}
+                            BlockState ceiling, BlockState arch) {}
 }

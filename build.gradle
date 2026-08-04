@@ -155,8 +155,8 @@ tasks.register('floorplan', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'mod.gottsch.forge.dungeons2.diagnostic.FloorPlanTool'
     systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'error'
-    ['seed', 'size', 'motif', 'floors', 'corridorWidth', 'corridorHeight', 'minRoomGap',
-     'x', 'z', 'surfaceY', 'order', 'out', 'open', 'describe'].each { k ->
+    ['seed', 'size', 'motif', 'floors', 'corridorWidth', 'corridorHeight', 'narrowHeight', 'profile', 'archBlock',
+     'minRoomGap', 'x', 'z', 'surfaceY', 'order', 'out', 'open', 'describe'].each { k ->
         if (project.hasProperty(k)) {
             args "--$k=${project.property(k)}"
         }

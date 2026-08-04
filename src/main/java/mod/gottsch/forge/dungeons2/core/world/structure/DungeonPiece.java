@@ -39,8 +39,13 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraftforge.registries.ForgeRegistries;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -241,6 +246,18 @@ public abstract class DungeonPiece extends StructurePiece {
      * <p>Runs as a second pass because a cell's neighbours must already exist: a mitre needs both
      * arms of the corner placed. Positions are pre-filtered to the chunk box, so this only reads
      * around cells this chunk owns.</p>
+     *
+     * <h2>Why a block's own updateShape is not trusted to survive worldgen</h2>
+     * <p>"Follows the same contract" is an assumption about someone else's code, and a block that
+     * breaks it takes the whole chunk with it: {@code updateShape} receives a {@link LevelAccessor},
+     * which during worldgen is a {@code WorldGenRegion} and <strong>not</strong> a {@code Level}. A
+     * block that casts it to {@code Level} (dungeonblocks' {@code FacadeShapeBlock} did, 3.0.0)
+     * throws {@code ClassCastException} from inside vanilla's own derivation, and the resulting
+     * "Feature placement" ReportedException kills chunk generation outright.</p>
+     *
+     * <p>Cosmetics are not worth a dead chunk, so a throwing block is skipped and keeps the shape it
+     * was authored with &mdash; a notch instead of a mitre. Logged once per block so the offending
+     * block is named without spamming a line per corner per chunk.</p>
      */
     private void settleJoinShapes(WorldGenLevel level, BoundingBox box, List<BlockPos> positions) {
         for (BlockPos pos : positions) {
@@ -248,10 +265,28 @@ public abstract class DungeonPiece extends StructurePiece {
             if (!hasJoinShape(current)) {
                 continue; // the decoration pass may have weathered it into something else
             }
-            BlockState settled = Block.updateFromNeighbourShapes(current, level, pos);
+            BlockState settled;
+            try {
+                settled = Block.updateFromNeighbourShapes(current, level, pos);
+            } catch (RuntimeException brokenContract) {
+                warnUnsettleableOnce(current, brokenContract);
+                continue;
+            }
             if (settled != current) {
                 level.setBlock(pos, settled, Block.UPDATE_CLIENTS);
             }
+        }
+    }
+
+    /** Block ids already reported by {@link #warnUnsettleableOnce}; worldgen runs on many threads. */
+    private static final Set<String> UNSETTLEABLE_BLOCKS = ConcurrentHashMap.newKeySet();
+
+    private static void warnUnsettleableOnce(BlockState state, RuntimeException cause) {
+        String id = String.valueOf(ForgeRegistries.BLOCKS.getKey(state.getBlock()));
+        if (UNSETTLEABLE_BLOCKS.add(id)) {
+            Dungeons.LOGGER.warn("{} threw from updateShape during worldgen, so its corner shapes are "
+                    + "left as authored. The block's updateShape must accept a LevelAccessor "
+                    + "(WorldGenRegion), not assume a Level: {}", id, cause.toString());
         }
     }
 

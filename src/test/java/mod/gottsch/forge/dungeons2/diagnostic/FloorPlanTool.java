@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.diagnostic;
 
+import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -57,6 +58,9 @@ import java.util.Optional;
  *   <tr><td>{@code --floors}</td><td>floor count override; omit to let the size tier roll it</td></tr>
  *   <tr><td>{@code --corridorWidth}</td><td>dilation width 1-3 (default 3, matching the shipped generation config)</td></tr>
  *   <tr><td>{@code --corridorHeight}</td><td>corridor wall height in blocks; default is the motif's own {@code corridor.height}</td></tr>
+ *   <tr><td>{@code --profile}</td><td>{@code flat} or {@code arched}, overriding the motif's own</td></tr>
+ *   <tr><td>{@code --archBlock}</td><td>the haunch stairs; defaults to {@code minecraft:stone_brick_stairs} when arching</td></tr>
+ *   <tr><td>{@code --narrowHeight}</td><td>ceiling height for 1-wide cells; defaults to one course below {@code corridorHeight}</td></tr>
  *   <tr><td>{@code --x} / {@code --z}</td><td>world XZ the planner is anchored at (default 0,0)</td></tr>
  *   <tr><td>{@code --surfaceY}</td><td>surface Y the stack hangs from (default 72)</td></tr>
  *   <tr><td>{@code --order}</td><td>{@code EMIT} (production: rooms, corridors, doors) or {@code CORRIDORS_FIRST}</td></tr>
@@ -78,6 +82,49 @@ public final class FloorPlanTool {
 
     private FloorPlanTool() {}
 
+    /**
+     * Applies the {@code --corridorHeight} / {@code --profile} / {@code --archBlock} overrides to
+     * the motif's own corridor section, so a corridor shape can be tried against a real dungeon
+     * without editing the shipped datapack and reloading a world.
+     *
+     * <p>Deliberately routed through {@code CorridorConfig}'s own validation rather than around
+     * it: a combination this tool refuses to draw is exactly the one a datapack would refuse to
+     * load, and finding that out here is cheaper.</p>
+     */
+    private static MotifConfig withCorridorOverrides(MotifConfig base, Map<String, String> opts) {
+        CorridorConfig corridor = base.corridor();
+        if (!opts.containsKey("corridorHeight") && !opts.containsKey("profile")
+                && !opts.containsKey("archBlock") && !opts.containsKey("narrowHeight")) {
+            return base;
+        }
+        int height = Integer.parseInt(opts.getOrDefault("corridorHeight", String.valueOf(corridor.height())));
+        CorridorConfig.Profile profile = opts.containsKey("profile")
+                ? CorridorConfig.Profile.valueOf(opts.get("profile").toUpperCase())
+                : corridor.profile();
+        Optional<String> archBlock = opts.containsKey("archBlock")
+                ? Optional.of(opts.get("archBlock"))
+                : corridor.archBlock();
+        // An arched profile with no block named anywhere: use the vanilla pairing for the shipped
+        // stone_bricks motifs so `-Pprofile=arched` alone does something useful.
+        if (profile == CorridorConfig.Profile.ARCHED && archBlock.isEmpty()) {
+            archBlock = Optional.of("minecraft:stone_brick_stairs");
+        }
+        // Carried through explicitly: rebuilding the record would otherwise drop an authored
+        // narrowHeight the moment any other corridor option is overridden.
+        Optional<Integer> narrowHeight = opts.containsKey("narrowHeight")
+                ? Optional.of(Integer.valueOf(opts.get("narrowHeight")))
+                : corridor.narrowHeight();
+        CorridorConfig overridden = new CorridorConfig(corridor.floor(), corridor.alternateFloor(),
+                corridor.ceiling(), height, profile, archBlock, narrowHeight);
+        if (profile == CorridorConfig.Profile.ARCHED && height < CorridorConfig.MIN_ARCHED_HEIGHT) {
+            System.err.println("profile=arched needs corridorHeight >= " + CorridorConfig.MIN_ARCHED_HEIGHT
+                    + " (got " + height + "); a datapack authoring this would fail to load.");
+            System.exit(1);
+        }
+        return new MotifConfig(base.wall(), base.ceiling(), base.door(), overridden,
+                base.floor(), base.schemes());
+    }
+
     public static void main(String[] args) throws Exception {
         Map<String, String> opts = parse(args);
 
@@ -98,9 +145,8 @@ public final class FloorPlanTool {
         // Loaded before planning, not just for rendering: corridor height is resolved from the
         // motif and injected into the planner, the same way DungeonStructure does it, so the plan
         // this tool draws is the plan production would build.
-        MotifConfig motifConfig = MotifConfigs.load(motif);
-        int corridorHeight = Integer.parseInt(opts.getOrDefault("corridorHeight",
-                String.valueOf(motifConfig.corridor().height())));
+        MotifConfig motifConfig = withCorridorOverrides(MotifConfigs.load(motif), opts);
+        int corridorHeight = motifConfig.corridor().height();
 
         DungeonStackPlanner planner = new DungeonStackPlanner(
                 seed, new Coords(worldX, 0, worldZ), surfaceY, motif, new TemplateCatalog())

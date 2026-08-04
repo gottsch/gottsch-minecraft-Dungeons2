@@ -18,10 +18,14 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.Optional;
 
 /**
  * The corridor section of a {@link MotifConfig}: its own floor pair and ceiling, distinct from the
@@ -39,9 +43,55 @@ import net.minecraft.world.level.block.state.BlockState;
  * {@code height - 2} rows of air between. It is motif-wide &mdash; per-floor variation is a later
  * step and wants a weighted roll, not a second scalar here.</p>
  *
+ * <p>{@code profile} shapes the top of that column. {@code flat} is a single ceiling row;
+ * {@code arched} adds a haunch row of {@code archBlock} stairs immediately below it, angled into
+ * the walls, so the ceiling springs from the wall rather than meeting it square. See
+ * {@link Profile}.</p>
+ *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record CorridorConfig(String floor, String alternateFloor, String ceiling, int height) {
+public record CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                             Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight) {
+
+    /** The flat form: the fields that predate profiles, with no arch. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height) {
+        this(floor, alternateFloor, ceiling, height, Profile.FLAT, Optional.empty(), Optional.empty());
+    }
+
+    /** The pre-narrowHeight form. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                          Profile profile, Optional<String> archBlock) {
+        this(floor, alternateFloor, ceiling, height, profile, archBlock, Optional.empty());
+    }
+
+    /**
+     * The shape of the corridor's ceiling.
+     *
+     * <p>{@code ARCHED} puts a stair at {@code floorY + height - 2} in every corridor cell that has
+     * a wall on one side and open corridor on the other, turned so its mass sits against the wall
+     * and its cut-away opens over the passage. Cells with walls on <em>both</em> sides get no
+     * haunch at all &mdash; that is a 1-wide corridor, and arching it from both sides would brick
+     * it up. The crown row above is unchanged, which is why an arch costs no extra height beyond
+     * the row it borrows.</p>
+     */
+    public enum Profile implements StringRepresentable {
+        FLAT("flat"),
+        ARCHED("arched");
+
+        private final String name;
+
+        Profile(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return name;
+        }
+
+        /** Failing rather than lenient, same reasoning as {@code WallPatternEntry.CourseAnchor}. */
+        public static final Codec<Profile> CODEC = StringRepresentable.fromEnum(Profile::values);
+    }
 
     /**
      * The historical hardcoded corridor height (was {@code DungeonCorridorPiece.CORRIDOR_WALL_HEIGHT}),
@@ -63,17 +113,73 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
     public static final int MIN_HEIGHT = 5;
     public static final int MAX_HEIGHT = 8;
 
+    /**
+     * The shortest corridor an arch fits in. The haunch row is {@code height - 2}, and it has to
+     * clear the door column's fixed {@code floorY .. floorY+3} &mdash; at height 5 the haunch would
+     * land on the lintel row itself and stair-block the doorway.
+     */
+    public static final int MIN_ARCHED_HEIGHT = 6;
+
+    /**
+     * The ceiling height for a cell that is only one cell wide, which is 15% of corridor cells at
+     * the shipped settings (measured across 40 MEDIUM dungeons at {@code corridorWidth} 3).
+     *
+     * <p>Full height reads fine in a passage you can see across, and reads as a slot canyon in one
+     * you cannot &mdash; the eye has nothing to judge the height against, so a 1-wide 7-high run
+     * just looks like a mistake. So a narrow cell drops its top course. Defaults to one row below
+     * {@code height}, never below {@link #MIN_HEIGHT}, which means a motif that never mentions it
+     * still behaves sensibly at every height including 5 (where it is a no-op).</p>
+     */
+    public int narrowCellHeight() {
+        return Math.max(MIN_HEIGHT, narrowHeight.orElse(height - 1));
+    }
+
     public static final CorridorConfig DEFAULT =
             new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
-                    DEFAULT_HEIGHT);
+                    DEFAULT_HEIGHT, Profile.FLAT, Optional.empty(), Optional.empty());
 
-    public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("floor").forGetter(CorridorConfig::floor),
-            Codec.STRING.fieldOf("alternateFloor").forGetter(CorridorConfig::alternateFloor),
-            Codec.STRING.fieldOf("ceiling").forGetter(CorridorConfig::ceiling),
-            Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "height", DEFAULT_HEIGHT)
-                    .forGetter(CorridorConfig::height)
-    ).apply(instance, CorridorConfig::new));
+    public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
+            instance.group(
+                    Codec.STRING.fieldOf("floor").forGetter(CorridorConfig::floor),
+                    Codec.STRING.fieldOf("alternateFloor").forGetter(CorridorConfig::alternateFloor),
+                    Codec.STRING.fieldOf("ceiling").forGetter(CorridorConfig::ceiling),
+                    Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "height", DEFAULT_HEIGHT)
+                            .forGetter(CorridorConfig::height),
+                    Codecs.strictOptionalFieldOf(Profile.CODEC, "profile", Profile.FLAT)
+                            .forGetter(CorridorConfig::profile),
+                    Codecs.strictOptionalFieldOf(Codec.STRING, "archBlock")
+                            .forGetter(CorridorConfig::archBlock),
+                    Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "narrowHeight")
+                            .forGetter(CorridorConfig::narrowHeight)
+            ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);
+
+    /**
+     * The two cross-field rules, which no single field's codec can express.
+     *
+     * <p>Both fail rather than degrade. An arch that quietly falls back to flat because the motif
+     * was one block too short is a dungeon that generates fine and simply isn't what was authored
+     * &mdash; indistinguishable, in game, from the feature not working. And an {@code arched}
+     * profile with no {@code archBlock} must not invent stone brick stairs for a deepslate motif:
+     * that is the silent-fallthrough the whole config was rebuilt to make impossible, and it is the
+     * same rule that makes a {@code door} section missing its {@code lintel} a load error.</p>
+     */
+    private static DataResult<CorridorConfig> validate(CorridorConfig config) {
+        if (config.profile == Profile.ARCHED && config.height < MIN_ARCHED_HEIGHT) {
+            return DataResult.error(() -> "corridor: profile 'arched' needs a height of at least "
+                    + MIN_ARCHED_HEIGHT + " (got " + config.height + ") -- the haunch row would land on the "
+                    + "doorway's lintel and block it");
+        }
+        if (config.profile == Profile.ARCHED && config.archBlock.isEmpty()) {
+            return DataResult.error(() ->
+                    "corridor: profile 'arched' requires an 'archBlock' (the stairs the haunch is built from)");
+        }
+        if (config.narrowHeight.isPresent() && config.narrowHeight.get() > config.height) {
+            return DataResult.error(() -> "corridor: narrowHeight " + config.narrowHeight.get()
+                    + " is above height " + config.height + " -- a 1-wide stretch cannot be taller than the "
+                    + "corridor it is part of");
+        }
+        return DataResult.success(config);
+    }
 
     public BlockState floorState() {
         return BlockStateCodec.block(floor, Blocks.STONE_BRICKS);
@@ -85,5 +191,21 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
 
     public BlockState ceilingState() {
         return BlockStateCodec.block(ceiling, Blocks.STONE_BRICKS);
+    }
+
+    /**
+     * The haunch stair's base state, or {@code null} when this corridor isn't arched. Falls back to
+     * the ceiling block if the authored id doesn't resolve &mdash; a haunch has to be *something*
+     * solid, and a hole in the ceiling is worse than a square one.
+     */
+    public BlockState archState() {
+        if (profile != Profile.ARCHED || archBlock.isEmpty()) {
+            return null;
+        }
+        return BlockStateCodec.block(archBlock.get(), ceilingState().getBlock());
+    }
+
+    public boolean isArched() {
+        return profile == Profile.ARCHED;
     }
 }

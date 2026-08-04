@@ -477,6 +477,42 @@ floor gets. An out-of-range value **fails to load** rather than clamping back to
 reason a `door` section missing its `lintel` does: a datapack that asks for 12 and silently gets 5
 is the failure mode this whole config was rebuilt to make impossible.
 
+`corridor.profile` shapes the top of that column: `flat` (the default) is a single ceiling row,
+`arched` keeps that crown row and turns the row below it into stair haunches leaning into the
+walls, so the ceiling springs off the wall instead of meeting it square. An arch therefore *borrows*
+a row rather than needing an extra one.
+
+```jsonc
+"corridor": { "floor": "minecraft:stone_bricks",
+              "alternateFloor": "minecraft:stone_bricks",
+              "ceiling": "minecraft:stone_bricks",
+              "height": 7,
+              "profile": "arched",
+              "archBlock": "minecraft:stone_brick_stairs" }
+```
+
+`archBlock` is **required** when the profile is `arched` — the same rule as a `door` section with
+no `lintel`. Silently defaulting it would put stone brick stairs in a deepslate corridor.
+`profile: arched` also requires `height` of at least 6: the haunch row is `height - 2`, and at
+height 5 that is the doorway's lintel row, so the arch would stair-block every door.
+
+`corridor.narrowHeight` is the ceiling height for a cell that is only **one cell wide** — walls
+facing each other across it. It defaults to one course below `height` and never goes below 5, so a
+motif that never mentions it still behaves sensibly (at `height: 5` it is a no-op). Full height
+reads fine in a passage you can see across and reads as a slot canyon in one you cannot: the eye has
+nothing to judge the height against, so a 1-wide 7-high run just looks like a mistake. Around 15% of
+corridor cells are 1-wide at the shipped settings, so this is not a rare case.
+
+The rows between a dropped ceiling and the corridor's full height are **filled solid**, not left
+alone — the piece's bounding box covers them either way, and whatever the terrain happened to put
+there could be a cave, i.e. a hole in the corridor roof.
+
+A haunch only goes in a cell that has a wall on one side and open corridor on the other. That one
+condition is what makes narrow corridors degrade correctly — a 1-wide corridor has walls on *both*
+sides across its width, so it never arches itself shut; only the ends of the run, where there's a
+wall behind and open passage ahead, get a haunch. Inside corners have two candidate directions and
+take the lowest of N/S/W/E, deterministically.
+
 Corridors are never dressed by a scheme — a border ring or checkerboard needs a room-sized
 rectangle. Corridor *walls* come from the shared `wall` section. Room `base`/`alternateBase` are
 rolled per interior cell at 45/55; `classic` sets both to the same block so the floor is uniform

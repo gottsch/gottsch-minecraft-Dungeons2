@@ -127,6 +127,49 @@ class MotifConfigCodecTest {
                 "a non-numeric height must fail to load");
     }
 
+    // -------- corridor profile --------
+
+    @Test
+    void aCorridorDefaultsToTheFlatProfile() {
+        assertEquals(CorridorConfig.Profile.FLAT,
+                fragment(String.format(CORRIDOR, "")).corridor().orElseThrow().profile());
+    }
+
+    @Test
+    void anArchedCorridorIsRead() {
+        CorridorConfig corridor = fragment(String.format(CORRIDOR,
+                ",\"height\": 7,\"profile\": \"arched\",\"archBlock\": \"minecraft:stone_brick_stairs\""))
+                .corridor().orElseThrow();
+
+        assertTrue(corridor.isArched());
+        assertEquals("minecraft:stone_brick_stairs", corridor.archBlock().orElseThrow());
+    }
+
+    /**
+     * An arch one block too short would put its haunch row on the doorway's lintel. Failing beats
+     * quietly falling back to flat: a dungeon that generates fine but isn't what was authored is
+     * indistinguishable, in game, from the feature not working at all.
+     */
+    @Test
+    void anArchedCorridorTooShortForItsHaunchIsALoadError() {
+        assertTrue(fails(String.format(CORRIDOR,
+                        ",\"height\": 5,\"profile\": \"arched\",\"archBlock\": \"minecraft:stone_brick_stairs\"")),
+                "arched at height 5 must fail to load");
+    }
+
+    /** Same rule as a `door` section with no `lintel`: never invent a block the author didn't name. */
+    @Test
+    void anArchedCorridorWithNoArchBlockIsALoadError() {
+        assertTrue(fails(String.format(CORRIDOR, ",\"height\": 7,\"profile\": \"arched\"")),
+                "arched with no archBlock must fail rather than defaulting to stone brick stairs");
+    }
+
+    @Test
+    void anUnknownProfileIsALoadError() {
+        assertTrue(fails(String.format(CORRIDOR, ",\"profile\": \"vaulted\"")),
+                "a typo'd profile must fail rather than silently reading as flat");
+    }
+
     /** Later fragment wins a section outright; sections are whole, never merged field by field. */
     @Test
     void aLaterFragmentReplacesASectionItAuthors() {

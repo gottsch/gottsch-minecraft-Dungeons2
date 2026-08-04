@@ -14,7 +14,8 @@
   "corridor": {
     "floor": "minecraft:cobblestone",
     "alternateFloor": "minecraft:stone_bricks",
-    "ceiling": "minecraft:stone_bricks"
+    "ceiling": "minecraft:stone_bricks",
+    "height": 7
   },
   "floor": {
     "base": "minecraft:stone_bricks",

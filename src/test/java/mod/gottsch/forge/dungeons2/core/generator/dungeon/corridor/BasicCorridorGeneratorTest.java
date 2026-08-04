@@ -22,17 +22,20 @@ import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.StairBlock;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,14 +216,16 @@ class BasicCorridorGeneratorTest {
      * A corridor's air gap grows with its height and the ceiling moves with it: at {@code h} the
      * cell is floor at {@code floorY}, {@code h-2} air rows, ceiling at {@code floorY+h-1}.
      */
+    /**
+     * Measured on a <em>wide</em> corridor deliberately: a 1-wide run drops its top course by
+     * design (see {@link #aOneWideCellDropsItsCeilingAndFillsAbove}), so it is the wrong shape to
+     * ask "does height reach the ceiling" of.
+     */
     @Test
     void aTallerCorridorGetsMoreAirAndAHigherCeiling() {
-        CorridorData corridor = simpleCorridor();
-        corridor.setWallHeight(7);
-
         List<BlockPlacement> out = new ArrayList<>();
         new BasicCorridorGenerator()
-                .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
         long airInMiddleCell = out.stream()
                 .filter(bp -> bp.getX() == 3 && bp.getZ() == 3 && "minecraft:air".equals(bp.getBlockId()))
@@ -232,7 +237,7 @@ class BasicCorridorGeneratorTest {
                         && !"minecraft:air".equals(bp.getBlockId()));
         assertTrue(ceilingAtTop, "the ceiling should sit at floorY+height-1 = 66");
 
-        long westWallColumn = out.stream().filter(bp -> bp.getX() == 1 && bp.getZ() == 3).count();
+        long westWallColumn = out.stream().filter(bp -> bp.getX() == 0 && bp.getZ() == 3).count();
         assertEquals(7, westWallColumn, "wall columns should be as tall as the corridor");
     }
 
@@ -281,6 +286,236 @@ class BasicCorridorGeneratorTest {
                 .build(gridFree, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), b);
 
         assertEquals(a.size(), b.size(), "the two overloads should emit the same number of blocks");
+    }
+
+    // -------- arched profile --------
+
+    /** An arched motif at the given height, built from stone brick stairs. */
+    private static MotifConfig arched(int height) {
+        return new MotifConfig(
+                MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
+                new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
+                        height, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs")),
+                MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
+    }
+
+    /** A 7x7 grid with a 3-wide corridor running east-west, so the arch has a cross-section. */
+    private Grid2D wideGrid() {
+        Grid2D grid = new Grid2D(7, 7);
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 2; z <= 4; z++) {
+                grid.get(x, z).setType(CellType.CORRIDOR);
+                grid.get(x, z).setRegionId(10);
+            }
+        }
+        return grid;
+    }
+
+    private CorridorData wideCorridor(int height) {
+        CorridorData c = new CorridorData(10);
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 2; z <= 4; z++) {
+                c.getCells().add(new Coords2D(x, z));
+            }
+        }
+        c.setWallHeight(height);
+        return c;
+    }
+
+    private static BlockPlacement at(List<BlockPlacement> out, int x, int y, int z) {
+        return out.stream().filter(bp -> bp.getX() == x && bp.getY() == y && bp.getZ() == z)
+                .findFirst().orElseThrow(() -> new AssertionError("nothing placed at " + x + "," + y + "," + z));
+    }
+
+    /**
+     * Read orientation off the <em>resolved</em> state, not the placement's property map:
+     * {@code BlockStateCodec.encodeProperties} stores only non-default values, and stairs default
+     * to {@code facing=north}, so the map is silently empty for exactly the case most worth
+     * asserting.
+     */
+    private static String facingOf(BlockPlacement bp) {
+        return BlockStateCodec.resolve(bp).getValue(StairBlock.FACING).getSerializedName();
+    }
+
+    private static String halfOf(BlockPlacement bp) {
+        return BlockStateCodec.resolve(bp).getValue(StairBlock.HALF).getSerializedName();
+    }
+
+    /**
+     * The cross-section of a 3-wide arch at height 7: haunches on the two wall-adjacent lanes
+     * leaning into their own wall, clear air down the middle, crown across the top.
+     *
+     * <p>The facings are the whole point and they are easy to get backwards. A stair's upper half
+     * is solid on the side it faces (verified against the real block shapes), so the north lane's
+     * haunch must face NORTH to put its mass in the north wall.</p>
+     */
+    @Test
+    void aThreeWideArchLeansItsHaunchesIntoTheWalls() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        // haunch row is floorY + height - 2 = 65; corridor lanes are z=2 (north), 3, 4 (south).
+        BlockPlacement north = at(out, 3, 65, 2);
+        assertEquals("minecraft:stone_brick_stairs", north.getBlockId());
+        assertEquals("north", facingOf(north), "north lane must lean into the north wall");
+        assertEquals("top", halfOf(north), "a haunch hangs from the crown, not the floor");
+
+        BlockPlacement south = at(out, 3, 65, 4);
+        assertEquals("minecraft:stone_brick_stairs", south.getBlockId());
+        assertEquals("south", facingOf(south), "south lane must lean into the south wall");
+
+        assertEquals("minecraft:air", at(out, 3, 65, 3).getBlockId(),
+                "the middle lane has no wall to spring from, so it stays open");
+        assertEquals("minecraft:stone_bricks", at(out, 3, 66, 3).getBlockId(),
+                "the crown row is unchanged by the arch");
+    }
+
+    /**
+     * The degradation that matters, and it is narrower than "a 1-wide corridor gets no arch".
+     *
+     * <p>A 1-wide run has walls on both sides <em>across</em> its width, so no north/south haunch
+     * ever qualifies — arching it from both sides would brick the passage shut at head height.
+     * Along the run it is a different story: the cell at each end has a wall behind it and open
+     * corridor ahead, so it does get a haunch, and that is the vault closing against the end wall
+     * rather than anything blocking passage. Only the middle of the run is bare.</p>
+     */
+    @Test
+    void aOneWideCorridorIsNeverArchedAcrossItsWidth() {
+        CorridorData corridor = simpleCorridor(); // x = 2..4 at z = 3, walls north and south
+        corridor.setWallHeight(7);
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(7))
+                .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        // A 1-wide run also drops its ceiling to 6, so its haunch row is 60 + 6 - 2 = 64.
+        assertEquals("minecraft:air", at(out, 3, 64, 3).getBlockId(),
+                "the middle of a 1-wide run has no wall to spring from in any direction");
+
+        for (BlockPlacement bp : out) {
+            if ("minecraft:stone_brick_stairs".equals(bp.getBlockId())) {
+                String facing = facingOf(bp);
+                assertTrue("east".equals(facing) || "west".equals(facing),
+                        "a haunch across the 1-cell width would narrow the passage; got facing=" + facing);
+            }
+        }
+    }
+
+    /** Nothing the arch does may reach the door column's fixed floorY..floorY+3. */
+    @Test
+    void theArchNeverReachesIntoTheDoorColumn() {
+        for (int height = CorridorConfig.MIN_ARCHED_HEIGHT; height <= CorridorConfig.MAX_HEIGHT; height++) {
+            List<BlockPlacement> out = new ArrayList<>();
+            new BasicCorridorGenerator().withMotifConfig(arched(height))
+                    .build(wideCorridor(height), wideGrid(), 60, DungeonMotif.CLASSIC,
+                            RandomSource.create(7L), out);
+
+            for (BlockPlacement bp : out) {
+                if ("minecraft:stone_brick_stairs".equals(bp.getBlockId())) {
+                    assertTrue(bp.getY() > 63,
+                            "height " + height + ": a haunch at " + bp.getY()
+                                    + " lands in the door column (60..63)");
+                }
+            }
+        }
+    }
+
+    /** Flat stays flat: the arch must be opt-in, not something every motif silently acquires. */
+    @Test
+    void aFlatProfileEmitsNoStairs() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator()
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertTrue(out.stream().noneMatch(bp -> bp.getBlockId().contains("stairs")),
+                "the default flat profile should place no stairs");
+    }
+
+    // -------- narrow cells drop their top course --------
+
+    /** A flat motif at the given height, leaving narrowHeight to its default (height - 1). */
+    private static MotifConfig flat(int height) {
+        return new MotifConfig(
+                MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
+                new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
+                        height),
+                MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
+    }
+
+    /**
+     * A 1-wide run reads as a slot canyon at full height, so its ceiling comes down one course.
+     * The rows above the dropped ceiling must be <em>filled</em>, not merely skipped: the piece's
+     * bounding box covers them either way, and leaving them to whatever the terrain put there is
+     * how you get a cave opening into the corridor roof.
+     */
+    @Test
+    void aOneWideCellDropsItsCeilingAndFillsAbove() {
+        CorridorData corridor = simpleCorridor(); // 1-wide run at z = 3
+        corridor.setWallHeight(7);
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(flat(7))
+                .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertEquals("minecraft:air", at(out, 3, 64, 3).getBlockId(), "row 4 is still headroom");
+        assertEquals("minecraft:stone_bricks", at(out, 3, 65, 3).getBlockId(),
+                "the ceiling drops to floorY+5 in a 1-wide cell");
+        assertTrue(!"minecraft:air".equals(at(out, 3, 66, 3).getBlockId()),
+                "the row above a dropped ceiling must be filled solid, not left open");
+
+        long column = out.stream().filter(bp -> bp.getX() == 3 && bp.getZ() == 3).count();
+        assertEquals(7, column, "a narrow cell still writes every row of the corridor's full height");
+    }
+
+    /** A wide corridor is unaffected — the rule is about cells with no cross-section. */
+    @Test
+    void aWideCellKeepsTheFullHeight() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(flat(7))
+                .build(wideCorridor(7), wideGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertEquals("minecraft:air", at(out, 3, 65, 3).getBlockId(),
+                "a 3-wide corridor keeps its headroom at row 5");
+        assertEquals("minecraft:stone_bricks", at(out, 3, 66, 3).getBlockId(),
+                "and its ceiling stays at the full height");
+    }
+
+    /**
+     * The narrow rule must not undercut the doorway. Dropping the ceiling shortens the cell, and a
+     * cell in front of a door still has to clear the lintel at floorY+3.
+     */
+    @Test
+    void aDroppedCeilingStillClearsTheDoorColumn() {
+        for (int height = CorridorConfig.MIN_HEIGHT; height <= CorridorConfig.MAX_HEIGHT; height++) {
+            CorridorData corridor = simpleCorridor();
+            corridor.setWallHeight(height);
+            Grid2D grid = simpleGrid();
+            grid.get(1, 3).setType(CellType.DOOR);
+
+            List<BlockPlacement> out = new ArrayList<>();
+            new BasicCorridorGenerator().withMotifConfig(flat(height))
+                    .build(corridor, grid, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+            for (int y = 61; y <= 63; y++) {
+                assertEquals("minecraft:air", at(out, 2, y, 3).getBlockId(),
+                        "height " + height + ": the cell at the doorway must stay open at y=" + y);
+            }
+        }
+    }
+
+    /** An arch needs 6; a narrow cell dropped below that gets no haunch rather than a bad one. */
+    @Test
+    void aNarrowCellDroppedBelowArchHeightGetsNoHaunch() {
+        CorridorData corridor = simpleCorridor();
+        corridor.setWallHeight(6); // narrow cells drop to 5, one below MIN_ARCHED_HEIGHT
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(arched(6))
+                .build(corridor, simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        assertTrue(out.stream().noneMatch(bp -> bp.getBlockId().contains("stairs")),
+                "a cell dropped below the arch minimum must not be arched");
     }
 
     @Test
