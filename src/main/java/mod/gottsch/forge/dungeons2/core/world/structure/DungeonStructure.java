@@ -19,9 +19,13 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
+import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
+import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
+import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
@@ -53,6 +57,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import java.util.ArrayList;
+import java.util.function.Supplier;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -191,6 +196,40 @@ public class DungeonStructure extends Structure {
         super(settings);
     }
 
+    /**
+     * Size / floor count / motif forced by {@code /d2-generate}, or {@code null} for the normal
+     * seed-rolled behaviour. Any field may be null to leave that one rolled.
+     *
+     * <p>This is a debug channel and looks like one. Nothing about worldgen's own plumbing can carry
+     * it: {@code findGenerationPoint} receives a vanilla {@link GenerationContext} and that is the
+     * whole of its input, so a command that wants to force a large 3-floor dungeon has no argument
+     * to pass. See {@link #withDebugOverrides} for why a static is safe here and would not be for
+     * anything else.</p>
+     */
+    public record DebugOverrides(DungeonSize size, Integer floorCount, String motif) {}
+
+    private static DebugOverrides debugOverrides;
+
+    /**
+     * Runs {@code work} with these overrides in force, then clears them &mdash; always, including on
+     * an exception. Callers must use this rather than setting the field, because a leaked override
+     * would apply to <em>natural</em> generation, and it would do so silently: a world quietly full
+     * of LARGE dungeons is not a crash, it is a save file nobody can tell is wrong.
+     *
+     * <p>Safe because the only caller is a command and the work it wraps is entirely synchronous
+     * &mdash; {@code Structure.generate} calls {@code findGenerationPoint} and builds the pieces
+     * before it returns, all on the server thread. It is not safe for anything that outlives the
+     * call, and there is deliberately no public setter.</p>
+     */
+    public static <T> T withDebugOverrides(DebugOverrides overrides, Supplier<T> work) {
+        debugOverrides = overrides;
+        try {
+            return work.get();
+        } finally {
+            debugOverrides = null;
+        }
+    }
+
     @Override
     public Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
@@ -207,7 +246,11 @@ public class DungeonStructure extends Structure {
         long seed = chunkPos.toLong() ^ context.seed();
         // Motif is fixed for now (CLASSIC is the only authored motif); size and
         // floor count are rolled deterministically inside the planner from seed.
-        String motifValue = DungeonMotif.CLASSIC.getValue();
+        // /d2-generate can force any of the three -- see DebugOverrides.
+        DebugOverrides overrides = debugOverrides;
+        String motifValue = overrides != null && overrides.motif() != null
+                ? overrides.motif()
+                : DungeonMotif.CLASSIC.getValue();
         StructureTemplateManager templateManager = context.structureTemplateManager();
         BlockPos position = new BlockPos(chunkCenterX, surfaceY, chunkCenterZ);
 
@@ -308,8 +351,14 @@ public class DungeonStructure extends Structure {
                 new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
                         surfaceY, motifValue, new TemplateCatalog());
         planner.withCorridorWidth(DungeonGenerationConfigHelper.get(context.registryAccess()).corridorWidth());
-        planner.withCorridorHeight(
-                MotifConfigHelper.get(context.registryAccess(), motifValue).corridor().height());
+        planner.withCorridorStyles(corridorStyleWeights(
+                MotifConfigHelper.get(context.registryAccess(), motifValue).corridor()));
+        if (overrides != null && overrides.size() != null) {
+            planner.withSize(overrides.size());
+        }
+        if (overrides != null && overrides.floorCount() != null) {
+            planner.withFloorCount(overrides.floorCount());
+        }
         planner.withTransitionAssembler(transitionAssembler);
         planner.withRoomAssembler(roomAssembler);
         if (geo != null) {
@@ -384,6 +433,20 @@ public class DungeonStructure extends Structure {
                 throw e;
             }
         }));
+    }
+
+    /**
+     * The motif's corridor styles reduced to what the planner can hold &mdash; it has no
+     * {@code net.minecraft} imports, so it takes names, weights and heights and the generator
+     * re-resolves the rest. A motif with no {@code styles} list yields its single baseline geometry,
+     * which is the historical behaviour.
+     */
+    public static List<CorridorStyleWeight> corridorStyleWeights(CorridorConfig corridor) {
+        List<CorridorStyleWeight> weights = new ArrayList<>();
+        for (CorridorStyle style : corridor.rollableStyles()) {
+            weights.add(new CorridorStyleWeight(style.name(), style.weight(), style.height()));
+        }
+        return weights;
     }
 
     /**

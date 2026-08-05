@@ -18,7 +18,9 @@
 package mod.gottsch.forge.dungeons2.diagnostic;
 
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
+import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
@@ -93,10 +95,29 @@ public final class FloorPlanTool {
      */
     private static MotifConfig withCorridorOverrides(MotifConfig base, Map<String, String> opts) {
         CorridorConfig corridor = base.corridor();
+        // --style pins every floor to one authored style, which is how you look at a single style
+        // in isolation; without it the tool rolls per floor exactly as production does.
+        if (opts.containsKey("style")) {
+            String wanted = opts.get("style");
+            CorridorStyle style = corridor.styles().stream()
+                    .filter(s -> s.name().equals(wanted)).findFirst().orElse(null);
+            if (style == null) {
+                System.err.println("motif '" + base + "' has no corridor style '" + wanted + "'. Authored: "
+                        + corridor.styles().stream().map(CorridorStyle::name).toList());
+                System.exit(1);
+            }
+            corridor = new CorridorConfig(corridor.floor(), corridor.alternateFloor(), corridor.ceiling(),
+                    style.height(), style.profile(), style.archBlock(), style.narrowHeight());
+            base = new MotifConfig(base.wall(), base.ceiling(), base.door(), corridor,
+                    base.floor(), base.schemes());
+        }
         if (!opts.containsKey("corridorHeight") && !opts.containsKey("profile")
                 && !opts.containsKey("archBlock") && !opts.containsKey("narrowHeight")) {
             return base;
         }
+        // Any explicit geometry override drops the styles list: the caller is asking for one shape,
+        // and leaving the roll in place would silently apply the override to only some floors. The
+        // constructor used below takes no styles, so this happens by construction.
         int height = Integer.parseInt(opts.getOrDefault("corridorHeight", String.valueOf(corridor.height())));
         CorridorConfig.Profile profile = opts.containsKey("profile")
                 ? CorridorConfig.Profile.valueOf(opts.get("profile").toUpperCase())
@@ -142,17 +163,17 @@ public final class FloorPlanTool {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
 
-        // Loaded before planning, not just for rendering: corridor height is resolved from the
-        // motif and injected into the planner, the same way DungeonStructure does it, so the plan
-        // this tool draws is the plan production would build.
+        // Loaded before planning, not just for rendering: the corridor styles are resolved from the
+        // motif and injected into the planner, through the same helper DungeonStructure calls, so
+        // the plan this tool draws is the plan production would build -- including which style each
+        // floor rolls.
         MotifConfig motifConfig = withCorridorOverrides(MotifConfigs.load(motif), opts);
-        int corridorHeight = motifConfig.corridor().height();
 
         DungeonStackPlanner planner = new DungeonStackPlanner(
                 seed, new Coords(worldX, 0, worldZ), surfaceY, motif, new TemplateCatalog())
                 .withSize(size)
                 .withCorridorWidth(corridorWidth)
-                .withCorridorHeight(corridorHeight)
+                .withCorridorStyles(DungeonStructure.corridorStyleWeights(motifConfig.corridor()))
                 .withMinRoomGap(minRoomGap);
         if (opts.containsKey("floors")) {
             planner.withFloorCount(Integer.parseInt(opts.get("floors")));

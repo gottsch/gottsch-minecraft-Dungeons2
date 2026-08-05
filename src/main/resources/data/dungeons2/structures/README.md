@@ -467,8 +467,9 @@ it is the same four-block column a doored one is.
 
 The other non-block field is `corridor.height` (5–8, default 5): the corridor's wall height in
 blocks, so the passage runs `floorY .. floorY + height - 1` — floor row at the bottom, ceiling row
-at the top, `height - 2` rows of air between. It is dungeon-wide; per-floor variation is not a
-thing yet.
+at the top, `height - 2` rows of air between. It is the motif's **baseline** geometry, used
+dungeon-wide unless the motif also authors `corridor.styles` (below), in which case it becomes
+the fallback rather than the value.
 
 The range is not arbitrary at either end. Below 5 the ceiling would land inside the doorway, which
 is a fixed four-block column (sill / two door halves / lintel) at every height — a taller corridor
@@ -506,6 +507,51 @@ staircase up and down along every run — visibly worse than the problem it solv
 motif whose corridors are uniformly narrow; do not expect it to behave on corridors that pinch and
 widen. (Doing the same thing per *run* rather than per cell is the version that would actually work,
 and is not built.)
+
+### Per-floor corridor styles
+
+`corridor.styles` is a weighted list of **named** corridor geometries. One is rolled **per floor**,
+and every corridor on that floor is built to it — so descending changes the character of the
+passages, while the corridor you are standing in never changes shape halfway along.
+
+```jsonc
+"corridor": { "floor": "minecraft:cobblestone",
+              "alternateFloor": "minecraft:stone_bricks",
+              "ceiling": "minecraft:stone_bricks",
+              "height": 7, "narrowHeight": 6,
+              "profile": "arched", "archBlock": "minecraft:stone_brick_stairs",
+              "styles": [
+                { "name": "vaulted", "weight": 3, "height": 7, "narrowHeight": 6,
+                  "profile": "arched", "archBlock": "minecraft:stone_brick_stairs" },
+                { "name": "grand",   "weight": 1, "height": 8, "narrowHeight": 7,
+                  "profile": "arched", "archBlock": "minecraft:stone_brick_stairs" },
+                { "name": "cramped", "weight": 2, "height": 5, "profile": "flat" }
+              ] }
+```
+
+A style carries the whole geometry set — `height`, `profile`, `archBlock`, `narrowHeight` — not just
+a height. That is deliberate: varying height while leaving the profile pinned motif-wide gives the
+tall floors an arch that was tuned for the short ones. `weight` defaults to 1 and must be at least
+1; a style that can never be rolled is a load error rather than a silent no-op.
+
+Every rule that applies to the `corridor` section applies to each style: the 5–8 range, arched
+needing height ≥ 6, arched needing an `archBlock`, and `narrowHeight` not exceeding `height`. A
+styles list is otherwise just a way to smuggle in the shapes the section itself rejects.
+
+Two rules are specific to styles:
+
+- **`name` is required, must not be blank, and must be unique within the list.** A generated
+  corridor stores only its style's *name*, so a duplicate would make its geometry depend on the
+  order of the list — silently, and only on the floors that happened to roll it.
+- **The baseline does not join the roll.** A motif's own `height`/`profile`/`archBlock`/
+  `narrowHeight` are what a motif with *no* `styles` generates, and the fallback if a saved corridor
+  names a style that no longer exists. A motif that authors styles chooses among those only. If you
+  want the baseline in the roll, author it as a style too — which is what the shipped `classic`
+  does with `vaulted`.
+
+Renaming or deleting a style does **not** break existing worlds: a corridor whose style name no
+longer resolves falls back to the baseline, and its *height* is stored on the piece itself, so the
+excavated shape is unchanged either way. Only the arch profile can shift.
 
 The rows between a dropped ceiling and the corridor's full height are **filled solid**, not left
 alone — the piece's bounding box covers them either way, and whatever the terrain happened to put

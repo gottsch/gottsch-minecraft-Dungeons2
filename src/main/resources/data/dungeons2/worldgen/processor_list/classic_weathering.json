@@ -219,10 +219,6 @@
             {
               "block": "minecraft:cobblestone_stairs",
               "probability": 0.43
-            },
-            {
-              "block": "minecraft:dirt",
-              "probability": 0.05
             }
           ]
         },
@@ -232,10 +228,6 @@
             {
               "block": "minecraft:polished_andesite_stairs",
               "probability": 0.5
-            },
-            {
-              "block": "minecraft:dirt",
-              "probability": 0.05
             }
           ]
         },

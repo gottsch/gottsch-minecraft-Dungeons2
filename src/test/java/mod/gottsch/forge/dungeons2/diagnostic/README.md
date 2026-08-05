@@ -26,6 +26,7 @@ Output lands in `build/floorplan/floorplan-<seed>.html` — one file, no assets,
 | `-PnarrowHeight` | the motif's own (default: no drop) | ceiling height for 1-wide cells |
 | `-Pprofile` | the motif's own `corridor.profile` | `flat` or `arched` |
 | `-ParchBlock` | `minecraft:stone_brick_stairs` | haunch stairs, when arching |
+| `-Pstyle` | — | pin every floor to one authored `corridor.styles` entry by name |
 | `-PminRoomGap` | `0` | minimum clear cells between rooms; `0` is shipped behaviour |
 | `-Px` / `-Pz` | `0` | world XZ the planner is anchored at |
 | `-PsurfaceY` | `72` | surface Y the stack hangs from |
@@ -34,8 +35,14 @@ Output lands in `build/floorplan/floorplan-<seed>.html` — one file, no assets,
 | `-Popen` | `false` | open in the default browser when done |
 | `-Pdescribe` | `false` | also dump the planner's own layout description |
 
-Every run also prints a text audit: who wins the contested cells, which writes actually changed the
-block, per-room wall ownership at the trim row, and any doorway left bricked up. That is what makes
+Without `-Pstyle`, the tool rolls a corridor style per floor exactly as production does — the
+audit's first block is which style each floor got. The four geometry overrides above are
+different: any of them **drops the styles list entirely** and pins the whole dungeon to one
+shape, since applying an override to only the floors that happened to roll it would be useless.
+
+Every run also prints a text audit: the per-floor corridor style, who wins the contested cells,
+which writes actually changed the block, per-room wall ownership at the trim row, and any
+doorway left bricked up. That is what makes
 two runs comparable as numbers rather than as two pictures.
 
 `-Porder` and `-PminRoomGap` exist to measure a change *before* making it. `-Porder` changes who wins

@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
+import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
@@ -41,7 +42,8 @@ import java.util.Set;
  * Builds one corridor region as {@link BlockPlacement}s.
  *
  * <p>The corridor's wall height {@code h} comes from {@link CorridorData#getWallHeight()}
- * (the planner resolved it from the motif's {@code CorridorConfig}); the whole corridor is
+ * (the planner resolved it from the motif's {@code CorridorConfig}, rolling one
+ * {@link CorridorStyle} per floor); the whole corridor is
  * {@code floorY .. floorY+h-1}. For each cell in the corridor: emits a floor block at
  * Y={@code floorY}, {@code h-2} air blocks above, and a motif ceiling block at
  * Y={@code floorY+h-1}. For each grid cell <em>neighboring</em> the corridor
@@ -94,9 +96,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     @Override
     public void build(CorridorData corridor, Grid2D grid, int floorY,
                       IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
-        Palette palette = palette(motif, random);
+        CorridorStyle style = motifConfig.corridor().styleFor(corridor.getStyleName());
+        Palette palette = palette(style);
         int height = corridor.getWallHeight();
-        int narrowCeiling = Math.min(height, motifConfig.corridor().narrowCellHeight());
+        int narrowCeiling = Math.min(height, style.narrowCellHeight());
 
         // The arch reads the same two questions off the grid that the grid-free overload reads off
         // CorridorData, so both paths run one shared rule (see haunchFacing).
@@ -133,9 +136,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     @Override
     public void build(CorridorData corridor, int floorY,
                       IDungeonMotif motif, RandomSource random, List<BlockPlacement> out) {
-        Palette palette = palette(motif, random);
+        CorridorStyle style = motifConfig.corridor().styleFor(corridor.getStyleName());
+        Palette palette = palette(style);
         int height = corridor.getWallHeight();
-        int narrowCeiling = Math.min(height, motifConfig.corridor().narrowCellHeight());
+        int narrowCeiling = Math.min(height, style.narrowCellHeight());
 
         // The grid is gone here, so wall adjacency comes from the cells the planner folded in.
         // wallCells and doorCells together are exactly what isWallElement would have answered
@@ -307,9 +311,34 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
             if (isWall.test(x + corner.dx, z) || isWall.test(x, z + corner.dz)) {
                 continue; // not a tip -- a flanking wall means the orthogonal rule owned this cell
             }
+            if (chamferAlreadyArrives(palette, x, z, corner.facing, isWall, isOpen)) {
+                continue;
+            }
             return new Haunch(corner.facing, corner.shape);
         }
         return null;
+    }
+
+    /**
+     * True when the cell this cap would lean toward already carries a haunch leaning the
+     * <strong>same</strong> way &mdash; in which case the cap is a second stair sitting directly in
+     * front of the first, which is the "stairs stacked in front of stairs" this suppresses.
+     *
+     * <p>A cap is the one haunch that does <em>not</em> lean into a wall: its whole purpose is to
+     * close the notch beside a convex corner tip, so by construction it leans over open corridor.
+     * That makes "what is in front of me" a question only this branch has to ask.</p>
+     *
+     * <p>Deliberately narrow. The neighbour that closes the corner properly is the one facing
+     * <em>perpendicular</em> to the cap &mdash; the two meet at right angles and mitre, which is
+     * exactly the arrangement the {@code CORNERS} table was added for. Only a neighbour facing the
+     * same way is a duplicate, and it was ~86% of caps: the chamfer had already arrived along that
+     * axis and the cap re-covered ground that was covered.</p>
+     */
+    private static boolean chamferAlreadyArrives(Palette palette, int x, int z, Direction facing,
+                                                 CellTest isWall, CellTest isOpen) {
+        Direction ahead = haunchFacing(palette,
+                x + facing.getStepX(), z + facing.getStepZ(), isWall, isOpen);
+        return ahead == facing;
     }
 
     /**
@@ -395,15 +424,19 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * Resolves the floor / wall / air / ceiling block states once per build call. The corridor has
      * its own floor pair and ceiling ({@code CorridorConfig}) but shares the room's wall block
      * ({@code WallConfig}), matching the pre-merge {@code block_provider} split.
+     *
+     * <p>Only the arch is per {@link CorridorStyle}: a style varies a floor's corridor
+     * <em>geometry</em>, not what it is built of, so two floors of the same motif read as the same
+     * place at different scales rather than as two motifs.</p>
      */
-    private Palette palette(IDungeonMotif motif, RandomSource random) {
+    private Palette palette(CorridorStyle style) {
         return new Palette(
                 motifConfig.corridor().floorState(),
                 motifConfig.corridor().alternateFloorState(),
                 motifConfig.wall().wallState(),
                 Blocks.AIR.defaultBlockState(),
                 motifConfig.corridor().ceilingState(),
-                motifConfig.corridor().archState());
+                motifConfig.corridor().archStateFor(style));
     }
 
     /** True if the cell at (x,z) is a wall-equivalent for corridor-wall placement. */

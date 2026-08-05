@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.maze;
 
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
+import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -125,6 +126,14 @@ public class DungeonStackPlanner {
      * construction, long before it can reach a datapack registry.
      */
     private int corridorHeight = CorridorData.DEFAULT_WALL_HEIGHT;
+    /**
+     * The corridor styles to roll among, one roll per floor (see {@link #rollCorridorStyle}). Empty
+     * is the historical behaviour: every floor gets {@link #corridorHeight} and the motif's baseline
+     * geometry. Injected by the caller for the same reason {@link #corridorHeight} is &mdash; the
+     * planner cannot reach a datapack registry, and it is the only place that both knows the floor
+     * and runs before the pieces are constructed.
+     */
+    private List<CorridorStyleWeight> corridorStyles = List.of();
     private int minRoomGap = 0;
 
     // -------- Phase 4b: assembled-entrance overrides (all-or-nothing) --------
@@ -203,6 +212,20 @@ public class DungeonStackPlanner {
      */
     public DungeonStackPlanner withCorridorHeight(int blocks) {
         this.corridorHeight = blocks;
+        return this;
+    }
+
+    /**
+     * Roll a corridor style per floor from this weighted list instead of applying one height to the
+     * whole dungeon. A single-entry list is equivalent to {@link #withCorridorHeight(int)} with that
+     * entry's height, and an empty (or null) list restores it.
+     *
+     * <p>Same contract as {@code withCorridorHeight}: the values are expected to be pre-validated,
+     * because {@code CorridorConfig}'s codec is where a bad one becomes a load error. Weights are
+     * assumed positive &mdash; the codec enforces that too.</p>
+     */
+    public DungeonStackPlanner withCorridorStyles(List<CorridorStyleWeight> styles) {
+        this.corridorStyles = styles == null ? List.of() : List.copyOf(styles);
         return this;
     }
 
@@ -950,6 +973,51 @@ public class DungeonStackPlanner {
         return x;
     }
 
+    /**
+     * The corridor style for one floor, or the injected single height when no styles were supplied.
+     * Every corridor on the floor gets this one &mdash; a style is what a floor's passages
+     * <em>are</em>, and rolling per corridor would put an 8-high arched run and a 5-high flat one on
+     * either side of the same door.
+     *
+     * <h2>Why its own Random</h2>
+     * <p>Rolled from a salted {@link #mixSeed} rather than off the shared {@code random} the rest of
+     * {@code convertLevel} draws from. Drawing from the shared stream would shift every subsequent
+     * draw, so simply <em>authoring</em> a styles list would relayout every floor of every existing
+     * seed &mdash; and a motif that authors none would still pay for the check. This way a motif
+     * without styles generates byte-identically to before, which is also what makes the existing
+     * regression suite a meaningful check on this change.</p>
+     *
+     * <p>The salt keeps this uncorrelated with the maze seed for the same floor, which is
+     * {@code mixSeed(seed, floorIndex)} unsalted.</p>
+     */
+    private CorridorStyleWeight rollCorridorStyle(int floorIndex) {
+        if (corridorStyles.isEmpty()) {
+            return new CorridorStyleWeight(CorridorData.BASELINE_STYLE, 1, corridorHeight);
+        }
+        if (corridorStyles.size() == 1) {
+            return corridorStyles.get(0);
+        }
+        int total = 0;
+        for (CorridorStyleWeight style : corridorStyles) {
+            total += style.weight();
+        }
+        // A list ordered by the datapack, indexed by an int -- deliberately not a Map lookup.
+        // See the planner's EnumMap fix: iterating a HashMap keyed by anything without a stable
+        // hash made prims() pick a different direction from one JVM run to the next, and no
+        // in-JVM test could see it.
+        int roll = new Random(CORRIDOR_STYLE_SALT ^ mixSeed(seed, floorIndex)).nextInt(total);
+        for (CorridorStyleWeight style : corridorStyles) {
+            roll -= style.weight();
+            if (roll < 0) {
+                return style;
+            }
+        }
+        return corridorStyles.get(corridorStyles.size() - 1);
+    }
+
+    /** Keeps the style roll uncorrelated with the maze roll that shares {@link #mixSeed}. */
+    private static final long CORRIDOR_STYLE_SALT = 0x5CB1D025791E5L;
+
     private int pickNumberOfRooms(DungeonSize size, Rectangle2D footprint) {
         // Loose heuristic: ~10% of cells become rooms, with size-tier bonus.
         int cells = footprint.getWidth() * footprint.getHeight();
@@ -1151,8 +1219,10 @@ public class DungeonStackPlanner {
         // Phase 3 corridor piece can render walls without the transient grid
         // (which is null after NBT deserialization). This mirrors exactly the
         // 8-neighbor wall test BasicCorridorGenerator applies against the grid.
+        CorridorStyleWeight corridorStyle = rollCorridorStyle(floorIndex);
         for (CorridorData cd : corridorMap.values()) {
-            cd.setWallHeight(corridorHeight);
+            cd.setWallHeight(corridorStyle.height());
+            cd.setStyleName(corridorStyle.name());
             Set<Coords2D> walls = new LinkedHashSet<>();
             Set<Coords2D> doors = new LinkedHashSet<>();
             for (Coords2D cell : cd.getCells()) {

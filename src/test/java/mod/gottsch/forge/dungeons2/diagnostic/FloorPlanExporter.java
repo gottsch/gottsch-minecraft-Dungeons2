@@ -463,6 +463,24 @@ public final class FloorPlanExporter {
     public String audit() {
         build();
         StringBuilder sb = new StringBuilder();
+
+        // Per-floor corridor geometry first: it is the one thing the 2D plan cannot show at all,
+        // and after §5.3 it differs floor to floor, so "which style did this floor roll" is the
+        // question a run of this tool is usually being asked.
+        sb.append("Corridor style per floor\n");
+        for (FloorLayout floor : layout.getFloors()) {
+            String style = floor.getCorridors().isEmpty()
+                    ? "(no corridors)"
+                    : floor.getCorridors().get(0).getStyleName();
+            int height = floor.getCorridors().isEmpty()
+                    ? 0 : floor.getCorridors().get(0).getWallHeight();
+            sb.append(String.format("  floor %d  style %-12s height %d%n",
+                    floor.getFloorIndex(),
+                    style.isEmpty() ? "(baseline)" : style,
+                    height));
+        }
+        sb.append('\n');
+
         sb.append("Contested cells (written by more than one piece), whole dungeon\n");
 
         Map<String, Integer> byContenders = new TreeMap<>();

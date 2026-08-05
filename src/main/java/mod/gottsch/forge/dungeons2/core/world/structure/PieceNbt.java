@@ -86,6 +86,11 @@ public final class PieceNbt {
         tag.putIntArray("Walls", flatten(corridor.getWallCells()));
         tag.putIntArray("DoorCells", flatten(corridor.getDoorCells()));
         tag.putInt("WallHeight", corridor.getWallHeight());
+        // Only written when a style was actually rolled, so a motif with no styles list keeps
+        // producing exactly the tag it did before.
+        if (!corridor.getStyleName().isEmpty()) {
+            tag.putString("CorridorStyle", corridor.getStyleName());
+        }
         if (corridor.getTemplateId() != null) {
             tag.putString("Template", corridor.getTemplateId());
         }
@@ -101,6 +106,11 @@ public final class PieceNbt {
         // own default is the 5 those saves were generated with, so leave it alone.
         if (tag.contains("WallHeight")) {
             corridor.setWallHeight(tag.getInt("WallHeight"));
+        }
+        // Absent on a save from a motif that authored no styles, and on every pre-styles save.
+        // Both mean the same thing -- the motif's baseline geometry -- which is the field's default.
+        if (tag.contains("CorridorStyle")) {
+            corridor.setStyleName(tag.getString("CorridorStyle"));
         }
         if (tag.contains("Template")) {
             corridor.setTemplateId(tag.getString("Template"));

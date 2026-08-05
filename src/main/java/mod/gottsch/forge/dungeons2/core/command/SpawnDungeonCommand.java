@@ -1,220 +1,182 @@
 package mod.gottsch.forge.dungeons2.core.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import mod.gottsch.forge.dungeons2.Dungeons;
-import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
-import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
-import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
-import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
-import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
-import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
-import mod.gottsch.forge.dungeons2.core.world.structure.EntitySpawner;
-import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
-import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
-import mod.gottsch.forge.dungeons2.core.data.RoomData;
-import mod.gottsch.forge.dungeons2.core.data.RoomRole;
-import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.DungeonLayoutRenderer;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor.BasicCorridorGenerator;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.BasicDoorGenerator;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.maze.DungeonStackPlanner;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
-import mod.gottsch.forge.gottschcore.spatial.Coords;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.commands.PlaceCommand;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LadderBlock;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.Locale;
 
 /**
- * Debug command: plan a dungeon at a position and write it directly to the
- * world, bypassing the Structure / datapack system. This is the Phase 2/3
- * visual smoke test &mdash; it exercises the {@link DungeonStackPlanner} and
- * {@link DungeonLayoutRenderer} end-to-end so you can walk a generated dungeon
- * before the vanilla worldgen plumbing exists.
+ * Debug command: generate a dungeon at a position, through the <strong>real</strong> worldgen path.
  *
- * <p>Usage: {@code /d2-generate <pos>} where {@code pos} is the surface
- * entrance opening. The dungeon builds downward from there. Single-floor,
- * SMALL tier for now. Entrance and END (terminal) rooms have no {@code .nbt}
- * templates yet, so they're rendered as synthetic placeholders &mdash; a 3x3
- * ladder shaft for the entrance and a ladder in the END room.</p>
+ * <p>Usage: {@code /d2-generate <pos> [size] [floors] [motif]}. Only the position is required;
+ * anything omitted is rolled from the seed exactly as natural generation would roll it.</p>
+ *
+ * <h2>What this runs, and why that matters</h2>
+ * <p>This is {@code /place structure dungeons2:dungeon} with arguments &mdash; it looks up the
+ * structure and hands it to vanilla's own {@link PlaceCommand#placeStructure}, so what gets built is
+ * the {@code DungeonStructure} pipeline in full: the jigsaw-assembled entrance, real
+ * {@code StructurePiece}s, and {@code postProcess} (which is where {@code settleJoinShapes} and the
+ * decoration/weathering pass live).</p>
+ *
+ * <p>It did not always. Until Aug 04 2026 this command was a Phase 2/3 relic that drove
+ * {@code DungeonLayoutRenderer} directly and wrote blocks straight to the world, with a hand-carved
+ * 3x3 ladder shaft standing in for the entrance &mdash; authored before the jigsaw entrance existed
+ * and never revisited. That made it actively misleading in exactly the two places bugs were hiding:
+ * it showed a synthetic entrance rather than {@code entrance/surface_entrance}, and, like every
+ * other headless path in this project, it skipped {@code postProcess}. Two of the four defects found
+ * in game on Aug 03 lived in that gap.</p>
+ *
+ * <h2>What changed for the worse</h2>
+ * <p>Two things, both inherited from {@code /place} and both worth knowing before debugging with
+ * this.</p>
+ * <ul>
+ *   <li><strong>The target chunks must already be loaded</strong>, and vanilla can silently skip
+ *       pieces landing in chunks that are already fully generated. The old command wrote blocks
+ *       unconditionally and never had this problem.</li>
+ *   <li><strong>The seed is no longer the position alone.</strong> {@code DungeonStructure} seeds
+ *       from {@code chunkPos.toLong() ^ worldSeed}, so reproducing a dungeon headlessly now needs
+ *       the world seed too. The effective seed is printed on success for exactly that reason
+ *       &mdash; feed it to {@code ./gradlew floorplan -Pseed=...}.</li>
+ * </ul>
  *
  * @author Mark Gottschling
  */
 public class SpawnDungeonCommand {
 
-    private static final BlockState BACKING = Blocks.STONE_BRICKS.defaultBlockState();
-    private static final BlockState AIR = Blocks.AIR.defaultBlockState();
-    private static final BlockState GLOWSTONE = Blocks.GLOWSTONE.defaultBlockState();
-    /** Ladder facing SOUTH is attached to the block on its north side. */
-    private static final BlockState LADDER =
-            Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH);
+    /** The structure this command places. Registered from {@code worldgen/structure/dungeon.json}. */
+    private static final ResourceKey<Structure> DUNGEON = ResourceKey.create(
+            Registries.STRUCTURE, new ResourceLocation(Dungeons.MOD_ID, "dungeon"));
+
+    private static final SuggestionProvider<CommandSourceStack> SIZES = (context, builder) ->
+            SharedSuggestionProvider.suggest(
+                    Arrays.stream(DungeonSize.values()).map(s -> s.name().toLowerCase(Locale.ROOT)), builder);
+
+    private static final SuggestionProvider<CommandSourceStack> MOTIFS = (context, builder) ->
+            SharedSuggestionProvider.suggest(
+                    Arrays.stream(DungeonMotif.values()).map(DungeonMotif::getValue), builder);
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher
-                .register(Commands.literal("d2-generate")
-                        .requires(source -> source.hasPermission(2))
-                        .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                                .executes(source ->
-                                        spawn(source.getSource(),
-                                                BlockPosArgument.getLoadedBlockPos(source, "pos")))
-                        )
-                );
+        dispatcher.register(Commands.literal("d2-generate")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                        .executes(context -> spawn(context, null, null, null))
+                        .then(Commands.argument("size", StringArgumentType.word())
+                                .suggests(SIZES)
+                                .executes(context -> spawn(context, size(context), null, null))
+                                .then(Commands.argument("floors", IntegerArgumentType.integer(1, 8))
+                                        .executes(context -> spawn(context, size(context), floors(context), null))
+                                        .then(Commands.argument("motif", StringArgumentType.word())
+                                                .suggests(MOTIFS)
+                                                .executes(context -> spawn(context, size(context), floors(context),
+                                                        StringArgumentType.getString(context, "motif"))))))));
     }
 
-    private static int spawn(CommandSourceStack sourceStack, BlockPos pos) {
+    private static DungeonSize size(CommandContext<CommandSourceStack> context) {
+        String raw = StringArgumentType.getString(context, "size");
         try {
-            ServerLevel level = sourceStack.getLevel();
-            long seed = pos.asLong();
-            int surfaceY = pos.getY();
-            ICoords anchor = new Coords(pos.getX(), 0, pos.getZ());
+            return DungeonSize.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            // Brigadier's own word() argument can't reject this, and a typo'd size silently falling
+            // through to the seed roll is the kind of "it generated, just not what I asked for"
+            // that costs an afternoon.
+            throw new IllegalArgumentException("unknown size '" + raw + "'; expected one of "
+                    + Arrays.toString(DungeonSize.values()));
+        }
+    }
 
-            Optional<DungeonLayout> result = new DungeonStackPlanner(
-                    seed, anchor, surfaceY, "classic", new TemplateCatalog())
-                    .withSize(DungeonSize.SMALL)
-                    .withFloorCount(1)
-                    .withCorridorWidth(DungeonGenerationConfigHelper.get(level.registryAccess()).corridorWidth())
-                    .withCorridorHeight(MotifConfigHelper.get(level.registryAccess(), "classic").corridor().height())
-                    .plan();
+    private static int floors(CommandContext<CommandSourceStack> context) {
+        return IntegerArgumentType.getInteger(context, "floors");
+    }
 
-            if (result.isEmpty()) {
-                sourceStack.sendFailure(Component.literal("Dungeon planning failed at " + pos));
+    private static int spawn(CommandContext<CommandSourceStack> context,
+                             DungeonSize size, Integer floors, String motif) {
+        CommandSourceStack source = context.getSource();
+        try {
+            BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
+            ServerLevel level = source.getLevel();
+
+            if (motif != null && DungeonMotif.getByValue(motif) == null) {
+                source.sendFailure(Component.literal("Unknown motif '" + motif + "'."));
                 return 0;
             }
-            DungeonLayout layout = result.get();
 
-            // World origin: shift so the entrance footprint's center lands at pos XZ.
-            Rectangle2D ent = layout.getEntrance().getFootprint();
-            int worldOriginX = pos.getX() - ent.getCenterX();
-            int worldOriginZ = pos.getZ() - ent.getCenterY();
+            Holder.Reference<Structure> structure = level.registryAccess()
+                    .registryOrThrow(Registries.STRUCTURE)
+                    .getHolder(DUNGEON)
+                    .orElse(null);
+            if (structure == null) {
+                source.sendFailure(Component.literal(
+                        "Structure " + DUNGEON.location() + " is not registered -- is the datapack loaded?"));
+                return 0;
+            }
 
-            RandomSource random = RandomSource.create(seed);
-            RoomPlacements roomPlacements = new RoomPlacements();
-            List<BlockPlacement> placements = roomPlacements.getBlocks();
+            // The seed DungeonStructure will use, computed the same way it does. Printed so a
+            // dungeon built here can be reproduced headlessly by the floorplan tool.
+            long seed = new ChunkPos(pos).toLong() ^ level.getSeed();
 
-            // Synthetic START/END room boxes FIRST so everything the renderer writes
-            // afterwards wins at any shared perimeter cells. These stand in for the
-            // entrance / transition templates until .nbt files exist.
-            MotifConfig motifConfig = MotifConfigHelper.get(
-                    level.registryAccess(), DungeonMotif.CLASSIC.getValue());
-            BasicRoomGenerator roomGen = new BasicRoomGenerator().withMotifConfig(motifConfig);
-            for (FloorLayout floor : layout.getFloors()) {
-                for (RoomData room : floor.getRooms()) {
-                    if (room.getRole() != RoomRole.NORMAL) {
-                        roomGen.build(room, floor.getFloorY(), DungeonMotif.CLASSIC, random, roomPlacements);
-                    }
+            DungeonStructure.DebugOverrides overrides =
+                    (size == null && floors == null && motif == null)
+                            ? null
+                            : new DungeonStructure.DebugOverrides(size, floors, motif);
+
+            int result = DungeonStructure.withDebugOverrides(overrides, () -> {
+                try {
+                    return PlaceCommand.placeStructure(source, structure, pos);
+                } catch (CommandSyntaxException e) {
+                    // Almost always "chunks not loaded". Rethrown unwrapped below.
+                    throw new PlacementFailed(e);
                 }
-            }
-            // Procedural rooms / corridors / doors. renderAll, not render: this command writes to
-            // a real world, so dropping the entity half would make it useless for testing props.
-            RoomPlacements rendered = new DungeonLayoutRenderer(
-                    roomGen,
-                    new BasicCorridorGenerator().withMotifConfig(motifConfig),
-                    new BasicDoorGenerator().withMotifConfig(motifConfig)).renderAll(layout, random);
-            placements.addAll(rendered.getBlocks());
-            roomPlacements.getEntities().addAll(rendered.getEntities());
+            });
 
-            // Write everything (floor-local XZ + world origin; Y already absolute).
-            int written = 0;
-            for (BlockPlacement p : placements) {
-                BlockPos worldPos = new BlockPos(
-                        worldOriginX + p.getX(), p.getY(), worldOriginZ + p.getZ());
-                level.setBlock(worldPos, BlockStateCodec.resolve(p), Block.UPDATE_CLIENTS);
-                written++;
-            }
-
-            // Entities after the blocks, so a pot always lands on a floor that already exists.
-            // No chunk-box clipping here: unlike a StructurePiece this command runs exactly once,
-            // so there is nothing to deduplicate against.
-            for (EntityPlacement e : roomPlacements.getEntities()) {
-                EntitySpawner.spawn(level, e,
-                        worldOriginX + e.getX(), e.getY(), worldOriginZ + e.getZ());
-            }
-
-            int floor0Y = layout.getFloors().get(0).getFloorY();
-            carveEntranceShaft(level, layout, pos.getX(), pos.getZ(), surfaceY);
-            placeSurfaceMarker(level, pos.getX(), pos.getZ(), surfaceY);
-            BlockPos endLadder = carveEndLadder(level, layout, worldOriginX, worldOriginZ);
-
-            final int total = written;
-            final String endStr = endLadder != null
-                    ? endLadder.getX() + " " + endLadder.getY() + " " + endLadder.getZ()
-                    : "(none)";
-            Dungeons.LOGGER.info("d2-generate: {}", layout.describe());
-            sourceStack.sendSuccess(() -> Component.literal(
-                    "Generated dungeon (" + total + " blocks)."
-                            + "\n  Entrance shaft (descend here): "
-                            + pos.getX() + " " + surfaceY + " " + pos.getZ()
-                            + "  →  floor0 Y=" + floor0Y
-                            + "\n  End/ladder room: " + endStr
-                            + "\n  Glowstone pillar marks the entrance on the surface."), true);
+            source.sendSuccess(() -> Component.literal(
+                    "Dungeon generated at " + pos.getX() + " " + pos.getZ()
+                            + "\n  size=" + (size == null ? "(rolled)" : size)
+                            + "  floors=" + (floors == null ? "(rolled)" : floors)
+                            + "  motif=" + (motif == null ? DungeonMotif.CLASSIC.getValue() : motif)
+                            + "\n  planner seed: " + seed
+                            + "\n  reproduce: ./gradlew floorplan -Pseed=" + seed), true);
+            return result;
+        } catch (PlacementFailed e) {
+            source.sendFailure(Component.literal("d2-generate: " + e.getCause().getMessage()
+                    + " (the target chunks have to be loaded -- try teleporting there first)"));
+        } catch (CommandSyntaxException e) {
+            source.sendFailure(Component.literal("d2-generate: " + e.getMessage()));
         } catch (Exception e) {
+            // Vanilla's dispatcher reports an exception here as a bare chat message and nothing
+            // reaches the logs, so log it through our own logger before giving up on it.
             Dungeons.LOGGER.error("d2-generate failed: ", e);
-            sourceStack.sendFailure(Component.literal("d2-generate error: " + e.getMessage()));
+            source.sendFailure(Component.literal("d2-generate error: " + e.getMessage()));
         }
-        return 1;
+        return 0;
     }
 
-    /** A 3x3 air shaft with a north-wall ladder from floor 0 up to the surface. */
-    private static void carveEntranceShaft(ServerLevel level, DungeonLayout layout,
-                                           int cx, int cz, int surfaceY) {
-        int floor0Y = layout.getFloors().get(0).getFloorY();
-        for (int y = floor0Y; y <= surfaceY; y++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    level.setBlock(new BlockPos(cx + dx, y, cz + dz), AIR, Block.UPDATE_CLIENTS);
-                }
-            }
-            // Backing block to the north, ladder on its south face.
-            level.setBlock(new BlockPos(cx, y, cz - 1), BACKING, Block.UPDATE_CLIENTS);
-            level.setBlock(new BlockPos(cx, y, cz), LADDER, Block.UPDATE_CLIENTS);
-        }
-    }
-
-    /**
-     * A ladder up the north interior wall of the bottom floor's END room.
-     * Returns the ladder's base position (for chat feedback), or null if there
-     * is no END room.
-     */
-    private static BlockPos carveEndLadder(ServerLevel level, DungeonLayout layout,
-                                           int worldOriginX, int worldOriginZ) {
-        FloorLayout bottom = layout.getFloors().get(layout.getFloors().size() - 1);
-        RoomData end = bottom.getRooms().stream()
-                .filter(r -> r.getRole() == RoomRole.END)
-                .findFirst().orElse(null);
-        if (end == null) {
-            return null;
-        }
-        int ex = worldOriginX + end.getOriginX() + end.getWidth() / 2;
-        int ez = worldOriginZ + end.getOriginZ() + 1; // one cell in from the north wall
-        int floorY = bottom.getFloorY();
-        for (int y = floorY + 1; y < floorY + end.getHeight() - 1; y++) {
-            level.setBlock(new BlockPos(ex, y, ez), LADDER, Block.UPDATE_CLIENTS);
-        }
-        return new BlockPos(ex, floorY, ez);
-    }
-
-    /** A short glowstone pillar 2 cells east of the shaft so the entrance is findable. */
-    private static void placeSurfaceMarker(ServerLevel level, int cx, int cz, int surfaceY) {
-        int mx = cx + 2;
-        for (int y = surfaceY; y <= surfaceY + 4; y++) {
-            level.setBlock(new BlockPos(mx, y, cz), GLOWSTONE, Block.UPDATE_CLIENTS);
+    /** Carries a checked {@link CommandSyntaxException} out of the {@code Supplier} lambda. */
+    private static class PlacementFailed extends RuntimeException {
+        PlacementFailed(CommandSyntaxException cause) {
+            super(cause);
         }
     }
 }

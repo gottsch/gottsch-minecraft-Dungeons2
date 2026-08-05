@@ -25,7 +25,11 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The corridor section of a {@link MotifConfig}: its own floor pair and ceiling, distinct from the
@@ -51,7 +55,8 @@ import java.util.Optional;
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
-                             Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight) {
+                             Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
+                             List<CorridorStyle> styles) {
 
     /** The flat form: the fields that predate profiles, with no arch. */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height) {
@@ -62,6 +67,12 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
                           Profile profile, Optional<String> archBlock) {
         this(floor, alternateFloor, ceiling, height, profile, archBlock, Optional.empty());
+    }
+
+    /** The pre-styles form: one motif-wide geometry, which is still the common case. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                          Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight) {
+        this(floor, alternateFloor, ceiling, height, profile, archBlock, narrowHeight, List.of());
     }
 
     /**
@@ -138,7 +149,47 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
 
     public static final CorridorConfig DEFAULT =
             new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
-                    DEFAULT_HEIGHT, Profile.FLAT, Optional.empty(), Optional.empty());
+                    DEFAULT_HEIGHT, Profile.FLAT, Optional.empty(), Optional.empty(), List.of());
+
+    /**
+     * This motif's own geometry as a {@link CorridorStyle}, so the generator has exactly one shape to
+     * read whether or not the motif authors {@code styles}. Named {@link CorridorStyle#BASELINE}
+     * (the empty string), which the style codec forbids an authored style from taking.
+     */
+    public CorridorStyle baseline() {
+        return new CorridorStyle(CorridorStyle.BASELINE, CorridorStyle.DEFAULT_WEIGHT,
+                height, profile, archBlock, narrowHeight);
+    }
+
+    /**
+     * The style a corridor stamped with {@code name} should be built from.
+     *
+     * <p>Falls back to {@link #baseline()} for an unknown name rather than failing, and this one
+     * <em>should</em> be lenient where the rest of this config is strict: the name arrives from a
+     * saved piece, not from a datapack. A world generated before a motif's styles were renamed would
+     * otherwise crash on chunk load, and the corridor's authoritative dimension &mdash; its wall
+     * height &mdash; rides on the piece itself, so a fallback here costs the profile, not the shape
+     * of the hole in the ground.</p>
+     */
+    public CorridorStyle styleFor(String name) {
+        if (name == null || name.isEmpty()) {
+            return baseline();
+        }
+        for (CorridorStyle style : styles) {
+            if (style.name().equals(name)) {
+                return style;
+            }
+        }
+        return baseline();
+    }
+
+    /**
+     * The styles to roll among for a floor: the authored list, or a single-entry list holding the
+     * baseline when the motif authored none. Never empty, so the caller needs no special case.
+     */
+    public List<CorridorStyle> rollableStyles() {
+        return styles.isEmpty() ? List.of(baseline()) : styles;
+    }
 
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
             instance.group(
@@ -152,33 +203,44 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     Codecs.strictOptionalFieldOf(Codec.STRING, "archBlock")
                             .forGetter(CorridorConfig::archBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "narrowHeight")
-                            .forGetter(CorridorConfig::narrowHeight)
+                            .forGetter(CorridorConfig::narrowHeight),
+                    Codecs.strictOptionalFieldOf(CorridorStyle.CODEC.listOf(), "styles", List.of())
+                            .forGetter(CorridorConfig::styles)
             ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);
 
     /**
-     * The two cross-field rules, which no single field's codec can express.
+     * The cross-field rules, which no single field's codec can express.
      *
-     * <p>Both fail rather than degrade. An arch that quietly falls back to flat because the motif
-     * was one block too short is a dungeon that generates fine and simply isn't what was authored
-     * &mdash; indistinguishable, in game, from the feature not working. And an {@code arched}
-     * profile with no {@code archBlock} must not invent stone brick stairs for a deepslate motif:
-     * that is the silent-fallthrough the whole config was rebuilt to make impossible, and it is the
-     * same rule that makes a {@code door} section missing its {@code lintel} a load error.</p>
+     * <p>All of them fail rather than degrade. An arch that quietly falls back to flat because the
+     * motif was one block too short is a dungeon that generates fine and simply isn't what was
+     * authored &mdash; indistinguishable, in game, from the feature not working. And an
+     * {@code arched} profile with no {@code archBlock} must not invent stone brick stairs for a
+     * deepslate motif: that is the silent-fallthrough the whole config was rebuilt to make
+     * impossible, and it is the same rule that makes a {@code door} section missing its
+     * {@code lintel} a load error.</p>
+     *
+     * <p>The three geometry rules live on {@link CorridorStyle#geometryError} because each authored
+     * style has to answer to them too. Duplicate style names are rejected here for the same reason:
+     * a corridor stores only its style's name, so two styles sharing one would make which geometry a
+     * corridor gets depend on list order &mdash; and it would silently be whichever came first.</p>
      */
     private static DataResult<CorridorConfig> validate(CorridorConfig config) {
-        if (config.profile == Profile.ARCHED && config.height < MIN_ARCHED_HEIGHT) {
-            return DataResult.error(() -> "corridor: profile 'arched' needs a height of at least "
-                    + MIN_ARCHED_HEIGHT + " (got " + config.height + ") -- the haunch row would land on the "
-                    + "doorway's lintel and block it");
+        String error = CorridorStyle.geometryError(
+                config.height, config.profile, config.archBlock, config.narrowHeight, "corridor");
+        if (error != null) {
+            return DataResult.error(() -> error);
         }
-        if (config.profile == Profile.ARCHED && config.archBlock.isEmpty()) {
-            return DataResult.error(() ->
-                    "corridor: profile 'arched' requires an 'archBlock' (the stairs the haunch is built from)");
+        Set<String> seen = new HashSet<>();
+        List<String> duplicates = new ArrayList<>();
+        for (CorridorStyle style : config.styles) {
+            if (!seen.add(style.name())) {
+                duplicates.add(style.name());
+            }
         }
-        if (config.narrowHeight.isPresent() && config.narrowHeight.get() > config.height) {
-            return DataResult.error(() -> "corridor: narrowHeight " + config.narrowHeight.get()
-                    + " is above height " + config.height + " -- a 1-wide stretch cannot be taller than the "
-                    + "corridor it is part of");
+        if (!duplicates.isEmpty()) {
+            return DataResult.error(() -> "corridor: duplicate style name(s) " + duplicates
+                    + " -- a corridor stores only its style's name, so a duplicate makes its geometry "
+                    + "depend on the order of the styles list");
         }
         return DataResult.success(config);
     }
@@ -201,10 +263,19 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
      * solid, and a hole in the ceiling is worse than a square one.
      */
     public BlockState archState() {
-        if (profile != Profile.ARCHED || archBlock.isEmpty()) {
+        return archStateFor(baseline());
+    }
+
+    /**
+     * The same, for one rolled {@link CorridorStyle}. The arch block is per style; the ceiling block
+     * it falls back to is not &mdash; a motif's corridors are made of one material whatever shape
+     * they take, which is the same materials-vs-decoration split {@code MotifConfig} documents.
+     */
+    public BlockState archStateFor(CorridorStyle style) {
+        if (style.profile() != Profile.ARCHED || style.archBlock().isEmpty()) {
             return null;
         }
-        return BlockStateCodec.block(archBlock.get(), ceilingState().getBlock());
+        return BlockStateCodec.block(style.archBlock().get(), ceilingState().getBlock());
     }
 
     public boolean isArched() {

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -168,6 +169,111 @@ class MotifConfigCodecTest {
     void anUnknownProfileIsALoadError() {
         assertTrue(fails(String.format(CORRIDOR, ",\"profile\": \"vaulted\"")),
                 "a typo'd profile must fail rather than silently reading as flat");
+    }
+
+    // -------- corridor styles (per-floor geometry) --------
+
+    private static final String STYLES = ",\"styles\": [%s]";
+    private static final String VAULTED =
+            "{\"name\": \"vaulted\",\"weight\": 3,\"height\": 7,\"narrowHeight\": 6,"
+                    + "\"profile\": \"arched\",\"archBlock\": \"minecraft:stone_brick_stairs\"}";
+    private static final String CRAMPED = "{\"name\": \"cramped\",\"weight\": 2,\"height\": 5}";
+
+    private static CorridorConfig corridorWithStyles(String styleJson) {
+        return fragment(String.format(CORRIDOR, String.format(STYLES, styleJson)))
+                .corridor().orElseThrow();
+    }
+
+    /** Every motif that exists today authors no styles, and must keep behaving as one fixed shape. */
+    @Test
+    void aCorridorWithNoAuthoredStylesRollsOnlyItsBaseline() {
+        CorridorConfig corridor = fragment(String.format(CORRIDOR, ",\"height\": 7")).corridor().orElseThrow();
+
+        assertTrue(corridor.styles().isEmpty());
+        assertEquals(List.of(corridor.baseline()), corridor.rollableStyles());
+        assertEquals(7, corridor.baseline().height());
+        assertEquals(CorridorStyle.BASELINE, corridor.baseline().name());
+    }
+
+    @Test
+    void authoredStylesAreReadWithTheirWeightsAndGeometry() {
+        CorridorConfig corridor = corridorWithStyles(VAULTED + "," + CRAMPED);
+
+        assertEquals(List.of("vaulted", "cramped"),
+                corridor.styles().stream().map(CorridorStyle::name).toList());
+        assertEquals(3, corridor.styleFor("vaulted").weight());
+        assertEquals(7, corridor.styleFor("vaulted").height());
+        assertEquals(6, corridor.styleFor("vaulted").narrowCellHeight());
+        assertTrue(corridor.styleFor("vaulted").isArched());
+        assertEquals(5, corridor.styleFor("cramped").height());
+        assertFalse(corridor.styleFor("cramped").isArched());
+        // No narrowHeight authored means no drop -- the default arrived at the hard way, see
+        // CorridorConfig#narrowCellHeight.
+        assertEquals(5, corridor.styleFor("cramped").narrowCellHeight());
+    }
+
+    /**
+     * A style name arrives from a <em>saved piece</em>, not from a datapack, so this one lookup is
+     * deliberately lenient where the rest of the config is strict: renaming a style must not crash
+     * chunk load for a world generated before the rename.
+     */
+    @Test
+    void anUnknownStyleNameFallsBackToTheBaselineRatherThanFailing() {
+        CorridorConfig corridor = corridorWithStyles(VAULTED);
+
+        assertEquals(corridor.baseline(), corridor.styleFor("renamed_last_week"));
+        assertEquals(corridor.baseline(), corridor.styleFor(null));
+        assertEquals(corridor.baseline(), corridor.styleFor(""));
+    }
+
+    /**
+     * A corridor stores only its style's <em>name</em>, so two styles sharing one would make which
+     * geometry a corridor gets depend on the order of the list -- silently, and only for whichever
+     * floors happened to roll it.
+     */
+    @Test
+    void duplicateStyleNamesAreALoadError() {
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES, VAULTED + "," + VAULTED))),
+                "two styles of the same name must fail to load");
+    }
+
+    @Test
+    void aStyleWithABlankNameIsALoadError() {
+        assertTrue(fails(String.format(CORRIDOR,
+                        String.format(STYLES, "{\"name\": \"  \",\"height\": 6}"))),
+                "a blank style name must fail -- it would shadow the baseline");
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES, "{\"height\": 6}"))),
+                "a style with no name at all must fail");
+    }
+
+    /**
+     * The three geometry rules apply per style, not just to the baseline. A styles list is otherwise
+     * a way to smuggle in exactly the shapes the section itself rejects.
+     */
+    @Test
+    void aStyleIsHeldToTheSameGeometryRulesAsTheCorridorItself() {
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
+                        "{\"name\": \"squat\",\"height\": 5,\"profile\": \"arched\","
+                                + "\"archBlock\": \"minecraft:stone_brick_stairs\"}"))),
+                "an arched style at height 5 must fail, same as an arched corridor at height 5");
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
+                        "{\"name\": \"bare\",\"height\": 7,\"profile\": \"arched\"}"))),
+                "an arched style with no archBlock must fail rather than inventing stairs");
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
+                        "{\"name\": \"tall\",\"height\": 12}"))),
+                "an over-tall style must fail, not clamp");
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
+                        "{\"name\": \"odd\",\"height\": 6,\"narrowHeight\": 8}"))),
+                "a narrowHeight above the style's own height must fail");
+    }
+
+    @Test
+    void aStyleWithNoWeightIsAsLikelyAsAnyOtherSingleWeightStyle() {
+        assertEquals(CorridorStyle.DEFAULT_WEIGHT,
+                corridorWithStyles("{\"name\": \"plainish\",\"height\": 6}").styleFor("plainish").weight());
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
+                        "{\"name\": \"never\",\"weight\": 0,\"height\": 6}"))),
+                "weight 0 must fail rather than authoring a style that can never be rolled");
     }
 
     /** Later fragment wins a section outright; sections are whole, never merged field by field. */

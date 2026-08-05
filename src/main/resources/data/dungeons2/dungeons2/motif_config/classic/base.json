@@ -18,7 +18,31 @@
     "height": 7,
     "narrowHeight": 6,
     "profile": "arched",
-    "archBlock": "minecraft:stone_brick_stairs"
+    "archBlock": "minecraft:stone_brick_stairs",
+    "styles": [
+      {
+        "name": "vaulted",
+        "weight": 3,
+        "height": 7,
+        "narrowHeight": 6,
+        "profile": "arched",
+        "archBlock": "minecraft:stone_brick_stairs"
+      },
+      {
+        "name": "grand",
+        "weight": 1,
+        "height": 8,
+        "narrowHeight": 7,
+        "profile": "arched",
+        "archBlock": "minecraft:stone_brick_stairs"
+      },
+      {
+        "name": "cramped",
+        "weight": 2,
+        "height": 5,
+        "profile": "flat"
+      }
+    ]
   },
   "floor": {
     "base": "minecraft:stone_bricks",

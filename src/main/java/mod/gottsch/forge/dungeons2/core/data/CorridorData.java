@@ -68,6 +68,15 @@ public class CorridorData {
      */
     public static final int DEFAULT_WALL_HEIGHT = 5;
 
+    /**
+     * The style name meaning "this motif's baseline geometry", for a corridor nobody rolled a style
+     * for (tests, and any pre-styles save). Same literal as {@code CorridorStyle.BASELINE}, and
+     * duplicated for the same reason {@link #DEFAULT_WALL_HEIGHT} is: that constant lives on the
+     * Minecraft-importing config side of the fence and this class is a pure POJO. Keep the two in
+     * step &mdash; the style codec rejects a blank name, so no authored style can collide with it.
+     */
+    public static final String BASELINE_STYLE = "";
+
     private int id;
     private List<Coords2D> cells = new ArrayList<>();
     /**
@@ -88,6 +97,15 @@ public class CorridorData {
      * Injected by {@code DungeonStackPlanner} from the motif's {@code CorridorConfig}.
      */
     private int wallHeight = DEFAULT_WALL_HEIGHT;
+    /**
+     * The name of the {@code CorridorStyle} this corridor was built to, rolled once per floor by
+     * {@code DungeonStackPlanner} so every corridor on a floor matches. Only the <em>name</em>
+     * travels: the profile and blocks are re-resolved from the datapack at render time, whereas
+     * {@link #wallHeight} cannot be, because it sizes the piece's bounding box at construction.
+     * That makes {@code wallHeight} authoritative and this a decoration key &mdash; if a datapack
+     * edit makes the two disagree, the height wins and the shape of the excavation is unchanged.
+     */
+    private String styleName = BASELINE_STYLE;
     /** Phase 8 hook: non-null when this corridor is rendered from a template prefab. */
     private String templateId;
 
@@ -125,6 +143,9 @@ public class CorridorData {
 
     public int getWallHeight() { return wallHeight; }
     public void setWallHeight(int wallHeight) { this.wallHeight = wallHeight; }
+
+    public String getStyleName() { return styleName == null ? BASELINE_STYLE : styleName; }
+    public void setStyleName(String styleName) { this.styleName = styleName; }
 
     public String getTemplateId() { return templateId; }
     public void setTemplateId(String templateId) { this.templateId = templateId; }
