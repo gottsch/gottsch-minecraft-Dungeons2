@@ -22,6 +22,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig.Profile;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -55,7 +56,14 @@ import java.util.Optional;
  * @author Mark Gottschling on Aug 04, 2026
  */
 public record CorridorStyle(String name, int weight, int height, Profile profile,
-                            Optional<String> archBlock, Optional<Integer> narrowHeight) {
+                            Optional<String> archBlock, Optional<Integer> narrowHeight,
+                            List<WallPatternEntry.CourseEntry> courses) {
+
+    /** The pre-courses form. */
+    public CorridorStyle(String name, int weight, int height, Profile profile,
+                         Optional<String> archBlock, Optional<Integer> narrowHeight) {
+        this(name, weight, height, profile, archBlock, narrowHeight, List.of());
+    }
 
     /** An unweighted style is as likely as any other single-weight style. */
     public static final int DEFAULT_WEIGHT = 1;
@@ -94,7 +102,10 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                     Codecs.strictOptionalFieldOf(
                                     Codec.intRange(CorridorConfig.MIN_HEIGHT, CorridorConfig.MAX_HEIGHT),
                                     "narrowHeight")
-                            .forGetter(CorridorStyle::narrowHeight)
+                            .forGetter(CorridorStyle::narrowHeight),
+                    Codecs.strictOptionalFieldOf(WallPatternEntry.CourseEntry.CODEC.listOf(), "courses",
+                                    List.of())
+                            .forGetter(CorridorStyle::courses)
             ).apply(instance, CorridorStyle::new)).flatXmap(CorridorStyle::validate, CorridorStyle::validate);
 
     private static DataResult<CorridorStyle> validate(CorridorStyle style) {
@@ -103,9 +114,49 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                     "corridor style: 'name' must not be blank -- it is what a generated corridor stores "
                             + "to find its geometry again");
         }
-        String error = geometryError(style.height, style.profile, style.archBlock, style.narrowHeight,
-                "corridor style '" + style.name + "'");
-        return error == null ? DataResult.success(style) : DataResult.error(() -> error);
+        String label = "corridor style '" + style.name + "'";
+        String error = geometryError(style.height, style.profile, style.archBlock, style.narrowHeight, label);
+        if (error == null) {
+            error = coursesError(style.courses, label);
+        }
+        if (error == null) {
+            return DataResult.success(style);
+        }
+        final String message = error;
+        return DataResult.error(() -> message);
+    }
+
+    /**
+     * The three parts of a room's {@code CourseEntry} that do not transfer to a corridor. Each is a
+     * <strong>load error</strong> rather than a silent drop, because all three fail invisibly: the
+     * course still draws, just not the way it was authored.
+     *
+     * <p>Returns {@code null} when the list is legal, or the message to fail loading with.</p>
+     */
+    static String coursesError(List<WallPatternEntry.CourseEntry> courses, String label) {
+        for (WallPatternEntry.CourseEntry course : courses) {
+            // A room is a rectangle with four runs and two of them own the corner columns
+            // (CoursesWallPatternProvider.ownsCorners). A corridor's wall is an arbitrary polyline
+            // -- it has no four corners to own, so there is nothing for this to mean.
+            if (course.cornerBlock().isPresent()) {
+                return label + ": a corridor course cannot take 'cornerBlock' -- corner ownership is a "
+                        + "rule about a rectangle's four runs, and a corridor wall winds";
+            }
+            // Deferred rather than rejected on principle: a projecting course would occupy the
+            // corridor cell in front of the wall, which is exactly where an arched profile puts its
+            // haunch, and in a 1-wide corridor it is the passage itself.
+            if (course.projection() != 0) {
+                return label + ": a corridor course cannot project (got " + course.projection()
+                        + ") -- the cell it would project into is the passage, and on an arched "
+                        + "profile it is where the haunch goes";
+            }
+            // minSize/minHeight/maxSize/maxHeight gate on a ROOM's dimensions. A corridor has none.
+            if (!course.gate().isUnbounded()) {
+                return label + ": a corridor course cannot carry size gates -- they gate on a room's "
+                        + "width/depth/height, and a corridor has no such dimensions";
+            }
+        }
+        return null;
     }
 
     /**

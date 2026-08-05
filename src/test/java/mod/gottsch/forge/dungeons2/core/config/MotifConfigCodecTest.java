@@ -276,6 +276,85 @@ class MotifConfigCodecTest {
                 "weight 0 must fail rather than authoring a style that can never be rolled");
     }
 
+    // -------- corridor courses --------
+
+    private static final String COURSES = ",\"courses\": [%s]";
+    private static final String PLINTH = "{\"block\": \"minecraft:polished_andesite\",\"anchor\": \"bottom\"}";
+
+    private static CorridorConfig corridorWithCourses(String courseJson) {
+        return fragment(String.format(CORRIDOR, String.format(COURSES, courseJson)))
+                .corridor().orElseThrow();
+    }
+
+    @Test
+    void aCorridorDefaultsToNoCourses() {
+        assertTrue(fragment(String.format(CORRIDOR, "")).corridor().orElseThrow().courses().isEmpty());
+    }
+
+    @Test
+    void corridorCoursesReuseTheRoomCourseEntryVerbatim() {
+        CorridorConfig corridor = corridorWithCourses(PLINTH + ",{\"block\": \"minecraft:andesite\","
+                + "\"alternateBlock\": \"minecraft:stone\",\"alternate\": \"strict\","
+                + "\"anchor\": \"top\",\"offset\": 2,\"orient\": \"toward_wall\"}");
+
+        assertEquals(2, corridor.courses().size());
+        WallPatternEntry.CourseEntry crown = corridor.courses().get(1);
+        assertEquals(WallPatternEntry.CourseAnchor.TOP, crown.anchor());
+        assertEquals(2, crown.offset());
+        assertEquals(WallPatternEntry.CourseAlternate.STRICT, crown.alternate());
+        assertEquals(WallPatternEntry.CourseOrient.TOWARD_WALL, crown.orient());
+        assertEquals("minecraft:stone", crown.alternateBlockOrBase());
+    }
+
+    /** The baseline's courses flow onto the baseline style, which is what the generator reads. */
+    @Test
+    void baselineCoursesReachTheBaselineStyle() {
+        CorridorConfig corridor = corridorWithCourses(PLINTH);
+
+        assertEquals(corridor.courses(), corridor.baseline().courses());
+        assertEquals(corridor.courses(), corridor.styleFor("nonexistent").courses());
+    }
+
+    /** A style's courses are its own -- that is the point of hanging them off the style. */
+    @Test
+    void aStyleCarriesItsOwnCoursesIndependentOfTheBaseline() {
+        CorridorConfig corridor = fragment(String.format(CORRIDOR,
+                        String.format(COURSES, PLINTH)
+                                + String.format(STYLES, "{\"name\": \"plain\",\"height\": 6,\"courses\": []}")))
+                .corridor().orElseThrow();
+
+        assertEquals(1, corridor.baseline().courses().size());
+        assertTrue(corridor.styleFor("plain").courses().isEmpty(),
+                "an explicitly empty styles course list must not inherit the baseline's");
+    }
+
+    /**
+     * The three parts of a room course that have no corridor meaning. Each is a load error rather
+     * than a silent drop, because all three fail invisibly -- the course still draws, just not the
+     * way it was authored.
+     */
+    @Test
+    void theThreeRoomOnlyCourseKnobsAreLoadErrorsOnACorridor() {
+        assertTrue(fails(String.format(CORRIDOR, String.format(COURSES,
+                        "{\"block\": \"minecraft:andesite\",\"cornerBlock\": \"minecraft:stone\"}"))),
+                "cornerBlock must fail -- a corridor wall has no four runs to own corners");
+        assertTrue(fails(String.format(CORRIDOR, String.format(COURSES,
+                        "{\"block\": \"minecraft:andesite\",\"projection\": 1}"))),
+                "a projecting corridor course must fail -- it would project into the passage itself");
+        assertTrue(fails(String.format(CORRIDOR, String.format(COURSES,
+                        "{\"block\": \"minecraft:andesite\",\"minHeight\": 6}"))),
+                "a size gate must fail -- it gates on room dimensions a corridor does not have");
+    }
+
+    /** The same rules apply inside a style, or a styles list is a way to smuggle them back in. */
+    @Test
+    void aStyleCourseIsHeldToTheSameCorridorRules() {
+        assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
+                        "{\"name\": \"trimmed\",\"height\": 6,\"courses\": ["
+                                + "{\"block\": \"minecraft:andesite\",\"projection\": 1}]}"))),
+                "a projecting course inside a style must fail too");
+    }
+
     /** Later fragment wins a section outright; sections are whole, never merged field by field. */
     @Test
     void aLaterFragmentReplacesASectionItAuthors() {

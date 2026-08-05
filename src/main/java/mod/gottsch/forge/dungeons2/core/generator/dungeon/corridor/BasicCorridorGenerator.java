@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -33,6 +34,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +102,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         Palette palette = palette(style);
         int height = corridor.getWallHeight();
         int narrowCeiling = Math.min(height, style.narrowCellHeight());
+        List<Course> courses = courses(style, height);
 
         // The arch reads the same two questions off the grid that the grid-free overload reads off
         // CorridorData, so both paths run one shared rule (see haunchFacing).
@@ -122,10 +125,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                     Coords2D neighbor = new Coords2D(nx, nz);
                     if (wallsEmitted.contains(neighbor)) continue;
                     if (isDoorElement(grid, nx, nz)) {
-                        emitDoorwayColumn(nx, nz, floorY, height, palette, out);
+                        emitDoorwayColumn(nx, nz, floorY, height, palette, courses, isOpen, random, out);
                         wallsEmitted.add(neighbor);
                     } else if (isWallElement(grid, nx, nz)) {
-                        emitWallColumn(nx, nz, floorY, height, palette, out);
+                        emitWallColumn(nx, nz, floorY, height, palette, courses, isOpen, random, out);
                         wallsEmitted.add(neighbor);
                     }
                 }
@@ -140,6 +143,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         Palette palette = palette(style);
         int height = corridor.getWallHeight();
         int narrowCeiling = Math.min(height, style.narrowCellHeight());
+        List<Course> courses = courses(style, height);
 
         // The grid is gone here, so wall adjacency comes from the cells the planner folded in.
         // wallCells and doorCells together are exactly what isWallElement would have answered
@@ -162,10 +166,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
             emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, random, out);
         }
         for (Coords2D wall : corridor.getWallCells()) {
-            emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, out);
+            emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, courses, isOpen, random, out);
         }
         for (Coords2D door : corridor.getDoorCells()) {
-            emitDoorwayColumn(door.getX(), door.getY(), floorY, height, palette, out);
+            emitDoorwayColumn(door.getX(), door.getY(), floorY, height, palette, courses, isOpen, random, out);
         }
     }
 
@@ -394,10 +398,130 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
 
     /** A wall column {@code height} blocks tall (Y = floorY .. floorY+height-1). */
     private static void emitWallColumn(int x, int z, int floorY, int height, Palette palette,
+                                       List<Course> courses, CellTest isOpen, RandomSource random,
                                        List<BlockPlacement> out) {
+        Direction face = courseFacing(x, z, isOpen);
         for (int yOffset = 0; yOffset < height; yOffset++) {
-            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.wall));
+            out.add(BlockStateCodec.placement(x, floorY + yOffset, z,
+                    courseState(courses, yOffset, x, z, face, random, palette.wall)));
         }
+    }
+
+    /**
+     * One resolved corridor course: a horizontal band at a known row of the wall column.
+     *
+     * <p>{@code row} is already anchored &mdash; the {@code bottom}/{@code top} arithmetic is done
+     * once per build call in {@link #courses}, not per cell, because unlike a room every wall column
+     * in a corridor is the same height.</p>
+     */
+    private record Course(BlockState block, BlockState alternate, int row,
+                          WallPatternEntry.CourseOrient orient, WallPatternEntry.CourseAlternate mode) {}
+
+    /**
+     * The style's authored courses with their blocks resolved and their rows anchored against this
+     * corridor's height.
+     *
+     * <p>A course that anchors outside the column is <strong>dropped, not clamped</strong> &mdash;
+     * the same clipping convention a room's courses get, and it is what lets one authored style
+     * carry a plinth and a crown without knowing whether this floor rolled 5 high or 8.</p>
+     */
+    private List<Course> courses(CorridorStyle style, int height) {
+        if (style.courses().isEmpty()) {
+            return List.of();
+        }
+        List<Course> resolved = new ArrayList<>(style.courses().size());
+        for (WallPatternEntry.CourseEntry entry : style.courses()) {
+            int row = entry.anchor() == WallPatternEntry.CourseAnchor.TOP
+                    ? height - 1 - entry.offset()
+                    : entry.offset();
+            if (row < 0 || row >= height) {
+                continue;
+            }
+            resolved.add(new Course(
+                    withProperties(entry.block(), entry.properties()),
+                    withProperties(entry.alternateBlockOrBase(), entry.properties()),
+                    row, entry.orient(), entry.alternate()));
+        }
+        return resolved;
+    }
+
+    private static BlockState withProperties(String block, Map<String, String> properties) {
+        BlockState state = BlockStateCodec.block(block, Blocks.STONE_BRICKS);
+        return properties.isEmpty() ? state : BlockStateCodec.withProperties(state, properties);
+    }
+
+    /**
+     * The block for one cell of a wall column, or {@code fallback} when no course claims that row.
+     *
+     * <p>Later in the list wins, the same ordering-is-execution-order convention the room's courses
+     * use. Randomness is drawn <strong>only</strong> when a {@code random}-mode course actually
+     * claims the cell, so a motif that authors no courses consumes exactly the randomness it did
+     * before and generates byte-identically.</p>
+     */
+    private static BlockState courseState(List<Course> courses, int yOffset, int x, int z,
+                                          Direction face, RandomSource random, BlockState fallback) {
+        BlockState state = fallback;
+        for (Course course : courses) {
+            if (course.row() != yOffset) {
+                continue;
+            }
+            state = oriented(mixed(course, x, z, random), course.orient(), face);
+        }
+        return state;
+    }
+
+    /**
+     * A course's block for one cell.
+     *
+     * <p>{@code random} is the room's own 45/55 split. {@code strict} alternates on
+     * <strong>{@code (x + z)} parity</strong> rather than on a run coordinate, because a corridor
+     * winds and has no {@code u}: parity alternates along both axes and carries through a 90° turn,
+     * at the cost of a possible repeat at the turn cell itself. That is the same class of caveat
+     * {@code WallSurface} already documents for a room's asymmetric patterns, and it is what a
+     * mirrored block pair needs &mdash; mixed randomly the two halves stop reading as whole bricks.</p>
+     */
+    private static BlockState mixed(Course course, int x, int z, RandomSource random) {
+        if (course.mode() == WallPatternEntry.CourseAlternate.STRICT) {
+            return Math.floorMod(x + z, 2) == 0 ? course.block() : course.alternate();
+        }
+        return RandomHelper.checkProbability(random, 45) ? course.block() : course.alternate();
+    }
+
+    /**
+     * Turns a course block to face the passage, mirroring the room provider's {@code oriented}.
+     * {@code face} is the direction this wall cell's decorated side points, i.e. toward the corridor;
+     * a stair's solid half sits on its own {@code facing} side, so a cornice against the wall wants
+     * the opposite of it.
+     */
+    private static BlockState oriented(BlockState state, WallPatternEntry.CourseOrient orient,
+                                       Direction face) {
+        if (orient == WallPatternEntry.CourseOrient.NONE || face == null) {
+            return state;
+        }
+        Direction facing = orient == WallPatternEntry.CourseOrient.TOWARD_WALL
+                ? face.getOpposite()
+                : face;
+        return BlockStateCodec.withProperties(state, Map.of("facing", facing.getSerializedName()));
+    }
+
+    /**
+     * Which way this wall cell's decorated face points: toward the corridor cell beside it.
+     *
+     * <p>{@code null} for a wall cell reached only diagonally &mdash; it has no face onto the
+     * passage, so there is nothing to orient. It still takes the course block, which keeps the band
+     * unbroken around an outside corner where the diagonal cell is the one a player sees end-on.</p>
+     *
+     * <p>A cell with corridor on two sides is an inside corner and faces both ways; it takes the
+     * lowest {@link Direction} ordinal, the same deterministic tie-break {@link #haunchFacing} uses.
+     * Determinism matters more than which one wins &mdash; see the planner's EnumMap fix.</p>
+     */
+    private static Direction courseFacing(int x, int z, CellTest isOpen) {
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            if (isOpen.test(x + d.getStepX(), z + d.getStepZ())) {
+                return d;
+            }
+        }
+        return null;
     }
 
     /**
@@ -412,10 +536,17 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * doorway is the door piece's fixed 4-row column, not a fraction of the corridor.</p>
      */
     private static void emitDoorwayColumn(int x, int z, int floorY, int height, Palette palette,
+                                          List<Course> courses, CellTest isOpen, RandomSource random,
                                           List<BlockPlacement> out) {
+        Direction face = courseFacing(x, z, isOpen);
         for (int yOffset = 0; yOffset < height; yOffset++) {
+            // The two pierced rows stay air whatever a course says: a band that filled them would
+            // brick up the doorway, and unlike a room's projecting trim there is no cell to step
+            // aside into. Every other row takes its course, so a band runs across a doorway's sill
+            // and lintel rather than stopping dead at every opening.
             BlockState state = (yOffset == DOOR_HALF_LOW || yOffset == DOOR_HALF_HIGH)
-                    ? palette.air : palette.wall;
+                    ? palette.air
+                    : courseState(courses, yOffset, x, z, face, random, palette.wall);
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, state));
         }
     }

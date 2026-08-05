@@ -56,7 +56,14 @@ import java.util.Set;
  */
 public record CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
                              Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
-                             List<CorridorStyle> styles) {
+                             List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses) {
+
+    /** The pre-courses form. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                          Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
+                          List<CorridorStyle> styles) {
+        this(floor, alternateFloor, ceiling, height, profile, archBlock, narrowHeight, styles, List.of());
+    }
 
     /** The flat form: the fields that predate profiles, with no arch. */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height) {
@@ -149,7 +156,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
 
     public static final CorridorConfig DEFAULT =
             new CorridorConfig("minecraft:stone_bricks", "minecraft:stone_bricks", "minecraft:stone_bricks",
-                    DEFAULT_HEIGHT, Profile.FLAT, Optional.empty(), Optional.empty(), List.of());
+                    DEFAULT_HEIGHT, Profile.FLAT, Optional.empty(), Optional.empty(), List.of(), List.of());
 
     /**
      * This motif's own geometry as a {@link CorridorStyle}, so the generator has exactly one shape to
@@ -158,7 +165,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
      */
     public CorridorStyle baseline() {
         return new CorridorStyle(CorridorStyle.BASELINE, CorridorStyle.DEFAULT_WEIGHT,
-                height, profile, archBlock, narrowHeight);
+                height, profile, archBlock, narrowHeight, courses);
     }
 
     /**
@@ -205,7 +212,10 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "narrowHeight")
                             .forGetter(CorridorConfig::narrowHeight),
                     Codecs.strictOptionalFieldOf(CorridorStyle.CODEC.listOf(), "styles", List.of())
-                            .forGetter(CorridorConfig::styles)
+                            .forGetter(CorridorConfig::styles),
+                    Codecs.strictOptionalFieldOf(WallPatternEntry.CourseEntry.CODEC.listOf(), "courses",
+                                    List.of())
+                            .forGetter(CorridorConfig::courses)
             ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);
 
     /**
@@ -227,8 +237,12 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
     private static DataResult<CorridorConfig> validate(CorridorConfig config) {
         String error = CorridorStyle.geometryError(
                 config.height, config.profile, config.archBlock, config.narrowHeight, "corridor");
+        if (error == null) {
+            error = CorridorStyle.coursesError(config.courses, "corridor");
+        }
         if (error != null) {
-            return DataResult.error(() -> error);
+            final String message = error;
+            return DataResult.error(() -> message);
         }
         Set<String> seen = new HashSet<>();
         List<String> duplicates = new ArrayList<>();

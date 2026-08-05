@@ -553,6 +553,56 @@ Renaming or deleting a style does **not** break existing worlds: a corridor whos
 longer resolves falls back to the baseline, and its *height* is stored on the piece itself, so the
 excavated shape is unchanged either way. Only the arch profile can shift.
 
+### Corridor wall courses
+
+`corridor.courses` is a list of horizontal bands laid over the corridor's wall columns — a plinth
+along the base, a string course, a crown under the ceiling. It reuses the **same `CourseEntry`** a
+room's `wall` slot takes, so `block`, `alternateBlock`, `alternate`, `anchor`, `offset`, `orient`
+and `properties` all mean exactly what they mean there.
+
+Author it on the `corridor` section for a motif-wide band, or inside a **style** so a floor's courses
+answer to that floor's height:
+
+```jsonc
+{ "name": "vaulted", "weight": 3, "height": 7, "profile": "arched",
+  "archBlock": "minecraft:stone_brick_stairs",
+  "courses": [
+    { "block": "minecraft:polished_andesite", "anchor": "bottom", "offset": 0 },
+    { "block": "minecraft:polished_andesite", "anchor": "top",    "offset": 2 }
+  ] }
+```
+
+A style's list replaces the baseline's outright — it is not merged, and an explicitly empty list
+means *no courses*, not *inherit*.
+
+**Anchor from the `top` for anything near the ceiling.** Corridor height is rolled per floor, so a
+crown measured from the floor sits at a different distance from the ceiling on every floor of the
+same dungeon. A course that resolves outside the column is **dropped, not clamped**, which is what
+lets one style carry a plinth and a crown without knowing what height the floor rolled.
+
+**`alternate: "strict"` alternates on `(x + z)` parity**, not on a run coordinate — a corridor winds,
+so there is no `u` to count along. Parity alternates on both axes and carries through a 90° turn,
+with a possible repeat at the turn cell itself. That is the same class of caveat `WallSurface`
+documents for a room's asymmetric patterns, and `strict` is still what a mirrored block pair needs.
+
+Three knobs a room course takes are **load errors** on a corridor, rather than being silently
+dropped:
+
+| knob | why |
+|---|---|
+| `cornerBlock` | corner ownership is a rule about a rectangle's four runs; a corridor wall winds |
+| `projection` | the cell it would project into *is* the passage — and on an arched profile it is where the haunch goes |
+| `minHeight`/`minSize`/`maxHeight`/`maxSize` | these gate on a room's dimensions, which a corridor has none of |
+
+**A course never fills a doorway's two door-half rows.** Every other row of a door column takes its
+course, so a band runs across an opening's sill and lintel rather than stopping dead at each one.
+
+**Expect roughly half of a corridor's courses to be invisible.** A corridor and the room beside it
+share one wall column with two faces, and only one block can be in it — measured, about half the wall
+faces you see from inside a corridor belong to the room behind them. Courses style the corridor's own
+share; the rest follows the neighbouring room's scheme. Nothing in the datapack changes that, and
+raising `minRoomGap` to 2 is the only lever that removes it (at ~30% fewer rooms per floor).
+
 The rows between a dropped ceiling and the corridor's full height are **filled solid**, not left
 alone — the piece's bounding box covers them either way, and whatever the terrain happened to put
 there could be a cave, i.e. a hole in the corridor roof.

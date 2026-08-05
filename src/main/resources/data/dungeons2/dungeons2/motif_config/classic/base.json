@@ -26,7 +26,19 @@
         "height": 7,
         "narrowHeight": 6,
         "profile": "arched",
-        "archBlock": "minecraft:stone_brick_stairs"
+        "archBlock": "minecraft:stone_brick_stairs",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "anchor": "bottom",
+            "offset": 0
+          },
+          {
+            "block": "minecraft:polished_andesite",
+            "anchor": "top",
+            "offset": 2
+          }
+        ]
       },
       {
         "name": "grand",
@@ -34,13 +46,40 @@
         "height": 8,
         "narrowHeight": 7,
         "profile": "arched",
-        "archBlock": "minecraft:stone_brick_stairs"
+        "archBlock": "minecraft:stone_brick_stairs",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "anchor": "bottom",
+            "offset": 0
+          },
+          {
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternateBlock": "dungeonblocks:right_large_stone_brick",
+            "alternate": "strict",
+            "anchor": "top",
+            "offset": 3
+          },
+          {
+            "block": "minecraft:polished_andesite",
+            "anchor": "top",
+            "offset": 2
+          }
+        ]
       },
       {
         "name": "cramped",
         "weight": 2,
         "height": 5,
-        "profile": "flat"
+        "profile": "flat",
+        "courses": [
+          {
+            "block": "minecraft:cobblestone",
+            "alternateBlock": "minecraft:mossy_cobblestone",
+            "anchor": "bottom",
+            "offset": 0
+          }
+        ]
       }
     ]
   },
