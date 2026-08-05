@@ -29,7 +29,9 @@
         "archBlock": "minecraft:stone_brick_stairs",
         "courses": [
           {
-            "block": "minecraft:polished_andesite",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternateBlock": "dungeonblocks:right_large_stone_brick",
+            "alternate": "strict",
             "anchor": "bottom",
             "offset": 0
           },
@@ -49,16 +51,11 @@
         "archBlock": "minecraft:stone_brick_stairs",
         "courses": [
           {
-            "block": "minecraft:polished_andesite",
-            "anchor": "bottom",
-            "offset": 0
-          },
-          {
             "block": "dungeonblocks:left_large_stone_brick",
             "alternateBlock": "dungeonblocks:right_large_stone_brick",
             "alternate": "strict",
-            "anchor": "top",
-            "offset": 3
+            "anchor": "bottom",
+            "offset": 0
           },
           {
             "block": "minecraft:polished_andesite",
@@ -74,10 +71,9 @@
         "profile": "flat",
         "courses": [
           {
-            "block": "minecraft:cobblestone",
-            "alternateBlock": "minecraft:mossy_cobblestone",
-            "anchor": "bottom",
-            "offset": 0
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternateBlock": "dungeonblocks:right_large_stone_brick",
+            "alternate": "strict"
           }
         ]
       }

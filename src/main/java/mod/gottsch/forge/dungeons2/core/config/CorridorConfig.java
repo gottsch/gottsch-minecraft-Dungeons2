@@ -36,16 +36,19 @@ import java.util.Set;
  * room's ({@link FloorConfig}/{@link CeilingConfig}) so corridors can read as rougher passages than
  * the rooms they join.
  *
- * <p>Corridors deliberately have no decorative pattern list &mdash; a border ring or checkerboard
- * needs a room-sized rectangle, and a corridor is a 1-3 cell wide run. The
+ * <p>Corridors deliberately have no <em>floor or ceiling</em> pattern list &mdash; a border ring or
+ * checkerboard needs a room-sized rectangle, and a corridor is a 1-3 cell wide run. The
  * {@code floor}/{@code alternateFloor} pair is rolled per cell at the same 45/55 split
  * {@code BasicFloorGenerator} uses for rooms. Corridor <em>walls</em> come from
- * {@link WallConfig}, shared with rooms.</p>
+ * {@link WallConfig}, shared with rooms, and can carry {@code courses} &mdash; horizontal bands are
+ * the one wall treatment that needs no rectangle, since a band sits at a constant row and simply
+ * runs along whatever the wall does.</p>
  *
  * <p>{@code height} is the corridor's wall height in blocks: the column runs
  * {@code floorY .. floorY + height - 1}, with the floor at the bottom, the ceiling at the top and
- * {@code height - 2} rows of air between. It is motif-wide &mdash; per-floor variation is a later
- * step and wants a weighted roll, not a second scalar here.</p>
+ * {@code height - 2} rows of air between. These fields are the motif's <strong>baseline</strong>;
+ * a motif that authors {@code styles} rolls one of those per floor instead, and this becomes the
+ * fallback. See {@link CorridorStyle}.</p>
  *
  * <p>{@code profile} shapes the top of that column. {@code flat} is a single ceiling row;
  * {@code arched} adds a haunch row of {@code archBlock} stairs immediately below it, angled into

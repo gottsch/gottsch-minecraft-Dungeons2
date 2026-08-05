@@ -92,3 +92,52 @@ seed.** The anchor is part of every piece's seed, so seed alone gives you a diff
 
 The tool lives in the **test** source set: it needs Minecraft bootstrapped (the generators resolve
 block states through the registry) and nothing shipped should depend on it.
+
+---
+
+## Driving a piece through the real `postProcess`
+
+`FakeWorldGenLevel` + `TestRegistries` let a test run a `StructurePiece`'s actual `postProcess`
+headlessly. That matters because **every other check in this project stops short of it**: unit
+tests, the floor-plan viewer and ad-hoc probes all call the generators directly, so they see what a
+piece *intends* to place. The weathering processor list and `settleJoinShapes` run only in
+`postProcess`, and four defects in three sessions lived in that gap — the `updateShape` chunk-gen
+crash, outer corners never populating, stairs weathering into dirt cubes, and duplicated arch caps.
+All four were found by a person looking at a screenshot.
+
+```java
+FakeWorldGenLevel level = FakeWorldGenLevel.create();
+piece.postProcess(level.level(), null, null, RandomSource.create(seed),
+                  piece.getBoundingBox(), chunkPos, origin);
+BlockState landed = level.blockAt(somePos);
+```
+
+`TestRegistries.get()` supplies the two datapack registries `postProcess` reads —
+`dungeons2:motif_config` and `minecraft:worldgen/processor_list` — decoded from the shipped
+resources. **Without it every lookup silently returns its default**, so the piece renders as bare
+stone brick with no weathering and the test passes while asserting nothing. `CorridorPostProcessTest`
+guards against exactly that with `theWeatheringPassActuallyRan`.
+
+**Invoke it per chunk, not once per piece.** Vanilla calls `postProcess` once for every chunk a
+piece's box spans, with the box clipped to that chunk — so everything inside runs N times over the
+same piece. `CorridorPostProcessTest.postProcessPerChunk` mirrors `StructureStart.placeInChunk`, and
+`splittingAPieceAcrossChunksBuildsTheSameThing` asserts the two give identical worlds. That test
+found a real defect the first time it ran: 5 blocks in 75,227, all arch corners on a boundary,
+settling their shape against a neighbour that had not been written yet.
+
+Two things it does *not* model, both deliberate:
+
+- **No chunk contents.** `getChunk` returns null and nothing models a chunk that already finished
+  generating, so this cannot reproduce "piece silently skipped in an already-generated chunk" —
+  that is `/place` behaviour on a live server. Chunk *boundaries* are modelled; see above.
+- **No `ServerLevel`.** `getLevel()` throws, so pieces that spawn **entities** — rooms with pots —
+  cannot be driven through it yet. Corridors and doors are pure block placement and work today.
+
+Anything else unimplemented throws naming the method it wants, so extending it is a matter of
+running a test and reading the message.
+
+**A note on writing assertions here.** It is easy to write one that passes either way. The first
+version of `authoredArchShapesSurviveSettleJoinShapes` asserted "some outer corner exists", which
+stayed green with the bug reintroduced; it now pairs each stair the generator intended with what
+landed at that position, and catches 537 of 1003. Reintroduce the bug and watch the test fail before
+trusting it.

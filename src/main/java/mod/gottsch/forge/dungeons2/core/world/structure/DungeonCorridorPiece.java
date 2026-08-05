@@ -101,6 +101,33 @@ public class DungeonCorridorPiece extends DungeonPiece {
         tag.put("Corridor", PieceNbt.writeCorridor(corridor));
     }
 
+    /**
+     * A corridor derives every corner shape it places, so vanilla never gets a vote.
+     *
+     * <p>Two independent reasons, and either alone would be enough.</p>
+     *
+     * <p><strong>Vanilla cannot get an arch right.</strong> {@code StairBlock.getStairsShape} looks
+     * for a stair at {@code pos.relative(facing)} to decide OUTER; a haunch faces <em>into its
+     * wall</em>, so that lookup always finds solid stone and the OUTER branch can never fire. Its
+     * INNER branch meanwhile fires on a perpendicular haunch across a narrow corridor, overriding a
+     * {@code straight} the generator chose deliberately. {@code BasicCorridorGenerator.haunchShape}
+     * derives the shape from the wall layout, which is information vanilla does not have.</p>
+     *
+     * <p><strong>And its answer is not chunk-stable.</strong> See
+     * {@link DungeonPiece#settlesJoinShapes()} &mdash; settling reads neighbours, {@code postProcess}
+     * runs per chunk, and a cell on a boundary settles against whatever the far side happens to hold
+     * at that moment. That produced a visible seam at multiples of 16.</p>
+     *
+     * <p>This covers the whole piece, not just haunches, so a datapack's corridor <em>course</em> of
+     * stairs is not mitred either. That is deliberate and consistent: corner rules assume a
+     * rectangle with four runs, and a corridor wall winds &mdash; the same reason
+     * {@code cornerBlock} is rejected on a corridor course.</p>
+     */
+    @Override
+    protected boolean settlesJoinShapes() {
+        return false;
+    }
+
     @Override
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {

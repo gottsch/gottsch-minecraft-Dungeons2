@@ -219,11 +219,34 @@ public abstract class DungeonPiece extends StructurePiece {
             int localZ = pieceBox.maxZ() - worldPos.getZ();
             placeBlock(level, info.state(), localX, localY, localZ, box);
 
-            if (hasJoinShape(info.state()) && box.isInside(worldPos)) {
+            if (settlesJoinShapes() && hasJoinShape(info.state()) && box.isInside(worldPos)) {
                 jointed.add(worldPos.immutable());
             }
         }
         settleJoinShapes(level, box, jointed);
+    }
+
+    /**
+     * Whether vanilla's neighbour-derived corner shapes may be applied to this piece's blocks.
+     *
+     * <p>{@code true} for a piece that authors no {@code shape} of its own and wants the mitre &mdash;
+     * a room's cornice ring, where vanilla's rule is exactly right because a room is a rectangle with
+     * four runs.</p>
+     *
+     * <p><strong>{@code false} for a piece that derives its own shapes</strong>, and that is not
+     * merely an optimisation. {@link #settleJoinShapes} reads a block's <em>neighbours</em>, and
+     * {@code postProcess} runs once per chunk a piece spans &mdash; so at a chunk boundary the
+     * neighbours on the far side have not been written yet and vanilla derives from air. The same
+     * cell therefore settles differently depending on which chunk got there first, leaving a seam
+     * running dead straight through a corridor at a multiple of 16. Measured at 5 cells in 75,227
+     * before this opt-out existed, all of them arch haunches on a boundary.</p>
+     *
+     * <p>Deriving the shape from the layout instead makes the answer chunk-independent by
+     * construction, which is the only fix available: there is no point during per-chunk placement at
+     * which every neighbour exists.</p>
+     */
+    protected boolean settlesJoinShapes() {
+        return true;
     }
 
     /** True for blocks whose model corners depend on their neighbours (stairs, cornices, mouldings). */

@@ -73,19 +73,6 @@ class AgingChainRatesTest {
             "dungeonblocks:square_brick",
             "dungeonblocks:large_bricks");
 
-    /**
-     * Stairs blocks classic actually authors, and so the only ones whose decay a player ever sees:
-     * the corridor arch haunch ({@code corridor.archBlock}) and the projecting wall-trim course in
-     * {@code schemes_walls.json}. Both are {@code minecraft:stone_brick_stairs}.
-     *
-     * <p>The other {@code *_stairs} rules in the file are keyed on blocks nothing authors. They read
-     * as a continuing chain — {@code stone_brick_stairs -> cobblestone_stairs -> andesite_stairs ->
-     * gravel} — but {@code AgingProcessor} looks its rules up by the <em>input</em> block once and
-     * never re-resolves what it just produced, so a rule keyed on an intermediate never fires. They
-     * are listed here as unreachable rather than tested.</p>
-     */
-    private static final Set<String> AUTHORED_STAIRS_SOURCES = Set.of("minecraft:stone_brick_stairs");
-
     /** The composed rates the shipped numbers work out to. Tolerance covers 4dp rounding. */
     private static final double DIRT_RATE = 0.0180;
     private static final double GRAVEL_RATE = 0.0060;
@@ -201,42 +188,35 @@ class AgingChainRatesTest {
     }
 
     /**
-     * A stair must weather into another stair. Every rule above this one is about a block's
-     * <em>material</em>; this is the one place the aging list can destroy a block's <em>shape</em>.
+     * Stairs weather into <strong>dirt</strong> as well as into other stairs, and that is
+     * deliberate &mdash; do not "fix" it.
      *
-     * <p>It shipped broken: {@code stone_brick_stairs} had a {@code dirt} stage on two of its three
-     * chains, so 2.5% of stairs became a full cube of dirt — a higher rate than the deep-decay
-     * chain's own dirt (1.8%), and the only decay in the file that changes a block's geometry.
-     * Harmless-looking while stairs were only wall trim, and conspicuous the moment the arched
-     * corridor profile put a stair in the <strong>ceiling</strong> row of every arched cell: an arch
-     * haunch turning into a dirt cube fills in the chamfer it was there to cut, so the arch reads as
-     * a mud plug rather than as decay.</p>
+     * <p>It looks like a defect from the code: it is the only rule in the file that changes a
+     * block's <em>shape</em> rather than its material, and at 2.5% it is commoner than the
+     * deep-decay chain's own dirt (1.8%). I removed it on 2026-08-04 on exactly that reasoning and
+     * was wrong. Gottsch wants it: an arch haunch gone to earth reads as the stair having fallen
+     * out and the ground coming through, and dirt is the <em>only</em> thing {@code floor_growth}
+     * and {@code hanging_growth} can sprout from &mdash; so removing it also silently took away
+     * every ceiling-growth anchor in the dungeon. See
+     * {@link #theDungeonHasADirtSourceForTheGrowthBehaviours}, which is the same linkage seen from
+     * the other end.</p>
      *
-     * <p>None of the three tests above could see it. All of them iterate {@link #DEEP_DECAY_SOURCES},
-     * which is full blocks only.</p>
+     * <p>Kept as a rate assertion rather than deleted outright, so a change to the stairs chains is
+     * at least visible in a diff.</p>
+     *
+     * <p><strong>Only {@code minecraft:stone_brick_stairs} is asserted</strong> because it is the
+     * only stairs block classic authors (the corridor arch haunch and the projecting wall-trim
+     * course are both it). The file's other {@code *_stairs} rules are keyed on blocks nothing
+     * authors: they read as a continuing chain &mdash; {@code stone_brick_stairs ->
+     * cobblestone_stairs -> andesite_stairs -> gravel} &mdash; but {@code AgingProcessor} looks its
+     * rules up by the <em>input</em> block once and never re-resolves what it just produced, so a
+     * rule keyed on an intermediate never fires. Those rules are unreachable, not tested.</p>
      */
     @Test
-    void authoredStairsOnlyDecayIntoStairs() {
-        for (String source : AUTHORED_STAIRS_SOURCES) {
-            for (String output : composedRates(source).keySet()) {
-                assertTrue(output.endsWith("_stairs"),
-                        source + " decays into " + output + ", which is not a stairs block -- that"
-                                + " fills in the chamfer instead of weathering it. An arch haunch is a"
-                                + " stair in the ceiling row; see the comment on this test.");
-            }
-        }
-    }
-
-    /** The rate the fix above is worth, so a re-added shape-breaking stage shows up as a number too. */
-    @Test
-    void authoredStairsNeverDecayToDirtOrRubble() {
-        for (String source : AUTHORED_STAIRS_SOURCES) {
-            Map<String, Double> rates = composedRates(source);
-            for (String hazard : Set.of("minecraft:dirt", "minecraft:gravel", "minecraft:air")) {
-                assertEquals(0.0, rates.getOrDefault(hazard, 0.0), 0.0,
-                        source + " reaches " + hazard);
-            }
-        }
+    void stairsDecayToDirtAtTheIntendedRate() {
+        assertEquals(0.025, composedRates("minecraft:stone_brick_stairs")
+                        .getOrDefault("minecraft:dirt", 0.0), EPSILON,
+                "the stairs-to-dirt rate drifted -- it is deliberate, see this test's comment");
     }
 
     @Test
