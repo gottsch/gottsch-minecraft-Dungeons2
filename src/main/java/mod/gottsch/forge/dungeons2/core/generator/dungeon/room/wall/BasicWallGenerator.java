@@ -60,6 +60,8 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
     /** Null means no wall treatment: every cell falls through to the plain wall block. */
     private ISurfacePatternProvider wallPattern;
+    /** Filled by {@link #build}; see {@link #occupiedFloorCells()}. */
+    private Set<Coords2D> occupiedFloorCells = Set.of();
 
     /**
      * Injects the resolved motif config. Same "resolve once where {@code RegistryAccess} is
@@ -91,6 +93,7 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
         // Doorway cells are floor-local grid coords, the same space as the surfaces' xAt/zAt.
         Set<Coords2D> doorways = new HashSet<>(room.getDoorways());
 
+        occupiedFloorCells = new HashSet<>();
         for (WallSurface surface : WallSurface.forRoom(room)) {
             SurfacePlan plan = planFor(surface, wallHeight, random);
             surface.emit(plan, floorY, doorways, wallState, out);
@@ -102,11 +105,42 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
             if (wallPattern instanceof IProjectingPatternProvider projecting) {
                 Map<Integer, SurfacePlan> projected = projecting.projectedPlans(
                         surface.length(), wallHeight, surface.facing(), random);
+                int before = out.size();
                 for (Map.Entry<Integer, SurfacePlan> layer : projected.entrySet()) {
                     surface.emitProjected(layer.getValue(), layer.getKey(), floorY, doorways, out);
                 }
+                recordFloorLevelTrim(out, before, floorY);
             }
         }
+    }
+
+    /**
+     * Notes which interior cells this run's projecting trim just took at floor level, so the room's
+     * props can keep out of them.
+     *
+     * <p><strong>Read back off the emitted placements rather than re-derived from the plans.</strong>
+     * Which cells a projected layer actually occupies is the product of three rules that all live in
+     * {@code WallSurface} &mdash; the projectable range that cedes corner columns between runs, the
+     * whole-column drop at a doorway, and the sparse "only marked cells" rule. Re-deriving them here
+     * would be a second copy that goes stale the first time one of them changes, and the failure it
+     * would cause (a pot inside a block, or a pot needlessly excluded) is invisible except in game.
+     * Asking what was emitted cannot disagree with what was emitted.</p>
+     *
+     * <p>Floor level is {@code floorY + 1}: {@code v = 0}, the row a pot stands in. Trim higher up
+     * a wall is irrelevant &mdash; a pot is one block tall.</p>
+     */
+    private void recordFloorLevelTrim(List<BlockPlacement> out, int fromIndex, int floorY) {
+        for (int i = fromIndex; i < out.size(); i++) {
+            BlockPlacement placement = out.get(i);
+            if (placement.getY() == floorY + 1) {
+                occupiedFloorCells.add(new Coords2D(placement.getX(), placement.getZ()));
+            }
+        }
+    }
+
+    @Override
+    public Set<Coords2D> occupiedFloorCells() {
+        return occupiedFloorCells;
     }
 
     /**

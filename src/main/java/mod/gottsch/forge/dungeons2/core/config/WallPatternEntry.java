@@ -18,26 +18,49 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.PilastersWallPatternProvider;
 import net.minecraft.util.StringRepresentable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * A {@link RoomScheme}'s {@code wall} slot: the decorative treatment laid over a room's plain wall
- * block.
+ * A {@link RoomScheme}'s {@code wall} slot: an <strong>ordered list</strong> of treatments laid over
+ * a room's plain wall block, each drawn on top of the last.
  *
- * <p>{@code type} is a plain string discriminator, same as {@link FloorPatternEntry}'s.
- * {@code "courses"} &mdash; horizontal bands &mdash; is the only type today; anything else means no
- * treatment, the same graceful degradation an unrecognized floor type gets.</p>
+ * <h2>Why a list, and why the type moved down a level</h2>
+ * <p>Until Aug 2026 this slot was a single typed entry, which said that a wall had one treatment and
+ * the {@code type} chose <em>which</em>. That was true while {@code courses} was the only type and
+ * false the moment a second arrived: courses are horizontal and pilasters vertical, and a wall wants
+ * <strong>both</strong> &mdash; a plinth running between engaged columns is one look, not two
+ * competing ones. So {@code type} belongs on the pattern, not on the slot.</p>
+ *
+ * <p>This is the shape {@link CeilingPatternEntry} has had since it shipped, and its reasoning
+ * carries over unchanged: surface patterns are sparse, so a cell a pattern does not mark is left
+ * null and the next pattern draws it. Layering is therefore just applying them in sequence, which
+ * makes the list itself the composition mechanism and a {@code "composite"} type unnecessary.
+ * Ordering is execution order, the same convention the {@code processor_list} files use &mdash;
+ * which is also how an author says whether a course runs across a pilaster or the pilaster
+ * interrupts the course. Put the one that should win last.</p>
  *
  * <h2>Why courses first</h2>
  * <p>One provider covers plinth, chair rail, string course <em>and</em> crown molding, because all
  * four are the same thing at a different height. They are also the only wall pattern with no join
  * problem: a band sits at a constant {@code v}, so it runs continuously around all four walls no
  * matter how the corner columns are shared out.</p>
+ *
+ * <h2>Pilasters &mdash; the vertical counterpart</h2>
+ * <p>Evenly spaced vertical strips, engaged into the wall when {@code projection} is 0 and standing
+ * out from it when it is not. They are laid out <strong>symmetric about each run's own centre</strong>
+ * rather than counted from {@code u = 0}: the Z-edge runs are {@code width} long and the X-edge runs
+ * {@code depth - 2}, so a fixed stride from the origin gives the four walls different phase and
+ * reads accidental. {@code WallSurface} guarantees runs are symmetric about their own centre for
+ * exactly this reason.</p>
  *
  * <h2>Projection &mdash; trim that stands out from the wall</h2>
  * <p>{@code projection} moves a course off the wall plane and into the room: {@code 0} (the
@@ -67,12 +90,163 @@ import java.util.Optional;
  *
  * @author Mark Gottschling on Aug 1, 2026
  */
-public record WallPatternEntry(String type, List<CourseEntry> courses, SizeGate gate) {
+public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
 
     /** An ungated treatment -- drawn whenever its scheme is rolled. */
-    public WallPatternEntry(String type, List<CourseEntry> courses) {
-        this(type, courses, SizeGate.UNBOUNDED);
+    public WallPatternEntry(List<PatternEntry> patterns) {
+        this(patterns, SizeGate.UNBOUNDED);
     }
+
+    /**
+     * The shape before the slot became a list: a single treatment of one type. Kept because most
+     * walls really are one pattern, and because it leaves every pre-Aug-2026 call site meaning
+     * exactly what it used to.
+     */
+    public WallPatternEntry(String type, List<CourseEntry> courses) {
+        this(List.of(new PatternEntry(type, courses)), SizeGate.UNBOUNDED);
+    }
+
+    /** As above, with the slot gate the single treatment used to carry itself. */
+    public WallPatternEntry(String type, List<CourseEntry> courses, SizeGate gate) {
+        this(List.of(new PatternEntry(type, courses)), gate);
+    }
+
+    /**
+     * One treatment. {@code type} is a plain string discriminator, same as
+     * {@link FloorPatternEntry}'s; an unrecognized value draws nothing, the same graceful
+     * degradation an unrecognized floor type gets.
+     *
+     * <ul>
+     *   <li>{@code "courses"} &mdash; horizontal bands. Uses {@code courses}, an ordered list of
+     *       {@link CourseEntry}.</li>
+     *   <li>{@code "pilasters"} &mdash; evenly spaced vertical strips. Uses {@code block}, optional
+     *       {@code baseBlock}/{@code capBlock} for the bottom and top rows with their own optional
+     *       {@code baseProperties}/{@code capProperties}, and {@code spacing}
+     *       (default {@value PilastersWallPatternProvider#DEFAULT_SPACING}).
+     *       <p>The per-row property maps are the one place this schema differs from
+     *       {@link CourseEntry}, which shares one map across its three block slots. A course's three
+     *       slots are the same block family wanting the same state; a pilaster's plinth and capital
+     *       are typically the same block at <em>opposite</em> values of a vertical property, so one
+     *       map cannot describe a column at all.</p></li>
+     *   <li>{@code "end_pilasters"} &mdash; one strip at each end of a wall instead of a rhythm.
+     *       Same blocks; uses {@code inset} (default
+     *       {@value PilastersWallPatternProvider#DEFAULT_INSET}) rather than {@code spacing}.</li>
+     * </ul>
+     *
+     * <p>Fields are a flat superset across the types, exactly as {@code CeilingPatternEntry}'s
+     * {@code SurfacePatternEntry} is, rather than a codec union per type. Writing a field the type
+     * cannot use is a <strong>load error</strong> ({@link WallPatternEntry#validate}) and not a
+     * silent no-op, because a wall that draws correctly while quietly ignoring a line the author
+     * wrote is the hardest kind of authoring mistake to see.</p>
+     */
+    public record PatternEntry(String type, List<CourseEntry> courses,
+                               Optional<String> block, Optional<String> baseBlock,
+                               Optional<String> capBlock, int spacing, int projection,
+                               CourseOrient orient, Map<String, String> properties,
+                               Optional<Map<String, String>> baseProperties,
+                               Optional<Map<String, String>> capProperties,
+                               int inset, SizeGate gate) {
+
+        /** A courses treatment, ungated -- the shape the whole slot used to have. */
+        public PatternEntry(String type, List<CourseEntry> courses) {
+            this(type, courses, Optional.empty(), Optional.empty(), Optional.empty(),
+                    PilastersWallPatternProvider.DEFAULT_SPACING, 0, CourseOrient.NONE,
+                    Map.of(), Optional.empty(), Optional.empty(),
+                    PilastersWallPatternProvider.DEFAULT_INSET, SizeGate.UNBOUNDED);
+        }
+
+        /** A strip's shape before the base and cap could be propertied separately. */
+        public PatternEntry(String type, List<CourseEntry> courses,
+                            Optional<String> block, Optional<String> baseBlock,
+                            Optional<String> capBlock, int spacing, int projection,
+                            CourseOrient orient, Map<String, String> properties,
+                            int inset, SizeGate gate) {
+            this(type, courses, block, baseBlock, capBlock, spacing, projection, orient,
+                    properties, Optional.empty(), Optional.empty(), inset, gate);
+        }
+
+        /** The base block, falling back to {@link #block} when unauthored. */
+        public Optional<String> baseBlockOrBase() {
+            return baseBlock.or(() -> block);
+        }
+
+        /** The cap block, falling back to {@link #block} when unauthored. */
+        public Optional<String> capBlockOrBase() {
+            return capBlock.or(() -> block);
+        }
+
+        /**
+         * The base row's block properties, falling back to {@link #properties} when unauthored --
+         * the same defaulting {@link #baseBlockOrBase} does, and for the same reason: absent means
+         * "whatever the strip uses", not "no properties".
+         */
+        public Map<String, String> basePropertiesOrBase() {
+            return baseProperties.orElse(properties);
+        }
+
+        /** See {@link #basePropertiesOrBase}. */
+        public Map<String, String> capPropertiesOrBase() {
+            return capProperties.orElse(properties);
+        }
+
+        /** Whether this entry is the {@code courses} type, compared the way the selector dispatches. */
+        public boolean isCourses() {
+            return COURSES.equals(type().trim().toLowerCase(Locale.ROOT));
+        }
+
+        /** Whether this entry is either strip type -- both need a {@code block} and neither takes courses. */
+        public boolean isPilasters() {
+            String name = type().trim().toLowerCase(Locale.ROOT);
+            return PILASTERS.equals(name) || END_PILASTERS.equals(name);
+        }
+
+        /** Whether this entry is specifically the end-strip type. */
+        public boolean isEndPilasters() {
+            return END_PILASTERS.equals(type().trim().toLowerCase(Locale.ROOT));
+        }
+
+        public static final Codec<PatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("type").forGetter(PatternEntry::type),
+                Codecs.strictOptionalFieldOf(CourseEntry.CODEC.listOf(), "courses", List.of())
+                        .forGetter(PatternEntry::courses),
+                // Bare Optionals for the same reason CourseEntry's alternateBlock is: absent means
+                // "fall back to another authored value", not "use this default block".
+                Codec.STRING.optionalFieldOf("block").forGetter(PatternEntry::block),
+                Codec.STRING.optionalFieldOf("baseBlock").forGetter(PatternEntry::baseBlock),
+                Codec.STRING.optionalFieldOf("capBlock").forGetter(PatternEntry::capBlock),
+                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "spacing",
+                        PilastersWallPatternProvider.DEFAULT_SPACING).forGetter(PatternEntry::spacing),
+                Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_PROJECTION), "projection", 0)
+                        .forGetter(PatternEntry::projection),
+                Codecs.strictOptionalFieldOf(CourseOrient.CODEC, "orient", CourseOrient.NONE)
+                        .forGetter(PatternEntry::orient),
+                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
+                        "properties", Map.of()).forGetter(PatternEntry::properties),
+                // Bare Optionals, like baseBlock/capBlock: absent falls back to another AUTHORED
+                // value rather than to a default this record invented.
+                Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("baseProperties")
+                        .forGetter(PatternEntry::baseProperties),
+                Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("capProperties")
+                        .forGetter(PatternEntry::capProperties),
+                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
+                                PilastersWallPatternProvider.DEFAULT_INSET)
+                        .forGetter(PatternEntry::inset),
+                SizeGate.MAP_CODEC.forGetter(PatternEntry::gate)
+        ).apply(instance, PatternEntry::new));
+    }
+
+    /** The horizontal-band type. Lower-cased after trimming, matching how the selector dispatches. */
+    public static final String COURSES = "courses";
+
+    /** The evenly spaced vertical-strip type. See {@link #COURSES} for the comparison rule. */
+    public static final String PILASTERS = "pilasters";
+
+    /**
+     * A strip at each end of a wall rather than a repeating rhythm &mdash; the paired corner, when
+     * two adjacent walls both draw one. Listed alongside {@link #PILASTERS} it gives corner piers
+     * with an even rhythm between them.
+     */
+    public static final String END_PILASTERS = "end_pilasters";
 
     /**
      * How a course's block should be turned to face, for blocks that have a {@code facing} property
@@ -286,16 +460,81 @@ public record WallPatternEntry(String type, List<CourseEntry> courses, SizeGate 
      * renders as a plain wall.</p>
      */
     public WallPatternEntry forRoom(int width, int depth, int height) {
-        List<CourseEntry> fitting = courses.stream()
-                .filter(course -> course.gate().fits(width, depth, height))
-                .toList();
-        return fitting.size() == courses.size() ? this : new WallPatternEntry(type, fitting, gate);
+        List<PatternEntry> fitting = new ArrayList<>(patterns.size());
+        boolean changed = false;
+        for (PatternEntry pattern : patterns) {
+            if (!pattern.gate().fits(width, depth, height)) {
+                changed = true;
+                continue;
+            }
+            List<CourseEntry> courses = pattern.courses().stream()
+                    .filter(course -> course.gate().fits(width, depth, height))
+                    .toList();
+            if (courses.size() == pattern.courses().size()) {
+                fitting.add(pattern);
+                continue;
+            }
+            changed = true;
+            // A courses pattern whose every band gated out contributes nothing; dropping it here
+            // rather than carrying an empty one keeps "no patterns left" the single test for
+            // "plain wall" in the selector.
+            if (!courses.isEmpty()) {
+                fitting.add(new PatternEntry(pattern.type(), courses, pattern.block(),
+                        pattern.baseBlock(), pattern.capBlock(), pattern.spacing(),
+                        pattern.projection(), pattern.orient(), pattern.properties(),
+                        pattern.baseProperties(), pattern.capProperties(),
+                        pattern.inset(), pattern.gate()));
+            }
+        }
+        return changed ? new WallPatternEntry(fitting, gate) : this;
     }
 
-    public static final Codec<WallPatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("type").forGetter(WallPatternEntry::type),
-            Codecs.strictOptionalFieldOf(CourseEntry.CODEC.listOf(), "courses", List.of())
-                    .forGetter(WallPatternEntry::courses),
-            SizeGate.MAP_CODEC.forGetter(WallPatternEntry::gate)
-    ).apply(instance, WallPatternEntry::new));
+    /**
+     * {@code patterns} is <strong>required</strong>, unlike {@code CeilingPatternEntry}'s.
+     *
+     * <p>Not a style choice: this slot used to be a single typed entry
+     * ({@code {"type": "courses", "courses": [...]}}), and a codec ignores keys it does not know.
+     * Left optional, every unmigrated datapack would decode <em>cleanly</em> to a slot with no
+     * patterns &mdash; a room whose authored trim silently vanished, with no error anywhere and
+     * nothing in game to distinguish it from a plain wall. Requiring the key turns that into a load
+     * failure naming {@code patterns}, which is the whole point of the strict codecs in this
+     * package. An empty slot was never worth authoring anyway.</p>
+     */
+    public static final Codec<WallPatternEntry> CODEC = RecordCodecBuilder.<WallPatternEntry>create(
+            instance -> instance.group(
+                    PatternEntry.CODEC.listOf().fieldOf("patterns")
+                            .forGetter(WallPatternEntry::patterns),
+                    SizeGate.MAP_CODEC.forGetter(WallPatternEntry::gate)
+            ).apply(instance, WallPatternEntry::new))
+            .flatXmap(WallPatternEntry::validate, WallPatternEntry::validate);
+
+    /**
+     * Rejects a field the pattern's own type cannot act on.
+     *
+     * <p>Same rule and same reasoning as {@code CeilingPatternEntry#validate}: the fields are a flat
+     * superset, so nothing stops an author writing {@code spacing} on a {@code courses} band or
+     * {@code courses} on a {@code pilasters} strip. Ignoring either would produce a wall exactly as
+     * correct as it was before the line was written &mdash; a silent nothing, with the pattern still
+     * drawing, which is the failure mode hardest to spot in game.</p>
+     *
+     * <p>{@code projection}, {@code orient} and {@code properties} are deliberately <em>not</em>
+     * checked: both types use all three, with the same meaning.</p>
+     */
+    private static DataResult<WallPatternEntry> validate(WallPatternEntry entry) {
+        for (PatternEntry pattern : entry.patterns()) {
+            if (!pattern.courses().isEmpty() && !pattern.isCourses()) {
+                return DataResult.error(() -> "wall pattern '" + pattern.type()
+                        + "': 'courses' is only meaningful on a 'courses' pattern");
+            }
+            if (pattern.block().isPresent() && pattern.isCourses()) {
+                return DataResult.error(() -> "wall pattern 'courses': 'block' belongs on each entry"
+                        + " of 'courses', not on the pattern itself");
+            }
+            if (pattern.isPilasters() && pattern.block().isEmpty()) {
+                return DataResult.error(() -> "wall pattern 'pilasters': 'block' is required"
+                        + " -- there is no default material for a pilaster");
+            }
+        }
+        return DataResult.success(entry);
+    }
 }

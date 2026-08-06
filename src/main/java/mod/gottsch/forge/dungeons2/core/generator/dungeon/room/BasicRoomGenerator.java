@@ -108,8 +108,14 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.
+        //
+        // The wall's projecting trim gets right of way over them: it is part of the architecture and
+        // was emitted before the pots were placed, so the pots move rather than spawning inside it.
+        // Asking the generator which cells it took (rather than working it out here) keeps the rules
+        // about which cells a projected layer actually reaches in the one place that has them.
         scheme.potsFor(width, depth, height).ifPresent(pots ->
-                RoomPropGenerator.placePots(room, floorY, pots, random, out.getEntities()));
+                RoomPropGenerator.placePots(room, floorY, pots, wallGen.occupiedFloorCells(),
+                        random, out.getEntities()));
     }
 
     /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */

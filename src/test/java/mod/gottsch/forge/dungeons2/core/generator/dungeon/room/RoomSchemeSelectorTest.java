@@ -289,9 +289,9 @@ class RoomSchemeSelectorTest {
     /** An inverted range is rejected at load rather than silently fitting nothing. */
     @Test
     void anInvertedElementGateIsALoadError() {
-        String json = "{\"name\": \"broken\", \"wall\": {\"type\": \"courses\", "
-                + "\"minHeight\": 7, \"maxHeight\": 5, \"courses\": ["
-                + "{\"block\": \"minecraft:polished_andesite\"}]}}";
+        String json = "{\"name\": \"broken\", \"wall\": {"
+                + "\"minHeight\": 7, \"maxHeight\": 5, \"patterns\": [{\"type\": \"courses\", "
+                + "\"courses\": [{\"block\": \"minecraft:polished_andesite\"}]}]}}";
         var result = RoomScheme.CODEC.parse(JsonOps.INSTANCE,
                 new com.google.gson.Gson().fromJson(json, com.google.gson.JsonElement.class));
         assertTrue(result.error().isPresent(), "maxHeight below minHeight should fail to decode");

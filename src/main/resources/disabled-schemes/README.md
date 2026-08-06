@@ -11,6 +11,11 @@ set a new scheme lands in ~1.85% of rooms; with only `plain` competing it lands 
 (~8.5 per MEDIUM dungeon). Mark's deliberate working configuration for scheme authoring
 (2026-08-05). It must not ship.
 
+`base.json` now holds **three** schemes — `plain`, `vaulted_hall` and (2026-08-06)
+`pilastered_hall`. Each new one dilutes the others: with three sharing the roll, `vaulted_hall`
+measures 9.6% and `pilastered_hall` 9.1%. Still far above the 1.85% they would get against the full
+set, but worth knowing that the "~1 room in 8" figure above shrinks as schemes are added here.
+
 ## There is no required set of files
 
 **A motif is a folder, and the folder's contents are entirely up to you** — any number of files,
@@ -43,6 +48,17 @@ you, then re-enable the two guards that assert on the shipped scheme list:
 `vaulted_hall` currently exists in both `base.json` and `classic/schemes_vaults.json`. That is
 **not** a conflict — same name, so whichever sorts later wins and there is exactly one scheme either
 way. Delete one only if having it twice is confusing to read.
+
+**Fold `pilastered_hall` in as well when restoring** — it lives only in `base.json` and has no
+parked counterpart, so a restore that just moves these files back keeps it, but a restore that
+rewrites `base.json` from scratch would drop it. It is also the only scheme in the cut-down set
+carrying `pots`, which is what keeps `SchemeIncidenceTest`'s pots bar off zero today.
+
+**These files were migrated to the new `wall` slot shape on 2026-08-06** (`"wall": {"patterns":
+[{"type": "courses", …}]}` rather than `"wall": {"type": "courses", …}`). Nothing here is loaded, so
+no test would have caught it if they had been missed — and the old shape now fails to load rather
+than degrading quietly, so a stale file would break the restore loudly. They are current; just
+move them.
 
 **Do not lower those tests' bars to make them pass.** The numbers were authored against measured
 planner output after trim once shipped at ~17% by weight and proved nearly unfindable in game.

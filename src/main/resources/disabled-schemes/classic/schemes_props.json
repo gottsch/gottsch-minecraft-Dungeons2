@@ -6,12 +6,16 @@
       "minSize": 5,
       "minHeight": 6,
       "wall": {
-        "type": "courses",
-        "courses": [
+        "patterns": [
           {
-            "block": "minecraft:polished_andesite",
-            "cornerBlock": "minecraft:andesite",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
           }
         ]
       },

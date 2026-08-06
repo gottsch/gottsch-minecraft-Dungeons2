@@ -133,12 +133,35 @@ public record WallSurface(int startX, int startZ, int stepX, int stepZ, int leng
      * (it never leaves its own wall) while a projecting one does.</p>
      */
     private int projectableFrom(int depth) {
-        return spansCorners() ? depth + 1 : 0;
+        return projectableFrom(spansCorners(), depth);
     }
 
     /** Last {@code u} whose projection at {@code depth} belongs to this run. See {@link #projectableFrom}. */
     private int projectableTo(int depth) {
-        return spansCorners() ? length - 2 - depth : length - 1;
+        return projectableTo(spansCorners(), length, depth);
+    }
+
+    /**
+     * {@link #projectableFrom} as a pure function, for a provider that must plan <em>within</em> the
+     * window rather than merely have its out-of-window cells discarded.
+     *
+     * <p>A pattern spread evenly across a run &mdash; pilasters &mdash; needs this. Centring the
+     * strips over the full run and letting {@link #emitProjected} drop the ones that fall outside
+     * loses exactly the outermost strips, so a 9-wide wall at spacing 4 keeps one of three. Centring
+     * them over the window keeps all of them. A course does not care, since it spans the run and is
+     * simply clipped.</p>
+     *
+     * <p>{@code spansCorners} is derivable from the run's facing &mdash; the Z-facing runs are the
+     * ones that step in X &mdash; which is how a provider, handed only an extent and a facing, can
+     * ask. Same equivalence {@code CoursesWallPatternProvider#ownsCorners} relies on.</p>
+     */
+    public static int projectableFrom(boolean spansCorners, int depth) {
+        return spansCorners ? depth + 1 : 0;
+    }
+
+    /** See {@link #projectableFrom(boolean, int)}. */
+    public static int projectableTo(boolean spansCorners, int length, int depth) {
+        return spansCorners ? length - 2 - depth : length - 1;
     }
 
     /**
@@ -150,9 +173,13 @@ public record WallSurface(int startX, int startZ, int stepX, int stepZ, int leng
      *   <li><strong>Only marked cells are written.</strong> Unlike {@link #emit}, a null cell here
      *       is not "use the base block" &mdash; this layer is the room's open air, and filling it
      *       would wall the room in.</li>
-     *   <li><strong>Nothing is placed in front of a doorway at door height.</strong> A block there
-     *       stands in the opening a player walks through. The wall plane can afford to merely leave
-     *       the door cell as air; a projecting course has to be skipped outright.</li>
+     *   <li><strong>Nothing is placed in front of a doorway at door height</strong>, and a pattern
+     *       that wanted to loses the <em>whole column</em>. A block at door height stands in the
+     *       opening a player walks through; but simply skipping those two cells is only right for a
+     *       pattern that has nothing else in that column. A pilaster runs the full height, so
+     *       dropping two cells out of it leaves a column of trim floating above the doorway with a
+     *       gap where it meets the floor &mdash; worse than not drawing it. See
+     *       {@link #blockedByDoorway}.</li>
      * </ul>
      */
     public void emitProjected(SurfacePlan plan, int depth, int floorY, Set<Coords2D> doorways,
@@ -160,17 +187,35 @@ public record WallSurface(int startX, int startZ, int stepX, int stepZ, int leng
         for (int u = projectableFrom(depth); u <= projectableTo(depth); u++) {
             int x = xAt(u) + facing.getStepX() * depth;
             int z = zAt(u) + facing.getStepZ() * depth;
-            boolean doorway = doorways.contains(new Coords2D(xAt(u), zAt(u)));
+            if (doorways.contains(new Coords2D(xAt(u), zAt(u))) && blockedByDoorway(plan, u)) {
+                continue;
+            }
             for (int v = 0; v < plan.vSize(); v++) {
-                if (doorway && (v == DOOR_HALF_LOW_V || v == DOOR_HALF_HIGH_V)) {
-                    continue;
-                }
                 BlockState planned = plan.get(u, v);
                 if (planned != null) {
                     out.add(BlockStateCodec.placement(x, floorY + 1 + v, z, planned));
                 }
             }
         }
+    }
+
+    /**
+     * Whether a projecting pattern's column at {@code u} has to be dropped entirely because it
+     * stands in a doorway.
+     *
+     * <p>The test is whether the pattern marks either <em>door-half</em> row. That single question
+     * separates the two cases correctly without the pattern having to know doorways exist, which it
+     * cannot: a cornice or a crown sits high on the wall, marks neither row, and draws straight over
+     * the opening as it should &mdash; the lintel is solid there anyway. A pilaster marks every row
+     * including those two, so it is dropped whole and the doorway is clear.</p>
+     *
+     * <p>Deciding it from the plan rather than from the provider is what keeps this a property of
+     * the <em>geometry</em>. A pattern that grows a new shape gets the right answer without anyone
+     * remembering to classify it, which is the same reason the door mask itself lives in
+     * {@link #emit} rather than in each provider.</p>
+     */
+    private static boolean blockedByDoorway(SurfacePlan plan, int u) {
+        return plan.get(u, DOOR_HALF_LOW_V) != null || plan.get(u, DOOR_HALF_HIGH_V) != null;
     }
 
     /**

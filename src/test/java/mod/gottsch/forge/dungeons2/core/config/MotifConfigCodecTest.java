@@ -444,10 +444,11 @@ class MotifConfigCodecTest {
     @Test
     void courseAlternateAndCornerDefaultToTheBaseBlock() {
         MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": "
-                + "{\"type\": \"courses\", \"courses\": [{\"block\": \"minecraft:polished_andesite\"}]}}]}");
+                + "{\"patterns\": [{\"type\": \"courses\", "
+                + "\"courses\": [{\"block\": \"minecraft:polished_andesite\"}]}]}}]}");
 
         WallPatternEntry.CourseEntry course =
-                config.schemes().get(0).wall().orElseThrow().courses().get(0);
+                config.schemes().get(0).wall().orElseThrow().patterns().get(0).courses().get(0);
         assertTrue(course.alternateBlock().isEmpty());
         assertTrue(course.cornerBlock().isEmpty());
         assertEquals("minecraft:polished_andesite", course.alternateBlockOrBase());
@@ -457,13 +458,57 @@ class MotifConfigCodecTest {
     @Test
     void courseAlternateAndCornerAreReadWhenAuthored() {
         MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": "
-                + "{\"type\": \"courses\", \"courses\": [{\"block\": \"minecraft:polished_andesite\", "
+                + "{\"patterns\": [{\"type\": \"courses\", "
+                + "\"courses\": [{\"block\": \"minecraft:polished_andesite\", "
                 + "\"alternateBlock\": \"minecraft:andesite\", "
-                + "\"cornerBlock\": \"minecraft:chiseled_stone_bricks\"}]}}]}");
+                + "\"cornerBlock\": \"minecraft:chiseled_stone_bricks\"}]}]}}]}");
 
         WallPatternEntry.CourseEntry course =
-                config.schemes().get(0).wall().orElseThrow().courses().get(0);
+                config.schemes().get(0).wall().orElseThrow().patterns().get(0).courses().get(0);
         assertEquals("minecraft:andesite", course.alternateBlockOrBase());
         assertEquals("minecraft:chiseled_stone_bricks", course.cornerBlockOrBase());
+    }
+
+    /**
+     * The wall slot is a list, so a room can carry a course and a pilaster at once -- the case the
+     * single typed entry could not express and the reason the shape changed.
+     */
+    @Test
+    void aWallSlotHoldsSeveralPatternsInOrder() {
+        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": "
+                + "{\"patterns\": ["
+                + "{\"type\": \"courses\", \"courses\": [{\"block\": \"minecraft:polished_andesite\"}]},"
+                + "{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\", \"spacing\": 3}"
+                + "]}}]}");
+
+        List<WallPatternEntry.PatternEntry> patterns =
+                config.schemes().get(0).wall().orElseThrow().patterns();
+        assertEquals(2, patterns.size());
+        assertTrue(patterns.get(0).isCourses());
+        assertTrue(patterns.get(1).isPilasters());
+        assertEquals(3, patterns.get(1).spacing());
+        // base/cap fall back to the shaft block, so a strip authored with `block` alone is uniform.
+        assertEquals("minecraft:stone_bricks", patterns.get(1).baseBlockOrBase().orElseThrow());
+    }
+
+    /**
+     * A field the pattern's own type cannot act on is a load error, not a silent no-op. Ignoring it
+     * would leave a wall exactly as correct as before the line was written, with the pattern still
+     * drawing -- the failure mode hardest to spot in game.
+     */
+    @Test
+    void aFieldTheTypeCannotUseFailsTheLoad() {
+        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": "
+                + "[{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\", "
+                + "\"courses\": [{\"block\": \"minecraft:andesite\"}]}]}}]}"));
+        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": "
+                + "[{\"type\": \"courses\", \"block\": \"minecraft:stone_bricks\"}]}}]}"));
+    }
+
+    /** A pilaster has no default material, so an absent block is an error rather than a guess. */
+    @Test
+    void aPilasterWithoutABlockFailsTheLoad() {
+        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": "
+                + "[{\"type\": \"pilasters\", \"spacing\": 3}]}}]}"));
     }
 }

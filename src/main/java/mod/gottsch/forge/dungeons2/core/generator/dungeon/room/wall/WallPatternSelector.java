@@ -67,20 +67,74 @@ public final class WallPatternSelector {
 
 
     /**
+     * Builds one provider per pattern and composes them in list order.
+     *
+     * <p>A pattern that will not resolve is <strong>dropped, and the rest still draw</strong>. That
+     * is the one place this differs from the pre-list behaviour, and deliberately: the
+     * degrade-the-whole-entry rule below is about a <em>single</em> treatment losing part of itself,
+     * which reads as a bug. Two patterns in a list are two authored decisions, and taking the
+     * pilasters away because a course names a typo'd block would hide which of them is broken.</p>
+     *
+     * <p>Every pattern dropping leaves nothing to draw, which is returned as null &mdash; the plain
+     * wall, allocating nothing, exactly as an absent slot does.</p>
+     */
+    static ISurfacePatternProvider toProvider(WallPatternEntry entry) {
+        List<ISurfacePatternProvider> providers = new ArrayList<>(entry.patterns().size());
+        for (WallPatternEntry.PatternEntry pattern : entry.patterns()) {
+            ISurfacePatternProvider provider = toPattern(pattern);
+            if (provider != null) {
+                providers.add(provider);
+            }
+        }
+        if (providers.isEmpty()) {
+            return null;
+        }
+        // One pattern is the overwhelmingly common case; handing it back unwrapped keeps the plans
+        // it produces identical to the pre-list ones rather than routed through an overlay.
+        return providers.size() == 1 ? providers.get(0) : new CompositeWallPatternProvider(providers);
+    }
+
+    /**
      * Maps a {@code type} to its provider. There is deliberately no Java-side default block, and a
-     * course whose block fails to resolve degrades <strong>the whole entry</strong> to plain wall
+     * course whose block fails to resolve degrades <strong>the whole pattern</strong> to plain wall
      * rather than rendering the rest of the bands without it &mdash; the same
      * degrade-the-whole-entry rule the floor patterns follow, and for the same reason: a half-drawn
      * pattern reads as a bug, where a plain wall reads as a plain wall.
      */
-    static ISurfacePatternProvider toProvider(WallPatternEntry entry) {
-        return switch (entry.type().trim().toLowerCase(Locale.ROOT)) {
-            case "courses" -> toCourses(entry);
+    private static ISurfacePatternProvider toPattern(WallPatternEntry.PatternEntry pattern) {
+        return switch (pattern.type().trim().toLowerCase(Locale.ROOT)) {
+            case WallPatternEntry.COURSES -> toCourses(pattern);
+            case WallPatternEntry.PILASTERS ->
+                    toPilasters(pattern, PilastersWallPatternProvider.Layout.EVEN);
+            case WallPatternEntry.END_PILASTERS ->
+                    toPilasters(pattern, PilastersWallPatternProvider.Layout.ENDS);
             default -> null; // unrecognized type: plain wall
         };
     }
 
-    private static ISurfacePatternProvider toCourses(WallPatternEntry entry) {
+    /**
+     * A pilaster strip. {@code block} is required by the codec, so an empty Optional here can only
+     * mean the id did not resolve, which drops the pattern like any other unresolvable block.
+     */
+    private static ISurfacePatternProvider toPilasters(WallPatternEntry.PatternEntry pattern,
+                                                       PilastersWallPatternProvider.Layout layout) {
+        // The three rows take their properties separately, unlike a course's three block slots.
+        // A pilaster needs it: a plinth and a capital are typically the SAME block at opposite
+        // values of a vertical property (dungeonblocks' pillar blocks use `base`, where `up` is the
+        // unrotated model and `down` is it flipped), so one shared map cannot express a column.
+        BlockState shaft = pattern.block().map(id -> state(id, pattern.properties())).orElse(null);
+        BlockState base = pattern.baseBlockOrBase()
+                .map(id -> state(id, pattern.basePropertiesOrBase())).orElse(null);
+        BlockState cap = pattern.capBlockOrBase()
+                .map(id -> state(id, pattern.capPropertiesOrBase())).orElse(null);
+        if (shaft == null || base == null || cap == null) {
+            return null;
+        }
+        return new PilastersWallPatternProvider(shaft, base, cap, pattern.spacing(),
+                pattern.projection(), pattern.orient(), layout, pattern.inset());
+    }
+
+    private static ISurfacePatternProvider toCourses(WallPatternEntry.PatternEntry entry) {
         if (entry.courses().isEmpty()) {
             return null;
         }

@@ -88,23 +88,27 @@
       "name": "plain",
       "weight": 12,
       "wall": {
-        "type": "courses",
-        "courses": [
+        "patterns": [
           {
-            "block": "dungeonblocks:left_large_stone_brick",
-            "alternateBlock": "dungeonblocks:right_large_stone_brick",
-            "alternate": "strict"
-          },
-          {
-            "block": "minecraft:stone_brick_stairs",
-            "anchor": "top",
-            "offset": 0,
-            "projection": 1,
-            "orient": "toward_wall",
-            "properties": {
-              "half": "top"
-            },
-            "minHeight": 6
+            "type": "courses",
+            "courses": [
+              {
+                "block": "dungeonblocks:left_large_stone_brick",
+                "alternateBlock": "dungeonblocks:right_large_stone_brick",
+                "alternate": "strict"
+              },
+              {
+                "block": "minecraft:stone_brick_stairs",
+                "anchor": "top",
+                "offset": 0,
+                "projection": 1,
+                "orient": "toward_wall",
+                "properties": {
+                  "half": "top"
+                },
+                "minHeight": 6
+              }
+            ]
           }
         ]
       }
@@ -145,12 +149,78 @@
         ]
       },
       "wall": {
-        "type": "courses",
-        "courses": [
+        "patterns": [
           {
-            "block": "minecraft:polished_andesite",
-            "cornerBlock": "minecraft:andesite",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "pilastered_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 7,
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          },
+          {
+            "type": "pilasters",
+            "block": "dungeonblocks:stone_bricks_pillar_block",
+            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "baseProperties": {
+              "base": "up"
+            },
+            "capProperties": {
+              "base": "down"
+            },
+            "spacing": 4,
+            "projection": 1
+          },
+          {
+            "type": "end_pilasters",
+            "block": "dungeonblocks:stone_bricks_pillar_block",
+            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "baseProperties": {
+              "base": "up"
+            },
+            "capProperties": {
+              "base": "down"
+            },
+            "projection": 1
+          }
+        ]
+      },
+      "pots": {
+        "minCount": 2,
+        "maxCount": 4,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 1
           }
         ]
       }

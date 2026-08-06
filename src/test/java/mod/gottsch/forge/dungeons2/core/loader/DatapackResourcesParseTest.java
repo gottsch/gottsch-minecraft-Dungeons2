@@ -160,38 +160,27 @@ class DatapackResourcesParseTest {
     }
 
     /**
-     * A bottom-anchored projecting course occupies the interior cells that touch a wall, at exactly
-     * the height loot pots stand at -- so a scheme carrying both puts a pot inside a block. Neither
-     * side can see the other (the wall pattern is authored in the wall's own coordinates, the pots
-     * are placed by a different generator against the room), so the only place to catch the
-     * combination is here, against the authored content.
+     * Every course of a scheme's wall slot, across all of its patterns.
+     *
+     * <p>The slot became an ordered list of patterns in Aug 2026 so that a wall could carry courses
+     * and pilasters at once. These checks are about the courses wherever they sit, so they flatten
+     * rather than caring which pattern each came from.</p>
      */
-    @Test
-    void noSchemeCombinesPotsWithAFloorLevelProjectingCourse() {
-        for (String name : MOTIFS) {
-            MotifConfig config = motif(name);
-            for (RoomScheme scheme : config.schemes()) {
-                if (scheme.pots().isEmpty() || scheme.wall().isEmpty()) {
-                    continue;
-                }
-                // Element gates make this conditional. The two slots only ever occupy the same
-                // cells in a room that draws both, so a wall gated to tall rooms and pots gated to
-                // short ones is a legitimate scheme, not a collision. Without the overlap check
-                // this rule would reject content that can never actually fail.
-                if (!scheme.wall().get().gate().overlaps(scheme.pots().get().gate())) {
-                    continue;
-                }
-                for (WallPatternEntry.CourseEntry course : scheme.wall().get().courses()) {
-                    boolean collides = course.projection() > 0
-                            && course.anchor() == WallPatternEntry.CourseAnchor.BOTTOM
-                            && course.offset() == 0;
-                    assertFalse(collides, "scheme '" + scheme.name()
-                            + "' has pots and a floor-level projecting course; a pot would spawn "
-                            + "inside the trim. Project the top (a cornice), or drop the pots slot.");
-                }
-            }
-        }
+    private static List<WallPatternEntry.CourseEntry> courses(RoomScheme scheme) {
+        return scheme.wall().stream()
+                .flatMap(wall -> wall.patterns().stream())
+                .flatMap(pattern -> pattern.courses().stream())
+                .toList();
     }
+
+    // NOTE: `noSchemeCombinesPotsWithAFloorLevelProjectingCourse` used to live here, forbidding a
+    // scheme from carrying both pots and floor-level projecting trim because a pot would spawn
+    // inside the trim. It was deleted in Aug 2026 when the collision stopped being possible:
+    // BasicWallGenerator now reports the floor-level cells its projecting trim took, and
+    // RoomPropGenerator excludes them before drawing pot positions. That was a prerequisite for
+    // pilasters, which occupy those cells by construction rather than by an authoring slip, so the
+    // restriction could not simply have been widened. The behaviour is covered by
+    // RoomPropGeneratorTest and BasicRoomGeneratorTest instead -- a mechanism, not a convention.
 
     /**
      * A sill (and its double-sill sibling) is a ledge: it only reads correctly standing out from the
@@ -204,10 +193,7 @@ class DatapackResourcesParseTest {
         for (String name : MOTIFS) {
             MotifConfig config = motif(name);
             for (RoomScheme scheme : config.schemes()) {
-                if (scheme.wall().isEmpty()) {
-                    continue;
-                }
-                for (WallPatternEntry.CourseEntry course : scheme.wall().get().courses()) {
+                for (WallPatternEntry.CourseEntry course : courses(scheme)) {
                     if (course.block().contains("sill")) {
                         assertTrue(course.projection() > 0, "scheme '" + scheme.name()
                                 + "' uses " + course.block() + " flush in the wall; a sill is a "
@@ -233,10 +219,7 @@ class DatapackResourcesParseTest {
         for (String name : MOTIFS) {
             MotifConfig config = motif(name);
             for (RoomScheme scheme : config.schemes()) {
-                if (scheme.wall().isEmpty()) {
-                    continue;
-                }
-                for (WallPatternEntry.CourseEntry course : scheme.wall().get().courses()) {
+                for (WallPatternEntry.CourseEntry course : courses(scheme)) {
                     if (course.projection() == 0) {
                         continue;
                     }

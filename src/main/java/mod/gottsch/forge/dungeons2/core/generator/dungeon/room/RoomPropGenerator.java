@@ -70,6 +70,16 @@ public final class RoomPropGenerator {
      */
     public static void placePots(RoomData room, int floorY, PotConfig config, RandomSource random,
                                  List<EntityPlacement> out) {
+        placePots(room, floorY, config, Set.of(), random, out);
+    }
+
+    /**
+     * As above, with {@code occupied} naming cells already taken by something the props must not
+     * stand in &mdash; today, the room's projecting wall trim at floor level (see
+     * {@code IDungeonWallGenerator#occupiedFloorCells}).
+     */
+    public static void placePots(RoomData room, int floorY, PotConfig config, Set<Coords2D> occupied,
+                                 RandomSource random, List<EntityPlacement> out) {
         List<PotConfig.PotVariant> variants = config.variants();
         if (variants.isEmpty()) {
             return;
@@ -79,7 +89,7 @@ public final class RoomPropGenerator {
             return;
         }
 
-        List<Coords2D> candidates = eligibleCells(room);
+        List<Coords2D> candidates = eligibleCells(room, occupied);
         if (candidates.isEmpty()) {
             return;
         }
@@ -107,11 +117,23 @@ public final class RoomPropGenerator {
         }
     }
 
-    /**
-     * Interior cells that touch a wall, minus the cells immediately inside a doorway. Returned in
-     * floor-local coords, the same space as {@code RoomData#getOriginX}/{@code getDoorways}.
-     */
+    /** Ungated form: no cells claimed by anything else. */
     static List<Coords2D> eligibleCells(RoomData room) {
+        return eligibleCells(room, Set.of());
+    }
+
+    /**
+     * Interior cells that touch a wall, minus the cells immediately inside a doorway and minus
+     * {@code occupied}. Returned in floor-local coords, the same space as
+     * {@code RoomData#getOriginX}/{@code getDoorways}.
+     *
+     * <p>{@code occupied} is what makes pots and projecting wall trim able to share a room. A
+     * pilaster stands in an inner-ring cell at exactly pot height, and unlike the floor-level
+     * projecting course &mdash; an authoring slip avoidable by projecting the top instead &mdash;
+     * that is true of every strip on the wall, by construction. Excluding the cells is the only
+     * resolution that does not make the two mutually exclusive in a scheme.</p>
+     */
+    static List<Coords2D> eligibleCells(RoomData room, Set<Coords2D> occupied) {
         int width = room.getWidth();
         int depth = room.getDepth();
         int originX = room.getOriginX();
@@ -126,7 +148,7 @@ public final class RoomPropGenerator {
                     continue;
                 }
                 Coords2D cell = new Coords2D(originX + x, originZ + z);
-                if (!blocked.contains(cell)) {
+                if (!blocked.contains(cell) && !occupied.contains(cell)) {
                     cells.add(cell);
                 }
             }

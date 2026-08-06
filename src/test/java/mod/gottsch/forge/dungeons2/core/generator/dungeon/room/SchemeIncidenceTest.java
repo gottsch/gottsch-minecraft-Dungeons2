@@ -165,7 +165,8 @@ class SchemeIncidenceTest {
      */
     private static boolean hasTopCourse(RoomScheme scheme, RoomData room) {
         return scheme.wallFor(room.getWidth(), room.getDepth(), room.getHeight())
-                .map(wall -> wall.courses().stream()
+                .map(wall -> wall.patterns().stream()
+                        .flatMap(pattern -> pattern.courses().stream())
                         .anyMatch(course -> course.anchor() == CourseAnchor.TOP))
                 .orElse(false);
     }
@@ -199,9 +200,9 @@ class SchemeIncidenceTest {
      * failed.
      */
     @Test
-    @Disabled("TEMPORARY -- classic is cut down to base.json (plain + vaulted_hall) for in-game "
-            + "testing of the vault, so the floor and pots schemes that these bars measure are not "
-            + "loaded at all: pots and floor read 0%. The full set is parked in "
+    @Disabled("TEMPORARY -- classic is cut down to base.json (plain, vaulted_hall, pilastered_hall) "
+            + "for in-game scheme authoring, so the floor schemes these bars measure are not "
+            + "loaded at all: floor reads 0%. The full set is parked in "
             + "src/main/resources/disabled-schemes/classic/; see the README there. RE-ENABLE THIS "
             + "when they move back. Do NOT lower the bars to make it pass -- they were authored "
             + "against measured incidence after trim shipped nearly unfindable once already.")

@@ -705,9 +705,11 @@ fails is **dropped**, and the rest of the scheme still draws:
   "floor": { "type": "border", "inset": 2, "cornerBlock": "minecraft:andesite",
              "edgeLeftBlock": "minecraft:polished_andesite",
              "edgeRightBlock": "minecraft:polished_andesite" },
-  "wall":  { "minHeight": 6, "type": "courses",
-             "courses": [ { "block": "minecraft:polished_andesite",
-                            "cornerBlock": "minecraft:andesite", "anchor": "top" } ] } }
+  "wall":  { "minHeight": 6,
+             "patterns": [ { "type": "courses",
+                             "courses": [ { "block": "minecraft:polished_andesite",
+                                            "cornerBlock": "minecraft:andesite",
+                                            "anchor": "top" } ] } ] } }
 ```
 
 A 5-high room gets the bordered floor and plain walls; a 6-high room gets both. **That is one scheme
@@ -746,13 +748,15 @@ One `wall` slot, two fates:
 
 ```json
 "wall": {
-  "type": "courses",
-  "courses": [
-    { "block": "dungeonblocks:left_large_stone_brick",
-      "alternateBlock": "dungeonblocks:right_large_stone_brick" },
-    { "block": "minecraft:stone_brick_stairs", "anchor": "top", "projection": 1,
-      "orient": "toward_wall", "properties": { "half": "top" },
-      "minHeight": 6 }
+  "patterns": [
+    { "type": "courses",
+      "courses": [
+        { "block": "dungeonblocks:left_large_stone_brick",
+          "alternateBlock": "dungeonblocks:right_large_stone_brick" },
+        { "block": "minecraft:stone_brick_stairs", "anchor": "top", "projection": 1,
+          "orient": "toward_wall", "properties": { "half": "top" },
+          "minHeight": 6 }
+      ] }
   ]
 }
 ```
@@ -905,20 +909,43 @@ resolve under a bare bootstrap, unlike `dungeonblocks:*`).
 
 ---
 
-#### Wall courses (`wall`)
+#### Wall patterns (`wall`)
+
+The `wall` slot is an **ordered list of patterns**, exactly like `ceiling` — each drawn on top of
+the last, later cells winning. Three types exist: `courses` (horizontal bands), `pilasters` (evenly
+spaced vertical strips) and `end_pilasters` (a strip at each end of a wall).
+
+```json
+"wall": {
+  "patterns": [
+    { "type": "courses", "courses": [ … ] },
+    { "type": "pilasters", "block": "dungeonblocks:stone_bricks_pillar_block" },
+    { "type": "end_pilasters", "block": "dungeonblocks:stone_bricks_pillar_block" }
+  ]
+}
+```
+
+**Order is how you say which one wins where they cross.** Listed after the courses, a pilaster
+interrupts the bands; listed before, the bands run across it. Both are reasonable looks, so there is
+no default — put the one that should win last.
+
+> **Before Aug 2026 this slot was a single typed entry** (`"wall": { "type": "courses", "courses":
+> […] }`). That form no longer loads. Wrap what you had in a `patterns` list and it means exactly
+> what it used to. Size gates (`minHeight` and friends) stay on the **slot**; each pattern may also
+> carry its own.
+
+##### Courses
 
 Horizontal bands across all four walls — plinth, chair rail, string course, crown molding. They are
 all the same feature at a different height, which is why one pattern type covers them.
 
 ```json
-"wall": {
-  "type": "courses",
+{ "type": "courses",
   "courses": [
     { "block": "minecraft:polished_andesite" },
     { "block": "minecraft:andesite", "anchor": "top", "offset": 1 },
     { "block": "minecraft:chiseled_stone_bricks", "anchor": "top" }
-  ]
-}
+  ] }
 ```
 
 `block` is required. `anchor` is `"bottom"` (default) or `"top"`, and `offset` (default 0) counts
@@ -997,10 +1024,12 @@ all four:
 > **A `sill` or `double_sill` block always wants `projection: 1`.** It is a ledge; set flush in the
 > wall plane it reads as a recessed panel instead. Also checked against the shipped schemes.
 
-> **A `bottom`/0 projecting course collides with loot pots.** Pots stand on the interior cells that
-> touch a wall, at exactly that height, so a scheme with both puts a pot inside a block. Project the
-> top (a cornice), not the bottom, or leave `pots` off that scheme. `DatapackResourcesParseTest`
-> fails the build on a shipped scheme that combines them.
+> **Projecting trim at floor level takes the cells pots would stand in — and the pots move.** Pots
+> stand on the interior cells that touch a wall, at exactly the height a `bottom`/0 projecting course
+> (or any pilaster) occupies. Since Aug 2026 the wall wins: it is emitted first, and the prop pass is
+> told which cells it took, so pots are placed elsewhere in the room instead of inside a block. A
+> room whose trim leaves too few cells simply gets fewer pots, the same degradation a small room
+> already had. You no longer have to keep the two out of one scheme.
 
 **Anchoring from the top is the point.** A wall is `height - 2` rows tall and room height is
 `min(rand(5..10), max(width, depth))` — so a course measured from the floor drifts away from the
@@ -1020,18 +1049,108 @@ Two other things a course cannot do anything about, both handled for you:
 - **Courses never break at corners.** A band sits at a constant height, so it rings the room
   unbroken regardless of how the corner columns are divided between wall runs.
 
-One unresolvable block id degrades the **whole** entry to plain wall, not just its own course —
+One unresolvable block id degrades the **whole pattern** to plain wall, not just its own course —
 same rule as the floor patterns, and for the same reason: a crown with no plinth under it reads as
-a bug, where a plain wall reads as a plain wall.
+a bug, where a plain wall reads as a plain wall. The *other* patterns in the list still draw,
+though: two patterns are two authored decisions, and silently dropping the pilasters because a
+course names a typo'd block would hide which of them is actually broken.
 
 > The accent-block rule above applies with more force here than on floors. Walls are what a player
 > actually looks at — and `classic` renders wall, floor and ceiling from the same
 > `minecraft:stone_bricks`, so trim in anything close to that block is invisible.
 
+##### Pilasters
+
+Evenly spaced vertical strips up a wall — engaged columns when they project, panelling when they do
+not. The vertical counterpart of a course.
+
+```json
+{ "type": "pilasters",
+  "block": "dungeonblocks:stone_pillar_block",
+  "baseBlock": "dungeonblocks:stone_pillar_base_block",
+  "capBlock": "dungeonblocks:stone_pillar_base_block",
+  "spacing": 4,
+  "projection": 1 }
+```
+
+`block` is **required and fails the load if absent** — there is no default material for a pilaster.
+`baseBlock` and `capBlock` take the strip's bottom and top rows and both default to `block`, so a
+pilaster written with `block` alone is a uniform strip. `projection` and `orient` mean exactly what
+they do on a course.
+
+**`baseProperties` and `capProperties` let the plinth and the capital differ**, each falling back to
+`properties` when absent. This is the one place the pilaster schema differs from a course, which
+shares one `properties` map across its three block slots — and it exists because a capital is
+usually the *same block as the plinth, inverted*:
+
+```json
+{ "type": "pilasters",
+  "block": "dungeonblocks:stone_bricks_pillar_block",
+  "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+  "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+  "baseProperties": { "base": "up" },
+  "capProperties":  { "base": "down" },
+  "projection": 1 }
+```
+
+A course's three block slots are one family wanting the *same* state, which is why they share a map;
+a column's two ends want opposite ones, which is why these do not.
+
+> **`base` reads the opposite way from what you would guess.** `dungeonblocks` pillar and
+> pillar-base blocks carry `base`, and the row sitting on the **floor** wants **`base: up`** while
+> the capital under the ceiling wants **`base: down`** — confirmed in game. (`base: up` is the
+> unrotated model and `base: down` is it flipped vertically; which end of the column each *looks*
+> right on is the part that surprises.) Same family of gotcha as the facing-inverted trim blocks
+> noted above: authoring it the intuitive way renders both ends upside down and nothing errors.
+
+**`spacing` (default 4) is a stride, not a count**, and the strips are laid out **symmetric about
+each wall's own centre** rather than counted from one end. That matters because the four runs are
+not the same length — the long walls span the full `width`, the short ones only `depth - 2` — so
+striding from a fixed end would give each wall a different phase and the room would read as an
+accident.
+
+**The strips never land on a room corner**, so the gaps stay even the whole way round. A corner
+column is a course's `cornerBlock`, not a pilaster. (Which wall *owns* a corner flips depending on
+whether the pattern projects, so this is not simply "skip the first and last cell" — it is handled
+for you, and it is why a room's four walls agree on spacing at every size.)
+
+**A projecting pilaster in a doorway is dropped whole**, not clipped. Trim at door height would
+stand in the opening, but removing just those two cells from a full-height strip leaves a column
+floating above the doorway with a gap at the floor — worse than not drawing it. A cornice is
+unaffected, because it never occupies those rows in the first place.
+
+Two notes on short rooms: a wall is only 3 rows tall at the low end, so a base plus a cap leaves a
+single shaft row between them — gate the scheme's `minHeight` if that reads badly. And unlike a
+course, a pilaster cannot be partly drawn: it is full height or absent.
+
+##### End pilasters
+
+`end_pilasters` places **one strip at each end of a wall** rather than a repeating rhythm. Same
+blocks and the same `projection` / `orient` / `properties`; it takes `inset` (default 0) instead of
+`spacing`.
+
+```json
+{ "type": "end_pilasters",
+  "block": "dungeonblocks:stone_bricks_pillar_block",
+  "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+  "projection": 1 }
+```
+
+**Listed alongside `pilasters` it gives you the paired corner** — this wall's end strip next to the
+perpendicular wall's, reading as a clustered pier, with the even rhythm running between them. That
+is the reason the two are separate types rather than one flag: a corner pier is a deliberate
+decision, and it should not depend on whether a room's width happened to divide by the spacing.
+
+`inset` moves both end strips in from the ends, symmetrically — `0` puts them as close to the corner
+as the wall can reach, `1` one cell along, and so on. On a wall too short for two, you get one; too
+short for that, none.
+
+This is the one pattern that *does* stand in a corner column. `pilasters` deliberately never does.
+
 #### Ceiling patterns (`ceiling`)
 
-Treatments on the ceiling. Unlike the floor and wall slots this is an **ordered list**, applied in
-sequence with later patterns drawn on top:
+Treatments on the ceiling. Like the wall slot (and unlike the floor) this is an **ordered list**,
+applied in sequence with later patterns drawn on top:
 
 ```json
 "ceiling": {

@@ -11,15 +11,19 @@
         "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
       },
       "wall": {
-        "type": "courses",
-        "minHeight": 6,
-        "courses": [
+        "patterns": [
           {
-            "block": "dungeonblocks:square_stone_brick",
-            "cornerBlock": "minecraft:chiseled_stone_bricks",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "dungeonblocks:square_stone_brick",
+                "cornerBlock": "minecraft:chiseled_stone_bricks",
+                "anchor": "top"
+              }
+            ]
           }
-        ]
+        ],
+        "minHeight": 6
       }
     },
     {
@@ -44,15 +48,19 @@
         "edgeRightBlock": "minecraft:polished_andesite"
       },
       "wall": {
-        "type": "courses",
-        "minHeight": 6,
-        "courses": [
+        "patterns": [
           {
-            "block": "minecraft:polished_andesite",
-            "cornerBlock": "minecraft:andesite",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
           }
-        ]
+        ],
+        "minHeight": 6
       }
     },
     {
@@ -119,15 +127,19 @@
         "secondaryBlock": "minecraft:polished_andesite"
       },
       "wall": {
-        "type": "courses",
-        "minHeight": 6,
-        "courses": [
+        "patterns": [
           {
-            "block": "minecraft:polished_andesite",
-            "cornerBlock": "minecraft:andesite",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
           }
-        ]
+        ],
+        "minHeight": 6
       }
     },
     {
@@ -151,15 +163,19 @@
         ]
       },
       "wall": {
-        "type": "courses",
-        "minHeight": 6,
-        "courses": [
+        "patterns": [
           {
-            "block": "minecraft:polished_andesite",
-            "cornerBlock": "minecraft:andesite",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
           }
-        ]
+        ],
+        "minHeight": 6
       }
     },
     {
@@ -181,15 +197,19 @@
         "thickness": 1
       },
       "wall": {
-        "type": "courses",
-        "minHeight": 6,
-        "courses": [
+        "patterns": [
           {
-            "block": "minecraft:polished_andesite",
-            "cornerBlock": "minecraft:andesite",
-            "anchor": "top"
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
           }
-        ]
+        ],
+        "minHeight": 6
       }
     },
     {

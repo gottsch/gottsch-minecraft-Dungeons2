@@ -184,4 +184,73 @@ class RoomPropGeneratorTest {
                     place(room(), potConfig(1, 5), seed).toString());
         }
     }
+
+    // ---------- cells claimed by projecting wall trim ----------
+
+    private static List<EntityPlacement> place(RoomData room, PotConfig config,
+                                               Set<Coords2D> occupied, long seed) {
+        List<EntityPlacement> out = new ArrayList<>();
+        RoomPropGenerator.placePots(room, FLOOR_Y, config, occupied, RandomSource.create(seed), out);
+        return out;
+    }
+
+    /**
+     * A pot never stands in a cell the wall's projecting trim already took.
+     *
+     * <p>This is what lets a scheme carry pilasters <em>and</em> pots. A pilaster occupies an
+     * inner-ring cell at exactly pot height for every strip on the wall &mdash; by construction, not
+     * by an authoring slip &mdash; so without this the two could only ever be mutually exclusive.
+     * A pot inside a block is invisible until someone walks into the room, which is why it is
+     * checked rather than reasoned about.</p>
+     */
+    @Test
+    void aPotNeverStandsInACellTakenByProjectingTrim() {
+        RoomData room = room();
+        // Every inner-ring cell along one wall, as a run of pilasters would claim.
+        Set<Coords2D> occupied = new HashSet<>();
+        for (int x = 11; x <= 19; x++) {
+            occupied.add(new Coords2D(x, 11));
+        }
+
+        for (long seed = 0; seed < 60; seed++) {
+            for (EntityPlacement pot : place(room, potConfig(4, 8), occupied, seed)) {
+                Coords2D cell = new Coords2D(pot.getX(), pot.getZ());
+                assertFalse(occupied.contains(cell),
+                        "pot at " + cell + " is inside the wall trim (seed " + seed + ")");
+            }
+        }
+    }
+
+    /**
+     * Trim taking most of the ring costs pots rather than breaking anything: the room gets fewer,
+     * the same degradation a room with too few eligible cells always had.
+     */
+    @Test
+    void trimOverMostOfTheRingLeavesFewerPotsRatherThanFailing() {
+        RoomData room = room();
+        Set<Coords2D> occupied = new HashSet<>(RoomPropGenerator.eligibleCells(room));
+        Coords2D survivor = occupied.iterator().next();
+        occupied.remove(survivor);
+
+        List<EntityPlacement> pots = place(room, potConfig(4, 4), occupied, 7L);
+        assertEquals(1, pots.size(), "one free cell means one pot, not four and not a crash");
+        assertEquals(survivor, new Coords2D(pots.get(0).getX(), pots.get(0).getZ()));
+    }
+
+    /** With the whole ring taken there is nowhere to stand, and that is not an error. */
+    @Test
+    void trimOverTheWholeRingPlacesNoPots() {
+        RoomData room = room();
+        Set<Coords2D> occupied = new HashSet<>(RoomPropGenerator.eligibleCells(room));
+        assertTrue(place(room, potConfig(4, 4), occupied, 3L).isEmpty());
+    }
+
+    /** The unoccupied overload is the old behaviour exactly -- nothing shifted for existing schemes. */
+    @Test
+    void anEmptyOccupiedSetChangesNothing() {
+        for (long seed = 0; seed < 20; seed++) {
+            assertEquals(place(room(), potConfig(1, 5), seed).toString(),
+                    place(room(), potConfig(1, 5), Set.of(), seed).toString());
+        }
+    }
 }

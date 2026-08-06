@@ -20,9 +20,11 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import net.minecraft.util.RandomSource;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Renders walls for a {@link RoomData} room as a list of {@link BlockPlacement}s.
@@ -43,4 +45,22 @@ public interface IDungeonWallGenerator {
      * @param out     accumulator the builder appends placements to
      */
     void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random, List<BlockPlacement> out);
+
+    /**
+     * The room's interior cells this generator's projecting trim took at floor level
+     * ({@code floorY + 1}), valid after {@link #build}. Floor-local X/Z, the same space as
+     * {@code RoomData#getDoorways}.
+     *
+     * <p>Exists so the room's props can stand somewhere else. A projecting pilaster occupies exactly
+     * the inner-ring cells a loot pot wants, for every strip on the wall &mdash; not an authoring
+     * slip but the shape of the feature &mdash; and a pot spawned inside trim is invisible until
+     * someone walks into the room. Reporting the cells lets the two coexist, where the alternative
+     * was forbidding the combination in a scheme.</p>
+     *
+     * <p>Empty by default: a generator that projects nothing has nothing to declare, and one that
+     * never learns about this keeps the old behaviour rather than silently under-reporting.</p>
+     */
+    default Set<Coords2D> occupiedFloorCells() {
+        return Set.of();
+    }
 }

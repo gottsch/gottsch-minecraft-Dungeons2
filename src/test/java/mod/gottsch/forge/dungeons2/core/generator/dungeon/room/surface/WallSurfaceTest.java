@@ -188,6 +188,85 @@ class WallSurfaceTest {
         assertTrue(out.stream().anyMatch(bp -> "minecraft:air".equals(bp.getBlockId())));
     }
 
+    // ---------- projecting trim at a doorway ----------
+
+    /**
+     * The run whose {@code u} range actually covers the room's doorways, with the doorway's local
+     * {@code u} alongside. The SOUTH run starts at the room origin and steps in +X, so a doorway on
+     * that wall sits at {@code doorX - originX}.
+     */
+    private static WallSurface southRun(RoomData room) {
+        return byFacing(room).get(Direction.SOUTH);
+    }
+
+    /**
+     * A full-height projecting pattern in a doorway column is dropped ENTIRELY, not clipped to
+     * miss the two door rows.
+     *
+     * <p>Clipping is right for a cornice and wrong for a pilaster: take two cells out of a
+     * floor-to-ceiling strip and what is left is a column of trim hanging above the opening with a
+     * gap where it should meet the floor. Nothing in the wall's own (u, v) space can see a doorway,
+     * so the rule has to live here.</p>
+     */
+    @Test
+    void aFullHeightProjectingColumnIsDroppedWholeAtADoorway() {
+        RoomData room = room();
+        WallSurface run = southRun(room);
+        int doorU = 3;
+        Coords2D door = new Coords2D(run.xAt(doorU), run.zAt(doorU));
+
+        // A strip running the full height of the wall, in the doorway's column and one beside it.
+        SurfacePlan plan = SurfacePlan.of(run.length(), 3);
+        for (int v = 0; v < 3; v++) {
+            plan.set(doorU, v, base);
+            plan.set(doorU + 1, v, base);
+        }
+
+        List<BlockPlacement> out = new ArrayList<>();
+        run.emitProjected(plan, 1, FLOOR_Y, Set.of(door), out);
+
+        int projectedX = run.xAt(doorU) + Direction.SOUTH.getStepX();
+        int projectedZ = run.zAt(doorU) + Direction.SOUTH.getStepZ();
+        assertTrue(out.stream().noneMatch(bp -> bp.getX() == projectedX && bp.getZ() == projectedZ),
+                "the whole doorway column should be gone, not just its two door rows");
+        assertEquals(3, out.stream()
+                        .filter(bp -> bp.getX() == run.xAt(doorU + 1) + Direction.SOUTH.getStepX()
+                                && bp.getZ() == run.zAt(doorU + 1) + Direction.SOUTH.getStepZ())
+                        .count(),
+                "the neighbouring strip is untouched");
+    }
+
+    /**
+     * A cornice still draws straight over a doorway. It marks only the top row, never a door row,
+     * so the drop rule leaves it alone -- which it must, since the lintel above a door is solid and
+     * a band that broke there would look like damage.
+     *
+     * <p><strong>This one passes with the drop rule removed as well, on purpose.</strong> It is the
+     * pairing assertion: the test above it would stay green if a future change dropped
+     * <em>every</em> column at a doorway, and this is what stops that. Same role
+     * {@code CeilingRingSettleTest#theRunsBetweenTheCornersStayStraight} plays for the ring.</p>
+     */
+    @Test
+    void aTopAnchoredProjectingCourseStillCrossesADoorway() {
+        RoomData room = room();
+        WallSurface run = southRun(room);
+        int doorU = 3;
+        Coords2D door = new Coords2D(run.xAt(doorU), run.zAt(doorU));
+
+        // One band on the top row only -- above both door halves.
+        SurfacePlan plan = SurfacePlan.of(run.length(), 4);
+        for (int u = 0; u < run.length(); u++) {
+            plan.set(u, 3, base);
+        }
+
+        List<BlockPlacement> out = new ArrayList<>();
+        run.emitProjected(plan, 1, FLOOR_Y, Set.of(door), out);
+
+        assertTrue(out.stream().anyMatch(bp -> bp.getX() == run.xAt(doorU) + Direction.SOUTH.getStepX()
+                        && bp.getZ() == run.zAt(doorU) + Direction.SOUTH.getStepZ()),
+                "a cornice must not be interrupted by the doorway beneath it");
+    }
+
     /** A room too thin to have interior depth still yields four runs; two just emit nothing. */
     @Test
     void aRoomWithNoInteriorDepthGivesZeroLengthXEdgeRuns() {
