@@ -181,6 +181,13 @@
             ]
           },
           {
+            "type": "panels",
+            "block": "dungeonblocks:stone_bricks_fluted_block",
+            "width": 3,
+            "spacing": 4,
+            "inset": 1
+          },
+          {
             "type": "pilasters",
             "block": "dungeonblocks:stone_bricks_pillar_block",
             "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",

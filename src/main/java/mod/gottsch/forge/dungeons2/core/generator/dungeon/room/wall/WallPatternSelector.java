@@ -108,8 +108,20 @@ public final class WallPatternSelector {
                     toPilasters(pattern, PilastersWallPatternProvider.Layout.EVEN);
             case WallPatternEntry.END_PILASTERS ->
                     toPilasters(pattern, PilastersWallPatternProvider.Layout.ENDS);
+            case WallPatternEntry.PANELS -> toPanels(pattern);
             default -> null; // unrecognized type: plain wall
         };
+    }
+
+    /**
+     * A rectangular field. Only {@code block} is used -- a panel's frame is drawn by listing
+     * {@code courses} and {@code pilasters} around it, not by this type. See
+     * {@link PanelsWallPatternProvider}.
+     */
+    private static ISurfacePatternProvider toPanels(WallPatternEntry.PatternEntry pattern) {
+        BlockState field = pattern.block().map(id -> state(id, pattern.properties())).orElse(null);
+        return field == null ? null : new PanelsWallPatternProvider(field, pattern.width(),
+                pattern.spacing(), pattern.inset(), pattern.projection(), pattern.orient());
     }
 
     /**

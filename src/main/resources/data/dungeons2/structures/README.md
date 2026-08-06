@@ -912,13 +912,15 @@ resolve under a bare bootstrap, unlike `dungeonblocks:*`).
 #### Wall patterns (`wall`)
 
 The `wall` slot is an **ordered list of patterns**, exactly like `ceiling` — each drawn on top of
-the last, later cells winning. Three types exist: `courses` (horizontal bands), `pilasters` (evenly
-spaced vertical strips) and `end_pilasters` (a strip at each end of a wall).
+the last, later cells winning. Four types exist: `courses` (horizontal bands), `pilasters` (evenly
+spaced vertical strips), `end_pilasters` (a strip at each end of a wall) and `panels` (rectangular
+fields).
 
 ```json
 "wall": {
   "patterns": [
     { "type": "courses", "courses": [ … ] },
+    { "type": "panels", "block": "dungeonblocks:stone_bricks_fluted_block", "inset": 1 },
     { "type": "pilasters", "block": "dungeonblocks:stone_bricks_pillar_block" },
     { "type": "end_pilasters", "block": "dungeonblocks:stone_bricks_pillar_block" }
   ]
@@ -1146,6 +1148,41 @@ as the wall can reach, `1` one cell along, and so on. On a wall too short for tw
 short for that, none.
 
 This is the one pattern that *does* stand in a corner column. `pilasters` deliberately never does.
+
+##### Panels
+
+`panels` draws repeating **rectangular fields** — the panel between the pilasters. It is the only
+pattern that can stop short of the wall vertically: a course fills a whole row and a strip a whole
+column, so a rectangle was not expressible before this.
+
+```json
+{ "type": "panels",
+  "block": "dungeonblocks:stone_bricks_fluted_block",
+  "width": 3,
+  "spacing": 4,
+  "inset": 1 }
+```
+
+`block` is required. `width` (default 3) is the field's width in cells, `spacing` (default 4) the
+stride between fields, and **`inset` (default 0) is the number of rows left plain above and below**
+— vertical here, unlike on `end_pilasters` where it is horizontal. In both it means "in from the
+edge this pattern is measured against". Fields are centred on each wall and never straddle a corner,
+the same rules `pilasters` follows. A wall too short to carry the field plus its margins draws
+nothing rather than squashing it.
+
+> **`panels` draws the field, not the frame — on purpose.** A recessed panel reads as a field with a
+> border, and the border is already expressible: two `courses` for the horizontal edges and
+> `pilasters` for the vertical ones, listed either side of the panel in the same slot. Only the
+> rectangle needed new geometry.
+
+**Order matters more here than anywhere else.** A field is a solid block of cells, so anything
+listed *after* it is drawn over it and anything listed *before* it is erased. Put `panels` early —
+under the strips and bands that are supposed to cross it.
+
+> **The block has to actually contrast.** A flush field is texture, not relief, so at `projection: 0`
+> it is only visible if it reads differently from the wall — and `classic` draws wall, floor and
+> ceiling all from `minecraft:stone_bricks`. A panel in anything close to that block is invisible.
+> Pick a genuinely different block, or give the field a projection.
 
 #### Ceiling patterns (`ceiling`)
 

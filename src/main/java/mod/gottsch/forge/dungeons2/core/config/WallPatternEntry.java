@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.PanelsWallPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.PilastersWallPatternProvider;
 import net.minecraft.util.StringRepresentable;
 
@@ -145,14 +146,15 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                                CourseOrient orient, Map<String, String> properties,
                                Optional<Map<String, String>> baseProperties,
                                Optional<Map<String, String>> capProperties,
-                               int inset, SizeGate gate) {
+                               int inset, int width, SizeGate gate) {
 
         /** A courses treatment, ungated -- the shape the whole slot used to have. */
         public PatternEntry(String type, List<CourseEntry> courses) {
             this(type, courses, Optional.empty(), Optional.empty(), Optional.empty(),
                     PilastersWallPatternProvider.DEFAULT_SPACING, 0, CourseOrient.NONE,
                     Map.of(), Optional.empty(), Optional.empty(),
-                    PilastersWallPatternProvider.DEFAULT_INSET, SizeGate.UNBOUNDED);
+                    PilastersWallPatternProvider.DEFAULT_INSET,
+                    PanelsWallPatternProvider.DEFAULT_WIDTH, SizeGate.UNBOUNDED);
         }
 
         /** A strip's shape before the base and cap could be propertied separately. */
@@ -162,7 +164,21 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                             CourseOrient orient, Map<String, String> properties,
                             int inset, SizeGate gate) {
             this(type, courses, block, baseBlock, capBlock, spacing, projection, orient,
-                    properties, Optional.empty(), Optional.empty(), inset, gate);
+                    properties, Optional.empty(), Optional.empty(), inset,
+                    PanelsWallPatternProvider.DEFAULT_WIDTH, gate);
+        }
+
+        /** A strip's shape before {@code panels} added a width. */
+        public PatternEntry(String type, List<CourseEntry> courses,
+                            Optional<String> block, Optional<String> baseBlock,
+                            Optional<String> capBlock, int spacing, int projection,
+                            CourseOrient orient, Map<String, String> properties,
+                            Optional<Map<String, String>> baseProperties,
+                            Optional<Map<String, String>> capProperties,
+                            int inset, SizeGate gate) {
+            this(type, courses, block, baseBlock, capBlock, spacing, projection, orient,
+                    properties, baseProperties, capProperties, inset,
+                    PanelsWallPatternProvider.DEFAULT_WIDTH, gate);
         }
 
         /** The base block, falling back to {@link #block} when unauthored. */
@@ -194,7 +210,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
             return COURSES.equals(type().trim().toLowerCase(Locale.ROOT));
         }
 
-        /** Whether this entry is either strip type -- both need a {@code block} and neither takes courses. */
+        /** Whether this entry is either strip type. */
         public boolean isPilasters() {
             String name = type().trim().toLowerCase(Locale.ROOT);
             return PILASTERS.equals(name) || END_PILASTERS.equals(name);
@@ -203,6 +219,20 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
         /** Whether this entry is specifically the end-strip type. */
         public boolean isEndPilasters() {
             return END_PILASTERS.equals(type().trim().toLowerCase(Locale.ROOT));
+        }
+
+        /** Whether this entry is the rectangular-field type. */
+        public boolean isPanels() {
+            return PANELS.equals(type().trim().toLowerCase(Locale.ROOT));
+        }
+
+        /**
+         * Whether this type draws from a single {@code block} rather than from {@code courses} --
+         * i.e. every type except {@code courses}. Those all require a block and none takes courses,
+         * which is the pair of rules {@link WallPatternEntry#validate} enforces.
+         */
+        public boolean needsBlock() {
+            return isPilasters() || isPanels();
         }
 
         public static final Codec<PatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -231,6 +261,9 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                                 PilastersWallPatternProvider.DEFAULT_INSET)
                         .forGetter(PatternEntry::inset),
+                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "width",
+                                PanelsWallPatternProvider.DEFAULT_WIDTH)
+                        .forGetter(PatternEntry::width),
                 SizeGate.MAP_CODEC.forGetter(PatternEntry::gate)
         ).apply(instance, PatternEntry::new));
     }
@@ -247,6 +280,17 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * with an even rhythm between them.
      */
     public static final String END_PILASTERS = "end_pilasters";
+
+    /**
+     * A repeating rectangular field, inset from the top and bottom of the wall.
+     *
+     * <p><strong>Only the field is new geometry.</strong> A panel's <em>frame</em> composes from the
+     * types that already exist &mdash; two {@code courses} for the horizontal edges and
+     * {@code pilasters} for the vertical ones &mdash; so this type deliberately does not draw one.
+     * What no existing type can draw is a rectangle: a course fills a whole row and a strip a whole
+     * column, and neither can stop short of the wall's ends vertically.</p>
+     */
+    public static final String PANELS = "panels";
 
     /**
      * How a course's block should be turned to face, for blocks that have a {@code facing} property
@@ -483,7 +527,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                         pattern.baseBlock(), pattern.capBlock(), pattern.spacing(),
                         pattern.projection(), pattern.orient(), pattern.properties(),
                         pattern.baseProperties(), pattern.capProperties(),
-                        pattern.inset(), pattern.gate()));
+                        pattern.inset(), pattern.width(), pattern.gate()));
             }
         }
         return changed ? new WallPatternEntry(fitting, gate) : this;
@@ -530,9 +574,9 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                 return DataResult.error(() -> "wall pattern 'courses': 'block' belongs on each entry"
                         + " of 'courses', not on the pattern itself");
             }
-            if (pattern.isPilasters() && pattern.block().isEmpty()) {
-                return DataResult.error(() -> "wall pattern 'pilasters': 'block' is required"
-                        + " -- there is no default material for a pilaster");
+            if (pattern.needsBlock() && pattern.block().isEmpty()) {
+                return DataResult.error(() -> "wall pattern '" + pattern.type()
+                        + "': 'block' is required -- there is no default material for it");
             }
         }
         return DataResult.success(entry);

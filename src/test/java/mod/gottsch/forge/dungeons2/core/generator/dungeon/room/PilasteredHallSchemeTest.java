@@ -91,13 +91,50 @@ class PilasteredHallSchemeTest {
         RoomScheme scheme = pilasteredHall();
         List<WallPatternEntry.PatternEntry> patterns = scheme.wall().orElseThrow().patterns();
 
-        assertEquals(3, patterns.size(), "a band, the rhythm crossing it, and the corner piers");
+        assertEquals(4, patterns.size(),
+                "a band, the panel fields, the rhythm crossing them, and the corner piers");
         assertTrue(patterns.get(0).isCourses());
-        assertTrue(patterns.get(1).isPilasters());
-        assertFalse(patterns.get(1).isEndPilasters(), "the second is the evenly spaced rhythm");
-        assertTrue(patterns.get(2).isEndPilasters(), "the third is the paired corner");
-        assertTrue(patterns.get(1).projection() > 0 && patterns.get(2).projection() > 0,
+        assertTrue(patterns.get(1).isPanels());
+        assertTrue(patterns.get(2).isPilasters());
+        assertFalse(patterns.get(2).isEndPilasters(), "the third is the evenly spaced rhythm");
+        assertTrue(patterns.get(3).isEndPilasters(), "the fourth is the paired corner");
+        assertTrue(patterns.get(2).projection() > 0 && patterns.get(3).projection() > 0,
                 "the strips stand out from the wall; flush they are panelling, not pilasters");
+    }
+
+    /**
+     * The panel fields are listed BEFORE the strips, so a pilaster crosses a field rather than being
+     * interrupted by it. Ordering is the only thing that decides this, which is why it is pinned:
+     * swapping the two entries is a silent visual change with no error anywhere.
+     */
+    @Test
+    void thePanelFieldsAreDrawnUnderTheStrips() {
+        List<WallPatternEntry.PatternEntry> patterns = pilasteredHall().wall().orElseThrow().patterns();
+        int panels = -1;
+        int strips = -1;
+        for (int i = 0; i < patterns.size(); i++) {
+            if (patterns.get(i).isPanels()) {
+                panels = i;
+            } else if (patterns.get(i).isPilasters() && strips < 0) {
+                strips = i;
+            }
+        }
+        assertTrue(panels >= 0 && strips >= 0, "the scheme should carry both");
+        assertTrue(panels < strips, "panels must be listed first, or the field would erase the strips");
+    }
+
+    /**
+     * The field is flush and the strips project, which is what makes the two read as different
+     * planes rather than as one lumpy wall. A flush field also cannot collide with pots.
+     */
+    @Test
+    void theFieldIsFlushAndTheStripsProject() {
+        for (WallPatternEntry.PatternEntry pattern : pilasteredHall().wall().orElseThrow().patterns()) {
+            if (pattern.isPanels()) {
+                assertEquals(0, pattern.projection(),
+                        "the panel field sits in the wall plane; the strips are what stand out");
+            }
+        }
     }
 
     /**
