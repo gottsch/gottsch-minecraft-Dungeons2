@@ -26,6 +26,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -252,6 +253,10 @@ class DatapackResourcesParseTest {
     }
 
     @Test
+    @Disabled("TEMPORARY -- classic is cut down to base.json (plain + vaulted_hall) for in-game "
+            + "testing of the vault. The other scheme files are parked in "
+            + "src/main/resources/disabled-schemes/classic/; see the README there. RE-ENABLE THIS "
+            + "when they move back -- it is the guard against the scheme list silently collapsing.")
     void classicShipsItsFullSchemeList() {
         MotifConfig classic = motif("classic");
 

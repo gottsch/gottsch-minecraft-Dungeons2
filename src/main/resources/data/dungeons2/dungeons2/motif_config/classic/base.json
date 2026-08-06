@@ -108,6 +108,52 @@
           }
         ]
       }
+    },
+    {
+      "name": "vaulted_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 7,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "border",
+            "block": "minecraft:stone_brick_stairs",
+            "inset": 0,
+            "projection": 2,
+            "orient": "outward",
+            "properties": {
+              "half": "top"
+            }
+          },
+          {
+            "type": "border",
+            "block": "minecraft:stone_bricks",
+            "inset": 0,
+            "projection": 1
+          },
+          {
+            "type": "border",
+            "block": "minecraft:stone_brick_stairs",
+            "inset": 1,
+            "projection": 1,
+            "orient": "outward",
+            "properties": {
+              "half": "top"
+            }
+          }
+        ]
+      },
+      "wall": {
+        "type": "courses",
+        "courses": [
+          {
+            "block": "minecraft:polished_andesite",
+            "cornerBlock": "minecraft:andesite",
+            "anchor": "top"
+          }
+        ]
+      }
     }
   ]
 }
