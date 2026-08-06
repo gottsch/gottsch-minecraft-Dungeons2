@@ -48,8 +48,12 @@ public record DungeonGenerationConfig(int corridorWidth) {
     /** Fallback used when no entry exists, so lookups never NPE. */
     public static final DungeonGenerationConfig DEFAULT = new DungeonGenerationConfig(3);
 
-    public static final Codec<DungeonGenerationConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.intRange(1, 3).optionalFieldOf("corridorWidth", DEFAULT.corridorWidth())
-                    .forGetter(DungeonGenerationConfig::corridorWidth)
-    ).apply(instance, DungeonGenerationConfig::new));
+    // Codecs.closed + strictOptionalFieldOf -- see RoomScheme.CODEC and Codecs#closed. With DFU's
+    // own optionalFieldOf, "corridorWidth": 5 decoded cleanly to 3 and every corridor in the
+    // dungeon came out a width the author never asked for, with nothing anywhere saying so.
+    public static final Codec<DungeonGenerationConfig> CODEC = Codecs.closed(
+            RecordCodecBuilder.mapCodec(instance -> instance.group(
+                    Codecs.strictOptionalFieldOf(Codec.intRange(1, 3), "corridorWidth",
+                            DEFAULT.corridorWidth()).forGetter(DungeonGenerationConfig::corridorWidth)
+            ).apply(instance, DungeonGenerationConfig::new)));
 }

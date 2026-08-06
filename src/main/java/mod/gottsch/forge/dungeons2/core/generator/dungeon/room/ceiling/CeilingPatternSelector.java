@@ -61,7 +61,19 @@ public final class CeilingPatternSelector {
 
     private CeilingPatternSelector() {}
 
-    /** The provider for a scheme's ceiling slot, or {@code null} when there is nothing to draw. */
+    /**
+     * The provider for a scheme's ceiling slot, or {@code null} when there is nothing to draw.
+     * Patterns whose own {@link mod.gottsch.forge.dungeons2.core.config.SizeGate} this room fails
+     * are dropped first; the rest of the list still draws.
+     */
+    public static ISurfacePatternProvider providerFor(Optional<CeilingPatternEntry> entry,
+                                                     int width, int depth, int height) {
+        return entry.map(ceiling -> ceiling.forRoom(width, depth, height))
+                .map(CeilingPatternSelector::toProvider)
+                .orElse(null);
+    }
+
+    /** Ungated form, for callers with no room in hand (tests, and any fully unconditional entry). */
     public static ISurfacePatternProvider providerFor(Optional<CeilingPatternEntry> entry) {
         return entry.map(CeilingPatternSelector::toProvider).orElse(null);
     }

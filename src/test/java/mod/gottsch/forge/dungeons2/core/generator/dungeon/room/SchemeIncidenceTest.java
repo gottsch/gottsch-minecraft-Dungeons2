@@ -128,6 +128,9 @@ class SchemeIncidenceTest {
                     if (scheme.potsFor(w, d, h).isPresent()) {
                         result.pots++;
                     }
+                    if (scheme.pillarsFor(w, d, h).isPresent()) {
+                        result.pillars++;
+                    }
                     // "Tall" is the population the top-trim rule is about: a 5-high room has only
                     // three interior wall rows, two of them door halves and one the lintel, so
                     // there is genuinely nowhere to put a crown.
@@ -177,6 +180,7 @@ class SchemeIncidenceTest {
         int ceiling;
         int floor;
         int pots;
+        int pillars;
         int tall;
         int tallWithTopTrim;
         int bare;
@@ -200,9 +204,9 @@ class SchemeIncidenceTest {
      * failed.
      */
     @Test
-    @Disabled("TEMPORARY -- classic is cut down to base.json (plain, vaulted_hall, pilastered_hall) "
-            + "for in-game scheme authoring, so the floor schemes these bars measure are not "
-            + "loaded at all: floor reads 0%. The full set is parked in "
+    @Disabled("TEMPORARY -- classic is cut down to base.json (plain, vaulted_hall, "
+            + "pilastered_hall, hypostyle_hall) for in-game scheme authoring, so the floor schemes "
+            + "these bars measure are not loaded at all: floor reads 0%. The full set is parked in "
             + "src/main/resources/disabled-schemes/classic/; see the README there. RE-ENABLE THIS "
             + "when they move back. Do NOT lower the bars to make it pass -- they were authored "
             + "against measured incidence after trim shipped nearly unfindable once already.")
@@ -215,6 +219,7 @@ class SchemeIncidenceTest {
         report.append(String.format("  wall    %5.1f%%%n", r.pct(r.wall)));
         report.append(String.format("  ceiling %5.1f%%%n", r.pct(r.ceiling)));
         report.append(String.format("  pots    %5.1f%%%n", r.pct(r.pots)));
+        report.append(String.format("  pillars %5.1f%%%n", r.pct(r.pillars)));
         report.append(String.format("  top trim, rooms taller than 5   %5.1f%% (%d of %d)%n",
                 r.tallPct(), r.tallWithTopTrim, r.tall));
         report.append(String.format("  no decoration drawn             %5.1f%%%n", r.pct(r.bare)));

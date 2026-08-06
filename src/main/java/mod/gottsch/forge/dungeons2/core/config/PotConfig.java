@@ -62,19 +62,24 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
      * "mostly the tall pot, occasionally a squat one" without repeating ids.
      */
     public record PotVariant(String entity, int weight) {
-        public static final Codec<PotVariant> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        // Codecs.closed -- see RoomScheme.CODEC.
+        public static final Codec<PotVariant> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("entity").forGetter(PotVariant::entity),
-                Codec.intRange(1, Integer.MAX_VALUE).optionalFieldOf("weight", 1).forGetter(PotVariant::weight)
-        ).apply(instance, PotVariant::new));
+                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
+                        .forGetter(PotVariant::weight)
+        ).apply(instance, PotVariant::new)));
     }
 
-    public static final Codec<PotConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minCount", 1).forGetter(PotConfig::minCount),
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("maxCount", 3).forGetter(PotConfig::maxCount),
+    // Codecs.closed -- see RoomScheme.CODEC.
+    public static final Codec<PotConfig> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minCount", 1)
+                    .forGetter(PotConfig::minCount),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 3)
+                    .forGetter(PotConfig::maxCount),
             Codec.STRING.fieldOf("lootTable").forGetter(PotConfig::lootTable),
             PotVariant.CODEC.listOf().fieldOf("variants").forGetter(PotConfig::variants),
             SizeGate.MAP_CODEC.forGetter(PotConfig::gate)
-    ).apply(instance, PotConfig::new));
+    ).apply(instance, PotConfig::new)));
 
     /**
      * The inclusive count range, normalised. A {@code maxCount} below {@code minCount} is authoring

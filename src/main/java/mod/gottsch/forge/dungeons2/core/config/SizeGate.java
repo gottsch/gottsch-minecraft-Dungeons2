@@ -75,8 +75,10 @@ public record SizeGate(int minHeight, int minSize,
      * like the scheme-level ones, so there is one concept to learn rather than two.</p>
      */
     public static final MapCodec<SizeGate> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minHeight", 0).forGetter(SizeGate::minHeight),
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minSize", 0).forGetter(SizeGate::minSize),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minHeight", 0)
+                    .forGetter(SizeGate::minHeight),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minSize", 0)
+                    .forGetter(SizeGate::minSize),
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxHeight")
                     .forGetter(SizeGate::maxHeight),
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxSize")

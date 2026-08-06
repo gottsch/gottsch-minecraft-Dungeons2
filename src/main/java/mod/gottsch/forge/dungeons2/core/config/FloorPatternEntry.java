@@ -130,32 +130,38 @@ public record FloorPatternEntry(String type, int weight, int inset,
      */
     private static Codec<FloorPatternEntry> codecHolder;
 
-    public static final Codec<FloorPatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    // Codecs.closed -- see RoomScheme.CODEC. Applies to a nested `generators` entry too, since that
+    // list is this same codec.
+    public static final Codec<FloorPatternEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.STRING.fieldOf("type").forGetter(FloorPatternEntry::type),
-            Codec.intRange(1, Integer.MAX_VALUE).optionalFieldOf("weight", 1).forGetter(FloorPatternEntry::weight),
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("inset", FloorBorderPatternProvider.DEFAULT_INSET)
-                    .forGetter(FloorPatternEntry::inset),
-            Codec.STRING.optionalFieldOf("cornerBlock").forGetter(FloorPatternEntry::cornerBlock),
-            Codec.STRING.optionalFieldOf("edgeLeftBlock").forGetter(FloorPatternEntry::edgeLeftBlock),
-            Codec.STRING.optionalFieldOf("edgeRightBlock").forGetter(FloorPatternEntry::edgeRightBlock),
-            Codec.STRING.optionalFieldOf("primaryBlock").forGetter(FloorPatternEntry::primaryBlock),
-            Codec.STRING.optionalFieldOf("secondaryBlock").forGetter(FloorPatternEntry::secondaryBlock),
-            Codec.doubleRange(0.0, 1.0)
-                    .optionalFieldOf("probability", RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY)
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
+                    .forGetter(FloorPatternEntry::weight),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
+                    FloorBorderPatternProvider.DEFAULT_INSET).forGetter(FloorPatternEntry::inset),
+            Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock").forGetter(FloorPatternEntry::cornerBlock),
+            Codecs.strictOptionalFieldOf(Codec.STRING, "edgeLeftBlock").forGetter(FloorPatternEntry::edgeLeftBlock),
+            Codecs.strictOptionalFieldOf(Codec.STRING, "edgeRightBlock").forGetter(FloorPatternEntry::edgeRightBlock),
+            Codecs.strictOptionalFieldOf(Codec.STRING, "primaryBlock").forGetter(FloorPatternEntry::primaryBlock),
+            Codecs.strictOptionalFieldOf(Codec.STRING, "secondaryBlock").forGetter(FloorPatternEntry::secondaryBlock),
+            Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0, 1.0), "probability",
+                    RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY)
                     .forGetter(FloorPatternEntry::probability),
-            Codec.intRange(0, Integer.MAX_VALUE)
-                    .optionalFieldOf("thickness", CrossFloorPatternProvider.DEFAULT_THICKNESS)
-                    .forGetter(FloorPatternEntry::thickness),
-            Codec.intRange(0, Integer.MAX_VALUE)
-                    .optionalFieldOf("spokes", RadialSpokesFloorPatternProvider.DEFAULT_SPOKES)
-                    .forGetter(FloorPatternEntry::spokes),
-            lazyInitialized(() -> codecHolder).listOf().optionalFieldOf("generators", List.of())
-                    .forGetter(FloorPatternEntry::generators),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "thickness",
+                    CrossFloorPatternProvider.DEFAULT_THICKNESS).forGetter(FloorPatternEntry::thickness),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spokes",
+                    RadialSpokesFloorPatternProvider.DEFAULT_SPOKES).forGetter(FloorPatternEntry::spokes),
+            // strictOptionalFieldOf, not DFU's own: optionalFieldOf returns the default for a
+            // present-but-malformed value as readily as for an absent one, so a stray key inside a
+            // nested generator decoded to an EMPTY generators list -- a composite that quietly
+            // stopped compositing. That swallowed the closed-schema check below at exactly the
+            // depth it is most useful; caught by ClosedSchemaCodecTest.
+            Codecs.strictOptionalFieldOf(lazyInitialized(() -> codecHolder).listOf(), "generators",
+                    List.of()).forGetter(FloorPatternEntry::generators),
             // Meaningless on a nested `generators` entry -- only the outermost entry is a scheme
             // slot, and only a scheme slot is gated. Harmless there, and factoring the field out of
             // the shared record for that one case would cost more than it saves.
             SizeGate.MAP_CODEC.forGetter(FloorPatternEntry::gate)
-    ).apply(instance, FloorPatternEntry::new));
+    ).apply(instance, FloorPatternEntry::new)));
 
     static {
         codecHolder = CODEC;

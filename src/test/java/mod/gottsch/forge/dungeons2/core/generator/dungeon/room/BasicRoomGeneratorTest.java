@@ -23,7 +23,10 @@ import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.DoorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.PotConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.SizeGate;
 import mod.gottsch.forge.dungeons2.core.config.WallConfig;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry.CourseAnchor;
@@ -188,5 +191,46 @@ class BasicRoomGeneratorTest {
                 "ribs should reach the contested ring and win cells in it, got " + finalBlock);
         assertTrue(finalBlock.containsValue("minecraft:stone_brick_stairs"),
                 "the cornice should survive everywhere a rib does not land, got " + finalBlock);
+    }
+
+    /**
+     * Pots route around free-standing columns, the same way they already route around projecting
+     * wall trim. A pot inside a column is invisible until someone walks into the room, so nothing in
+     * game reports it -- which is why the reservation is asserted here rather than left to look
+     * right.
+     */
+    @Test
+    void potsDoNotStandInsideAColumn() {
+        // spacing 2 / inset 0 drives the lattice right into the inner ring, where the pots want to
+        // stand. At the default inset the two barely compete, so a passing test would prove nothing.
+        RoomScheme scheme = new RoomScheme("pillared", 1, 0, 0,
+                Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(new PotConfig(12, 12, "dungeons2:pots/classic",
+                        List.of(new PotConfig.PotVariant("dungeonblocks:medium_pot", 1)))),
+                Optional.of(new PillarPatternEntry(List.of(
+                        new PillarPatternEntry.PillarEntry("grid", "minecraft:stone_bricks",
+                                Optional.empty(), Optional.empty(), 2, 0, Map.of(),
+                                Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED)))));
+
+        MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,
+                DoorConfig.DEFAULT, CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(scheme));
+
+        RoomData room = new RoomData(1, 0, 0, 11, 11, 7, RoomRole.NORMAL);
+        RoomPlacements out = new RoomPlacements();
+        new BasicRoomGenerator().withMotifConfig(config)
+                .build(room, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        java.util.Set<String> columnCells = out.getBlocks().stream()
+                .filter(bp -> bp.getY() == 61 && "minecraft:stone_bricks".equals(bp.getBlockId()))
+                .map(bp -> bp.getX() + "," + bp.getZ())
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertTrue(!columnCells.isEmpty(), "the lattice should have placed columns at all");
+        assertTrue(!out.getEntities().isEmpty(), "and the room should have pots to place");
+        for (var pot : out.getEntities()) {
+            assertTrue(!columnCells.contains(pot.getX() + "," + pot.getZ()),
+                    "pot at " + pot.getX() + "," + pot.getZ() + " is standing inside a column");
+        }
     }
 }

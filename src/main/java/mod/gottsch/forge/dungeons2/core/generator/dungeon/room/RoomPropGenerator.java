@@ -139,7 +139,7 @@ public final class RoomPropGenerator {
         int originX = room.getOriginX();
         int originZ = room.getOriginZ();
 
-        Set<Coords2D> blocked = cellsInsideDoorways(room);
+        Set<Coords2D> blocked = RoomInterior.cellsInsideDoorways(room);
         List<Coords2D> cells = new ArrayList<>();
         for (int x = 1; x < width - 1; x++) {
             for (int z = 1; z < depth - 1; z++) {
@@ -156,23 +156,7 @@ public final class RoomPropGenerator {
         return cells;
     }
 
-    /**
-     * The four orthogonal neighbours of every doorway cell. Only the one that lands in the room's
-     * interior can ever match an eligible cell, so there is no need to work out which side of the
-     * room the door is on.
-     */
-    private static Set<Coords2D> cellsInsideDoorways(RoomData room) {
-        Set<Coords2D> blocked = new HashSet<>();
-        for (Coords2D door : room.getDoorways()) {
-            // Coords2D's second axis is named Y but is the Z axis -- the 2D maze grid's "height"
-            // is the 3D depth, the same aliasing DungeonStackPlanner notes at room conversion.
-            blocked.add(new Coords2D(door.getX() + 1, door.getY()));
-            blocked.add(new Coords2D(door.getX() - 1, door.getY()));
-            blocked.add(new Coords2D(door.getX(), door.getY() + 1));
-            blocked.add(new Coords2D(door.getX(), door.getY() - 1));
-        }
-        return blocked;
-    }
+    // cellsInsideDoorways moved to RoomInterior when free-standing pillars needed the same rule.
 
     private static String pickVariant(List<PotConfig.PotVariant> variants, int totalWeight,
                                       RandomSource random) {

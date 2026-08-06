@@ -28,12 +28,18 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPa
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.IDungeonCeilingGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.BasicPillarGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.IDungeonPillarGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.PillarPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.BasicWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.IDungeonWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.WallPatternSelector;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import net.minecraft.util.RandomSource;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Default room orchestrator: delegates walls, floor, and ceiling to the three
@@ -106,6 +112,17 @@ public class BasicRoomGenerator implements IRoomGenerator {
         floorGen.build(room, floorY, motif, random, blocks);
         ceilingGen.build(room, floorY, motif, random, blocks);
 
+        // Free-standing pillars are the only element that draws in the room's VOLUME rather than on
+        // one of its surfaces, and they run last of the four for that reason -- they stand in the
+        // interior air the hollow step cleared, so anything that also reaches into it must already
+        // have been emitted.
+        //
+        // That makes a column win against a projecting ceiling rib where the two meet, which is the
+        // right way round: a column is structure and a rib is decoration, so the column should read
+        // as carrying the ceiling rather than being interrupted a block short of it.
+        IDungeonPillarGenerator pillarGen = selectPillarGenerator(motif, scheme, width, depth, height);
+        pillarGen.build(room, floorY, motif, random, blocks);
+
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.
         //
@@ -113,9 +130,21 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // was emitted before the pots were placed, so the pots move rather than spawning inside it.
         // Asking the generator which cells it took (rather than working it out here) keeps the rules
         // about which cells a projected layer actually reaches in the one place that has them.
+        // Both the wall's projecting trim and the columns get right of way: each is architecture,
+        // each was emitted before the pots, and a pot inside either is invisible until someone walks
+        // into the room. Asking each generator which cells it took (rather than re-deriving them
+        // here) keeps those rules in the one place that has them -- the columns' set in particular
+        // is what actually got built, doorway drops and all, not what the layout asked for.
+        Set<Coords2D> taken = new HashSet<>(wallGen.occupiedFloorCells());
+        taken.addAll(pillarGen.occupiedFloorCells());
         scheme.potsFor(width, depth, height).ifPresent(pots ->
-                RoomPropGenerator.placePots(room, floorY, pots, wallGen.occupiedFloorCells(),
-                        random, out.getEntities()));
+                RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
+    }
+
+    public IDungeonPillarGenerator selectPillarGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                        int width, int depth, int height) {
+        return new BasicPillarGenerator().withPillarLayouts(PillarPatternSelector.layoutsFor(
+                scheme.pillarsFor(width, depth, height), width, depth, height));
     }
 
     /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */
@@ -142,6 +171,6 @@ public class BasicRoomGenerator implements IRoomGenerator {
         return new BasicCeilingGenerator()
                 .withMotifConfig(motifConfig)
                 .withCeilingPattern(CeilingPatternSelector.providerFor(
-                        scheme.ceilingFor(width, depth, height)));
+                        scheme.ceilingFor(width, depth, height), width, depth, height));
     }
 }

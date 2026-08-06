@@ -235,15 +235,17 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
             return isPilasters() || isPanels();
         }
 
-        public static final Codec<PatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        // Codecs.closed -- see RoomScheme.CODEC. This is the record with the most fields to
+        // misspell, and the one the backlog note was raised against.
+        public static final Codec<PatternEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("type").forGetter(PatternEntry::type),
                 Codecs.strictOptionalFieldOf(CourseEntry.CODEC.listOf(), "courses", List.of())
                         .forGetter(PatternEntry::courses),
                 // Bare Optionals for the same reason CourseEntry's alternateBlock is: absent means
                 // "fall back to another authored value", not "use this default block".
-                Codec.STRING.optionalFieldOf("block").forGetter(PatternEntry::block),
-                Codec.STRING.optionalFieldOf("baseBlock").forGetter(PatternEntry::baseBlock),
-                Codec.STRING.optionalFieldOf("capBlock").forGetter(PatternEntry::capBlock),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "block").forGetter(PatternEntry::block),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "baseBlock").forGetter(PatternEntry::baseBlock),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "capBlock").forGetter(PatternEntry::capBlock),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "spacing",
                         PilastersWallPatternProvider.DEFAULT_SPACING).forGetter(PatternEntry::spacing),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_PROJECTION), "projection", 0)
@@ -253,11 +255,13 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "properties", Map.of()).forGetter(PatternEntry::properties),
                 // Bare Optionals, like baseBlock/capBlock: absent falls back to another AUTHORED
-                // value rather than to a default this record invented.
-                Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("baseProperties")
-                        .forGetter(PatternEntry::baseProperties),
-                Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("capProperties")
-                        .forGetter(PatternEntry::capProperties),
+                // value rather than to a default this record invented. Strict, though: DFU's own
+                // optionalFieldOf swallows the WHOLE map on one bad entry, so an unquoted boolean
+                // ("waterlogged": false) silently threw the author's entire property map away.
+                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
+                        "baseProperties").forGetter(PatternEntry::baseProperties),
+                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
+                        "capProperties").forGetter(PatternEntry::capProperties),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                                 PilastersWallPatternProvider.DEFAULT_INSET)
                         .forGetter(PatternEntry::inset),
@@ -265,7 +269,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                                 PanelsWallPatternProvider.DEFAULT_WIDTH)
                         .forGetter(PatternEntry::width),
                 SizeGate.MAP_CODEC.forGetter(PatternEntry::gate)
-        ).apply(instance, PatternEntry::new));
+        ).apply(instance, PatternEntry::new)));
     }
 
     /** The horizontal-band type. Lower-cased after trimming, matching how the selector dispatches. */
@@ -450,12 +454,13 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
             return cornerBlock.orElse(block);
         }
 
-        public static final Codec<CourseEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        // Codecs.closed -- see RoomScheme.CODEC.
+        public static final Codec<CourseEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("block").forGetter(CourseEntry::block),
                 // Absent means "same as block", which is why these are bare Optionals rather than
                 // strictOptionalFieldOf with a fallback: there is no default block to name here.
-                Codec.STRING.optionalFieldOf("alternateBlock").forGetter(CourseEntry::alternateBlock),
-                Codec.STRING.optionalFieldOf("cornerBlock").forGetter(CourseEntry::cornerBlock),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "alternateBlock").forGetter(CourseEntry::alternateBlock),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock").forGetter(CourseEntry::cornerBlock),
                 // strictOptionalFieldOf, not DFU's own: optionalFieldOf cannot tell "absent" from
                 // "present but malformed" and returns the default for both, so `"anchor": "topp"`
                 // would silently read as BOTTOM and put the crown molding on the floor. That is the
@@ -473,7 +478,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                 Codecs.strictOptionalFieldOf(CourseAlternate.CODEC, "alternate",
                         CourseAlternate.RANDOM).forGetter(CourseEntry::alternate),
                 SizeGate.MAP_CODEC.forGetter(CourseEntry::gate)
-        ).apply(instance, CourseEntry::new));
+        ).apply(instance, CourseEntry::new)));
     }
 
     /**
@@ -544,12 +549,12 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * failure naming {@code patterns}, which is the whole point of the strict codecs in this
      * package. An empty slot was never worth authoring anyway.</p>
      */
-    public static final Codec<WallPatternEntry> CODEC = RecordCodecBuilder.<WallPatternEntry>create(
-            instance -> instance.group(
+    public static final Codec<WallPatternEntry> CODEC = Codecs.closed(
+            RecordCodecBuilder.<WallPatternEntry>mapCodec(instance -> instance.group(
                     PatternEntry.CODEC.listOf().fieldOf("patterns")
                             .forGetter(WallPatternEntry::patterns),
                     SizeGate.MAP_CODEC.forGetter(WallPatternEntry::gate)
-            ).apply(instance, WallPatternEntry::new))
+            ).apply(instance, WallPatternEntry::new)))
             .flatXmap(WallPatternEntry::validate, WallPatternEntry::validate);
 
     /**
@@ -577,6 +582,22 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
             if (pattern.needsBlock() && pattern.block().isEmpty()) {
                 return DataResult.error(() -> "wall pattern '" + pattern.type()
                         + "': 'block' is required -- there is no default material for it");
+            }
+            // Inverted per-entry gates. RoomScheme#validate only ever reached the SLOT gate, so an
+            // inverted gate on a pattern or a course was accepted and then fit no room -- the
+            // pattern silently never drew. Found while giving ceiling patterns the same gates
+            // (backlog #24); it was latent on the wall side from the day per-course gates shipped.
+            DataResult<SizeGate> patternGate = pattern.gate()
+                    .validate("wall pattern '" + pattern.type() + "'");
+            if (patternGate.error().isPresent()) {
+                return DataResult.error(() -> patternGate.error().orElseThrow().message());
+            }
+            for (CourseEntry course : pattern.courses()) {
+                DataResult<SizeGate> courseGate = course.gate()
+                        .validate("wall course '" + course.block() + "'");
+                if (courseGate.error().isPresent()) {
+                    return DataResult.error(() -> courseGate.error().orElseThrow().message());
+                }
             }
         }
         return DataResult.success(entry);

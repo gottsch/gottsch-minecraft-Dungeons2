@@ -231,6 +231,44 @@
           }
         ]
       }
+    },
+    {
+      "name": "hypostyle_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 7,
+      "pillars": {
+        "patterns": [
+          {
+            "type": "grid",
+            "block": "dungeonblocks:stone_bricks_pillar_block",
+            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "baseProperties": {
+              "base": "up"
+            },
+            "capProperties": {
+              "base": "down"
+            },
+            "spacing": 4,
+            "inset": 2
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

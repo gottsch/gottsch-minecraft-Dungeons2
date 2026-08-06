@@ -61,9 +61,11 @@ import java.util.Optional;
  * floor and wall slots are single entries because surface patterns are sparse and therefore compose
  * for free; see that record for why no {@code "composite"} type is needed.</p>
  *
- * <p>A {@code pillars} slot is deliberately <em>not</em> declared yet: it is an additive optional
- * codec field, and there is no provider behind it to give it meaning. The load-bearing decision is
- * that this container exists and owns the roll, not that it is populated up front.</p>
+ * <p>{@code pillars} holds a {@link PillarPatternEntry} &mdash; free-standing columns standing in
+ * the room's interior. It is the one slot that draws in the room's <em>volume</em> rather than on
+ * one of its surfaces, which is why it needed a new element rather than another pattern type; see
+ * that record. Declared here only once there was a provider behind it, which was the whole reason it
+ * was held back.</p>
  *
  * <h2>Eligibility</h2>
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
@@ -110,16 +112,18 @@ import java.util.Optional;
 public record RoomScheme(String name, int weight, int minHeight, int minSize,
                          Optional<Integer> maxHeight, Optional<Integer> maxSize,
                          Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
-                         Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
+                         Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
+                         Optional<PillarPatternEntry> pillars) {
 
     /**
      * A scheme with no element slots filled &mdash; an undecorated room of the given weight and
      * eligibility. Exists so that adding the next element slot does not churn every caller that
-     * only cares about the roll; the canonical constructor has already widened five times.
+     * only cares about the roll; the canonical constructor has now widened six times.
      */
     public RoomScheme(String name, int weight, int minHeight, int minSize) {
         this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
     }
 
     /** Element slots with lower bounds only &mdash; the shape before {@code max*} was added. */
@@ -127,17 +131,31 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                       Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                       Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
         this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
-                floor, wall, ceiling, pots);
+                floor, wall, ceiling, pots, Optional.empty());
+    }
+
+    /** The four surface slots plus bounds &mdash; the shape before {@code pillars} was added. */
+    public RoomScheme(String name, int weight, int minHeight, int minSize,
+                      Optional<Integer> maxHeight, Optional<Integer> maxSize,
+                      Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                      Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
+        this(name, weight, minHeight, minSize, maxHeight, maxSize, floor, wall, ceiling, pots,
+                Optional.empty());
     }
 
     /** The undecorated room: plain floor, plain walls, plain ceiling, no props, eligible everywhere. */
     public static final RoomScheme PLAIN = new RoomScheme("plain", 1, 0, 0);
 
-    public static final Codec<RoomScheme> CODEC = RecordCodecBuilder.<RoomScheme>create(instance -> instance.group(
+    // Codecs.closed: a key this record does not declare is a load error rather than being dropped,
+    // so a misspelled slot name ("celing") fails the pack instead of quietly leaving the room plain.
+    public static final Codec<RoomScheme> CODEC = Codecs.closed(RecordCodecBuilder.<RoomScheme>mapCodec(instance -> instance.group(
             Codec.STRING.fieldOf("name").forGetter(RoomScheme::name),
-            Codec.intRange(1, Integer.MAX_VALUE).optionalFieldOf("weight", 1).forGetter(RoomScheme::weight),
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minHeight", 0).forGetter(RoomScheme::minHeight),
-            Codec.intRange(0, Integer.MAX_VALUE).optionalFieldOf("minSize", 0).forGetter(RoomScheme::minSize),
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
+                    .forGetter(RoomScheme::weight),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minHeight", 0)
+                    .forGetter(RoomScheme::minHeight),
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minSize", 0)
+                    .forGetter(RoomScheme::minSize),
             // intRange(1, ..) not (0, ..): a bound of 0 fits no room the planner builds, so it can
             // only ever be a mistake, and a range codec turns it into a load error for free.
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxHeight")
@@ -147,8 +165,9 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "floor").forGetter(RoomScheme::floor),
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "wall").forGetter(RoomScheme::wall),
             Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "ceiling").forGetter(RoomScheme::ceiling),
-            Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots)
-    ).apply(instance, RoomScheme::new)).flatXmap(RoomScheme::validate, RoomScheme::validate);
+            Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots),
+            Codecs.strictOptionalFieldOf(PillarPatternEntry.CODEC, "pillars").forGetter(RoomScheme::pillars)
+    ).apply(instance, RoomScheme::new))).flatXmap(RoomScheme::validate, RoomScheme::validate);
 
     /**
      * Rejects an inverted range. A codec cannot express "at least the value of that other field",
@@ -179,6 +198,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         slots = chain(slots, scheme.wall.map(WallPatternEntry::gate), scheme.name, "wall");
         slots = chain(slots, scheme.ceiling.map(CeilingPatternEntry::gate), scheme.name, "ceiling");
         slots = chain(slots, scheme.pots.map(PotConfig::gate), scheme.name, "pots");
+        slots = chain(slots, scheme.pillars.map(PillarPatternEntry::gate), scheme.name, "pillars");
         return slots.map(ignored -> scheme);
     }
 
@@ -222,6 +242,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         return pots.filter(entry -> entry.gate().fits(width, depth, height));
     }
 
+    /** See {@link #floorFor}. */
+    public Optional<PillarPatternEntry> pillarsFor(int width, int depth, int height) {
+        return pillars.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
     /**
      * Whether this scheme fills any element slot at all. False for the deliberately undecorated
      * room, which is a legitimate authored outcome rather than a mistake &mdash; the distinction
@@ -229,7 +254,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      * gated out, and only the second is a fault.
      */
     public boolean declaresAnySlot() {
-        return floor.isPresent() || wall.isPresent() || ceiling.isPresent() || pots.isPresent();
+        return floor.isPresent() || wall.isPresent() || ceiling.isPresent() || pots.isPresent()
+                || pillars.isPresent();
     }
 
     /** Whether this scheme draws anything at all in a room of these dimensions. */
@@ -237,7 +263,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         return floorFor(width, depth, height).isPresent()
                 || wallFor(width, depth, height).isPresent()
                 || ceilingFor(width, depth, height).isPresent()
-                || potsFor(width, depth, height).isPresent();
+                || potsFor(width, depth, height).isPresent()
+                || pillarsFor(width, depth, height).isPresent();
     }
 
     /**

@@ -55,13 +55,31 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
         this(patterns, SizeGate.UNBOUNDED);
     }
 
-    public static final Codec<CeilingPatternEntry> CODEC = RecordCodecBuilder.<CeilingPatternEntry>create(
-            instance -> instance.group(
+    // Codecs.closed -- see RoomScheme.CODEC.
+    public static final Codec<CeilingPatternEntry> CODEC = Codecs.closed(
+            RecordCodecBuilder.<CeilingPatternEntry>mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(SurfacePatternEntry.CODEC.listOf(), "patterns", List.of())
                             .forGetter(CeilingPatternEntry::patterns),
                     SizeGate.MAP_CODEC.forGetter(CeilingPatternEntry::gate)
-            ).apply(instance, CeilingPatternEntry::new))
+            ).apply(instance, CeilingPatternEntry::new)))
             .flatXmap(CeilingPatternEntry::validate, CeilingPatternEntry::validate);
+
+    /**
+     * This treatment with only the patterns a room of these dimensions actually draws.
+     *
+     * <p>The ceiling's counterpart to {@code WallPatternEntry#forRoom}, and the last list in the
+     * schema to get one &mdash; wall courses, every element slot and the scheme itself could all be
+     * gated entry by entry, and {@code ceiling.patterns} arbitrarily could not.</p>
+     *
+     * <p>Returns {@code this} when nothing gated out, so the common case allocates nothing and stays
+     * {@code ==}-identical for callers that care.</p>
+     */
+    public CeilingPatternEntry forRoom(int width, int depth, int height) {
+        List<SurfacePatternEntry> fitting = patterns.stream()
+                .filter(pattern -> pattern.gate().fits(width, depth, height))
+                .toList();
+        return fitting.size() == patterns.size() ? this : new CeilingPatternEntry(fitting, gate);
+    }
 
     /**
      * Rejects an {@code orient} on a pattern type that cannot apply one.
@@ -82,6 +100,14 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                 return DataResult.error(() -> "ceiling pattern '" + pattern.type()
                         + "': orient is only meaningful on a 'border', which has an outward"
                         + " direction to face; this type has none");
+            }
+            // An inverted per-entry gate fits no room, so the pattern silently never draws --
+            // indistinguishable at generation time from one that merely never came up, which is
+            // exactly what SizeGate#validate exists to turn into a load error.
+            DataResult<SizeGate> gate = pattern.gate()
+                    .validate("ceiling pattern '" + pattern.type() + "'");
+            if (gate.error().isPresent()) {
+                return DataResult.error(() -> gate.error().orElseThrow().message());
             }
         }
         return DataResult.success(entry);
@@ -173,15 +199,29 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * difference between a stepped vault and blocky corbelling. A ring at {@code inset: 0},
      * {@code projection: 2} with a second at {@code inset: 1}, {@code projection: 1} is a two-step
      * vault: perimeter dropped twice, then once, with the centre field left at full height.</p>
+     *
+     * <h2>Per-entry gating</h2>
+     * <p>The four flat {@link SizeGate} fields work here exactly as they do on a wall course, and
+     * for the same reason: a ceiling is routinely <em>partly</em> size-dependent. A coffered lattice
+     * belongs on every ceiling in the dungeon, while the boss at its centre is a lonely dot in a
+     * small room and a projecting ring needs headroom a 5-high room does not have. With only a slot
+     * gate that is two schemes again &mdash; the duplication element gates exist to remove &mdash;
+     * or a lattice that vanishes from small rooms for no reason.</p>
+     *
+     * <p>All patterns gating out leaves an empty list, which the selector already renders as a plain
+     * ceiling.</p>
      */
     public record SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
                                       int inset, int spacing, int size, int projection,
-                                      SurfaceOrient orient, Map<String, String> properties) {
+                                      SurfaceOrient orient, Map<String, String> properties,
+                                      SizeGate gate) {
 
-        public static final Codec<SurfacePatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        // Codecs.closed -- see RoomScheme.CODEC.
+        public static final Codec<SurfacePatternEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("type").forGetter(SurfacePatternEntry::type),
-                Codec.STRING.optionalFieldOf("block").forGetter(SurfacePatternEntry::block),
-                Codec.STRING.optionalFieldOf("cornerBlock").forGetter(SurfacePatternEntry::cornerBlock),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "block").forGetter(SurfacePatternEntry::block),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock")
+                        .forGetter(SurfacePatternEntry::cornerBlock),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                         BorderSurfacePatternProvider.DEFAULT_INSET).forGetter(SurfacePatternEntry::inset),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
@@ -193,8 +233,9 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                 Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.NONE)
                         .forGetter(SurfacePatternEntry::orient),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "properties", Map.of()).forGetter(SurfacePatternEntry::properties)
-        ).apply(instance, SurfacePatternEntry::new));
+                        "properties", Map.of()).forGetter(SurfacePatternEntry::properties),
+                SizeGate.MAP_CODEC.forGetter(SurfacePatternEntry::gate)
+        ).apply(instance, SurfacePatternEntry::new)));
 
         /** Convenience for tests and simple entries: type plus its one required block, drawn flush. */
         public SurfacePatternEntry(String type, String block) {
@@ -209,6 +250,14 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                                    int inset, int spacing, int size, int projection) {
             this(type, block, cornerBlock, inset, spacing, size, projection,
                     SurfaceOrient.NONE, Map.of());
+        }
+
+        /** An ungated treatment -- drawn whenever its scheme is rolled. The shape before gates. */
+        public SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
+                                   int inset, int spacing, int size, int projection,
+                                   SurfaceOrient orient, Map<String, String> properties) {
+            this(type, block, cornerBlock, inset, spacing, size, projection, orient, properties,
+                    SizeGate.UNBOUNDED);
         }
 
         /**

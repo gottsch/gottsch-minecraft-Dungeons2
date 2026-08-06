@@ -352,6 +352,52 @@ class CeilingPatternSelectorTest {
                 entry(hanging("coffers", "minecraft:polished_andesite"))));
     }
 
+    // ---------- per-entry gates (backlog #24) ----------
+
+    private static SurfacePatternEntry gated(String type, String block, int minSize) {
+        return new SurfacePatternEntry(type, Optional.of(block), Optional.empty(),
+                BorderSurfacePatternProvider.DEFAULT_INSET, GridSurfacePatternProvider.DEFAULT_SPACING,
+                CentreSurfacePatternProvider.DEFAULT_SIZE, 0, SurfaceOrient.NONE, Map.of(),
+                new mod.gottsch.forge.dungeons2.core.config.SizeGate(0, minSize,
+                        Optional.empty(), Optional.empty()));
+    }
+
+    /**
+     * The case a slot-level gate cannot express, and the reason this was the last list in the schema
+     * still missing one: a coffered lattice belongs on every ceiling, while the boss at its centre is
+     * a lonely dot in a small room. Before this, that needed two schemes.
+     */
+    @Test
+    void aPatternGatesOutWhileTheRestOfTheListStillDraws() {
+        CeilingPatternEntry entry = entry(
+                new SurfacePatternEntry("coffers", "minecraft:polished_andesite"),
+                gated("centre", "minecraft:chiseled_stone_bricks", 11));
+
+        assertEquals(1, entry.forRoom(7, 7, 6).patterns().size(),
+                "the boss gates out of a 7-wide room");
+        assertEquals(2, entry.forRoom(13, 13, 6).patterns().size(),
+                "and is back in a 13-wide one");
+        assertEquals("coffers", entry.forRoom(7, 7, 6).patterns().get(0).type(),
+                "the lattice is the one that survives");
+    }
+
+    /** Nothing gated means the same instance back, not a copy -- the wall's rule, mirrored. */
+    @Test
+    void anUngatedListIsReturnedUnchanged() {
+        CeilingPatternEntry entry = entry(new SurfacePatternEntry("coffers", "minecraft:polished_andesite"));
+        assertSame(entry, entry.forRoom(7, 7, 6));
+    }
+
+    /** Every pattern gating out is a plain ceiling, the same as an absent slot. */
+    @Test
+    void everyPatternGatingOutIsAPlainCeiling() {
+        CeilingPatternEntry entry = entry(gated("coffers", "minecraft:polished_andesite", 11));
+        assertNull(CeilingPatternSelector.providerFor(Optional.of(entry), 7, 7, 6),
+                "nothing left to draw");
+        assertInstanceOf(ISurfacePatternProvider.class,
+                CeilingPatternSelector.providerFor(Optional.of(entry), 13, 13, 6));
+    }
+
     /** With no pattern the ceiling is exactly what it always was: every interior cell, plain. */
     @Test
     void noPatternRendersThePlainCeiling() {
