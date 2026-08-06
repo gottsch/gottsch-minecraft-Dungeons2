@@ -239,7 +239,7 @@ class WeatheringProcessorListTest {
         // shared rubble palette, so the pattern's silhouette survives weathering.
         expected.put("dungeonblocks:mossy_chiseled_stone_bricks", 0.20);
 
-        Map<String, Double> actual = composedRates();
+        Map<String, Double> actual = composedRates(ORIGINAL_TABLE_SOURCES);
         assertEquals(expected.keySet(), actual.keySet(), "Output states changed");
         expected.forEach((output, rate) -> assertEquals(rate, actual.get(output), EPSILON,
                 "Composed rate for " + output + " drifted from the table it replaces"));
@@ -258,8 +258,14 @@ class WeatheringProcessorListTest {
             remaining.put(rule.source, left * (1.0 - rule.probability));
         }
         assertFalse(perSource.isEmpty(), "No rules parsed");
-        perSource.forEach((source, total) -> assertTrue(total <= 0.30 + EPSILON,
-                source + " weathers at " + total + ", above the intended 0.30"));
+        perSource.forEach((source, total) -> {
+            // The large stone bricks arrived from dungeons2:aging on 2026-08-05 carrying the
+            // rates they already had there (44% total). The 0.30 below is the old substitution
+            // table's budget for the stone-brick family and was never a claim about them.
+            double budget = MIGRATED_SOURCES.contains(source) ? 0.45 : 0.30;
+            assertTrue(total <= budget + EPSILON,
+                    source + " weathers at " + total + ", above the intended " + budget);
+        });
     }
 
     /** One parsed rule: which block it consumes, at what conditional probability, to what. */
@@ -301,14 +307,42 @@ class WeatheringProcessorListTest {
     }
 
     /** Absolute probability each output state is produced, composing the rule chain. */
-    private static Map<String, Double> composedRates() {
+    /**
+     * Composed absolute output rates, restricted to {@code sources}.
+     *
+     * <p>Restricted because this processor stopped being about one block family on 2026-08-05, when
+     * {@code left_/right_large_stone_brick} moved here from {@code dungeons2:aging}. Summing every
+     * rule's output across all sources conflates two independent budgets -- both families produce
+     * {@code cobblestone} and {@code gravel}, so the totals would no longer correspond to any
+     * decision anyone made.</p>
+     */
+    private static Map<String, Double> composedRates(Set<String> sources) {
         Map<String, Double> rates = new LinkedHashMap<>();
         Map<String, Double> remaining = new LinkedHashMap<>();
         for (RuleEntry rule : ruleProcessorEntries()) {
+            if (!sources.contains(rule.source)) {
+                continue;
+            }
             double left = remaining.getOrDefault(rule.source, 1.0);
             rates.merge(rule.output, left * rule.probability, Double::sum);
             remaining.put(rule.source, left * (1.0 - rule.probability));
         }
         return rates;
     }
+
+    /**
+     * The blocks this processor carried when the decorator table below was written. The large stone
+     * bricks are deliberately not among them -- see {@link #composedRates}.
+     */
+    private static final Set<String> ORIGINAL_TABLE_SOURCES = Set.of(
+            "minecraft:stone_bricks",
+            "minecraft:cobblestone",
+            "minecraft:polished_andesite",
+            "minecraft:chiseled_stone_bricks",
+            "dungeonblocks:chiseled_stone_bricks");
+
+    /** Sources that moved here from aging and carry their own, larger budget. */
+    private static final Set<String> MIGRATED_SOURCES = Set.of(
+            "dungeonblocks:left_large_stone_brick",
+            "dungeonblocks:right_large_stone_brick");
 }

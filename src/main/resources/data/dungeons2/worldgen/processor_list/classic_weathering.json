@@ -31,58 +31,9 @@
       // stages as it actually lists.
       "agings": 3,
       "rules": [
-        {
-          "block": "dungeonblocks:left_large_stone_brick",
-          "output_blocks": [
-            {
-              "block": "dungeonblocks:mossy_left_large_stone_brick",
-              "probability": 0.3
-            },
-            {
-              "block": "minecraft:mossy_cobblestone",
-              "probability": 0.3
-            }
-          ]
-        },
-        {
-          "block": "dungeonblocks:left_large_stone_brick",
-          "output_blocks": [
-            {
-              "block": "minecraft:cobblestone",
-              "probability": 0.43
-            },
-            {
-              "block": "minecraft:mossy_cobblestone",
-              "probability": 0.1
-            }
-          ]
-        },
-        {
-          "block": "dungeonblocks:right_large_stone_brick",
-          "output_blocks": [
-            {
-              "block": "dungeonblocks:mossy_right_large_stone_brick",
-              "probability": 0.3
-            },
-            {
-              "block": "minecraft:mossy_cobblestone",
-              "probability": 0.3
-            }
-          ]
-        },
-        {
-          "block": "dungeonblocks:right_large_stone_brick",
-          "output_blocks": [
-            {
-              "block": "minecraft:cobblestone",
-              "probability": 0.43
-            },
-            {
-              "block": "minecraft:mossy_cobblestone",
-              "probability": 0.1
-            }
-          ]
-        },
+        // NOTE: left_/right_large_stone_brick are NOT here. They are plain full cubes with no
+        // properties to carry, which is the only thing this processor does that minecraft:rule
+        // cannot, so they live in the minecraft:rule processor below. See the block comment there.
         {
           "block": "dungeonblocks:left_large_brick",
           "output_blocks": [
@@ -406,22 +357,8 @@
             { "block": "minecraft:gravel", "probability": 0.25 }
           ]
         },
-        {
-          "block": "dungeonblocks:left_large_stone_brick",
-          "output_blocks": [
-            { "block": "minecraft:cobblestone", "probability": 0.2 },
-            { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
-          ]
-        },
-        {
-          "block": "dungeonblocks:right_large_stone_brick",
-          "output_blocks": [
-            { "block": "minecraft:cobblestone", "probability": 0.2 },
-            { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
-          ]
-        },
+        // left_/right_large_stone_brick's deep decay is in the minecraft:rule processor too --
+        // it has to be, or the two halves of their chain would live in different processors.
         {
           "block": "dungeonblocks:square_stone_brick",
           "output_blocks": [
@@ -485,7 +422,111 @@
       // fixed output_state and DROPS the input's properties, so never point one at a
       // stair/slab/wall: it would silently reset facing/half/shape. Use aging for those.
       "processor_type": "minecraft:rule",
+      // ===================================================================================
+      // left_/right_large_stone_brick live HERE, not in dungeons2:aging (moved 2026-08-05).
+      //
+      // WHY: aging exists to carry a block's PROPERTIES across a substitution -- facing, half,
+      // shape, waterlogged -- which is what stairs, slabs and walls need. A large stone brick is
+      // a plain full cube with nothing to carry, so it needs none of it.
+      //
+      // HOW THE SHAPE TRANSLATES. Both processors fall through on a probability MISS, and
+      // neither re-reads what it just produced (VanillaRuleChainingTest proves both halves):
+      //   * aging's several CHAINS on one block  ->  several rules here, in order.
+      //   * aging's STAGES within one chain      ->  would need a SECOND minecraft:rule
+      //                                             processor; a later rule in THIS one never
+      //                                             sees an earlier rule's output.
+      // Rather than add a second processor, the four outcomes are flattened into one ordered
+      // run of rules. That is exactly equivalent: aging only ever places the DEEPEST stage a
+      // block reached, so the intermediate states were never visible in the world anyway.
+      //
+      // THE NUMBERS ARE CONDITIONAL, like the ones below them. Each rule is only reached when
+      // every rule above it missed, so the absolute rates are:
+      //
+      //     mossy 30%    cobblestone 9.8%    dirt 3.15%    gravel 1.05%    unchanged 56%
+      //
+      // which is what the aging chains composed to before the move -- the conversion is a
+      // no-op in the world. AgingChainRatesTest#largeStoneBrickKeepsItsRatesAfterTheMoveToVanillaRules
+      // recomputes this from the file, so retuning one number without the others fails the build.
+      //
+      // A NOTE ON OUTPUT BLOCKS: do not add a later rule keyed on minecraft:cobblestone hoping
+      // to continue this chain. It would not catch the cobblestone produced here (first match
+      // wins and returns), and it WOULD catch cobblestone that arrived as input -- the corridor
+      // floor is minecraft:cobblestone. That cross-contamination is the one hazard aging does
+      // not have, because its stages stay inside their own chain.
+      // ===================================================================================
       "rules": [
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.3
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "dungeonblocks:mossy_left_large_stone_brick" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.14
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.0523
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:dirt" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.0184
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:gravel" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.3
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "dungeonblocks:mossy_right_large_stone_brick" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.14
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.0523
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:dirt" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.0184
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:gravel" }
+        },
         {
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",

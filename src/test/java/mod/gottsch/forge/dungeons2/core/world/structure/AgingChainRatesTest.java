@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -62,16 +63,52 @@ class AgingChainRatesTest {
 
     private static final String AGING_TYPE = "dungeons2:aging";
 
-    /** Blocks the deep-decay chains are authored for. */
+    /**
+     * Blocks the deep-decay chains are authored for.
+     *
+     * <p>{@code left_/right_large_stone_brick} are deliberately <strong>absent</strong>: as of
+     * 2026-08-05 they weather through the {@code minecraft:rule} processor instead, being plain
+     * full cubes with no properties for {@code AgingProcessor} to carry. Their rates are asserted by
+     * {@link #largeStoneBrickKeepsItsRatesAfterTheMoveToVanillaRules} against that processor.
+     *
+     * <p><strong>Moving a block out of aging silently removes it from every assertion in this
+     * class</strong>, which is the trap this note exists to close. Anything else that migrates needs
+     * a rates test on the other side before it leaves, not after.
+     */
     private static final Set<String> DEEP_DECAY_SOURCES = Set.of(
             "minecraft:stone_bricks",
-            "dungeonblocks:left_large_stone_brick",
-            "dungeonblocks:right_large_stone_brick",
             "dungeonblocks:square_stone_brick",
             "dungeonblocks:left_large_brick",
             "dungeonblocks:right_large_brick",
             "dungeonblocks:square_brick",
             "dungeonblocks:large_bricks");
+
+    /**
+     * Sources allowed to decay past {@link #DIRT_RATE}/{@link #GRAVEL_RATE}, because they are
+     * <strong>wall-only</strong> blocks.
+     *
+     * <p>The budget the other sources are held to exists for one reason: {@code classic} uses
+     * {@code minecraft:stone_bricks} for the wall, the floor <em>and</em> the ceiling, so a rule
+     * cannot be scoped to the surfaces where gravel is harmless (Backlog #15). Gravel in a ceiling
+     * rains debris; gravel in a wall does nothing.</p>
+     *
+     * <p>The large stone bricks are never a ceiling: {@code motif_config/classic/base.json} sets
+     * {@code ceiling.ceiling} to plain stone bricks, and these two appear only in authored wall
+     * courses. So the reason for the cap does not apply to them, and Mark's call on 2026-08-05 was
+     * to let their rate stand at roughly 3.2% dirt / 1.1% gravel rather than retune it.</p>
+     *
+     * <p><strong>If either block is ever used as a ceiling</strong> -- a motif's
+     * {@code ceiling.ceiling}, or a {@code border}/{@code coffers} ceiling pattern naming it -- take
+     * it out of this set, because the exemption is about where the block lands, not about the
+     * block.</p>
+     */
+    private static final Set<String> WALL_ONLY_SOURCES = Set.of(
+            "dungeonblocks:left_large_stone_brick",
+            "dungeonblocks:right_large_stone_brick");
+
+    /** The looser bound the wall-only sources are held to: still bounded, just not ceiling-safe. */
+    private static final double WALL_ONLY_MAX_DIRT = 0.05;
+    private static final double WALL_ONLY_MAX_FALLING = 0.02;
 
     /** The composed rates the shipped numbers work out to. Tolerance covers 4dp rounding. */
     private static final double DIRT_RATE = 0.0180;
@@ -162,11 +199,118 @@ class AgingChainRatesTest {
     void deepDecayProducesDirtAndGravelAtTheDocumentedRates() {
         for (String source : DEEP_DECAY_SOURCES) {
             Map<String, Double> rates = composedRates(source);
-            assertEquals(DIRT_RATE, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON,
-                    source + " dirt rate drifted");
-            assertEquals(GRAVEL_RATE, rates.getOrDefault("minecraft:gravel", 0.0), EPSILON,
-                    source + " gravel rate drifted");
+            double dirt = rates.getOrDefault("minecraft:dirt", 0.0);
+            double gravel = rates.getOrDefault("minecraft:gravel", 0.0);
+
+            if (WALL_ONLY_SOURCES.contains(source)) {
+                // Bounded, not pinned -- see WALL_ONLY_SOURCES. The point is that it stays a
+                // minority outcome, not that it hits a particular number.
+                assertTrue(dirt <= WALL_ONLY_MAX_DIRT + EPSILON,
+                        source + " dirt " + dirt + " exceeds the wall-only bound "
+                                + WALL_ONLY_MAX_DIRT);
+                assertTrue(gravel <= WALL_ONLY_MAX_FALLING + EPSILON,
+                        source + " gravel " + gravel + " exceeds the wall-only bound "
+                                + WALL_ONLY_MAX_FALLING);
+                continue;
+            }
+            assertEquals(DIRT_RATE, dirt, EPSILON, source + " dirt rate drifted");
+            assertEquals(GRAVEL_RATE, gravel, EPSILON, source + " gravel rate drifted");
         }
+    }
+
+    /**
+     * The composed rates for the two blocks that moved to {@code minecraft:rule} on 2026-08-05.
+     *
+     * <p>The move had to be a <strong>no-op in the world</strong>, so this recomputes the rates from
+     * the shipped file and checks them against what the aging chains produced before it. The
+     * arithmetic is the same shape as {@link #composedRates}: rules are tried in order and each is
+     * reached only when every earlier one missed. It differs in one way that matters -- a
+     * {@code minecraft:rule} processor never re-reads its own output, so there are no stages to
+     * compound, only alternatives. That is why the four probabilities in the file look unrelated to
+     * the aging numbers they replaced.
+     */
+    @Test
+    void largeStoneBrickKeepsItsRatesAfterTheMoveToVanillaRules() {
+        for (String source : List.of("dungeonblocks:left_large_stone_brick",
+                "dungeonblocks:right_large_stone_brick")) {
+            Map<String, Double> rates = vanillaRuleRates(source);
+            String mossy = source.replace("dungeonblocks:", "dungeonblocks:mossy_");
+
+            assertEquals(0.300, rates.getOrDefault(mossy, 0.0), EPSILON, source + " -> mossy");
+            assertEquals(0.098, rates.getOrDefault("minecraft:cobblestone", 0.0), EPSILON,
+                    source + " -> cobblestone");
+            assertEquals(0.0315, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON,
+                    source + " -> dirt");
+            assertEquals(0.0105, rates.getOrDefault("minecraft:gravel", 0.0), EPSILON,
+                    source + " -> gravel");
+
+            double falling = rates.getOrDefault("minecraft:gravel", 0.0);
+            assertTrue(falling <= WALL_ONLY_MAX_FALLING + EPSILON,
+                    source + " gravel " + falling + " exceeds the wall-only bound");
+        }
+    }
+
+    /**
+     * Absolute probability of each output for {@code source} in the {@code minecraft:rule}
+     * processor. Rules are tried in authored order and a probability miss falls through to the next,
+     * so rule <i>k</i> fires with {@code p_k} times the product of {@code (1 - p_j)} before it.
+     */
+    private static Map<String, Double> vanillaRuleRates(String source) {
+        JsonObject processor = null;
+        for (var element : readJson().getAsJsonArray("processors")) {
+            JsonObject candidate = element.getAsJsonObject();
+            if ("minecraft:rule".equals(candidate.get("processor_type").getAsString())) {
+                processor = candidate;
+            }
+        }
+        assertNotNull(processor, "no minecraft:rule processor in the shipped list");
+
+        Map<String, Double> rates = new LinkedHashMap<>();
+        double remaining = 1.0;
+        for (var element : processor.getAsJsonArray("rules")) {
+            JsonObject input = element.getAsJsonObject().getAsJsonObject("input_predicate");
+            if (!input.has("block") || !source.equals(input.get("block").getAsString())) {
+                continue;
+            }
+            double p = input.has("probability") ? input.get("probability").getAsDouble() : 1.0;
+            String out = element.getAsJsonObject().getAsJsonObject("output_state")
+                    .get("Name").getAsString();
+            rates.merge(out, remaining * p, Double::sum);
+            remaining *= (1.0 - p);
+        }
+        return rates;
+    }
+
+    /**
+     * The conditional-probability trap, stated as a test so it cannot be re-learned the hard way:
+     * <strong>rules are tried in order and a later one only fires when the earlier ones missed</strong>,
+     * so an authored probability is never the rate you get, and deleting a rule makes everything
+     * below it fire MORE.
+     *
+     * <p>Learned twice in one day on 2026-08-05. First when the middle aging chain was deleted from
+     * the large stone bricks to make them weather less: it did, but it also stopped shielding the
+     * deep-decay chain, which went from being reached 0.399 of the time to 0.7 and roughly doubled
+     * dirt and gravel. Then again when those blocks moved to {@code minecraft:rule}, where the same
+     * arithmetic applies to a flat list of rules.</p>
+     *
+     * <p>Asserted against the migrated block because it is the one whose four rules are a single
+     * ordered run on one source, which is exactly the shape that looks absolute and is not.</p>
+     */
+    @Test
+    void authoredProbabilitiesAreConditionalNotAbsolute() {
+        Map<String, Double> rates = vanillaRuleRates("dungeonblocks:left_large_stone_brick");
+
+        // Authored 0.14, 0.0523, 0.0184 -- every one of them lands lower than it reads.
+        assertTrue(rates.get("minecraft:cobblestone") < 0.14 - EPSILON,
+                "cobblestone authored at 0.14 must compose to less: " + rates);
+        assertTrue(rates.get("minecraft:dirt") < 0.0523 - EPSILON,
+                "dirt authored at 0.0523 must compose to less: " + rates);
+        assertTrue(rates.get("minecraft:gravel") < 0.0184,
+                "gravel authored at 0.0184 must compose to less: " + rates);
+
+        // And the first rule is the one exception: nothing shields it, so it lands as authored.
+        assertEquals(0.30, rates.get("dungeonblocks:mossy_left_large_stone_brick"), EPSILON,
+                "the first rule in a run has nothing above it and does land at its authored rate");
     }
 
     @Test
@@ -231,12 +375,16 @@ class AgingChainRatesTest {
         Set<String> falling = Set.of("minecraft:gravel", "minecraft:sand",
                 "minecraft:red_sand", "minecraft:suspicious_gravel", "minecraft:suspicious_sand");
         for (String source : DEEP_DECAY_SOURCES) {
+            // A wall-only block cannot rain anything onto a floor, so the ceiling-debris budget is
+            // not the bound that applies to it -- see WALL_ONLY_SOURCES.
+            double budget = WALL_ONLY_SOURCES.contains(source)
+                    ? WALL_ONLY_MAX_FALLING : MAX_FALLING_RATE;
             double total = composedRates(source).entrySet().stream()
                     .filter(entry -> falling.contains(entry.getKey()))
                     .mapToDouble(Map.Entry::getValue).sum();
-            assertTrue(total <= MAX_FALLING_RATE + EPSILON,
+            assertTrue(total <= budget + EPSILON,
                     source + " decays to falling blocks " + total + " of the time -- above the "
-                            + MAX_FALLING_RATE + " ceiling-debris budget");
+                            + budget + " budget");
         }
     }
 
