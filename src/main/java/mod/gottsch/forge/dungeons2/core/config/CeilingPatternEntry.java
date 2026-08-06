@@ -18,12 +18,16 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BorderSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CentreSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.GridSurfacePatternProvider;
+import net.minecraft.util.StringRepresentable;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -51,11 +55,73 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
         this(patterns, SizeGate.UNBOUNDED);
     }
 
-    public static final Codec<CeilingPatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(SurfacePatternEntry.CODEC.listOf(), "patterns", List.of())
-                    .forGetter(CeilingPatternEntry::patterns),
-            SizeGate.MAP_CODEC.forGetter(CeilingPatternEntry::gate)
-    ).apply(instance, CeilingPatternEntry::new));
+    public static final Codec<CeilingPatternEntry> CODEC = RecordCodecBuilder.<CeilingPatternEntry>create(
+            instance -> instance.group(
+                    Codecs.strictOptionalFieldOf(SurfacePatternEntry.CODEC.listOf(), "patterns", List.of())
+                            .forGetter(CeilingPatternEntry::patterns),
+                    SizeGate.MAP_CODEC.forGetter(CeilingPatternEntry::gate)
+            ).apply(instance, CeilingPatternEntry::new))
+            .flatXmap(CeilingPatternEntry::validate, CeilingPatternEntry::validate);
+
+    /**
+     * Rejects an {@code orient} on a pattern type that cannot apply one.
+     *
+     * <p>Only {@code border} orients, because only a ring has an outward direction to orient
+     * <em>to</em>: a {@code coffers} rib is a line with open room on both sides, and a {@code centre}
+     * boss is a solid block with no edge at all. Neither has a defensible answer, so neither invents
+     * one.</p>
+     *
+     * <p>Failing the load rather than ignoring the field is the same rule the strict codecs in this
+     * package follow. An ignored {@code orient} would produce a ceiling that is exactly as correct as
+     * it was before the author wrote the line &mdash; a silent nothing, and the hardest kind of
+     * authoring mistake to see, since the pattern itself still draws.</p>
+     */
+    private static DataResult<CeilingPatternEntry> validate(CeilingPatternEntry entry) {
+        for (SurfacePatternEntry pattern : entry.patterns()) {
+            if (pattern.orient() != SurfaceOrient.NONE && !pattern.orientable()) {
+                return DataResult.error(() -> "ceiling pattern '" + pattern.type()
+                        + "': orient is only meaningful on a 'border', which has an outward"
+                        + " direction to face; this type has none");
+            }
+        }
+        return DataResult.success(entry);
+    }
+
+    /**
+     * Which way a pattern turns a block that has a {@code facing} property &mdash; the ceiling's
+     * counterpart to a wall course's {@code CourseOrient}.
+     *
+     * <p>Named for the ring rather than for the room's walls, because a ring at {@code inset: 2} has
+     * no wall to be toward: {@code toward_wall} would be a lie at every inset but zero. Outward means
+     * a directional block's solid mass sits on the ring's outer side &mdash; for stairs, the vault
+     * springing off the perimeter and stepping down into the room.</p>
+     *
+     * <p><strong>Authors of {@code dungeonblocks} trim:</strong> its directional mouldings are
+     * modelled facing-inverted relative to vanilla stairs, so the same visual result needs the
+     * opposite value here, exactly as it does for a wall course. See {@code CourseOrient}'s note.</p>
+     */
+    public enum SurfaceOrient implements StringRepresentable {
+        /** Leave {@code facing} alone -- for full cubes, or when {@code properties} sets it. */
+        NONE("none"),
+        /** Solid mass toward the ring's outer edge: a springing, a soffit leaning on the wall. */
+        OUTWARD("outward"),
+        /** Solid mass toward the ring's middle -- an inverted cove, stepping up to the centre. */
+        INWARD("inward");
+
+        private final String name;
+
+        SurfaceOrient(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return name;
+        }
+
+        /** Failing, for the same reason {@code CourseAnchor.CODEC} is: the set is closed and tiny. */
+        public static final Codec<SurfaceOrient> CODEC = StringRepresentable.fromEnum(SurfaceOrient::values);
+    }
 
     /**
      * One treatment. {@code type} is a plain string discriminator, same as
@@ -94,9 +160,23 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *
      * <p>Headroom is the scheme's problem, not this record's: a rib hanging into a 5-high room
      * leaves two interior rows, so a projecting ceiling wants a {@code minHeight}.</p>
+     *
+     * <h2>orient and properties &mdash; what makes a stepped vault a vault</h2>
+     * <p>{@code properties} applies author-named block properties to both {@code block} and
+     * {@code cornerBlock}, exactly as a wall course's does and for the same reason: they are one
+     * block family, and a corner stair that missed its {@code half=top} is a very quiet defect. It
+     * applies to every pattern type, since it says nothing about geometry.</p>
+     *
+     * <p>{@code orient} ({@link SurfaceOrient}) is <strong>{@code border} only</strong>, and a
+     * load error elsewhere &mdash; see {@link CeilingPatternEntry#validate}. Together the two turn a
+     * ring of full cubes into a ring of stairs springing off the room's edge, which is the
+     * difference between a stepped vault and blocky corbelling. A ring at {@code inset: 0},
+     * {@code projection: 2} with a second at {@code inset: 1}, {@code projection: 1} is a two-step
+     * vault: perimeter dropped twice, then once, with the centre field left at full height.</p>
      */
     public record SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
-                                      int inset, int spacing, int size, int projection) {
+                                      int inset, int spacing, int size, int projection,
+                                      SurfaceOrient orient, Map<String, String> properties) {
 
         public static final Codec<SurfacePatternEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("type").forGetter(SurfacePatternEntry::type),
@@ -109,7 +189,11 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "size",
                         CentreSurfacePatternProvider.DEFAULT_SIZE).forGetter(SurfacePatternEntry::size),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, WallPatternEntry.MAX_PROJECTION),
-                        "projection", 0).forGetter(SurfacePatternEntry::projection)
+                        "projection", 0).forGetter(SurfacePatternEntry::projection),
+                Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.NONE)
+                        .forGetter(SurfacePatternEntry::orient),
+                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
+                        "properties", Map.of()).forGetter(SurfacePatternEntry::properties)
         ).apply(instance, SurfacePatternEntry::new));
 
         /** Convenience for tests and simple entries: type plus its one required block, drawn flush. */
@@ -119,5 +203,27 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                     GridSurfacePatternProvider.DEFAULT_SPACING,
                     CentreSurfacePatternProvider.DEFAULT_SIZE, 0);
         }
+
+        /** The shape before {@code orient}/{@code properties} existed: an unoriented plain pattern. */
+        public SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
+                                   int inset, int spacing, int size, int projection) {
+            this(type, block, cornerBlock, inset, spacing, size, projection,
+                    SurfaceOrient.NONE, Map.of());
+        }
+
+        /**
+         * Whether this type has an outward direction for {@link #orient} to mean anything by. Only
+         * {@code border} does; see {@link CeilingPatternEntry#validate}.
+         */
+        public boolean orientable() {
+            return BORDER.equals(type().trim().toLowerCase(Locale.ROOT));
+        }
     }
+
+    /**
+     * The one orientable pattern type. Lower-cased and compared after trimming, matching how
+     * {@code CeilingPatternSelector} dispatches, so validation and dispatch cannot disagree about
+     * whether {@code " Border "} is a border.
+     */
+    public static final String BORDER = "border";
 }

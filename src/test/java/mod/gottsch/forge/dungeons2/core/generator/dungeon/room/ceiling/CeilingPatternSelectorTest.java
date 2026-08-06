@@ -1,6 +1,10 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfacePatternEntry;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -17,12 +21,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.properties.Half;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -66,6 +73,92 @@ class CeilingPatternSelectorTest {
                 entry(new SurfacePatternEntry("border", "minecraft:polished_andesite"))));
         assertInstanceOf(CentreSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
                 entry(new SurfacePatternEntry("centre", "minecraft:chiseled_stone_bricks"))));
+    }
+
+    // ---------- orient and properties ----------
+
+    /** Flush (projection 0), so {@code plan()} is the layer under test rather than an empty one. */
+    private static SurfacePatternEntry ring(SurfaceOrient orient, Map<String, String> properties) {
+        return new SurfacePatternEntry("border", Optional.of("minecraft:stone_brick_stairs"),
+                Optional.empty(), 0, 3, 1, 0, orient, properties);
+    }
+
+    private static SurfacePlan planOf(SurfacePatternEntry pattern, int uSize, int vSize) {
+        return CeilingPatternSelector.toProvider(entry(pattern))
+                .plan(uSize, vSize, Direction.DOWN, RandomSource.create(0L));
+    }
+
+    /**
+     * The end-to-end shape of a vault springing: the selector has to carry {@code orient} through to
+     * the provider, and the provider has to have the surface's axes to make sense of it. A break
+     * anywhere in that chain leaves every cell at the block's default facing.
+     */
+    @Test
+    void orientReachesTheProviderAndTurnsEachSideOfTheRing() {
+        SurfacePlan plan = planOf(ring(SurfaceOrient.OUTWARD, Map.of()), 7, 7);
+        assertEquals(Direction.NORTH, plan.get(3, 0).getValue(StairBlock.FACING));
+        assertEquals(Direction.SOUTH, plan.get(3, 6).getValue(StairBlock.FACING));
+        assertEquals(Direction.WEST, plan.get(0, 3).getValue(StairBlock.FACING));
+        assertEquals(Direction.EAST, plan.get(6, 3).getValue(StairBlock.FACING));
+    }
+
+    /**
+     * {@code properties} must reach the corner cells too, not just the edges. A corner stair missing
+     * its {@code half=top} sits at the wrong end of the block and reads as a hole in the springing --
+     * the same quiet defect a wall course's shared property map exists to prevent.
+     */
+    @Test
+    void propertiesApplyToTheCornerBlockAsWellAsTheEdge() {
+        SurfacePlan plan = planOf(ring(SurfaceOrient.OUTWARD, Map.of("half", "top")), 7, 7);
+        assertEquals(Half.TOP, plan.get(3, 0).getValue(StairBlock.HALF), "edge");
+        assertEquals(Half.TOP, plan.get(0, 0).getValue(StairBlock.HALF), "corner");
+    }
+
+    /** A property the block does not have is ignored rather than fatal, per BlockStateCodec. */
+    @Test
+    void anUnknownPropertyIsIgnored() {
+        SurfacePatternEntry pattern = new SurfacePatternEntry("coffers",
+                Optional.of("minecraft:polished_andesite"), Optional.empty(), 0, 3, 1, 0,
+                SurfaceOrient.NONE, Map.of("half", "top"));
+        assertSame(Blocks.POLISHED_ANDESITE.defaultBlockState(), planOf(pattern, 7, 7).get(3, 3));
+    }
+
+    /**
+     * A ring authored before {@code orient} existed must come out byte-identical. This is the
+     * regression that matters most here: {@code classic} already ships border and coffer patterns,
+     * and every one of them decodes through the widened record.
+     */
+    @Test
+    void anUnorientedRingIsUnchangedFromBeforeTheFeature() {
+        SurfacePlan plan = planOf(new SurfacePatternEntry("border", "minecraft:polished_andesite"), 7, 7);
+        assertSame(Blocks.POLISHED_ANDESITE.defaultBlockState(), plan.get(3, 0));
+        assertSame(Blocks.POLISHED_ANDESITE.defaultBlockState(), plan.get(0, 0));
+    }
+
+    /**
+     * {@code orient} on a type with no outward direction is a <strong>load error</strong>, not a
+     * silently ignored field. An ignored one produces a ceiling exactly as correct as it was before
+     * the author wrote the line, which is the hardest authoring mistake to notice -- the pattern
+     * still draws.
+     */
+    @Test
+    void orientOnANonBorderPatternFailsTheLoad() {
+        SurfacePatternEntry coffers = new SurfacePatternEntry("coffers",
+                Optional.of("minecraft:polished_andesite"), Optional.empty(), 0, 3, 1, 0,
+                SurfaceOrient.OUTWARD, Map.of());
+        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(
+                JsonOps.INSTANCE, new CeilingPatternEntry(List.of(coffers)));
+        assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
+        assertTrue(encoded.error().get().message().contains("orient"),
+                "the message should name the offending field: " + encoded.error().get().message());
+    }
+
+    /** The same field on a border is of course fine -- the guard must not be a blanket ban. */
+    @Test
+    void orientOnABorderLoadsCleanly() {
+        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(
+                JsonOps.INSTANCE, new CeilingPatternEntry(List.of(ring(SurfaceOrient.OUTWARD, Map.of()))));
+        assertTrue(encoded.error().isEmpty(), "unexpected error: " + encoded.error());
     }
 
     /** Both spellings, because half the world writes one and half the other. */

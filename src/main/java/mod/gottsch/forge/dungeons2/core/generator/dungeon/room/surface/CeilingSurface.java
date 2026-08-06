@@ -57,6 +57,27 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
     }
 
     /**
+     * The world direction {@code u} advances in, and the one {@code v} does &mdash; read straight off
+     * {@link #xAt} and {@link #zAt}, which add {@code u} to X and {@code v} to Z.
+     *
+     * <h2>Why a pattern needs these when a wall pattern does not</h2>
+     * <p>{@link #facing()} answers "which way does this surface face", which is all a wall pattern
+     * ever needs: every cell of one wall run faces the same way, so the run carries the answer. A
+     * ceiling has no runs. Its cells face DOWN uniformly, and the direction that actually matters to
+     * a ring &mdash; which way is <em>outward</em> &mdash; differs per cell and is a horizontal
+     * direction that {@code facing()} cannot express at all.</p>
+     *
+     * <p>Rather than hand a provider this whole record (which would let it read {@code ceilingY} and
+     * stop being surface-generic), the two axis directions travel to it as constructor arguments.
+     * They live here because this is the class whose coordinate mapping defines them: change
+     * {@link #xAt} or {@link #zAt} and these must change with it.</p>
+     */
+    public static final Direction U_DIRECTION = Direction.EAST;
+
+    /** See {@link #U_DIRECTION}. */
+    public static final Direction V_DIRECTION = Direction.SOUTH;
+
+    /**
      * The ceiling of a room. A room with no interior yields a zero extent, which simply emits
      * nothing &mdash; the same graceful degradation an empty pattern always has here.
      */

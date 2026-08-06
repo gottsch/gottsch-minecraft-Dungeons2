@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfacePatternEntry;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BorderSurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CeilingSurface;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CentreSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.GridSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
@@ -29,6 +30,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePl
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -90,15 +92,23 @@ public final class CeilingPatternSelector {
         if (block == null) {
             return null;
         }
+        // Author-named properties are applied here, once, to every state this pattern will place --
+        // they are one block family (a ring of stairs and its corner stair both want half=top), the
+        // same rule a wall course's `properties` follows.
+        BlockState state = BlockStateCodec.withProperties(block.defaultBlockState(), pattern.properties());
         return switch (pattern.type().trim().toLowerCase(Locale.ROOT)) {
-            case "border" -> {
+            case CeilingPatternEntry.BORDER -> {
                 Block corner = pattern.cornerBlock().map(BlockStateCodec::blockOrNull).orElse(block);
                 yield corner == null ? null : new BorderSurfacePatternProvider(
-                        pattern.inset(), block.defaultBlockState(), corner.defaultBlockState());
+                        pattern.inset(), state,
+                        BlockStateCodec.withProperties(corner.defaultBlockState(), pattern.properties()),
+                        pattern.orient(),
+                        // The ring's outward direction is per cell, so it needs the surface's axes;
+                        // this selector only ever builds for a ceiling, so it knows them.
+                        CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
             }
-            case "coffers" -> new GridSurfacePatternProvider(pattern.spacing(), block.defaultBlockState());
-            case "centre", "center" -> new CentreSurfacePatternProvider(
-                    pattern.size(), block.defaultBlockState());
+            case "coffers" -> new GridSurfacePatternProvider(pattern.spacing(), state);
+            case "centre", "center" -> new CentreSurfacePatternProvider(pattern.size(), state);
             default -> null; // unrecognized type: skipped
         };
     }

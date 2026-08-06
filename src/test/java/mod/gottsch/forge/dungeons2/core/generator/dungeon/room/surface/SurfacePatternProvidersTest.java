@@ -1,9 +1,11 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface;
 
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Direction;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -63,6 +65,102 @@ class SurfacePatternProvidersTest {
     void aDegenerateExtentStillProducesAValidPlan() {
         SurfacePlan plan = new BorderSurfacePatternProvider(0, edge, corner).plan(1, 4, DOWN);
         assertEquals(4, plan.markedCells());
+    }
+
+    // ---------- border orientation ----------
+
+    private static BorderSurfacePatternProvider orientedRing(int inset, SurfaceOrient orient) {
+        BlockState stairs = Blocks.STONE_BRICK_STAIRS.defaultBlockState();
+        return new BorderSurfacePatternProvider(inset, stairs, stairs, orient,
+                CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
+    }
+
+    private static Direction facingAt(SurfacePlan plan, int u, int v) {
+        return plan.get(u, v).getValue(StairBlock.FACING);
+    }
+
+    /**
+     * Each side of the ring faces off its own edge. This is the whole point of the feature: without
+     * it every cell keeps one facing and the ring reads as blocky corbelling rather than as a vault
+     * springing off the room's perimeter.
+     */
+    @Test
+    void eachSideOfAnOutwardRingFacesOffItsOwnEdge() {
+        SurfacePlan plan = orientedRing(0, SurfaceOrient.OUTWARD).plan(7, 7, DOWN);
+        // u advances +X (east), v advances +Z (south) -- see CeilingSurface.U_DIRECTION.
+        assertEquals(Direction.WEST, facingAt(plan, 0, 3), "the u=0 side is the west edge");
+        assertEquals(Direction.EAST, facingAt(plan, 6, 3), "the u=max side is the east edge");
+        assertEquals(Direction.NORTH, facingAt(plan, 3, 0), "the v=0 side is the north edge");
+        assertEquals(Direction.SOUTH, facingAt(plan, 3, 6), "the v=max side is the south edge");
+    }
+
+    /** {@code inward} is the same ring turned through 180 degrees, not a different ring. */
+    @Test
+    void inwardIsTheExactOppositeOfOutward() {
+        SurfacePlan out = orientedRing(0, SurfaceOrient.OUTWARD).plan(7, 7, DOWN);
+        SurfacePlan in = orientedRing(0, SurfaceOrient.INWARD).plan(7, 7, DOWN);
+        assertEquals(out.markedCells(), in.markedCells(), "orientation must not change the shape");
+        for (int u = 0; u < 7; u++) {
+            for (int v = 0; v < 7; v++) {
+                if (out.get(u, v) != null) {
+                    assertEquals(facingAt(out, u, v).getOpposite(), facingAt(in, u, v),
+                            "cell (" + u + "," + v + ")");
+                }
+            }
+        }
+    }
+
+    /**
+     * A corner sits on two edges and must pick one <strong>deterministically</strong>. Lowest
+     * {@link Direction} ordinal wins (NORTH 2, SOUTH 3, WEST 4, EAST 5), the same tie-break the
+     * corridor arch uses -- see the planner's EnumMap fix for what a run-dependent choice costs.
+     */
+    @Test
+    void aCornerPicksItsFacingDeterministicallyByLowestOrdinal() {
+        SurfacePlan plan = orientedRing(0, SurfaceOrient.OUTWARD).plan(7, 7, DOWN);
+        assertEquals(Direction.NORTH, facingAt(plan, 0, 0), "north-west: NORTH(2) beats WEST(4)");
+        assertEquals(Direction.NORTH, facingAt(plan, 6, 0), "north-east: NORTH(2) beats EAST(5)");
+        assertEquals(Direction.SOUTH, facingAt(plan, 0, 6), "south-west: SOUTH(3) beats WEST(4)");
+        assertEquals(Direction.SOUTH, facingAt(plan, 6, 6), "south-east: SOUTH(3) beats EAST(5)");
+
+        SurfacePlan again = orientedRing(0, SurfaceOrient.OUTWARD).plan(7, 7, DOWN);
+        assertEquals(facingAt(plan, 0, 0), facingAt(again, 0, 0), "same input, same answer");
+    }
+
+    /** An inset ring orients off its own edges, not the surface's -- there is no wall out there. */
+    @Test
+    void anInsetRingOrientsOffItsOwnEdgesNotTheSurfaces() {
+        SurfacePlan plan = orientedRing(1, SurfaceOrient.OUTWARD).plan(7, 7, DOWN);
+        assertEquals(Direction.WEST, facingAt(plan, 1, 3));
+        assertEquals(Direction.EAST, facingAt(plan, 5, 3));
+        assertNull(plan.get(0, 3), "the outermost ring is not this ring");
+    }
+
+    /**
+     * {@code none} is the shipped behaviour of every ring authored before orientation existed, and
+     * must stay byte-identical -- the same instance back, not an equal one.
+     */
+    @Test
+    void anUnorientedRingIsUntouched() {
+        BlockState stairs = Blocks.STONE_BRICK_STAIRS.defaultBlockState();
+        SurfacePlan plan = new BorderSurfacePatternProvider(0, stairs, stairs).plan(7, 7, DOWN);
+        assertSame(stairs, plan.get(3, 0));
+        assertSame(stairs, plan.get(0, 0), "corners too");
+    }
+
+    /**
+     * A ring of full cubes asked to orient keeps its block rather than throwing. Same lenient rule
+     * {@code BlockStateCodec.withProperties} applies everywhere else: a datapack naming a facing on
+     * a block that has none is an authoring slip, not a crash in worldgen.
+     */
+    @Test
+    void orientingABlockWithNoFacingLeavesItAlone() {
+        BorderSurfacePatternProvider provider = new BorderSurfacePatternProvider(
+                0, edge, corner, SurfaceOrient.OUTWARD,
+                CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
+        SurfacePlan plan = provider.plan(5, 5, DOWN);
+        assertSame(edge, plan.get(2, 0));
+        assertSame(corner, plan.get(0, 0));
     }
 
     // ---------- coffers ----------
