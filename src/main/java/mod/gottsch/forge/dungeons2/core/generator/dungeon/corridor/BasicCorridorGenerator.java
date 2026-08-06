@@ -424,6 +424,22 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * <p>A course that anchors outside the column is <strong>dropped, not clamped</strong> &mdash;
      * the same clipping convention a room's courses get, and it is what lets one authored style
      * carry a plinth and a crown without knowing whether this floor rolled 5 high or 8.</p>
+     *
+     * <h2>Anchors address the VISIBLE wall, not the whole column</h2>
+     * <p>A wall column spans {@code floorY .. floorY + height - 1}, but its first and last rows can
+     * never be seen. Row 0 sits at the same level as the corridor's own floor plane, walled in by
+     * that floor beside it and by the column above it; row {@code height - 1} sits beside the
+     * ceiling plane. Measured across 4 MEDIUM dungeons: <strong>0 of 5,279</strong> wall cells at
+     * row 0 have a single air neighbour, and the top row is the same. The rows a player can
+     * actually see are {@code 1 .. height - 2}.</p>
+     *
+     * <p>So {@code bottom}/0 is the lowest <em>visible</em> row and {@code top}/0 the highest. That
+     * also makes this identical to a room's convention &mdash; {@code WallSurface.emit} writes at
+     * {@code floorY + 1 + v}, so a room's {@code v} is this row minus one &mdash; which matters
+     * because the two share {@link WallPatternEntry.CourseEntry} verbatim. Until Aug 2026 they did
+     * not agree, and one authored course rendered in a room and vanished in a corridor. It was
+     * reported as "large brick isn't in the corridors at all". It was there, in the one row nothing
+     * can see.</p>
      */
     private List<Course> courses(CorridorStyle style, int height) {
         if (style.courses().isEmpty()) {
@@ -432,9 +448,9 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         List<Course> resolved = new ArrayList<>(style.courses().size());
         for (WallPatternEntry.CourseEntry entry : style.courses()) {
             int row = entry.anchor() == WallPatternEntry.CourseAnchor.TOP
-                    ? height - 1 - entry.offset()
-                    : entry.offset();
-            if (row < 0 || row >= height) {
+                    ? height - 2 - entry.offset()
+                    : 1 + entry.offset();
+            if (row < 1 || row > height - 2) {
                 continue;
             }
             resolved.add(new Course(

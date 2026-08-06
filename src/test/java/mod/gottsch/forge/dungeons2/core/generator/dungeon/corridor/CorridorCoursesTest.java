@@ -134,27 +134,61 @@ class CorridorCoursesTest {
         }
     }
 
+    /**
+     * {@code bottom}/0 is the lowest row a player can <strong>see</strong>, which is
+     * {@code floorY + 1}, not {@code floorY}.
+     *
+     * <p>This asserted row 0 until Aug 2026, under the name
+     * {@code aBottomAnchoredCourseLandsOnTheFloorRow} -- an accurate description of what the code
+     * did and a complete miss on whether it was any use. A wall column's row 0 is level with the
+     * corridor's own floor plane: floor beside it, more wall above it, terrain behind. It has no
+     * exposed face at all, measured at 0 of 5,279 cells across 4 MEDIUM dungeons. Every corridor
+     * course `classic` authored at {@code bottom}/0 was being built and buried, which is how it was
+     * reported: "large brick isn't in the corridors at all".
+     *
+     * <p>The row also has to match a room's, since both read the same {@link CourseEntry}: a room's
+     * {@code v = 0} is {@code floorY + 1} via {@code WallSurface.emit}.
+     */
     @Test
-    void aBottomAnchoredCourseLandsOnTheFloorRow() {
+    void aBottomAnchoredCourseLandsOnTheLowestVISIBLERow() {
         List<BlockPlacement> out = build(motif(
                 new CourseEntry("minecraft:polished_andesite", CourseAnchor.BOTTOM, 0)));
 
-        assertEquals(plinth(), wallAt(out, 3, 2, 0));
-        assertEquals(wall(), wallAt(out, 3, 2, 1), "the course must claim exactly one row");
+        assertEquals(wall(), wallAt(out, 3, 2, 0),
+                "row 0 is level with the corridor floor and can never be seen -- "
+                        + "a course must not be spent on it");
+        assertEquals(plinth(), wallAt(out, 3, 2, 1));
+        assertEquals(wall(), wallAt(out, 3, 2, 2), "the course must claim exactly one row");
     }
 
     /**
      * The reason {@code top} exists at all, and it matters more here than in a room: corridor height
      * is rolled per floor now, so a crown measured from the floor would sit at a different distance
      * from the ceiling on every floor of the same dungeon.
+     *
+     * <p>{@code top}/0 is the highest <em>visible</em> row, {@code height - 2}. Row
+     * {@code height - 1} is level with the ceiling plane and is as buried as row 0.
      */
     @Test
     void aTopAnchoredCourseIsMeasuredFromTheCeiling() {
         List<BlockPlacement> out = build(motif(
                 new CourseEntry("minecraft:polished_andesite", CourseAnchor.TOP, 2)));
 
-        assertEquals(plinth(), wallAt(out, 3, 2, HEIGHT - 3));
-        assertEquals(wall(), wallAt(out, 3, 2, HEIGHT - 2));
+        assertEquals(plinth(), wallAt(out, 3, 2, HEIGHT - 4));
+        assertEquals(wall(), wallAt(out, 3, 2, HEIGHT - 3));
+    }
+
+    /** Neither buried row may be addressed, from either end. */
+    @Test
+    void theBuriedTopAndBottomRowsAreNeverGivenACourse() {
+        List<BlockPlacement> out = build(motif(
+                new CourseEntry("minecraft:polished_andesite", CourseAnchor.TOP, 0),
+                new CourseEntry("minecraft:polished_andesite", CourseAnchor.BOTTOM, 0)));
+
+        assertEquals(wall(), wallAt(out, 3, 2, 0), "the floor-level row");
+        assertEquals(wall(), wallAt(out, 3, 2, HEIGHT - 1), "the ceiling-level row");
+        assertEquals(plinth(), wallAt(out, 3, 2, 1), "bottom/0 -> lowest visible");
+        assertEquals(plinth(), wallAt(out, 3, 2, HEIGHT - 2), "top/0 -> highest visible");
     }
 
     /** Anchoring off the end of the column drops the course; it must not clamp to the last row. */
@@ -176,7 +210,7 @@ class CorridorCoursesTest {
                 new CourseEntry("minecraft:polished_andesite", CourseAnchor.BOTTOM, 0),
                 new CourseEntry("minecraft:andesite", CourseAnchor.BOTTOM, 0)));
 
-        assertEquals(Blocks.ANDESITE.defaultBlockState(), wallAt(out, 3, 2, 0));
+        assertEquals(Blocks.ANDESITE.defaultBlockState(), wallAt(out, 3, 2, 1));
     }
 
     /**
@@ -193,7 +227,7 @@ class CorridorCoursesTest {
 
         for (int x = 2; x <= 4; x++) {
             BlockState expected = Math.floorMod(x + 2, 2) == 0 ? plinth() : Blocks.ANDESITE.defaultBlockState();
-            assertEquals(expected, wallAt(out, x, 2, 0), "parity broke at x=" + x);
+            assertEquals(expected, wallAt(out, x, 2, 1), "parity broke at x=" + x);
         }
     }
 
@@ -241,7 +275,7 @@ class CorridorCoursesTest {
         new BasicCorridorGenerator().withMotifConfig(motifConfig)
                 .build(corridor, grid(), FLOOR_Y, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
-        assertEquals(plinth(), wallAt(out, 3, 2, 0));
+        assertEquals(plinth(), wallAt(out, 3, 2, 1));
     }
 
     /** Courses are a wall treatment; the passage's own cells are not theirs to touch. */

@@ -38,7 +38,7 @@
           {
             "block": "minecraft:polished_andesite",
             "anchor": "top",
-            "offset": 2
+            "offset": 1
           }
         ]
       },
@@ -60,7 +60,7 @@
           {
             "block": "minecraft:polished_andesite",
             "anchor": "top",
-            "offset": 2
+            "offset": 1
           }
         ]
       },
