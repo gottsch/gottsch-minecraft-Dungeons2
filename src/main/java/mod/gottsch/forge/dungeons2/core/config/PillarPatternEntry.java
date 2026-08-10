@@ -47,10 +47,9 @@ import java.util.Optional;
  * <h2>Why an ordered list from day one</h2>
  * <p>The {@code wall} slot shipped as a single typed entry and had to be migrated to a list the
  * moment a second type arrived &mdash; 17 slots across 6 files, plus a required {@code patterns} key
- * to stop unmigrated packs degrading silently. Three further layouts are already sketched
- * ({@code colonnade}, {@code quartet}, {@code ambulatory}; see the backlog), so paying that cost
- * again is a certainty rather than a risk. A list also lets a great hall carry a colonnade
- * <em>and</em> a central quartet once those exist.</p>
+ * to stop unmigrated packs degrading silently. The bet paid off immediately: {@code colonnade} and
+ * {@code quartet} both landed the same day and cost no migration at all. A list also lets a great
+ * hall carry a colonnade <em>and</em> a central quartet.</p>
  *
  * <p>{@code patterns} is <strong>required</strong>, for the same load-bearing reason it is on
  * {@link WallPatternEntry}: an optional key would let a slot with no patterns decode cleanly, and a
@@ -70,6 +69,19 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
     public static final String GRID = "grid";
 
     /**
+     * Two rows running the length of the room with a clear aisle between them. The one layout with
+     * an <em>axis</em>; see {@code ColonnadePillarPatternProvider}.
+     */
+    public static final String COLONNADE = "colonnade";
+
+    /**
+     * Four columns marking a square at the room's centre. Structurally a grid capped at two columns
+     * per axis; what keeps it distinct is that its square does not grow with the room. See
+     * {@code QuartetPillarPatternProvider}.
+     */
+    public static final String QUARTET = "quartet";
+
+    /**
      * One layout. {@code type} is a plain string discriminator, the same idiom the floor, wall and
      * ceiling slots use; an unrecognized value draws nothing, the same graceful degradation they
      * give.
@@ -77,7 +89,24 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
      * <ul>
      *   <li>{@code "grid"} &mdash; columns on an even lattice, {@code spacing} apart, centred on the
      *       interior and kept {@code inset} cells clear of the wall.</li>
+     *   <li>{@code "colonnade"} &mdash; two rows along the room's longer axis, {@code spacing} apart
+     *       and {@code inset} from the walls they run beside, leaving a clear aisle between them.
+     *       Draws nothing in a room too narrow to have an aisle at all.</li>
+     *   <li>{@code "quartet"} &mdash; four columns marking a square of side {@code spacing} at the
+     *       room's centre, shrunk to fit if the room cannot carry it at {@code inset}. Unlike the
+     *       grid the square does not grow with the room.</li>
      * </ul>
+     *
+     * <p>{@code spacing} and {@code inset} carry the same meaning on all three, which is why no
+     * layout has needed a new field: {@code inset} is "how far in from the edge" and {@code spacing}
+     * is "how far apart the columns are". The grid applies both to two axes; the colonnade applies
+     * {@code spacing} along its length only, since its width is two rows by definition; the quartet
+     * uses {@code spacing} as the side of its square and never repeats.</p>
+     *
+     * <p><strong>{@code spacing} is also the knob that keeps the layouts apart.</strong> A quartet
+     * authored at the grid's own spacing lands on the grid's own footprint in any room small enough
+     * for the grid to produce two columns per axis; authored wider, it does not. That is a better
+     * lever than a size gate, which removes the overlap only by removing most of the rooms.</p>
      *
      * <h2>The blocks</h2>
      * <p>{@code block} is the shaft and is <strong>required</strong> &mdash; there is no default

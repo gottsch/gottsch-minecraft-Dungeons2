@@ -269,6 +269,158 @@
           }
         ]
       }
+    },
+    {
+      "name": "colonnaded_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 7,
+      "pillars": {
+        "patterns": [
+          {
+            "type": "colonnade",
+            "block": "dungeonblocks:stone_bricks_pillar_block",
+            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "baseProperties": {
+              "base": "up"
+            },
+            "capProperties": {
+              "base": "down"
+            },
+            "spacing": 4,
+            "inset": 2
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "quartet_hall",
+      "weight": 12,
+      "minSize": 7,
+      "maxSize": 7,
+      "minHeight": 6,
+      "pillars": {
+        "patterns": [
+          {
+            "type": "quartet",
+            "block": "dungeonblocks:stone_bricks_pillar_block",
+            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+            "baseProperties": {
+              "base": "up"
+            },
+            "capProperties": {
+              "base": "down"
+            },
+            "spacing": 6,
+            "inset": 1
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "brazier_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 5,
+      "platforms": {
+        "patterns": [
+          {
+            "type": "dais",
+            "layout": "centre",
+            "block": "minecraft:stone_bricks",
+            "stairBlock": "minecraft:stone_brick_stairs",
+            "centreBlock": "minecraft:chiseled_stone_bricks",
+            "size": 3,
+            "inset": 1,
+            "orient": "inward",
+            "topBlock": "dungeonblocks:brazier_block",
+            "topProperties": {
+              "fire": "embers"
+            }
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "brazier_corners_hall",
+      "weight": 12,
+      "minSize": 11,
+      "minHeight": 5,
+      "platforms": {
+        "patterns": [
+          {
+            "type": "dais",
+            "layout": "corners",
+            "block": "minecraft:stone_bricks",
+            "stairBlock": "minecraft:stone_brick_stairs",
+            "centreBlock": "minecraft:chiseled_stone_bricks",
+            "size": 1,
+            "inset": 1,
+            "orient": "inward",
+            "topBlock": "dungeonblocks:brazier_block",
+            "topProperties": {
+              "fire": "embers"
+            }
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

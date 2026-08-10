@@ -34,8 +34,15 @@
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/7x7_hall_1",
         "processors": "dungeons2:classic_weathering",
-
-
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/15x21_hall_1",
+        "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },
       "weight": 1

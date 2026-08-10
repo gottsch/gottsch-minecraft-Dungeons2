@@ -67,6 +67,10 @@ import java.util.Optional;
  * that record. Declared here only once there was a provider behind it, which was the whole reason it
  * was held back.</p>
  *
+ * <p>{@code platforms} holds a {@link PlatformPatternEntry} &mdash; raised daises standing on the
+ * floor, optionally carrying a brazier or the like on top. The second volume slot, and it runs after
+ * {@code pillars} for the same reason: it draws in the interior air the hollow step cleared.</p>
+ *
  * <h2>Eligibility</h2>
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
  * carry it, <em>before</em> weights are totalled. This matters more than it did for floors:
@@ -113,7 +117,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                          Optional<Integer> maxHeight, Optional<Integer> maxSize,
                          Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                          Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
-                         Optional<PillarPatternEntry> pillars) {
+                         Optional<PillarPatternEntry> pillars,
+                         Optional<PlatformPatternEntry> platforms) {
 
     /**
      * A scheme with no element slots filled &mdash; an undecorated room of the given weight and
@@ -123,7 +128,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
     public RoomScheme(String name, int weight, int minHeight, int minSize) {
         this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty());
+                Optional.empty(), Optional.empty());
     }
 
     /** Element slots with lower bounds only &mdash; the shape before {@code max*} was added. */
@@ -131,7 +136,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                       Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                       Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
         this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
-                floor, wall, ceiling, pots, Optional.empty());
+                floor, wall, ceiling, pots, Optional.empty(), Optional.empty());
     }
 
     /** The four surface slots plus bounds &mdash; the shape before {@code pillars} was added. */
@@ -140,7 +145,17 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                       Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                       Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots) {
         this(name, weight, minHeight, minSize, maxHeight, maxSize, floor, wall, ceiling, pots,
-                Optional.empty());
+                Optional.empty(), Optional.empty());
+    }
+
+    /** The shape before {@code platforms} was added. */
+    public RoomScheme(String name, int weight, int minHeight, int minSize,
+                      Optional<Integer> maxHeight, Optional<Integer> maxSize,
+                      Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                      Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
+                      Optional<PillarPatternEntry> pillars) {
+        this(name, weight, minHeight, minSize, maxHeight, maxSize, floor, wall, ceiling, pots,
+                pillars, Optional.empty());
     }
 
     /** The undecorated room: plain floor, plain walls, plain ceiling, no props, eligible everywhere. */
@@ -166,7 +181,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "wall").forGetter(RoomScheme::wall),
             Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "ceiling").forGetter(RoomScheme::ceiling),
             Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots),
-            Codecs.strictOptionalFieldOf(PillarPatternEntry.CODEC, "pillars").forGetter(RoomScheme::pillars)
+            Codecs.strictOptionalFieldOf(PillarPatternEntry.CODEC, "pillars").forGetter(RoomScheme::pillars),
+            Codecs.strictOptionalFieldOf(PlatformPatternEntry.CODEC, "platforms").forGetter(RoomScheme::platforms)
     ).apply(instance, RoomScheme::new))).flatXmap(RoomScheme::validate, RoomScheme::validate);
 
     /**
@@ -199,6 +215,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         slots = chain(slots, scheme.ceiling.map(CeilingPatternEntry::gate), scheme.name, "ceiling");
         slots = chain(slots, scheme.pots.map(PotConfig::gate), scheme.name, "pots");
         slots = chain(slots, scheme.pillars.map(PillarPatternEntry::gate), scheme.name, "pillars");
+        slots = chain(slots, scheme.platforms.map(PlatformPatternEntry::gate), scheme.name, "platforms");
         return slots.map(ignored -> scheme);
     }
 
@@ -247,6 +264,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         return pillars.filter(entry -> entry.gate().fits(width, depth, height));
     }
 
+    /** See {@link #floorFor}. */
+    public Optional<PlatformPatternEntry> platformsFor(int width, int depth, int height) {
+        return platforms.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
     /**
      * Whether this scheme fills any element slot at all. False for the deliberately undecorated
      * room, which is a legitimate authored outcome rather than a mistake &mdash; the distinction
@@ -255,7 +277,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      */
     public boolean declaresAnySlot() {
         return floor.isPresent() || wall.isPresent() || ceiling.isPresent() || pots.isPresent()
-                || pillars.isPresent();
+                || pillars.isPresent() || platforms.isPresent();
     }
 
     /** Whether this scheme draws anything at all in a room of these dimensions. */
@@ -264,7 +286,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                 || wallFor(width, depth, height).isPresent()
                 || ceilingFor(width, depth, height).isPresent()
                 || potsFor(width, depth, height).isPresent()
-                || pillarsFor(width, depth, height).isPresent();
+                || pillarsFor(width, depth, height).isPresent()
+                || platformsFor(width, depth, height).isPresent();
     }
 
     /**

@@ -31,6 +31,9 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFlo
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.BasicPillarGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.IDungeonPillarGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.PillarPatternSelector;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.BasicPlatformGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.IDungeonPlatformGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.PlatformPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.BasicWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.IDungeonWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.WallPatternSelector;
@@ -112,16 +115,23 @@ public class BasicRoomGenerator implements IRoomGenerator {
         floorGen.build(room, floorY, motif, random, blocks);
         ceilingGen.build(room, floorY, motif, random, blocks);
 
-        // Free-standing pillars are the only element that draws in the room's VOLUME rather than on
-        // one of its surfaces, and they run last of the four for that reason -- they stand in the
-        // interior air the hollow step cleared, so anything that also reaches into it must already
-        // have been emitted.
+        // Pillars and platforms draw in the room's VOLUME rather than on one of its surfaces, which
+        // is why both run after the four surface steps -- they stand in the interior air the hollow
+        // step cleared, so anything that also reaches into it must already have been emitted.
         //
         // That makes a column win against a projecting ceiling rib where the two meet, which is the
         // right way round: a column is structure and a rib is decoration, so the column should read
         // as carrying the ceiling rather than being interrupted a block short of it.
         IDungeonPillarGenerator pillarGen = selectPillarGenerator(motif, scheme, width, depth, height);
         pillarGen.build(room, floorY, motif, random, blocks);
+
+        // Platforms after columns, and for a concrete reason rather than symmetry: both draw in the
+        // interior air, and where a dais meets a column the column should be the thing standing on
+        // it. Running the dais second lets it place its own cells around a column already there,
+        // and its footprint check skips cells another platform took.
+        IDungeonPlatformGenerator platformGen =
+                selectPlatformGenerator(motif, scheme, width, depth, height);
+        platformGen.build(room, floorY, motif, random, blocks);
 
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.
@@ -137,8 +147,15 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // is what actually got built, doorway drops and all, not what the layout asked for.
         Set<Coords2D> taken = new HashSet<>(wallGen.occupiedFloorCells());
         taken.addAll(pillarGen.occupiedFloorCells());
+        taken.addAll(platformGen.occupiedFloorCells());
         scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
+    }
+
+    public IDungeonPlatformGenerator selectPlatformGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                            int width, int depth, int height) {
+        return new BasicPlatformGenerator().withPlatformLayouts(PlatformPatternSelector.layoutsFor(
+                scheme.platformsFor(width, depth, height), width, depth, height));
     }
 
     public IDungeonPillarGenerator selectPillarGenerator(IDungeonMotif motif, RoomScheme scheme,

@@ -205,7 +205,7 @@ class SchemeIncidenceTest {
      */
     @Test
     @Disabled("TEMPORARY -- classic is cut down to base.json (plain, vaulted_hall, "
-            + "pilastered_hall, hypostyle_hall) for in-game scheme authoring, so the floor schemes "
+            + "pilastered_hall, hypostyle_hall, colonnaded_hall, quartet_hall) for in-game scheme authoring, so the floor schemes "
             + "these bars measure are not loaded at all: floor reads 0%. The full set is parked in "
             + "src/main/resources/disabled-schemes/classic/; see the README there. RE-ENABLE THIS "
             + "when they move back. Do NOT lower the bars to make it pass -- they were authored "

@@ -486,15 +486,23 @@ public class MazeLevelGenerator2D {
             fillRooms.add(fillRoom);
         }
 
-        // add small joiner rooms
-        // currently adds 5 * 9x9, 5 * 7x7, 5 * 5x5
-        // this part will change in Dungeons2 as we would want something like provideFillRooms() which either builds the rooms or fetchs premade structures
+        // Small joiner rooms, at fixed sizes rather than rolled: these exist to pack the leftover
+        // pockets that the size roll (minSize..maxSize) is too coarse to fit.
+        //
+        // 7x7 is the FLOOR, deliberately. A 5x5 room has a 3x3 interior, and that is the one size
+        // nothing can decorate: every interior feature is either the whole room or a block from a
+        // doorway, so those rooms came out permanently bare (measured 2026-08-07: 100% of them).
+        // 5x5 is left to the template pools, where a hand-authored piece can make the size look
+        // deliberate. See EmptyRoomProbe.
+        //
+        // Still the placeholder the original TODO described -- eventually this wants a
+        // provideFillRooms() that either builds a room or fetches a premade structure.
         for (int i = 0; i < this.fillRoomsPerSize; i++) {
             IRoom2D fillRoom = generateRoom2(xRange, yRange, 9, 9, levelBoundary, minDegrees, maxDegrees, random);
             fillRooms.add(fillRoom);
             fillRoom = generateRoom2(xRange, yRange, 7, 7, levelBoundary, minDegrees, maxDegrees, random);
             fillRooms.add(fillRoom);
-            fillRoom = generateRoom2(xRange, yRange, 5, 5, levelBoundary, minDegrees, maxDegrees, random);
+            fillRoom = generateRoom2(xRange, yRange, 7, 7, levelBoundary, minDegrees, maxDegrees, random);
             fillRooms.add(fillRoom);
         }
 

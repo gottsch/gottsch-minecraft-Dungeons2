@@ -77,7 +77,12 @@ public final class PillarPatternSelector {
             return null;
         }
         return switch (pattern.type().trim().toLowerCase(Locale.ROOT)) {
-            case PillarPatternEntry.GRID -> new GridPillarPatternProvider(pattern.spacing(), pattern.inset());
+            case PillarPatternEntry.GRID ->
+                    new GridPillarPatternProvider(pattern.spacing(), pattern.inset());
+            case PillarPatternEntry.COLONNADE ->
+                    new ColonnadePillarPatternProvider(pattern.spacing(), pattern.inset());
+            case PillarPatternEntry.QUARTET ->
+                    new QuartetPillarPatternProvider(pattern.spacing(), pattern.inset());
             default -> null; // unrecognized type: skipped
         };
     }

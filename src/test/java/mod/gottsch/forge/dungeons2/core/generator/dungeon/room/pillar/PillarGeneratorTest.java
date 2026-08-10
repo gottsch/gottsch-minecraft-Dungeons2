@@ -114,6 +114,178 @@ class PillarGeneratorTest {
         }
     }
 
+    // ---------- the colonnade's axis ----------
+
+    /** Two rows, and they run along the LONGER axis -- that is the whole point of the layout. */
+    @Test
+    void aColonnadeRunsAlongTheLongerAxis() {
+        // interior 15 x 7: the run is along X, the two rows are at fixed Z.
+        Set<Coords2D> wide = new ColonnadePillarPatternProvider(4, 2).footprint(15, 7);
+        assertEquals(2, wide.stream().map(Coords2D::getY).distinct().count(),
+                "two rows across the short axis");
+        assertTrue(wide.stream().map(Coords2D::getX).distinct().count() > 2,
+                "and more than two positions along the long one");
+
+        // Transposed room: the colonnade must transpose with it.
+        Set<Coords2D> deep = new ColonnadePillarPatternProvider(4, 2).footprint(7, 15);
+        assertEquals(2, deep.stream().map(Coords2D::getX).distinct().count());
+        assertTrue(deep.stream().map(Coords2D::getY).distinct().count() > 2);
+        assertEquals(wide.size(), deep.size(), "same room, turned 90 degrees, same column count");
+    }
+
+    /**
+     * The axis must come from the room's proportions and never from chance. A piece renders once per
+     * overlapping chunk and every run has to agree; a coin flip here would give a room a different
+     * colonnade per chunk and tear it along the seam.
+     */
+    @Test
+    void theAxisIsDeterministic() {
+        Set<Coords2D> first = new ColonnadePillarPatternProvider(4, 2).footprint(17, 9);
+        for (int i = 0; i < 20; i++) {
+            assertEquals(keys(first), keys(new ColonnadePillarPatternProvider(4, 2).footprint(17, 9)));
+        }
+        assertEquals(2, first.stream().map(Coords2D::getY).distinct().count(),
+                "the longer axis is X, so the rows sit at fixed Z");
+    }
+
+    /** The rows leave an aisle. A colonnade with no gap between its rows is a wall. */
+    @Test
+    void theRowsAlwaysLeaveAClearAisle() {
+        for (int cross = 3; cross <= 20; cross++) {
+            for (int inset = 0; inset <= 3; inset++) {
+                Set<Coords2D> cells = new ColonnadePillarPatternProvider(4, inset).footprint(20, cross);
+                if (cells.isEmpty()) {
+                    continue;
+                }
+                List<Integer> rows = cells.stream().map(Coords2D::getY).distinct().sorted().toList();
+                assertEquals(2, rows.size(), "cross " + cross + " inset " + inset);
+                assertTrue(rows.get(1) - rows.get(0) >= 2,
+                        "cross " + cross + " inset " + inset + ": rows at " + rows + " leave no aisle");
+            }
+        }
+    }
+
+    /**
+     * The layout is an axis, so a room without one gets nothing. In a square room the two rows sit
+     * against opposite walls with a void between and read as a grid missing its middle row -- grid
+     * is what square rooms are for.
+     */
+    @Test
+    void aRoomThatIsNotElongatedGetsNoColonnade() {
+        assertTrue(new ColonnadePillarPatternProvider(4, 2).footprint(13, 13).isEmpty(),
+                "square: declines");
+        assertTrue(new ColonnadePillarPatternProvider(4, 2).footprint(11, 9).isEmpty(),
+                "11x9 is only one bay off square: declines");
+        assertFalse(new ColonnadePillarPatternProvider(4, 2).footprint(13, 7).isEmpty(),
+                "13x7 is a hall: draws");
+        assertFalse(new ColonnadePillarPatternProvider(4, 2).footprint(15, 9).isEmpty(),
+                "15x9 is a hall: draws");
+    }
+
+    /** Declining is symmetric: turning a square room 90 degrees does not make it a hall. */
+    @Test
+    void decliningDoesNotDependOnWhichAxisIsWhich() {
+        for (int a = 5; a <= 25; a++) {
+            for (int b = 5; b <= 25; b++) {
+                assertEquals(new ColonnadePillarPatternProvider(4, 2).footprint(a, b).isEmpty(),
+                        new ColonnadePillarPatternProvider(4, 2).footprint(b, a).isEmpty(),
+                        "interior " + a + "x" + b + " disagrees with its transpose");
+            }
+        }
+    }
+
+    @Test
+    void aRoomTooNarrowForAnAisleGetsNoColonnade() {
+        // inset 2 needs a cross axis of at least 7 to leave a gap; 6 must draw nothing.
+        assertEquals(7, ColonnadePillarPatternProvider.minimumCrossAxis(2));
+        assertTrue(new ColonnadePillarPatternProvider(4, 2).footprint(20, 6).isEmpty());
+        assertFalse(new ColonnadePillarPatternProvider(4, 2).footprint(20, 7).isEmpty());
+    }
+
+    /** The run inherits the grid's centring rather than restating the arithmetic. */
+    @Test
+    void theRunIsCentredAlongItsAxis() {
+        for (int run = 5; run <= 40; run++) {
+            final int length = run;
+            Set<Coords2D> cells = new ColonnadePillarPatternProvider(4, 2).footprint(length, 9);
+            if (cells.isEmpty()) {
+                continue;
+            }
+            int lowest = cells.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+            int highest = cells.stream().mapToInt(Coords2D::getX).max().orElseThrow();
+            assertTrue(Math.abs(lowest - (length - 1 - highest)) <= 1,
+                    () -> "run " + length + ": colonnade is off-centre along its axis");
+        }
+    }
+
+    // ---------- the quartet ----------
+
+    @Test
+    void aQuartetIsAlwaysFourColumnsMarkingASquare() {
+        for (int iw = 5; iw <= 30; iw++) {
+            for (int idp = 5; idp <= 30; idp++) {
+                Set<Coords2D> cells = new QuartetPillarPatternProvider(6, 2).footprint(iw, idp);
+                if (cells.isEmpty()) {
+                    continue;
+                }
+                assertEquals(4, cells.size(), "interior " + iw + "x" + idp);
+                int spanX = cells.stream().mapToInt(Coords2D::getX).max().orElseThrow()
+                        - cells.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+                int spanZ = cells.stream().mapToInt(Coords2D::getY).max().orElseThrow()
+                        - cells.stream().mapToInt(Coords2D::getY).min().orElseThrow();
+                assertEquals(spanX, spanZ,
+                        "interior " + iw + "x" + idp + ": a quartet marks a SQUARE, not a rectangle");
+            }
+        }
+    }
+
+    /**
+     * The property that makes this a distinct layout rather than a sparse grid: the square marks one
+     * centre and <strong>does not grow with the room</strong>, so a bigger room gets the same four
+     * columns with more space round them.
+     */
+    @Test
+    void theSquareDoesNotGrowWithTheRoom() {
+        int span = span(new QuartetPillarPatternProvider(6, 2).footprint(15, 15));
+        assertEquals(span, span(new QuartetPillarPatternProvider(6, 2).footprint(21, 21)));
+        assertEquals(span, span(new QuartetPillarPatternProvider(6, 2).footprint(29, 29)));
+        // ...where the grid's column count does grow, which is the whole difference.
+        assertTrue(new GridPillarPatternProvider(6, 2).footprint(29, 29).size()
+                > new GridPillarPatternProvider(6, 2).footprint(15, 15).size());
+    }
+
+    /** It shrinks to fit rather than declining -- a small room still has a centre worth marking. */
+    @Test
+    void asquareTooBigForTheRoomShrinksInsteadOfVanishing() {
+        Set<Coords2D> tight = new QuartetPillarPatternProvider(10, 2).footprint(7, 7);
+        assertEquals(4, tight.size(), "still four columns in a 7-interior room");
+        assertTrue(span(tight) < 10, "the authored square did not fit, so it was shrunk");
+        for (Coords2D cell : tight) {
+            assertTrue(cell.getX() >= 2 && cell.getX() <= 4 && cell.getY() >= 2 && cell.getY() <= 4,
+                    "and it still respects the inset: " + cell.getX() + "," + cell.getY());
+        }
+    }
+
+    @Test
+    void aQuartetIsCentredAndSymmetric() {
+        for (int iw = 5; iw <= 30; iw++) {
+            final int width = iw;
+            Set<Coords2D> cells = new QuartetPillarPatternProvider(6, 2).footprint(width, 11);
+            if (cells.isEmpty()) {
+                continue;
+            }
+            int low = cells.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+            int high = cells.stream().mapToInt(Coords2D::getX).max().orElseThrow();
+            assertTrue(Math.abs(low - (width - 1 - high)) <= 1,
+                    () -> "interior " + width + ": quartet is off-centre");
+        }
+    }
+
+    private static int span(Set<Coords2D> cells) {
+        return cells.stream().mapToInt(Coords2D::getX).max().orElseThrow()
+                - cells.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+    }
+
     // ---------- the generator ----------
 
     private static RoomData room(int width, int depth, int height) {
@@ -261,6 +433,38 @@ class PillarGeneratorTest {
 
         assertEquals(0, PillarPatternSelector.layoutsFor(Optional.of(entry), 9, 9, 8).size());
         assertEquals(1, PillarPatternSelector.layoutsFor(Optional.of(entry), 13, 13, 8).size());
+    }
+
+    @Test
+    void aColonnadeIsSelectedAndDrawsFullColumns() {
+        List<BlockPlacement> out = build(room(17, 11, 8),
+                new PillarEntry("colonnade", PILLAR), new BasicPillarGenerator());
+
+        assertFalse(out.isEmpty(), "the colonnade should have drawn");
+        assertEquals(Set.of(61, 62, 63, 64, 65, 66),
+                out.stream().map(BlockPlacement::getY).collect(Collectors.toSet()));
+        assertEquals(2, distinctCoords(out).stream().map(Coords2D::getY).distinct().count(),
+                "two rows in the room, drawn as full columns");
+    }
+
+    /**
+     * Grid and colonnade in one slot, deduplicated where they meet. Note this composes rather than
+     * choosing -- in a room where both fit, both draw. It is NOT a way to say "colonnade in long
+     * rooms, grid in square ones"; the room here is elongated so both are present at once.
+     */
+    @Test
+    void aGridAndAColonnadeCanShareASlot() {
+        PillarPatternEntry entry = new PillarPatternEntry(List.of(
+                new PillarEntry("colonnade", PILLAR),
+                new PillarEntry("grid", "minecraft:polished_andesite")));
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicPillarGenerator().withPillarLayouts(PillarPatternSelector.toLayouts(entry))
+                .build(room(23, 13, 8), 60, DungeonMotif.CLASSIC, RandomSource.create(3L), out);
+
+        assertEquals(out.size(), out.stream()
+                .map(bp -> bp.getX() + "," + bp.getY() + "," + bp.getZ()).distinct().count());
+        assertTrue(out.stream().anyMatch(bp -> PILLAR.equals(bp.getBlockId())));
+        assertTrue(out.stream().anyMatch(bp -> "minecraft:polished_andesite".equals(bp.getBlockId())));
     }
 
     @Test

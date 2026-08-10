@@ -11,10 +11,18 @@ set a new scheme lands in ~1.85% of rooms; with only `plain` competing it lands 
 (~8.5 per MEDIUM dungeon). Mark's deliberate working configuration for scheme authoring
 (2026-08-05). It must not ship.
 
-`base.json` now holds **three** schemes — `plain`, `vaulted_hall` and (2026-08-06)
-`pilastered_hall`. Each new one dilutes the others: with three sharing the roll, `vaulted_hall`
-measures 9.6% and `pilastered_hall` 9.1%. Still far above the 1.85% they would get against the full
-set, but worth knowing that the "~1 room in 8" figure above shrinks as schemes are added here.
+`base.json` now holds **six** schemes (all 2026-08-06 unless noted): `plain`, `vaulted_hall`,
+`pilastered_hall`, `hypostyle_hall`, `colonnaded_hall` and `quartet_hall`.
+
+**Each new scheme in the same size band dilutes the others.** The four grand ones all gate at
+`minSize: 9`, so they split one pool four ways — currently 185/202/191/188 rooms of 3459, i.e. ~5.4%
+each, down from 12.4% when `vaulted_hall` had `plain` to itself. Ceiling decoration fell 9.5% → 5.3%
+and pots 8.7% → 5.8% purely from this. **Weight cannot fix it**: raising a weight does not remove a
+competitor.
+
+`quartet_hall` is the counter-example worth copying: gated `minSize: 7, maxSize: 7`, a band none of
+the others occupy, it took 506 rooms (14.6%) from `plain` and changed the other four by *nothing*.
+If you are adding a scheme for authoring visibility, giving it its own band beats raising its weight.
 
 ## There is no required set of files
 
@@ -49,10 +57,15 @@ you, then re-enable the two guards that assert on the shipped scheme list:
 **not** a conflict — same name, so whichever sorts later wins and there is exactly one scheme either
 way. Delete one only if having it twice is confusing to read.
 
-**Fold `pilastered_hall` in as well when restoring** — it lives only in `base.json` and has no
-parked counterpart, so a restore that just moves these files back keeps it, but a restore that
-rewrites `base.json` from scratch would drop it. It is also the only scheme in the cut-down set
-carrying `pots`, which is what keeps `SchemeIncidenceTest`'s pots bar off zero today.
+**Four schemes live only in `base.json` and have no parked counterpart** — `pilastered_hall`,
+`hypostyle_hall`, `colonnaded_hall` and `quartet_hall`. A restore that just moves these files back
+keeps them; a restore that rewrites `base.json` from scratch would drop all four. `pilastered_hall`
+is also the only one carrying `pots`, which is what keeps `SchemeIncidenceTest`'s pots bar off zero
+today.
+
+**Re-measure after restoring.** The full set plus six is a different roll from either half, and the
+manual's headline figures (top trim 79%, floor patterns 41%) were measured against the full set
+*before* any of the pillar or vault schemes existed. Expect them to move.
 
 **These files were migrated to the new `wall` slot shape on 2026-08-06** (`"wall": {"patterns":
 [{"type": "courses", …}]}` rather than `"wall": {"type": "courses", …}`). Nothing here is loaded, so

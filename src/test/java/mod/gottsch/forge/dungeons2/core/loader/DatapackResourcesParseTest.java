@@ -274,6 +274,11 @@ class DatapackResourcesParseTest {
      * 5..17 on a side, and height is {@code min(rand(5..10), max(width, depth))}, so a 5x5 room can
      * never be 10 high. Testing impossible shapes would force authors to cover rooms that do not
      * exist.</p>
+     *
+     * <p><strong>5 is kept in the sweep even though the planner stopped building 5x5 rooms
+     * procedurally</strong> (2026-08-07 -- the joiner-room floor was raised to 7x7, because a 3x3
+     * interior is the one size no decoration fits). A 5x5 room can still arrive from a template
+     * pool, so a motif that has no scheme for one is still an authoring hole.</p>
      */
     @Test
     void everyRoomThePlannerCanBuildMatchesAScheme() {
