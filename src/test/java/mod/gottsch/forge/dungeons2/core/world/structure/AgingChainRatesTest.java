@@ -406,6 +406,71 @@ class AgingChainRatesTest {
                 "Expected every common wall block to decay to dirt eventually, got " + dirtProducers);
     }
 
+    /**
+     * Backlog #37's timber chains, pinned the same way the stone budgets are.
+     *
+     * <p><strong>Timber is allowed to reach air and the stone chains are not</strong>, which looks
+     * like an inconsistency and is not. The ban in {@link #noWallBlockDecaysToAir} exists because
+     * {@code classic} uses one block for wall, floor <em>and</em> ceiling (#15), so a hole in a
+     * floor and a breach of the outer shell are indistinguishable to a rule. {@code spruce_log} and
+     * the spruce corbel are used for beams and brackets and nothing else, and a joist hangs
+     * <em>below</em> the ceiling slab rather than forming it &mdash; so decaying one leaves a gap
+     * in the run with the shell intact. The exemption is about where the block lands, not about
+     * timber being special; if a motif ever puts {@code spruce_log} in a wall or ceiling, this test
+     * and the rules it guards both have to change.</p>
+     */
+    @Test
+    void timberAgesAtTheIntendedRates() {
+        // These are FINAL outcomes, not stages reached: of the 35% of beams that go stripped,
+        // 15% carry on to air, so 0.35 x 0.85 stay stripped and 0.35 x 0.15 end as a gap.
+        Map<String, Double> beam = composedRates("minecraft:spruce_log");
+        assertEquals(0.35 * 0.85, beam.getOrDefault("minecraft:stripped_spruce_log", 0.0), EPSILON,
+                "the beam's stripped rate drifted");
+        assertEquals(0.35 * 0.15, beam.getOrDefault("minecraft:air", 0.0), EPSILON,
+                "the beam's break-through rate drifted -- it is the second stage of a chain, so it"
+                        + " is 0.35 x 0.15, not 0.15");
+
+        Map<String, Double> bracket = composedRates("dungeonblocks:spruce_corbel_block");
+        assertEquals(0.35 * 0.9, bracket.getOrDefault("dungeonblocks:stripped_spruce_corbel_block", 0.0),
+                EPSILON, "the bracket's stripped rate drifted");
+        assertEquals(0.35 * 0.1, bracket.getOrDefault("minecraft:air", 0.0), EPSILON,
+                "the bracket's removal rate drifted -- deliberately below the beam's, because a"
+                        + " bracket is one cell and reads as missing where a beam reads as broken");
+    }
+
+    /**
+     * The functional timber must not be aged at all. A ladder with a hole in it is not decoration
+     * &mdash; the entrance descent is built from them, and the shaft is the only way down.
+     */
+    @Test
+    void functionalTimberIsNotAged() {
+        for (String functional : Set.of("minecraft:ladder", "minecraft:barrel",
+                "dungeonblocks:spruce_dungeon_door", "dungeonblocks:spruce_dungeon_door_3",
+                "dungeonblocks:dark_oak_dungeon_door")) {
+            assertTrue(composedRates(functional).isEmpty(),
+                    functional + " has an aging rule. Ladders carry the entrance descent, and"
+                            + " doors already have a 'sometimes absent' feature in the motif's door"
+                            + " probability -- ageing one to air double-counts it. See the TIMBER"
+                            + " block in classic_weathering.json.");
+        }
+    }
+
+    /**
+     * The stripped variants are reachable as a <em>stage</em> and must not become sources. They
+     * appear in eight authored templates where the author chose them; a standalone rule would age
+     * that content too. #26 is the same trap seen from the other end &mdash; three rules believed
+     * dead were live precisely because prefab palettes author their inputs.
+     */
+    @Test
+    void strippedTimberIsAStageNotASource() {
+        for (String stage : Set.of("minecraft:stripped_spruce_log",
+                "dungeonblocks:stripped_spruce_corbel_block")) {
+            assertTrue(composedRates(stage).isEmpty(),
+                    stage + " has become an aging source. It is authored directly in shipped"
+                            + " templates, so a rule keyed on it ages the author's own choice.");
+        }
+    }
+
     @Test
     void aWallBlockIsNotWeatheredAwayEntirely() {
         // Sanity on the other side: these chains stack on top of two cosmetic ones, so it

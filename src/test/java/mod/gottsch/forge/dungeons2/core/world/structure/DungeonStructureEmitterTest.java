@@ -95,6 +95,54 @@ class DungeonStructureEmitterTest {
         }
     }
 
+    /**
+     * {@code emit} has to stay equal to its two halves concatenated. {@code DungeonStructure} uses
+     * the halves so it can slot the prefab rooms between them; the floor-plan exporter and these
+     * tests use the whole. If the two drift, the thing that generates and the thing that draws the
+     * plan stop being the same dungeon -- and nothing else would say so.
+     */
+    @Test
+    void emitIsExactlyTerrainThenDoors() {
+        DungeonLayout layout = plan();
+        List<StructurePiece> whole = DungeonPieceEmitter.emit(layout, ANCHOR_X, ANCHOR_Z);
+        List<StructurePiece> terrain = DungeonPieceEmitter.emitTerrain(layout, ANCHOR_X, ANCHOR_Z);
+        List<StructurePiece> doors = DungeonPieceEmitter.emitDoors(layout, ANCHOR_X, ANCHOR_Z);
+
+        assertFalse(doors.isEmpty(), "plan has no doors, so this proves nothing");
+        assertEquals(whole.size(), terrain.size() + doors.size(), "halves do not cover the whole");
+        for (int i = 0; i < terrain.size(); i++) {
+            assertEquals(whole.get(i).getClass(), terrain.get(i).getClass(),
+                    "terrain half diverges at index " + i);
+            assertEquals(box(whole.get(i)), box(terrain.get(i)),
+                    "terrain half diverges at index " + i);
+        }
+        for (int i = 0; i < doors.size(); i++) {
+            assertEquals(box(whole.get(terrain.size() + i)), box(doors.get(i)),
+                    "door half diverges at index " + i);
+        }
+    }
+
+    /**
+     * No door piece may be emitted before a terrain piece. Doors run last because both the room and
+     * the corridor leave the door rows as air and the door piece is what builds the opening; it is
+     * also what lets the prefab rooms render late without sealing their own doorways.
+     */
+    @Test
+    void doorsComeAfterEveryTerrainPiece() {
+        List<StructurePiece> pieces = DungeonPieceEmitter.emit(plan(), ANCHOR_X, ANCHOR_Z);
+        boolean seenDoor = false;
+        for (StructurePiece piece : pieces) {
+            if (piece instanceof DungeonDoorPiece) {
+                seenDoor = true;
+            } else {
+                assertFalse(seenDoor, "a non-door piece was emitted after a door piece: "
+                        + piece.getClass().getSimpleName() + " -- doors must be last, or a prefab "
+                        + "room rendered between them would seal its own doorways");
+            }
+        }
+        assertTrue(seenDoor, "plan has no doors, so this proves nothing");
+    }
+
     @Test
     void everyPieceStaysWithinDungeonBounds() {
         DungeonLayout layout = plan();

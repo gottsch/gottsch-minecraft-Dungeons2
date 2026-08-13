@@ -45,7 +45,7 @@ import java.util.Locale;
  * {@code DungeonLayoutRenderer} directly and wrote blocks straight to the world, with a hand-carved
  * 3x3 ladder shaft standing in for the entrance &mdash; authored before the jigsaw entrance existed
  * and never revisited. That made it actively misleading in exactly the two places bugs were hiding:
- * it showed a synthetic entrance rather than {@code entrance/surface_entrance}, and, like every
+ * it showed a synthetic entrance rather than {@code entrance/<motif>/surface_entrance}, and, like every
  * other headless path in this project, it skipped {@code postProcess}. Two of the four defects found
  * in game on Aug 03 lived in that gap.</p>
  *

@@ -1,3 +1,4 @@
 {
-  "corridorWidth": 3
+  "corridorWidth": 3,
+  "roomTemplateAttemptsPerFloor": 4
 }

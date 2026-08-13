@@ -154,11 +154,11 @@ class DungeonStackPlannerTest {
             if (layout.getFloors().size() == 1) {
                 assertTrue(layout.getTransitions().isEmpty(),
                         "Single-floor dungeon should have zero transitions");
-                // Bottom floor still has an END room (the dungeon's terminal/boss room);
-                // it's a marked endpoint but not linked to anything downstairs.
+                // The bottom floor's endpoint is TERMINAL, not END: END means "a downstairs
+                // transition fills this slot", and a single-floor dungeon has none.
                 FloorLayout only = layout.getFloors().get(0);
-                boolean hasEnd = only.getRooms().stream().anyMatch(r -> r.getRole() == RoomRole.END);
-                assertTrue(hasEnd, "Even single-floor dungeon must have a terminal END room");
+                boolean hasEnd = only.getRooms().stream().anyMatch(r -> r.getRole() == RoomRole.TERMINAL);
+                assertTrue(hasEnd, "Even single-floor dungeon must have a terminal room");
                 return;
             }
         }

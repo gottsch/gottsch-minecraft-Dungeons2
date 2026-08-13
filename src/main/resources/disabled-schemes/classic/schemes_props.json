@@ -35,6 +35,18 @@
           {
             "entity": "dungeonblocks:thin_clay_pot",
             "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:thin_stone_pot",
+            "weight": 1
           }
         ]
       }
@@ -58,6 +70,18 @@
           },
           {
             "entity": "dungeonblocks:thin_clay_pot",
+            "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:thin_stone_pot",
             "weight": 1
           }
         ]
@@ -89,6 +113,18 @@
           },
           {
             "entity": "dungeonblocks:thin_clay_pot",
+            "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:thin_stone_pot",
             "weight": 1
           }
         ]

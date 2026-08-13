@@ -17,13 +17,18 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import mod.gottsch.forge.dungeons2.Dungeons;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Static lookup helper for the {@link MotifConfigRegistries#MOTIF_CONFIG} datapack registry, and
@@ -81,6 +86,35 @@ public class MotifConfigHelper {
                 .map(Map.Entry::getValue)
                 .toList();
 
-        return fragments.isEmpty() ? MotifConfig.DEFAULT : MotifConfigFragment.resolve(fragments);
+        return fragments.isEmpty()
+                ? MotifConfig.DEFAULT
+                : MotifConfigFragment.resolve(fragments, problem -> report(motif, problem));
     }
+
+    /**
+     * Schemes already reported, so a broken pack says its piece once instead of every chunk.
+     *
+     * <h2>Why a static set rather than logging at the call site</h2>
+     * <p>{@link #resolve} runs <strong>once per piece per chunk</strong> during worldgen, and it is
+     * the only place a cross-file scheme fault can be detected at all (see
+     * {@code MotifConfigFragment#inherit}). Logged plainly, one typo in one datapack would put
+     * thousands of identical lines in the log of every world that generates a dungeon &mdash; which
+     * is a good way to make an error message worth ignoring.</p>
+     *
+     * <p>Bounded by the pack's own content: one entry per motif and scheme name, added only when
+     * something is already wrong. Not cleared on reload, deliberately &mdash; re-reporting a fault
+     * the author has not fixed yet buys nothing, and a fixed one stops being reported because it
+     * stops being detected.</p>
+     */
+    private static final Set<String> REPORTED = ConcurrentHashMap.newKeySet();
+
+    private static void report(String motif, String problem) {
+        if (REPORTED.add(motif + ": " + problem)) {
+            LOGGER.error("motif '{}': {}", motif, problem);
+        }
+    }
+
+    // Dungeons.MOD_ID is a compile-time String constant, so this inlines and does not load the @Mod
+    // class -- which matters, since this helper is exercised under a bare Bootstrap in tests.
+    private static final Logger LOGGER = LogManager.getLogger(Dungeons.MOD_ID);
 }

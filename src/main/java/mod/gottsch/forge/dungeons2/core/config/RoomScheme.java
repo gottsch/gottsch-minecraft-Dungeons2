@@ -118,7 +118,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                          Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                          Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
                          Optional<PillarPatternEntry> pillars,
-                         Optional<PlatformPatternEntry> platforms) {
+                         Optional<PlatformPatternEntry> platforms,
+                         Optional<String> parent, boolean isAbstract) {
 
     /**
      * A scheme with no element slots filled &mdash; an undecorated room of the given weight and
@@ -128,7 +129,18 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
     public RoomScheme(String name, int weight, int minHeight, int minSize) {
         this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), false);
+    }
+
+    /** The shape before {@code extends}/{@code abstract}: a scheme that stands on its own. */
+    public RoomScheme(String name, int weight, int minHeight, int minSize,
+                      Optional<Integer> maxHeight, Optional<Integer> maxSize,
+                      Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                      Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
+                      Optional<PillarPatternEntry> pillars,
+                      Optional<PlatformPatternEntry> platforms) {
+        this(name, weight, minHeight, minSize, maxHeight, maxSize, floor, wall, ceiling, pots,
+                pillars, platforms, Optional.empty(), false);
     }
 
     /** Element slots with lower bounds only &mdash; the shape before {@code max*} was added. */
@@ -182,8 +194,49 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "ceiling").forGetter(RoomScheme::ceiling),
             Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots),
             Codecs.strictOptionalFieldOf(PillarPatternEntry.CODEC, "pillars").forGetter(RoomScheme::pillars),
-            Codecs.strictOptionalFieldOf(PlatformPatternEntry.CODEC, "platforms").forGetter(RoomScheme::platforms)
+            Codecs.strictOptionalFieldOf(PlatformPatternEntry.CODEC, "platforms").forGetter(RoomScheme::platforms),
+            Codecs.strictOptionalFieldOf(Codec.STRING, "extends").forGetter(RoomScheme::parent),
+            Codecs.strictOptionalFieldOf(Codec.BOOL, "abstract", false).forGetter(RoomScheme::isAbstract)
     ).apply(instance, RoomScheme::new))).flatXmap(RoomScheme::validate, RoomScheme::validate);
+
+    /**
+     * This scheme with every <strong>unfilled</strong> element slot taken from {@code parent}.
+     * Applied by {@link MotifConfigFragment#resolve} after the fragments have merged, so a parent
+     * may live in another file and an addon retuning the parent reaches every child for free.
+     *
+     * <h2>What does NOT inherit, and why</h2>
+     * <p><strong>Weight and all four size bounds stay the child's own.</strong> Two reasons, and the
+     * second is the real one:</p>
+     * <ul>
+     *   <li>{@code weight}, {@code minHeight} and {@code minSize} are primitives with defaults, so
+     *       nothing here can tell "the author omitted it" from "the author wrote the default" &mdash;
+     *       the same limitation {@code SizeGate} and {@code PatternEntry} keep running into. An
+     *       inheriting primitive would silently ignore a deliberate {@code minSize: 0}.</li>
+     *   <li>More importantly, <strong>a variant exists because its eligibility differs.</strong>
+     *       Inheritance is for schemes that differ in <em>content</em> (the same hall in andesite and
+     *       in deepslate); {@code minSize}/{@code maxSize} are how an author says which rooms a
+     *       scheme is <em>for</em>, and quietly copying that from a parent is how a whole size band
+     *       ends up with no scheme at all.</li>
+     * </ul>
+     *
+     * <p>A slot the child fills <strong>replaces the parent's wholesale</strong>, with no merging of
+     * the lists inside it. A child that wants the parent's three ceiling patterns plus one more
+     * restates all four &mdash; deliberately, because a list-merge has no way to express removing an
+     * inherited entry, and "override with less" is the commoner intent.</p>
+     *
+     * <p>{@link #parent} is left set on the result rather than cleared: it costs nothing, and it is
+     * the only thing a dumped scheme carries to say where half of it came from.</p>
+     */
+    public RoomScheme inheritFrom(RoomScheme parentScheme) {
+        return new RoomScheme(name, weight, minHeight, minSize, maxHeight, maxSize,
+                floor.or(parentScheme::floor),
+                wall.or(parentScheme::wall),
+                ceiling.or(parentScheme::ceiling),
+                pots.or(parentScheme::pots),
+                pillars.or(parentScheme::pillars),
+                platforms.or(parentScheme::platforms),
+                parent, isAbstract);
+    }
 
     /**
      * Rejects an inverted range. A codec cannot express "at least the value of that other field",
@@ -196,6 +249,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      * would instead invent a range the author never asked for.</p>
      */
     private static DataResult<RoomScheme> validate(RoomScheme scheme) {
+        // The only inheritance fault a codec can see. A missing parent, or a parent that itself
+        // extends, are both cross-file questions and are caught by MotifConfigFragment#resolve.
+        if (scheme.parent.map(scheme.name::equals).orElse(false)) {
+            return DataResult.error(() -> "scheme '" + scheme.name + "': extends itself");
+        }
         if (scheme.maxHeight.isPresent() && scheme.maxHeight.get() < scheme.minHeight) {
             return DataResult.error(() -> "scheme '" + scheme.name + "': maxHeight "
                     + scheme.maxHeight.get() + " is below minHeight " + scheme.minHeight

@@ -45,7 +45,8 @@ import java.util.List;
  * <p>{@link RoomRole#START} / {@link RoomRole#END} rooms are <em>not</em> emitted
  * as procedural room pieces here &mdash; those slots are covered by the assembled
  * entrance and transition jigsaw pieces respectively (see {@link RoomData}'s role
- * doc). Likewise, a {@link RoomRole#NORMAL} room whose {@link RoomData#getTemplateId()}
+ * doc). {@link RoomRole#TERMINAL} <em>is</em> emitted: nothing covers the bottom
+ * floor's final room, and skipping it left a door opening into raw terrain. Likewise, a {@link RoomRole#NORMAL} room whose {@link RoomData#getTemplateId()}
  * is non-null (Phase 8: jigsaw-assembled interior room) is skipped too. In every
  * such case {@link DungeonStructure} adds the real assembled pieces to the worldgen
  * builder directly since they're real vanilla {@code PoolElementStructurePiece}s,
@@ -57,8 +58,29 @@ public final class DungeonPieceEmitter {
 
     private DungeonPieceEmitter() {}
 
-    /** Emits every procedural piece for {@code layout} (rooms, corridors, doors). */
+    /**
+     * Emits every procedural piece for {@code layout} (corridors, rooms, doors), in render order.
+     *
+     * <p>{@link DungeonStructure} does <strong>not</strong> use this: it needs to slot the
+     * jigsaw-assembled prefab rooms in between the terrain and the doors, so it calls
+     * {@link #emitTerrain} and {@link #emitDoors} separately. This whole-list form is kept for
+     * callers that just want the procedural pieces &mdash; the floor-plan exporter and the
+     * emitter's own tests &mdash; and must stay equal to the two halves concatenated.</p>
+     */
     public static List<StructurePiece> emit(DungeonLayout layout, int anchorX, int anchorZ) {
+        List<StructurePiece> pieces = new ArrayList<>(emitTerrain(layout, anchorX, anchorZ));
+        pieces.addAll(emitDoors(layout, anchorX, anchorZ));
+        return pieces;
+    }
+
+    /**
+     * Corridors and procedural rooms, in that order &mdash; everything except the doors.
+     *
+     * <p>Split out from {@link #emit} so the caller can render the authored prefab rooms
+     * <em>after</em> these but <em>before</em> the doors. Both halves of that sandwich matter, and
+     * for different reasons: see {@link #emitDoors}.</p>
+     */
+    public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ) {
         List<StructurePiece> pieces = new ArrayList<>();
         String motif = layout.getMotifValue();
 
@@ -83,25 +105,47 @@ public final class DungeonPieceEmitter {
             // isWallElement rejects), so the cells in contention are exactly the room's own
             // perimeter. The rule this encodes is just "a room owns its own wall".
             //
-            // Doors stay last: both sides deliberately leave the two door-half rows as air, but
-            // from different sources (RoomData#getDoorways vs the grid's DOOR cells), and the
-            // door piece is what actually hangs the door.
+            // Doors are no longer emitted here -- see emitDoors, and the sandwich note above.
             for (CorridorData corridor : floor.getCorridors()) {
                 pieces.add(new DungeonCorridorPiece(corridor, motif, floorY, anchorX, anchorZ));
             }
             for (RoomData room : floor.getRooms()) {
                 // START / END slots are the template pieces' job; skip them here.
-                // Same for a NORMAL room that got a Phase 8 jigsaw-assembled prefab
-                // instead of a procedural build (templateId non-null).
-                if (room.getRole() == RoomRole.NORMAL && room.getTemplateId() == null) {
+                // TERMINAL is not one of those -- the bottom floor has no downstairs
+                // transition to cover it, so this mod builds it (see RoomRole).
+                // A NORMAL room that got a Phase 8 jigsaw-assembled prefab instead of a
+                // procedural build (templateId non-null) is skipped for the same reason.
+                if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
                     pieces.add(new DungeonRoomPiece(room, motif, floorY, anchorX, anchorZ));
                 }
             }
-            for (DoorData door : floor.getDoors()) {
-                pieces.add(new DungeonDoorPiece(door, motif, floorY, anchorX, anchorZ));
-            }
         }
 
+        return pieces;
+    }
+
+    /**
+     * The door pieces, which must be rendered <strong>after everything else</strong>.
+     *
+     * <p>Both a room and its corridor deliberately leave the two door-half rows as air, but from
+     * different sources ({@code RoomData#getDoorways} vs the grid's {@code DOOR} cells), and the
+     * door piece is what actually hangs the door.
+     *
+     * <p><strong>This is also what makes rendering prefab rooms late safe.</strong> A prefab writes
+     * its own {@code dungeons2:door} marker cells from the jigsaw's {@code final_state} &mdash; it
+     * has no idea whether the maze opened that candidate &mdash; so a prefab rendered after its
+     * doors would seal them again. Prefabs go between the terrain and this. ({@code
+     * dungeons2:connector} cells are exempt from the whole question: they never get a door piece,
+     * because the template already has a real built door there.)</p>
+     */
+    public static List<StructurePiece> emitDoors(DungeonLayout layout, int anchorX, int anchorZ) {
+        List<StructurePiece> pieces = new ArrayList<>();
+        String motif = layout.getMotifValue();
+        for (FloorLayout floor : layout.getFloors()) {
+            for (DoorData door : floor.getDoors()) {
+                pieces.add(new DungeonDoorPiece(door, motif, floor.getFloorY(), anchorX, anchorZ));
+            }
+        }
         return pieces;
     }
 }

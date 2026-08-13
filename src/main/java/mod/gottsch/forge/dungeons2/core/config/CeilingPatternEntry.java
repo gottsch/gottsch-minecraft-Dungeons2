@@ -23,6 +23,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BorderSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CentreSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.GridSurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.JoistSurfacePatternProvider;
 import net.minecraft.util.StringRepresentable;
 
 import java.util.List;
@@ -82,12 +83,16 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
     }
 
     /**
-     * Rejects an {@code orient} on a pattern type that cannot apply one.
+     * Rejects an {@code orient} on a pattern type that cannot apply one, and an {@code orient} that
+     * has nothing to turn.
      *
-     * <p>Only {@code border} orients, because only a ring has an outward direction to orient
-     * <em>to</em>: a {@code coffers} rib is a line with open room on both sides, and a {@code centre}
-     * boss is a solid block with no edge at all. Neither has a defensible answer, so neither invents
-     * one.</p>
+     * <p>{@code border} and {@code joists} orient, because each has a direction to orient <em>to</em>
+     * &mdash; the ring's outward edge, and the wall a bracket rests on. A {@code coffers} rib is a
+     * line with open room on both sides, and a {@code centre} boss is a solid block with no edge at
+     * all. Neither has a defensible answer, so neither invents one. Note a joist's own beam cells are
+     * a rib by that same argument: {@code orient} there turns the <strong>bracket</strong>, which is
+     * why an oriented {@code joists} with no {@code bracketBlock} is rejected too rather than
+     * silently doing nothing.</p>
      *
      * <p>Failing the load rather than ignoring the field is the same rule the strict codecs in this
      * package follow. An ignored {@code orient} would produce a ceiling that is exactly as correct as
@@ -98,8 +103,18 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
         for (SurfacePatternEntry pattern : entry.patterns()) {
             if (pattern.orient() != SurfaceOrient.NONE && !pattern.orientable()) {
                 return DataResult.error(() -> "ceiling pattern '" + pattern.type()
-                        + "': orient is only meaningful on a 'border', which has an outward"
+                        + "': orient is only meaningful on a 'border' or 'joists', which have a"
                         + " direction to face; this type has none");
+            }
+            if (pattern.orient() != SurfaceOrient.NONE && JOISTS.equals(pattern.normalizedType())
+                    && pattern.bracketBlock().isEmpty()) {
+                return DataResult.error(() -> "ceiling pattern 'joists': orient turns the end"
+                        + " bracket, and this entry has no bracketBlock to turn; the beams"
+                        + " themselves take their axis from the run");
+            }
+            if (pattern.bracketBlock().isPresent() && !JOISTS.equals(pattern.normalizedType())) {
+                return DataResult.error(() -> "ceiling pattern '" + pattern.type()
+                        + "': bracketBlock is a 'joists' field -- only a beam has an end to bracket");
             }
             // An inverted per-entry gate fits no room, so the pattern silently never draws --
             // indistinguishable at generation time from one that merely never came up, which is
@@ -163,6 +178,13 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *       {@value GridSurfacePatternProvider#DEFAULT_SPACING}).</li>
      *   <li>{@code "centre"} &mdash; a square boss at the middle. Uses {@code block} and
      *       {@code size} (default {@value CentreSurfacePatternProvider#DEFAULT_SIZE}).</li>
+     *   <li>{@code "joists"} &mdash; parallel beams (rafters) crossing the room's <em>shorter</em>
+     *       axis, reading as the floor above rather than as masonry. Uses {@code block},
+     *       {@code spacing} (default {@value JoistSurfacePatternProvider#DEFAULT_SPACING}), and an
+     *       optional {@code bracketBlock} carrying each run's two ends <strong>from the row
+     *       below</strong> &mdash; so a bracketed entry occupies two rows, not one. The block is
+     *       <strong>not assumed to be timber</strong> &mdash; stone beams are equally legitimate,
+     *       and are the ones that weather today.</li>
      * </ul>
      *
      * <p>{@code block} is required by every type: there is deliberately no Java-side default for a
@@ -212,6 +234,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * ceiling.</p>
      */
     public record SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
+                                      Optional<String> bracketBlock,
                                       int inset, int spacing, int size, int projection,
                                       SurfaceOrient orient, Map<String, String> properties,
                                       SizeGate gate) {
@@ -222,6 +245,8 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                 Codecs.strictOptionalFieldOf(Codec.STRING, "block").forGetter(SurfacePatternEntry::block),
                 Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock")
                         .forGetter(SurfacePatternEntry::cornerBlock),
+                Codecs.strictOptionalFieldOf(Codec.STRING, "bracketBlock")
+                        .forGetter(SurfacePatternEntry::bracketBlock),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                         BorderSurfacePatternProvider.DEFAULT_INSET).forGetter(SurfacePatternEntry::inset),
                 Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
@@ -260,19 +285,37 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                     SizeGate.UNBOUNDED);
         }
 
+        /** The shape before {@code bracketBlock} existed: no bracket, for the types that have none. */
+        public SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
+                                   int inset, int spacing, int size, int projection,
+                                   SurfaceOrient orient, Map<String, String> properties,
+                                   SizeGate gate) {
+            this(type, block, cornerBlock, Optional.empty(), inset, spacing, size, projection,
+                    orient, properties, gate);
+        }
+
         /**
-         * Whether this type has an outward direction for {@link #orient} to mean anything by. Only
-         * {@code border} does; see {@link CeilingPatternEntry#validate}.
+         * Whether this type has a direction for {@link #orient} to mean anything by &mdash;
+         * {@code border} (the ring's outward edge) and {@code joists} (the wall each bracket rests
+         * on). See {@link CeilingPatternEntry#validate}.
          */
         public boolean orientable() {
-            return BORDER.equals(type().trim().toLowerCase(Locale.ROOT));
+            String type = normalizedType();
+            return BORDER.equals(type) || JOISTS.equals(type);
+        }
+
+        /**
+         * Lower-cased and trimmed, matching how {@code CeilingPatternSelector} dispatches, so
+         * validation and dispatch cannot disagree about whether {@code " Border "} is a border.
+         */
+        String normalizedType() {
+            return type().trim().toLowerCase(Locale.ROOT);
         }
     }
 
-    /**
-     * The one orientable pattern type. Lower-cased and compared after trimming, matching how
-     * {@code CeilingPatternSelector} dispatches, so validation and dispatch cannot disagree about
-     * whether {@code " Border "} is a border.
-     */
+    /** A ring following the surface's edge: the first orientable type. */
     public static final String BORDER = "border";
+
+    /** Parallel beams crossing the surface one way: the second, and the only one with a bracket. */
+    public static final String JOISTS = "joists";
 }

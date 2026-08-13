@@ -29,12 +29,19 @@ hardcoded to `classic` (see `DungeonStructure.findGenerationPoint`) — this is 
 mechanism, ready for whenever motif selection varies for real. A missing themed pool degrades
 gracefully to plain procedural generation for that floor/room/transition, same as an empty pool
 always has; a smarter two-tier fallback (missing theme → shared/classic pool instead of straight
-to procedural) is a possible future phase, not implemented. **The entrance is the one
-exception** — `entrance/surface_entrance.json`/`descent.json`
-stay unparametrized for now, because `surface_exit.nbt`/`descent_1.nbt` have jigsaw assembly-joint
-`pool`/`target` fields baked into their NBT that cross-reference each other by exact resource
-location; moving them under a motif subfolder needs those fields updated too (safest done by
-re-saving the jigsaw blocks in-game with the new Target Pool value), not a blind file move.
+to procedural) is a possible future phase, not implemented. **The entrance is parametrized too as
+of 2026-08-13** — `entrance/<motif>/surface_entrance.json` → `.../descent_ladder.json` →
+`.../descent.json`. It was the last one done because it is the only *chained* assembly: its pieces
+name each other's pools in fields baked into compressed NBT rather than in any JSON.
+
+> **Only the `pool` field is motif-scoped.** A jigsaw's three id-shaped fields are not the same
+> kind of thing. `pool` names a real `template_pool` resource, so it moves when the pool moves.
+> `name` and `target` are just labels vanilla matches against each other when picking a joint —
+> the pool already restricts which pieces are candidates, so scoping the labels too would buy
+> nothing and would force every new motif to re-label joints that mean the same thing. So a new
+> motif's entrance chain reuses `dungeons2:entrance/ladder_top` etc. verbatim and only points its
+> `pool` fields at its own folder. `EntrancePoolWiringTest` enforces exactly this, and is what
+> catches the in-game-Save revert described further down.
 
 **Conventions (all templates):** author facing **north** (the planner rolls a 0/90/180/270
 rotation and rotates markers with it); footprint **odd** in X and Z; local origin =
@@ -208,44 +215,45 @@ Used inside the **jigsaw-assembled entrance** (surface building → descent → 
 (see below). These have a **real pool** so vanilla connects them; our planner ignores them
 (name ≠ `dungeons2:door`).
 
-| Field        | Surface building → descent          | Descent top (mates upward)        |
-|--------------|-------------------------------------|-----------------------------------|
-| `name`       | `dungeons2:entrance/surface_exit`   | `dungeons2:entrance/descent_top`  |
-| `target`     | `dungeons2:entrance/descent_top`    | `dungeons2:entrance/surface_exit` |
-| `pool`       | `dungeons2:entrance/descent`        | `minecraft:empty` (or next pool)  |
-| `final_state`| `minecraft:air`                     | `minecraft:air`                   |
-| `joint`      | `aligned`                           | `aligned`                         |
-| orientation  | front = **down** → `down_south`     | front = **up** → `up_north`       |
+Taking the live chain's first link as the shape of a joint — the surface building reaching down
+for the shaft, and the shaft's top reaching back up:
 
-> The **start pool** id is `dungeons2:entrance/surface_entrance` (renamed from `surface_exit` —
-> from the player's perspective, this piece is what they discover and enter to begin the descent,
-> not something they exit through). The shipped `surface_exit.nbt`'s own jigsaw-joint identity
-> string above is unchanged and still literally `dungeons2:entrance/surface_exit`; that string is
-> just this joint's local matching identifier, not the pool id, and it's unused for this piece's
-> own placement (it's the assembly root, so nothing targets it) — so the mismatch is harmless. New
-> pieces authored going forward should use `dungeons2:entrance/surface_entrance` for this joint's
-> identity to keep the two in sync.
+| Field        | Surface building → shaft                  | Shaft top (mates upward)              |
+|--------------|-------------------------------------------|---------------------------------------|
+| `name`       | `dungeons2:entrance/surface_entrance`     | `dungeons2:entrance/ladder_top`       |
+| `target`     | `dungeons2:entrance/ladder_top`           | `dungeons2:entrance/surface_entrance` |
+| `pool`       | `dungeons2:entrance/classic/descent_ladder` | `minecraft:empty` (or next pool)    |
+| `final_state`| `minecraft:stone_bricks`                  | `minecraft:stone_bricks`              |
+| `joint`      | `aligned`                                 | `aligned`                             |
+| orientation  | front = **down** → `down_south`           | front = **up** → `up_north`           |
+
+> **`pool` is motif-scoped; `name` and `target` are not** — see the motif note at the top of this
+> file. That asymmetry is deliberate, not an oversight, and `EntrancePoolWiringTest` enforces it.
 
 Vertical joints are supported (trial chambers / ancient cities chain vertically). Register
 each variant in a `template_pool` JSON under
-`data/dungeons2/worldgen/template_pool/entrance/` and assemble with a small `max_depth` so
-it never recurses into the dungeon. The descent piece carries the `dungeons2:door` candidates
+`data/dungeons2/worldgen/template_pool/entrance/<motif>/` and assemble with a small `max_depth` so
+it never recurses into the dungeon. The terminal piece carries the `dungeons2:door` candidates
 (role 1 above) on its floor-0 walking plane — **their Y defines floor 0's walking plane** and
 their cells become the START room's `candidateDoorways`.
 
 **Worked example, the three-piece `classic` entrance chain (2026-07-30, confirmed in game):**
 each piece independently swappable later (e.g. a future `entrance_ladder_2` alternative in the
-same pool), unlike the old monolithic `surface_exit.nbt`/`descent_1.nbt` pair.
+same pool), unlike the monolithic two-piece pair it replaced (`surface_exit.nbt`/`descent_1.nbt`,
+which lingered unreferenced until they were deleted on 2026-08-13).
 
 | Piece | Role | Joint | Name | Target Pool | Target Name |
 |---|---|---|---|---|---|
-| `entrance_1` | root — surface building | bottom (outgoing) | `dungeons2:entrance/surface_entrance` | `dungeons2:entrance/descent_ladder` | `dungeons2:entrance/ladder_top` |
+| `entrance_1` | root — surface building | bottom (outgoing) | `dungeons2:entrance/surface_entrance` | `dungeons2:entrance/classic/descent_ladder` | `dungeons2:entrance/ladder_top` |
 | `entrance_ladder_1` | middle — vertical shaft | top (incoming) | `dungeons2:entrance/ladder_top` | `minecraft:empty` | `minecraft:empty` |
-| `entrance_ladder_1` | middle — vertical shaft | bottom (outgoing) | `dungeons2:entrance/ladder_bottom` | `dungeons2:entrance/descent` | `dungeons2:entrance/room_top` |
+| `entrance_ladder_1` | middle — vertical shaft | bottom (outgoing) | `dungeons2:entrance/ladder_bottom` | `dungeons2:entrance/classic/descent` | `dungeons2:entrance/room_top` |
 | `entrance_exit_1` | terminal — floor-0 room, carries the `dungeons2:door` candidates | top (incoming) | `dungeons2:entrance/room_top` | `minecraft:empty` | `minecraft:empty` |
 
-Registered as `entrance/surface_entrance.json` (root) → `entrance/descent_ladder.json` (new) →
-`entrance/descent.json` (repointed at `entrance_exit_1`, replacing the old test piece). A
+Note the asymmetry in that table, and that it is deliberate: **Target Pool** carries `classic/`,
+**Name** and **Target Name** do not (see the motif note at the top of this file).
+
+Registered as `entrance/classic/surface_entrance.json` (root) → `entrance/classic/descent_ladder.json`
+→ `entrance/classic/descent.json` (repointed at `entrance_exit_1`, replacing the old test piece). A
 `dungeons2:connector` (role 2) spanning a **3-wide** opening was authored into this chain and
 confirmed working — multi-cell-wide connectors generalize the same way single-cell ones already
 did.
@@ -344,7 +352,8 @@ is authored; see the motif-naming note above — e.g. a desert theme would add
 |------|------|----------|
 | `dungeons2:rooms/<motif>/normal` | the only pool | Complete, self-contained pieces (`minecraft:single_pool_element`, like `ladder1.nbt`/`stairs_1.nbt`) with `dungeons2:door` (and optionally `dungeons2:connector`) candidates around the perimeter at local Y=0, the room's own walking plane. No assembly joints, no segments, no top/bottom split — a room is never chained. |
 
-Per floor, the planner tries a small, fixed number of candidate slots (currently 2). For each
+Per floor, the planner tries `roomTemplateAttemptsPerFloor` candidate slots — see
+**[Prefab frequency](#prefab-frequency-roomtemplateattemptsperfloor)** below. For each
 it assembles the prefab once to **measure** it, reserves a slot at that real size (kept clear
 of the floor's own boundary), then assembles it again anchored so it lands exactly there, and
 hands its footprint and door markers to the maze as one of `MazeLevelGenerator2D`'s **supplied
@@ -368,6 +377,47 @@ Add real content by creating `data/dungeons2/worldgen/template_pool/rooms/<motif
 no outgoing joint) plus the `.nbt` files it references — nothing else needs to change, the
 mechanism already reads whatever pool entries exist. `classic/normal.json` is the only one
 authored today.
+
+#### Prefab frequency (`roomTemplateAttemptsPerFloor`)
+
+How many prefab rooms a dungeon gets is a datapack knob, in
+`data/dungeons2/dungeons2/generation_config/<name>.json` alongside `corridorWidth`:
+
+```json
+{
+  "corridorWidth": 3,
+  "roomTemplateAttemptsPerFloor": 4
+}
+```
+
+Range **0–8**, default **4**. It is *attempts*, but adoption measures at 100%, so in practice it is
+the number of prefabs per floor. Measured over 200 MEDIUM dungeons of 3 floors:
+
+| attempts/floor | prefabs per dungeon | prefab share of rooms | dungeons missing a given template |
+|---|---|---|---|
+| 2 (the old hardcoded value) | 6.0 | 11.3% | ~18%\* |
+| **4 (shipped)** | **12.0** | **20.6%** | ~3%\* |
+
+\* The first two columns are measured; the last is computed as `(3/4)^prefabs` for the four-entry
+`classic` pool, because the placement harness uses a synthetic prefab and cannot see which pool
+entry vanilla picked. It is trustworthy only because the computed 17.8% at 6 prefabs matches the
+19% measured directly over 400 dungeons in Jul 2026. Making the real template id reach
+`RoomData.templateId` (it is currently the constant `dungeons2:rooms/assembled`) would let a test
+assert this properly.
+
+**Raising this is the right lever, not pool weights.** Weights only reshuffle a fixed budget, so
+favouring one template makes the others correspondingly rarer; only the attempt count changes how
+many prefab rooms exist at all. The "missing a given template" column is what this fixes — at 2
+attempts with four pool entries, nearly one dungeon in five contained no `7x7_junction_1` at all.
+
+**`0` is a legitimate value** and is in range on purpose: it turns prefab rooms off without deleting
+the pool, which is the only way to compare a dungeon with and without them.
+
+**The cost is real.** Each attempt is *two* jigsaw assemblies — one to measure the rotated
+footprint, one to place it — so doubling the count doubles that work per floor. It is piece-list
+construction with no block placement, and the planner-side cost of the change measured at +8%, but
+that was against a synthetic assembler; the real vanilla `JigsawPlacement` cost at 8 has not been
+measured in game.
 
 ---
 
@@ -741,6 +791,49 @@ scheme doing what `plain` + `plain_6` used to take two to do.
 > something, and names the offender. `SchemeIncidenceTest` also reports a "no decoration drawn"
 > percentage, but does not fail on it: barring that number would forbid exactly the legitimate case
 > above.
+
+#### Sharing content between schemes (`extends` / `abstract`)
+
+Gates handle variants that differ in **fitness** — the same scheme drawing less in a room too small
+for all of it. `extends` handles variants that differ in **content**: the same hall in andesite and
+in deepslate, where nothing about the eligibility changes and only the materials do.
+
+```json
+{ "name": "grand_hall", "abstract": true,
+  "wall": { "patterns": [ { "type": "courses", "courses": [
+      { "block": "minecraft:polished_andesite", "anchor": "top" } ] } ] },
+  "pots": { "minCount": 1, "maxCount": 2, "lootTable": "dungeons2:pots/classic",
+            "variants": [ { "entity": "dungeonblocks:pot", "weight": 1 } ] } },
+
+{ "name": "joisted_hall_stone", "extends": "grand_hall",
+  "weight": 12, "minSize": 9, "minHeight": 7,
+  "ceiling": { "patterns": [ { "type": "joists", "block": "minecraft:polished_andesite" } ] } }
+```
+
+The child gets the parent's wall and pots, adds a ceiling of its own, and states its own gates.
+
+- **`abstract: true` keeps a template out of the roll.** Without it the parent competes as a room in
+  its own right, and it cannot be silenced with `weight: 0` — the floor is 1. An abstract scheme is
+  dropped whether or not anything extends it. Extending a *concrete* scheme is allowed too; that one
+  simply also keeps rolling.
+- **A slot the child fills replaces the parent's wholesale.** No merging of the lists inside it — a
+  merge cannot express *removing* an inherited entry, and "override with less" is the commoner
+  intent. A child wanting the parent's three ceiling patterns plus one more restates all four.
+- **`weight`, `minHeight`, `minSize`, `maxHeight` and `maxSize` never inherit.** Partly because a
+  primitive cannot distinguish "omitted" from "wrote the default", but mostly because a variant
+  exists *because* its eligibility differs — quietly copying a parent's `minSize` is how a whole
+  band of room sizes ends up with no scheme at all.
+- **The parent may live in a different file**, and that is the point: inheritance is resolved after
+  every file in the motif has merged, so an addon that retunes `grand_hall` reaches every child
+  without restating any of them.
+- **One hop.** A parent may not itself extend. That makes cycles unrepresentable rather than
+  something to detect, and keeps reading a scheme to at most two places.
+
+Two mistakes here are **not** load errors, because a parent is addressed across the whole motif and
+no single file's codec can see it: naming a parent that does not exist, and extending a scheme that
+itself extends. Both **drop the child from the roll** (a scheme half of whose content is missing
+would draw a room nobody authored) and log an error naming both ends, once. Extending *yourself* is
+visible in one file and does fail the load.
 
 **A single course can be gated too**, which is the case a slot gate cannot reach: a plinth belongs
 on every wall in the dungeon, while the crown above it needs headroom a 5-high room does not have.
@@ -1204,6 +1297,33 @@ applied in sequence with later patterns drawn on top:
 | `coffers` | a lattice of ribs dividing the ceiling into panels | `spacing` (3) |
 | `border` | a ring following the walls, reading as a soffit | `inset` (0), `cornerBlock` |
 | `centre` | a square boss at the middle (`center` also accepted) | `size` (1) |
+| `joists` | parallel beams (rafters) crossing the room one way | `spacing` (3), `bracketBlock`, `orient` |
+
+**`joists` is the one-directional counterpart to `coffers`.** A lattice reads as formal masonry; a
+run of parallel beams reads as the floor above you. Four things about it are not obvious:
+
+- **The beams span the room's *shorter* side**, and the `spacing` rhythm steps along its longer one
+  — the opposite of the `colonnade` pillar layout, which runs *along* the length. A square room
+  always runs east–west, deterministically; unlike `colonnade` this never declines a room.
+- **A beam block that has an `axis` is laid along the run automatically.** Do not author `axis` — the
+  run direction comes from the room's proportions, so any authored value is wrong in every room
+  shaped the other way. A beam with no `axis` (any plain cube) is placed unchanged, which is what
+  lets the same entry carry a stone beam and a timber one.
+- **`bracketBlock` is optional and is any block, and it hangs *under* the beam.** A bracket carries
+  its beam from below — one sitting in the beam's own row is not supporting it, it is interrupting
+  it. So a bracketed entry occupies **two rows**: beams at `projection`, brackets at `projection + 1`,
+  with the beam running unbroken wall to wall above them. `dungeonblocks`' corbels are the obvious
+  choice, stairs are an equally good one, and no bracket at all is the default.
+  **Mind the headroom** — give a bracketed entry a `minHeight` one greater than a bare one needs.
+- **`orient` turns the bracket, not the beams.** `outward` points it at the wall its end rests on,
+  `inward` into the room; one authored value comes out turned correctly at both ends. A `dungeonblocks`
+  corbel wants **`inward`** — its post sits on the far face and the arm cantilevers away from it, so
+  the block faces off its wall. `orient` with no `bracketBlock` is a **load error**, since it would
+  otherwise be a line that does nothing.
+
+The beams are **not assumed to be timber.** Stone and stone brick beams are equally legitimate, and
+they are the ones that weather today: `classic_weathering.json` has 110 rules and none of them touch
+wood, so a timber beam ships un-aged among cracked stone until that is authored.
 
 Every type also takes **`projection`** (default 0), which hangs the treatment below the ceiling
 instead of drawing it flush in it — the same knob, the same meaning and the same cap as a wall
@@ -1280,10 +1400,27 @@ Scatters `dungeonblocks` pots across the room's floor, each carrying a loot tabl
   "variants": [
     { "entity": "dungeonblocks:pot", "weight": 2 },
     { "entity": "dungeonblocks:squat_clay_pot", "weight": 2 },
-    { "entity": "dungeonblocks:thin_clay_pot", "weight": 1 }
+    { "entity": "dungeonblocks:thin_clay_pot", "weight": 1 },
+    { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+    { "entity": "dungeonblocks:squat_stone_pot", "weight": 2 },
+    { "entity": "dungeonblocks:thin_stone_pot", "weight": 1 }
   ]
 }
 ```
+
+**Shape and palette are separate axes.** `dungeonblocks` ships each of the three shapes — tall
+(`pot`), squat (`squat_*`) and thin (`thin_*`) — in four palettes, and the id is the two combined:
+
+| Palette | Ids | Used by |
+|---|---|---|
+| terracotta | `pot`, `squat_clay_pot`, `thin_clay_pot` | procedurally generated rooms |
+| grey / stone | `stone_pot`, `squat_stone_pot`, `thin_stone_pot` | procedurally generated rooms |
+| red | `red_pot`, `squat_red_pot`, `thin_red_pot` | **template rooms only** |
+| blue | `blue_pot`, `squat_blue_pot`, `thin_blue_pot` | **template rooms only** |
+
+Red and blue are **deliberately kept out of the scheme `variants` lists**: they are reserved as a
+hand-placed signal in template (prefab) rooms, and a scheme that rolls them procedurally would make
+that signal meaningless. Add grey freely; do not add red or blue to a motif's schemes.
 
 `lootTable` and `variants` are **required**; `minCount`/`maxCount` default to 1 and 3. A count is
 rolled per room from that inclusive range, then that many distinct cells are drawn — a room with
@@ -1293,7 +1430,7 @@ fewer eligible cells than the rolled count just gets fewer pots.
 
 - **`lootTable` is required for a reason.** `PotEntity` drops nothing at all when its table id is
   null or `minecraft:empty`, and it does **not** fall back to the entity type's own table — the
-  ones `dungeonblocks` ships for its three pot types are empty stubs with no pools. A missing or
+  ones `dungeonblocks` ships for its pot types are empty stubs with no pools. A missing or
   typo'd id is a pot that shatters into thin air with no error anywhere. The id must resolve to a
   file this mod ships; `DatapackResourcesParseTest` fails the build if it doesn't.
 - **The table must be `"type": "minecraft:entity"`.** The drop path builds its `LootParams` with the
@@ -1329,6 +1466,18 @@ So a hand-authored prefab and the procedural room next to it weather identically
 one file. Adding a theme's weathering is pure data: create
 `data/dungeons2/worldgen/processor_list/<motif>_weathering.json`. A motif with no such
 file simply generates undecorated — the same graceful degradation a missing pool has.
+
+> **A misspelled block id does not fail this file — it becomes `minecraft:air`.** The block registry
+> is *defaulted*, so an unknown id decodes cleanly to the default value instead of erroring: a
+> misspelled decay target produces a rule that never fires, and a misspelled palette entry grows air.
+> Two things now catch it. GottschCore logs a warning naming the id at load, and
+> `ShippedBlockIdsTest` fails the build for any bad id anywhere in this mod's shipped data —
+> including `dungeonblocks:` ids, which it checks against the blockstate files in that mod's jar,
+> because a headless registry cannot answer for them.
+>
+> If you add a field that holds a block id, add its key to that test's `BLOCK_KEYS`. It fails on any
+> namespaced value under a key it does not recognise, precisely so the sweep cannot quietly stop
+> covering new fields.
 
 ### Which processor to use
 
@@ -1368,7 +1517,9 @@ Each is an object, not a bare number, so a behaviour carries its own palette:
 ```json
 {
   "processor_type": "dungeons2:decoration",
-  "cobwebs":     { "probability": 0.02, "blocks": ["minecraft:cobweb"] },
+  "cobwebs":        { "probability": 0.02, "blocks": ["minecraft:cobweb"] },
+  "corner_cobwebs": { "probability": 0.06, "blocks": ["dungeonblocks:angle_cobweb_1",
+                                                      "dungeonblocks:angle_cobweb_2"] },
   "wall_growth": { "probability": 0.04, "bonus": 0.22, "max": 0.55,
                    "blocks": ["minecraft:glow_lichen", "dungeonblocks:lichen"] },
 
@@ -1386,6 +1537,7 @@ Each is an object, not a bare number, so a behaviour carries its own palette:
 | Behaviour | Fires on | Writes to |
 |---|---|---|
 | `cobwebs` | air with a **horizontally adjacent solid** — corners and wall faces, not open floor | that cell |
+| `corner_cobwebs` | air with a **full-cube wall AND a full-cube floor or ceiling** — the junction between the two | that cell, angled into the junction |
 | `wall_growth` | air beside a solid block | that cell, attached to the wall's face |
 | `floor_growth` | a `dirt` block with air above | the cell above |
 | `hanging_growth` | a `dirt` block with air below | the cell below |
@@ -1395,6 +1547,32 @@ Each is an object, not a bare number, so a behaviour carries its own palette:
 
 Every behaviour takes `probability` (absolute — one roll per candidate position, *not*
 conditional like the rule/aging chains) and `blocks` (a palette, picked from uniformly).
+
+**`corner_cobwebs` is a separate behaviour from `cobwebs`, and deliberately so.** A
+`minecraft:cobweb` fills its cell and strings itself across any gap, so "something solid beside it"
+is the whole requirement. An angle web is modelled as a triangular sheet that **gathers into the
+angle where two surfaces meet** and tapers away from it — put one halfway up a bare wall and it has
+nothing to gather into, and reads as a sheet hanging in mid-air. It is a different question, not a
+different palette entry, which is also why the two carry independent probabilities. Three things
+follow:
+
+- **Both surfaces must be full cubes**, not merely solid — same reason `wall_growth` needs one. A
+  stair or a facade passes `isSolid` but presents no face to gather against.
+- **The block must be able to express the orientation.** The processor sets `facing` from the
+  neighbours, compensating for the piece's own rotation and mirroring. A block with no such
+  property — `minecraft:cobweb` — draws nothing here rather than being placed unoriented. Nothing
+  in the processor names a block.
+- **The junction is chosen with `half`, not with `facing`.** Both junctions use the *same*
+  horizontal facing so the web's sheet stands against the wall; `half=top` gathers it at the
+  ceiling and `half=bottom` at the floor, and the two are different models. This is not a stylistic
+  choice — a vertical facing tips the sheet flat onto the floor, and the vertical mirror that would
+  be wanted instead cannot be expressed as a blockstate rotation at all. **A web with no `half`
+  (e.g. a ceiling-only model) is used at ceiling junctions and skipped at floor-only ones** rather
+  than placed wrong.
+- **Use a higher probability than `cobwebs`.** This fires on far fewer cells (only wall/floor and
+  wall/ceiling junctions), so the same rate would be nearly invisible; `classic` runs 0.06 against
+  the plain web's 0.02.
+
 `wall_growth` adds two more:
 
 | Field | Default | Meaning |

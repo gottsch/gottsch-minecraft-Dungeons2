@@ -24,6 +24,16 @@ competitor.
 the others occupy, it took 506 rooms (14.6%) from `plain` and changed the other four by *nothing*.
 If you are adding a scheme for authoring visibility, giving it its own band beats raising its weight.
 
+> **A gated scheme's share moves when the size distribution moves — measured 2026-08-10.**
+> `quartet_hall` is now **609 rooms (21.2%)**, up from that 14.6%, with nothing about it changed.
+> Backlog #35 stopped the planner building 5×5 joiner rooms, which grew the 7-wide band from 38% to
+> 53% of the dungeon *and* left `quartet_hall` as one of only **two** schemes eligible there. It
+> takes 40.3% of that band, because at min side 7 the roll is `plain` (12) against `quartet_hall`
+> (12) and nothing else. Owning a band cuts both ways: it insulates a scheme from new competitors,
+> and it hands the scheme the whole band when the band grows. **Re-measure a gated scheme after any
+> change to room sizes.** (Left at weight 12 deliberately — Mark, 2026-08-10: the schemes are not
+> fleshed out yet and high visibility is wanted during authoring.)
+
 ## There is no required set of files
 
 **A motif is a folder, and the folder's contents are entirely up to you** — any number of files,

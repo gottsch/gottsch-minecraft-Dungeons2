@@ -5,18 +5,20 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.Direction;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The three surface-generic pattern shapes. Written against {@code (u, v)} rather than against a
+ * The four surface-generic pattern shapes. Written against {@code (u, v)} rather than against a
  * ceiling, so these tests are pure geometry -- no room, no world.
  */
 class SurfacePatternProvidersTest {
@@ -234,6 +236,194 @@ class SurfacePatternProvidersTest {
     @Test
     void aNonPositiveBossMarksNothing() {
         assertEquals(0, new CentreSurfacePatternProvider(0, corner).plan(5, 5, DOWN).markedCells());
+    }
+
+    // ---------- joists ----------
+
+    /** A log: the case where {@code axis} has to be derived. */
+    private static JoistSurfacePatternProvider joists(int spacing) {
+        return JoistSurfacePatternProvider.beams(spacing, Blocks.SPRUCE_LOG.defaultBlockState());
+    }
+
+    /** Vanilla stairs stand in for a corbel -- what matters is that it carries {@code facing}. */
+    private static JoistSurfacePatternProvider brackets(int spacing, SurfaceOrient orient) {
+        return JoistSurfacePatternProvider.brackets(spacing,
+                Blocks.STONE_BRICK_STAIRS.defaultBlockState(), orient,
+                CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
+    }
+
+    /**
+     * The rule that separates this from a colonnade: a beam <strong>spans</strong>, so it crosses
+     * the shorter extent and the rhythm steps along the longer one. A colonnade runs the other way,
+     * along the length -- reusing its elongation test here would put the beams down the room.
+     */
+    @Test
+    void beamsRunAcrossTheShorterAxis() {
+        // u is the short axis (5 against 9), so each beam is a full row of constant v.
+        SurfacePlan plan = joists(3).plan(5, 9, DOWN);
+        for (int u = 0; u < 5; u++) {
+            assertTrue(plan.get(u, 4) != null, "the centre beam should cross the whole 5-cell span");
+        }
+        assertNull(plan.get(2, 3), "and the cells between beams stay base");
+    }
+
+    @Test
+    void andTheOtherWayRoundWhenTheOtherAxisIsShorter() {
+        SurfacePlan plan = joists(3).plan(9, 5, DOWN);
+        for (int v = 0; v < 5; v++) {
+            assertTrue(plan.get(4, v) != null, "the centre beam should cross the whole 5-cell span");
+        }
+        assertNull(plan.get(3, 2));
+    }
+
+    /**
+     * A square surface has no shorter axis, so the tie-break must be fixed rather than rolled: a
+     * room renders once per overlapping chunk and every run has to agree, or the ceiling tears at
+     * the seam.
+     */
+    @Test
+    void aSquareSurfaceAlwaysRunsAlongUAndNeverDeclines() {
+        SurfacePlan plan = joists(3).plan(7, 7, DOWN);
+        for (int u = 0; u < 7; u++) {
+            assertTrue(plan.get(u, 3) != null, "u runs, so the centre row is a beam");
+        }
+        assertNull(plan.get(3, 4), "and the column is not");
+        assertEquals(plan.markedCells(), joists(3).plan(7, 7, DOWN).markedCells(),
+                "same input, same answer");
+    }
+
+    /** The same centred rhythm the coffer lattice uses, shared rather than restated. */
+    @Test
+    void theBeamRhythmIsCentred() {
+        SurfacePlan plan = joists(3).plan(5, 7, DOWN);
+        assertTrue(plan.get(0, 3) != null, "a beam lands on the centre line");
+        assertTrue(plan.get(0, 0) != null);
+        assertTrue(plan.get(0, 6) != null);
+        assertNull(plan.get(0, 1));
+        assertNull(plan.get(0, 2));
+    }
+
+    /** Every line a beam is a solid ceiling, not a run of joists -- same degrade as the grid's. */
+    @Test
+    void aSpacingOfOneOrLessMarksNoBeams() {
+        assertEquals(0, joists(1).plan(7, 7, DOWN).markedCells());
+        assertEquals(0, joists(0).plan(7, 7, DOWN).markedCells());
+    }
+
+    /**
+     * A beam block that has an {@code axis} is laid <em>along</em> the run. This cannot be authored:
+     * the run direction comes from the room's proportions, so a hardcoded value is wrong in every
+     * room shaped the other way.
+     */
+    @Test
+    void aBeamWithAnAxisIsLaidAlongItsRun() {
+        assertEquals(Direction.Axis.X, joists(3).plan(5, 9, DOWN).get(2, 4).getValue(RotatedPillarBlock.AXIS),
+                "u is short, so the beams run east-west");
+        assertEquals(Direction.Axis.Z, joists(3).plan(9, 5, DOWN).get(4, 2).getValue(RotatedPillarBlock.AXIS),
+                "v is short, so they run north-south");
+    }
+
+    /** A stone beam is a plain cube with no axis at all, and must be placed rather than rejected. */
+    @Test
+    void aBeamWithNoAxisIsPlacedUnchanged() {
+        SurfacePlan plan = JoistSurfacePatternProvider.beams(3, edge).plan(5, 9, DOWN);
+        assertSame(edge, plan.get(2, 4));
+    }
+
+    /**
+     * The beams are never interrupted: a bracket carries its beam from the row <em>below</em>, so
+     * the beam's own plan runs unbroken wall to wall whether or not one is authored.
+     *
+     * <p>The first cut had the bracket replace the end cell, which Mark rejected on sight in game
+     * &mdash; a corbel sitting in the beam's row is not supporting it, it is interrupting it.</p>
+     */
+    @Test
+    void theBeamRunsUnbrokenToBothWalls() {
+        SurfacePlan plan = joists(3).plan(5, 9, DOWN);
+        for (int u = 0; u < 5; u++) {
+            assertEquals(Blocks.SPRUCE_LOG, plan.get(u, 4).getBlock(), "cell (" + u + ",4)");
+        }
+    }
+
+    /** And the brackets are a plan of their own, marking only the ends the beams run between. */
+    @Test
+    void theBracketPlanMarksOnlyTheEndsOfEachRun() {
+        SurfacePlan plan = brackets(3, SurfaceOrient.INWARD).plan(5, 9, DOWN);
+        assertEquals(Blocks.STONE_BRICK_STAIRS, plan.get(0, 4).getBlock());
+        assertEquals(Blocks.STONE_BRICK_STAIRS, plan.get(4, 4).getBlock());
+        for (int u = 1; u <= 3; u++) {
+            assertNull(plan.get(u, 4), "the span between the brackets is open air at (" + u + ",4)");
+        }
+    }
+
+    /**
+     * <strong>Bracket lines and beam lines must be the same lines.</strong> Both parts derive the
+     * run axis and the rhythm from the same extents, so this holds by construction rather than by
+     * agreement -- which is the reason the two are one class with a {@code Part} and not two.
+     */
+    @Test
+    void everyBracketSitsUnderABeam() {
+        SurfacePlan beams = joists(3).plan(9, 5, DOWN);
+        SurfacePlan brackets = brackets(3, SurfaceOrient.INWARD).plan(9, 5, DOWN);
+        for (int u = 0; u < 9; u++) {
+            for (int v = 0; v < 5; v++) {
+                if (brackets.get(u, v) != null) {
+                    assertNotNull(beams.get(u, v),
+                            "a bracket with no beam over it at (" + u + "," + v + ")");
+                }
+            }
+        }
+    }
+
+    /**
+     * One authored {@code orient} turns both brackets relative to <em>their own</em> wall, which is
+     * the same thing a wall course's orient buys across four runs. {@code outward} points each
+     * bracket at the wall its end rests on.
+     */
+    @Test
+    void eachBracketFacesItsOwnEndOfTheRun() {
+        SurfacePlan plan = brackets(3, SurfaceOrient.OUTWARD).plan(5, 9, DOWN);
+        // u advances east, so the run's two ends are west (u=0) and east (u=4).
+        assertEquals(Direction.WEST, plan.get(0, 4).getValue(StairBlock.FACING));
+        assertEquals(Direction.EAST, plan.get(4, 4).getValue(StairBlock.FACING));
+    }
+
+    /**
+     * {@code inward} is the value a {@code dungeonblocks} corbel wants: its model puts the post on
+     * the far face and cantilevers the arm away from it, so the block faces off its wall into the
+     * room. Kept as an authored choice rather than assumed, because #25's family of inverted trim
+     * models is exactly where reasoning about this has been wrong before.
+     */
+    @Test
+    void inwardIsTheExactOppositeAtBothEnds() {
+        SurfacePlan out = brackets(3, SurfaceOrient.OUTWARD).plan(5, 9, DOWN);
+        SurfacePlan in = brackets(3, SurfaceOrient.INWARD).plan(5, 9, DOWN);
+        assertEquals(out.markedCells(), in.markedCells(), "orientation must not change the shape");
+        assertEquals(Direction.EAST, in.get(0, 4).getValue(StairBlock.FACING));
+        assertEquals(Direction.WEST, in.get(4, 4).getValue(StairBlock.FACING));
+    }
+
+    /**
+     * A one-cell run has one end, not two. Without the guard the far-end write would land on the
+     * same cell facing the other way, so the "outward" bracket in a 1-wide room would silently be
+     * the inward one.
+     */
+    @Test
+    void aOneCellRunGetsASingleBracket() {
+        // A 1x9 surface is three one-cell runs (stride 1, 4, 7), each with one end rather than two.
+        SurfacePlan plan = brackets(3, SurfaceOrient.OUTWARD).plan(1, 9, DOWN);
+        assertEquals(3, plan.markedCells(), "one bracket per run");
+        assertEquals(Direction.WEST, plan.get(0, 4).getValue(StairBlock.FACING),
+                "without the guard the far-end write lands on the same cell and turns it east");
+    }
+
+    /** Orienting a bracket with no facing is an authoring slip, not a crash in worldgen. */
+    @Test
+    void orientingABracketWithNoFacingLeavesItAlone() {
+        JoistSurfacePatternProvider provider = JoistSurfacePatternProvider.brackets(
+                3, corner, SurfaceOrient.OUTWARD,
+                CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
+        assertSame(corner, provider.plan(5, 9, DOWN).get(0, 4));
     }
 
     // ---------- composition ----------

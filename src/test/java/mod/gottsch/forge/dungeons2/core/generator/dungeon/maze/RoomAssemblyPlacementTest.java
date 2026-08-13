@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
@@ -50,17 +51,36 @@ class RoomAssemblyPlacementTest {
 
     private static final int SEEDS = 200;
     private static final int FLOORS = 3;
-    /** {@code ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR} in the planner. */
+    /** The planner's own default, which this test drives explicitly rather than relying on. */
     private static final int ATTEMPTS_PER_FLOOR = 2;
+    /** What {@code generation_config/default.json} ships (backlog #16). */
+    private static final int SHIPPED_ATTEMPTS_PER_FLOOR = 4;
 
     @Test
     void aRotatedRoomPrefabIsAlmostAlwaysAdopted() {
+        assertAdoptionHolds(ATTEMPTS_PER_FLOOR);
+    }
+
+    /**
+     * Adoption has to survive the count the mod actually ships, not just the planner's default.
+     * More attempts per floor compete for the same floor area &mdash; each adopted prefab reserves
+     * its footprint against the next attempt &mdash; so a rate measured at 2 says nothing about 4.
+     * This is the check that would catch raising the shipped number too far.
+     */
+    @Test
+    void adoptionSurvivesTheShippedAttemptCount() {
+        assertAdoptionHolds(SHIPPED_ATTEMPTS_PER_FLOOR);
+    }
+
+    private void assertAdoptionHolds(int attemptsPerFloor) {
         int adopted = 0;
+        int normalRooms = 0;
         for (long seed = 0; seed < SEEDS; seed++) {
             Optional<DungeonLayout> opt = new DungeonStackPlanner(
                     seed, new Coords(128, 0, 256), 72, "classic", new TemplateCatalog())
                     .withSize(DungeonSize.MEDIUM)
                     .withFloorCount(FLOORS)
+                    .withRoomTemplateAttempts(attemptsPerFloor)
                     .withRoomAssembler(ROTATED_7X7)
                     .plan();
             if (opt.isEmpty()) {
@@ -68,6 +88,9 @@ class RoomAssemblyPlacementTest {
             }
             for (FloorLayout floor : opt.get().getFloors()) {
                 for (RoomData room : floor.getRooms()) {
+                    if (room.getRole() == RoomRole.NORMAL) {
+                        normalRooms++;
+                    }
                     if (room.getTemplateId() == null || !room.getTemplateId().contains("rooms/assembled")) {
                         continue;
                     }
@@ -83,13 +106,18 @@ class RoomAssemblyPlacementTest {
             }
         }
 
-        int slots = SEEDS * FLOORS * ATTEMPTS_PER_FLOOR;
+        int slots = SEEDS * FLOORS * attemptsPerFloor;
         double rate = (double) adopted / slots;
+        System.out.printf("room-prefab adoption at %d attempts/floor: %d of %d (%.1f%%), "
+                        + "%.1f prefabs and %.1f rooms per %d-floor dungeon -> %.1f%% prefab share%n",
+                attemptsPerFloor, adopted, slots, rate * 100, (double) adopted / SEEDS,
+                (double) normalRooms / SEEDS, FLOORS, 100.0 * adopted / normalRooms);
         assertTrue(rate >= 0.90, String.format(
-                "only %.0f%% of room-prefab slots were filled (%d of %d) -- a rotated prefab's real "
-                        + "footprint sits up to 6 blocks west/north of the assembly point, so a slot "
-                        + "picked before the footprint is known lands out of bounds and is dropped",
-                rate * 100, adopted, slots));
+                "only %.0f%% of room-prefab slots were filled (%d of %d) at %d attempts/floor -- a "
+                        + "rotated prefab's real footprint sits up to 6 blocks west/north of the "
+                        + "assembly point, so a slot picked before the footprint is known lands out "
+                        + "of bounds and is dropped",
+                rate * 100, adopted, slots, attemptsPerFloor));
     }
 
     /**

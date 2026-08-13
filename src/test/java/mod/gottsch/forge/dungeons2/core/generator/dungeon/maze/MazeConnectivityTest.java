@@ -69,7 +69,7 @@ class MazeConnectivityTest {
             assertNotNull(grid, "floor should carry its transient grid for the test");
 
             RoomData start = roomWithRole(floor, RoomRole.START);
-            RoomData end = roomWithRole(floor, RoomRole.END);
+            RoomData end = endpointOf(floor);
             assertNotNull(start, "seed " + seed + ": missing START room");
             assertNotNull(end, "seed " + seed + ": missing END room");
 
@@ -88,10 +88,20 @@ class MazeConnectivityTest {
                     .plan()
                     .orElseThrow();
             FloorLayout floor = layout.getFloors().get(0);
-            RoomData end = roomWithRole(floor, RoomRole.END);
+            RoomData end = endpointOf(floor);
             assertEquals(1, end.getDoorways().size(),
                     "seed " + seed + ": terminal room should have exactly one entrance");
         }
+    }
+
+    /**
+     * The floor's endpoint room, whichever role it carries: a downstairs transition slot on an
+     * upper floor ({@code END}), or the dungeon's final room on the bottom one ({@code TERMINAL}).
+     * Connectivity is the same question for both.
+     */
+    private RoomData endpointOf(FloorLayout floor) {
+        RoomData end = roomWithRole(floor, RoomRole.END);
+        return end != null ? end : roomWithRole(floor, RoomRole.TERMINAL);
     }
 
     private RoomData roomWithRole(FloorLayout floor, RoomRole role) {

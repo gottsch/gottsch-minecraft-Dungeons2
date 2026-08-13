@@ -1,11 +1,11 @@
 {
-  "name": "dungeons2:entrance/descent_ladder",
+  "name": "dungeons2:entrance/classic/surface_entrance",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:entrances/classic/entrance_ladder_1",
+        "location": "dungeons2:entrances/classic/entrance_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

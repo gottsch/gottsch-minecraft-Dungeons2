@@ -37,7 +37,7 @@ import java.util.List;
  * <p>{@code lootTable} is <strong>required</strong>, and required for a reason:
  * {@code PotEntity#dropLoot} returns early when its table id is null or {@code minecraft:empty},
  * with <em>no</em> fallback to the entity type's own table &mdash; and the tables
- * {@code dungeonblocks} ships for its three pot types are empty stubs with no pools. A pot without
+ * {@code dungeonblocks} ships for its pot types are empty stubs with no pools. A pot without
  * a table here is a pot that shatters into nothing, silently. Making the field required turns that
  * into a load-time error instead.</p>
  *
@@ -60,6 +60,12 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
     /**
      * One weighted pot entity type. A separate record rather than a bare id list so a motif can say
      * "mostly the tall pot, occasionally a squat one" without repeating ids.
+     *
+     * <p>{@code dungeonblocks} ships each of its three pot shapes in four palettes. Only the
+     * terracotta and grey/stone ones belong here: <strong>red and blue are reserved for hand-placed
+     * pots in template rooms</strong>, where they act as a signal a procedural roll would dilute to
+     * nothing. Nothing enforces that &mdash; an entity id is just a string to this codec &mdash; so
+     * it is stated here and in manual &sect;pots.</p>
      */
     public record PotVariant(String entity, int weight) {
         // Codecs.closed -- see RoomScheme.CODEC.

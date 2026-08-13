@@ -27,11 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Reproduces the ASSEMBLED-ENTRANCE path (Phase 4b) that the synthetic-fallback
- * voxel test never exercised. The real entrance is 2 pieces: surface_exit
- * (3x1x5) on top and descent_1 (7x7x15, octagonal, door-carrier) below. The
- * door-carrier's XZ bbox (7x7) becomes the reserved floor-0 START footprint and
- * the 3 dungeons2:door markers (mid-W / mid-N / mid-E flat sides) become the
+ * voxel test never exercised. The door-carrier's XZ bbox (7x7) becomes the
+ * reserved floor-0 START footprint and its dungeons2:door markers become the
  * START room's candidate doorways.
+ *
+ * <p>The geometry below is a hand-built stub, not a read of the shipped templates.
+ * It was modelled on the two-piece entrance of the time (a 3x1x5 cap over a 7x7x15
+ * octagonal door-carrier); the shipped chain has been three pieces since
+ * 2026-07-30 and those two files were deleted on 2026-08-13. The stub still
+ * exercises the path it was written for, since what it asserts is how the planner
+ * consumes an assembled entrance's markers, not which templates supplied them.</p>
  */
 class AssembledEntranceStubTest {
 

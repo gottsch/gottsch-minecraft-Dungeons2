@@ -111,6 +111,45 @@
             ]
           }
         ]
+      },
+      "pots": {
+        "maxSize": 7,
+        "minCount": 0,
+        "maxCount": 2,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
+            "weight": 1
+          }
+        ]
+      },
+      "platforms": {
+        "minSize": 9,
+        "patterns": [
+          {
+            "type": "dais",
+            "layout": "centre",
+            "block": "minecraft:stone_bricks",
+            "stairBlock": "minecraft:stone_brick_stairs",
+            "centreBlock": "minecraft:chiseled_stone_bricks",
+            "size": 3,
+            "inset": 1,
+            "orient": "inward"
+          }
+        ]
       }
     },
     {
@@ -164,10 +203,143 @@
       }
     },
     {
+      "name": "grand_hall",
+      "abstract": true,
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      },
+      "pots": {
+        "minCount": 1,
+        "maxCount": 2,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "joisted_hall_stone",
+      "extends": "grand_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 7,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "joists",
+            "block": "minecraft:polished_andesite",
+            "bracketBlock": "dungeonblocks:polished_andesite_corbel_block",
+            "orient": "inward",
+            "spacing": 3,
+            "projection": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "joisted_hall",
+      "weight": 12,
+      "minSize": 9,
+      "minHeight": 7,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "joists",
+            "block": "minecraft:spruce_log",
+            "bracketBlock": "dungeonblocks:spruce_corbel_block",
+            "orient": "inward",
+            "spacing": 3,
+            "projection": 1
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "cornerBlock": "minecraft:andesite",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      },
+      "pots": {
+        "minCount": 1,
+        "maxCount": 2,
+        "lootTable": "dungeons2:pots/classic",
+        "variants": [
+          {
+            "entity": "dungeonblocks:pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
       "name": "pilastered_hall",
       "weight": 12,
       "minSize": 9,
       "minHeight": 7,
+      "platforms": {
+        "patterns": [
+          {
+            "type": "dais",
+            "layout": "centre",
+            "block": "minecraft:stone_bricks",
+            "stairBlock": "minecraft:stone_brick_stairs",
+            "centreBlock": "minecraft:chiseled_stone_bricks",
+            "size": 3,
+            "inset": 1,
+            "orient": "inward",
+            "topBlock": "dungeonblocks:brazier_block",
+            "topProperties": {
+              "fire": "embers"
+            }
+          }
+        ]
+      },
       "wall": {
         "patterns": [
           {
@@ -227,6 +399,14 @@
           },
           {
             "entity": "dungeonblocks:squat_clay_pot",
+            "weight": 1
+          },
+          {
+            "entity": "dungeonblocks:stone_pot",
+            "weight": 2
+          },
+          {
+            "entity": "dungeonblocks:squat_stone_pot",
             "weight": 1
           }
         ]

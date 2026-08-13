@@ -43,10 +43,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  *
  * @author Mark Gottschling on Jul 25, 2026
  */
-public record DungeonGenerationConfig(int corridorWidth) {
+public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttemptsPerFloor) {
 
     /** Fallback used when no entry exists, so lookups never NPE. */
-    public static final DungeonGenerationConfig DEFAULT = new DungeonGenerationConfig(3);
+    public static final DungeonGenerationConfig DEFAULT = new DungeonGenerationConfig(3, 4);
 
     // Codecs.closed + strictOptionalFieldOf -- see RoomScheme.CODEC and Codecs#closed. With DFU's
     // own optionalFieldOf, "corridorWidth": 5 decoded cleanly to 3 and every corridor in the
@@ -54,6 +54,12 @@ public record DungeonGenerationConfig(int corridorWidth) {
     public static final Codec<DungeonGenerationConfig> CODEC = Codecs.closed(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(Codec.intRange(1, 3), "corridorWidth",
-                            DEFAULT.corridorWidth()).forGetter(DungeonGenerationConfig::corridorWidth)
+                            DEFAULT.corridorWidth()).forGetter(DungeonGenerationConfig::corridorWidth),
+                    // 0 is meaningful and deliberately in range: it turns prefab rooms off entirely
+                    // without deleting the pool, which is the only way to A/B them. The upper bound
+                    // is a cost guard -- each attempt is TWO jigsaw assemblies (probe + place).
+                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "roomTemplateAttemptsPerFloor",
+                            DEFAULT.roomTemplateAttemptsPerFloor())
+                            .forGetter(DungeonGenerationConfig::roomTemplateAttemptsPerFloor)
             ).apply(instance, DungeonGenerationConfig::new)));
 }

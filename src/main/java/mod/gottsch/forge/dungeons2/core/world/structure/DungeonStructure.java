@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
@@ -81,11 +82,13 @@ import java.util.Set;
  *
  * <h2>Phase 4b &mdash; jigsaw-assembled entrance</h2>
  * <p>The entrance is assembled up front by vanilla {@link JigsawPlacement} from
- * the {@code dungeons2:entrance/surface_entrance} start pool. Its {@code dungeons2:door}
+ * the {@code dungeons2:entrance/<motif>/surface_entrance} start pool. Its {@code dungeons2:door}
  * jigsaw markers are read back off the assembled pieces and drive floor 0's
  * walking-plane Y, reserved START footprint, and candidate doorways &mdash; all fed
  * into the planner via {@link DungeonStackPlanner#withAssembledEntrance}. The
- * assembled pieces are added to the builder alongside the procedural pieces; vanilla
+ * assembled pieces are added to the builder <em>after</em> the procedural ones &mdash; see the
+ * render-order note in {@code findGenerationPoint}, which is load-bearing: anything authored
+ * renders after anything generated, so a shared wall is won by the hand-built side. Vanilla
  * handles converting unconnected door jigsaws to their {@code final_state}. When no
  * entrance assembles (e.g. the pool is absent) the planner falls back to a
  * chunk-centered synthetic layout with no rendered entrance.</p>
@@ -102,20 +105,33 @@ public class DungeonStructure extends Structure {
      * pool(s). {@code maxDepth} is kept small so assembly never recurses into
      * the dungeon body.
      *
-     * <p><strong>Not motif-parametrized (unlike transitions/rooms below).</strong>
-     * {@code surface_exit.nbt}/{@code descent_1.nbt} have their own jigsaw
-     * assembly-joint {@code pool}/{@code target} fields baked into their NBT,
-     * cross-referencing each other by exact resource-location string
-     * ({@code dungeons2:entrance/descent}, {@code .../descent_top},
-     * {@code .../surface_entrance}). Moving this pool under a motif subfolder would
-     * require rewriting those embedded strings too -- safe to do by re-saving the
-     * jigsaw blocks in-game (Target Pool field), not something to blind-edit in
-     * compressed NBT. Rooms/transitions don't have this problem: their current
-     * content has no cross-pool references at all (see each's own doc below), so
-     * only the entrance is held back from motif support this pass.</p>
+     * <p><strong>Motif-parametrized since 2026-08-13</strong> (backlog #6), which
+     * makes it the last of the three pools to be. The entrance was held back because
+     * unlike rooms and transitions its pieces chain to each other, so each carries
+     * jigsaw fields naming the next link -- and those are baked into compressed NBT,
+     * not JSON.
+     *
+     * <p><strong>Only the {@code pool} field needed rewriting.</strong> A jigsaw's
+     * three id-shaped fields are not the same kind of thing: {@code pool} names a
+     * real {@code template_pool} resource and therefore has to move when the pool
+     * moves, while {@code name} and {@code target} are just labels vanilla matches
+     * against each other when choosing a joint. Those are deliberately left
+     * un-scoped ({@code dungeons2:entrance/ladder_top}, not
+     * {@code .../classic/ladder_top}): a motif's pool already restricts which
+     * pieces are candidates, so scoping the joint labels too would buy nothing and
+     * would force every new motif to re-label joints that mean the same thing. Two
+     * fields across two files was the whole edit.
+     *
+     * <p><strong>An in-game re-save of these templates reverts the patch.</strong>
+     * The Structure Block writes back whatever the jigsaw block in the world says,
+     * so a piece re-saved from a world whose copy predates this will silently
+     * restore the old un-scoped pool id -- see the entrance-chain notes in
+     * {@code structures/README.md}. {@code EntrancePoolWiringTest} is what catches
+     * it having happened.</p>
      */
-    private static final ResourceLocation ENTRANCE_START_POOL =
-            new ResourceLocation(Dungeons.MOD_ID, "entrance/surface_entrance");
+    private static ResourceLocation entranceStartPool(String motifValue) {
+        return new ResourceLocation(Dungeons.MOD_ID, "entrance/" + motifValue + "/surface_entrance");
+    }
     private static final int ENTRANCE_MAX_DEPTH = 5;
     private static final int ENTRANCE_MAX_DISTANCE = 116;
 
@@ -257,7 +273,7 @@ public class DungeonStructure extends Structure {
         // Phase 4b: assemble the jigsaw entrance FIRST — its dungeons2:door markers
         // define floor 0's walking-plane Y, footprint, and candidate doorways, all
         // of which the maze planner needs as inputs.
-        List<StructurePiece> entrancePieces = assembleEntrance(context, position);
+        List<StructurePiece> entrancePieces = assembleEntrance(context, position, motifValue);
         EntranceGeometry geo = scanEntranceGeometry(entrancePieces, templateManager, seed);
 
         // Transitions assemble lazily, one per inter-floor link, as the planner
@@ -350,7 +366,13 @@ public class DungeonStructure extends Structure {
         DungeonStackPlanner planner =
                 new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
                         surfaceY, motifValue, new TemplateCatalog());
-        planner.withCorridorWidth(DungeonGenerationConfigHelper.get(context.registryAccess()).corridorWidth());
+        // One resolve, both knobs. This is the ONLY planner call site: /d2-generate delegates to
+        // vanilla PlaceCommand.placeStructure, which comes back through here, so a knob wired up
+        // here reaches the command for free.
+        DungeonGenerationConfig generationConfig =
+                DungeonGenerationConfigHelper.get(context.registryAccess());
+        planner.withCorridorWidth(generationConfig.corridorWidth());
+        planner.withRoomTemplateAttempts(generationConfig.roomTemplateAttemptsPerFloor());
         planner.withCorridorStyles(corridorStyleWeights(
                 MotifConfigHelper.get(context.registryAccess(), motifValue).corridor()));
         if (overrides != null && overrides.size() != null) {
@@ -400,10 +422,36 @@ public class DungeonStructure extends Structure {
 
         return Optional.of(new GenerationStub(position, builder -> {
             try {
-                List<StructurePiece> allPieces = new ArrayList<>(entrancePieces);
+                // RENDER ORDER IS LOAD-BEARING; pieces are written in list order, last writer wins.
+                //
+                //   GENERATED (corridors + procedural rooms)
+                //     -> AUTHORED (entrance, transitions, prefab rooms)
+                //     -> doors
+                //
+                // The rule is "anything authored renders after anything generated". Adjacent room
+                // boxes overlap by one column by design, so an authored piece beside a procedural
+                // one shares a wall with it -- and every authored piece used to sit FIRST in this
+                // list and lose every contested cell. Measured with SharedWallProbe:
+                //
+                //   prefab rooms        87.0% share >= 1 wall with a procedural room, 1.53 sides each
+                //   entrance/transitions 43.3% share >= 1 wall with a procedural room, 0.70 sides each
+                //
+                // i.e. ~1.5 of every prefab's four hand-authored walls was being painted over with
+                // generated stone. Hand-authored content should win that contest; that is the whole
+                // reason it was authored.
+                //
+                // DOORS STAY LAST, and every authored piece must stay in front of them. An authored
+                // piece writes its own dungeons2:door marker cells from the jigsaw final_state with
+                // no knowledge of whether the maze opened that candidate, so one rendered after its
+                // doors would seal them shut again. (dungeons2:connector cells are exempt from the
+                // question entirely -- they never get a door piece, because the template already
+                // has a real built door there.)
+                List<StructurePiece> allPieces =
+                        new ArrayList<>(DungeonPieceEmitter.emitTerrain(layout, emitAnchorX, emitAnchorZ));
+                allPieces.addAll(entrancePieces);
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));
-                allPieces.addAll(DungeonPieceEmitter.emit(layout, emitAnchorX, emitAnchorZ));
+                allPieces.addAll(DungeonPieceEmitter.emitDoors(layout, emitAnchorX, emitAnchorZ));
 
                 // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
                 // full chunk range every piece's bounding box says it should touch, so
@@ -521,11 +569,12 @@ public class DungeonStructure extends Structure {
      * assembles). Assembly is run once here and the resulting piece instances are
      * reused, keeping the result deterministic.
      */
-    private static List<StructurePiece> assembleEntrance(GenerationContext context, BlockPos position) {
+    private static List<StructurePiece> assembleEntrance(GenerationContext context, BlockPos position,
+                                                         String motifValue) {
         Registry<StructureTemplatePool> poolRegistry =
                 context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
         Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
-                ResourceKey.create(Registries.TEMPLATE_POOL, ENTRANCE_START_POOL));
+                ResourceKey.create(Registries.TEMPLATE_POOL, entranceStartPool(motifValue)));
         if (startPool.isEmpty()) {
             return List.of();
         }
@@ -757,6 +806,7 @@ public class DungeonStructure extends Structure {
                         fp.getMinX(), s.assemblyY(), fp.getMinY(), fp.getWidth(), fp.getHeight());
             }
         }
+
         return out;
     }
 
@@ -807,16 +857,53 @@ public class DungeonStructure extends Structure {
         }
 
         List<StructurePiece> out = new ArrayList<>();
+        Set<String> built = new HashSet<>();
         for (StagedRoom s : staged) {
             Rectangle2D fp = s.worldFootprint();
-            if (adopted.contains(footprintKey(fp.getMinX(), fp.getMinY(),
-                    fp.getWidth(), fp.getHeight(), s.assemblyY()))) {
+            String key = footprintKey(fp.getMinX(), fp.getMinY(),
+                    fp.getWidth(), fp.getHeight(), s.assemblyY());
+            if (adopted.contains(key)) {
+                built.add(key);
                 out.addAll(s.pieces());
             } else {
                 Dungeons.LOGGER.debug(
                         "discarding assembled room at world ({},{},{}) {}x{} -- the planner did not "
                                 + "adopt this footprint, so the maze reserved nothing for it",
                         fp.getMinX(), s.assemblyY(), fp.getMinY(), fp.getWidth(), fp.getHeight());
+            }
+        }
+
+        // The OTHER direction, which used to be silent and is the one a player sees. A room the
+        // planner marked as templated is skipped by DungeonPieceEmitter on the promise that a
+        // staged prefab covers it; if no staged footprint matches, nothing builds it at all and the
+        // room generates as a walled, empty box. Discarding a prefab (above) is a tidy no-op --
+        // ordinary rooms fill the space. This is the fault.
+        if (built.size() < adopted.size()) {
+            for (FloorLayout floor : layout.getFloors()) {
+                for (RoomData room : floor.getRooms()) {
+                    if (room.getTemplateId() == null) {
+                        continue;
+                    }
+                    int worldX = anchorX + room.getOriginX();
+                    int worldZ = anchorZ + room.getOriginZ();
+                    String key = footprintKey(worldX, worldZ, room.getWidth(), room.getDepth(),
+                            floor.getFloorY());
+                    if (!built.contains(key)) {
+                        Dungeons.LOGGER.error(
+                                "[D2-PREFAB] EMPTY ROOM: floor {} adopted a templated room at world "
+                                        + "({},{},{}) {}x{} but no staged prefab matched it -- the "
+                                        + "procedural emitter skipped it too, so this room will "
+                                        + "generate as an empty box. Staged footprints: {}",
+                                floor.getFloorIndex(), worldX, floor.getFloorY(), worldZ,
+                                room.getWidth(), room.getDepth(),
+                                staged.stream()
+                                        .map(t -> t.worldFootprint().getMinX() + "," + t.assemblyY()
+                                                + "," + t.worldFootprint().getMinY() + " "
+                                                + t.worldFootprint().getWidth() + "x"
+                                                + t.worldFootprint().getHeight())
+                                        .toList());
+                    }
+                }
             }
         }
         return out;

@@ -61,17 +61,27 @@ public class GridSurfacePatternProvider implements ISurfacePatternProvider {
         if (spacing <= 1 || uSize <= 0 || vSize <= 0) {
             return plan;
         }
-        int uCentre = (uSize - 1) / 2;
-        int vCentre = (vSize - 1) / 2;
         for (int u = 0; u < uSize; u++) {
-            boolean uRib = Math.abs(u - uCentre) % spacing == 0;
+            boolean uRib = onCentredRhythm(u, uSize, spacing);
             for (int v = 0; v < vSize; v++) {
-                boolean vRib = Math.abs(v - vCentre) % spacing == 0;
-                if (uRib || vRib) {
+                if (uRib || onCentredRhythm(v, vSize, spacing)) {
                     plan.set(u, v, rib);
                 }
             }
         }
         return plan;
+    }
+
+    /**
+     * Whether the line at {@code index} carries a rib: the centred rhythm this class documents,
+     * exposed because {@link JoistSurfacePatternProvider} steps to the same one along its single
+     * axis.
+     *
+     * <p>Shared rather than restated for the reason {@code ColonnadePillarPatternProvider} reuses
+     * {@code GridPillarPatternProvider.positions}: centring arithmetic has already been got wrong
+     * once in this codebase, invisibly, because it only misbehaves at some extents.</p>
+     */
+    public static boolean onCentredRhythm(int index, int extent, int spacing) {
+        return spacing > 1 && Math.abs(index - (extent - 1) / 2) % spacing == 0;
     }
 }

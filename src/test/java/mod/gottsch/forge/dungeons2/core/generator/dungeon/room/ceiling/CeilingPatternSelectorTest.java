@@ -6,6 +6,7 @@ import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfacePatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.SizeGate;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
@@ -15,6 +16,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CentreSur
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.GridSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.JoistSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Direction;
@@ -35,6 +37,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -150,6 +153,106 @@ class CeilingPatternSelectorTest {
                 JsonOps.INSTANCE, new CeilingPatternEntry(List.of(coffers)));
         assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
         assertTrue(encoded.error().get().message().contains("orient"),
+                "the message should name the offending field: " + encoded.error().get().message());
+    }
+
+    // ---------- joists (backlog #36) ----------
+
+    /** Flush (projection 0), so {@code plan()} is the layer under test rather than an empty one. */
+    private static SurfacePatternEntry joists(Optional<String> bracket, SurfaceOrient orient) {
+        return new SurfacePatternEntry("joists", Optional.of("minecraft:spruce_log"),
+                Optional.empty(), bracket, 0, 3, 1, 0, orient, Map.of(), SizeGate.UNBOUNDED);
+    }
+
+    @Test
+    void joistsDispatchToTheirOwnProvider() {
+        assertInstanceOf(JoistSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
+                entry(new SurfacePatternEntry("joists", "minecraft:spruce_log"))));
+    }
+
+    /** A bracket is optional, so an entry without one is a single flush layer of bare beams. */
+    @Test
+    void joistsWithoutABracketAreOneLayerOfBeams() {
+        assertInstanceOf(JoistSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
+                entry(joists(Optional.empty(), SurfaceOrient.NONE))));
+    }
+
+    /**
+     * <strong>A bracket is a layer of its own, one row below the beams.</strong> A corbel carries
+     * its beam from underneath; one placed in the beam's own row is not supporting it, it is
+     * interrupting it &mdash; which is what the first cut did, and what Mark rejected on the first
+     * screenshots. So one authored pattern becomes two layers here, and the depth grouping the
+     * selector already had keeps them apart.
+     */
+    @Test
+    void aBracketedJoistEntryHangsItsBracketsARowBelowTheBeams() {
+        ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(
+                entry(joists(Optional.of("minecraft:stone_brick_stairs"), SurfaceOrient.INWARD)));
+        SurfacePlan beams = provider.plan(5, 9, Direction.DOWN, RandomSource.create(0L));
+        for (int u = 0; u < 5; u++) {
+            assertEquals(Blocks.SPRUCE_LOG, beams.get(u, 4).getBlock(),
+                    "the beam layer runs unbroken at u=" + u);
+        }
+        Map<Integer, SurfacePlan> below = assertInstanceOf(IProjectingPatternProvider.class, provider)
+                .projectedPlans(5, 9, Direction.DOWN, RandomSource.create(0L));
+        assertEquals(Set.of(1), below.keySet(), "the brackets hang exactly one row down");
+        SurfacePlan brackets = below.get(1);
+        assertEquals(Blocks.STONE_BRICK_STAIRS, brackets.get(0, 4).getBlock());
+        assertEquals(Blocks.STONE_BRICK_STAIRS, brackets.get(4, 4).getBlock());
+        assertNull(brackets.get(2, 4), "and nothing hangs under the middle of the span");
+    }
+
+    /**
+     * A bracket id that will not resolve degrades to no bracket rather than dropping the pattern --
+     * the same call the ring's {@code cornerBlock} makes. A typo in the trim should not delete the
+     * beams it was decorating.
+     */
+    @Test
+    void anUnresolvableBracketLeavesTheBeamsAlone() {
+        ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(
+                entry(joists(Optional.of("dungeonblocks:no_such_corbel"), SurfaceOrient.NONE)));
+        // Bare beams, and specifically nothing hanging below them: an unknown id resolving to the
+        // block registry's default would hang a row of AIR under every run -- backlog #13's trap,
+        // here in its most visible form. blockOrNull rejecting AIR is what stops it.
+        assertInstanceOf(JoistSurfacePatternProvider.class, provider);
+        SurfacePlan plan = provider.plan(5, 9, Direction.DOWN, RandomSource.create(0L));
+        assertEquals(Blocks.SPRUCE_LOG, plan.get(0, 4).getBlock());
+        assertEquals(Blocks.SPRUCE_LOG, plan.get(4, 4).getBlock());
+    }
+
+    /**
+     * {@code orient} on joists turns the bracket, so authoring one with no bracket is a line that
+     * does nothing -- the silent-nothing class this whole validate exists to close. It fails the
+     * load instead.
+     */
+    @Test
+    void orientOnJoistsWithNoBracketFailsTheLoad() {
+        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(JsonOps.INSTANCE,
+                new CeilingPatternEntry(List.of(joists(Optional.empty(), SurfaceOrient.INWARD))));
+        assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
+        assertTrue(encoded.error().get().message().contains("bracketBlock"),
+                "the message should name what is missing: " + encoded.error().get().message());
+    }
+
+    @Test
+    void orientOnJoistsWithABracketLoadsCleanly() {
+        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(JsonOps.INSTANCE,
+                new CeilingPatternEntry(List.of(
+                        joists(Optional.of("dungeonblocks:spruce_corbel_block"), SurfaceOrient.INWARD))));
+        assertTrue(encoded.error().isEmpty(), "unexpected error: " + encoded.error());
+    }
+
+    /** And the field is joists-only: a ring has corners, not ends. */
+    @Test
+    void aBracketOnANonJoistPatternFailsTheLoad() {
+        SurfacePatternEntry border = new SurfacePatternEntry("border",
+                Optional.of("minecraft:stone_brick_stairs"), Optional.empty(),
+                Optional.of("dungeonblocks:spruce_corbel_block"), 0, 3, 1, 0,
+                SurfaceOrient.NONE, Map.of(), SizeGate.UNBOUNDED);
+        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(
+                JsonOps.INSTANCE, new CeilingPatternEntry(List.of(border)));
+        assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
+        assertTrue(encoded.error().get().message().contains("bracketBlock"),
                 "the message should name the offending field: " + encoded.error().get().message());
     }
 

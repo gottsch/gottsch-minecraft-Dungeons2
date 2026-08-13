@@ -1,5 +1,5 @@
 {
-  "name": "dungeons2:entrance/descent",
+  "name": "dungeons2:entrance/classic/descent",
   "fallback": "minecraft:empty",
   "elements": [
     {

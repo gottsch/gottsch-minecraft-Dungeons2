@@ -135,6 +135,8 @@ public class DungeonStackPlanner {
      */
     private List<CorridorStyleWeight> corridorStyles = List.of();
     private int minRoomGap = 0;
+    /** See {@link #DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR}; injected by {@link #withRoomTemplateAttempts}. */
+    private int roomTemplateAttempts = DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR;
 
     // -------- Phase 4b: assembled-entrance overrides (all-or-nothing) --------
     // When set (see withAssembledEntrance), floor 0 is driven by the jigsaw-
@@ -201,6 +203,18 @@ public class DungeonStackPlanner {
      */
     public DungeonStackPlanner withCorridorWidth(int cells) {
         this.corridorCells = Math.max(1, cells);
+        return this;
+    }
+
+    /**
+     * Override how many jigsaw-assembled rooms this planner tries to place per floor. Zero is a
+     * legitimate value &mdash; it turns prefab rooms off without emptying the pool &mdash; so this
+     * floors at 0 rather than 1. The codec is where an out-of-range value becomes a load error;
+     * there is deliberately no upper clamp here that could turn a bad datapack into a slow dungeon
+     * with nothing saying why.
+     */
+    public DungeonStackPlanner withRoomTemplateAttempts(int attempts) {
+        this.roomTemplateAttempts = Math.max(0, attempts);
         return this;
     }
 
@@ -427,8 +441,18 @@ public class DungeonStackPlanner {
                                List<Coords2D> premadeWorldCells) {
     }
 
-    /** Attempts per floor to place a jigsaw-assembled room before falling back to procedural fill rooms. */
-    private static final int ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR = 2;
+    /**
+     * Attempts per floor to place a jigsaw-assembled room before falling back to procedural fill
+     * rooms. Same "resolve where {@code RegistryAccess} is available, inject the value" shape as
+     * {@link #corridorCells}: this default only applies to callers that never call
+     * {@link #withRoomTemplateAttempts(int)} (i.e. tests), while production worldgen and the debug
+     * command both read it from the {@code dungeons2:generation_config} registry.
+     *
+     * <p>It is kept at the historical <strong>2</strong> rather than tracking the shipped value,
+     * because a great many tests were written against the layouts it produces and silently
+     * re-rolling all of them is not a change this constant should be able to make on its own.</p>
+     */
+    private static final int DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR = 2;
 
     /**
      * Assembly attempts per inter-floor transition. Each attempt draws a fresh
@@ -522,11 +546,11 @@ public class DungeonStackPlanner {
             int gridH = makeOdd(Math.max(footprints.get(0).getHeight(), ed + 2 * ENTRANCE_MARGIN));
             footprints.set(0, new Rectangle2D(0, 0, gridW, gridH));
 
-            // Center the entrance in the grid on an even origin (the maze rejects
+            // Offset the entrance within the grid on an even origin (the maze rejects
             // odd-origin rooms), then derive the world anchor so grid-local (0,0)
             // maps to world such that the entrance lands where it was assembled.
-            int startMinX = makeEven((gridW - ew) / 2);
-            int startMinZ = makeEven((gridH - ed) / 2);
+            int startMinX = entranceStart(gridW, ew, 0);
+            int startMinZ = entranceStart(gridH, ed, 1);
             entranceLocalFootprint = new Rectangle2D(startMinX, startMinZ, ew, ed);
             int worldAnchorX = assembledEntranceWorldRect.getMinX() - startMinX;
             int worldAnchorZ = assembledEntranceWorldRect.getMinY() - startMinZ;
@@ -800,7 +824,7 @@ public class DungeonStackPlanner {
                 // bounding box's min corner off the position we asked for (6 blocks,
                 // for the 7x7 prefabs that ship). A slot picked before that is known
                 // is a guess, and 44% of them were being thrown away.
-                for (int attempt = 0; attempt < ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR; attempt++) {
+                for (int attempt = 0; attempt < roomTemplateAttempts; attempt++) {
                     long assemblySeed = random.nextLong();
                     int probeWorldX = planAnchor.getX();
                     int probeWorldZ = planAnchor.getZ();
@@ -909,7 +933,7 @@ public class DungeonStackPlanner {
 
             FloorLayout floor = convertLevel(
                     levelOpt.get(), i, floorFloors[i], floorCeilings[i],
-                    footprint, random, premadeCells, templateIdByRoom);
+                    footprint, random, premadeCells, templateIdByRoom, i == floorCount - 1);
             layout.getFloors().add(floor);
         }
 
@@ -1017,6 +1041,50 @@ public class DungeonStackPlanner {
 
     /** Keeps the style roll uncorrelated with the maze roll that shares {@link #mixSeed}. */
     private static final long CORRIDOR_STYLE_SALT = 0x5CB1D025791E5L;
+
+    /** As {@link #CORRIDOR_STYLE_SALT}, for the entrance offset. See {@link #entranceStart}. */
+    private static final long ENTRANCE_OFFSET_SALT = 0xE27A9CE0FF5E7L;
+
+    /**
+     * Where the entrance sits along one axis of floor 0's grid &mdash; rolled, not centred.
+     *
+     * <h2>What this buys</h2>
+     * <p>A centred entrance means every dungeon is entered at its dead middle and spreads equally in
+     * all four directions, which is the one thing about a floor's shape that never varies. Offset,
+     * you come down into a corner or an edge and the maze runs away from you: same rooms, same
+     * corridors, different dungeon to walk.</p>
+     *
+     * <p>Note the entrance does <strong>not</strong> move in the world &mdash; it is assembled first
+     * and the grid's world anchor is derived backwards from it. What moves is the <em>grid around
+     * it</em>, so this changes the dungeon's shape rather than its location.</p>
+     *
+     * <h2>The bound is derived, not authored</h2>
+     * <p>The entrance may sit anywhere that still leaves {@link #ENTRANCE_MARGIN} clear on
+     * <em>both</em> sides &mdash; which is exactly the invariant the margin was introduced for, and
+     * is why this needs no new constant and no new config knob. It falls out with two useful
+     * properties: a floor only just big enough for the entrance stays centred (slack is 0, so the
+     * roll is a no-op), and a roomy floor gets a large range. The grid is sized
+     * {@code max(rolled, ew + 2 * ENTRANCE_MARGIN)}, so the slack can never be negative.</p>
+     *
+     * <h2>Its own Random, for the reason {@code rollCorridorStyle} documents</h2>
+     * <p>Drawing from the shared {@code random} would shift every subsequent draw and relayout every
+     * floor of every existing seed &mdash; which would also make the before/after measurement of
+     * this very change meaningless, since every number would move for reasons unrelated to the
+     * entrance. Salted off {@link #mixSeed} instead, so the <em>only</em> thing that differs from a
+     * previous run is where the entrance sits.</p>
+     *
+     * @param axis 0 for X, 1 for Z, so the two axes roll independently rather than in lockstep
+     */
+    private int entranceStart(int gridExtent, int entranceExtent, int axis) {
+        int slack = gridExtent - entranceExtent - 2 * ENTRANCE_MARGIN;
+        if (slack <= 0) {
+            return makeEven(Math.max(0, (gridExtent - entranceExtent) / 2));
+        }
+        int offset = new Random(ENTRANCE_OFFSET_SALT ^ mixSeed(seed, axis)).nextInt(slack + 1);
+        // makeEven rounds DOWN, so the near-side margin can only grow; the far side is bounded by
+        // the slack itself. Both stay >= ENTRANCE_MARGIN.
+        return makeEven(ENTRANCE_MARGIN + offset);
+    }
 
     private int pickNumberOfRooms(DungeonSize size, Rectangle2D footprint) {
         // Loose heuristic: ~10% of cells become rooms, with size-tier bonus.
@@ -1164,7 +1232,7 @@ public class DungeonStackPlanner {
      */
     private FloorLayout convertLevel(ILevel2D level, int floorIndex, int floorY, int ceilingY,
                                       Rectangle2D footprint, Random random, Set<Coords2D> premadeCells,
-                                      Map<IRoom2D, String> templateIdByRoom) {
+                                      Map<IRoom2D, String> templateIdByRoom, boolean bottomFloor) {
         FloorLayout floor = new FloorLayout(floorIndex, floorY, ceilingY, footprint);
         // Stash the maze grid (transient) so the renderer's corridor builder can
         // resolve neighbor wall cells. Not serialized; see FloorLayout#grid.
@@ -1172,8 +1240,14 @@ public class DungeonStackPlanner {
 
         // Rooms.
         for (IRoom2D room2D : level.getRooms()) {
+            // The bottom floor's end room is TERMINAL, not END: END means "a downstairs transition
+            // occupies this slot", and there is no downstairs from the bottom floor. Marked here
+            // rather than tested for in the emitter, so the one place that knows a floor is the
+            // last one is the one place that decides.
             RoomRole role = room2D.isStart() ? RoomRole.START
-                    : (room2D.isEnd() ? RoomRole.END : RoomRole.NORMAL);
+                    : (room2D.isEnd()
+                        ? (bottomFloor ? RoomRole.TERMINAL : RoomRole.END)
+                        : RoomRole.NORMAL);
             int width = room2D.getWidth();
             int depth = room2D.getHeight(); // 2D "height" = 3D depth
             int height = pickRoomHeight(random, width, depth);

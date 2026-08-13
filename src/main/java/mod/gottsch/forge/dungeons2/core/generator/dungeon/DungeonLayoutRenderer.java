@@ -54,8 +54,8 @@ import java.util.List;
  *
  * <h2>What is and isn't rendered</h2>
  * <ul>
- *     <li><strong>Rendered:</strong> {@link RoomRole#NORMAL} rooms, every
- *         corridor, every door.</li>
+ *     <li><strong>Rendered:</strong> {@link RoomRole#NORMAL} and
+ *         {@link RoomRole#TERMINAL} rooms, every corridor, every door.</li>
  *     <li><strong>Skipped:</strong> {@link RoomRole#START} / {@link RoomRole#END}
  *         rooms, the entrance, and transitions &mdash; those are template pieces
  *         (or synthetic placeholders) handled by the shell, not procedural
@@ -139,7 +139,7 @@ public final class DungeonLayoutRenderer {
         for (RoomData room : floor.getRooms()) {
             // START/END rooms are covered by the entrance/transition template
             // (or a synthetic placeholder); skip them here.
-            if (room.getRole() != RoomRole.NORMAL) {
+            if (!room.getRole().isProcedurallyBuilt()) {
                 continue;
             }
             roomGenerator.build(room, floorY, motif, random, placements);

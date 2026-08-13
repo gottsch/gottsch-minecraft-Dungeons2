@@ -26,6 +26,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CentreSur
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.GridSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.JoistSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -82,11 +83,10 @@ public final class CeilingPatternSelector {
         List<Layer> layers = new ArrayList<>(entry.patterns().size());
         boolean anyProjects = false;
         for (SurfacePatternEntry pattern : entry.patterns()) {
-            ISurfacePatternProvider provider = toLayer(pattern);
-            if (provider != null) {
-                layers.add(new Layer(pattern.projection(), provider));
-                anyProjects |= pattern.projection() > 0;
-            }
+            addLayers(pattern, layers);
+        }
+        for (Layer layer : layers) {
+            anyProjects |= layer.depth() > 0;
         }
         if (layers.isEmpty()) {
             return null;
@@ -97,6 +97,37 @@ public final class CeilingPatternSelector {
             return layers.get(0).provider();
         }
         return new LayeredSurfacePatternProvider(layers);
+    }
+
+    /**
+     * Appends the layers one authored pattern draws &mdash; usually one, and <strong>two for a
+     * bracketed {@code joists}</strong>: the beams at the authored projection and the brackets one
+     * row below them, because a bracket carries its beam from underneath rather than standing in
+     * its row. Splitting them here rather than inside the provider is what lets the existing
+     * depth-grouping in {@link LayeredSurfacePatternProvider} do the work.
+     */
+    private static void addLayers(SurfacePatternEntry pattern, List<Layer> layers) {
+        ISurfacePatternProvider provider = toLayer(pattern);
+        if (provider == null) {
+            return;
+        }
+        layers.add(new Layer(pattern.projection(), provider));
+
+        if (!CeilingPatternEntry.JOISTS.equals(pattern.type().trim().toLowerCase(Locale.ROOT))) {
+            return;
+        }
+        // Absent bracket means beams run bare; a bracket that will not resolve is the same answer,
+        // for the same reason cornerBlock falls back to block rather than dropping the ring -- a
+        // typo in the trim should not delete the beams it was decorating.
+        Block bracket = pattern.bracketBlock().map(BlockStateCodec::blockOrNull).orElse(null);
+        if (bracket != null) {
+            layers.add(new Layer(pattern.projection() + 1,
+                    JoistSurfacePatternProvider.brackets(pattern.spacing(),
+                            BlockStateCodec.withProperties(bracket.defaultBlockState(),
+                                    pattern.properties()),
+                            pattern.orient(),
+                            CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION)));
+        }
     }
 
     private static ISurfacePatternProvider toLayer(SurfacePatternEntry pattern) {
@@ -120,6 +151,8 @@ public final class CeilingPatternSelector {
                         CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
             }
             case "coffers" -> new GridSurfacePatternProvider(pattern.spacing(), state);
+            // The beams only -- their brackets are a second layer, added by addLayers.
+            case CeilingPatternEntry.JOISTS -> JoistSurfacePatternProvider.beams(pattern.spacing(), state);
             case "centre", "center" -> new CentreSurfacePatternProvider(pattern.size(), state);
             default -> null; // unrecognized type: skipped
         };
