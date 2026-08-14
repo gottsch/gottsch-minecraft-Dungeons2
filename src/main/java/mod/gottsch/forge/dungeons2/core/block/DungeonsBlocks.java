@@ -25,6 +25,11 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
+ * <strong>This registers nothing today &mdash; see
+ * {@link mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities} for the full
+ * explanation.</strong> Nothing loads this class during startup, so the deferred generator block is
+ * absent from the registry; that is harmless only because the Phase 2 feature that placed it is
+ * itself unregistered. Verified 2026-08-13.
  *
  * @author Mark Gottschling Oct 25, 2023
  *

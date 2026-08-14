@@ -102,6 +102,9 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 	implementation fg.deobf("gottsch:gottschcore:1.20.1-2.9.0")
     implementation fg.deobf("gottsch:dungeonblocks:1.20.1-3.0.0")
+    // gottsch's Monster Manual (gmm) - shared mob base-class/asset library. It REGISTERS NOTHING;
+    // this mod registers the mobs it wants under its own namespace (see DungeonsEntities).
+    implementation fg.deobf("gottsch:monster-manual:[1.20.1-1.0.1,1.20.1-2.0.0)")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).

@@ -116,6 +116,13 @@ public class Registration {
 	 *
 	 */
 	public static void init() {
+		// Touch the registry-holder classes so their static RegistryObject fields actually reach the
+		// DeferredRegisters below. A DeferredRegister collects an entry when the field initialises,
+		// which happens only when its holding class is first loaded -- so a holder nothing references
+		// registers NOTHING, silently and with no error. Do this before register(eventBus).
+		mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities.register();
+		mod.gottsch.forge.dungeons2.core.item.DungeonsItems.register();
+
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(eventBus);
 		ITEMS.register(eventBus);
