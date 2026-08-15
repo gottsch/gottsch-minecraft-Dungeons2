@@ -477,22 +477,37 @@
         // this file where a chain can safely reach air, and it is only safe because of what
         // the block is used for -- move spruce_log into a wall or ceiling and this must go.
         //
+        // ONE STAGE, AND STRIPPED IS NOT IT (revised 2026-08-14, after Mark walked it in game).
+        // The original chain went spruce_log -> stripped -> air, which put ~30% of beams in a
+        // stripped state. It does not read as age: stripped spruce is a clean, pale, evenly
+        // planed block, so a stripped beam beside an untouched one reads as two DIFFERENT
+        // materials chosen by an author rather than as one material that weathered. The gap
+        // reads correctly, so the chain now goes straight to it.
+        //
+        // dungeonblocks ships NO aged timber -- 694 blocks, and the only wood variants are
+        // stripped_* and the species families. So "stripped" and "gone" were the entire
+        // vocabulary available, and dropping the first leaves exactly one stage. A genuinely
+        // weathered log block is what it would take to have a middle state here at all.
+        //
         // BOTH RULES MUST BE dungeons2:aging, not minecraft:rule. A log carries `axis` and
         // the corbel carries `facing`, and a vanilla rule drops properties: JoistSurface-
         // PatternProvider turns each log to lie ALONG its run, so a vanilla rule would silently
-        // stand every weathered beam on end. The stripped variants carry the same properties,
-        // which is what makes them a safe first stage.
+        // stand every weathered beam on end. That is moot while the only output is air, but it
+        // stops being moot the moment anyone adds a real intermediate block back.
         //
-        // COMPOSED RATES. These chains are each block's only rule, so no conditional discount
-        // applies from a competing chain -- but the stages still compound, and what you end
-        // up looking at in the room is the FINAL outcome, not the stage entered. 35% of beams
-        // go stripped and 15% of those carry on to air, which leaves:
+        // COMPOSED RATES. Single stage now, so the rate IS the outcome -- no compounding, and
+        // these chains are each block's only rule so no conditional discount applies either:
         //
-        //     spruce_log     ->  29.8% stripped,  5.3% gone   (64.9% untouched)
-        //     spruce corbel  ->  31.5% stripped,  3.5% gone   (65.0% untouched)
+        //     spruce_log     ->  15% gone   (85% untouched)
+        //     spruce corbel  ->  10% gone   (90% untouched)
         //
-        // The corbel's second stage is lower on purpose: a bracket is a single cell and
-        // reads as missing, where a beam is a run and reads as broken. AgingChainRatesTest
+        // The rates were RAISED from the old chain's 5.3% / 3.5% break-through, deliberately.
+        // Those were second-stage figures sitting behind a 35% first stage that was carrying
+        // the visible weathering; with stripped gone, holding them would have left timber ~95%
+        // factory-fresh, which is the state #37 was raised to fix.
+        //
+        // The corbel stays below the beam for the original reason: a bracket is a single cell
+        // and reads as missing, where a beam is a run and reads as broken. AgingChainRatesTest
         // asserts both, so retune there too.
         //
         // NOT AGED, deliberately:
@@ -501,23 +516,22 @@
         //   * the dungeon doors (spruce/dark_oak) -- dungeonblocks ships no aged form of one,
         //     and "sometimes there is no door" is ALREADY a feature (the motif's door
         //     probability, ~1/3 of openings). Ageing them to air would double-count it.
-        //   * minecraft:stripped_spruce_log as a SOURCE. It appears in 8 authored templates
-        //     where the author chose it, and a standalone rule would age those too. Reaching
-        //     stripped as a STAGE of the spruce_log chain does not create such a rule -- the
-        //     processor looks a rule up by the input block once and never re-resolves what it
-        //     just produced. That asymmetry is #26's lesson pointed forwards.
+        //   * the stripped variants, in EITHER role. They are no longer produced as a stage,
+        //     and they must not become sources: stripped_spruce_log appears in 8 authored
+        //     templates where the author chose it, so a rule keyed on it would age the
+        //     author's own choice. (While it WAS a stage, that was safe for a reason worth
+        //     keeping: the processor looks a rule up by the input block once and never
+        //     re-resolves what it just produced, so producing a block never ages it.)
         // ===================================================================================
         {
           "block": "minecraft:spruce_log",
           "output_blocks": [
-            { "block": "minecraft:stripped_spruce_log", "probability": 0.35 },
             { "block": "minecraft:air", "probability": 0.15 }
           ]
         },
         {
           "block": "dungeonblocks:spruce_corbel_block",
           "output_blocks": [
-            { "block": "dungeonblocks:stripped_spruce_corbel_block", "probability": 0.35 },
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         }

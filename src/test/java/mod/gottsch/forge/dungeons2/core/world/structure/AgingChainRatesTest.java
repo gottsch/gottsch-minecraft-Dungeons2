@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -421,21 +422,39 @@ class AgingChainRatesTest {
      */
     @Test
     void timberAgesAtTheIntendedRates() {
-        // These are FINAL outcomes, not stages reached: of the 35% of beams that go stripped,
-        // 15% carry on to air, so 0.35 x 0.85 stay stripped and 0.35 x 0.15 end as a gap.
+        // Single stage each since 2026-08-14, so the rate IS the outcome -- see
+        // timberNeverWeathersToStrippedWood for why the intermediate stage went.
         Map<String, Double> beam = composedRates("minecraft:spruce_log");
-        assertEquals(0.35 * 0.85, beam.getOrDefault("minecraft:stripped_spruce_log", 0.0), EPSILON,
-                "the beam's stripped rate drifted");
-        assertEquals(0.35 * 0.15, beam.getOrDefault("minecraft:air", 0.0), EPSILON,
-                "the beam's break-through rate drifted -- it is the second stage of a chain, so it"
-                        + " is 0.35 x 0.15, not 0.15");
+        assertEquals(0.15, beam.getOrDefault("minecraft:air", 0.0), EPSILON,
+                "the beam's break-through rate drifted");
 
         Map<String, Double> bracket = composedRates("dungeonblocks:spruce_corbel_block");
-        assertEquals(0.35 * 0.9, bracket.getOrDefault("dungeonblocks:stripped_spruce_corbel_block", 0.0),
-                EPSILON, "the bracket's stripped rate drifted");
-        assertEquals(0.35 * 0.1, bracket.getOrDefault("minecraft:air", 0.0), EPSILON,
+        assertEquals(0.1, bracket.getOrDefault("minecraft:air", 0.0), EPSILON,
                 "the bracket's removal rate drifted -- deliberately below the beam's, because a"
                         + " bracket is one cell and reads as missing where a beam reads as broken");
+    }
+
+    /**
+     * Stripped spruce is a clean, pale, evenly planed block. A stripped beam beside an untouched
+     * one reads as two <em>different materials an author chose</em>, not as one material that
+     * weathered &mdash; walked in game 2026-08-14 and rejected. The gap reads correctly, so the
+     * chains go straight to it.
+     *
+     * <p>This is not a rate to retune, it is a block that must not appear as an aging output at
+     * all. Restoring a middle stage needs a genuinely weathered log from {@code dungeonblocks},
+     * which ships none: of its 694 blocks the only wood variants are {@code stripped_*} and the
+     * species families, so {@code stripped} and {@code gone} were the whole vocabulary.</p>
+     */
+    @Test
+    void timberNeverWeathersToStrippedWood() {
+        for (String source : Set.of("minecraft:spruce_log", "dungeonblocks:spruce_corbel_block")) {
+            for (String output : composedRates(source).keySet()) {
+                assertFalse(output.contains("stripped"),
+                        source + " ages to " + output + ". Stripped wood reads as a different"
+                                + " material rather than as an aged one -- see the TIMBER block in"
+                                + " classic_weathering.json.");
+            }
+        }
     }
 
     /**
@@ -456,13 +475,16 @@ class AgingChainRatesTest {
     }
 
     /**
-     * The stripped variants are reachable as a <em>stage</em> and must not become sources. They
-     * appear in eight authored templates where the author chose them; a standalone rule would age
-     * that content too. #26 is the same trap seen from the other end &mdash; three rules believed
-     * dead were live precisely because prefab palettes author their inputs.
+     * The stripped variants must not become aging sources. They appear in eight authored
+     * templates where the author chose them; a standalone rule would age that content too. #26 is
+     * the same trap seen from the other end &mdash; three rules believed dead were live precisely
+     * because prefab palettes author their inputs.
+     *
+     * <p>They are no longer produced as a stage either, which is a separate assertion &mdash; see
+     * {@link #timberNeverWeathersToStrippedWood}.</p>
      */
     @Test
-    void strippedTimberIsAStageNotASource() {
+    void strippedTimberIsNeverAnAgingSource() {
         for (String stage : Set.of("minecraft:stripped_spruce_log",
                 "dungeonblocks:stripped_spruce_corbel_block")) {
             assertTrue(composedRates(stage).isEmpty(),

@@ -60,23 +60,30 @@ mandatory=true
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
+# ORDERING IS "AFTER" FOR ALL THREE LIBRARIES, AND MUST STAY CONSISTENT.
+# `ordering` says where THIS mod sits relative to the dependency, so AFTER = "dungeons2 loads after
+# gottschcore", which is what building on it implies.
+# These were BEFORE until 2026-08-13, which was harmless on its own but became a load-order CYCLE the
+# moment gmm was added: gmm's own toml declares gottschcore AFTER, so BEFORE here gave
+#     dungeons2 -> gottschcore -> gmm -> dungeons2
+# and Forge dies at ModSorter with "Detected Cycles" and a NullPointerException on a null sortedList,
+# naming three anonymous ModFileInfo objects and nothing else. Dungeon Denizens uses AFTER for all of
+# its libraries; Village Dungeons uses BEFORE for all of its. Either is fine -- MIXING them is not.
 [[dependencies.dungeons2]]
 modId="gottschcore"
 mandatory=true
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
 versionRange="[2.9.0,3.0.0)"
-ordering="BEFORE"
+ordering="AFTER"
 side="BOTH"
 [[dependencies.dungeons2]]
 modId="dungeonblocks"
 mandatory=true
 versionRange="[3.0.0,4.0.0)"
-ordering="BEFORE"
+ordering="AFTER"
 side="BOTH"
 # gottsch's Monster Manual (gmm) - shared mob base-class/asset library; it registers nothing, this
-# mod registers dungeons2:rat / dungeons2:giant_rat from its classes.
-# NOTE ordering is AFTER, not BEFORE like the two above. Dungeon Denizens records why: BEFORE forms
-# a load-order cycle once the gmm dependency chains gottschcore -> gmm -> consumer.
+# mod registers dungeons2:rat / dungeons2:giant_rat from its classes. See the ordering note above.
 [[dependencies.dungeons2]]
 modId="gmm"
 mandatory=true

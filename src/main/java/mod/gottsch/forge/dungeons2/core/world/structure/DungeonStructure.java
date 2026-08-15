@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
@@ -373,8 +374,11 @@ public class DungeonStructure extends Structure {
                 DungeonGenerationConfigHelper.get(context.registryAccess());
         planner.withCorridorWidth(generationConfig.corridorWidth());
         planner.withRoomTemplateAttempts(generationConfig.roomTemplateAttemptsPerFloor());
-        planner.withCorridorStyles(corridorStyleWeights(
-                MotifConfigHelper.get(context.registryAccess(), motifValue).corridor()));
+        // Hoisted rather than resolved inline: the [D2-SCHEME] logging below needs the same
+        // config, and a room's scheme roll must be read from the motif the planner actually ran
+        // with or the log would name a scheme the room does not have.
+        final MotifConfig motifConfig = MotifConfigHelper.get(context.registryAccess(), motifValue);
+        planner.withCorridorStyles(corridorStyleWeights(motifConfig.corridor()));
         if (overrides != null && overrides.size() != null) {
             planner.withSize(overrides.size());
         }
@@ -452,6 +456,46 @@ public class DungeonStructure extends Structure {
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));
                 allPieces.addAll(DungeonPieceEmitter.emitDoors(layout, emitAnchorX, emitAnchorZ));
+
+                // Which scheme each procedural room rolled, and where to stand to see it. The
+                // sibling of [D2-PREFAB], and it exists for the same reason that one does: a
+                // scheme at 3-4% of rooms is perfectly common and still unfindable by wandering,
+                // so authoring one means hunting for your own work.
+                //
+                //   grep "D2-SCHEME" run/logs/dungeons2.log | grep joisted_hall_stone
+                //
+                // NOT logs/debug.log, and NOT at the default log level. CommonSetup calls
+                // Config.instance.addRollingFileAppender(MOD_ID), so every Dungeons.LOGGER line
+                // goes to its OWN file, logs/<modid>.log, at the level in the [logging] section of
+                // config/dungeons2-common.toml -- which ships as "info", so debug lines are
+                // dropped before they reach the file. Set level = "debug" there and restart. This
+                // is why [D2-PREFAB] has never produced output either: it is debug too.
+                //
+                // HERE, not in BasicRoomGenerator.build, which is where it belongs by subject and
+                // is exactly wrong by mechanism: build() runs inside postProcess, once per chunk
+                // the room's box overlaps, so a room spanning four chunks would log four times.
+                // This list is built once per placement.
+                //
+                // rolledScheme repeats the roll rather than reporting it -- it is the same
+                // deterministicRandom(room id) call build() makes, off chunk-independent piece
+                // state, so it is the real answer and not an estimate. It costs one selector pass
+                // per room and is skipped entirely unless debug logging is on.
+                //
+                // Prefab rooms are absent by construction: they are PoolElementStructurePieces and
+                // roll no scheme at all. [D2-PREFAB] already names those, by template.
+                if (Dungeons.LOGGER.isDebugEnabled()) {
+                    for (StructurePiece p : allPieces) {
+                        if (p instanceof DungeonRoomPiece room) {
+                            BoundingBox bb = room.getBoundingBox();
+                            RoomData data = room.getRoom();
+                            Dungeons.LOGGER.debug("[D2-SCHEME] {} room {} {}x{}x{} at ({},{},{})",
+                                    room.rolledScheme(motifConfig).name(), data.getId(),
+                                    data.getWidth(), data.getDepth(), data.getHeight(),
+                                    (bb.minX() + bb.maxX()) / 2, bb.minY() + 1,
+                                    (bb.minZ() + bb.maxZ()) / 2);
+                        }
+                    }
+                }
 
                 // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
                 // full chunk range every piece's bounding box says it should touch, so
