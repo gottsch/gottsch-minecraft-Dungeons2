@@ -66,9 +66,15 @@ class ShippedLangCoverageTest {
         List<String> missing = new ArrayList<>();
         for (Path model : itemModels()) {
             String name = model.getFileName().toString().replace(".json", "");
-            String key = "item.dungeons2." + name;
-            if (!lang.has(key)) {
-                missing.add(key + "  (model " + model.getFileName() + " ships with no display name)");
+            // A BlockItem takes its name from its BLOCK -- BlockItem.getDescriptionId delegates to
+            // the block's -- so it is spelled block.dungeons2.<name> and never gets an item.* key.
+            // Accepting either is the fix; adding the item.* key would ship a translation nothing
+            // ever looks up. (Found 2026-08-14 with spawner_marker, the mod's first BlockItem.)
+            String itemKey = "item.dungeons2." + name;
+            String blockKey = "block.dungeons2." + name;
+            if (!lang.has(itemKey) && !lang.has(blockKey)) {
+                missing.add(itemKey + " / " + blockKey
+                        + "  (model " + model.getFileName() + " ships with no display name)");
             }
         }
         if (!missing.isEmpty()) {

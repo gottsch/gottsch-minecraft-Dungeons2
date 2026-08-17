@@ -59,6 +59,9 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.HashSet;
 import java.util.List;
@@ -127,7 +130,7 @@ public class DungeonStructure extends Structure {
      * The Structure Block writes back whatever the jigsaw block in the world says,
      * so a piece re-saved from a world whose copy predates this will silently
      * restore the old un-scoped pool id -- see the entrance-chain notes in
-     * {@code structures/README.md}. {@code EntrancePoolWiringTest} is what catches
+     * {@code structures/README.md}. {@code PoolWiringTest} is what catches
      * it having happened.</p>
      */
     private static ResourceLocation entranceStartPool(String motifValue) {
@@ -161,12 +164,20 @@ public class DungeonStructure extends Structure {
      * maxDepth} is a safety cap only, not a design constraint: real chain length
      * is bounded by whatever the author actually builds into the pools, not by us.
      *
-     * <p>Motif-parametrized: {@code ladder1.nbt}/{@code stairs_1.nbt} are complete,
-     * self-contained pieces with no outgoing joint, so they carry no cross-pool
-     * references -- safe to relocate under a motif subfolder, unlike the entrance
-     * (see its doc above). A future chained (segmented) transition author is
-     * responsible for pointing their own joint at whatever motif-scoped pool name
-     * they're building against, same as any other authoring hygiene.</p>
+     * <p>Motif-parametrized. {@code ladder1.nbt}/{@code stairs_1.nbt} are complete,
+     * self-contained pieces with no outgoing joint, but {@code stairs_2_bottom} and
+     * {@code stairs_2_mid} are <strong>not</strong>: each names the pool holding the
+     * next link, baked into compressed NBT, so this category carries exactly the
+     * cross-pool fragility described for the entrance above. {@code PoolWiringTest}
+     * covers both (it was entrance-only until 2026-08-14, on the mistaken premise
+     * that no transition chained).
+     *
+     * <p><strong>The continuation pools are named per chain, not per role</strong>
+     * (#11, 2026-08-14): {@code stairs_2/segment} and {@code stairs_2/top}, because
+     * their contents are specific to one authored staircase -- "the middle of
+     * stairs_2", not "any middle". {@code shaft_bottom} keeps its role name on
+     * purpose: it genuinely is the generic start pool, and unrelated transitions
+     * coexisting there as weighted alternatives is the design.</p>
      */
     private static ResourceLocation transitionStartPool(String motifValue) {
         return new ResourceLocation(Dungeons.MOD_ID, "transitions/" + motifValue + "/shaft_bottom");
@@ -189,6 +200,85 @@ public class DungeonStructure extends Structure {
     }
     private static final int ROOM_MAX_DEPTH = 1;
     private static final int ROOM_MAX_DISTANCE = 16;
+
+    /**
+     * Backlog #5: the motif whose pools stand in for a motif that has not authored its own.
+     *
+     * <p><strong>Why a fallback tier exists at all, and it is not about looks.</strong> Before this,
+     * a themed pool that did not exist degraded straight to the same behaviour an empty pool always
+     * had &mdash; and what that behaviour costs is wildly different per category:</p>
+     * <ul>
+     *   <li><strong>entrance</strong> &mdash; the planner takes its synthetic layout and the dungeon
+     *       generates with <em>no built entrance at all</em>. There is no way in.</li>
+     *   <li><strong>transitions</strong> &mdash; the planner substitutes a synthetic placeholder
+     *       footprint, which nothing renders (transitions are assembled in this class, not emitted
+     *       by {@code DungeonPieceEmitter}). The floors are reserved and doored, and the staircase
+     *       between them is never built: doors to nowhere, and floors you cannot reach.</li>
+     *   <li><strong>rooms</strong> &mdash; the slot is filled by an ordinary procedural room.
+     *       Cosmetic, and invisible to the player.</li>
+     * </ul>
+     *
+     * <p>So for two of the three, "graceful degradation" was producing a structurally broken
+     * dungeon, silently. <strong>A mismatched staircase beats no staircase</strong>, which is the
+     * whole argument for this.</p>
+     *
+     * <p><strong>The rooms case is the weak one, deliberately kept anyway.</strong> Procedural rooms
+     * are built through the motif's own {@code block_provider}, so a procedural room in a desert
+     * dungeon is made of desert blocks, while a borrowed {@code classic} prefab is baked stone brick
+     * — for rooms the fallback may well look <em>worse</em> than the degradation it replaces. It is
+     * applied uniformly for now because a half-authored motif wanting its rooms filled is at least
+     * as likely; {@link #resolveStartPool} is the single place to make it per-category if that turns
+     * out wrong in game.</p>
+     */
+    private static final String FALLBACK_MOTIF = "classic";
+
+    /**
+     * Pool ids already warned about, so a borrowed pool is reported once per session rather than
+     * once per dungeon. Same reasoning as {@code MotifConfigHelper}'s static set.
+     */
+    private static final Set<ResourceLocation> BORROWED_POOLS = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Which pool id to actually use for {@code motifValue}: its own if that ships, otherwise
+     * {@link #FALLBACK_MOTIF}'s, otherwise {@code null} for "degrade".
+     *
+     * <p>Separated from the registry lookup so the decision is testable without a loaded registry
+     * &mdash; {@code exists} is the only thing Minecraft has to answer.</p>
+     */
+    static ResourceLocation chooseStartPool(String motifValue,
+                                            Function<String, ResourceLocation> poolFor,
+                                            Predicate<ResourceLocation> exists) {
+        ResourceLocation own = poolFor.apply(motifValue);
+        if (exists.test(own)) {
+            return own;
+        }
+        if (FALLBACK_MOTIF.equals(motifValue)) {
+            // The fallback motif itself is missing its own pool. There is no second tier to try,
+            // and reporting it as "borrowed" would be nonsense.
+            return null;
+        }
+        ResourceLocation borrowed = poolFor.apply(FALLBACK_MOTIF);
+        return exists.test(borrowed) ? borrowed : null;
+    }
+
+    /** {@link #chooseStartPool} against the live registry, warning once per borrowed pool. */
+    private static Optional<Holder.Reference<StructureTemplatePool>> resolveStartPool(
+            GenerationContext context, String motifValue, Function<String, ResourceLocation> poolFor) {
+        Registry<StructureTemplatePool> poolRegistry =
+                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        ResourceLocation chosen = chooseStartPool(motifValue, poolFor, poolRegistry::containsKey);
+        if (chosen == null) {
+            return Optional.empty();
+        }
+        ResourceLocation own = poolFor.apply(motifValue);
+        if (!chosen.equals(own) && BORROWED_POOLS.add(own)) {
+            Dungeons.LOGGER.warn("motif '{}' ships no {} -- borrowing {} from the '{}' motif."
+                    + " Author that pool to silence this; without the fallback the dungeon would"
+                    + " generate with that piece missing entirely.", motifValue, own, chosen,
+                    FALLBACK_MOTIF);
+        }
+        return poolRegistry.getHolder(ResourceKey.create(Registries.TEMPLATE_POOL, chosen));
+    }
 
     /**
      * Valid range for an assembled transition's realized height. Diagnostic only,
@@ -615,10 +705,8 @@ public class DungeonStructure extends Structure {
      */
     private static List<StructurePiece> assembleEntrance(GenerationContext context, BlockPos position,
                                                          String motifValue) {
-        Registry<StructureTemplatePool> poolRegistry =
-                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
-        Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
-                ResourceKey.create(Registries.TEMPLATE_POOL, entranceStartPool(motifValue)));
+        Optional<Holder.Reference<StructureTemplatePool>> startPool =
+                resolveStartPool(context, motifValue, DungeonStructure::entranceStartPool);
         if (startPool.isEmpty()) {
             return List.of();
         }
@@ -644,10 +732,8 @@ public class DungeonStructure extends Structure {
      */
     private static List<StructurePiece> assembleTransition(GenerationContext context, BlockPos position,
                                                             String motifValue) {
-        Registry<StructureTemplatePool> poolRegistry =
-                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
-        Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
-                ResourceKey.create(Registries.TEMPLATE_POOL, transitionStartPool(motifValue)));
+        Optional<Holder.Reference<StructureTemplatePool>> startPool =
+                resolveStartPool(context, motifValue, DungeonStructure::transitionStartPool);
         if (startPool.isEmpty()) {
             return List.of();
         }
@@ -967,10 +1053,8 @@ public class DungeonStructure extends Structure {
      */
     private static List<StructurePiece> assembleRoom(GenerationContext context, BlockPos position,
                                                      String motifValue) {
-        Registry<StructureTemplatePool> poolRegistry =
-                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
-        Optional<Holder.Reference<StructureTemplatePool>> startPool = poolRegistry.getHolder(
-                ResourceKey.create(Registries.TEMPLATE_POOL, roomStartPool(motifValue)));
+        Optional<Holder.Reference<StructureTemplatePool>> startPool =
+                resolveStartPool(context, motifValue, DungeonStructure::roomStartPool);
         if (startPool.isEmpty()) {
             return List.of();
         }

@@ -25,11 +25,20 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * <strong>This registers nothing today &mdash; see
+ * Dungeons2's blocks.
+ *
+ * <p><strong>This class registered nothing at all until 2026-08-14</strong>, because nothing
+ * referenced it and a {@code DeferredRegister} collects an entry only when the holding class is
+ * first loaded. {@link Registration#init()} now touches it explicitly via {@link #register()}. See
  * {@link mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities} for the full
- * explanation.</strong> Nothing loads this class during startup, so the deferred generator block is
- * absent from the registry; that is harmless only because the Phase 2 feature that placed it is
- * itself unregistered. Verified 2026-08-13.
+ * diagnosis, which is worth reading before adding anything here.</p>
+ *
+ * <p>{@link #DEFERRED_DUNGEON_GENERATOR} is Phase 2 legacy awaiting Phase 6 deletion (backlog #43)
+ * and nothing places it &mdash; {@code DungeonFeature} is unregistered. It is now genuinely in the
+ * registry rather than silently absent, which is why it carries a model, a lang key and
+ * {@code noLootTable()}: #43's advice was "do not wire this class up just for the dead block", and
+ * that stands, but a live block now shares the holder so the dead one has to be presentable.
+ * <strong>Phase 6 deletes this field, not the class.</strong></p>
  *
  * @author Mark Gottschling Oct 25, 2023
  *
@@ -38,4 +47,55 @@ public class DungeonsBlocks {
     public static final RegistryObject<Block> DEFERRED_DUNGEON_GENERATOR = Registration.BLOCKS.register("deferred_dungeon_generator", () -> new DeferredDungeonGeneratorBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
             .strength(3.0F).sound(SoundType.STONE).replaceable().noCollission().noLootTable().air()));
 
+    /**
+     * Backlog #10: the invisible proximity mob-set spawner. Air-<em>like</em> in every respect that
+     * matters to the player &mdash; not visible, not collidable, not targetable, no drops &mdash;
+     * because the dungeon around it is the content and this is only a trigger.
+     *
+     * <p>No {@code air()} and no {@code isAir} override. <strong>Not because they broke anything
+     * &mdash; they did not.</strong> The spawner's "no block entity" symptom was GottschCore's
+     * {@code SpawnUtil} discarding every mob and {@code execute()} self-destructing regardless; this
+     * block worked throughout. Dropping {@code air()} is kept because a block entity host should not
+     * claim to be air, not as a fix. See {@link MobSetSpawnerBlock#getShape}.</p>
+     *
+     * <p>Invisibility comes from {@code BaseEntityBlock}, whose {@code getRenderShape} is
+     * {@code INVISIBLE}, so none of it needed to be bought with {@code air()} in the first place.
+     * {@code noCollission} keeps the player walking through it and
+     * {@link MobSetSpawnerBlock#getShape} makes it un-targetable, which together is the whole of
+     * what {@code air()} was there for.</p>
+     */
+    public static final RegistryObject<Block> MOB_SET_SPAWNER = Registration.BLOCKS.register(
+            "mob_set_spawner",
+            () -> new MobSetSpawnerBlock(MobSetSpawnerBlock.properties()));
+
+    /**
+     * Backlog #10: the <strong>authoring</strong> marker. A template author places one of these; the
+     * {@code dungeons2:spawner} processor swaps it for {@link #MOB_SET_SPAWNER} at placement, so it
+     * is visible in the structure editor and gone in the finished dungeon.
+     *
+     * <p><strong>Why a real block and not a DATA structure block.</strong> The original design used
+     * {@code d2:spawner} on a DATA structure block, and it cannot work:
+     * {@code SinglePoolElement.getSettings} installs {@code BlockIgnoreProcessor.STRUCTURE_BLOCK}
+     * <em>before</em> the pool's own processors, and that returns {@code null} for a structure block
+     * &mdash; removing it from the placement list rather than replacing it. The pool's processors are
+     * then handed a list it is already absent from, and the unwritten cell shows the terrain the
+     * dungeon was carved out of. Pinned by {@code JigsawStripsStructureBlocksTest}. Village Dungeons
+     * uses marker blocks for the same reason.</p>
+     *
+     * <p>An ordinary solid block: it must survive to the processor, so nothing air-like or
+     * replaceable. {@code noLootTable} because it is authoring scaffolding, not content.</p>
+     */
+    public static final RegistryObject<Block> SPAWNER_MARKER = Registration.BLOCKS.register(
+            "spawner_marker",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE).strength(3.0F).sound(SoundType.STONE).noLootTable()));
+
+    /**
+     * Forces this class to load so the fields above actually register. Called from
+     * {@link Registration#init()}; see that method's comment for why a holder nothing references
+     * registers nothing at all.
+     */
+    public static void register() {
+        // Intentionally empty -- class loading is the whole point.
+    }
 }

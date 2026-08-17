@@ -3,30 +3,30 @@ package mod.gottsch.forge.dungeons2.core.block.entity;
 
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
+import mod.gottsch.forge.gottschcore.block.entity.ProximityMobSetSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * <strong>This registers nothing today, and that is currently harmless. Verified 2026-08-13.</strong>
+ * Dungeons2's block entity types.
  *
- * <p>A {@code DeferredRegister} collects an entry when the {@link RegistryObject} field below
- * initialises &mdash; which happens only when this class is first loaded. Nothing loads it during
- * startup: it carries no {@code @Mod.EventBusSubscriber} (so Forge does not force-load it), and its
- * only reference in the whole mod is from {@code DeferredDungeonGeneratorBlockEntity}'s own
- * constructor, which cannot run until after the type it needs is registered. The same is true of
- * {@link DungeonsBlocks}. So the block and the block entity are both absent from the game's
- * registries.</p>
+ * <h2>This class registered NOTHING until 2026-08-14, and the reason is worth keeping</h2>
+ * <p>A {@code DeferredRegister} collects an entry when the {@link RegistryObject} field initialises
+ * &mdash; which happens only when the holding class is first loaded. Nothing loaded this one: it
+ * carries no {@code @Mod.EventBusSubscriber} (so Forge does not force-load it), and its only
+ * reference in the whole mod was from {@code DeferredDungeonGeneratorBlockEntity}'s own
+ * constructor, which cannot run until after the type it needs is registered. The same was true of
+ * {@link DungeonsBlocks}. Both were therefore absent from the game's registries, silently and with
+ * no error &mdash; the identical trap {@code DungeonsEntities} hit during the rat work (#40/#41).
+ * {@link Registration#init()} now touches both explicitly.</p>
  *
- * <p><strong>Why that does not matter yet:</strong> the whole deferred-generation path is Phase 2
- * legacy awaiting Phase 6 deletion. {@code ConfiguredFeatures} is commented out in its entirety, so
- * {@code DungeonFeature} &mdash; the only thing that ever placed this block &mdash; is never
- * registered either, and the {@code deferred_dungeon*.json} files sit outside any registry folder.
- * Nothing places the block, so nothing misses it.</p>
- *
- * <p><strong>Do not "fix" this by touching the class in {@code Registration.init()}</strong> the way
- * {@code DungeonsEntities} and {@code DungeonsItems} are. That would put a block with no model, no
- * loot table and no display name into the registry to serve a code path that does not run. Either
- * leave it, or delete the pair with the rest of Phase 6.</p>
+ * <h2>Backlog #43 said not to fix this. That advice was right, and is now spent</h2>
+ * <p>#43's reasoning: wiring these up "would put a block with no model, no loot table and no display
+ * name into the registry to serve a code path that does not run". True while
+ * {@link #DEFERRED_DUNGEON_GENERATOR_ENTITY_TYPE} was the only occupant. #10's mob-set spawner is a
+ * live block that genuinely needs registering, so the holder has to be wired regardless &mdash; and
+ * the dead entry, now unavoidably along for the ride, was given the model and lang key it lacked.
+ * <strong>Phase 6 deletes the deferred-generator field and its block, not this class.</strong></p>
  *
  * @author Mark Gottschling on Oct 25, 2023
  *
@@ -39,4 +39,34 @@ public class DungeonsBlockEntities {
 									DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.get())
 							.build(null));
 
+	/**
+	 * Backlog #10. The block entity class itself is GottschCore's, unmodified &mdash; it is a
+	 * library that registers nothing, so the type belongs to whoever consumes it.
+	 *
+	 * <p>Built with the {@code Supplier} constructor rather than the eager one so the type is
+	 * resolved on demand instead of during its own registration.</p>
+	 */
+	public static final RegistryObject<BlockEntityType<ProximityMobSetSpawnerBlockEntity>> MOB_SET_SPAWNER =
+			Registration.BLOCK_ENTITIES.register("mob_set_spawner",
+					() -> BlockEntityType.Builder.of(
+									(pos, state) -> new ProximityMobSetSpawnerBlockEntity(
+											DungeonsBlockEntities::mobSetSpawnerType, pos, state),
+									DungeonsBlocks.MOB_SET_SPAWNER.get())
+							.build(null));
+
+	/**
+	 * Indirection so {@link mod.gottsch.forge.dungeons2.core.block.MobSetSpawnerBlock} and the
+	 * builder above can both hand GottschCore a {@code Supplier} instead of a resolved type.
+	 */
+	public static BlockEntityType<ProximityMobSetSpawnerBlockEntity> mobSetSpawnerType() {
+		return MOB_SET_SPAWNER.get();
+	}
+
+	/**
+	 * Forces this class to load so the fields above actually register. Called from
+	 * {@link Registration#init()}.
+	 */
+	public static void register() {
+		// Intentionally empty -- class loading is the whole point.
+	}
 }

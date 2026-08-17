@@ -24,6 +24,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.SharedConstants;
@@ -72,6 +73,9 @@ class WeatheringProcessorListTest {
     /** The decoration processor's dispatch key as authored in the JSON. */
     private static final String DECORATION_TYPE = "dungeons2:decoration";
 
+    /** The spawner-marker processor's dispatch key as authored in the JSON (#10). */
+    private static final String SPAWNER_TYPE = "dungeons2:spawner";
+
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
      * to 4 decimal places, which is worth ~1e-4 on the composed result.
@@ -106,8 +110,8 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(3, processors.size(),
-                "Expected the vanilla rule processor plus the aging and decoration processors");
+        assertEquals(4, processors.size(),
+                "Expected the vanilla rule processor, aging, decoration and the #10 spawner marker");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -116,6 +120,7 @@ class WeatheringProcessorListTest {
                 case "minecraft:rule" -> RuleProcessor.CODEC;
                 case AGING_TYPE -> AgingProcessor.codec(NO_TYPE);
                 case DECORATION_TYPE -> DecorationProcessor.codec(NO_TYPE);
+                case SPAWNER_TYPE -> SpawnerMarkerProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -150,7 +155,10 @@ class WeatheringProcessorListTest {
         // (dungeons2:aging, dungeons2:decoration). Anything else -- minecraft:capped, or
         // any other unmarked processor overriding finalizeProcessing -- would land in the
         // clipped pass and decide differently in each chunk the piece spans.
-        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE);
+        // dungeons2:spawner (#10) is marked LevelIndependentProcessor like the other two, and in
+        // practice cannot fire on a procedural piece at all -- it matches structure blocks, which
+        // only an authored template contains.
+        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),

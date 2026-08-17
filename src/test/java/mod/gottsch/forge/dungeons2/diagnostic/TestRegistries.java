@@ -27,6 +27,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigRegistries;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
@@ -155,6 +156,16 @@ public final class TestRegistries {
         decorationSelf[0] = decorationType;
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.DECORATION_PROCESSOR_NAME), decorationType);
+
+        // #10's spawner marker. Registered here for the same reason as the two above -- without it
+        // the shipped list stops decoding entirely and every test that touches weathering fails at
+        // once, which is exactly what happened when this processor was first added to the JSON.
+        StructureProcessorType<?>[] spawnerSelf = new StructureProcessorType<?>[1];
+        Codec<SpawnerMarkerProcessor> spawnerCodec = SpawnerMarkerProcessor.codec(() -> spawnerSelf[0]);
+        StructureProcessorType<SpawnerMarkerProcessor> spawnerType = () -> spawnerCodec;
+        spawnerSelf[0] = spawnerType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.SPAWNER_PROCESSOR_NAME), spawnerType);
 
         registry.freeze();
     }

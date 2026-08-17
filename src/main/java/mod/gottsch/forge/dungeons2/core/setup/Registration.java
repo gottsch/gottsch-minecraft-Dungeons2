@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.particles.ParticleType;
@@ -104,6 +105,21 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@link SpawnerMarkerProcessor} under this mod's namespace. */
+	public static final String SPAWNER_PROCESSOR_NAME = "spawner";
+
+	/**
+	 * Backlog #10: turns an authored {@code d2:spawner} DATA marker into the mob-set spawner.
+	 * Unlike the two above, this class is Dungeons2's own -- it is specific to this mod's marker
+	 * convention and its own block, so there is nothing to promote.
+	 */
+	public static final RegistryObject<StructureProcessorType<SpawnerMarkerProcessor>> SPAWNER_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(SPAWNER_PROCESSOR_NAME, () -> {
+				Codec<SpawnerMarkerProcessor> codec =
+						SpawnerMarkerProcessor.codec(() -> Registration.SPAWNER_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
 	public static final RegistryObject<StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {
@@ -122,6 +138,12 @@ public class Registration {
 		// registers NOTHING, silently and with no error. Do this before register(eventBus).
 		mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities.register();
 		mod.gottsch.forge.dungeons2.core.item.DungeonsItems.register();
+		// Added 2026-08-14 with #10's mob-set spawner. Both of these holders had been registering
+		// nothing since they were written -- see DungeonsBlockEntities' javadoc, and note that
+		// backlog #43's "do not wire these up" advice was about the dead deferred-generator entry,
+		// which is now sharing a holder with a live block.
+		mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks.register();
+		mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities.register();
 
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(eventBus);

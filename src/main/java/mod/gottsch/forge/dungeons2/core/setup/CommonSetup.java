@@ -49,6 +49,16 @@ public class CommonSetup {
 	public static void common(final FMLCommonSetupEvent event) {
 		// add mod specific logging
 		Config.instance.addRollingFileAppender(Dungeons.MOD_ID);
+
+		// Backlog #10 diagnostic. Registration is the one thing about the mob-set spawner that
+		// cannot be observed from inside the game: the block is invisible, so "registered and
+		// working" and "block entity type missing" look identical, and a DeferredRegister holder
+		// that never class-loads registers NOTHING with no error at all (see DungeonsBlockEntities,
+		// and #40/#41 where the same trap ate the rats). This runs after registration is complete,
+		// so it is the authoritative answer.
+		//
+		//   grep "D2-REGISTRY" run/logs/dungeons2.log
+		logRegistryPresence();
 //		Dungeons2Networking.register();
 
 		// Register structure piece types. The STRUCTURE_PIECE registry is frozen
@@ -104,5 +114,25 @@ public class CommonSetup {
 		event.register(DungeonsEntities.GIANT_RAT_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
+	}
+
+	/**
+	 * Reports whether #10's block, its block entity type and its marker are actually in the game's
+	 * registries. Logged at INFO deliberately -- a missing block entity type is a hard fault, not a
+	 * detail, and this is the line that says so without needing debug logging turned on.
+	 */
+	private static void logRegistryPresence() {
+		java.util.List<String> report = new java.util.ArrayList<>();
+		for (String name : java.util.List.of("mob_set_spawner", "spawner_marker")) {
+			net.minecraft.resources.ResourceLocation id =
+					new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, name);
+			report.add(name + ": block="
+					+ net.minecraftforge.registries.ForgeRegistries.BLOCKS.containsKey(id));
+		}
+		net.minecraft.resources.ResourceLocation spawner =
+				new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, "mob_set_spawner");
+		report.add("mob_set_spawner: blockEntityType="
+				+ net.minecraftforge.registries.ForgeRegistries.BLOCK_ENTITY_TYPES.containsKey(spawner));
+		Dungeons.LOGGER.info("[D2-REGISTRY] {}", String.join("  |  ", report));
 	}
 }

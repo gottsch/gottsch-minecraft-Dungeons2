@@ -94,7 +94,12 @@ class ShippedBlockIdsTest {
             "wall", "ceiling", "floor", "door", "lintel", "base", "alternateBase",
             "alternateFloor", "archBlock",
             // processor palettes, and vanilla's own block-state object
-            "blocks", "Name");
+            "blocks", "Name",
+            // #10: the spawner processor's authored marker. A real block id, so it belongs here and
+            // not in the exempt list -- the sweep verifies dungeons2: ids through our own
+            // blockstate files exactly as it does dungeonblocks:, which is what makes a typo in it
+            // a build failure rather than a marker that silently never matches.
+            "marker_block");
 
     /**
      * Keys whose values are namespaced ids of something that is <em>not</em> a block. Listed rather
@@ -106,6 +111,9 @@ class ShippedBlockIdsTest {
             "predicate_type", "type", "structure", "feature", "features", "biomes", "values",
             // content references
             "entity", "lootTable", "function", "condition", "random_sequence",
+            // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
+            // rather than from the block registry. ShippedMobSetsTest is what verifies it.
+            "mob_set",
             // block TAGS -- the same class of typo, but resolved from datapacks rather than the
             // block registry, so out of scope here. Worth its own sweep if one ever bites.
             "tags");
@@ -271,9 +279,25 @@ class ShippedBlockIdsTest {
 
     // ---------- walking the shipped files ----------
 
+    /**
+     * Directories whose files hold no block ids at all and are verified by a different sweep.
+     *
+     * <p>A whole-directory skip rather than new {@link #NON_BLOCK_KEYS} entries, deliberately.
+     * {@code mob_sets} files key their entity ids under a bare {@code "id"}, and classifying
+     * {@code "id"} as never-a-block would blunt the sweep everywhere &mdash; the teeth of this test
+     * are precisely that an unclassified key fails. Excluding one directory with a named reason
+     * costs one line and leaves the classifier sharp. {@code ShippedMobSetsTest} covers what is in
+     * here.</p>
+     */
+    private static final Set<String> SWEPT_ELSEWHERE = Set.of("mob_sets");
+
     private static List<Found> sweep() {
         List<Found> found = new ArrayList<>();
         for (Path file : jsonFilesUnder(DATA_ROOT)) {
+            Path parent = file.getParent();
+            if (parent != null && SWEPT_ELSEWHERE.contains(parent.getFileName().toString())) {
+                continue;
+            }
             collect(parse(file), null, file.getFileName().toString(), found);
         }
         return found;

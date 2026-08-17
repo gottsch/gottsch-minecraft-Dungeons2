@@ -1,11 +1,11 @@
 {
-  "name": "dungeons2:transitions/classic/shaft_top",
+  "name": "dungeons2:transitions/classic/stairs_2/segment",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/classic/stairs_2_top",
+        "location": "dungeons2:transitions/classic/stairs_2_mid",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

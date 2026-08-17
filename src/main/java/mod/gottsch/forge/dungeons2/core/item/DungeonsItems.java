@@ -25,6 +25,8 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
+import net.minecraft.world.item.BlockItem;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegistryObject;
@@ -50,11 +52,26 @@ public class DungeonsItems {
             DungeonsEntities.GIANT_RAT + "_egg",
             () -> new ForgeSpawnEggItem(DungeonsEntities.GIANT_RAT_ENTITY, 0x3d3128, 0x1c1712, new Item.Properties()));
 
+    /**
+     * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
+     * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
+     * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
+     *
+     * <p>In {@code FUNCTIONAL_BLOCKS} beside the vanilla spawner and structure blocks, which is
+     * where someone building a dungeon template would look for it.</p>
+     */
+    public static final RegistryObject<Item> SPAWNER_MARKER = Registration.ITEMS.register(
+            "spawner_marker",
+            () -> new BlockItem(DungeonsBlocks.SPAWNER_MARKER.get(), new Item.Properties()));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
             event.accept(RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(GIANT_RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 

@@ -40,7 +40,7 @@ name each other's pools in fields baked into compressed NBT rather than in any J
 > the pool already restricts which pieces are candidates, so scoping the labels too would buy
 > nothing and would force every new motif to re-label joints that mean the same thing. So a new
 > motif's entrance chain reuses `dungeons2:entrance/ladder_top` etc. verbatim and only points its
-> `pool` fields at its own folder. `EntrancePoolWiringTest` enforces exactly this, and is what
+> `pool` fields at its own folder. `PoolWiringTest` enforces exactly this, and is what
 > catches the in-game-Save revert described further down.
 
 **Conventions (all templates):** author facing **north** (the planner rolls a 0/90/180/270
@@ -228,7 +228,7 @@ for the shaft, and the shaft's top reaching back up:
 | orientation  | front = **down** → `down_south`           | front = **up** → `up_north`           |
 
 > **`pool` is motif-scoped; `name` and `target` are not** — see the motif note at the top of this
-> file. That asymmetry is deliberate, not an oversight, and `EntrancePoolWiringTest` enforces it.
+> file. That asymmetry is deliberate, not an oversight, and `PoolWiringTest` enforces it.
 
 Vertical joints are supported (trial chambers / ancient cities chain vertically). Register
 each variant in a `template_pool` JSON under
@@ -280,13 +280,21 @@ Pools live under `data/dungeons2/worldgen/template_pool/transitions/<motif>/` (c
 
 | Pool | Role | Contents |
 |------|------|----------|
-| `dungeons2:transitions/<motif>/shaft_bottom` | **start pool** (what the planner assembles from, at the lower floor's plane) | Either a **complete, self-contained piece** with no outgoing joint — this is exactly what `ladder1.nbt`/`stairs_1.nbt` already are, registered here unchanged — or a **bottom segment**: `dungeons2:door` candidates at its own (lower) floor level + one **upward** assembly joint (`up_north`) into `shaft_segment`. |
-| `dungeons2:transitions/<motif>/shaft_segment` | optional, repeatable middle piece(s) | Down joint (`down_south`, mates to whatever sent the connection up) + up joint (`up_north`, continues further) — no doors, corridor/decoration between the two ends. Only needed once you're authoring segmented chains; doesn't need to exist otherwise. |
-| `dungeons2:transitions/<motif>/shaft_top` | terminal piece | `dungeons2:door` candidates at the *upper* floor's level + one **downward** joint (`down_south`, mates to whatever's below it), no further upward connection. |
+| `dungeons2:transitions/<motif>/shaft_bottom` | **start pool** (what the planner assembles from, at the lower floor's plane) | Either a **complete, self-contained piece** with no outgoing joint — this is exactly what `ladder1.nbt`/`stairs_1.nbt` already are, registered here unchanged — or a **bottom segment**: `dungeons2:door` candidates at its own (lower) floor level + one **upward** assembly joint into that chain's own segment pool. |
+| `dungeons2:transitions/<motif>/<chain>/segment` | optional, repeatable middle piece(s) | Down joint (mates to whatever sent the connection up) + up joint (continues further) — no doors, corridor/decoration between the two ends. Only needed once you're authoring segmented chains; doesn't need to exist otherwise. |
+| `dungeons2:transitions/<motif>/<chain>/top` | terminal piece | `dungeons2:door` candidates at the *upper* floor's level + one **downward** joint (mates to whatever's below it), no further upward connection. |
 
-Both self-contained pieces and segmented chains can coexist as weighted alternatives in the same
-`shaft_bottom` pool — nothing stops you from mixing monolithic and composed styles. All pieces
-that participate in one chain should share the same XZ footprint so walls line up.
+**Continuation pools are named per chain, not per role** (backlog #11, renamed 2026-08-14 from
+`shaft_segment`/`shaft_top`). A middle pool's contents are specific to one authored staircase — it
+means "the middle of `stairs_2`", not "any middle" — so a second chain sharing the name would
+describe neither. Vanilla would not *mis*-assemble in that case (`canAttach` requires the source's
+`target` to equal the candidate's `name`, so a foreign segment is simply rejected), but every
+placement attempt against the wrong entries is wasted and the name stops documenting anything.
+
+**`shaft_bottom` deliberately keeps its role name.** It genuinely is the generic start pool, and
+multiple unrelated transitions coexisting there as weighted alternatives is the design — self-
+contained pieces and segmented chains mix freely. All pieces in one chain should share the same XZ
+footprint so walls line up.
 
 **Wiring a chain — which jigsaw carries what.** Vanilla's `JigsawBlock.canAttach` connects two
 jigsaws when their fronts are opposite, their tops match (for `aligned`), and **the first's
@@ -304,9 +312,9 @@ Worked example, the three-piece `stairs_2` chain:
 
 | Piece | Joint | Name | Target Pool | Target Name |
 |---|---|---|---|---|
-| `stairs_2_bottom` | up | `dungeons2:stairs_2/bottom_up` | `dungeons2:transitions/classic/shaft_segment` | `dungeons2:stairs_2/mid_down` |
+| `stairs_2_bottom` | up | `dungeons2:stairs_2/bottom_up` | `dungeons2:transitions/classic/stairs_2/segment` | `dungeons2:stairs_2/mid_down` |
 | `stairs_2_mid` | down | `dungeons2:stairs_2/mid_down` | `minecraft:empty` | `minecraft:empty` |
-| `stairs_2_mid` | up | `dungeons2:stairs_2/mid_up` | `dungeons2:transitions/classic/shaft_top` | `dungeons2:stairs_2/top_down` |
+| `stairs_2_mid` | up | `dungeons2:stairs_2/mid_up` | `dungeons2:transitions/classic/stairs_2/top` | `dungeons2:stairs_2/top_down` |
 | `stairs_2_top` | down | `dungeons2:stairs_2/top_down` | `minecraft:empty` | `minecraft:empty` |
 
 A jigsaw `name` must be unique to its role — two pieces sharing a name makes which one gets
@@ -1689,17 +1697,88 @@ the weathering list, so every authored prefab ages by default.
 
 ---
 
-## DATA structure-block markers (content / vertical links)
+## DATA structure-block markers — **DO NOT USE ANY OF THESE**
 
-Type the string into the DATA structure block's text field. The block is cleared to air on
-placement; code fills in the content.
+> **A DATA structure block cannot work in a Dungeons2 template, and it fails destructively.**
+> Established 2026-08-14, the expensive way. Every authored piece is placed as a **jigsaw pool
+> element**, and `SinglePoolElement.getSettings` installs `BlockIgnoreProcessor.STRUCTURE_BLOCK`
+> *before* appending the pool's own `processors`. That processor returns `null` for a structure
+> block, which **removes it from the placement list** rather than replacing it. Nothing then writes
+> the cell — so you do not get a marker that quietly fails, you get **whatever terrain the dungeon
+> was carved out of**, sitting inside the finished room. The reported case was a coal ore block in
+> the middle of a hall.
+>
+> `ShippedSpawnerMarkerTest` fails the build if any shipped template contains a structure block at
+> all, and `JigsawStripsStructureBlocksTest` pins the vanilla mechanism so a future version change
+> is visible.
 
-| Marker string | Place where | Meaning |
-|---------------|-------------|---------|
-| `d2:descend`  | a floor cell | Entrance: where the drop lands on floor 0. Transition: the lower-floor connection column. |
-| `d2:ascend`   | a floor cell | Transition only: the upper-floor connection column. |
-| `d2:chest`    | a floor cell | Becomes a loot chest (loot table assigned in code). Optional. |
-| `d2:spawner`  | a floor cell | Becomes a mob spawner (entity assigned in code). Optional. |
-| `d2:anchor`   | one cell     | Optional origin override (default origin = NW-bottom corner). |
+The table below is **historical**. None of these five was ever implemented; `d2:spawner` briefly
+was, and had to be redone as a marker **block** — see below.
+
+| Marker string | Was meant to | Status |
+|---------------|--------------|--------|
+| `d2:spawner`  | become a mob spawner | **superseded** by the `dungeons2:spawner_marker` block |
+| `d2:descend`  | entrance drop / lower-floor connection column | never built; superseded by the jigsaw `dungeons2:door` / `dungeons2:connector` markers |
+| `d2:ascend`   | upper-floor connection column | never built; same |
+| `d2:chest`    | become a loot chest | never built |
+| `d2:anchor`   | origin override | never built |
 
 > The old `d2:door` DATA marker is **removed** — doors are jigsaw blocks (role 1), not DATA blocks.
+
+**If you need a new marker, use a block.** Register one, add it to the pool's processor list with a
+processor that swaps it, and give it a `BlockItem` so it can be placed by hand. That is what
+`dungeons2:spawner_marker` does, and it is the only shape that survives jigsaw placement.
+
+## The mob-set spawner (backlog #10, 2026-08-14)
+
+**Place a `dungeons2:spawner_marker` block on a floor cell.** It is a normal solid block that looks
+like a vanilla spawner, it has an item (`/give @s dungeons2:spawner_marker`, or find it in the
+Functional Blocks creative tab), and it is visible while you author — so you can see what you put
+where. At placement the `dungeons2:spawner` processor swaps it for `dungeons2:mob_set_spawner`: an
+**invisible, non-solid, non-collidable** block whose block entity spawns a datapack-defined set of
+mobs when a player comes within `proximity` blocks (8 by default, roughly "as you enter the room" at
+Dungeons2's room sizes).
+
+Shipped example: `rooms/classic/15x21_hall_1.nbt` carries one at local `(7, 1, 10)` — centre of the
+hall's aisle, on the walking plane.
+
+**Which mobs is datapack content, not code.** The set is named by the `dungeons2:spawner` entry in
+the motif's processor list (`worldgen/processor_list/classic_weathering.json`), and the shipped one
+is `dungeons2:classic_vermin` — the dungeon's own rats.
+
+**One marker means one set per motif.** A block carries no free text, so there is no per-cell
+override. A motif wanting a second set registers a second marker block and adds a second processor
+entry pointing `marker_block` at it; that half is pure data.
+
+Sets live at `data/<namespace>/mob_sets/*.json` and are read by GottschCore's `MobSetDataHandler`,
+so a datapack can add or replace them without touching the mod:
+
+```json
+{
+  "id": "dungeons2:classic_vermin",
+  "category": "classic",
+  "count": { "min": 2, "max": 4 },
+  "mobs": [
+    { "id": "dungeons2:rat", "weight": 10 },
+    { "id": "dungeons2:giant_rat", "weight": 3 }
+  ]
+}
+```
+
+`minecraft:empty` is a valid weighted entry and means "spawn nothing this roll".
+
+> **Why a marker block rather than a DATA marker.** Vanilla's `handleDataMarker` hook belongs to
+> `StructurePiece`, and every authored Dungeons2 piece is a `PoolElementStructurePiece` this mod
+> does not subclass — so a **structure processor** is the available mechanism, and all four pools
+> already name a processor list. But a processor never sees a structure block in a pool element
+> (see the warning at the top of this section), so the marker has to be an ordinary block. Village
+> Dungeons uses marker blocks for exactly this reason.
+>
+> Consequently the marker only works in **authored templates**. A procedurally-built room places no
+> marker and would reach the same spawner through `BlockEntityData` instead —
+> `DungeonPiece.applyBlockEntity` has supported that since Phase 3, and nothing emits it yet.
+
+> **`ShippedMobSetsTest` is what catches a typo.** The processor deliberately does not validate that
+> a set exists — `MobSetDataRegistry` fills at datapack reload while a processor runs during
+> worldgen, so "not loaded yet" and "does not exist" are indistinguishable there. A misspelled set
+> is a build failure instead of a silent no-op spawner.
