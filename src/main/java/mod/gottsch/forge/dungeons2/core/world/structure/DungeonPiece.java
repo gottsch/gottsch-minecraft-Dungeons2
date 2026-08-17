@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 /**
  * Base for the three procedural Phase 3 pieces ({@link DungeonRoomPiece},
@@ -88,12 +89,35 @@ public abstract class DungeonPiece extends StructurePiece {
     protected int anchorX;
     protected int anchorZ;
 
+    /**
+     * Which floor of the dungeon this piece is on, <strong>0 at the entrance</strong> and counting
+     * downward &mdash; {@code FloorLayout#getFloorIndex}, carried down to where content is built.
+     *
+     * <h2>Why this is not derived from {@link #floorY}</h2>
+     * <p>They are a pair, not alternatives, and they diverge the moment the ground is not flat.
+     * {@code floorY} is the absolute world Y every placement is computed from; {@code floorIndex}
+     * is the ordinal an author means by "the third floor down". A dungeon under a mountain has its
+     * floor 3 at a higher {@code floorY} than a ravine dungeon's floor 0, so no arithmetic on
+     * {@code floorY} recovers the ordinal &mdash; it has to be carried.</p>
+     *
+     * <p>A constructor parameter rather than a fluent setter with a default, deliberately: a
+     * default of 0 would mean a caller that forgot it silently built the whole dungeon as if every
+     * floor were the entrance floor. The compiler naming every call site is worth the churn.</p>
+     */
+    protected int floorIndex;
+
+    /** Which floor this piece is on, 0 at the entrance. See {@link #floorIndex}. */
+    public int getFloorIndex() {
+        return floorIndex;
+    }
+
     /** Planning constructor. */
-    protected DungeonPiece(StructurePieceType type, String motifValue, int floorY,
+    protected DungeonPiece(StructurePieceType type, String motifValue, int floorY, int floorIndex,
                            int anchorX, int anchorZ, BoundingBox box) {
         super(type, 0, box);
         this.motifValue = motifValue;
         this.floorY = floorY;
+        this.floorIndex = floorIndex;
         this.anchorX = anchorX;
         this.anchorZ = anchorZ;
         // NORTH = no rotation; piece-local maps to world by a pure min-offset.
@@ -105,6 +129,10 @@ public abstract class DungeonPiece extends StructurePiece {
         super(type, tag);
         this.motifValue = tag.getString("Motif");
         this.floorY = tag.getInt("FloorY");
+        // Absent in a dungeon saved before floorIndex existed; getInt answers 0, which reads that
+        // whole dungeon as the entrance floor. Acceptable rather than versioned: the only consumer
+        // is content difficulty, and 0 is the safe end of that scale.
+        this.floorIndex = tag.getInt("FloorIndex");
         this.anchorX = tag.getInt("AnchorX");
         this.anchorZ = tag.getInt("AnchorZ");
     }
@@ -114,6 +142,7 @@ public abstract class DungeonPiece extends StructurePiece {
                                          CompoundTag tag) {
         tag.putString("Motif", motifValue == null ? "" : motifValue);
         tag.putInt("FloorY", floorY);
+        tag.putInt("FloorIndex", floorIndex);
         tag.putInt("AnchorX", anchorX);
         tag.putInt("AnchorZ", anchorZ);
     }
@@ -174,6 +203,7 @@ public abstract class DungeonPiece extends StructurePiece {
         // may read the existing world block (RuleProcessor's location_predicate does,
         // and reading outside the current WorldGenRegion during worldgen is illegal).
         List<StructureTemplate.StructureBlockInfo> infos = new ArrayList<>(placements.size());
+        List<BlockPlacement> blockEntities = new ArrayList<>();
         for (BlockPlacement p : placements) {
             int worldX = anchorX + p.getX();
             int worldY = p.getY();
@@ -185,15 +215,12 @@ public abstract class DungeonPiece extends StructurePiece {
                 // Block-entity placements (chests / spawners / signs) bypass the
                 // processor pass entirely, preserving the guarantee the procedural
                 // decorator pass always had: authored container content is never
-                // swapped out from under itself. They are written straight out, so they
-                // are the one thing still clipped here.
+                // swapped out from under itself. Held back and written below rather
+                // than here, so a plain placement cannot land on top of one.
                 BlockPos worldPos = new BlockPos(worldX, worldY, worldZ);
-                if (!box.isInside(worldPos)) {
-                    continue;
+                if (box.isInside(worldPos)) { // the one thing still clipped in this loop
+                    blockEntities.add(p);
                 }
-                placeBlock(level, state, worldX - pieceBox.minX(), worldY - pieceBox.minY(),
-                        pieceBox.maxZ() - worldZ, box);
-                applyBlockEntity(level, worldPos, be);
                 continue;
             }
             infos.add(new StructureTemplate.StructureBlockInfo(
@@ -223,6 +250,32 @@ public abstract class DungeonPiece extends StructurePiece {
                 jointed.add(worldPos.immutable());
             }
         }
+
+        // Block entities last, and that ordering is load-bearing rather than tidy. The placement
+        // list is a layering order -- a later placement overwrites an earlier one in the same cell
+        // -- but the two halves above do not run in list order: the plain placements are collected
+        // and written after the decoration pass, so anything written during the collection loop is
+        // written FIRST no matter where it sat in the list. A room's hollow() step emits air for
+        // every interior cell, including the one a scheme just put a spawner in, so a spawner
+        // written in the loop was reliably erased by that air a moment later. Nothing had noticed,
+        // because the only block entity in play until now arrived through the jigsaw path instead.
+        for (BlockPlacement p : blockEntities) {
+            int worldX = anchorX + p.getX();
+            int worldY = p.getY();
+            int worldZ = anchorZ + p.getZ();
+            BlockPos worldPos = new BlockPos(worldX, worldY, worldZ);
+            placeBlock(level, BlockStateCodec.resolve(p), worldX - pieceBox.minX(),
+                    worldY - pieceBox.minY(), pieceBox.maxZ() - worldZ, box);
+            applyBlockEntity(level, worldPos, p.getBlockEntityNbt());
+            // The same probe the marker processor keeps, for the same reason: a procedural spawner
+            // that works and one that was never planned look identical in game, so this is the only
+            // way to tell "the scheme never rolled it" from "it was placed and does nothing".
+            //
+            //   grep "D2-SPAWNER" run/logs/dungeons2.log
+            Dungeons.LOGGER.debug("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
+                    p.getBlockEntityNbt());
+        }
+
         settleJoinShapes(level, box, jointed);
     }
 
@@ -382,10 +435,11 @@ public abstract class DungeonPiece extends StructurePiece {
 
     /**
      * Best-effort block-entity application. Builds a full BE tag (id + position +
-     * stringified fields) and loads it into the placed block entity. No Phase 2
-     * builder populates {@link BlockEntityData} yet, so this path is dormant; it
-     * is wired now so spawner / chest content lights up the moment a builder
-     * starts emitting it, without another piece change.
+     * stringified fields) and loads it into the placed block entity.
+     *
+     * <p>Dormant from Phase 3 until Aug 2026, when {@code RoomSpawnerGenerator} became the first
+     * builder to populate {@link BlockEntityData} &mdash; which is what turned two latent faults
+     * here into real ones: the write order (see {@link #placeAll}) and the save below.</p>
      */
     protected void applyBlockEntity(WorldGenLevel level, BlockPos pos, BlockEntityData data) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -393,7 +447,26 @@ public abstract class DungeonPiece extends StructurePiece {
             return;
         }
         try {
-            CompoundTag tag = blockEntity.saveWithFullMetadata();
+            // Start from the block entity's own state so a field this data does not mention keeps
+            // whatever the block set up when it created the entity.
+            //
+            // A THROWING save is not fatal here, and must not be. A freshly created block entity
+            // has not necessarily finished initialising itself -- GottschCore's
+            // ProximityMobSetSpawnerBlockEntity throws NPE out of saveAdditional when its mob-count
+            // range is still null, which is exactly the state every spawner this path places is in.
+            // Before this catch, that exception unwound past the load below and the spawner got
+            // none of its data: an invisible block that ticks forever and spawns nothing. Falling
+            // back to an empty tag is safe because load() only overwrites the fields the tag
+            // actually carries, so the entity's in-memory defaults survive.
+            CompoundTag tag;
+            try {
+                tag = blockEntity.saveWithFullMetadata();
+            } catch (Exception incompleteEntity) {
+                Dungeons.LOGGER.debug("{} could not be saved before its data was applied at {} ({});"
+                        + " starting from an empty tag", blockEntity.getClass().getSimpleName(), pos,
+                        incompleteEntity.toString());
+                tag = new CompoundTag();
+            }
             if (data.getType() != null) {
                 tag.putString("id", data.getType());
             }
@@ -455,12 +528,57 @@ public abstract class DungeonPiece extends StructurePiece {
         return z ^ (z >>> 31);
     }
 
-    /** Stores a value as an int when it parses cleanly, otherwise as a string. */
+    /**
+     * Stores a stringified {@link BlockEntityData} value as the narrowest NBT type it parses
+     * cleanly as, falling back to a string.
+     *
+     * <h2>Why the type matters, when NBT converts numbers freely</h2>
+     * <p>{@code CompoundTag.getDouble} happily reads an {@code IntTag}, so for a reader that only
+     * ever calls a numeric getter the distinction is invisible. Two readers in play here are not
+     * like that:</p>
+     * <ul>
+     *   <li>A {@code double} field written as a string is read back as <strong>0</strong>, not as
+     *       its value &mdash; and {@code AbstractProximityBlockEntity} guards its read with a bare
+     *       {@code tag.contains(key)}, which a {@code StringTag} satisfies. A spawner whose
+     *       {@code proximity} came through as text therefore triggers only when the player stands
+     *       in its cell, which for an invisible block is indistinguishable from broken.</li>
+     *   <li>A {@code long} outside {@code int} range &mdash; a chest's {@code LootTableSeed} is the
+     *       standing example &mdash; failed {@code Integer.parseInt} and was stored as text, so the
+     *       chest rolled its table fresh instead of using the fixed seed.</li>
+     * </ul>
+     *
+     * <p>Order is narrowest-first so a plain {@code "3"} keeps costing four bytes; the double case
+     * only fires for a value written with a decimal point or exponent, which is how
+     * {@code RoomSpawnerGenerator} writes the fields it means as doubles.</p>
+     */
     private static void putParsed(CompoundTag tag, String key, String value) {
         try {
             tag.putInt(key, Integer.parseInt(value));
-        } catch (NumberFormatException e) {
-            tag.putString(key, value);
+            return;
+        } catch (NumberFormatException notAnInt) {
+            // fall through
         }
+        try {
+            tag.putLong(key, Long.parseLong(value));
+            return;
+        } catch (NumberFormatException notALong) {
+            // fall through
+        }
+        try {
+            // Double.parseDouble accepts "NaN", "Infinity" and a trailing 'd'/'f'; none of those is
+            // a value any caller means, and each would read back as a number where a string was
+            // intended, so they are rejected rather than parsed.
+            if (FLOATING_POINT.matcher(value).matches()) {
+                tag.putDouble(key, Double.parseDouble(value));
+                return;
+            }
+        } catch (NumberFormatException notADouble) {
+            // fall through
+        }
+        tag.putString(key, value);
     }
+
+    /** Decimal or exponent-form numbers only -- see {@link #putParsed}. */
+    private static final Pattern FLOATING_POINT =
+            Pattern.compile("[+-]?(\\d+\\.\\d*|\\.\\d+|\\d+)([eE][+-]?\\d+)?");
 }

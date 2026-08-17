@@ -67,6 +67,7 @@ class ShippedMobSetsTest {
 
     private static final String MOB_SETS = "/data/dungeons2/mob_sets";
     private static final String PROCESSOR_LISTS = "/data/dungeons2/worldgen/processor_list";
+    private static final String MOTIF_CONFIGS = "/data/dungeons2/dungeons2/motif_config";
 
     /**
      * Dungeons2's own entity ids. Not resolvable through the registry headlessly (Forge does not
@@ -145,6 +146,124 @@ class ShippedMobSetsTest {
                     + " set that does not ship. Every d2:spawner marker they convert would produce"
                     + " a spawner that spawns nothing:\n  " + String.join("\n  ", dangling)
                     + "\nShipped: " + shipped);
+        }
+    }
+
+    /**
+     * The same sweep from the other two sources of spawner content: a motif's
+     * {@code mobSetsByFloorIndex} depth table, and any scheme's {@code spawners} slot that names
+     * its own sets instead of deferring to the table.
+     *
+     * <p>Worth its own check rather than folding into the processor one, because the failure is
+     * worse here. A processor's dangling set breaks the handful of authored templates carrying the
+     * marker; a table's breaks <em>every procedural room on the floors that band covers</em>. Both
+     * are invisible in game &mdash; a spawner drawing from a set that does not exist is an
+     * invisible block that ticks and does nothing.</p>
+     */
+    @Test
+    void everyMobSetASchemeOrDepthBandReferencesShips() {
+        Set<String> shipped = new LinkedHashSet<>();
+        for (Path file : jsonFilesUnder(MOB_SETS)) {
+            shipped.add(parse(file).getAsJsonObject().get("id").getAsString());
+        }
+
+        List<String> dangling = new ArrayList<>();
+        int sources = 0;
+        for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
+            JsonObject fragment = parse(file).getAsJsonObject();
+            String where = file.getFileName().toString();
+
+            if (fragment.has("mobSetsByFloorIndex")) {
+                for (JsonElement wrapped : fragment.getAsJsonArray("mobSetsByFloorIndex")) {
+                    JsonObject band = wrapped.getAsJsonObject();
+                    sources++;
+                    checkSets(band, shipped, where + " / floor "
+                            + band.get("minFloorIndex").getAsString() + " band", dangling);
+                }
+            }
+            if (!fragment.has("schemes")) {
+                continue;
+            }
+            for (JsonElement wrapped : fragment.getAsJsonArray("schemes")) {
+                JsonObject scheme = wrapped.getAsJsonObject();
+                if (!scheme.has("spawners")) {
+                    continue;
+                }
+                JsonObject spawners = scheme.getAsJsonObject("spawners");
+                // A slot with no mobSets defers to the depth table above -- nothing to check, and
+                // that is the common case by design, not an omission.
+                if (spawners.has("mobSets")) {
+                    sources++;
+                    checkSets(spawners, shipped,
+                            where + " / " + scheme.get("name").getAsString(), dangling);
+                }
+            }
+        }
+        if (!dangling.isEmpty()) {
+            org.junit.jupiter.api.Assertions.fail(dangling.size() + " spawner source(s) reference a"
+                    + " mob set that does not ship. Every procedural room they fire in would get an"
+                    + " invisible block that spawns nothing:\n  "
+                    + String.join("\n  ", dangling) + "\nShipped: " + shipped);
+        }
+        org.junit.jupiter.api.Assertions.assertTrue(sources > 0,
+                "no shipped motif declares a depth band or a scheme-level mobSets list, so this"
+                        + " check passed vacuously -- either procedural spawners were removed or a"
+                        + " key was renamed");
+    }
+
+    /**
+     * Every shipped scheme that places spawners must be answerable by its motif's depth table.
+     *
+     * <p>The two halves of the override are easy to get half-done: strip {@code mobSets} off a
+     * scheme to let it inherit, and forget to add the table. Nothing complains &mdash;
+     * {@code SpawnerConfig} resolves to an empty list and the room places no spawners at all, which
+     * looks exactly like a scheme that never had the slot.</p>
+     */
+    @Test
+    void everySchemeThatDefersHasATableToDeferTo() {
+        List<String> orphans = new ArrayList<>();
+        for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
+            JsonObject fragment = parse(file).getAsJsonObject();
+            if (!fragment.has("schemes")) {
+                continue;
+            }
+            // Same folder = same motif; a fragment may hold the schemes while a sibling holds the
+            // table, which is the whole point of fragments, so the table is looked for across the
+            // motif's directory rather than in this file alone.
+            boolean tableInMotif = false;
+            for (Path sibling : jsonFilesUnder(MOTIF_CONFIGS)) {
+                if (sibling.getParent().equals(file.getParent())
+                        && parse(sibling).getAsJsonObject().has("mobSetsByFloorIndex")) {
+                    tableInMotif = true;
+                    break;
+                }
+            }
+            for (JsonElement wrapped : fragment.getAsJsonArray("schemes")) {
+                JsonObject scheme = wrapped.getAsJsonObject();
+                if (!scheme.has("spawners")) {
+                    continue;
+                }
+                if (!scheme.getAsJsonObject("spawners").has("mobSets") && !tableInMotif) {
+                    orphans.add(file.getParent().getFileName() + " / "
+                            + scheme.get("name").getAsString());
+                }
+            }
+        }
+        if (!orphans.isEmpty()) {
+            org.junit.jupiter.api.Assertions.fail(orphans.size() + " scheme(s) declare spawners with"
+                    + " no mobSets and belong to a motif with no mobSetsByFloorIndex table, so they"
+                    + " resolve to nothing and place no spawners:\n  "
+                    + String.join("\n  ", orphans));
+        }
+    }
+
+    private static void checkSets(JsonObject holder, Set<String> shipped, String where,
+                                  List<String> dangling) {
+        for (JsonElement entry : holder.getAsJsonArray("mobSets")) {
+            String referenced = entry.getAsJsonObject().get("mobSet").getAsString();
+            if (!shipped.contains(referenced)) {
+                dangling.add(where + " -> " + referenced);
+            }
         }
     }
 

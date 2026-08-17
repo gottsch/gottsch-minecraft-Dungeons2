@@ -71,6 +71,12 @@ import java.util.Optional;
  * floor, optionally carrying a brazier or the like on top. The second volume slot, and it runs after
  * {@code pillars} for the same reason: it draws in the interior air the hollow step cleared.</p>
  *
+ * <p>{@code spawners} holds a {@link SpawnerConfig} &mdash; invisible proximity mob-set spawners
+ * standing in the room's interior. The only slot whose output is neither seen nor collided with, and
+ * the only one that reaches the world through {@code BlockEntityData}; it is what lets a
+ * <em>procedural</em> room have monsters, where before only an authored template carrying the marker
+ * block could. See that record.</p>
+ *
  * <h2>Eligibility</h2>
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
  * carry it, <em>before</em> weights are totalled. This matters more than it did for floors:
@@ -106,6 +112,18 @@ import java.util.Optional;
  * scheme eligible nowhere, which is indistinguishable at generation time from a scheme that is
  * merely unlucky.</p>
  *
+ * <h3>Depth</h3>
+ * <p>{@link #minFloorIndex} and {@link #maxFloorIndex} are the third eligibility axis, and the only
+ * one that is not about the room's shape: they say how far into the dungeon a scheme belongs.
+ * <strong>0 is the entrance floor</strong>, counting downward &mdash; the same ordinal
+ * {@code FloorLayout#getFloorIndex} carries, deliberately not a world Y, since a dungeon under a
+ * mountain has its third floor higher up than a ravine dungeon's first.</p>
+ *
+ * <p>{@code minFloorIndex: 0} and no maximum is the default and means "anywhere", so an existing
+ * pack is unaffected. Unlike {@code maxHeight}/{@code maxSize}, {@code maxFloorIndex} accepts
+ * <strong>0</strong>: "this scheme only on the entrance floor" is a real thing to author, where a
+ * {@code maxHeight} of 0 could only ever be a mistake.</p>
+ *
  * <p><strong>Maxima make it possible to leave a gap.</strong> With minimums only, one unconstrained
  * scheme guarantees every room matches something; with bounds, a whole band of room sizes can fall
  * through to the undecorated fallback silently. {@code DatapackResourcesParseTest} sweeps the room
@@ -119,7 +137,19 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                          Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
                          Optional<PillarPatternEntry> pillars,
                          Optional<PlatformPatternEntry> platforms,
+                         Optional<SpawnerConfig> spawners,
+                         FloorRange floors,
                          Optional<String> parent, boolean isAbstract) {
+
+    /** The entrance-floor index; 0, and named so the arithmetic in a gate reads as depth. */
+    public int minFloorIndex() {
+        return floors.min();
+    }
+
+    /** See {@link #minFloorIndex}. */
+    public Optional<Integer> maxFloorIndex() {
+        return floors.max();
+    }
 
     /**
      * A scheme with no element slots filled &mdash; an undecorated room of the given weight and
@@ -129,10 +159,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
     public RoomScheme(String name, int weight, int minHeight, int minSize) {
         this(name, weight, minHeight, minSize, Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), false);
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                FloorRange.ANY, Optional.empty(), false);
     }
 
-    /** The shape before {@code extends}/{@code abstract}: a scheme that stands on its own. */
+    /** The shape before the {@code spawners} slot was added. */
     public RoomScheme(String name, int weight, int minHeight, int minSize,
                       Optional<Integer> maxHeight, Optional<Integer> maxSize,
                       Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
@@ -140,7 +171,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                       Optional<PillarPatternEntry> pillars,
                       Optional<PlatformPatternEntry> platforms) {
         this(name, weight, minHeight, minSize, maxHeight, maxSize, floor, wall, ceiling, pots,
-                pillars, platforms, Optional.empty(), false);
+                pillars, platforms, Optional.empty(), FloorRange.ANY, Optional.empty(), false);
     }
 
     /** Element slots with lower bounds only &mdash; the shape before {@code max*} was added. */
@@ -195,6 +226,13 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codecs.strictOptionalFieldOf(PotConfig.CODEC, "pots").forGetter(RoomScheme::pots),
             Codecs.strictOptionalFieldOf(PillarPatternEntry.CODEC, "pillars").forGetter(RoomScheme::pillars),
             Codecs.strictOptionalFieldOf(PlatformPatternEntry.CODEC, "platforms").forGetter(RoomScheme::platforms),
+            Codecs.strictOptionalFieldOf(SpawnerConfig.CODEC, "spawners").forGetter(RoomScheme::spawners),
+            // The depth axis, flattened into minFloorIndex/maxFloorIndex keys. Spelled that way
+            // rather than minFloor/minDepth because a scheme object already has a "floor" key
+            // meaning the floor SURFACE pattern, and two unrelated senses of "floor" one line apart
+            // is how an author misreads a file. One group argument rather than two because this
+            // record is at DFU's 16-argument ceiling -- see FloorRange.
+            FloorRange.MAP_CODEC.forGetter(RoomScheme::floors),
             Codecs.strictOptionalFieldOf(Codec.STRING, "extends").forGetter(RoomScheme::parent),
             Codecs.strictOptionalFieldOf(Codec.BOOL, "abstract", false).forGetter(RoomScheme::isAbstract)
     ).apply(instance, RoomScheme::new))).flatXmap(RoomScheme::validate, RoomScheme::validate);
@@ -205,7 +243,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      * may live in another file and an addon retuning the parent reaches every child for free.
      *
      * <h2>What does NOT inherit, and why</h2>
-     * <p><strong>Weight and all four size bounds stay the child's own.</strong> Two reasons, and the
+     * <p><strong>Weight, all four size bounds and both floor bounds stay the child's own.</strong> Two reasons, and the
      * second is the real one:</p>
      * <ul>
      *   <li>{@code weight}, {@code minHeight} and {@code minSize} are primitives with defaults, so
@@ -235,6 +273,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                 pots.or(parentScheme::pots),
                 pillars.or(parentScheme::pillars),
                 platforms.or(parentScheme::platforms),
+                spawners.or(parentScheme::spawners),
+                floors,
                 parent, isAbstract);
     }
 
@@ -267,6 +307,10 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         // The element gates are validated from here rather than from inside SizeGate's own map
         // codec, because this is the level that knows the scheme's name and which slot it was --
         // "maxHeight 5 is below minHeight 7" is not an actionable error message on its own.
+        DataResult<FloorRange> floorRange = scheme.floors.validate("scheme '" + scheme.name + "'");
+        if (floorRange.error().isPresent()) {
+            return DataResult.error(() -> floorRange.error().get().message());
+        }
         DataResult<SizeGate> slots = DataResult.success(SizeGate.UNBOUNDED);
         slots = chain(slots, scheme.floor.map(FloorPatternEntry::gate), scheme.name, "floor");
         slots = chain(slots, scheme.wall.map(WallPatternEntry::gate), scheme.name, "wall");
@@ -274,6 +318,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         slots = chain(slots, scheme.pots.map(PotConfig::gate), scheme.name, "pots");
         slots = chain(slots, scheme.pillars.map(PillarPatternEntry::gate), scheme.name, "pillars");
         slots = chain(slots, scheme.platforms.map(PlatformPatternEntry::gate), scheme.name, "platforms");
+        slots = chain(slots, scheme.spawners.map(SpawnerConfig::gate), scheme.name, "spawners");
         return slots.map(ignored -> scheme);
     }
 
@@ -327,6 +372,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         return platforms.filter(entry -> entry.gate().fits(width, depth, height));
     }
 
+    /** See {@link #floorFor}. */
+    public Optional<SpawnerConfig> spawnersFor(int width, int depth, int height) {
+        return spawners.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
     /**
      * Whether this scheme fills any element slot at all. False for the deliberately undecorated
      * room, which is a legitimate authored outcome rather than a mistake &mdash; the distinction
@@ -334,8 +384,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      * gated out, and only the second is a fault.
      */
     public boolean declaresAnySlot() {
+        // spawners counts, even though it is the one slot that draws nothing a player can see: what
+        // this asks is whether the author declared anything, and a spawner slot that gated itself
+        // out is exactly as much a fault as a ceiling that did.
         return floor.isPresent() || wall.isPresent() || ceiling.isPresent() || pots.isPresent()
-                || pillars.isPresent() || platforms.isPresent();
+                || pillars.isPresent() || platforms.isPresent() || spawners.isPresent();
     }
 
     /** Whether this scheme draws anything at all in a room of these dimensions. */
@@ -345,7 +398,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                 || ceilingFor(width, depth, height).isPresent()
                 || potsFor(width, depth, height).isPresent()
                 || pillarsFor(width, depth, height).isPresent()
-                || platformsFor(width, depth, height).isPresent();
+                || platformsFor(width, depth, height).isPresent()
+                || spawnersFor(width, depth, height).isPresent();
     }
 
     /**
@@ -355,6 +409,33 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      * <p>Both bounds are <strong>inclusive</strong>, and both are measured against the same numbers
      * their minimums are: full height, and the <em>smaller</em> of width and depth.</p>
      */
+    /**
+     * Whether this scheme may be rolled on this floor. <strong>0 is the entrance floor</strong>,
+     * counting downward; both bounds are inclusive and absent {@link #maxFloorIndex} is unbounded.
+     *
+     * <h2>Why depth is a separate question from size</h2>
+     * <p>Size asks "does this pattern degenerate in a room this small"; depth asks "does this
+     * content belong this far into the dungeon". They are independent, so a grand hall gated to
+     * {@code minFloorIndex 3} still has to be a big room, and both checks apply. Kept as two
+     * methods rather than one because the selector wants to reject on depth <em>first</em> &mdash;
+     * it is the coarser filter, it is a single comparison against a value that does not vary within
+     * a floor, and it is the one an author is more likely to have meant.</p>
+     *
+     * <p>Combined with a cap on a template ({@code #44}) this is what a mini-boss is made of:
+     * {@code minFloorIndex} puts it deep, the cap makes it rare.</p>
+     */
+    public boolean fitsFloor(int floorIndex) {
+        return floors.contains(floorIndex);
+    }
+
+    /**
+     * Whether this scheme may be rolled for a room of these dimensions <em>on this floor</em> --
+     * the whole eligibility question, which is what {@code RoomSchemeSelector} asks.
+     */
+    public boolean fits(int width, int depth, int height, int floorIndex) {
+        return fitsFloor(floorIndex) && fits(width, depth, height);
+    }
+
     public boolean fits(int width, int depth, int height) {
         int size = Math.min(width, depth);
         return height >= minHeight

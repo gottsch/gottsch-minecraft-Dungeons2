@@ -104,7 +104,7 @@ class CorridorPostProcessTest {
         for (FloorLayout floor : layout.getFloors()) {
             for (CorridorData corridor : floor.getCorridors()) {
                 pieces.add(new DungeonCorridorPiece(
-                        corridor, MOTIF, floor.getFloorY(), ANCHOR_X, ANCHOR_Z));
+                        corridor, MOTIF, floor.getFloorY(), floor.getFloorIndex(), ANCHOR_X, ANCHOR_Z));
             }
         }
         return pieces;
@@ -319,7 +319,7 @@ class CorridorPostProcessTest {
                 }
 
                 postProcessPerChunk(new DungeonCorridorPiece(
-                        corridor, MOTIF, floor.getFloorY(), ANCHOR_X, ANCHOR_Z), level, seed);
+                        corridor, MOTIF, floor.getFloorY(), floor.getFloorIndex(), ANCHOR_X, ANCHOR_Z), level, seed);
             }
         }
 

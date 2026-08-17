@@ -40,6 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class AssembledEntranceStubTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     private static final String MOTIF = "classic";
     private static final String AIR = "minecraft:air";
 
@@ -92,13 +95,13 @@ class AssembledEntranceStubTest {
             Map<Long, String> vox = new HashMap<>();
             for (RoomData room : f0.getRooms()) {
                 if (room.getRole() != RoomRole.NORMAL) continue;
-                stamp(vox, new DungeonRoomPiece(room, MOTIF, floorY, anchorX, anchorZ).renderPlacements());
+                stamp(vox, new DungeonRoomPiece(room, MOTIF, floorY, TEST_FLOOR_INDEX, anchorX, anchorZ).renderPlacements());
             }
             for (CorridorData corridor : f0.getCorridors()) {
-                stamp(vox, new DungeonCorridorPiece(corridor, MOTIF, floorY, anchorX, anchorZ).renderPlacements());
+                stamp(vox, new DungeonCorridorPiece(corridor, MOTIF, floorY, TEST_FLOOR_INDEX, anchorX, anchorZ).renderPlacements());
             }
             for (DoorData door : f0.getDoors()) {
-                stamp(vox, new DungeonDoorPiece(door, MOTIF, floorY, anchorX, anchorZ).renderPlacements());
+                stamp(vox, new DungeonDoorPiece(door, MOTIF, floorY, TEST_FLOOR_INDEX, anchorX, anchorZ).renderPlacements());
             }
 
             // Locate the START room footprint (grid-local -> world XZ).

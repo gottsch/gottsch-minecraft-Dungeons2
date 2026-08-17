@@ -48,6 +48,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class DungeonPieceRoundTripTest {
 
+    /**
+     * Deliberately NOT 0. A round-trip assertion on a zero-valued int passes whether the field is
+     * written and read or dropped entirely -- {@code getInt} answers 0 for an absent key -- so the
+     * default value is the one number that cannot test this.
+     */
+    private static final int TEST_FLOOR_INDEX = 3;
+
     private static final String MOTIF = "classic";
     private static final int FLOOR_Y = 40;
     private static final int ANCHOR_X = 128;
@@ -79,10 +86,11 @@ class DungeonPieceRoundTripTest {
         room.getDoorways().add(new Coords2D(4, 8));
         room.getDoorways().add(new Coords2D(8, 6));
 
-        DungeonRoomPiece original = new DungeonRoomPiece(room, MOTIF, FLOOR_Y, ANCHOR_X, ANCHOR_Z);
+        DungeonRoomPiece original = new DungeonRoomPiece(room, MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z);
         DungeonRoomPiece loaded = new DungeonRoomPiece(null, save(original));
 
         assertEquals(original.getBoundingBox(), loaded.getBoundingBox(), "bounding box");
+        assertEquals(TEST_FLOOR_INDEX, loaded.getFloorIndex(), "floor index");
         RoomData a = original.getRoom();
         RoomData b = loaded.getRoom();
         assertEquals(a.getId(), b.getId());
@@ -108,10 +116,11 @@ class DungeonPieceRoundTripTest {
         // the deserialized piece has no grid to re-derive them from.
         corridor.getDoorCells().add(new Coords2D(6, 7));
 
-        DungeonCorridorPiece original = new DungeonCorridorPiece(corridor, MOTIF, FLOOR_Y, ANCHOR_X, ANCHOR_Z);
+        DungeonCorridorPiece original = new DungeonCorridorPiece(corridor, MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z);
         DungeonCorridorPiece loaded = new DungeonCorridorPiece(null, save(original));
 
         assertEquals(original.getBoundingBox(), loaded.getBoundingBox(), "bounding box");
+        assertEquals(TEST_FLOOR_INDEX, loaded.getFloorIndex(), "floor index");
         assertEquals(original.getCorridor().getId(), loaded.getCorridor().getId());
         assertEquals(original.getCorridor().getCells(), loaded.getCorridor().getCells(), "cells");
         assertEquals(original.getCorridor().getWallCells(), loaded.getCorridor().getWallCells(), "wall cells");
@@ -122,10 +131,11 @@ class DungeonPieceRoundTripTest {
     void doorPieceRoundTrips() {
         DoorData door = new DoorData(12, 9, 2, 5, Direction2D.NORTH);
 
-        DungeonDoorPiece original = new DungeonDoorPiece(door, MOTIF, FLOOR_Y, ANCHOR_X, ANCHOR_Z);
+        DungeonDoorPiece original = new DungeonDoorPiece(door, MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z);
         DungeonDoorPiece loaded = new DungeonDoorPiece(null, save(original));
 
         assertEquals(original.getBoundingBox(), loaded.getBoundingBox(), "bounding box");
+        assertEquals(TEST_FLOOR_INDEX, loaded.getFloorIndex(), "floor index");
         DoorData a = original.getDoor();
         DoorData b = loaded.getDoor();
         assertEquals(a.getX(), b.getX());
@@ -138,7 +148,7 @@ class DungeonPieceRoundTripTest {
     @Test
     void motifAndAnchorSurviveRoundTrip() {
         RoomData room = new RoomData(1, 0, 0, 5, 5, 6, RoomRole.NORMAL);
-        DungeonRoomPiece original = new DungeonRoomPiece(room, MOTIF, FLOOR_Y, ANCHOR_X, ANCHOR_Z);
+        DungeonRoomPiece original = new DungeonRoomPiece(room, MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z);
         CompoundTag tag = save(original);
 
         assertEquals(MOTIF, tag.getString("Motif"));
@@ -157,7 +167,7 @@ class DungeonPieceRoundTripTest {
     void roomDoorwaysSurviveWhenEmpty() {
         RoomData room = new RoomData(2, 2, 2, 7, 7, 7, RoomRole.NORMAL);
         DungeonRoomPiece loaded = new DungeonRoomPiece(null,
-                save(new DungeonRoomPiece(room, MOTIF, FLOOR_Y, ANCHOR_X, ANCHOR_Z)));
+                save(new DungeonRoomPiece(room, MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z)));
         List<Coords2D> doorways = loaded.getRoom().getDoorways();
         assertEquals(0, doorways.size(), "empty doorways should round-trip as empty");
     }

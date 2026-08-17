@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.block;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.block.entity.DungeonSpawnerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities;
 import mod.gottsch.forge.gottschcore.block.AbstractProximityBlock;
 import mod.gottsch.forge.gottschcore.block.entity.ProximityMobSetSpawnerBlockEntity;
@@ -33,8 +34,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An <strong>invisible</strong> block whose block entity spawns a datapack-defined mob set when a
@@ -98,12 +97,12 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         try {
-            ProximityMobSetSpawnerBlockEntity blockEntity = new ProximityMobSetSpawnerBlockEntity(
+            ProximityMobSetSpawnerBlockEntity blockEntity = new DungeonSpawnerBlockEntity(
                     DungeonsBlockEntities::mobSetSpawnerType, pos, state);
             blockEntity.setProximity(DEFAULT_PROXIMITY);
-            // Logged on SUCCESS too, not just on failure. The open question is no longer "does this
-            // throw" but "is this called at all" -- if the world never asks the block for an entity,
-            // silence here is the answer and every theory about what happens inside is moot.
+            // Once per block entity created, so cheap. Kept because "is the world even asking this
+            // block for an entity" was the question that finally narrowed #10, and a spawner that
+            // works looks exactly like one that was never placed.
             Dungeons.LOGGER.debug("[D2-SPAWNER] newBlockEntity OK at {}", pos);
             return blockEntity;
         } catch (RuntimeException e) {
@@ -113,32 +112,19 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock {
         }
     }
 
-    /**
-     * Positions already reported by {@link #getTicker}'s first-tick diagnostic, so it logs once per
-     * spawner instead of twenty times a second. Bounded: a dungeon has a handful of spawners, and
-     * this is diagnostic scaffolding rather than state anything depends on.
-     */
-    private static final Set<BlockPos> TICK_LOGGED = ConcurrentHashMap.newKeySet();
-
     @Override
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
                                                                   BlockEntityType<T> type) {
         // Server only: the spawn decision must happen once, authoritatively.
+        //
+        // Kept deliberately bare. A first-tick diagnostic lived here while #10 was being debugged
+        // and was removed once it had done its job: it called pos.immutable() on every tick of
+        // every spawner to key a seen-set, which is an allocation on a ticking path to serve a
+        // question nobody is asking any more. If it is ever needed again, guard the whole block on
+        // isDebugEnabled() rather than allocating first and deciding second.
         return level.isClientSide() ? null : (lvl, pos, blockState, be) -> {
             if (be instanceof ProximityMobSetSpawnerBlockEntity spawner) {
-                // First tick per position only. GottschCore's own "proximity met" / "self-destructing"
-                // lines are the natural place to read this, but they are DEBUG on ITS logger and its
-                // log level has not been persuaded to change -- so this reports the same state from
-                // our side, where the level is known to work.
-                //
-                // Absent entirely  => the ticker never runs; nothing downstream can matter.
-                // mobSetName=null  => the block entity NBT was never applied to it.
-                // dead=true        => it already fired (or self-destructed) before you looked.
-                if (TICK_LOGGED.add(pos.immutable())) {
-                    Dungeons.LOGGER.debug("[D2-SPAWNER] first tick at {} mobSet={} proximity={} dead={}",
-                            pos, spawner.getMobSetName(), spawner.getProximity(), spawner.isDead());
-                }
                 spawner.tickServer();
             }
         };

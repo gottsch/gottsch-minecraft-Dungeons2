@@ -18,6 +18,8 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Everything a single motif renders with: the base architectural blocks for each element, plus the
@@ -71,10 +73,59 @@ import java.util.List;
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
-                          CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes) {
+                          CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                          List<MobSetBand> mobSetsByFloorIndex,
+                          Map<String, TemplateLimit> templateLimits) {
+
+    /** The shape before {@code mobSetsByFloorIndex}: a motif whose schemes must name their own sets. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes) {
+        this(wall, ceiling, door, corridor, floor, schemes, List.of(), Map.of());
+    }
+
+    /** The shape before {@code templateLimits}: a motif that caps no authored template. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Map.of());
+    }
 
     /** Used when a motif has no files: stone_bricks everywhere, oak door, always-plain floor. */
     public static final MotifConfig DEFAULT = new MotifConfig(
             WallConfig.DEFAULT, CeilingConfig.DEFAULT, DoorConfig.DEFAULT,
             CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(RoomScheme.PLAIN));
+
+    /**
+     * The mob sets a spawner on this floor draws from, when its scheme does not name its own.
+     *
+     * <p>Empty means the table has nothing to say &mdash; either the motif declares no table, or (a
+     * case the load-time check makes unreachable for a non-empty table) no band covers this floor.
+     * A scheme whose {@code spawners} slot also names no sets then places nothing, which is the
+     * degrade-don't-abort convention every other missing-content path here follows.</p>
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    public List<SpawnerConfig.MobSetEntry> mobSetsFor(int floorIndex) {
+        return MobSetBand.forFloor(mobSetsByFloorIndex, floorIndex)
+                .map(MobSetBand::mobSets)
+                .orElseGet(List::of);
+    }
+
+    /**
+     * The cap on an authored template, or empty when it is unlimited &mdash; which is the default
+     * and the overwhelmingly common case.
+     *
+     * <p>Keyed by the template's <strong>full id</strong>, the same string a template pool's
+     * {@code "location"} field carries and the same one {@code PoolElementIds} reads back off a
+     * placed element. Keying on the id rather than on some D2-side alias is what makes this
+     * category-agnostic: nothing about it is specific to rooms, so a transition or an entrance
+     * variant can be capped later with no new mechanism.</p>
+     *
+     * <p>An id naming a template no pool references caps nothing and says nothing &mdash; a typo
+     * cannot be caught at load, because pools resolve from datapacks at a different time, so it is
+     * swept at build time instead ({@code ShippedTemplateLimitsTest}).</p>
+     */
+    public Optional<TemplateLimit> limitFor(String templateId) {
+        return Optional.ofNullable(templateLimits.get(templateId));
+    }
 }

@@ -847,8 +847,10 @@
     // any that were not weathering.
     //
     // IT ONLY EVER FIRES ON AUTHORED TEMPLATES, since nothing procedural places the marker.
-    // Procedural rooms would reach the same spawner through BlockEntityData instead, which
-    // DungeonPiece.applyBlockEntity has supported since Phase 3 and which nothing emits yet.
+    // A procedural room reaches the same spawner through the motif config's `spawners` scheme
+    // slot instead (RoomSpawnerGenerator -> BlockEntityData -> DungeonPiece.applyBlockEntity).
+    // The two build the same block-entity tag; SpawnerTagParityTest is what keeps them agreeing,
+    // so a field renamed here must be renamed there.
     //
     // ONE MARKER = ONE SET. A block carries no free text, so the per-cell override the DATA
     // marker allowed is gone. A motif wanting a second set registers a second marker block and

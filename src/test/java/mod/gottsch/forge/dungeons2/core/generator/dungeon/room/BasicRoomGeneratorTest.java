@@ -22,9 +22,12 @@ import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.DoorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
+import mod.gottsch.forge.dungeons2.core.config.FloorRange;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.MobSetBand;
 import mod.gottsch.forge.dungeons2.core.config.PotConfig;
+import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
 import mod.gottsch.forge.dungeons2.core.config.WallConfig;
@@ -60,6 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class BasicRoomGeneratorTest {
 
+    /** These cases are about room content, not depth, so every one builds the entrance floor. */
+    private static final int ENTRANCE_FLOOR = 0;
+
     @BeforeAll
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
@@ -74,7 +80,7 @@ class BasicRoomGeneratorTest {
     void orchestratorEmitsWallFloorAndCeilingPlacements() {
         BasicRoomGenerator gen = new BasicRoomGenerator();
         RoomPlacements outPlacements = new RoomPlacements();
-        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
+        gen.build(smallRoom(), 60, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
         List<BlockPlacement> out = outPlacements.getBlocks();
 
         // Interior air = 75 (RoomVolumeGeneratorTest) + walls = 72 (BasicWallGeneratorTest).
@@ -93,7 +99,7 @@ class BasicRoomGeneratorTest {
         RoomPlacements outPlacements = new RoomPlacements();
         RoomData room = smallRoom();
         int floorY = 60;
-        gen.build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
+        gen.build(room, floorY, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(99L), outPlacements);
         List<BlockPlacement> out = outPlacements.getBlocks();
 
         int expectedCeilingY = floorY + room.getHeight() - 1; // = 64
@@ -115,8 +121,8 @@ class BasicRoomGeneratorTest {
         BasicRoomGenerator gen = new BasicRoomGenerator();
         RoomPlacements first = new RoomPlacements();
         RoomPlacements second = new RoomPlacements();
-        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), first);
-        gen.build(smallRoom(), 60, DungeonMotif.CLASSIC, RandomSource.create(99L), second);
+        gen.build(smallRoom(), 60, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(99L), first);
+        gen.build(smallRoom(), 60, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(99L), second);
 
         List<BlockPlacement> a = first.getBlocks();
         List<BlockPlacement> b = second.getBlocks();
@@ -166,7 +172,7 @@ class BasicRoomGeneratorTest {
         int floorY = 60;
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(config)
-                .build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(4L), out);
+                .build(room, floorY, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(4L), out);
 
         // Both layers live here: the cornice hangs off the top wall row, the ribs one below the
         // ceiling, and for a 7-high room those are the same Y.
@@ -219,7 +225,7 @@ class BasicRoomGeneratorTest {
         RoomData room = new RoomData(1, 0, 0, 11, 11, 7, RoomRole.NORMAL);
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(config)
-                .build(room, 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+                .build(room, 60, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
 
         java.util.Set<String> columnCells = out.getBlocks().stream()
                 .filter(bp -> bp.getY() == 61 && "minecraft:stone_bricks".equals(bp.getBlockId()))
@@ -232,5 +238,60 @@ class BasicRoomGeneratorTest {
             assertTrue(!columnCells.contains(pot.getX() + "," + pot.getZ()),
                     "pot at " + pot.getX() + "," + pot.getZ() + " is standing inside a column");
         }
+    }
+
+    // ---------- the depth axis ----------
+
+    /**
+     * A room's spawners draw from the band its FLOOR falls in, not from a constant. This is the
+     * end-to-end version of {@code MobSetsByFloorTest}: it runs the real orchestrator, so the
+     * floorIndex actually has to survive the trip into the block-entity data.
+     *
+     * <p>Both assertions matter. The first is the feature; the second is the guard, because a
+     * floorIndex dropped anywhere along the way would leave both floors on the shallow band and
+     * the feature would still look like it worked.</p>
+     */
+    @Test
+    void aRoomsSpawnersDrawFromItsOwnFloorsBand() {
+        assertEquals("dungeons2:shallow", mobSetOnFloor(0));
+        assertEquals("dungeons2:deep", mobSetOnFloor(4));
+    }
+
+    /** A scheme naming its own sets ignores the depth table, at every depth. */
+    @Test
+    void aSchemeThatNamesItsOwnSetsIsUnaffectedByDepth() {
+        Optional<SpawnerConfig> owning = Optional.of(new SpawnerConfig(1, 1, 1, 3, 8.0D,
+                List.of(new SpawnerConfig.MobSetEntry("dungeons2:fixed", 1))));
+        assertEquals("dungeons2:fixed", mobSetOnFloor(0, owning));
+        assertEquals("dungeons2:fixed", mobSetOnFloor(4, owning));
+    }
+
+    /** The deferring form -- no mobSets at all, which is what the shipped schemes use. */
+    private static String mobSetOnFloor(int floorIndex) {
+        return mobSetOnFloor(floorIndex, Optional.of(new SpawnerConfig(1, 1, 1, 3, 8.0D,
+                Optional.empty(), SizeGate.UNBOUNDED)));
+    }
+
+    private static String mobSetOnFloor(int floorIndex, Optional<SpawnerConfig> spawners) {
+        RoomScheme scheme = new RoomScheme("spawning", 1, 0, 0,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                spawners, FloorRange.ANY, Optional.empty(), false);
+
+        MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,
+                DoorConfig.DEFAULT, CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(scheme),
+                List.of(new MobSetBand(0, List.of(new SpawnerConfig.MobSetEntry("dungeons2:shallow", 1))),
+                        new MobSetBand(3, List.of(new SpawnerConfig.MobSetEntry("dungeons2:deep", 1)))));
+
+        RoomPlacements out = new RoomPlacements();
+        new BasicRoomGenerator().withMotifConfig(config)
+                .build(new RoomData(1, 0, 0, 11, 11, 8, RoomRole.NORMAL), 60, floorIndex,
+                        DungeonMotif.CLASSIC, RandomSource.create(11L), out);
+
+        return out.getBlocks().stream()
+                .filter(placement -> placement.getBlockEntityNbt() != null)
+                .map(placement -> placement.getBlockEntityNbt().getData().get("mobSetName"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no spawner was placed on floor " + floorIndex));
     }
 }

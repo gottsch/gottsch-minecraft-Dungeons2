@@ -80,9 +80,9 @@ public class BasicRoomGenerator implements IRoomGenerator {
     }
 
     @Override
-    public void build(RoomData room, int floorY, IDungeonMotif motif,
+    public void build(RoomData room, int floorY, int floorIndex, IDungeonMotif motif,
                       RandomSource random, RoomPlacements out) {
-        RoomScheme scheme = selectScheme(room, random);
+        RoomScheme scheme = selectScheme(room, floorIndex, random);
         List<BlockPlacement> blocks = out.getBlocks();
 
         // Room dims are passed to the selectors because a scheme's element slots carry their own
@@ -148,6 +148,24 @@ public class BasicRoomGenerator implements IRoomGenerator {
         Set<Coords2D> taken = new HashSet<>(wallGen.occupiedFloorCells());
         taken.addAll(pillarGen.occupiedFloorCells());
         taken.addAll(platformGen.occupiedFloorCells());
+
+        // Spawners before pots, and they claim their cells against them. Not because the two
+        // collide -- the spawner block is invisible and has no collision, so a pot would sit in one
+        // without complaint -- but because the mobs materialise at that cell and would break the pot
+        // on their way out, which reads as a bug rather than an ambush.
+        //
+        // Emitted into the BLOCK list even though nothing about them is visible: the block entity is
+        // how a spawner exists at all, and DungeonPiece writes block-entity placements after the
+        // decoration pass precisely so an interior air cell cannot overwrite one.
+        // The depth axis: which mob sets this room's spawners draw from is the FLOOR's decision by
+        // default, and only the scheme's if the scheme said so. That is what lets one hall scheme be
+        // authored once and get harder the deeper it is rolled, instead of needing a near-duplicate
+        // scheme per depth band. See SpawnerConfig#resolvedAgainst.
+        scheme.spawnersFor(width, depth, height).ifPresent(spawners ->
+                taken.addAll(RoomSpawnerGenerator.placeSpawners(room, floorY, floorIndex,
+                        spawners.resolvedAgainst(motifConfig.mobSetsFor(floorIndex)),
+                        taken, random, blocks)));
+
         scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
     }
@@ -165,9 +183,9 @@ public class BasicRoomGenerator implements IRoomGenerator {
     }
 
     /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */
-    public RoomScheme selectScheme(RoomData room, RandomSource random) {
+    public RoomScheme selectScheme(RoomData room, int floorIndex, RandomSource random) {
         return RoomSchemeSelector.select(motifConfig.schemes(),
-                room.getWidth(), room.getDepth(), room.getHeight(), random);
+                room.getWidth(), room.getDepth(), room.getHeight(), floorIndex, random);
     }
 
     public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme,

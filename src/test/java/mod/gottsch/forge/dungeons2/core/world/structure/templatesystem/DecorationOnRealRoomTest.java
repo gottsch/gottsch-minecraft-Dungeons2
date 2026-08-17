@@ -69,6 +69,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class DecorationOnRealRoomTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     /** No processor is ever serialized here, so the type is never asked for. */
     private static final java.util.function.Supplier<
             net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType<?>> NO_TYPE = () -> null;
@@ -94,7 +97,7 @@ class DecorationOnRealRoomTest {
     private static List<StructureTemplate.StructureBlockInfo> buildRoom(int width, int depth, int height) {
         RoomData room = new RoomData(1, 0, 0, width, depth, height, RoomRole.NORMAL);
         RoomPlacements roomPlacements = new RoomPlacements();
-        new BasicRoomGenerator().build(room, FLOOR_Y, DungeonMotif.CLASSIC,
+        new BasicRoomGenerator().build(room, FLOOR_Y, TEST_FLOOR_INDEX, DungeonMotif.CLASSIC,
                 RandomSource.create(1234L), roomPlacements);
         List<BlockPlacement> placements = roomPlacements.getBlocks();
 

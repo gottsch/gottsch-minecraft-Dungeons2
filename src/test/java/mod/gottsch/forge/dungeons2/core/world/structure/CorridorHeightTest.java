@@ -54,6 +54,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class CorridorHeightTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     private static final long SEED = 0xD2_4A_2026L;
     private static final int ANCHOR_X = 128;
     private static final int ANCHOR_Z = 256;
@@ -111,7 +114,7 @@ class CorridorHeightTest {
             int floorY = layout.getFloors().get(0).getFloorY();
             for (CorridorData corridor : corridors(layout)) {
                 DungeonCorridorPiece piece =
-                        new DungeonCorridorPiece(corridor, MOTIF, floorY, ANCHOR_X, ANCHOR_Z);
+                        new DungeonCorridorPiece(corridor, MOTIF, floorY, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z);
                 BoundingBox box = piece.getBoundingBox();
                 assertEquals(floorY, box.minY(), "box floor at height " + height);
                 assertEquals(floorY + height - 1, box.maxY(), "box ceiling at height " + height);

@@ -48,8 +48,9 @@ public class DungeonDoorPiece extends DungeonPiece {
 
     private DoorData door;
 
-    public DungeonDoorPiece(DoorData door, String motifValue, int floorY, int anchorX, int anchorZ) {
-        super(StructurePieces.DOOR, motifValue, floorY, anchorX, anchorZ,
+    public DungeonDoorPiece(DoorData door, String motifValue, int floorY, int floorIndex,
+                            int anchorX, int anchorZ) {
+        super(StructurePieces.DOOR, motifValue, floorY, floorIndex, anchorX, anchorZ,
                 computeBox(door, floorY, anchorX, anchorZ));
         this.door = door;
     }

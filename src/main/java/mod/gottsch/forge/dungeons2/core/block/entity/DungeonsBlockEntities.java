@@ -3,7 +3,6 @@ package mod.gottsch.forge.dungeons2.core.block.entity;
 
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
-import mod.gottsch.forge.gottschcore.block.entity.ProximityMobSetSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -40,16 +39,17 @@ public class DungeonsBlockEntities {
 							.build(null));
 
 	/**
-	 * Backlog #10. The block entity class itself is GottschCore's, unmodified &mdash; it is a
-	 * library that registers nothing, so the type belongs to whoever consumes it.
+	 * Backlog #10. The block entity is {@link DungeonSpawnerBlockEntity} &mdash; GottschCore's
+	 * proximity mob-set spawner plus a persisted floor index. GottschCore is a library that
+	 * registers nothing, so the type belongs to whoever consumes it.
 	 *
 	 * <p>Built with the {@code Supplier} constructor rather than the eager one so the type is
 	 * resolved on demand instead of during its own registration.</p>
 	 */
-	public static final RegistryObject<BlockEntityType<ProximityMobSetSpawnerBlockEntity>> MOB_SET_SPAWNER =
+	public static final RegistryObject<BlockEntityType<DungeonSpawnerBlockEntity>> MOB_SET_SPAWNER =
 			Registration.BLOCK_ENTITIES.register("mob_set_spawner",
 					() -> BlockEntityType.Builder.of(
-									(pos, state) -> new ProximityMobSetSpawnerBlockEntity(
+									(pos, state) -> new DungeonSpawnerBlockEntity(
 											DungeonsBlockEntities::mobSetSpawnerType, pos, state),
 									DungeonsBlocks.MOB_SET_SPAWNER.get())
 							.build(null));
@@ -58,7 +58,7 @@ public class DungeonsBlockEntities {
 	 * Indirection so {@link mod.gottsch.forge.dungeons2.core.block.MobSetSpawnerBlock} and the
 	 * builder above can both hand GottschCore a {@code Supplier} instead of a resolved type.
 	 */
-	public static BlockEntityType<ProximityMobSetSpawnerBlockEntity> mobSetSpawnerType() {
+	public static BlockEntityType<DungeonSpawnerBlockEntity> mobSetSpawnerType() {
 		return MOB_SET_SPAWNER.get();
 	}
 

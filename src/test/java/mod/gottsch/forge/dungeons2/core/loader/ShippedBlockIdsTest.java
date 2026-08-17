@@ -112,8 +112,9 @@ class ShippedBlockIdsTest {
             // content references
             "entity", "lootTable", "function", "condition", "random_sequence",
             // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
-            // rather than from the block registry. ShippedMobSetsTest is what verifies it.
-            "mob_set",
+            // rather than from the block registry. ShippedMobSetsTest is what verifies it --
+            // "mob_set" from the marker processor, "mobSet" from a scheme's spawners slot.
+            "mob_set", "mobSet",
             // block TAGS -- the same class of typo, but resolved from datapacks rather than the
             // block registry, so out of scope here. Worth its own sweep if one ever bites.
             "tags");

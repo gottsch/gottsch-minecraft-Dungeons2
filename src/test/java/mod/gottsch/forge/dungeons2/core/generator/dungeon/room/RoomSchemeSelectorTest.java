@@ -1,6 +1,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.FloorRange;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
@@ -24,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * resolved here, so no Minecraft bootstrap is needed.
  */
 class RoomSchemeSelectorTest {
+
+    /** The entrance floor. These cases are about size and weight, not depth. */
+    private static final int ENTRANCE_FLOOR = 0;
 
     /** A scheme with no dimensional constraints. */
     private static RoomScheme scheme(String name, int weight) {
@@ -53,7 +57,7 @@ class RoomSchemeSelectorTest {
         List<RoomScheme> schemes = List.of(scheme("grand", 1), capped("cosy", 50, null, 7));
         RandomSource random = RandomSource.create(7);
         for (int i = 0; i < 200; i++) {
-            assertEquals("grand", RoomSchemeSelector.select(schemes, 15, 15, 10, random).name(),
+            assertEquals("grand", RoomSchemeSelector.select(schemes, 15, 15, 10, ENTRANCE_FLOOR, random).name(),
                     "a maxSize 7 scheme must never fire in a 15-wide room");
         }
     }
@@ -61,8 +65,8 @@ class RoomSchemeSelectorTest {
     @Test
     void aCappedSchemeStillFiresInsideItsBand() {
         List<RoomScheme> schemes = List.of(capped("cosy", 1, 6, 7));
-        assertEquals("cosy", RoomSchemeSelector.select(schemes, 7, 7, 6, RandomSource.create(3)).name());
-        assertEquals("cosy", RoomSchemeSelector.select(schemes, 5, 5, 5, RandomSource.create(3)).name());
+        assertEquals("cosy", RoomSchemeSelector.select(schemes, 7, 7, 6, ENTRANCE_FLOOR, RandomSource.create(3)).name());
+        assertEquals("cosy", RoomSchemeSelector.select(schemes, 5, 5, 5, ENTRANCE_FLOOR, RandomSource.create(3)).name());
     }
 
     /** Both bounds are inclusive, on the same numbers their minimums use. */
@@ -88,12 +92,12 @@ class RoomSchemeSelectorTest {
     void aRoomOutsideEveryBandDegradesToPlain() {
         List<RoomScheme> schemes = List.of(capped("cosy", 5, 6, 7), gated("grand", 5, 9, 11));
         assertEquals(RoomScheme.PLAIN,
-                RoomSchemeSelector.select(schemes, 9, 9, 7, RandomSource.create(1)));
+                RoomSchemeSelector.select(schemes, 9, 9, 7, ENTRANCE_FLOOR, RandomSource.create(1)));
     }
 
     /** A roomy room: nothing is gated out of a 15x15x10. */
     private static RoomScheme select(List<RoomScheme> schemes, RandomSource random) {
-        return RoomSchemeSelector.select(schemes, 15, 15, 10, random);
+        return RoomSchemeSelector.select(schemes, 15, 15, 10, ENTRANCE_FLOOR, random);
     }
 
     @Test
@@ -119,7 +123,7 @@ class RoomSchemeSelectorTest {
         List<RoomScheme> schemes = List.of(scheme("plain", 1), gated("vaulted", 50, 9, 0));
         RandomSource random = RandomSource.create(7);
         for (int i = 0; i < 200; i++) {
-            assertEquals("plain", RoomSchemeSelector.select(schemes, 15, 15, 5, random).name());
+            assertEquals("plain", RoomSchemeSelector.select(schemes, 15, 15, 5, ENTRANCE_FLOOR, random).name());
         }
     }
 
@@ -130,14 +134,14 @@ class RoomSchemeSelectorTest {
         List<RoomScheme> schemes = List.of(scheme("plain", 1), gated("spokes", 50, 0, 7));
         RandomSource random = RandomSource.create(7);
         for (int i = 0; i < 200; i++) {
-            assertEquals("plain", RoomSchemeSelector.select(schemes, 20, 5, 10, random).name());
+            assertEquals("plain", RoomSchemeSelector.select(schemes, 20, 5, 10, ENTRANCE_FLOOR, random).name());
         }
     }
 
     @Test
     void aRoomMatchingNoSchemeDegradesToPlainRatherThanForcingOne() {
         List<RoomScheme> schemes = List.of(gated("grand", 1, 10, 12), gated("vaulted", 1, 9, 0));
-        assertEquals(RoomScheme.PLAIN, RoomSchemeSelector.select(schemes, 5, 5, 5, RandomSource.create(1)));
+        assertEquals(RoomScheme.PLAIN, RoomSchemeSelector.select(schemes, 5, 5, 5, ENTRANCE_FLOOR, RandomSource.create(1)));
     }
 
     /**
@@ -153,7 +157,7 @@ class RoomSchemeSelectorTest {
         int aCount = 0;
         int total = 2000;
         for (int i = 0; i < total; i++) {
-            String name = RoomSchemeSelector.select(schemes, 15, 15, 6, random).name();
+            String name = RoomSchemeSelector.select(schemes, 15, 15, 6, ENTRANCE_FLOOR, random).name();
             assertFalse("grand".equals(name), "a scheme needing height 10 must not be rolled at 6");
             if ("a".equals(name)) {
                 aCount++;
@@ -233,7 +237,7 @@ class RoomSchemeSelectorTest {
         int bordered = 0;
         for (int i = 0; i < 400; i++) {
             // A 5-high room: the crown is gated out, but the scheme still competes at weight 50.
-            if (RoomSchemeSelector.select(schemes, 9, 9, 5, random).name().equals("bordered")) {
+            if (RoomSchemeSelector.select(schemes, 9, 9, 5, ENTRANCE_FLOOR, random).name().equals("bordered")) {
                 bordered++;
             }
         }
@@ -297,5 +301,83 @@ class RoomSchemeSelectorTest {
         assertTrue(result.error().isPresent(), "maxHeight below minHeight should fail to decode");
         assertTrue(result.error().get().message().contains("wall"),
                 "the error should name the slot it came from, got: " + result.error().get().message());
+    }
+
+    // ---------- the depth axis ----------
+
+    private static RoomScheme onFloors(String name, int weight, int minFloorIndex,
+                                       Optional<Integer> maxFloorIndex) {
+        return new RoomScheme(name, weight, 0, 0, Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                new FloorRange(minFloorIndex, maxFloorIndex), Optional.empty(), false);
+    }
+
+    private static String rollOnFloor(List<RoomScheme> schemes, int floorIndex) {
+        return RoomSchemeSelector.select(schemes, 15, 15, 10, floorIndex,
+                RandomSource.create(7L)).name();
+    }
+
+    /** A scheme gated deep must not appear near the entrance, and vice versa. */
+    @Test
+    void aSchemeIsOnlyRolledOnTheFloorsItAllows() {
+        List<RoomScheme> schemes = List.of(
+                onFloors("shallow", 1, 0, Optional.of(1)),
+                onFloors("deep", 1, 2, Optional.empty()));
+
+        assertEquals("shallow", rollOnFloor(schemes, 0));
+        assertEquals("shallow", rollOnFloor(schemes, 1));
+        assertEquals("deep", rollOnFloor(schemes, 2));
+        assertEquals("deep", rollOnFloor(schemes, 9));
+    }
+
+    /**
+     * The gate filters BEFORE weights are totalled, exactly as the size gates do. An out-of-range
+     * scheme's weight must not sit in the denominator -- otherwise a heavy deep scheme would
+     * quietly suppress the shallow ones near the entrance without ever being rolled itself.
+     */
+    @Test
+    void anOutOfRangeSchemesWeightNeverEntersTheDenominator() {
+        List<RoomScheme> schemes = List.of(
+                onFloors("shallow", 1, 0, Optional.of(0)),
+                onFloors("mighty", 999, 3, Optional.empty()));
+
+        for (long seed = 0; seed < 50; seed++) {
+            assertEquals("shallow", RoomSchemeSelector.select(schemes, 15, 15, 10, 0,
+                    RandomSource.create(seed)).name(),
+                    "the deep scheme's weight leaked into floor 0's roll at seed " + seed);
+        }
+    }
+
+    /** A floor no scheme allows degrades to the undecorated room, like every other empty set. */
+    @Test
+    void aFloorNoSchemeAllowsDegradesToPlain() {
+        List<RoomScheme> schemes = List.of(onFloors("deep", 1, 5, Optional.empty()));
+        assertEquals(RoomScheme.PLAIN, RoomSchemeSelector.select(schemes, 15, 15, 10, 0,
+                RandomSource.create(1L)));
+    }
+
+    /**
+     * {@code maxFloorIndex: 0} means the entrance floor only -- a real thing to author, and the
+     * reason that bound accepts 0 where maxHeight/maxSize start at 1.
+     */
+    @Test
+    void anEntranceOnlySchemeIsExpressible() {
+        RoomScheme entranceOnly = onFloors("lobby", 1, 0, Optional.of(0));
+        assertTrue(entranceOnly.fitsFloor(0));
+        assertFalse(entranceOnly.fitsFloor(1));
+    }
+
+    /** Depth and size are independent: passing one does not excuse failing the other. */
+    @Test
+    void depthAndSizeBothHaveToPass() {
+        RoomScheme deepAndLarge = new RoomScheme("grand_vault", 1, 0, 11,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), new FloorRange(3, Optional.empty()), Optional.empty(), false);
+
+        assertTrue(deepAndLarge.fits(15, 15, 10, 3), "deep enough and big enough");
+        assertFalse(deepAndLarge.fits(15, 15, 10, 1), "big enough but too shallow");
+        assertFalse(deepAndLarge.fits(7, 7, 6, 3), "deep enough but too small");
     }
 }

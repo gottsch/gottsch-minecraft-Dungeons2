@@ -42,6 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 class ProceduralRenderDeterminismTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     private static final String MOTIF = "classic";
     private static final int FLOOR_Y = 40;
 
@@ -66,8 +69,8 @@ class ProceduralRenderDeterminismTest {
 
     @Test
     void sameStateRendersIdentically() {
-        DungeonRoomPiece a = new DungeonRoomPiece(room(7), MOTIF, FLOOR_Y, 128, 256);
-        DungeonRoomPiece b = new DungeonRoomPiece(room(7), MOTIF, FLOOR_Y, 128, 256);
+        DungeonRoomPiece a = new DungeonRoomPiece(room(7), MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, 128, 256);
+        DungeonRoomPiece b = new DungeonRoomPiece(room(7), MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, 128, 256);
 
         String first = dump(a.renderPlacements());
         // Re-render the same instance, and an independent instance with identical state.
@@ -80,7 +83,7 @@ class ProceduralRenderDeterminismTest {
     void renderTakesNoExternalRandom() {
         // The render is reproducible across many calls with nothing but stable state
         // passed in — i.e. it cannot depend on a chunk-seeded RandomSource.
-        DungeonRoomPiece piece = new DungeonRoomPiece(room(3), MOTIF, FLOOR_Y, -512, 64);
+        DungeonRoomPiece piece = new DungeonRoomPiece(room(3), MOTIF, FLOOR_Y, TEST_FLOOR_INDEX, -512, 64);
         String baseline = dump(piece.renderPlacements());
         for (int i = 0; i < 8; i++) {
             assertEquals(baseline, dump(piece.renderPlacements()),

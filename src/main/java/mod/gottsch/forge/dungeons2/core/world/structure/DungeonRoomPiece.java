@@ -53,8 +53,9 @@ public class DungeonRoomPiece extends DungeonPiece {
 
     private RoomData room;
 
-    public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int anchorX, int anchorZ) {
-        super(StructurePieces.ROOM, motifValue, floorY, anchorX, anchorZ,
+    public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
+                            int anchorX, int anchorZ) {
+        super(StructurePieces.ROOM, motifValue, floorY, floorIndex, anchorX, anchorZ,
                 computeBox(room, floorY, anchorX, anchorZ));
         this.room = room;
     }
@@ -117,7 +118,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     public RoomPlacements renderRoom(MotifConfig motifConfig) {
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(motifConfig)
-                .build(room, floorY, motif(), deterministicRandom(room.getId()), out);
+                .build(room, floorY, floorIndex, motif(), deterministicRandom(room.getId()), out);
         return out;
     }
 
@@ -130,7 +131,7 @@ public class DungeonRoomPiece extends DungeonPiece {
      */
     public RoomScheme rolledScheme(MotifConfig motifConfig) {
         return new BasicRoomGenerator().withMotifConfig(motifConfig)
-                .selectScheme(room, deterministicRandom(room.getId()));
+                .selectScheme(room, floorIndex, deterministicRandom(room.getId()));
     }
 
     public RoomData getRoom() {

@@ -41,6 +41,8 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Room2D;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 
+import mod.gottsch.forge.dungeons2.core.config.TemplateLimit;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -238,6 +240,24 @@ public class DungeonStackPlanner {
      * because {@code CorridorConfig}'s codec is where a bad one becomes a load error. Weights are
      * assumed positive &mdash; the codec enforces that too.</p>
      */
+    /**
+     * How many times an authored template may be placed, keyed by its full id &mdash; backlog #44,
+     * resolved from the motif's {@code templateLimits}. Same "resolve where {@code RegistryAccess}
+     * is available, inject the resolved value" shape as {@link #withCorridorWidth}.
+     *
+     * <p>Absent (the default) means every template is unlimited, and in that state this feature
+     * consumes <strong>no</strong> randomness and takes no branch &mdash; a dungeon planned without
+     * limits is byte-identical to one planned before they existed. That matters because the check
+     * sits in front of {@code placeAvoidingReserved}, which draws from {@code random}: a limit that
+     * rejects an attempt necessarily shifts the stream and re-rolls existing seeds. Declaring one is
+     * therefore a world-changing edit, exactly as adding a {@code minSize} to a shipped scheme is.
+     * </p>
+     */
+    public DungeonStackPlanner withTemplateLimits(Map<String, TemplateLimit> limits) {
+        this.templateLimits = limits == null ? Map.of() : Map.copyOf(limits);
+        return this;
+    }
+
     public DungeonStackPlanner withCorridorStyles(List<CorridorStyleWeight> styles) {
         this.corridorStyles = styles == null ? List.of() : List.copyOf(styles);
         return this;
@@ -392,6 +412,8 @@ public class DungeonStackPlanner {
     // displaced only by rotation, and rooms additionally reject a footprint touching
     // the floor edge. The entrance is a THIRD variant and is not part of this parity:
     // it has no assembler and drives the layout anchor rather than fitting a slot.
+    private Map<String, TemplateLimit> templateLimits = Map.of();
+
     private RoomAssembler roomAssembler;
 
     /**
@@ -438,7 +460,29 @@ public class DungeonStackPlanner {
      */
     public record AssembledRoom(Rectangle2D worldFootprint,
                                List<Coords2D> doorWorldCells,
-                               List<Coords2D> premadeWorldCells) {
+                               List<Coords2D> premadeWorldCells,
+                               List<String> elementIds) {
+
+        /** The shape before the assembler could say which template it drew. */
+        public AssembledRoom(Rectangle2D worldFootprint, List<Coords2D> doorWorldCells,
+                             List<Coords2D> premadeWorldCells) {
+            this(worldFootprint, doorWorldCells, premadeWorldCells, List.of());
+        }
+
+        /**
+         * The template this room actually is, or empty when the assembler could not say &mdash; see
+         * {@code PoolElementIds.locationOf} for when that happens and why it is not an error.
+         *
+         * <p>The <strong>first</strong> element, because jigsaw assembly starts from the piece
+         * placed at the requested position; a room is normally one piece anyway. This is the
+         * identity backlog #44 counts, and it is deliberately a plain {@code String} so this record
+         * stays free of Minecraft types like the rest of the planner's data.</p>
+         */
+        public java.util.Optional<String> rootElementId() {
+            return elementIds.isEmpty()
+                    ? java.util.Optional.empty()
+                    : java.util.Optional.of(elementIds.get(0));
+        }
     }
 
     /**
@@ -750,6 +794,10 @@ public class DungeonStackPlanner {
                         floorCeilings[0], entranceLocalFootprint, rollRotation(random));
         layout.setEntrance(entrance);
 
+        // Backlog #44: how many of each authored template the whole dungeon has committed. Per-floor
+        // counts live inside the loop below, so they reset with each floor.
+        Map<String, Integer> templatesInDungeon = new HashMap<>();
+
         for (int i = 0; i < floorCount; i++) {
             Rectangle2D footprint = footprints.get(i);
 
@@ -813,6 +861,7 @@ public class DungeonStackPlanner {
             // degradation: no assembler, or a failed/colliding attempt, just skips
             // that slot -- ordinary procedural fill rooms cover the gap as today.
             List<IRoom2D> templateRooms = new ArrayList<>();
+            Map<String, Integer> templatesOnFloor = new HashMap<>();
             Map<IRoom2D, String> templateIdByRoom = new IdentityHashMap<>();
             Set<Coords2D> templateRoomPremadeLocalCells = new HashSet<>();
             if (roomAssembler != null) {
@@ -833,6 +882,21 @@ public class DungeonStackPlanner {
                     if (probe.isEmpty()) {
                         continue;
                     }
+                    // #44: reject a capped template HERE, on the probe, rather than after
+                    // committing. The probe and the commit use the same assemblySeed and therefore
+                    // draw the same prefab, so the identity is already known -- and rejecting now
+                    // avoids staging a room in the Forge shell that would only be discarded, which
+                    // is the kind of half-placed state the staging list exists to prevent.
+                    //
+                    // A capped draw COSTS AN ATTEMPT rather than re-rolling within one. Deliberate:
+                    // re-rolling needs a bound anyway (a pool whose every template is capped out
+                    // would spin), and spending the attempt degrades the right way -- fewer prefab
+                    // rooms, with ordinary procedural fill covering the gap.
+                    Optional<String> templateId = probe.get().rootElementId();
+                    if (!allowsAnotherCopy(templateId, templatesOnFloor, templatesInDungeon)) {
+                        continue;
+                    }
+
                     Rectangle2D probeRect = probe.get().worldFootprint();
                     int offsetX = probeRect.getMinX() - probeWorldX;
                     int offsetZ = probeRect.getMinY() - probeWorldZ;
@@ -885,6 +949,15 @@ public class DungeonStackPlanner {
                     templateRoom.setCandidateDoorways(doorsLocal);
 
                     templateRooms.add(templateRoom);
+                    // Counted HERE, at adoption, not at the commit call above: the planner may
+                    // still reject a committed prefab (the bounds check a few lines up), and a
+                    // prefab nothing was reserved for never becomes a room a player can walk into.
+                    // Counting an attempt that produced nothing would spend a budget on a room that
+                    // does not exist.
+                    templateId.ifPresent(id -> {
+                        templatesOnFloor.merge(id, 1, Integer::sum);
+                        templatesInDungeon.merge(id, 1, Integer::sum);
+                    });
                     templateIdByRoom.put(templateRoom, "dungeons2:rooms/assembled");
                     templateRoomPremadeLocalCells.addAll(premadeLocal);
                     roomReserved.add(realFootprint);
@@ -1014,6 +1087,29 @@ public class DungeonStackPlanner {
      * <p>The salt keeps this uncorrelated with the maze seed for the same floor, which is
      * {@code mixSeed(seed, floorIndex)} unsalted.</p>
      */
+    /**
+     * Whether one more copy of this template may be placed &mdash; backlog #44.
+     *
+     * <p><strong>An unidentifiable template is unlimited, not blocked.</strong>
+     * {@code rootElementId} comes back empty for an empty pool element, a feature element, or a
+     * pool holding an inline template that vanilla itself refuses to serialise (see
+     * {@code PoolElementIds}). Treating "I could not tell what this is" as "do not place it" would
+     * turn an obscure pool-authoring choice into a dungeon with no prefab rooms at all, whereas an
+     * uncapped room is a cosmetic disappointment. Degrade toward generating.</p>
+     */
+    private boolean allowsAnotherCopy(Optional<String> templateId,
+                                      Map<String, Integer> onFloor, Map<String, Integer> inDungeon) {
+        if (templateId.isEmpty() || templateLimits.isEmpty()) {
+            return true;
+        }
+        TemplateLimit limit = templateLimits.get(templateId.get());
+        if (limit == null) {
+            return true;
+        }
+        return limit.allows(onFloor.getOrDefault(templateId.get(), 0),
+                inDungeon.getOrDefault(templateId.get(), 0));
+    }
+
     private CorridorStyleWeight rollCorridorStyle(int floorIndex) {
         if (corridorStyles.isEmpty()) {
             return new CorridorStyleWeight(CorridorData.BASELINE_STYLE, 1, corridorHeight);

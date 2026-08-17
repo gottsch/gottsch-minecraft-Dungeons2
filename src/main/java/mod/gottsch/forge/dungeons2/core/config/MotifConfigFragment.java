@@ -56,7 +56,24 @@ import java.util.function.Consumer;
  */
 public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                   Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
-                                  Optional<FloorConfig> floor, List<RoomScheme> schemes) {
+                                  Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                                  Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                                  Map<String, TemplateLimit> templateLimits) {
+
+    /** The shape before {@code templateLimits}. */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Map.of());
+    }
+
+    /** The shape before {@code mobSetsByFloorIndex}. */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes) {
+        this(wall, ceiling, door, corridor, floor, schemes, Optional.empty(), Map.of());
+    }
 
     public static final Codec<MotifConfigFragment> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codecs.strictOptionalFieldOf(WallConfig.CODEC, "wall").forGetter(MotifConfigFragment::wall),
@@ -65,7 +82,26 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             Codecs.strictOptionalFieldOf(CorridorConfig.CODEC, "corridor").forGetter(MotifConfigFragment::corridor),
             Codecs.strictOptionalFieldOf(FloorConfig.CODEC, "floor").forGetter(MotifConfigFragment::floor),
             Codecs.strictOptionalFieldOf(RoomScheme.CODEC.listOf(), "schemes", List.of())
-                    .forGetter(MotifConfigFragment::schemes)
+                    .forGetter(MotifConfigFragment::schemes),
+            // REPLACED wholesale by a later fragment rather than appended to, unlike schemes -- which
+            // is why it is an Optional<List> and not a defaulted List. Schemes merge by name because
+            // they are independent entries an addon may want to add one of; a depth table is a single
+            // coherent progression, and half of one merged into half of another is a curve nobody
+            // authored. Absent therefore has to be distinguishable from "declared, empty".
+            Codecs.strictOptionalFieldOf(
+                            MobSetBand.CODEC.listOf().flatXmap(MobSetBand::validate, MobSetBand::validate),
+                            "mobSetsByFloorIndex")
+                    .forGetter(MotifConfigFragment::mobSetsByFloorIndex),
+            // MERGED BY KEY by a later fragment, not replaced -- the opposite of the depth table
+            // one line above, and the difference is what each thing IS. A depth table is one
+            // coherent progression, so half of yours spliced into half of mine is a curve nobody
+            // authored. A limits map is a set of INDEPENDENT per-template entries, exactly like
+            // schemes, so an addon capping its own room must not wipe the base pack's caps.
+            // Rule of thumb: coherent whole -> replace, independent entries -> merge by key.
+            Codecs.strictOptionalFieldOf(
+                            Codec.unboundedMap(Codec.STRING, TemplateLimit.CODEC),
+                            "templateLimits", Map.of())
+                    .forGetter(MotifConfigFragment::templateLimits)
     ).apply(instance, MotifConfigFragment::new));
 
     /**
@@ -112,6 +148,8 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         DoorConfig door = DoorConfig.DEFAULT;
         CorridorConfig corridor = CorridorConfig.DEFAULT;
         FloorConfig floor = FloorConfig.DEFAULT;
+        List<MobSetBand> mobSets = List.of();
+        Map<String, TemplateLimit> templateLimits = new LinkedHashMap<>();
         Map<String, RoomScheme> schemes = new LinkedHashMap<>();
 
         for (MotifConfigFragment fragment : fragments) {
@@ -120,6 +158,10 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             door = fragment.door().orElse(door);
             corridor = fragment.corridor().orElse(corridor);
             floor = fragment.floor().orElse(floor);
+            mobSets = fragment.mobSetsByFloorIndex().orElse(mobSets);
+            // put, not putAll-into-a-fresh-map: a later fragment replaces an entry for the same
+            // template and leaves every other pack's entries alone.
+            templateLimits.putAll(fragment.templateLimits());
             for (RoomScheme scheme : fragment.schemes()) {
                 // LinkedHashMap#put keeps an existing key's position, which is the "replaces in
                 // place" half of the rule above.
@@ -129,7 +171,8 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
 
         List<RoomScheme> rolled = inherit(schemes, problems);
         return new MotifConfig(wall, ceiling, door, corridor, floor,
-                rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled);
+                rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets,
+                Map.copyOf(templateLimits));
     }
 
     /**

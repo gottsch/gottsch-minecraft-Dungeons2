@@ -48,6 +48,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class EmptyRoomProbe {
 
+    /** The entrance floor. These cases are about size and weight, not depth. */
+    private static final int ENTRANCE_FLOOR = 0;
+
     private static final int DUNGEONS = 60;
 
     /** Needed since this probe started running the real generators: they resolve block states. */
@@ -91,7 +94,7 @@ class EmptyRoomProbe {
                     int h = room.getHeight();
                     rooms++;
 
-                    RoomScheme scheme = RoomSchemeSelector.select(config.schemes(), w, d, h, random);
+                    RoomScheme scheme = RoomSchemeSelector.select(config.schemes(), w, d, h, ENTRANCE_FLOOR, random);
                     // [total, at min side 7, at min side 9, at 11+]
                     int minSide = Math.min(w, d);
                     int[] tally = bySchemeAndSize.computeIfAbsent(scheme.name(), k -> new int[4]);

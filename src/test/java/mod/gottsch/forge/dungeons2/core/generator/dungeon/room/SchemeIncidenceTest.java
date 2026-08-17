@@ -51,6 +51,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SchemeIncidenceTest {
 
+    /** The entrance floor. These cases are about size and weight, not depth. */
+    private static final int ENTRANCE_FLOOR = 0;
+
     private static final ICoords ANCHOR = new Coords(128, 0, 256);
     private static final int SURFACE_Y = 72;
     private static final int DUNGEONS = 60;
@@ -108,7 +111,7 @@ class SchemeIncidenceTest {
                     result.height.merge(room.getHeight(), 1, Integer::sum);
 
                     RoomScheme scheme = RoomSchemeSelector.select(config.schemes(),
-                            room.getWidth(), room.getDepth(), room.getHeight(), random);
+                            room.getWidth(), room.getDepth(), room.getHeight(), ENTRANCE_FLOOR, random);
                     result.byName.merge(scheme.name(), 1, Integer::sum);
                     // Counted through the *For accessors, not the raw slots: with element gates
                     // "declares a wall" and "draws a wall" are different numbers, and only the

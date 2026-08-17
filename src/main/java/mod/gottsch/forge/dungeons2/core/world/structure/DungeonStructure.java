@@ -446,7 +446,11 @@ public class DungeonStructure extends Structure {
                         describeElements(assembled), worldX, worldY, worldZ);
             }
             return Optional.of(new DungeonStackPlanner.AssembledRoom(
-                    rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells()));
+                    rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells(),
+                    // Which prefab vanilla actually drew. Read here because this is the only point
+                    // that still holds the assembled pieces -- the planner receives geometry, and
+                    // the rendered piece is a footprint by then. Backlog #44 counts these.
+                    PoolElementIds.locationsOf(assembled)));
         };
 
         // Hand the entrance's world geometry to the planner, which sizes floor 0's
@@ -469,6 +473,9 @@ public class DungeonStructure extends Structure {
         // with or the log would name a scheme the room does not have.
         final MotifConfig motifConfig = MotifConfigHelper.get(context.registryAccess(), motifValue);
         planner.withCorridorStyles(corridorStyleWeights(motifConfig.corridor()));
+        // #44: how often an authored template may repeat. Same resolved-motif source as the
+        // corridor styles above, so an addon's own limits arrive through its own fragment.
+        planner.withTemplateLimits(motifConfig.templateLimits());
         if (overrides != null && overrides.size() != null) {
             planner.withSize(overrides.size());
         }
@@ -859,24 +866,15 @@ public class DungeonStructure extends Structure {
      * dungeon: pool selection, rotation and adoption are all invisible after the
      * fact.</p>
      *
-     * <p>1.20.1's {@code SinglePoolElement} exposes no accessor for its location —
-     * the field is a {@code protected Either<ResourceLocation, StructureTemplate>}
-     * reachable only through the codec — so this reads it out of {@code toString()},
-     * which renders as {@code Single[Left[namespace:path]]}. Diagnostic only;
-     * nothing branches on the result.</p>
+     * <p>Reads the ids through {@link PoolElementIds}, which goes via the element's own codec.
+     * This used to scrape {@code toString()}; that was acceptable while the answer was only ever
+     * logged, and stopped being so once backlog #44 needed the same identity to make a generation
+     * decision. One mechanism now, so the log and the cap can never disagree about what a room
+     * is.</p>
      */
     private static String describeElements(List<StructurePiece> pieces) {
-        List<String> names = new ArrayList<>();
-        for (StructurePiece piece : pieces) {
-            if (!(piece instanceof PoolElementStructurePiece pool)) {
-                continue;
-            }
-            String raw = pool.getElement().toString();
-            int start = raw.indexOf('[');
-            int end = raw.lastIndexOf(']');
-            names.add(start >= 0 && end > start ? raw.substring(start + 1, end) : raw);
-        }
-        return String.join(" + ", names);
+        List<String> names = PoolElementIds.locationsOf(pieces);
+        return names.isEmpty() ? "<unidentified>" : String.join(" + ", names);
     }
 
     /**

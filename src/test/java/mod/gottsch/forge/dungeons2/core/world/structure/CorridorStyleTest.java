@@ -58,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class CorridorStyleTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     private static final int ANCHOR_X = 128;
     private static final int ANCHOR_Z = 256;
     private static final int SURFACE_Y = 64;
@@ -202,7 +205,7 @@ class CorridorStyleTest {
                 int floorY = floor.getFloorY();
                 for (CorridorData corridor : floor.getCorridors()) {
                     DungeonCorridorPiece piece =
-                            new DungeonCorridorPiece(corridor, MOTIF, floorY, ANCHOR_X, ANCHOR_Z);
+                            new DungeonCorridorPiece(corridor, MOTIF, floorY, TEST_FLOOR_INDEX, ANCHOR_X, ANCHOR_Z);
                     BoundingBox box = piece.getBoundingBox();
                     assertEquals(floorY + corridor.getWallHeight() - 1, box.maxY(),
                             "box ceiling disagrees with the rolled style on floor " + floor.getFloorIndex());

@@ -92,6 +92,7 @@ public final class DungeonPieceEmitter {
 
         for (FloorLayout floor : layout.getFloors()) {
             int floorY = floor.getFloorY();
+            int floorIndex = floor.getFloorIndex();
             // Corridors BEFORE rooms, and that order is load-bearing. A room's perimeter is
             // CellType.WALL, so a corridor beside it emits a wall column over the very same
             // cells -- unconditionally, with the motif's plain wall block and no knowledge of
@@ -107,7 +108,7 @@ public final class DungeonPieceEmitter {
             //
             // Doors are no longer emitted here -- see emitDoors, and the sandwich note above.
             for (CorridorData corridor : floor.getCorridors()) {
-                pieces.add(new DungeonCorridorPiece(corridor, motif, floorY, anchorX, anchorZ));
+                pieces.add(new DungeonCorridorPiece(corridor, motif, floorY, floorIndex, anchorX, anchorZ));
             }
             for (RoomData room : floor.getRooms()) {
                 // START / END slots are the template pieces' job; skip them here.
@@ -116,7 +117,7 @@ public final class DungeonPieceEmitter {
                 // A NORMAL room that got a Phase 8 jigsaw-assembled prefab instead of a
                 // procedural build (templateId non-null) is skipped for the same reason.
                 if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
-                    pieces.add(new DungeonRoomPiece(room, motif, floorY, anchorX, anchorZ));
+                    pieces.add(new DungeonRoomPiece(room, motif, floorY, floorIndex, anchorX, anchorZ));
                 }
             }
         }
@@ -143,7 +144,8 @@ public final class DungeonPieceEmitter {
         String motif = layout.getMotifValue();
         for (FloorLayout floor : layout.getFloors()) {
             for (DoorData door : floor.getDoors()) {
-                pieces.add(new DungeonDoorPiece(door, motif, floor.getFloorY(), anchorX, anchorZ));
+                pieces.add(new DungeonDoorPiece(door, motif, floor.getFloorY(), floor.getFloorIndex(),
+                        anchorX, anchorZ));
             }
         }
         return pieces;

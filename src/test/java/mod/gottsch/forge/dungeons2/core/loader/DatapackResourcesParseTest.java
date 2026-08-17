@@ -284,22 +284,32 @@ class DatapackResourcesParseTest {
     void everyRoomThePlannerCanBuildMatchesAScheme() {
         for (String name : MOTIFS) {
             List<RoomScheme> schemes = motif(name).schemes();
-            for (int width = 5; width <= 17; width += 2) {
-                for (int depth = 5; depth <= 17; depth += 2) {
-                    int tallest = Math.min(10, Math.max(width, depth));
-                    for (int height = 5; height <= tallest; height++) {
-                        int w = width;
-                        int d = depth;
-                        int h = height;
-                        assertTrue(schemes.stream().anyMatch(scheme -> scheme.fits(w, d, h)),
-                                "motif '" + name + "' has no scheme for a " + width + "x" + depth
-                                        + " room " + height + " high; such rooms would silently "
-                                        + "generate undecorated");
+            for (int floorIndex = 0; floorIndex < DEEPEST_FLOOR_INDEX; floorIndex++) {
+                for (int width = 5; width <= 17; width += 2) {
+                    for (int depth = 5; depth <= 17; depth += 2) {
+                        int tallest = Math.min(10, Math.max(width, depth));
+                        for (int height = 5; height <= tallest; height++) {
+                            int w = width;
+                            int d = depth;
+                            int h = height;
+                            int f = floorIndex;
+                            assertTrue(schemes.stream().anyMatch(scheme -> scheme.fits(w, d, h, f)),
+                                    "motif '" + name + "' has no scheme for a " + width + "x" + depth
+                                            + " room " + height + " high on floor " + floorIndex
+                                            + "; such rooms would silently generate undecorated");
+                        }
                     }
                 }
             }
         }
     }
+
+    /**
+     * Floors the planner can produce, as an exclusive bound: {@code DungeonSize.LARGE} rolls 3..5
+     * floors, so the deepest index is 4. Swept one past that anyway &mdash; a scheme gated to a
+     * floor no dungeon has is dead content, and the cost of finding out is one more loop.
+     */
+    private static final int DEEPEST_FLOOR_INDEX = 6;
 
     /**
      * A scheme that fills element slots must actually draw <em>somewhere</em> in its own range.
@@ -325,18 +335,34 @@ class DatapackResourcesParseTest {
                     continue;
                 }
                 boolean everDraws = false;
-                for (int width = 5; width <= 17 && !everDraws; width += 2) {
-                    for (int depth = 5; depth <= 17 && !everDraws; depth += 2) {
-                        int tallest = Math.min(10, Math.max(width, depth));
-                        for (int height = 5; height <= tallest; height++) {
-                            if (scheme.fits(width, depth, height)
-                                    && scheme.drawsAnything(width, depth, height)) {
-                                everDraws = true;
-                                break;
+                boolean everEligible = false;
+                for (int f = 0; f < DEEPEST_FLOOR_INDEX && !everDraws; f++) {
+                    if (!scheme.fitsFloor(f)) {
+                        continue;
+                    }
+                    for (int width = 5; width <= 17 && !everDraws; width += 2) {
+                        for (int depth = 5; depth <= 17 && !everDraws; depth += 2) {
+                            int tallest = Math.min(10, Math.max(width, depth));
+                            for (int height = 5; height <= tallest; height++) {
+                                if (!scheme.fits(width, depth, height)) {
+                                    continue;
+                                }
+                                everEligible = true;
+                                if (scheme.drawsAnything(width, depth, height)) {
+                                    everDraws = true;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
+                // Separated from the draw check so the message names the actual fault. A scheme
+                // gated to a floor no dungeon has, or to a room shape the planner cannot build, is
+                // dead for a different reason than one whose slots all gate out -- and both look
+                // identical in game, which is to say invisible.
+                assertTrue(everEligible, "motif '" + name + "', scheme '" + scheme.name()
+                        + "' is eligible for no room the planner can build on any floor it allows"
+                        + " -- check its minFloorIndex/maxFloorIndex against its size bounds");
                 assertTrue(everDraws, "motif '" + name + "', scheme '" + scheme.name()
                         + "' fills element slots but every one of them gates out of every room it "
                         + "is eligible for -- it can never render anything");

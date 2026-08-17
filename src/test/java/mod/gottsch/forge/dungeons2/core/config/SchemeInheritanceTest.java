@@ -279,10 +279,64 @@ class SchemeInheritanceTest {
         RoomScheme scheme = new RoomScheme("child", 3, 7, 9,
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of("grand"), true);
+                Optional.empty(), FloorRange.ANY, Optional.of("grand"), true);
 
         JsonElement json = RoomScheme.CODEC.encodeStart(JsonOps.INSTANCE, scheme)
                 .result().orElseThrow();
         assertEquals(scheme, RoomScheme.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow());
+    }
+
+    // ---------- the depth gate ----------
+
+    /**
+     * <strong>The floor bounds never inherit</strong>, for the same reason the size bounds do not:
+     * a variant exists <em>because</em> its eligibility differs, and quietly copying a parent's
+     * depth is how a whole band of floors ends up with no scheme at all.
+     */
+    @Test
+    void floorBoundsStayTheChildsOwn() {
+        List<RoomScheme> schemes = resolved(schemes("""
+                {"name":"grand","abstract":true,"minFloorIndex":3,"maxFloorIndex":5,
+                 "pots":{"minCount":1,"maxCount":1,"lootTable":"dungeons2:pots/classic",
+                         "variants":[{"entity":"dungeonblocks:pot","weight":1}]}}""",
+                "{\"name\":\"child\",\"extends\":\"grand\"}"));
+
+        RoomScheme child = byName(schemes, "child");
+        assertEquals(0, child.minFloorIndex(), "not the parent's 3");
+        assertTrue(child.maxFloorIndex().isEmpty(), "not the parent's 5");
+        assertTrue(child.pots().isPresent(), "but the content still comes across");
+    }
+
+    @Test
+    void theFloorBoundsRoundTripThroughTheClosedCodec() {
+        RoomScheme scheme = fragment(schemes(
+                "{\"name\":\"deep\",\"minFloorIndex\":2,\"maxFloorIndex\":4}")).schemes().get(0);
+        assertEquals(2, scheme.minFloorIndex());
+        assertEquals(Optional.of(4), scheme.maxFloorIndex());
+
+        JsonElement json = RoomScheme.CODEC.encodeStart(JsonOps.INSTANCE, scheme)
+                .result().orElseThrow();
+        assertEquals(scheme, RoomScheme.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow());
+    }
+
+    /**
+     * An inverted range fits no floor at all, which at generation time is indistinguishable from a
+     * scheme that merely never won its roll -- the silent-nothing class of failure the strict codecs
+     * exist to prevent.
+     */
+    @Test
+    void aMaxFloorIndexBelowTheMinIsALoadError() {
+        assertTrue(RoomScheme.CODEC.parse(JsonOps.INSTANCE, GSON.fromJson(
+                        "{\"name\":\"impossible\",\"minFloorIndex\":5,\"maxFloorIndex\":2}",
+                        JsonElement.class))
+                .error().isPresent());
+    }
+
+    /** Default is "anywhere", so an existing pack is unaffected by the new axis. */
+    @Test
+    void aSchemeWithNoFloorBoundsFitsEveryFloor() {
+        RoomScheme anywhere = fragment(schemes("{\"name\":\"plain\"}")).schemes().get(0);
+        assertTrue(anywhere.fitsFloor(0));
+        assertTrue(anywhere.fitsFloor(99));
     }
 }

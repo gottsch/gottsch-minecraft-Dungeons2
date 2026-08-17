@@ -44,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BasicDoorGeneratorTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     @BeforeAll
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
@@ -150,7 +153,7 @@ class BasicDoorGeneratorTest {
         for (int x = 0; x < side; x++) {
             for (int z = 0; z < side; z++) {
                 DungeonDoorPiece piece = new DungeonDoorPiece(
-                        new DoorData(x, z, 1, 2, Direction2D.NORTH), "classic", 60, 0, 0);
+                        new DoorData(x, z, 1, 2, Direction2D.NORTH), "classic", 60, TEST_FLOOR_INDEX, 0, 0);
                 for (BlockPlacement bp : piece.renderPlacements(config)) {
                     if (bp.getY() == 61 && !"minecraft:air".equals(bp.getBlockId())) {
                         hung++;
@@ -220,7 +223,7 @@ class BasicDoorGeneratorTest {
         MotifConfig config = withDoorProbability(0.5);
         for (int x = 0; x < 20; x++) {
             DungeonDoorPiece piece = new DungeonDoorPiece(
-                    new DoorData(x, 3, 1, 2, Direction2D.NORTH), "classic", 60, 0, 0);
+                    new DoorData(x, 3, 1, 2, Direction2D.NORTH), "classic", 60, TEST_FLOOR_INDEX, 0, 0);
             assertEquals(piece.renderPlacements(config).toString(),
                     piece.renderPlacements(config).toString(),
                     "door at x=" + x + " changed between renders");

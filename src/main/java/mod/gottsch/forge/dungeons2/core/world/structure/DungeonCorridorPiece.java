@@ -48,8 +48,9 @@ public class DungeonCorridorPiece extends DungeonPiece {
 
     private CorridorData corridor;
 
-    public DungeonCorridorPiece(CorridorData corridor, String motifValue, int floorY, int anchorX, int anchorZ) {
-        super(StructurePieces.CORRIDOR, motifValue, floorY, anchorX, anchorZ,
+    public DungeonCorridorPiece(CorridorData corridor, String motifValue, int floorY, int floorIndex,
+                            int anchorX, int anchorZ) {
+        super(StructurePieces.CORRIDOR, motifValue, floorY, floorIndex, anchorX, anchorZ,
                 computeBox(corridor, floorY, anchorX, anchorZ));
         this.corridor = corridor;
     }

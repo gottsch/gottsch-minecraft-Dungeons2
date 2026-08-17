@@ -1775,8 +1775,11 @@ so a datapack can add or replace them without touching the mod:
 > Dungeons uses marker blocks for exactly this reason.
 >
 > Consequently the marker only works in **authored templates**. A procedurally-built room places no
-> marker and would reach the same spawner through `BlockEntityData` instead —
-> `DungeonPiece.applyBlockEntity` has supported that since Phase 3, and nothing emits it yet.
+> marker and reaches the same spawner through the motif config's **`spawners` scheme slot** instead
+> (`RoomSpawnerGenerator` → `BlockEntityData` → `DungeonPiece.applyBlockEntity`) — see
+> §spawners of the Room Schemes manual. The two paths build the same block-entity tag by two
+> different encodings, so a field renamed on one side must be renamed on the other;
+> `SpawnerTagParityTest` fails the build if they drift.
 
 > **`ShippedMobSetsTest` is what catches a typo.** The processor deliberately does not validate that
 > a set exists — `MobSetDataRegistry` fills at datapack reload while a processor runs during

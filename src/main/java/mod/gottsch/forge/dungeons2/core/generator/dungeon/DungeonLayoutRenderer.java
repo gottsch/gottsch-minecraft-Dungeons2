@@ -142,7 +142,7 @@ public final class DungeonLayoutRenderer {
             if (!room.getRole().isProcedurallyBuilt()) {
                 continue;
             }
-            roomGenerator.build(room, floorY, motif, random, placements);
+            roomGenerator.build(room, floorY, floor.getFloorIndex(), motif, random, placements);
         }
 
         for (DoorData door : floor.getDoors()) {

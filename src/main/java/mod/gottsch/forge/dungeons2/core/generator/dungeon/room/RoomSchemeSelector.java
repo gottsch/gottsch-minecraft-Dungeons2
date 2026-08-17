@@ -47,8 +47,9 @@ public final class RoomSchemeSelector {
     private RoomSchemeSelector() {}
 
     /**
-     * Rolls one scheme for a room of the given dimensions. {@code height} is the full room height
-     * (floor block through ceiling block), matching {@code RoomData#getHeight}.
+     * Rolls one scheme for a room of the given dimensions on the given floor. {@code height} is the
+     * full room height (floor block through ceiling block), matching {@code RoomData#getHeight};
+     * {@code floorIndex} is 0 at the entrance, counting downward.
      *
      * <p>Consumes exactly one value from {@code random} whenever any scheme is eligible &mdash;
      * unconditionally, even for a one-element list, so that the number of values drawn never
@@ -59,9 +60,16 @@ public final class RoomSchemeSelector {
      * {@code postProcess} calls a piece gets per overlapping chunk.</p>
      */
     public static RoomScheme select(List<RoomScheme> schemes, int width, int depth, int height,
-                                    RandomSource random) {
+                                    int floorIndex, RandomSource random) {
         List<RoomScheme> eligible = new ArrayList<>();
         for (RoomScheme scheme : schemes) {
+            // Depth first, then shape. Two independent conditions, and the order is only about
+            // reading clearly: depth is the coarser filter and does not vary within a floor, so
+            // rejecting on it first says "this scheme is not for down here" before asking anything
+            // about the room. See RoomScheme#fitsFloor.
+            if (!scheme.fitsFloor(floorIndex)) {
+                continue;
+            }
             if (scheme.fits(width, depth, height)) {
                 eligible.add(scheme);
             }

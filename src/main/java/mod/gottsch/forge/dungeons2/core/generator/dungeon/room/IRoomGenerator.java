@@ -38,5 +38,13 @@ import net.minecraft.util.RandomSource;
  * </p>
  */
 public interface IRoomGenerator {
-    void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random, RoomPlacements out);
+    /**
+     * @param floorY     the walking plane's absolute world Y, which every placement is computed from
+     * @param floorIndex which floor of the dungeon this room is on, <strong>0 at the entrance</strong>
+     *                   and counting downward. A separate parameter rather than something derived
+     *                   from {@code floorY}, because the two only agree on flat ground &mdash; see
+     *                   {@code DungeonPiece#floorIndex}. Content that scales with depth reads this.
+     */
+    void build(RoomData room, int floorY, int floorIndex, IDungeonMotif motif, RandomSource random,
+               RoomPlacements out);
 }

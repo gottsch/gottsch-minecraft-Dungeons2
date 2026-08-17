@@ -58,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class VoxelStubDiagnosticTest {
 
+    /** Every piece here is built on the entrance floor; depth is not what these cases are about. */
+    private static final int TEST_FLOOR_INDEX = 0;
+
     private static final String MOTIF = "classic";
     private static final String AIR = "minecraft:air";
 
@@ -95,13 +98,13 @@ class VoxelStubDiagnosticTest {
             // Emit order mirrors DungeonPieceEmitter: rooms, corridors, doors.
             for (RoomData room : f0.getRooms()) {
                 if (room.getRole() != RoomRole.NORMAL) continue;
-                stamp(vox, new DungeonRoomPiece(room, MOTIF, floorY, 0, 0).renderPlacements());
+                stamp(vox, new DungeonRoomPiece(room, MOTIF, floorY, TEST_FLOOR_INDEX, 0, 0).renderPlacements());
             }
             for (CorridorData corridor : f0.getCorridors()) {
-                stamp(vox, new DungeonCorridorPiece(corridor, MOTIF, floorY, 0, 0).renderPlacements());
+                stamp(vox, new DungeonCorridorPiece(corridor, MOTIF, floorY, TEST_FLOOR_INDEX, 0, 0).renderPlacements());
             }
             for (DoorData door : f0.getDoors()) {
-                stamp(vox, new DungeonDoorPiece(door, MOTIF, floorY, 0, 0).renderPlacements());
+                stamp(vox, new DungeonDoorPiece(door, MOTIF, floorY, TEST_FLOOR_INDEX, 0, 0).renderPlacements());
             }
 
             for (Map.Entry<Long, String> e : vox.entrySet()) {
