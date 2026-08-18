@@ -33,19 +33,14 @@ import net.minecraftforge.registries.RegistryObject;
  * {@link mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities} for the full
  * diagnosis, which is worth reading before adding anything here.</p>
  *
- * <p>{@link #DEFERRED_DUNGEON_GENERATOR} is Phase 2 legacy awaiting Phase 6 deletion (backlog #43)
- * and nothing places it &mdash; {@code DungeonFeature} is unregistered. It is now genuinely in the
- * registry rather than silently absent, which is why it carries a model, a lang key and
- * {@code noLootTable()}: #43's advice was "do not wire this class up just for the dead block", and
- * that stands, but a live block now shares the holder so the dead one has to be presentable.
- * <strong>Phase 6 deletes this field, not the class.</strong></p>
+ * <p><strong>Phase 6 (backlog #43) removed {@code DEFERRED_DUNGEON_GENERATOR} on 2026-08-18</strong>,
+ * along with its block, block entity and the whole unregistered feature path it existed for. This
+ * class stays because live content shares it &mdash; which is exactly the split #43 called for.</p>
  *
  * @author Mark Gottschling Oct 25, 2023
  *
  */
 public class DungeonsBlocks {
-    public static final RegistryObject<Block> DEFERRED_DUNGEON_GENERATOR = Registration.BLOCKS.register("deferred_dungeon_generator", () -> new DeferredDungeonGeneratorBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
-            .strength(3.0F).sound(SoundType.STONE).replaceable().noCollission().noLootTable().air()));
 
     /**
      * Backlog #10: the invisible proximity mob-set spawner. Air-<em>like</em> in every respect that

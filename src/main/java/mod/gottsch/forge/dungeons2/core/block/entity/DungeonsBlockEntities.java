@@ -21,22 +21,16 @@ import net.minecraftforge.registries.RegistryObject;
  *
  * <h2>Backlog #43 said not to fix this. That advice was right, and is now spent</h2>
  * <p>#43's reasoning: wiring these up "would put a block with no model, no loot table and no display
- * name into the registry to serve a code path that does not run". True while
- * {@link #DEFERRED_DUNGEON_GENERATOR_ENTITY_TYPE} was the only occupant. #10's mob-set spawner is a
- * live block that genuinely needs registering, so the holder has to be wired regardless &mdash; and
- * the dead entry, now unavoidably along for the ride, was given the model and lang key it lacked.
- * <strong>Phase 6 deletes the deferred-generator field and its block, not this class.</strong></p>
+ * name into the registry to serve a code path that does not run". True while the deferred-generator
+ * type was the only occupant. #10's mob-set spawner is a live block that genuinely needs
+ * registering, so the holder had to be wired regardless &mdash; and <strong>Phase 6 then deleted the
+ * dead entry outright (2026-08-18)</strong>, which is the resolution #43 asked for: the field and
+ * its block go, this class stays because live content is in it.</p>
  *
  * @author Mark Gottschling on Oct 25, 2023
  *
  */
 public class DungeonsBlockEntities {
-
-	public static final RegistryObject<BlockEntityType<DeferredDungeonGeneratorBlockEntity>> DEFERRED_DUNGEON_GENERATOR_ENTITY_TYPE =
-			Registration.BLOCK_ENTITIES.register("deferred_dungeon_generator",
-					() -> BlockEntityType.Builder.of(DeferredDungeonGeneratorBlockEntity::new,
-									DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.get())
-							.build(null));
 
 	/**
 	 * Backlog #10. The block entity is {@link DungeonSpawnerBlockEntity} &mdash; GottschCore's

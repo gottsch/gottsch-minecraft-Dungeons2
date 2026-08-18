@@ -70,16 +70,4 @@ public class WorldEvents {
 //			}
 //		}
 	}
-//	@SubscribeEvent
-//	public static void onBiomeLoading(final BiomeLoadingEvent event) {
-//		/*
-//		 * NOTE:
-//		 * generation must occur in the correct order according to GenerationStep.Decoration
-//		 */
-////		TreasureOreGeneration.generateOres(event);
-//
-//		if (event.getCategory() != BiomeCategory.OCEAN) {
-//			event.getGeneration().addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION, ConfiguredFeatures.DUNGEON_PLACED_FEATURE.getHolder().get());
-//		}
-//	}
 }

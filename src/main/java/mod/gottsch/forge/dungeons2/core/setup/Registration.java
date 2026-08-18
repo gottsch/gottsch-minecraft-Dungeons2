@@ -19,7 +19,6 @@ package mod.gottsch.forge.dungeons2.core.setup;
 
 import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
-import mod.gottsch.forge.dungeons2.core.world.feature.ConfiguredFeatures;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
@@ -154,6 +153,5 @@ public class Registration {
 		STRUCTURE_TYPES.register(eventBus);
 		STRUCTURE_PROCESSORS.register(eventBus);
 
-		ConfiguredFeatures.register(eventBus);
 	}
 }
