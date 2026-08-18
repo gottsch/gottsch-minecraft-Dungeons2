@@ -18,6 +18,9 @@
 package mod.gottsch.forge.dungeons2.diagnostic;
 
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -30,6 +33,8 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerato
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.mobset.MobSetData;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
@@ -37,8 +42,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,12 +95,50 @@ class SpawnerIncidenceProbe {
 
     private static final String SPAWNER = "dungeons2:mob_set_spawner";
 
-    /** The generators resolve block states. */
+    private static final String VANILLA_SPAWNER = "minecraft:spawner";
+
+    /**
+     * The generators resolve block states &mdash; and, since vanilla spawners landed, the mob-set
+     * registry has to be filled too.
+     *
+     * <h2>Why the registry matters to a headless probe</h2>
+     * <p>A proximity spawner stores its set's <em>name</em> and never looks it up at generation, so
+     * this probe measured it fine with an empty registry. A vanilla cage has to be handed real
+     * entity ids at generation time, and correctly places <strong>nothing</strong> when the set
+     * cannot be resolved &mdash; so an unfilled registry silently under-reports every vanilla slot
+     * and, worse, charges the difference to "cell exhaustion", which is a real bug's signature.
+     * Loading the shipped sets is what keeps the number honest.</p>
+     */
     @BeforeAll
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        loadShippedMobSets();
     }
+
+    /** Decodes {@code data/dungeons2/mob_sets/*.json} through the real codec and registers them. */
+    private static void loadShippedMobSets() {
+        try {
+            URL url = SpawnerIncidenceProbe.class.getResource(MOB_SETS);
+            if (url == null) {
+                return;
+            }
+            Path dir = Paths.get(url.toURI());
+            try (Stream<Path> files = Files.list(dir)) {
+                for (Path file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
+                    JsonElement json = JsonParser.parseString(Files.readString(file));
+                    MobSetData.CODEC.parse(JsonOps.INSTANCE, json)
+                            .result()
+                            .ifPresent(MobSetDataRegistry::register);
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("could not load the shipped mob sets, so any vanilla"
+                    + " spawner would silently measure as un-placeable", e);
+        }
+    }
+
+    private static final String MOB_SETS = "/data/dungeons2/mob_sets";
 
     @Test
     void howOftenDoesARoomGetASpawner() {
@@ -99,6 +147,7 @@ class SpawnerIncidenceProbe {
         int rooms = 0;
         int roomsWithSpawner = 0;
         int spawners = 0;
+        int vanillaCages = 0;
         int carriesSlot = 0;       // scheme rolled DOES have a spawners slot
 
         Map<Integer, int[]> byFloor = new TreeMap<>();    // [rooms, roomsWithSpawner, spawners]
@@ -135,6 +184,9 @@ class SpawnerIncidenceProbe {
                         for (BlockPlacement p : out.getBlocks()) {
                             if (SPAWNER.equals(p.getBlockId())) {
                                 placed++;
+                            } else if (VANILLA_SPAWNER.equals(p.getBlockId())) {
+                                placed++;
+                                vanillaCages++;
                             }
                         }
 
@@ -162,6 +214,8 @@ class SpawnerIncidenceProbe {
                 DUNGEONS, rooms);
         System.out.printf("  rooms with >=1 spawner : %d (%.1f%%)%n",
                 roomsWithSpawner, pct(roomsWithSpawner, rooms));
+        System.out.printf("  of which vanilla cages : %d (%.1f%% of all spawners)%n",
+                vanillaCages, pct(vanillaCages, spawners));
         System.out.printf("  spawners placed        : %d (%.2f per room, %.1f per dungeon)%n",
                 spawners, rooms == 0 ? 0 : (double) spawners / rooms,
                 (double) spawners / (DUNGEONS * 2));
@@ -197,6 +251,10 @@ class SpawnerIncidenceProbe {
         System.out.println();
 
         assertTrue(rooms > 0, "no procedural rooms were built, so this probe measured nothing");
+        assertTrue(vanillaCages > 0,
+                "not one vanilla spawner was placed. Either no shipped scheme asks for type"
+                        + " 'vanilla' any more, or the mob-set registry did not load -- and an"
+                        + " unloaded registry makes every vanilla slot look like cell exhaustion");
         assertTrue(spawners > 0,
                 "not one spawner was placed across " + rooms + " rooms. Either the spawners slot"
                         + " stopped being shipped, or every candidate cell is being claimed before"

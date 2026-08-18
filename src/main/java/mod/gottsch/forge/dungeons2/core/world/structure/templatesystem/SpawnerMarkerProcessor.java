@@ -21,6 +21,14 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
+import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
+import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
+import mod.gottsch.forge.gottschcore.mobset.WeightedMob;
+import net.minecraft.nbt.TagParser;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Blocks;
+import java.util.List;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -90,14 +98,22 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     private final double proximity;
     private final int minMobs;
     private final int maxMobs;
+    private final SpawnerConfig.Kind kind;
 
+    /** The proximity form, which is what every marker authored before vanilla spawners meant. */
     public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity,
                                   int minMobs, int maxMobs) {
+        this(mobSet, markerBlock, proximity, minMobs, maxMobs, SpawnerConfig.Kind.PROXIMITY);
+    }
+
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity,
+                                  int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
         this.mobSet = mobSet;
         this.markerBlock = markerBlock;
         this.proximity = proximity;
         this.minMobs = minMobs;
         this.maxMobs = maxMobs;
+        this.kind = kind;
     }
 
     /**
@@ -112,7 +128,11 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                         .forGetter(p -> p.markerBlock),
                 Codec.DOUBLE.optionalFieldOf("proximity", 8.0D).forGetter(p -> p.proximity),
                 Codec.INT.optionalFieldOf("min_mobs", 1).forGetter(p -> p.minMobs),
-                Codec.INT.optionalFieldOf("max_mobs", 3).forGetter(p -> p.maxMobs)
+                Codec.INT.optionalFieldOf("max_mobs", 3).forGetter(p -> p.maxMobs),
+                // Same default and the same reason as the scheme slot's: every marker authored
+                // before vanilla spawners existed means the ambush block.
+                SpawnerConfig.Kind.CODEC.optionalFieldOf("type", SpawnerConfig.Kind.PROXIMITY)
+                        .forGetter(p -> p.kind)
         ).apply(instance, SpawnerMarkerProcessor::new));
         return codec;
     }
@@ -136,12 +156,82 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // Present but no mobs => look in run/logs/gottschcore.log instead: the block entity's own
         // "proximity met" / "self-destructing" lines are GottschCore's, and that file has its own
         // [logging] level in config/gottschcore-common.toml.
-        Dungeons.LOGGER.debug("[D2-SPAWNER] {} -> mob_set_spawner at {} (set {})",
-                markerBlock, current.pos(), mobSet);
+        Dungeons.LOGGER.debug("[D2-SPAWNER] {} -> {} at {} (set {})",
+                markerBlock, kind.getSerializedName(), current.pos(), mobSet);
+
+        if (kind == SpawnerConfig.Kind.VANILLA) {
+            CompoundTag vanilla = vanillaSpawnerTag(settings.getRandom(current.pos()));
+            if (vanilla == null) {
+                // No resolvable mobs, so there is nothing to put in the cage. Leave the marker
+                // in place rather than emit an empty spawner: vanilla's own default is a pig, and
+                // an unconverted marker is at least visibly wrong to whoever authored it.
+                Dungeons.LOGGER.warn("[D2-SPAWNER] mob set {} resolved to no usable mobs at {};"
+                        + " leaving the marker unconverted", mobSet, current.pos());
+                return current;
+            }
+            return new StructureTemplate.StructureBlockInfo(current.pos(),
+                    Blocks.SPAWNER.defaultBlockState(), vanilla);
+        }
+
         // The block lookup is the ONLY part of this that needs a populated Forge registry, which is
         // why everything either side of it is separately callable -- see SpawnerMarkerProcessorTest.
         return new StructureTemplate.StructureBlockInfo(current.pos(),
                 DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(), spawnerTag());
+    }
+
+    /** Matches {@code RoomSpawnerGenerator}, so both routes name the same block entity. */
+    static final String VANILLA_SPAWNER_ENTITY = "minecraft:mob_spawner";
+
+    /**
+     * The tag for a vanilla cage drawing from this processor mob set, or {@code null} when the set
+     * resolves to nothing vanilla could spawn.
+     *
+     * <h2>Here the two routes DO share code, unlike the proximity pair</h2>
+     * <p>The proximity spawner builds the same tag by two different encodings on the two routes and
+     * cannot share an implementation, which is the whole reason {@code SpawnerTagParityTest} exists.
+     * The vanilla tag has no such split: {@code VanillaSpawnerNbt} emits SNBT, this side parses it
+     * and the procedural side posts it through {@code BlockEntityData}. One builder, so there is
+     * nothing here that can drift out of step.</p>
+     *
+     * <p>Unlike the floor index, the mob draw here CAN be seeded properly &mdash;
+     * {@code settings.getRandom(pos)} is position-derived, so the same template in the same place
+     * shows the same mob.</p>
+     */
+    CompoundTag vanillaSpawnerTag(RandomSource random) {
+        List<WeightedMob> mobs = MobSetDataRegistry.get(mobSet)
+                .map(VanillaSpawnerNbt::usableMobs)
+                .orElseGet(List::of);
+        if (mobs.isEmpty()) {
+            return null;
+        }
+        int total = mobs.stream().mapToInt(WeightedMob::weight).sum();
+        int roll = random.nextInt(Math.max(1, total));
+        String shown = mobs.get(mobs.size() - 1).id().toString();
+        for (WeightedMob mob : mobs) {
+            roll -= mob.weight();
+            if (roll < 0) {
+                shown = mob.id().toString();
+                break;
+            }
+        }
+        int spawnCount = minMobs + (maxMobs > minMobs ? random.nextInt(maxMobs - minMobs + 1) : 0);
+
+        try {
+            CompoundTag tag = new CompoundTag();
+            tag.putString("id", VANILLA_SPAWNER_ENTITY);
+            tag.put(VanillaSpawnerNbt.SPAWN_DATA,
+                    TagParser.parseTag(VanillaSpawnerNbt.spawnData(shown)));
+            // SpawnPotentials is a LIST, and TagParser only parses a compound -- so it is wrapped
+            // and unwrapped, the same trick DungeonPiece#parseNbtValue uses for the other route.
+            tag.put(VanillaSpawnerNbt.SPAWN_POTENTIALS,
+                    TagParser.parseTag("{v:" + VanillaSpawnerNbt.spawnPotentials(mobs) + "}").get("v"));
+            VanillaSpawnerNbt.tuning(spawnCount).forEach((k, v) -> tag.putInt(k, Integer.parseInt(v)));
+            return tag;
+        } catch (Exception malformed) {
+            Dungeons.LOGGER.error("[D2-SPAWNER] could not build vanilla spawner tag for set {}: {}",
+                    mobSet, malformed.toString());
+            return null;
+        }
     }
 
     /**

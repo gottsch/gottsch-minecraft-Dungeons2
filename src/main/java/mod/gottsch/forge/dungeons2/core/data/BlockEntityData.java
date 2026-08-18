@@ -38,7 +38,23 @@ import java.util.Map;
  *         "LootTableSeed":"12345"}}</li>
  * </ul>
  *
- * <p>Pure POJO &mdash; no Minecraft imports.</p>
+ * <h2>{@link #nbtValues}: the flat map cannot express everything</h2>
+ * <p>{@link #data} is {@code String -> String} and the renderer sniffs each value back to an int,
+ * long, double or string. That covers every field the proximity spawner and a chest need, and it
+ * cannot express a <strong>nested compound</strong> at all &mdash; which a vanilla
+ * {@code minecraft:spawner} requires, since its mob lives at
+ * {@code SpawnData.entity.id} and its weighted alternatives at {@code SpawnPotentials}.</p>
+ *
+ * <p>So nested values travel as <strong>SNBT text in their own map</strong>, parsed by the renderer
+ * with {@code TagParser}. A separate map rather than SNBT smuggled into {@link #data}: that would
+ * mean the renderer guessing whether {@code "{id:1}"} is a compound or a string it should store
+ * verbatim, and value-sniffing in this exact code path has already produced one real bug &mdash;
+ * {@code proximity} was stored as a string and read back as {@code 0}. The author says which kind
+ * of value it is by choosing the map; nothing infers it.</p>
+ *
+ * <p>Pure POJO &mdash; no Minecraft imports. That is the whole reason these are strings rather than
+ * {@code CompoundTag}s: this class sits in the data layer, which stays loader-agnostic, and the
+ * parse happens in {@code DungeonPiece} where Minecraft is already in scope.</p>
  *
  * @author Mark Gottschling on May 25, 2026
  */
@@ -46,6 +62,8 @@ public class BlockEntityData {
     /** Block-entity type as a resource location string (e.g. {@code "minecraft:mob_spawner"}). */
     private String type;
     private Map<String, String> data = new LinkedHashMap<>();
+    /** NBT key &rarr; SNBT text, for values that are compounds or lists. See the class doc. */
+    private Map<String, String> nbtValues = new LinkedHashMap<>();
 
     public BlockEntityData() {}
 
@@ -71,14 +89,36 @@ public class BlockEntityData {
         this.data = data == null ? new LinkedHashMap<>() : new LinkedHashMap<>(data);
     }
 
+    public Map<String, String> getNbtValues() {
+        if (nbtValues == null) nbtValues = new LinkedHashMap<>();
+        return nbtValues;
+    }
+    public void setNbtValues(Map<String, String> nbtValues) {
+        this.nbtValues = nbtValues == null ? new LinkedHashMap<>() : new LinkedHashMap<>(nbtValues);
+    }
+
     /** Fluent helper: add one NBT key/value. */
     public BlockEntityData with(String key, String value) {
         getData().put(key, value);
         return this;
     }
 
+    /**
+     * Fluent helper: add one NBT key whose value is a compound or list, given as SNBT text.
+     *
+     * <p>Unparsed here on purpose &mdash; this class has no Minecraft on its classpath. A malformed
+     * string therefore fails at render time, where it is logged against the position it was going
+     * to be written to; see {@code DungeonPiece#applyBlockEntity}.</p>
+     */
+    public BlockEntityData withNbt(String key, String snbt) {
+        getNbtValues().put(key, snbt);
+        return this;
+    }
+
     @Override
     public String toString() {
-        return "BlockEntityData{type=" + type + (data != null && !data.isEmpty() ? " " + data : "") + '}';
+        return "BlockEntityData{type=" + type
+                + (data != null && !data.isEmpty() ? " " + data : "")
+                + (nbtValues != null && !nbtValues.isEmpty() ? " " + nbtValues : "") + '}';
     }
 }

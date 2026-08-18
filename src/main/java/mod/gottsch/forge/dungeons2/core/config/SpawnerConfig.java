@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.StringRepresentable;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +57,41 @@ import java.util.Optional;
  */
 public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
                             Optional<Integer> maxMobs, double proximity,
-                            Optional<List<MobSetEntry>> mobSets, SizeGate gate) {
+                            Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind) {
+
+    /**
+     * Which kind of spawner the slot places.
+     *
+     * <p>{@link #PROXIMITY} is this mod's own invisible block: it fires once when a player comes
+     * within {@code proximity}, releases {@code minMobs}..{@code maxMobs} at once, and then dies.
+     * An ambush. {@link #VANILLA} is {@code minecraft:spawner} &mdash; the visible cage that keeps
+     * producing mobs until it is broken or lit, which is a completely different thing to walk into
+     * and is the one players already know how to deal with.</p>
+     *
+     * <p>The mob set feeds both. The difference is <em>when</em> the set is consulted: a proximity
+     * spawner stores the set's <em>name</em> and rolls a mob at trigger time, while a vanilla one
+     * has to be handed real entity ids at generation time, because vanilla's own {@code BaseSpawner}
+     * does the rolling and has never heard of a mob set. That is why the vanilla path needs the
+     * registry during worldgen and the proximity path does not.</p>
+     */
+    public enum Kind implements StringRepresentable {
+        PROXIMITY("proximity"),
+        VANILLA("vanilla");
+
+        private final String name;
+
+        Kind(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return name;
+        }
+
+        /** Failing rather than lenient, same reasoning as {@code CorridorConfig.Profile}. */
+        public static final Codec<Kind> CODEC = StringRepresentable.fromEnum(Kind::values);
+    }
 
     /** The tuning defaults, spelled the same as {@code SpawnerMarkerProcessor}'s so the two agree. */
     public static final int DEFAULT_MIN_MOBS = 1;
@@ -67,7 +102,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     public SpawnerConfig(int minCount, int maxCount, int minMobs, int maxMobs, double proximity,
                          List<MobSetEntry> mobSets) {
         this(minCount, maxCount, Optional.of(minMobs), Optional.of(maxMobs), proximity,
-                Optional.of(mobSets), SizeGate.UNBOUNDED);
+                Optional.of(mobSets), SizeGate.UNBOUNDED, Kind.PROXIMITY);
     }
 
     /**
@@ -79,7 +114,8 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      */
     public SpawnerConfig(String mobSet) {
         this(1, 1, Optional.empty(), Optional.empty(), DEFAULT_PROXIMITY,
-                Optional.of(List.of(new MobSetEntry(mobSet, 1))), SizeGate.UNBOUNDED);
+                Optional.of(List.of(new MobSetEntry(mobSet, 1))), SizeGate.UNBOUNDED,
+                Kind.PROXIMITY);
     }
 
     /**
@@ -109,7 +145,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
                 maxMobs.or(b::maxMobs),
                 proximity,
                 mobSets.isPresent() ? mobSets : Optional.of(b.mobSets()),
-                gate);
+                gate, kind);
     }
 
     /**
@@ -123,7 +159,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             return this;
         }
         return new SpawnerConfig(minCount, maxCount, minMobs, maxMobs, proximity,
-                Optional.of(floorSets), gate);
+                Optional.of(floorSets), gate, kind);
     }
 
     /** The sets this config names outright, or empty when it defers to the motif's depth table. */
@@ -167,7 +203,12 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             // See resolvedAgainst for why absent and empty must stay distinguishable.
             Codecs.strictOptionalFieldOf(MobSetEntry.CODEC.listOf(), "mobSets")
                     .forGetter(SpawnerConfig::mobSets),
-            SizeGate.MAP_CODEC.forGetter(SpawnerConfig::gate)
+            SizeGate.MAP_CODEC.forGetter(SpawnerConfig::gate),
+            // Defaults to proximity: every scheme authored before vanilla spawners existed means
+            // the ambush block, and silently switching those to visible cages would change what
+            // every shipped hall does.
+            Codecs.strictOptionalFieldOf(Kind.CODEC, "type", Kind.PROXIMITY)
+                    .forGetter(SpawnerConfig::kind)
     ).apply(instance, SpawnerConfig::new))).flatXmap(SpawnerConfig::validate, SpawnerConfig::validate);
 
     /**

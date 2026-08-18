@@ -665,7 +665,8 @@
       },
       "spawners": {
         "minCount": 0,
-        "maxCount": 1
+        "maxCount": 1,
+        "type": "vanilla"
       }
     }
   ]

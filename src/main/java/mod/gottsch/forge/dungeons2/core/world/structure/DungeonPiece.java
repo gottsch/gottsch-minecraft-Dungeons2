@@ -25,7 +25,10 @@ import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.core.BlockPos;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.ChunkPos;
@@ -482,12 +485,42 @@ public abstract class DungeonPiece extends StructurePiece {
             for (Map.Entry<String, String> entry : data.getData().entrySet()) {
                 putParsed(tag, entry.getKey(), entry.getValue());
             }
+            // Nested values arrive as SNBT text and are parsed here rather than in the data layer,
+            // which has no Minecraft on its classpath. A vanilla minecraft:spawner needs this: its
+            // mob is at SpawnData.entity.id and its weighted alternatives at SpawnPotentials, and
+            // the flat String map cannot express either.
+            //
+            // A malformed string is logged and SKIPPED rather than aborting the whole entity: the
+            // other fields are still worth applying, and a spawner that ends up with vanilla's own
+            // default mob is a visibly wrong spawner rather than an invisible missing one.
+            for (Map.Entry<String, String> entry : data.getNbtValues().entrySet()) {
+                try {
+                    tag.put(entry.getKey(), parseNbtValue(entry.getValue()));
+                } catch (CommandSyntaxException malformed) {
+                    Dungeons.LOGGER.error("[D2-SPAWNER] could not parse SNBT for '{}' at {}: {} -- "
+                            + "value was {}", entry.getKey(), pos, malformed.getMessage(),
+                            entry.getValue());
+                }
+            }
             blockEntity.load(tag);
             blockEntity.setChanged();
         } catch (Exception e) {
             Dungeons.LOGGER.warn("Failed to apply block-entity data {} at {}: {}",
                     data, pos, e.getMessage());
         }
+    }
+
+    /**
+     * Parses one SNBT value of any type, not just a compound.
+     *
+     * <p>{@code TagParser.parseTag} only accepts a compound, and a vanilla spawner's
+     * {@code SpawnPotentials} is a <strong>list</strong> &mdash; so parsing the value directly
+     * would reject exactly the field this channel was added for. Wrapping it in a throwaway
+     * compound and taking the one entry back out costs nothing and works for compounds, lists and
+     * scalars alike.</p>
+     */
+    private static Tag parseNbtValue(String snbt) throws CommandSyntaxException {
+        return TagParser.parseTag("{v:" + snbt + "}").get("v");
     }
 
     /**

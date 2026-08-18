@@ -22,11 +22,16 @@ import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
+import mod.gottsch.forge.gottschcore.mobset.WeightedMob;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -70,6 +75,10 @@ public final class RoomSpawnerGenerator {
      * placement's block id and the {@code "id"} the block-entity tag is loaded against.
      */
     public static final String SPAWNER_BLOCK = "dungeons2:mob_set_spawner";
+
+    /** Vanilla's cage, for {@code SpawnerConfig.Kind#VANILLA}. */
+    public static final String VANILLA_SPAWNER_BLOCK = "minecraft:spawner";
+    public static final String VANILLA_SPAWNER_ENTITY = "minecraft:mob_spawner";
 
     // The block entity's own NBT field names (GottschCore's ProximityMobSetSpawnerBlockEntity /
     // AbstractProximityBlockEntity). Spelled out rather than imported, for the reason every Phase 2
@@ -127,11 +136,26 @@ public final class RoomSpawnerGenerator {
 
             String mobSet = pickMobSet(sets, totalWeight, random);
             // floorY + 1: the cell resting on the floor, which is where a mob standing in the room
-            // would be. The block is invisible and passes the player through, so nothing about the
-            // room reads differently for it being there.
-            BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
-                    SPAWNER_BLOCK);
-            placement.setBlockEntityNbt(spawnerData(config, mobSet, floorIndex));
+            // would be. A proximity block is invisible and passes the player through, so nothing
+            // about the room reads differently for it being there; a vanilla cage is a real solid
+            // block and deliberately does read as one.
+            BlockPlacement placement;
+            if (config.kind() == SpawnerConfig.Kind.VANILLA) {
+                BlockEntityData vanilla = vanillaSpawnerData(config, mobSet, random);
+                if (vanilla == null) {
+                    // The set could not be resolved to real mobs, so there is nothing to put in the
+                    // cage. Skip the cell rather than place an empty spawner: vanilla's own default
+                    // is a pig, and a pig cage in a dungeon is worse than no spawner at all. The
+                    // cell is NOT claimed, so a pot may still use it.
+                    continue;
+                }
+                placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
+                        VANILLA_SPAWNER_BLOCK);
+                placement.setBlockEntityNbt(vanilla);
+            } else {
+                placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(), SPAWNER_BLOCK);
+                placement.setBlockEntityNbt(spawnerData(config, mobSet, floorIndex));
+            }
             out.add(placement);
             used.add(cell);
         }
@@ -163,6 +187,66 @@ public final class RoomSpawnerGenerator {
                 // DungeonSpawnerBlockEntity for what it is for and why it needed a field rather
                 // than just a tag key.
                 .with(FLOOR_INDEX, String.valueOf(floorIndex));
+    }
+
+    /**
+     * The block-entity data for a vanilla cage drawing from {@code mobSetName}, or {@code null} when
+     * the set cannot be resolved to any mob vanilla could draw.
+     *
+     * <h2>The set is consulted HERE, unlike the proximity path</h2>
+     * <p>A proximity spawner stores the set's <em>name</em> and rolls at trigger time. Vanilla's
+     * {@code BaseSpawner} has never heard of a mob set, so the ids have to be handed over at
+     * generation &mdash; which means this path needs {@code MobSetDataRegistry} during worldgen
+     * while the proximity path does not. The registry is filled at datapack reload, well before any
+     * chunk generates, so it is populated in a real game; it is empty under a bare test harness,
+     * and returning {@code null} is what keeps that case from placing a pig cage.</p>
+     *
+     * <p>The consequence worth stating: a mob set edited in a datapack later changes every
+     * proximity spawner in an existing world and <strong>no</strong> vanilla one, because the
+     * vanilla tags were baked when the chunk generated.</p>
+     *
+     * <p>{@code SpawnCount} is drawn from the same {@code minMobs}..{@code maxMobs} range the
+     * proximity spawner uses, so the depth bands reach this kind too &mdash; a floor-2 cage
+     * releases 2-4 exactly as a floor-2 ambush does.</p>
+     */
+    static BlockEntityData vanillaSpawnerData(SpawnerConfig config, String mobSetName,
+                                              RandomSource random) {
+        Optional<ResourceLocation> id = Optional.ofNullable(ResourceLocation.tryParse(mobSetName));
+        if (id.isEmpty()) {
+            return null;
+        }
+        List<WeightedMob> mobs = MobSetDataRegistry.get(id.get())
+                .map(VanillaSpawnerNbt::usableMobs)
+                .orElseGet(List::of);
+        if (mobs.isEmpty()) {
+            return null;
+        }
+
+        // Drawn with the piece's own seeded random, like every other procedural decision here, so
+        // the cage shows the same mob on every regeneration of the same seed.
+        String shown = drawMob(mobs, random);
+        int min = config.effectiveMinMobs();
+        int max = config.clampedMaxMobs();
+        int spawnCount = min + (max > min ? random.nextInt(max - min + 1) : 0);
+
+        BlockEntityData data = new BlockEntityData(VANILLA_SPAWNER_ENTITY)
+                .withNbt(VanillaSpawnerNbt.SPAWN_DATA, VanillaSpawnerNbt.spawnData(shown))
+                .withNbt(VanillaSpawnerNbt.SPAWN_POTENTIALS, VanillaSpawnerNbt.spawnPotentials(mobs));
+        VanillaSpawnerNbt.tuning(spawnCount).forEach(data::with);
+        return data;
+    }
+
+    /** Weighted draw over the set's mobs, matching {@link #pickMobSet}'s shape. */
+    private static String drawMob(List<WeightedMob> mobs, RandomSource random) {
+        int total = mobs.stream().mapToInt(WeightedMob::weight).sum();
+        int roll = random.nextInt(Math.max(1, total));
+        for (WeightedMob mob : mobs) {
+            roll -= mob.weight();
+            if (roll < 0) {
+                return mob.id().toString();
+            }
+        }
+        return mobs.get(mobs.size() - 1).id().toString();
     }
 
     /**

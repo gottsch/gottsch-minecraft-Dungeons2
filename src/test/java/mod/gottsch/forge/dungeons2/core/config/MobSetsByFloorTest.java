@@ -323,6 +323,57 @@ class MobSetsByFloorTest {
         assertTrue(decoded.maxMobs().isEmpty());
     }
 
+    // ---- Spawner kind (proximity vs vanilla) --------------------------------------------
+    //
+    // The mob set feeds both kinds; what differs is WHEN it is consulted. A proximity spawner
+    // stores the set name and rolls at trigger time, so it stays a live reference. A vanilla cage
+    // has to be handed real entity ids at generation, because vanilla's BaseSpawner has never
+    // heard of a mob set.
+
+    /** Every scheme authored before vanilla spawners existed meant the ambush block. */
+    @Test
+    void aSlotThatNamesNoTypeIsAProximitySpawner() {
+        SpawnerConfig config = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .result().orElseThrow();
+        assertEquals(SpawnerConfig.Kind.PROXIMITY, config.kind(),
+                "defaulting to vanilla would silently turn every shipped hall's invisible ambush"
+                        + " into a visible cage");
+    }
+
+    @Test
+    void aSlotMayAskForAVanillaSpawner() {
+        SpawnerConfig config = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"type\":\"vanilla\"}"))
+                .result().orElseThrow();
+        assertEquals(SpawnerConfig.Kind.VANILLA, config.kind());
+    }
+
+    /** Failing rather than lenient, the same rule the rest of the schema follows. */
+    @Test
+    void anUnknownSpawnerTypeIsALoadError() {
+        DataResult<SpawnerConfig> result = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"type\":\"vanila\"}"));
+        assertTrue(result.error().isPresent(),
+                "a misspelled type must not quietly fall back to proximity");
+    }
+
+    /**
+     * The kind survives band resolution. It is a property of the slot, not of the depth table --
+     * a band says what spawns and how many, never through what mechanism.
+     */
+    @Test
+    void resolvingAgainstABandKeepsTheKind() {
+        SpawnerConfig vanilla = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"type\":\"vanilla\"}"))
+                .result().orElseThrow();
+
+        SpawnerConfig resolved = vanilla.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
+        assertEquals(SpawnerConfig.Kind.VANILLA, resolved.kind());
+        assertEquals(3, resolved.effectiveMinMobs(), "and the band still reaches it");
+        assertEquals(5, resolved.clampedMaxMobs());
+    }
+
     private static MotifConfigFragment fragment(List<MobSetBand> table) {
         return new MotifConfigFragment(Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), List.of(), Optional.of(table));
