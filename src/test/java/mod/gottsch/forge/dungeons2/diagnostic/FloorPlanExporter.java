@@ -523,6 +523,7 @@ public final class FloorPlanExporter {
                 .forEach(e -> sb.append(String.format("    %-58s %6d%n", e.getKey(), e.getValue())));
 
         sb.append(wallOwnership());
+        sb.append(corridorWallOwnership().format());
         sb.append(sealedDoorways());
         return sb.toString();
     }
@@ -600,6 +601,151 @@ public final class FloorPlanExporter {
     }
 
     /**
+     * Ownership of the wall faces a player can see <em>from inside a corridor</em> &mdash; the
+     * corridor-side counterpart of {@link #wallOwnership()}, which asks the same question from
+     * inside a room.
+     *
+     * <h2>What counts as a visible face</h2>
+     * <p>A cell whose winning write is air and whose winner is a <strong>corridor</strong> piece is
+     * passage space. Every solid cell orthogonally adjacent to one, at the same Y, presents a face
+     * to that passage, and is credited to whoever won <em>that</em> cell. Air-owner rather than
+     * geometry is what separates a passage from a room interior: a room writes its own interior air,
+     * so its cells never enter the count, while a corridor cell that happens to lie inside a room's
+     * box does &mdash; which is exactly the shared wall the measurement is about.</p>
+     *
+     * <p>Rows are counted from {@code floorY}. <strong>Row 0 cannot appear</strong>: it is the
+     * corridor's own walking surface, so no air cell sits there and nothing at that row faces the
+     * passage. That is the same finding {@code CorridorWallRowVisibilityProbe} reached from the
+     * other direction &mdash; a {@code bottom}-anchored course lands on row 0 and is buried &mdash;
+     * arrived at here by counting faces rather than cells.</p>
+     */
+    public Faces corridorWallOwnership() {
+        build();
+        Faces faces = new Faces();
+        for (FloorLayout floor : layout.getFloors()) {
+            Map<Long, CellWrites> floorCells = cells.get(floor.getFloorY());
+            List<Owner> floorOwners = owners.get(floor.getFloorY());
+            if (floorCells == null || floorOwners == null) {
+                continue;
+            }
+            for (Map.Entry<Long, CellWrites> e : floorCells.entrySet()) {
+                CellWrites cell = e.getValue();
+                if (!isAir(blockName(cell.winnerBlock()))
+                        || !"corridor".equals(floorOwners.get(cell.winnerOwner()).kind())) {
+                    continue;
+                }
+                int x = unpackX(e.getKey());
+                int y = unpackY(e.getKey());
+                int z = unpackZ(e.getKey());
+                int row = y - floor.getFloorY();
+                for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                    CellWrites neighbour = floorCells.get(key(x + d[0], y, z + d[1]));
+                    if (neighbour == null) {
+                        // Never written by any piece: untouched stone, not a face anyone authored.
+                        faces.unwritten++;
+                        continue;
+                    }
+                    String block = blockName(neighbour.winnerBlock());
+                    if (isAir(block)) {
+                        continue;
+                    }
+                    faces.count(floorOwners.get(neighbour.winnerOwner()).kind(), row);
+                    // The mismatch half of the step-5 question: this face is visible from the
+                    // passage, the corridor wrote it too, and something else won with a different
+                    // block. That -- not ownership -- is what a player reads as a break in the
+                    // styling, and it is why the corridor default was set to the room baseline.
+                    for (int[] w : neighbour.writes) {
+                        if ("corridor".equals(floorOwners.get(w[0]).kind())) {
+                            faces.corridorAlsoWrote++;
+                            if (w[1] != neighbour.winnerBlock()) {
+                                faces.mismatched++;
+                                faces.mismatches.merge(
+                                        blockName(w[1]) + " -> " + block, 1L, Long::sum);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return faces;
+    }
+
+    /** Tallies for {@link #corridorWallOwnership()}; addable so a probe can pool many dungeons. */
+    public static final class Faces {
+        public long corridor;
+        public long room;
+        public long door;
+        /** Adjacent cells no piece ever wrote &mdash; reported so the denominator is auditable. */
+        public long unwritten;
+        /** Visible faces the corridor also wrote, whoever won them. */
+        public long corridorAlsoWrote;
+        /** ...of those, the ones won by a DIFFERENT block: the visible styling break. */
+        public long mismatched;
+        /** corridor's block -> winning block, for the mismatched faces. */
+        public final Map<String, Long> mismatches = new HashMap<>();
+        /** row offset from floorY -> {corridor, room, door}. */
+        public final Map<Integer, long[]> byRow = new TreeMap<>();
+
+        private void count(String kind, int row) {
+            long[] tally = byRow.computeIfAbsent(row, r -> new long[3]);
+            switch (kind) {
+                case "corridor" -> { corridor++; tally[0]++; }
+                case "door" -> { door++; tally[2]++; }
+                default -> { room++; tally[1]++; }
+            }
+        }
+
+        public long total() {
+            return corridor + room + door;
+        }
+
+        public void add(Faces other) {
+            corridor += other.corridor;
+            room += other.room;
+            door += other.door;
+            unwritten += other.unwritten;
+            corridorAlsoWrote += other.corridorAlsoWrote;
+            mismatched += other.mismatched;
+            other.mismatches.forEach((k, v) -> mismatches.merge(k, v, Long::sum));
+            other.byRow.forEach((row, t) -> {
+                long[] mine = byRow.computeIfAbsent(row, r -> new long[3]);
+                for (int i = 0; i < 3; i++) {
+                    mine[i] += t[i];
+                }
+            });
+        }
+
+        public String format() {
+            long total = total();
+            if (total == 0) {
+                return "  corridor-visible wall faces: none%n".formatted();
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("  corridor-visible wall faces: %d%n"
+                            + "    corridor %5.1f%%   room %5.1f%%   door %5.1f%%%n",
+                    total, 100.0 * corridor / total, 100.0 * room / total, 100.0 * door / total));
+            sb.append(String.format("    row   faces   corridor      room      door%n"));
+            byRow.forEach((row, t) -> {
+                long rowTotal = t[0] + t[1] + t[2];
+                sb.append(String.format("    %3d %7d   %6.1f%%   %6.1f%%   %6.1f%%%s%n",
+                        row, rowTotal,
+                        100.0 * t[0] / rowTotal, 100.0 * t[1] / rowTotal, 100.0 * t[2] / rowTotal,
+                        row == 0 ? "   <- the corridor's own floor row" : ""));
+            });
+            sb.append(String.format("    of those faces, the corridor also wrote %d (%.1f%%),%n"
+                            + "    and %d (%.1f%% of all visible faces) were won by a DIFFERENT block%n",
+                    corridorAlsoWrote, 100.0 * corridorAlsoWrote / total,
+                    mismatched, 100.0 * mismatched / total));
+            mismatches.entrySet().stream()
+                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                    .limit(8)
+                    .forEach(e -> sb.append(String.format("      %-58s %7d%n", e.getKey(), e.getValue())));
+            return sb.toString();
+        }
+    }
+
+    /**
      * Door cells left solid at the two door-half rows.
      *
      * <p>The room side masks doorways from {@code RoomData#getDoorways}; the corridor side masks
@@ -629,6 +775,14 @@ public final class FloorPlanExporter {
             }
         }
         return String.format("  doorways solid at the door-half rows: %d of %d%n", sealed, checked);
+    }
+
+    /**
+     * Air, and only air. A door is passable but still presents a face to the passage, so
+     * {@link #corridorWallOwnership()} needs the narrower test that {@link #isPassable} is not.
+     */
+    private static boolean isAir(String blockId) {
+        return blockId.endsWith(":air");
     }
 
     /** Whether a block at a door-half row still lets a player through. */
