@@ -86,6 +86,19 @@ public class DungeonsBlocks {
                     .mapColor(MapColor.STONE).strength(3.0F).sound(SoundType.STONE).noLootTable()));
 
     /**
+     * Backlog #48 step 3: the chest authoring marker. Unlike {@link #SPAWNER_MARKER} this one has a
+     * block entity, because which loot table a chest draws is a per-cell decision and a template
+     * holds several chests -- see {@link ChestMarkerBlock}.
+     *
+     * <p>Solid and visible for the same reason the spawner marker is: it must survive to the
+     * processor, and its author has to be able to see it while building.</p>
+     */
+    public static final RegistryObject<Block> CHEST_MARKER = Registration.BLOCKS.register(
+            "chest_marker",
+            () -> new ChestMarkerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD).strength(2.5F).sound(SoundType.WOOD).noLootTable()));
+
+    /**
      * Forces this class to load so the fields above actually register. Called from
      * {@link Registration#init()}; see that method's comment for why a holder nothing references
      * registers nothing at all.

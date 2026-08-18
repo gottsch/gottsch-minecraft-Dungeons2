@@ -57,6 +57,15 @@ public class DungeonsBlockEntities {
 	}
 
 	/**
+	 * Backlog #48 step 3. Carries no behaviour -- it exists so a template can store per-marker
+	 * fields and {@code ChestMarkerProcessor} can read them back during placement.
+	 */
+	public static final RegistryObject<BlockEntityType<ChestMarkerBlockEntity>> CHEST_MARKER =
+			Registration.BLOCK_ENTITIES.register("chest_marker",
+					() -> BlockEntityType.Builder.of(ChestMarkerBlockEntity::new,
+							DungeonsBlocks.CHEST_MARKER.get()).build(null));
+
+	/**
 	 * Forces this class to load so the fields above actually register. Called from
 	 * {@link Registration#init()}.
 	 */

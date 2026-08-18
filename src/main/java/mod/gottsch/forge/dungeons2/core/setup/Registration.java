@@ -119,6 +119,18 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@link mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor}. */
+	public static final String CHEST_PROCESSOR_NAME = "chest";
+
+	/** Backlog #48 step 3: turns an authored {@code dungeons2:chest_marker} into a chest with loot. */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor>> CHEST_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(CHEST_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor
+								.codec(() -> Registration.CHEST_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
 	public static final RegistryObject<StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {

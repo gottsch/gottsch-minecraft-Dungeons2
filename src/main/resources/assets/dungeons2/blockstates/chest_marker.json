@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "dungeons2:block/chest_marker" },
+    "facing=south": { "model": "dungeons2:block/chest_marker", "y": 180 },
+    "facing=west":  { "model": "dungeons2:block/chest_marker", "y": 270 },
+    "facing=east":  { "model": "dungeons2:block/chest_marker", "y": 90 }
+  }
+}
