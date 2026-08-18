@@ -108,7 +108,9 @@
           "mobSet": "dungeons2:classic_vermin",
           "weight": 1
         }
-      ]
+      ],
+      "minMobs": 2,
+      "maxMobs": 4
     }
   ],
   "schemes": [

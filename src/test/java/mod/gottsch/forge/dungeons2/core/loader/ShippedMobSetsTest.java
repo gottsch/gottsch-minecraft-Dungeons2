@@ -36,6 +36,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -209,6 +210,77 @@ class ShippedMobSetsTest {
                 "no shipped motif declares a depth band or a scheme-level mobSets list, so this"
                         + " check passed vacuously -- either procedural spawners were removed or a"
                         + " key was renamed");
+    }
+
+    /**
+     * A shipped depth curve must not get <em>easier</em> as it descends.
+     *
+     * <p>Bands may set their own {@code minMobs}/{@code maxMobs}; a band that omits them falls back
+     * to {@link SpawnerConfig#DEFAULT_MIN_MOBS}/{@link SpawnerConfig#DEFAULT_MAX_MOBS}, so the
+     * comparison has to be made on the <em>resolved</em> numbers rather than the declared ones. That
+     * is the whole trap here: declaring counts on the deep band alone reads as an escalation, but
+     * declaring them on the shallow band alone silently makes the depths tamer, and the JSON looks
+     * equally deliberate either way.</p>
+     *
+     * <p>Not a codec rule. A pack is entitled to author a curve that eases off &mdash; a mod whose
+     * deep floors are meant to be sparse and tense is a legitimate thing to build. This pins what
+     * <strong>this</strong> mod ships, which is a curve that escalates.</p>
+     */
+    @Test
+    void theShippedDepthCurveNeverGetsEasierAsItDescends() {
+        List<String> regressions = new ArrayList<>();
+        int declaredCounts = 0;
+
+        for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
+            JsonObject fragment = parse(file).getAsJsonObject();
+            if (!fragment.has("mobSetsByFloorIndex")) {
+                continue;
+            }
+            String where = file.getFileName().toString();
+
+            List<JsonObject> bands = new ArrayList<>();
+            for (JsonElement wrapped : fragment.getAsJsonArray("mobSetsByFloorIndex")) {
+                bands.add(wrapped.getAsJsonObject());
+            }
+            // File order is not authored order -- MobSetBand.forFloor reads the table by
+            // minFloorIndex, so a curve has to be judged in that order too.
+            bands.sort(java.util.Comparator.comparingInt(
+                    band -> band.has("minFloorIndex") ? band.get("minFloorIndex").getAsInt() : 0));
+
+            int previousMin = Integer.MIN_VALUE;
+            int previousMax = Integer.MIN_VALUE;
+            String previousWhere = null;
+            for (JsonObject band : bands) {
+                int start = band.has("minFloorIndex") ? band.get("minFloorIndex").getAsInt() : 0;
+                if (band.has("minMobs") || band.has("maxMobs")) {
+                    declaredCounts++;
+                }
+                int min = band.has("minMobs")
+                        ? band.get("minMobs").getAsInt() : SpawnerConfig.DEFAULT_MIN_MOBS;
+                int max = band.has("maxMobs")
+                        ? band.get("maxMobs").getAsInt() : SpawnerConfig.DEFAULT_MAX_MOBS;
+                String here = where + " / floor " + start + " band (" + min + ".." + max + ")";
+
+                if (previousWhere != null && (min < previousMin || max < previousMax)) {
+                    regressions.add(here + " releases fewer mobs than the shallower "
+                            + previousWhere);
+                }
+                previousMin = min;
+                previousMax = max;
+                previousWhere = here;
+            }
+        }
+
+        org.junit.jupiter.api.Assertions.assertTrue(regressions.isEmpty(),
+                "a shipped depth band gets EASIER as it descends, which is the opposite of what the"
+                        + " table is for. Remember an omitted count resolves to the default ("
+                        + SpawnerConfig.DEFAULT_MIN_MOBS + ".." + SpawnerConfig.DEFAULT_MAX_MOBS
+                        + "), so a shallow band declaring counts can cause this without the deep"
+                        + " band changing at all:\n  " + String.join("\n  ", regressions));
+
+        org.junit.jupiter.api.Assertions.assertTrue(declaredCounts > 0,
+                "no shipped band declares minMobs/maxMobs, so this check passed vacuously -- either"
+                        + " the per-band counts were removed or the keys were renamed");
     }
 
     /**
