@@ -22,12 +22,13 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.block.ChestMarkerBlock;
 import mod.gottsch.forge.dungeons2.core.block.entity.ChestMarkerBlockEntity;
-import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
+import mod.gottsch.forge.dungeons2.core.integration.TreasureIntegration;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -36,6 +37,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProc
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -63,12 +66,24 @@ import java.util.function.Supplier;
  * chest in the same template would be. The author orients the marker; the pool's rotation does the
  * rest.</p>
  *
- * <p>{@code treasure} on the marker is read by {@link ChestMarkerBlockEntity} and <strong>not acted
- * on here</strong> &mdash; that is #48 step 4. A template may already carry it.</p>
+ * <h2>The Treasure2 branch, per marker</h2>
+ * <p>A marker with {@code treasure: true} asks Treasure2 for a real chest &mdash; its rarity draw,
+ * its chest block, its locks, its table, and its cache entry. Everything else falls through to the
+ * ordinary chest above, so a template can hold three plain chests and one Treasure2 boss chest and
+ * says so in one line. With Treasure2 absent the flag is inert and every marker takes the D2 route,
+ * which is why {@code lootTable} is still worth authoring on a {@code treasure} marker: it is what
+ * that chest holds when the mod is not installed.</p>
+ *
+ * <p><strong>This processor is deliberately NOT {@code LevelIndependentProcessor}.</strong> It was,
+ * until the Treasure2 branch: {@code TreasureApi.generateChest} reads the level (the fluid state
+ * under the chest, and the biome it records), so the promise that interface makes &mdash; "reads
+ * nothing but the block handed to it, so it is safe to run unclipped over a whole piece" &mdash;
+ * stopped being true. Leaving it on would let a pack that put this processor in a weathering list
+ * read outside the chunk box during worldgen, which is illegal. See {@code PieceProcessors}.</p>
  *
  * @author Mark Gottschling on Aug 18, 2026
  */
-public class ChestMarkerProcessor extends StructureProcessor implements LevelIndependentProcessor {
+public class ChestMarkerProcessor extends StructureProcessor {
 
     static final ResourceLocation DEFAULT_MARKER_BLOCK =
             new ResourceLocation(Dungeons.MOD_ID, "chest_marker");
@@ -125,6 +140,21 @@ public class ChestMarkerProcessor extends StructureProcessor implements LevelInd
             return current;
         }
 
+        // Treasure2 first, when this individual marker asked for it. Empty means the mod is absent
+        // (or could not build one), and the fall-through below is then the whole point rather than a
+        // failure -- the dungeon has to generate the same shape either way.
+        if (wantsTreasureChest(current)) {
+            Direction facing = markerFacing(current, settings);
+            Optional<StructureTemplate.StructureBlockInfo> treasure =
+                    TreasureIntegration.generateChest(level, current.pos(), facing,
+                            settings.getRandom(current.pos()));
+            if (treasure.isPresent()) {
+                Dungeons.LOGGER.debug("[D2-CHEST] {} -> treasure2 chest at {}",
+                        markerBlock, current.pos());
+                return treasure.get();
+            }
+        }
+
         BlockState chest = chestState(current, settings);
         if (chest == null) {
             Dungeons.LOGGER.warn("[D2-CHEST] chest block {} does not exist; leaving the marker at {}",
@@ -142,6 +172,46 @@ public class ChestMarkerProcessor extends StructureProcessor implements LevelInd
         Dungeons.LOGGER.debug("[D2-CHEST] {} -> {} at {} (table {})",
                 markerBlock, chestBlock, current.pos(), table);
         return new StructureTemplate.StructureBlockInfo(current.pos(), chest, tag);
+    }
+
+    /** Whether this individual marker opted in to a Treasure2 chest. */
+    private static boolean wantsTreasureChest(StructureTemplate.StructureBlockInfo current) {
+        CompoundTag nbt = current.nbt();
+        return nbt != null && nbt.getBoolean(ChestMarkerBlockEntity.TREASURE);
+    }
+
+    /** The marker's authored facing, rotated by the placement. */
+    private static Direction markerFacing(StructureTemplate.StructureBlockInfo current,
+                                          StructurePlaceSettings settings) {
+        return current.state().hasProperty(ChestMarkerBlock.FACING)
+                ? settings.getRotation().rotate(current.state().getValue(ChestMarkerBlock.FACING))
+                : Direction.NORTH;
+    }
+
+    /**
+     * Completes the cache entry for every Treasure2 chest this processor placed.
+     *
+     * <p>{@code processBlock} only has a {@link LevelReader}, which cannot name its dimension, so a
+     * Treasure2 chest is cached without one and stays that way unless this runs &mdash; the contract
+     * {@code TreasureApi.generateChest} documents. Scanning the processed blocks rather than
+     * remembering positions keeps this stateless, which matters because a structure processor
+     * instance is shared across placements.</p>
+     */
+    @Override
+    public List<StructureTemplate.StructureBlockInfo> finalizeProcessing(
+            ServerLevelAccessor level, BlockPos piecePos, BlockPos originalPos,
+            List<StructureTemplate.StructureBlockInfo> blocks,
+            List<StructureTemplate.StructureBlockInfo> processedBlocks,
+            StructurePlaceSettings settings) {
+
+        if (TreasureIntegration.isLoaded()) {
+            for (StructureTemplate.StructureBlockInfo info : processedBlocks) {
+                if (TreasureIntegration.isTreasureChest(info.state())) {
+                    TreasureIntegration.finalizeChest(level, info.pos());
+                }
+            }
+        }
+        return super.finalizeProcessing(level, piecePos, originalPos, blocks, processedBlocks, settings);
     }
 
     /** The chest state, facing where the marker faced, rotated by the placement. */
