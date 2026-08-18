@@ -105,6 +105,12 @@ dependencies {
     // gottsch's Monster Manual (gmm) - shared mob base-class/asset library. It REGISTERS NOTHING;
     // this mod registers the mobs it wants under its own namespace (see DungeonsEntities).
     implementation fg.deobf("gottsch:monster-manual:[1.20.1-1.0.1,1.20.1-2.0.0)")
+    // Treasure2 - OPTIONAL soft dependency (backlog #48). compileOnly, NOT implementation: a chest
+    // marker can opt in to a real Treasure2 chest, and the dungeon has to generate perfectly well
+    // without the mod installed, so no Treasure2 class may be loaded unless
+    // ModList.get().isLoaded("treasure2") says it is there. Add a runtimeOnly line temporarily if you
+    // want to exercise the integration in dev.
+    compileOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).

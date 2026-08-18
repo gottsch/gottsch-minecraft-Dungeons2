@@ -131,15 +131,63 @@ import java.util.Optional;
  *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record RoomScheme(String name, int weight, int minHeight, int minSize,
-                         Optional<Integer> maxHeight, Optional<Integer> maxSize,
+public record RoomScheme(String name, int weight, SizeGate gate,
                          Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                          Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
                          Optional<PillarPatternEntry> pillars,
                          Optional<PlatformPatternEntry> platforms,
                          Optional<SpawnerConfig> spawners,
+                         Optional<ChestConfig> chests,
                          FloorRange floors,
                          Optional<String> parent, boolean isAbstract) {
+
+    /**
+     * The scheme's own eligibility range, folded into a {@link SizeGate} when the {@code chests}
+     * slot took the record past DFU's 16-argument ceiling ({@code RecordCodecBuilder.group} stops
+     * at {@code Products.P16}). The four fields were already exactly a {@code SizeGate}; they are
+     * simply named as one now.
+     *
+     * <p><strong>No JSON changed.</strong> {@code SizeGate.MAP_CODEC} is a {@code MapCodec}, so
+     * {@code minHeight}/{@code minSize}/{@code maxHeight}/{@code maxSize} stay flat keys on the
+     * scheme object exactly as before, and the four accessors below keep the old names working. A
+     * pack sees nothing.</p>
+     */
+    public int minHeight() {
+        return gate.minHeight();
+    }
+
+    /** See {@link #minHeight}. */
+    public int minSize() {
+        return gate.minSize();
+    }
+
+    /** See {@link #minHeight}. */
+    public Optional<Integer> maxHeight() {
+        return gate.maxHeight();
+    }
+
+    /** See {@link #minHeight}. */
+    public Optional<Integer> maxSize() {
+        return gate.maxSize();
+    }
+
+    /**
+     * The pre-fold canonical shape, kept as a constructor so every existing caller -- and there are
+     * eighteen -- goes on compiling unchanged.
+     */
+    public RoomScheme(String name, int weight, int minHeight, int minSize,
+                      Optional<Integer> maxHeight, Optional<Integer> maxSize,
+                      Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                      Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
+                      Optional<PillarPatternEntry> pillars,
+                      Optional<PlatformPatternEntry> platforms,
+                      Optional<SpawnerConfig> spawners,
+                      FloorRange floors,
+                      Optional<String> parent, boolean isAbstract) {
+        this(name, weight, new SizeGate(minHeight, minSize, maxHeight, maxSize),
+                floor, wall, ceiling, pots, pillars, platforms, spawners, Optional.empty(),
+                floors, parent, isAbstract);
+    }
 
     /** The entrance-floor index; 0, and named so the arithmetic in a gate reads as depth. */
     public int minFloorIndex() {
@@ -210,16 +258,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codec.STRING.fieldOf("name").forGetter(RoomScheme::name),
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                     .forGetter(RoomScheme::weight),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minHeight", 0)
-                    .forGetter(RoomScheme::minHeight),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minSize", 0)
-                    .forGetter(RoomScheme::minSize),
-            // intRange(1, ..) not (0, ..): a bound of 0 fits no room the planner builds, so it can
-            // only ever be a mistake, and a range codec turns it into a load error for free.
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxHeight")
-                    .forGetter(RoomScheme::maxHeight),
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxSize")
-                    .forGetter(RoomScheme::maxSize),
+            SizeGate.MAP_CODEC.forGetter(RoomScheme::gate),
             Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "floor").forGetter(RoomScheme::floor),
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "wall").forGetter(RoomScheme::wall),
             Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "ceiling").forGetter(RoomScheme::ceiling),
@@ -227,11 +266,13 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
             Codecs.strictOptionalFieldOf(PillarPatternEntry.CODEC, "pillars").forGetter(RoomScheme::pillars),
             Codecs.strictOptionalFieldOf(PlatformPatternEntry.CODEC, "platforms").forGetter(RoomScheme::platforms),
             Codecs.strictOptionalFieldOf(SpawnerConfig.CODEC, "spawners").forGetter(RoomScheme::spawners),
+            Codecs.strictOptionalFieldOf(ChestConfig.CODEC, "chests").forGetter(RoomScheme::chests),
             // The depth axis, flattened into minFloorIndex/maxFloorIndex keys. Spelled that way
             // rather than minFloor/minDepth because a scheme object already has a "floor" key
             // meaning the floor SURFACE pattern, and two unrelated senses of "floor" one line apart
             // is how an author misreads a file. One group argument rather than two because this
-            // record is at DFU's 16-argument ceiling -- see FloorRange.
+            // record kept hitting DFU's 16-argument ceiling -- see FloorRange, and see SizeGate
+            // above, which is the fold the chests slot forced.
             FloorRange.MAP_CODEC.forGetter(RoomScheme::floors),
             Codecs.strictOptionalFieldOf(Codec.STRING, "extends").forGetter(RoomScheme::parent),
             Codecs.strictOptionalFieldOf(Codec.BOOL, "abstract", false).forGetter(RoomScheme::isAbstract)
@@ -266,7 +307,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
      * the only thing a dumped scheme carries to say where half of it came from.</p>
      */
     public RoomScheme inheritFrom(RoomScheme parentScheme) {
-        return new RoomScheme(name, weight, minHeight, minSize, maxHeight, maxSize,
+        return new RoomScheme(name, weight, gate,
                 floor.or(parentScheme::floor),
                 wall.or(parentScheme::wall),
                 ceiling.or(parentScheme::ceiling),
@@ -274,6 +315,7 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
                 pillars.or(parentScheme::pillars),
                 platforms.or(parentScheme::platforms),
                 spawners.or(parentScheme::spawners),
+                chests.or(parentScheme::chests),
                 floors,
                 parent, isAbstract);
     }
@@ -294,14 +336,14 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
         if (scheme.parent.map(scheme.name::equals).orElse(false)) {
             return DataResult.error(() -> "scheme '" + scheme.name + "': extends itself");
         }
-        if (scheme.maxHeight.isPresent() && scheme.maxHeight.get() < scheme.minHeight) {
+        if (scheme.maxHeight().isPresent() && scheme.maxHeight().get() < scheme.minHeight()) {
             return DataResult.error(() -> "scheme '" + scheme.name + "': maxHeight "
-                    + scheme.maxHeight.get() + " is below minHeight " + scheme.minHeight
+                    + scheme.maxHeight().get() + " is below minHeight " + scheme.minHeight()
                     + ", so it fits no room at all");
         }
-        if (scheme.maxSize.isPresent() && scheme.maxSize.get() < scheme.minSize) {
+        if (scheme.maxSize().isPresent() && scheme.maxSize().get() < scheme.minSize()) {
             return DataResult.error(() -> "scheme '" + scheme.name + "': maxSize "
-                    + scheme.maxSize.get() + " is below minSize " + scheme.minSize
+                    + scheme.maxSize().get() + " is below minSize " + scheme.minSize()
                     + ", so it fits no room at all");
         }
         // The element gates are validated from here rather than from inside SizeGate's own map
@@ -373,6 +415,11 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
     }
 
     /** See {@link #floorFor}. */
+    public Optional<ChestConfig> chestsFor(int width, int depth, int height) {
+        return chests.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /** See {@link #chestsFor}. */
     public Optional<SpawnerConfig> spawnersFor(int width, int depth, int height) {
         return spawners.filter(entry -> entry.gate().fits(width, depth, height));
     }
@@ -437,10 +484,8 @@ public record RoomScheme(String name, int weight, int minHeight, int minSize,
     }
 
     public boolean fits(int width, int depth, int height) {
-        int size = Math.min(width, depth);
-        return height >= minHeight
-                && size >= minSize
-                && maxHeight.map(max -> height <= max).orElse(true)
-                && maxSize.map(max -> size <= max).orElse(true);
+        // Delegated since the fold: this method and SizeGate#fits were the same four comparisons
+        // written twice, which is exactly the drift the fold removes.
+        return gate.fits(width, depth, height);
     }
 }

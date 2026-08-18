@@ -90,3 +90,15 @@ mandatory=true
 versionRange="[1.0.1,2.0.0)"
 ordering="AFTER"
 side="BOTH"
+
+# Treasure2 (treasure2) - OPTIONAL. Backlog #48: a chest marker can opt in to a real Treasure2 chest
+# per marker (the boss chest), and everything else falls back to this mod's own chest. mandatory=false
+# so the dungeon still generates without it, and AFTER for the same reason as the three above: the
+# API is called during worldgen, so Treasure2 must have registered by then. Compiled against
+# compileOnly, so every call site is guarded by ModList.get().isLoaded("treasure2").
+[[dependencies.dungeons2]]
+modId="treasure2"
+mandatory=false
+versionRange="[4.1.0,5.0.0)"
+ordering="AFTER"
+side="BOTH"

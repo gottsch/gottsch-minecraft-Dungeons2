@@ -167,6 +167,13 @@ public class BasicRoomGenerator implements IRoomGenerator {
                         spawners.resolvedAgainst(motifConfig.bandFor(floorIndex)),
                         taken, random, blocks)));
 
+        // Chests before pots and claiming their cells, for a blunter reason than the spawners':
+        // a chest is a SOLID block, so a pot entity spawned in the same cell stands inside it and,
+        // having gravity, falls and shatters as soon as the chunk ticks.
+        scheme.chestsFor(width, depth, height).ifPresent(chests ->
+                taken.addAll(RoomChestGenerator.placeChests(room, floorY, chests, taken, random,
+                        blocks)));
+
         scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
     }
