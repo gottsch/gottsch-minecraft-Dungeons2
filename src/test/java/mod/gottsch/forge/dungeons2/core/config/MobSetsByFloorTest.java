@@ -204,6 +204,125 @@ class MobSetsByFloorTest {
         assertEquals(List.of(VERMIN), names(merged.mobSetsFor(0)));
     }
 
+    // ---- Per-band mob counts -------------------------------------------------------------
+    //
+    // Without these a band could change WHAT spawns but never HOW MANY, so "3-5 on the deep
+    // floors" needed a near-duplicate scheme per band -- the duplication the table exists to
+    // remove. Precedence is scheme's own value, then the band's, then the built-in default.
+
+    private static MobSetBand countingBand(int minFloorIndex, int minMobs, int maxMobs) {
+        return new MobSetBand(minFloorIndex,
+                List.of(new SpawnerConfig.MobSetEntry(DEEP, 1)),
+                Optional.of(minMobs), Optional.of(maxMobs));
+    }
+
+    /** A slot that states no counts takes the band's. */
+    @Test
+    void aBandSuppliesTheMobCountWhenTheSchemeStatesNone() {
+        SpawnerConfig deferring = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minCount\":1,\"maxCount\":1}"))
+                .result().orElseThrow();
+        assertTrue(deferring.minMobs().isEmpty(), "the slot should state no count, not a defaulted one");
+
+        SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
+        assertEquals(3, resolved.effectiveMinMobs());
+        assertEquals(5, resolved.clampedMaxMobs());
+    }
+
+    /** The scheme's own count wins -- an author who wrote a number meant it at every depth. */
+    @Test
+    void aSchemeThatStatesItsOwnCountOverridesTheBand() {
+        SpawnerConfig owning = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minMobs\":1,\"maxMobs\":2}"))
+                .result().orElseThrow();
+
+        SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
+        assertEquals(1, resolved.effectiveMinMobs());
+        assertEquals(2, resolved.clampedMaxMobs());
+    }
+
+    /**
+     * The two axes are independent: a scheme pinned to its own mob SETS still gets the band's
+     * counts. "Which mobs" and "how many" are separate authoring decisions, so overriding one must
+     * not silently opt out of the other.
+     */
+    @Test
+    void aSchemeWithItsOwnSetsStillTakesTheBandsCount() {
+        SpawnerConfig owningSets = new SpawnerConfig(VERMIN);
+        SpawnerConfig resolved = owningSets.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
+
+        assertEquals(List.of(VERMIN),
+                resolved.declaredMobSets().stream().map(SpawnerConfig.MobSetEntry::mobSet).toList(),
+                "its own sets must survive");
+        assertEquals(3, resolved.effectiveMinMobs(), "but the band still sets the crowd size");
+        assertEquals(5, resolved.clampedMaxMobs());
+    }
+
+    /** Neither speaks -> the built-in default, unchanged from before the band could carry counts. */
+    @Test
+    void withNeitherASchemeNorABandCountTheDefaultStands() {
+        SpawnerConfig deferring = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .result().orElseThrow();
+
+        SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(band(0, DEEP)));
+        assertEquals(SpawnerConfig.DEFAULT_MIN_MOBS, resolved.effectiveMinMobs());
+        assertEquals(SpawnerConfig.DEFAULT_MAX_MOBS, resolved.clampedMaxMobs());
+    }
+
+    /**
+     * A band restating the default is NOT the same as a band saying nothing, and this is the whole
+     * reason the field is an Optional. The first overrides a scheme that stated nothing; the second
+     * leaves it alone. Here they happen to agree in value -- what differs is that the band's
+     * presence is observable.
+     */
+    @Test
+    void aBandStatingNoCountLeavesTheSchemesOwnAlone() {
+        SpawnerConfig owning = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minMobs\":4,\"maxMobs\":6}"))
+                .result().orElseThrow();
+
+        SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(band(0, DEEP)));
+        assertEquals(4, resolved.effectiveMinMobs());
+        assertEquals(6, resolved.clampedMaxMobs());
+    }
+
+    /** An inverted band range clamps rather than failing -- nonsense, but not ambiguous. */
+    @Test
+    void anInvertedBandRangeClamps() {
+        SpawnerConfig deferring = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .result().orElseThrow();
+
+        SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(countingBand(0, 5, 2)));
+        assertEquals(5, resolved.effectiveMinMobs());
+        assertEquals(5, resolved.clampedMaxMobs(), "max should clamp up to min, as the scheme slot does");
+    }
+
+    /** The counts are real datapack keys, and the band's schema stays closed around them. */
+    @Test
+    void aBandRoundTripsItsCountsAndRejectsAnUnknownKey() {
+        JsonElement json = JsonParser.parseString(
+                "{\"minFloorIndex\":2,\"mobSets\":[{\"mobSet\":\"" + DEEP + "\"}],"
+                        + "\"minMobs\":3,\"maxMobs\":5}");
+        MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
+        assertEquals(Optional.of(3), decoded.minMobs());
+        assertEquals(Optional.of(5), decoded.maxMobs());
+
+        DataResult<MobSetBand> typo = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"mobSets\":[{\"mobSet\":\"" + DEEP + "\"}],\"minMob\":3}"));
+        assertTrue(typo.error().isPresent(), "a misspelled count key must not be silently ignored");
+    }
+
+    /** A band omitting the counts decodes to absent, not to the defaults. */
+    @Test
+    void aBandWithNoCountsDecodesToAbsent() {
+        MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"mobSets\":[{\"mobSet\":\"" + DEEP + "\"}]}")).result().orElseThrow();
+        assertTrue(decoded.minMobs().isEmpty());
+        assertTrue(decoded.maxMobs().isEmpty());
+    }
+
     private static MotifConfigFragment fragment(List<MobSetBand> table) {
         return new MotifConfigFragment(Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), List.of(), Optional.of(table));

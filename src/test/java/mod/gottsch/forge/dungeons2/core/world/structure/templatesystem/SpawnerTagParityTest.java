@@ -144,8 +144,12 @@ class SpawnerTagParityTest {
                 })
                 .spawnerTag();
 
+        // effectiveMinMobs(), not minMobs(): the record component answers "what did the author
+        // write" and is deliberately EMPTY here, because a scheme stating no count defers to the
+        // floor's band before it falls back to this default. The resolved value is what the
+        // processor's own default has to agree with.
         SpawnerConfig defaults = new SpawnerConfig(MOB_SET);
-        assertEquals(authored.getInt("minMobs"), defaults.minMobs());
+        assertEquals(authored.getInt("minMobs"), defaults.effectiveMinMobs());
         assertEquals(authored.getInt("maxMobs"), defaults.clampedMaxMobs());
         assertEquals(authored.getDouble("proximity"), defaults.proximity());
     }

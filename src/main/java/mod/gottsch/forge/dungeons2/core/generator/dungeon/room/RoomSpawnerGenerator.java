@@ -156,7 +156,7 @@ public final class RoomSpawnerGenerator {
     public static BlockEntityData spawnerData(SpawnerConfig config, String mobSet, int floorIndex) {
         return new BlockEntityData(SPAWNER_BLOCK)
                 .with(MOB_SET_NAME, mobSet)
-                .with(MIN_MOBS, String.valueOf(config.minMobs()))
+                .with(MIN_MOBS, String.valueOf(config.effectiveMinMobs()))
                 .with(MAX_MOBS, String.valueOf(config.clampedMaxMobs()))
                 .with(PROXIMITY, String.valueOf(config.proximity()))
                 // Stamped at generation and persisted, though nothing reads it yet -- see

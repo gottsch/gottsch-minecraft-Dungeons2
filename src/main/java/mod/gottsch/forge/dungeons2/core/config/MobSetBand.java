@@ -22,6 +22,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * One depth band of the motif's {@code mobSetsByFloorIndex} table: the mob sets a dungeon's spawners
@@ -44,15 +45,41 @@ import java.util.List;
  * floor down, every time. (Note that Stronger Mobs Below's own scaling <em>is</em> keyed on world Y;
  * the two axes coexist deliberately and answer different questions.)</p>
  *
+ * <h2>The band may also change how MANY mobs a spawner releases</h2>
+ * <p>{@code minMobs}/{@code maxMobs} are optional here and, when present, supply the value for any
+ * scheme on those floors that does not state its own. Without them the depth axis could only change
+ * <em>what</em> spawns, never <em>how much</em> &mdash; and the only way to make a deeper floor
+ * release 3&ndash;5 instead of 1&ndash;3 would have been a near-duplicate scheme per band, which is
+ * the exact duplication this table exists to remove.</p>
+ *
+ * <p><strong>Independent of {@code mobSets}, deliberately.</strong> A scheme that names its own sets
+ * still picks up the band's counts, because "which mobs" and "how many" are separate authoring
+ * decisions: a scheme pinned to one set at every depth can still get more crowded as it descends.
+ * Precedence is the same for both, and is the ordinary one &mdash; the scheme's own value wins,
+ * then the band's, then the built-in default.</p>
+ *
  * @author Mark Gottschling on Aug 17, 2026
  */
-public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets) {
+public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets,
+                         Optional<Integer> minMobs, Optional<Integer> maxMobs) {
+
+    /** The shape before per-band mob counts: a band that changes what spawns, not how many. */
+    public MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets) {
+        this(minFloorIndex, mobSets, Optional.empty(), Optional.empty());
+    }
 
     // Codecs.closed -- see RoomScheme.CODEC.
     public static final Codec<MobSetBand> CODEC = Codecs.closed(RecordCodecBuilder.<MobSetBand>mapCodec(instance -> instance.group(
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minFloorIndex", 0)
                     .forGetter(MobSetBand::minFloorIndex),
-            SpawnerConfig.MobSetEntry.CODEC.listOf().fieldOf("mobSets").forGetter(MobSetBand::mobSets)
+            SpawnerConfig.MobSetEntry.CODEC.listOf().fieldOf("mobSets").forGetter(MobSetBand::mobSets),
+            // Absent means "this band has nothing to say about counts", which is not the same as a
+            // band restating the default -- the first defers to the scheme, the second overrides a
+            // scheme that stated nothing. Same Optional-not-sentinel argument as SpawnerConfig#mobSets.
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "minMobs")
+                    .forGetter(MobSetBand::minMobs),
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxMobs")
+                    .forGetter(MobSetBand::maxMobs)
     ).apply(instance, MobSetBand::new))).flatXmap(MobSetBand::validateBand, MobSetBand::validateBand);
 
     private static DataResult<MobSetBand> validateBand(MobSetBand band) {

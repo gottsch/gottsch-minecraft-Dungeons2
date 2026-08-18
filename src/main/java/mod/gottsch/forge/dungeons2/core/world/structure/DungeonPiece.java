@@ -272,7 +272,16 @@ public abstract class DungeonPiece extends StructurePiece {
             // way to tell "the scheme never rolled it" from "it was placed and does nothing".
             //
             //   grep "D2-SPAWNER" run/logs/dungeons2.log
-            Dungeons.LOGGER.debug("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
+            //
+            // INFO, not debug, and deliberately the only spawner line that is. The mod's own
+            // [logging] level ships at "info", so a debug probe is off for every user AND for the
+            // author until a config file is hand-edited -- which makes "an invisible feature needs
+            // a visible probe" (the lesson this line exists because of) false in practice. Cost is
+            // one line per spawner actually placed, single figures per dungeon; [D2-TOUCH] already
+            // writes an order of magnitude more than that at WARN. The per-tick and block-entity-
+            // creation lines stay at debug, because those fire on chunk load rather than on
+            // generation and would turn a walk through a finished dungeon into a log flood.
+            Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
                     p.getBlockEntityNbt());
         }
 

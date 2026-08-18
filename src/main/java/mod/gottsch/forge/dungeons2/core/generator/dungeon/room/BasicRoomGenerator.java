@@ -160,10 +160,11 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // The depth axis: which mob sets this room's spawners draw from is the FLOOR's decision by
         // default, and only the scheme's if the scheme said so. That is what lets one hall scheme be
         // authored once and get harder the deeper it is rolled, instead of needing a near-duplicate
-        // scheme per depth band. See SpawnerConfig#resolvedAgainst.
+        // scheme per depth band. The band carries the mobs-per-spawn counts too, so a deeper floor
+        // can be more crowded as well as nastier. See SpawnerConfig#resolvedAgainst.
         scheme.spawnersFor(width, depth, height).ifPresent(spawners ->
                 taken.addAll(RoomSpawnerGenerator.placeSpawners(room, floorY, floorIndex,
-                        spawners.resolvedAgainst(motifConfig.mobSetsFor(floorIndex)),
+                        spawners.resolvedAgainst(motifConfig.bandFor(floorIndex)),
                         taken, random, blocks)));
 
         scheme.potsFor(width, depth, height).ifPresent(pots ->

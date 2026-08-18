@@ -106,9 +106,20 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
      * @param floorIndex 0 at the entrance, counting downward
      */
     public List<SpawnerConfig.MobSetEntry> mobSetsFor(int floorIndex) {
-        return MobSetBand.forFloor(mobSetsByFloorIndex, floorIndex)
+        return bandFor(floorIndex)
                 .map(MobSetBand::mobSets)
                 .orElseGet(List::of);
+    }
+
+    /**
+     * The whole band covering {@code floorIndex}, which carries the per-depth mob counts as well as
+     * the sets. Prefer this over {@link #mobSetsFor} where a {@link SpawnerConfig} is being
+     * resolved &mdash; the sets-only view silently drops the counts.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    public Optional<MobSetBand> bandFor(int floorIndex) {
+        return MobSetBand.forFloor(mobSetsByFloorIndex, floorIndex);
     }
 
     /**
