@@ -118,6 +118,15 @@
         "projection": "rigid"
       },
       "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/7x7_chest_test",
+        "processors": "dungeons2:classic_chests",
+        "projection": "rigid"
+      },
+      "weight": 1
     }
   ]
 }

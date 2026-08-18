@@ -95,6 +95,9 @@ class ShippedBlockIdsTest {
             "alternateFloor", "archBlock",
             // processor palettes, and vanilla's own block-state object
             "blocks", "Name",
+            // #48: the chest processor's target block, and a chests slot variant's block. Both are
+            // real block ids, so they are verified here rather than exempted.
+            "chest_block",
             // #10: the spawner processor's authored marker. A real block id, so it belongs here and
             // not in the exempt list -- the sweep verifies dungeons2: ids through our own
             // blockstate files exactly as it does dungeonblocks:, which is what makes a typo in it
@@ -117,7 +120,12 @@ class ShippedBlockIdsTest {
             "mob_set", "mobSet",
             // block TAGS -- the same class of typo, but resolved from datapacks rather than the
             // block registry, so out of scope here. Worth its own sweep if one ever bites.
-            "tags");
+            "tags",
+            // #48: loot table ids, resolved from the loot table registry. "loot_table" is the chest
+            // processor's pool-level default; "lootTable" above is the scheme slot's and the chest
+            // loot band's. A sweep of these against the shipped loot_tables folder would be the
+            // chest equivalent of ShippedMobSetsTest, and does not exist yet.
+            "loot_table");
 
     /** Where a modded block proves it exists, absent a running game. See the class notes. */
     private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";

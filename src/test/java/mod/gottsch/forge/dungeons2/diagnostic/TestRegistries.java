@@ -27,6 +27,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigRegistries;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.MappedRegistry;
@@ -166,6 +167,17 @@ public final class TestRegistries {
         spawnerSelf[0] = spawnerType;
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.SPAWNER_PROCESSOR_NAME), spawnerType);
+
+        // #48's chest marker. Same self-reference dance, and registered here for the same reason:
+        // this class decodes EVERY shipped processor_list, so a type missing from this registry does
+        // not fail one test -- it fails every test that builds a FakeWorldGenLevel, with a stack
+        // that names the JSON rather than the missing type.
+        StructureProcessorType<?>[] chestSelf = new StructureProcessorType<?>[1];
+        Codec<ChestMarkerProcessor> chestCodec = ChestMarkerProcessor.codec(() -> chestSelf[0]);
+        StructureProcessorType<ChestMarkerProcessor> chestType = () -> chestCodec;
+        chestSelf[0] = chestType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.CHEST_PROCESSOR_NAME), chestType);
 
         registry.freeze();
     }
