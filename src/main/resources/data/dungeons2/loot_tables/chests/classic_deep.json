@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_deep",
+  "pools": [
+    {
+      "rolls": { "min": 3.0, "max": 5.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:iron_ingot", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:lapis_lazuli", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 8.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:redstone", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 4.0, "max": 9.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 8 },
+        { "type": "minecraft:item", "name": "minecraft:ender_pearl", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 6 },
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 6,
+          "functions": [ { "function": "minecraft:enchant_randomly" } ] },
+        { "type": "minecraft:item", "name": "minecraft:obsidian", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] }
+      ]
+    }
+  ]
+}

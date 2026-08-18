@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_hoard",
+  "pools": [
+    {
+      "rolls": { "min": 3.0, "max": 5.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 8.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_randomly" } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_golden_apple", "weight": 2 },
+        { "type": "minecraft:item", "name": "minecraft:diamond_sword", "weight": 4,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 15.0, "max": 25.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_chestplate", "weight": 4,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 15.0, "max": 25.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:experience_bottle", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 8.0 } } ] }
+      ]
+    }
+  ]
+}

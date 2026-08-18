@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_shallow",
+  "pools": [
+    {
+      "rolls": { "min": 2.0, "max": 4.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:bread", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:torch", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:coal", "weight": 18,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_nugget", "weight": 15,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:string", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_ingot", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:leather", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:wheat", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:bucket", "weight": 4 },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 2 }
+      ]
+    }
+  ]
+}

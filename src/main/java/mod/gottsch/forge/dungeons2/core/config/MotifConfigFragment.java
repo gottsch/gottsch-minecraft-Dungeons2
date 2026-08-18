@@ -58,21 +58,32 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                                   Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                   Optional<FloorConfig> floor, List<RoomScheme> schemes,
                                   Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                                  Optional<List<ChestLootBand>> chestLootByFloorIndex,
                                   Map<String, TemplateLimit> templateLimits) {
+
+    /** The shape before {@code chestLootByFloorIndex}. */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                               Map<String, TemplateLimit> templateLimits) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Optional.empty(),
+                templateLimits);
+    }
 
     /** The shape before {@code templateLimits}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,
                                Optional<List<MobSetBand>> mobSetsByFloorIndex) {
-        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Map.of());
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Optional.empty(), Map.of());
     }
 
     /** The shape before {@code mobSetsByFloorIndex}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes) {
-        this(wall, ceiling, door, corridor, floor, schemes, Optional.empty(), Map.of());
+        this(wall, ceiling, door, corridor, floor, schemes, Optional.empty(), Optional.empty(), Map.of());
     }
 
     public static final Codec<MotifConfigFragment> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -92,6 +103,10 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                             MobSetBand.CODEC.listOf().flatXmap(MobSetBand::validate, MobSetBand::validate),
                             "mobSetsByFloorIndex")
                     .forGetter(MotifConfigFragment::mobSetsByFloorIndex),
+            // Replaced wholesale, exactly like the mob table above and for the same reason: a loot
+            // progression is one coherent curve, not a set of independent entries.
+            Codecs.strictOptionalFieldOf(ChestLootBand.CODEC.listOf(), "chestLootByFloorIndex")
+                    .forGetter(MotifConfigFragment::chestLootByFloorIndex),
             // MERGED BY KEY by a later fragment, not replaced -- the opposite of the depth table
             // one line above, and the difference is what each thing IS. A depth table is one
             // coherent progression, so half of yours spliced into half of mine is a curve nobody
@@ -149,6 +164,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         CorridorConfig corridor = CorridorConfig.DEFAULT;
         FloorConfig floor = FloorConfig.DEFAULT;
         List<MobSetBand> mobSets = List.of();
+        List<ChestLootBand> chestLoot = List.of();
         Map<String, TemplateLimit> templateLimits = new LinkedHashMap<>();
         Map<String, RoomScheme> schemes = new LinkedHashMap<>();
 
@@ -159,6 +175,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             corridor = fragment.corridor().orElse(corridor);
             floor = fragment.floor().orElse(floor);
             mobSets = fragment.mobSetsByFloorIndex().orElse(mobSets);
+            chestLoot = fragment.chestLootByFloorIndex().orElse(chestLoot);
             // put, not putAll-into-a-fresh-map: a later fragment replaces an entry for the same
             // template and leaves every other pack's entries alone.
             templateLimits.putAll(fragment.templateLimits());
@@ -171,7 +188,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
 
         List<RoomScheme> rolled = inherit(schemes, problems);
         return new MotifConfig(wall, ceiling, door, corridor, floor,
-                rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets,
+                rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
                 Map.copyOf(templateLimits));
     }
 

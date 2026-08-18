@@ -83,6 +83,47 @@
     "base": "minecraft:stone_bricks",
     "alternateBase": "minecraft:stone_bricks"
   },
+  "chestLootByFloorIndex": [
+    {
+      "minFloorIndex": 0,
+      "lootTables": [
+        {
+          "lootTable": "dungeons2:chests/classic_shallow",
+          "weight": 9
+        },
+        {
+          "lootTable": "dungeons2:chests/classic_deep",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "minFloorIndex": 2,
+      "lootTables": [
+        {
+          "lootTable": "dungeons2:chests/classic_deep",
+          "weight": 8
+        },
+        {
+          "lootTable": "dungeons2:chests/classic_shallow",
+          "weight": 2
+        }
+      ]
+    },
+    {
+      "minFloorIndex": 4,
+      "lootTables": [
+        {
+          "lootTable": "dungeons2:chests/classic_deep",
+          "weight": 7
+        },
+        {
+          "lootTable": "dungeons2:chests/classic_hoard",
+          "weight": 3
+        }
+      ]
+    }
+  ],
   "mobSetsByFloorIndex": [
     {
       "minFloorIndex": 0,
@@ -234,6 +275,16 @@
       "spawners": {
         "minCount": 0,
         "maxCount": 1
+      },
+      "chests": {
+        "minCount": 0,
+        "maxCount": 1,
+        "variants": [
+          {
+            "block": "minecraft:chest",
+            "weight": 1
+          }
+        ]
       }
     },
     {
@@ -279,6 +330,16 @@
       "spawners": {
         "minCount": 0,
         "maxCount": 1
+      },
+      "chests": {
+        "minCount": 0,
+        "maxCount": 1,
+        "variants": [
+          {
+            "block": "minecraft:chest",
+            "weight": 1
+          }
+        ]
       }
     },
     {
@@ -498,6 +559,16 @@
       "spawners": {
         "minCount": 0,
         "maxCount": 1
+      },
+      "chests": {
+        "minCount": 0,
+        "maxCount": 1,
+        "variants": [
+          {
+            "block": "minecraft:chest",
+            "weight": 1
+          }
+        ]
       }
     },
     {

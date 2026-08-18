@@ -75,19 +75,39 @@ import java.util.Optional;
 public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                           CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                           List<MobSetBand> mobSetsByFloorIndex,
+                          List<ChestLootBand> chestLootByFloorIndex,
                           Map<String, TemplateLimit> templateLimits) {
+
+    /** The shape before {@code chestLootByFloorIndex}: a motif whose chests must name their own tables. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, List.of(),
+                templateLimits);
+    }
+
+    /**
+     * The chest loot band covering {@code floorIndex}. Pair with
+     * {@code ChestConfig#resolvedAgainst}; a scheme naming its own tables keeps them.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    public Optional<ChestLootBand> chestBandFor(int floorIndex) {
+        return ChestLootBand.forFloor(chestLootByFloorIndex, floorIndex);
+    }
 
     /** The shape before {@code mobSetsByFloorIndex}: a motif whose schemes must name their own sets. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes) {
-        this(wall, ceiling, door, corridor, floor, schemes, List.of(), Map.of());
+        this(wall, ceiling, door, corridor, floor, schemes, List.of(), List.of(), Map.of());
     }
 
     /** The shape before {@code templateLimits}: a motif that caps no authored template. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex) {
-        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Map.of());
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, List.of(), Map.of());
     }
 
     /** Used when a motif has no files: stone_bricks everywhere, oak door, always-plain floor. */

@@ -81,6 +81,17 @@ public final class RoomChestGenerator {
             return Set.of();
         }
 
+        // declaredLootTables, not the raw Optional: by this point the caller has resolved the slot
+        // against the motif's depth table (ChestConfig#resolvedAgainst), so an empty list here means
+        // neither the scheme nor the floor had anything to offer. Place NOTHING rather than a chest
+        // with no table -- an empty chest costs the player a walk to find out it was empty, which is
+        // worse than no chest at all. Same call the spawner slot makes for an unresolvable mob set.
+        List<ChestConfig.LootTableEntry> tables = config.declaredLootTables();
+        int totalTableWeight = tables.stream().mapToInt(ChestConfig.LootTableEntry::weight).sum();
+        if (tables.isEmpty() || totalTableWeight <= 0) {
+            return Set.of();
+        }
+
         List<Coords2D> candidates = RoomPropGenerator.eligibleCells(room, occupied);
         if (candidates.isEmpty()) {
             return Set.of();
@@ -106,7 +117,7 @@ public final class RoomChestGenerator {
             // floorY + 1: resting on the floor surface, the same row the pots and spawners use.
             BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
                     pickVariant(variants, totalWeight, random), properties);
-            placement.setBlockEntityNbt(chestData(config, random));
+            placement.setBlockEntityNbt(chestData(pickTable(tables, totalTableWeight, random), random));
             out.add(placement);
             used.add(cell);
         }
@@ -122,10 +133,29 @@ public final class RoomChestGenerator {
      * pots, and it fires roughly once in four billion, which is to say never in testing and
      * eventually in the wild.</p>
      */
-    static BlockEntityData chestData(ChestConfig config, RandomSource random) {
+    static BlockEntityData chestData(String lootTable, RandomSource random) {
         return new BlockEntityData(CHEST_ENTITY)
-                .with(LOOT_TABLE, config.lootTable())
+                .with(LOOT_TABLE, lootTable)
                 .with(LOOT_TABLE_SEED, Long.toString(lootSeed(random)));
+    }
+
+    /**
+     * Weighted draw over the resolved tables, <strong>per chest</strong> rather than once per room.
+     *
+     * <p>Two chests in one room can therefore differ, which is the point of a weighted list: a floor
+     * whose band is "mostly common, occasionally rare" should not turn a two-chest room into two
+     * rare chests on one roll.</p>
+     */
+    static String pickTable(List<ChestConfig.LootTableEntry> tables, int totalWeight,
+                            RandomSource random) {
+        int roll = random.nextInt(totalWeight);
+        for (ChestConfig.LootTableEntry entry : tables) {
+            roll -= entry.weight();
+            if (roll < 0) {
+                return entry.lootTable();
+            }
+        }
+        return tables.get(tables.size() - 1).lootTable();
     }
 
     /** A non-zero seed; see {@link #chestData}. */

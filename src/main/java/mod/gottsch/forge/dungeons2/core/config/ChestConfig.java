@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The {@code chests} scheme slot: how many chests a room gets, which block they are, and what they
@@ -34,10 +35,10 @@ import java.util.List;
  * never had a caller; this is the caller.</p>
  *
  * <h2>Loot</h2>
- * <p>{@code lootTable} is <strong>required</strong>, for the same reason {@code PotConfig} requires
- * it: a chest with no table is an empty chest, and an empty chest in a dungeon reads as a bug that
- * has already eaten the player's time by the time they notice. A required field turns that into a
- * load error.</p>
+ * <p>{@code lootTables} is optional <em>here</em> because the motif's {@link ChestLootBand} table
+ * supplies it by depth; a scheme naming its own wins. What is not optional is that <strong>something</strong>
+ * supplies one: a chest with no table resolves to no chest at all, because an empty chest in a
+ * dungeon reads as a bug that has already eaten the player's time by the time they notice.</p>
  *
  * <p>Unlike a pot's, this must be a <strong>{@code "type": "minecraft:chest"}</strong> table &mdash;
  * the block's own unpack path builds {@code LootParams} with the ORIGIN parameter, not ENTITY. Each
@@ -50,17 +51,72 @@ import java.util.List;
  * because the case for it is the boss chest &mdash; a specific chest in a specific room, not a
  * property of every chest a scheme happens to roll. A procedural slot has no way to say "this one".</p>
  *
- * <p>No depth tiering either: {@code lootTable} is one table, not a table per floor band. #48 step 2
- * adds that, and it should follow {@code MobSetBand}'s shape rather than invent a second one.</p>
+ * <p>Depth tiering IS here as of #48 step 2: see {@link ChestLootBand}, which follows
+ * {@code MobSetBand}'s shape rather than inventing a second one.</p>
  *
  * @author Mark Gottschling on Aug 18, 2026
  */
-public record ChestConfig(int minCount, int maxCount, String lootTable, List<ChestVariant> variants,
-                          SizeGate gate) {
+public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEntry>> lootTables,
+                         List<ChestVariant> variants, SizeGate gate) {
 
     /** Ungated -- placed whenever the scheme is rolled. */
+    public ChestConfig(int minCount, int maxCount, Optional<List<LootTableEntry>> lootTables,
+                       List<ChestVariant> variants) {
+        this(minCount, maxCount, lootTables, variants, SizeGate.UNBOUNDED);
+    }
+
+    /** The single-table form, for a scheme (or a test) naming one table outright. */
     public ChestConfig(int minCount, int maxCount, String lootTable, List<ChestVariant> variants) {
         this(minCount, maxCount, lootTable, variants, SizeGate.UNBOUNDED);
+    }
+
+    /** The single-table form, gated. */
+    public ChestConfig(int minCount, int maxCount, String lootTable, List<ChestVariant> variants,
+                       SizeGate gate) {
+        this(minCount, maxCount, Optional.of(List.of(new LootTableEntry(lootTable, 1))), variants,
+                gate);
+    }
+
+    /**
+     * This config with the motif's depth table filled in where the scheme said nothing.
+     *
+     * <p>The scheme wins when it names its own tables: a treasury room is a treasury at every depth,
+     * and that is the whole reason the field is an {@link Optional} rather than a defaulted value
+     * &mdash; a default cannot tell "the author named this table" from "the author said nothing".
+     * The same argument, and the same shape, as {@code SpawnerConfig#resolvedAgainst}.</p>
+     */
+    public ChestConfig resolvedAgainst(Optional<ChestLootBand> band) {
+        if (band.isEmpty() || lootTables.isPresent()) {
+            return this;
+        }
+        return new ChestConfig(minCount, maxCount, Optional.of(band.get().lootTables()), variants,
+                gate);
+    }
+
+    /**
+     * The tables this config names outright, or empty when it defers to a motif depth table that
+     * had nothing to offer either.
+     *
+     * <p>Empty means <strong>place no chest</strong>, not "place an empty one". The spawner slot
+     * makes the same call for an unresolvable mob set, and for the same reason: the thing with no
+     * contents is worse than the absence of the thing, because the player pays a walk to find out.</p>
+     */
+    public List<LootTableEntry> declaredLootTables() {
+        return lootTables.orElseGet(List::of);
+    }
+
+    /**
+     * One weighted loot table. Weighted rather than a single id so a floor can be "usually the
+     * common table, occasionally something better" without needing a second band &mdash; the same
+     * shape, and the same argument, as {@code SpawnerConfig.MobSetEntry}.
+     */
+    public record LootTableEntry(String lootTable, int weight) {
+        // Codecs.closed -- see RoomScheme.CODEC.
+        public static final Codec<LootTableEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.STRING.fieldOf("lootTable").forGetter(LootTableEntry::lootTable),
+                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
+                        .forGetter(LootTableEntry::weight)
+        ).apply(instance, LootTableEntry::new)));
     }
 
     /**
@@ -91,7 +147,11 @@ public record ChestConfig(int minCount, int maxCount, String lootTable, List<Che
                     .forGetter(ChestConfig::minCount),
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 1)
                     .forGetter(ChestConfig::maxCount),
-            Codec.STRING.fieldOf("lootTable").forGetter(ChestConfig::lootTable),
+            // Optional, and absent means "take the motif's depth table" -- see resolvedAgainst.
+            // A required field here would force every scheme to restate loot it has no opinion on,
+            // which is exactly what the depth axis exists to avoid.
+            Codecs.strictOptionalFieldOf(LootTableEntry.CODEC.listOf(), "lootTables")
+                    .forGetter(ChestConfig::lootTables),
             ChestVariant.CODEC.listOf().fieldOf("variants").forGetter(ChestConfig::variants),
             SizeGate.MAP_CODEC.forGetter(ChestConfig::gate)
     ).apply(instance, ChestConfig::new)));
