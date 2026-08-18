@@ -47,7 +47,6 @@ public class Dungeons {
 	 */
 	public Dungeons() {
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
-		ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
 
 		// register the deferred registries
         Registration.init();
