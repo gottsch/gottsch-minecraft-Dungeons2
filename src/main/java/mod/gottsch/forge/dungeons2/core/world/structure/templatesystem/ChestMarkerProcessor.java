@@ -195,22 +195,32 @@ public class ChestMarkerProcessor extends StructureProcessor {
     }
 
     /**
-     * The facing the chest should end up with &mdash; taken from the marker's state <em>as handed to
-     * this processor</em>, with <strong>no further rotation</strong>.
+     * The facing to emit &mdash; the marker's own, with <strong>no rotation applied here</strong>.
      *
-     * <h2>The double-rotation bug this fixes</h2>
-     * <p>{@code StructureTemplate} rotates every block state <em>before</em> the processors run, so
-     * {@code current.state()} already carries the placed facing, not the authored one. Applying
-     * {@code settings.getRotation()} here rotated it a second time: harmless at {@code NONE}, and
-     * ninety degrees wrong at every other rotation &mdash; which is exactly the shape of the report
-     * ("the chest isn't rotated"), because a chest that is wrong by the rotation looks like a chest
-     * that ignored it.</p>
+     * <h2>Vanilla rotates this processor's OUTPUT, not its input</h2>
+     * <p>Confirmed in game 2026-08-18, by comparing the two ends rather than reasoning about
+     * either. At a {@code CLOCKWISE_90} placement the marker arrived reading {@code south} &mdash;
+     * its authored value, unrotated &mdash; this method emitted {@code south}, and the block that
+     * landed in the world reads {@code facing: west}. South rotated clockwise is west, so the
+     * rotation was applied to what this processor returned.</p>
      *
-     * <p>Treasure2 is the evidence: {@code IChestSubprocessor.process} rotates manually and says why
-     * &mdash; "have to manually rotate chests as they do not extend vanilla chests and aren't
-     * recognized for rotation". A manual rotate is needed only for blocks whose own
-     * {@code rotate()} does not handle their facing. {@link ChestMarkerBlock} overrides
-     * {@code rotate()}, so vanilla had already done the work.</p>
+     * <p>So rotating here produced a <strong>double</strong> rotation: invisible at {@code NONE},
+     * ninety degrees out everywhere else. A chest wrong <em>by</em> the rotation reads as a chest
+     * that ignored it, which is why the bug was reported as "the chest isn't rotated".</p>
+     *
+     * <p>Two wrong explanations preceded the right one, and both were reasoned rather than measured:
+     * first that the rotation simply was not being applied, then that the <em>input</em> arrived
+     * pre-rotated. The log line above disproved the second (the marker reads its authored value at
+     * a rotated placement) and the F3 screen settled the first. <strong>The processor's own log
+     * cannot settle this</strong> &mdash; it prints what this code emits, which is upstream of the
+     * transform in question. Only the placed block can.</p>
+     *
+     * <p>Treasure2 is not a counter-example. {@code IChestSubprocessor.process} rotates manually and
+     * says why: its chests "do not extend vanilla chests and aren't recognized for rotation" &mdash;
+     * i.e. their own {@code rotate()} does not carry their facing, so vanilla's pass over the output
+     * does nothing and T2 must do it itself. {@link ChestMarkerBlock} overrides {@code rotate()},
+     * so for this marker vanilla's pass does the work. Copying T2's code without its condition is
+     * exactly how the double got written.</p>
      */
     private static Direction markerFacing(StructureTemplate.StructureBlockInfo current,
                                           StructurePlaceSettings settings) {
