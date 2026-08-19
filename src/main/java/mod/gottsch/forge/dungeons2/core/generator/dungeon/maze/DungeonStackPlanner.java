@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.maze;
 
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
@@ -96,6 +97,20 @@ public class DungeonStackPlanner {
     /** Max attempts to place a START/END room within a footprint without overlap. */
     private static final int PLACEMENT_ATTEMPTS = 20;
 
+    /**
+     * Overworld's floor, used when no caller supplies one. Worldgen always does &mdash; see
+     * {@code DungeonStructure#findGenerationPoint} &mdash; so this only serves tests and the
+     * floor-plan harness, which have no {@code LevelHeightAccessor} to ask.
+     */
+    private static final int DEFAULT_MIN_BUILD_Y = -64;
+
+    /**
+     * Blocks left clear above {@link #minBuildY}. The overworld's bedrock band occupies the lowest
+     * five layers in a randomised pattern, so a floor slab any lower than this is cutting into
+     * bedrock rather than standing on it.
+     */
+    private static final int BEDROCK_MARGIN = 5;
+
     private final long seed;
     private final ICoords anchor;
     private final int surfaceY;
@@ -106,6 +121,7 @@ public class DungeonStackPlanner {
     private int floorHeight = DEFAULT_FLOOR_HEIGHT;
     private int gapBetweenFloors = DEFAULT_GAP_BETWEEN_FLOORS;
     private int entranceDrop = DEFAULT_ENTRANCE_DROP;
+    private int minBuildY = DEFAULT_MIN_BUILD_Y;
     /**
      * Corridor width in cells, achieved via dilation. This default (3) only
      * applies to callers that never call {@link #withCorridorWidth(int)} (e.g.
@@ -186,6 +202,29 @@ public class DungeonStackPlanner {
     public DungeonStackPlanner withGapBetweenFloors(int gap) {
         this.gapBetweenFloors = gap;
         return this;
+    }
+
+    /**
+     * The world's floor, from {@code LevelHeightAccessor#getMinBuildHeight}. Floors that would
+     * stack below it are dropped &mdash; see the clamp in {@link #plan()}.
+     *
+     * <p>Worth passing rather than assuming: the overworld's -64 is not universal, and a dimension
+     * with a shallower floor would otherwise have dungeons generating into nothing.</p>
+     */
+    public DungeonStackPlanner withMinBuildY(int minBuildY) {
+        this.minBuildY = minBuildY;
+        return this;
+    }
+
+    /**
+     * Floor-to-floor drop: the walking plane of floor {@code i} to that of floor {@code i+1}.
+     *
+     * <p>{@code floorHeight} is the budget above a walking plane and {@code gapBetweenFloors} is the
+     * stone buffer below it, so the two always travel together &mdash; and this is the number a
+     * transition template has to span. 12 with the shipped defaults.</p>
+     */
+    private int pitch() {
+        return floorHeight + gapBetweenFloors;
     }
 
     /**
@@ -633,6 +672,54 @@ public class DungeonStackPlanner {
                 return Optional.empty();
             }
         }
+        // Backlog #50 -- drop the floors that would not fit above the world's floor.
+        //
+        // WHY IT IS HERE AND NOT AT THE ROLL. floorCount was rolled ~80 lines up, before floor 0's Y
+        // was known: on the assembled-entrance path it comes from the entrance's own bottom door
+        // marker, which is not resolved until the branch above. It is tempting to move the roll down
+        // to join this, and it must not move -- rolling in place and then taking a min consumes
+        // exactly the same randomness, so every seed that already fits stays byte-identical and only
+        // the ones that were generating into bedrock change. Moving the roll would relayout every
+        // dungeon in every existing world.
+        //
+        // Everything downstream indexes off floorCount, so shrinking it here is enough: the extra
+        // rolled footprints simply go unused, and the two Y arrays are over-allocated but only ever
+        // read up to floorCount. The transition lists below are sized from it, so this has to happen
+        // before them.
+        int safeBottom = minBuildY + BEDROCK_MARGIN;
+
+        // Floor 0 is not clampable. Its Y is fixed -- by the assembled entrance's bottom door on
+        // the shipped path, by surfaceY on the synthetic one -- so if IT does not clear the bedrock
+        // band there is no shorter dungeon to fall back to, only no dungeon. Declining is the
+        // honest outcome and callers already handle it: an entrance footprint that will not fit
+        // returns empty a few lines above, and the structure simply does not place.
+        //
+        // Needs a surface around Y=9 to trigger at the shipped pitch, so in practice this is a
+        // guard rather than a behaviour, and the shipped biome tag makes it rarer still. It exists
+        // because the alternative is a dungeon buried in bedrock, and because #29's proposed pitch
+        // moves every threshold in this method upward.
+        if (floorFloors[0] < safeBottom) {
+            Dungeons.LOGGER.info(
+                    "[D2-DEPTH] declining to place: floor 0 would sit at Y={}, below the world"
+                            + " floor {} plus {} clear of bedrock (surfaceY {})",
+                    floorFloors[0], minBuildY, BEDROCK_MARGIN, surfaceY);
+            return Optional.empty();
+        }
+
+        int floorsThatFit = 1 + Math.max(0, (floorFloors[0] - safeBottom) / pitch());
+        if (floorsThatFit < floorCount) {
+            // INFO, not debug: the mod's own logging level ships at "info", so a debug line here
+            // would be invisible to the one person who could act on it. This is rare by
+            // construction -- it needs a low surface -- and one line when it happens is the
+            // difference between "that dungeon is short" and knowing why.
+            Dungeons.LOGGER.info(
+                    "[D2-DEPTH] floor count {} -> {} at floor0Y={} (pitch {}, world floor {},"
+                            + " keeping {} clear of bedrock): the full stack would reach {}",
+                    floorCount, Math.max(1, floorsThatFit), floorFloors[0], pitch(), minBuildY,
+                    BEDROCK_MARGIN, floorFloors[0] - (floorCount - 1) * pitch());
+            floorCount = Math.max(1, floorsThatFit);
+        }
+
         for (int i = 1; i < floorCount; i++) {
             floorCeilings[i] = floorFloors[i - 1] - gapBetweenFloors - 1;
             floorFloors[i] = floorCeilings[i] - floorHeight + 1;

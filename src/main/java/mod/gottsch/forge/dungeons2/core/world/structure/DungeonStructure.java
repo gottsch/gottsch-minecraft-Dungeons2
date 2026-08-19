@@ -468,6 +468,10 @@ public class DungeonStructure extends Structure {
                 DungeonGenerationConfigHelper.get(context.registryAccess());
         planner.withCorridorWidth(generationConfig.corridorWidth());
         planner.withRoomTemplateAttempts(generationConfig.roomTemplateAttemptsPerFloor());
+        // #50: the world's floor, so the stack can be shortened rather than generating into (or
+        // below) bedrock in low terrain. From the height accessor rather than a hardcoded -64,
+        // because that number is the overworld's and this structure is not promised to stay there.
+        planner.withMinBuildY(context.heightAccessor().getMinBuildHeight());
         // Hoisted rather than resolved inline: the [D2-SCHEME] logging below needs the same
         // config, and a room's scheme roll must be read from the motif the planner actually ran
         // with or the log would name a scheme the room does not have.
