@@ -149,8 +149,8 @@ public class ChestMarkerProcessor extends StructureProcessor {
                     TreasureIntegration.generateChest(level, current.pos(), facing,
                             settings.getRandom(current.pos()));
             if (treasure.isPresent()) {
-                Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {}",
-                        markerBlock, current.pos().toShortString());
+                Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {} (facing {})",
+                        markerBlock, current.pos().toShortString(), facing);
                 return treasure.get();
             }
         }
@@ -173,8 +173,17 @@ public class ChestMarkerProcessor extends StructureProcessor {
         // level ships at "info", so a debug probe is off for every user AND for whoever is trying to
         // verify the feature -- which is how this line came to be missing from a log that had 214
         // [D2-SPAWNER] lines in it. One line per conversion, at the position it happened.
-        Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {})",
-                markerBlock, chestBlock, current.pos().toShortString(), table);
+        // Facing and rotation are logged because the piece's rotation is NOT the chest's facing, and
+        // only the second one is the thing worth checking. The piece rotation was inferable from the
+        // vector between two markers at known template cells; the facing was inferable from nothing
+        // at all, so verifying it meant walking to the chest. Printing both makes the transform
+        // readable in one line: authored facing, rotation applied, facing that came out.
+        Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {}, authored {} + rot {} -> facing {})",
+                markerBlock, chestBlock, current.pos().toShortString(), table,
+                current.state().hasProperty(ChestMarkerBlock.FACING)
+                        ? current.state().getValue(ChestMarkerBlock.FACING) : "none",
+                settings.getRotation(), chest.hasProperty(ChestMarkerBlock.FACING)
+                        ? chest.getValue(ChestMarkerBlock.FACING) : "none");
         return new StructureTemplate.StructureBlockInfo(current.pos(), chest, tag);
     }
 
