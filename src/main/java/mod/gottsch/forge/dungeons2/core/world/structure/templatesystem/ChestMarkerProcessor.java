@@ -178,8 +178,9 @@ public class ChestMarkerProcessor extends StructureProcessor {
         // vector between two markers at known template cells; the facing was inferable from nothing
         // at all, so verifying it meant walking to the chest. Printing both makes the transform
         // readable in one line: authored facing, rotation applied, facing that came out.
-        Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {}, authored {} + rot {} -> facing {})",
+        Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {}, marker facing {} after rot {} -> chest facing {})",
                 markerBlock, chestBlock, current.pos().toShortString(), table,
+                // NOT the authored facing: StructureTemplate rotated it before we were handed it.
                 current.state().hasProperty(ChestMarkerBlock.FACING)
                         ? current.state().getValue(ChestMarkerBlock.FACING) : "none",
                 settings.getRotation(), chest.hasProperty(ChestMarkerBlock.FACING)
@@ -193,11 +194,28 @@ public class ChestMarkerProcessor extends StructureProcessor {
         return nbt != null && nbt.getBoolean(ChestMarkerBlockEntity.TREASURE);
     }
 
-    /** The marker's authored facing, rotated by the placement. */
+    /**
+     * The facing the chest should end up with &mdash; taken from the marker's state <em>as handed to
+     * this processor</em>, with <strong>no further rotation</strong>.
+     *
+     * <h2>The double-rotation bug this fixes</h2>
+     * <p>{@code StructureTemplate} rotates every block state <em>before</em> the processors run, so
+     * {@code current.state()} already carries the placed facing, not the authored one. Applying
+     * {@code settings.getRotation()} here rotated it a second time: harmless at {@code NONE}, and
+     * ninety degrees wrong at every other rotation &mdash; which is exactly the shape of the report
+     * ("the chest isn't rotated"), because a chest that is wrong by the rotation looks like a chest
+     * that ignored it.</p>
+     *
+     * <p>Treasure2 is the evidence: {@code IChestSubprocessor.process} rotates manually and says why
+     * &mdash; "have to manually rotate chests as they do not extend vanilla chests and aren't
+     * recognized for rotation". A manual rotate is needed only for blocks whose own
+     * {@code rotate()} does not handle their facing. {@link ChestMarkerBlock} overrides
+     * {@code rotate()}, so vanilla had already done the work.</p>
+     */
     private static Direction markerFacing(StructureTemplate.StructureBlockInfo current,
                                           StructurePlaceSettings settings) {
         return current.state().hasProperty(ChestMarkerBlock.FACING)
-                ? settings.getRotation().rotate(current.state().getValue(ChestMarkerBlock.FACING))
+                ? current.state().getValue(ChestMarkerBlock.FACING)
                 : Direction.NORTH;
     }
 
@@ -235,9 +253,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
             return null;
         }
         BlockState state = block.defaultBlockState();
-        Direction facing = current.state().hasProperty(ChestMarkerBlock.FACING)
-                ? settings.getRotation().rotate(current.state().getValue(ChestMarkerBlock.FACING))
-                : Direction.NORTH;
+        Direction facing = markerFacing(current, settings);
         // A chest_block a pack points at might not have FACING at all (a barrel's is a full
         // DirectionProperty, a shulker box has none), so this asks rather than assumes.
         for (var property : state.getProperties()) {
