@@ -111,7 +111,7 @@ dependencies {
     // ModList.get().isLoaded("treasure2") says it is there. Add a runtimeOnly line temporarily if you
     // want to exercise the integration in dev.
     compileOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+//    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).
     testImplementation platform('org.junit:junit-bom:5.10.0')

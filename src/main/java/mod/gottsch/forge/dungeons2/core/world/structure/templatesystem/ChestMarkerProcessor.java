@@ -149,7 +149,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
                     TreasureIntegration.generateChest(level, current.pos(), facing,
                             settings.getRandom(current.pos()));
             if (treasure.isPresent()) {
-                Dungeons.LOGGER.debug("[D2-CHEST] {} -> treasure2 chest at {}",
+                Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {}",
                         markerBlock, current.pos());
                 return treasure.get();
             }
@@ -169,7 +169,11 @@ public class ChestMarkerProcessor extends StructureProcessor {
         // the seed source so one template placed twice in a dungeon does not hold the same items.
         tag.putLong(LOOT_TABLE_SEED_TAG, lootSeed(current.pos()));
 
-        Dungeons.LOGGER.debug("[D2-CHEST] {} -> {} at {} (table {})",
+        // INFO, not debug, and for the reason the spawner probe was promoted: the mod's [logging]
+        // level ships at "info", so a debug probe is off for every user AND for whoever is trying to
+        // verify the feature -- which is how this line came to be missing from a log that had 214
+        // [D2-SPAWNER] lines in it. One line per conversion, at the position it happened.
+        Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {})",
                 markerBlock, chestBlock, current.pos(), table);
         return new StructureTemplate.StructureBlockInfo(current.pos(), chest, tag);
     }

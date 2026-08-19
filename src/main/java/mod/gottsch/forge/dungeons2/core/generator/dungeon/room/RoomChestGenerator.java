@@ -117,7 +117,15 @@ public final class RoomChestGenerator {
             // floorY + 1: resting on the floor surface, the same row the pots and spawners use.
             BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
                     pickVariant(variants, totalWeight, random), properties);
-            placement.setBlockEntityNbt(chestData(pickTable(tables, totalTableWeight, random), random));
+            String table = pickTable(tables, totalTableWeight, random);
+            placement.setBlockEntityNbt(chestData(table, random));
+            // The procedural route's probe, and it is INFO for the same reason the marker route's
+            // is: at the shipped "info" level a debug line is invisible to the person verifying the
+            // feature. Tagged PROC so the two routes can be told apart in one grep -- without it a
+            // chest in a finished dungeon says nothing about which half of #48 produced it.
+            mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info(
+                    "[D2-CHEST] PROC {} at {},{},{} (table {})",
+                    placement.getBlockId(), placement.getX(), placement.getY(), placement.getZ(), table);
             out.add(placement);
             used.add(cell);
         }
