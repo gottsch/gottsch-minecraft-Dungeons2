@@ -20,7 +20,11 @@ package mod.gottsch.forge.dungeons2.core.setup;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.gmm.core.client.model.RatModel;
+import mod.gottsch.forge.gmm.core.client.model.ShriekerModel;
+import mod.gottsch.forge.gmm.core.client.model.VioletFungusModel;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.RatRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.ShriekerRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.VioletFungusRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -52,6 +56,12 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(RatModel.LAYER_LOCATION, RatModel::createBodyLayer);
+        // The fungi do NOT share a layer, despite sharing a look today: VioletFungusModel
+        // delegates to the shrieker's rig for now but owns its own LAYER_LOCATION, so it gets its
+        // own registration and keeps working when GMM gives it the tentacle geometry.
+        event.registerLayerDefinition(ShriekerModel.LAYER_LOCATION, ShriekerModel::createBodyLayer);
+        event.registerLayerDefinition(VioletFungusModel.LAYER_LOCATION,
+                VioletFungusModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -61,6 +71,10 @@ public class ClientSetup {
         // Keep this in step with GIANT_RAT_ENTITY's sized(...) -- they are independent numbers.
         event.registerEntityRenderer(DungeonsEntities.GIANT_RAT_ENTITY.get(),
                 context -> new RatRenderer<>(context, 2.0F));
+        // Unlike the rats these take no scale -- their EntityType box is the size they render at.
+        event.registerEntityRenderer(DungeonsEntities.SHRIEKER_ENTITY.get(), ShriekerRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.VIOLET_FUNGUS_ENTITY.get(),
+                VioletFungusRenderer::new);
     }
 
     private ClientSetup() {}

@@ -778,6 +778,16 @@
       // SPREAD, not to stay put, so none of these pop off in an unlit dungeon.
       // (No tall_grass or large_fern -- those are two blocks high and only the lower half
       // would be placed.)
+      //
+      // The two dungeons2:*_marker entries are NOT blocks that stay. They are the handoff from this
+      // pass, which knows where the dirt ended up, to DungeonPiece, which has a level and can spawn:
+      // each one is swapped for its mob (dungeons2:shrieker / dungeons2:violet_fungus) before it is
+      // ever written. A StructureProcessor returns block states and cannot create an entity, which
+      // is the whole reason they exist -- see DungeonsBlocks#SHRIEKER_MARKER.
+      //
+      // They sit in this list rather than in Java so which fungus grows, and how often relative to
+      // the mushrooms, stays a datapack decision: the pick is uniform over the list, so the fungi
+      // are 2 of 8 entries of the 0.35 that grows at all. A motif that wants none simply omits them.
       "floor_growth": {
         "probability": 0.35,
         "blocks": [
@@ -786,7 +796,9 @@
           "minecraft:moss_carpet",
           "minecraft:grass",
           "minecraft:fern",
-          "minecraft:dead_bush"
+          "minecraft:dead_bush",
+          "dungeons2:shrieker_marker",
+          "dungeons2:violet_fungus_marker"
         ]
       },
       // Underneath a dirt block, where the cell below it is air.

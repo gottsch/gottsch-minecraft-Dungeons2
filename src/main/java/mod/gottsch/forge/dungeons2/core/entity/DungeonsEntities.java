@@ -19,6 +19,8 @@ package mod.gottsch.forge.dungeons2.core.entity;
 
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gmm.core.entity.monster.Rat;
+import mod.gottsch.forge.gmm.core.entity.monster.plant.Shrieker;
+import mod.gottsch.forge.gmm.core.entity.monster.plant.VioletFungus;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -84,6 +86,46 @@ public class DungeonsEntities {
                             .clientTrackingRange(8)
                             .setShouldReceiveVelocityUpdates(true)
                             .build(GIANT_RAT));
+
+    public static final String SHRIEKER = "shrieker";
+    public static final String VIOLET_FUNGUS = "violet_fungus";
+
+    /**
+     * The fungi, placed by the weathering pass rather than spawned (see {@code FungusGrowth}).
+     *
+     * <h2>They are mobs that behave like plants, and that is the whole reason they fit here</h2>
+     * <p>Both are {@code GMMMonster}s, but neither moves: they root themselves on spawn and never
+     * path. That is what makes them placeable as <em>growth</em> — a tuft of something on a patch of
+     * decayed dirt — where an ordinary monster would wander off the cell that justified it.</p>
+     *
+     * <h2>Sized from Dungeon Denizens, deliberately</h2>
+     * <p>{@code 1.3 x 0.85} is the box DD arrived at from the rebuilt Blockbench rig, and it is
+     * <strong>wider than one block</strong> on purpose. That matters here in a way it does not in a
+     * cave: growth lands on any dirt cell, including one against a wall, so a fungus can visually
+     * overlap the wall beside it. That is cosmetic — these have no collision to speak of and no AI
+     * to get stuck — and narrowing the box to fit the grid would make the hitbox disagree with the
+     * model, which is the worse bug of the two. Keep them in step with GMM if DD re-sizes.</p>
+     *
+     * <p>Registered here rather than depended upon: {@code ddenizens} already registers both, but
+     * D2 does not depend on it and the dungeon's monsters are its own — the same call #40/#41 made
+     * for the rats. GMM is already a mandatory dependency, so this costs nothing new.</p>
+     */
+    public static final RegistryObject<EntityType<Shrieker>> SHRIEKER_ENTITY =
+            Registration.ENTITIES.register(SHRIEKER,
+                    () -> EntityType.Builder.of(Shrieker::new, MobCategory.MONSTER)
+                            .sized(1.3F, 0.85F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SHRIEKER));
+
+    /** See {@link #SHRIEKER_ENTITY}; GMM currently shares the shrieker's rig for this one. */
+    public static final RegistryObject<EntityType<VioletFungus>> VIOLET_FUNGUS_ENTITY =
+            Registration.ENTITIES.register(VIOLET_FUNGUS,
+                    () -> EntityType.Builder.of(VioletFungus::new, MobCategory.MONSTER)
+                            .sized(1.3F, 0.85F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(VIOLET_FUNGUS));
 
     /** Twice the rat's health and damage; same speed, so it is a threat rather than a chase. */
     public static AttributeSupplier.Builder createGiantRatAttributes() {

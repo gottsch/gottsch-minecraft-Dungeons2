@@ -3,7 +3,13 @@
   "entity.dungeons2.giant_rat": "Giant Rat",
   "item.dungeons2.rat_egg": "Rat Spawn Egg",
   "item.dungeons2.giant_rat_egg": "Giant Rat Spawn Egg",
+  "entity.dungeons2.shrieker": "Shrieker",
+  "entity.dungeons2.violet_fungus": "Violet Fungus",
+  "item.dungeons2.shrieker_egg": "Shrieker Spawn Egg",
+  "item.dungeons2.violet_fungus_egg": "Violet Fungus Spawn Egg",
   "block.dungeons2.mob_set_spawner": "Mob Set Spawner",
   "block.dungeons2.spawner_marker": "Spawner Marker",
-  "block.dungeons2.chest_marker": "Chest Marker"
+  "block.dungeons2.chest_marker": "Chest Marker",
+  "block.dungeons2.shrieker_marker": "Shrieker Marker",
+  "block.dungeons2.violet_fungus_marker": "Violet Fungus Marker"
 }

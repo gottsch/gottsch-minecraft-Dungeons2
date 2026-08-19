@@ -53,6 +53,29 @@ public class DungeonsItems {
             () -> new ForgeSpawnEggItem(DungeonsEntities.GIANT_RAT_ENTITY, 0x3d3128, 0x1c1712, new Item.Properties()));
 
     /**
+     * The fungi get spawn eggs and their markers deliberately do not.
+     *
+     * <p>The two are opposite cases. An egg is worth having for a mob nothing spawns naturally --
+     * it is the only way to look at one without generating a dungeon and finding decayed dirt. The
+     * fungus markers, by contrast, are never placed by hand: the weathering pass emits them and
+     * {@code DungeonPiece} consumes them in the same tick, so unlike the spawner marker there is no
+     * authoring workflow for them to serve. The chest marker sets the same precedent in reverse --
+     * it has no item either.</p>
+     *
+     * <p>Colours match Dungeon Denizens', so the same mob reads the same in any pack carrying both.</p>
+     */
+    public static final RegistryObject<Item> SHRIEKER_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SHRIEKER + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.SHRIEKER_ENTITY, 0x8f4f8f, 0xc9a24a,
+                    new Item.Properties()));
+
+    /** See {@link #SHRIEKER_EGG}. */
+    public static final RegistryObject<Item> VIOLET_FUNGUS_EGG = Registration.ITEMS.register(
+            DungeonsEntities.VIOLET_FUNGUS + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.VIOLET_FUNGUS_ENTITY, 0x6e2878, 0x231528,
+                    new Item.Properties()));
+
+    /**
      * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
      * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
      * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
@@ -69,6 +92,8 @@ public class DungeonsItems {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
             event.accept(RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(GIANT_RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(SHRIEKER_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(VIOLET_FUNGUS_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);

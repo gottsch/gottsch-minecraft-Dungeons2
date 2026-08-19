@@ -24,6 +24,8 @@ import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
 import mod.gottsch.forge.gmm.core.entity.monster.Rat;
+import mod.gottsch.forge.gmm.core.entity.monster.plant.Shrieker;
+import mod.gottsch.forge.gmm.core.entity.monster.plant.VioletFungus;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -90,6 +92,8 @@ public class CommonSetup {
 		event.put(DungeonsEntities.RAT_ENTITY.get(), Rat.createAttributes().build());
 		event.put(DungeonsEntities.GIANT_RAT_ENTITY.get(),
 				DungeonsEntities.createGiantRatAttributes().build());
+		event.put(DungeonsEntities.SHRIEKER_ENTITY.get(), Shrieker.createAttributes().build());
+		event.put(DungeonsEntities.VIOLET_FUNGUS_ENTITY.get(), VioletFungus.createAttributes().build());
 	}
 
 	/**
@@ -112,6 +116,16 @@ public class CommonSetup {
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.GIANT_RAT_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// Registered for the same reason the rats' are -- this says where one is ALLOWED to stand,
+		// not what spawns one. Nothing spawns these naturally: the weathering pass places them
+		// directly (FungusGrowth), which bypasses spawn placement entirely. The registration still
+		// earns its keep for a spawn egg and for /summon.
+		event.register(DungeonsEntities.SHRIEKER_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		event.register(DungeonsEntities.VIOLET_FUNGUS_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 	}
