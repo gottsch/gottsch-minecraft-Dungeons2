@@ -24,7 +24,9 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -163,21 +165,72 @@ class FungusGrowthTest {
         assertNull(placement.getLootTable());
     }
 
+    /**
+     * The fungi are monsters, so they have to be rarer than the ground cover they grow among.
+     *
+     * <p>Pins the intent, not the number: the weights are free to move as long as a fungus stays
+     * strictly rarer than every plant. Unweighted they were 2 of 8 entries &mdash; a quarter of
+     * everything that grows, which is what a weighted palette exists to fix, and which a later
+     * re-authoring of this list could quietly restore.</p>
+     */
+    @Test
+    void aFungusIsRarerThanEveryPlantItGrowsAmong() throws IOException {
+        Map<String, Integer> weights = floorGrowthWeights();
+        assertFalse(weights.isEmpty(), "no floor_growth palette entries were parsed");
+
+        int heaviestFungus = 0;
+        int lightestPlant = Integer.MAX_VALUE;
+        for (Map.Entry<String, Integer> entry : weights.entrySet()) {
+            if (FungusGrowth.markerIds().contains(entry.getKey())) {
+                heaviestFungus = Math.max(heaviestFungus, entry.getValue());
+            } else {
+                lightestPlant = Math.min(lightestPlant, entry.getValue());
+            }
+        }
+        assertTrue(heaviestFungus > 0, "no fungus marker carries a weight");
+        assertTrue(heaviestFungus < lightestPlant,
+                "a fungus is weighted " + heaviestFungus + " against a plant at " + lightestPlant
+                        + ", so the dungeon grows monsters as often as ground cover");
+    }
+
+    /** Palette entry id &rarr; weight, for the shipped {@code floor_growth} list. */
+    private static Map<String, Integer> floorGrowthWeights() throws IOException {
+        String palette = floorGrowthPalette();
+        Map<String, Integer> weights = new LinkedHashMap<>();
+        // The object form first, then whatever bare ids are left over -- those mean weight 1.
+        Matcher objects = Pattern.compile(
+                "\\{\\s*\"block\"\\s*:\\s*\"([a-z0-9_:]+)\"\\s*,\\s*\"weight\"\\s*:\\s*(\\d+)\\s*\\}")
+                .matcher(palette);
+        while (objects.find()) {
+            weights.put(objects.group(1), Integer.parseInt(objects.group(2)));
+        }
+        Matcher bare = Pattern.compile("(?<![:\\w])\"([a-z0-9_]+:[a-z0-9_]+)\"\\s*(?=[,\\]])")
+                .matcher(palette);
+        while (bare.find()) {
+            weights.putIfAbsent(bare.group(1), 1);
+        }
+        return weights;
+    }
+
     /** Every {@code dungeons2:*_marker} named inside the shipped {@code floor_growth} palette. */
     private static Set<String> markersInFloorGrowth() throws IOException {
-        String json = read();
-        int start = json.indexOf("\"floor_growth\"");
-        assertTrue(start >= 0, "the shipped weathering list has no floor_growth block any more");
-        int blocks = json.indexOf('[', start);
-        int end = json.indexOf(']', blocks);
-        String palette = json.substring(blocks, end);
-
+        String palette = floorGrowthPalette();
         Set<String> found = new LinkedHashSet<>();
         Matcher matcher = Pattern.compile("\"(dungeons2:[a-z0-9_]+)\"").matcher(palette);
         while (matcher.find()) {
             found.add(matcher.group(1));
         }
         return found;
+    }
+
+    /** The text of the shipped floor_growth "blocks" array. */
+    private static String floorGrowthPalette() throws IOException {
+        String json = read();
+        int start = json.indexOf("\"floor_growth\"");
+        assertTrue(start >= 0, "the shipped weathering list has no floor_growth block any more");
+        int blocks = json.indexOf('[', start);
+        int end = json.indexOf(']', blocks);
+        return json.substring(blocks, end + 1);
     }
 
     private static String read() throws IOException {

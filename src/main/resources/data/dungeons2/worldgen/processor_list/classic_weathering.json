@@ -786,19 +786,24 @@
       // is the whole reason they exist -- see DungeonsBlocks#SHRIEKER_MARKER.
       //
       // They sit in this list rather than in Java so which fungus grows, and how often relative to
-      // the mushrooms, stays a datapack decision: the pick is uniform over the list, so the fungi
-      // are 2 of 8 entries of the 0.35 that grows at all. A motif that wants none simply omits them.
+      // the mushrooms, stays a datapack decision. A motif that wants none simply omits them.
+      //
+      // THE PALETTE IS WEIGHTED. An entry is either a bare id (weight 1) or {block, weight}, and
+      // the draw is one roll over the total. Weights matter here more than anywhere else in this
+      // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
+      // which is ground-cover frequency for something that is actually a monster. At 1 each against
+      // the mushrooms' 10 they are 2 of 62, about 3%.
       "floor_growth": {
         "probability": 0.35,
         "blocks": [
-          "minecraft:brown_mushroom",
-          "minecraft:red_mushroom",
-          "minecraft:moss_carpet",
-          "minecraft:grass",
-          "minecraft:fern",
-          "minecraft:dead_bush",
-          "dungeons2:shrieker_marker",
-          "dungeons2:violet_fungus_marker"
+          { "block": "minecraft:brown_mushroom", "weight": 10 },
+          { "block": "minecraft:red_mushroom", "weight": 10 },
+          { "block": "minecraft:moss_carpet", "weight": 10 },
+          { "block": "minecraft:grass", "weight": 10 },
+          { "block": "minecraft:fern", "weight": 10 },
+          { "block": "minecraft:dead_bush", "weight": 10 },
+          { "block": "dungeons2:shrieker_marker", "weight": 1 },
+          { "block": "dungeons2:violet_fungus_marker", "weight": 1 }
         ]
       },
       // Underneath a dirt block, where the cell below it is air.

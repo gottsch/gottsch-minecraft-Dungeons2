@@ -115,8 +115,8 @@ class DecorationOnRealRoomTest {
         // Deliberately the SHIPPED probabilities, not certainties: this is also a check
         // that 0.02 / 0.04+0.22 are not so low that a room-sized piece gets nothing.
         DecorationProcessor processor = new DecorationProcessor(NO_TYPE, 
-                new DecorationRule(COBWEBS, List.of(Blocks.COBWEB)),
-                new WallGrowthRule(WALL_GROWTH, WALL_GROWTH_BONUS, WALL_GROWTH_MAX,
+                DecorationRule.of(COBWEBS, List.of(Blocks.COBWEB)),
+                WallGrowthRule.of(WALL_GROWTH, WALL_GROWTH_BONUS, WALL_GROWTH_MAX,
                         List.of(Blocks.GLOW_LICHEN)),
                 BlockMatch.NONE, DecorationRule.NONE, DecorationRule.NONE, DecorationRule.NONE,
                 DecorationRule.NONE, BlockMatch.NONE);
@@ -148,7 +148,7 @@ class DecorationOnRealRoomTest {
         // stopped emitting interior air this would go to zero and say so.
         DecorationProcessor certain = new DecorationProcessor(NO_TYPE, 
                 DecorationRule.NONE,
-                new WallGrowthRule(1.0F, 0.0F, 1.0F, List.of(Blocks.GLOW_LICHEN)),
+                WallGrowthRule.of(1.0F, 0.0F, 1.0F, List.of(Blocks.GLOW_LICHEN)),
                 BlockMatch.NONE, DecorationRule.NONE, DecorationRule.NONE, DecorationRule.NONE,
                 DecorationRule.NONE, BlockMatch.NONE);
 
@@ -234,12 +234,12 @@ class DecorationOnRealRoomTest {
         StructurePlaceSettings settings = new StructurePlaceSettings();
         settings.addProcessor(shippedStoneBrickAging());
         settings.addProcessor(new DecorationProcessor(NO_TYPE, 
-                new DecorationRule(COBWEBS, List.of(Blocks.COBWEB)),
-                new WallGrowthRule(WALL_GROWTH, WALL_GROWTH_BONUS, WALL_GROWTH_MAX,
+                DecorationRule.of(COBWEBS, List.of(Blocks.COBWEB)),
+                WallGrowthRule.of(WALL_GROWTH, WALL_GROWTH_BONUS, WALL_GROWTH_MAX,
                         List.of(Blocks.GLOW_LICHEN)),
                 new BlockMatch(List.of(Blocks.DIRT), List.of()),
-                new DecorationRule(0.35F, List.of(Blocks.BROWN_MUSHROOM, Blocks.RED_MUSHROOM)),
-                new DecorationRule(0.3F, List.of(Blocks.HANGING_ROOTS)),
+                DecorationRule.of(0.35F, List.of(Blocks.BROWN_MUSHROOM, Blocks.RED_MUSHROOM)),
+                DecorationRule.of(0.3F, List.of(Blocks.HANGING_ROOTS)),
                 DecorationRule.NONE, DecorationRule.NONE, BlockMatch.NONE));
 
         // A big room on purpose. At the shipped rates a 15x15 gives only a handful of dirt
