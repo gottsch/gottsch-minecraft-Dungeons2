@@ -120,7 +120,17 @@ dependencies {
     // The trade: with this line in, the dev run no longer exercises the ABSENT case, which is the
     // one that breaks users (see TreasureIntegrationTest -- the guard is what stops a
     // NoClassDefFoundError). Comment it out again to test that half.
-    runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
+    //
+    // It is COMMENTED OUT as of 2026-08-19, deliberately: the absent case is the default state a
+    // user is in, so it is the one the checked-in build should be testing. Uncomment only while
+    // exercising the T2 branch, and put it back.
+    //
+    // It reaches further than the dev run: `runtimeOnly` extends into testRuntimeClasspath, so with
+    // the line in, the whole suite runs with Treasure2 PRESENT. The 770-test run on 2026-08-19 was
+    // the first with it absent, and it is green. That is not the same as the in-game check -- the
+    // suite has no ServerLevel and never places a marker -- but it does prove no test was leaning
+    // on T2 being resolvable.
+    //runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
 //    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).
