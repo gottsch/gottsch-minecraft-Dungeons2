@@ -111,6 +111,16 @@ dependencies {
     // ModList.get().isLoaded("treasure2") says it is there. Add a runtimeOnly line temporarily if you
     // want to exercise the integration in dev.
     compileOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
+    // DEV ONLY, and it changes what the dev run tests. runtimeOnly puts Treasure2 on the dev
+    // client's classpath so the per-marker `treasure: true` branch actually executes -- compileOnly
+    // deliberately does not, which is why the branch fell through to the D2 chest on every run up to
+    // now. It does NOT ship: runtimeOnly is not written into mods.toml, and Treasure2 stays
+    // mandatory=false there.
+    //
+    // The trade: with this line in, the dev run no longer exercises the ABSENT case, which is the
+    // one that breaks users (see TreasureIntegrationTest -- the guard is what stops a
+    // NoClassDefFoundError). Comment it out again to test that half.
+    runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
 //    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).
