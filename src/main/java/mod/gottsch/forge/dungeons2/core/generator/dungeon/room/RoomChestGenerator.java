@@ -123,9 +123,14 @@ public final class RoomChestGenerator {
             // is: at the shipped "info" level a debug line is invisible to the person verifying the
             // feature. Tagged PROC so the two routes can be told apart in one grep -- without it a
             // chest in a finished dungeon says nothing about which half of #48 produced it.
+            // toShortString, matching ChestMarkerProcessor: a position in a log is read by someone
+            // about to go and look at it, so it has to survive a copy and paste into a command.
             mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info(
-                    "[D2-CHEST] PROC {} at {},{},{} (table {})",
-                    placement.getBlockId(), placement.getX(), placement.getY(), placement.getZ(), table);
+                    "[D2-CHEST] PROC {} at {} (table {})",
+                    placement.getBlockId(),
+                    new net.minecraft.core.BlockPos(placement.getX(), placement.getY(),
+                            placement.getZ()).toShortString(),
+                    table);
             out.add(placement);
             used.add(cell);
         }

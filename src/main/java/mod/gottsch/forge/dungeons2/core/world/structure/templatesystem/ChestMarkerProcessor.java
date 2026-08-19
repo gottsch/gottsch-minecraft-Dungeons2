@@ -136,7 +136,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
             // Left standing on purpose -- see the class note. Logged at WARN because a template that
             // reaches here is misconfigured and nothing downstream will say so.
             Dungeons.LOGGER.warn("[D2-CHEST] marker at {} resolved to no loot table; leaving the"
-                    + " marker in place rather than generating an empty chest", current.pos());
+                    + " marker in place rather than generating an empty chest", current.pos().toShortString());
             return current;
         }
 
@@ -150,7 +150,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
                             settings.getRandom(current.pos()));
             if (treasure.isPresent()) {
                 Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {}",
-                        markerBlock, current.pos());
+                        markerBlock, current.pos().toShortString());
                 return treasure.get();
             }
         }
@@ -158,7 +158,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
         BlockState chest = chestState(current, settings);
         if (chest == null) {
             Dungeons.LOGGER.warn("[D2-CHEST] chest block {} does not exist; leaving the marker at {}",
-                    chestBlock, current.pos());
+                    chestBlock, current.pos().toShortString());
             return current;
         }
 
@@ -174,7 +174,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
         // verify the feature -- which is how this line came to be missing from a log that had 214
         // [D2-SPAWNER] lines in it. One line per conversion, at the position it happened.
         Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {})",
-                markerBlock, chestBlock, current.pos(), table);
+                markerBlock, chestBlock, current.pos().toShortString(), table);
         return new StructureTemplate.StructureBlockInfo(current.pos(), chest, tag);
     }
 
