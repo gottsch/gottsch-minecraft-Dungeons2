@@ -22,6 +22,9 @@ import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ServerLevelAccessor;
 
@@ -70,6 +73,38 @@ public final class EntitySpawner {
         }
         entity.moveTo(worldX + placement.getXOffset(), worldY, worldZ + placement.getZOffset(),
                 placement.getYRot(), 0.0F);
+
+        // A Mob has to be FINALIZED or it arrives half-built, and for a long time nothing here
+        // noticed because the only entity this placed was a pot -- which is not a Mob and has
+        // nothing to finalize.
+        //
+        // What was being skipped: vanilla's own difficulty-based setup, GMM's entire mob_config
+        // attribute override system (maxHealth, knockbackResistance, the lot), its companion
+        // spawning, and -- the one that showed -- each plant monster's own setNoAi(true), which
+        // GMM applies in finalizeSpawn. So D2's fungi were running AI that Dungeon Denizens' are
+        // not, purely because they arrived through a different door. GottschCore's
+        // SpawnUtil.spawnAndAddMob has always finalized, so the spawner path was already correct
+        // and only this one was not.
+        //
+        // Before the loot round trip below, deliberately: that saves and reloads the whole entity
+        // tag, so anything finalizeSpawn set (NoAI included) has to be in place first or it is
+        // written back out from a stale snapshot.
+        //
+        // getCurrentDifficultyAt reads the chunk at this position, which is legal here because
+        // DungeonPiece#placeEntities has already clipped the placement to the chunk box -- the
+        // position is inside the region being generated. See that method's note on the clip.
+        if (entity instanceof Mob mob) {
+            BlockPos pos = BlockPos.containing(mob.getX(), mob.getY(), mob.getZ());
+            try {
+                mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos),
+                        MobSpawnType.STRUCTURE, null, null);
+            } catch (Exception e) {
+                // Degrade rather than abort, the same convention an unresolved id gets: a mob with
+                // default attributes is a worse dungeon, an exception here is a dead chunk.
+                Dungeons.LOGGER.warn("finalizeSpawn failed for {} at {}: {}",
+                        placement.getEntityId(), pos.toShortString(), e.getMessage());
+            }
+        }
 
         String lootTable = placement.getLootTable();
         if (lootTable != null && !lootTable.isBlank()) {
