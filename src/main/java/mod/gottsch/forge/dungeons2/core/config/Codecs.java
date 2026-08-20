@@ -173,6 +173,42 @@ public final class Codecs {
     }
 
     /**
+     * Declares extra keys that carry no data, so a {@link #closed} schema will accept a note written
+     * into the file itself.
+     *
+     * <h2>Why a config needs somewhere to explain itself</h2>
+     * <p>JSON has no comments, and closing the schema (which is the right default &mdash; see
+     * {@link #closed}) means a pack cannot smuggle one in under a spare key either. For most of
+     * these records that is fine: the README is the documentation. It is <em>not</em> fine for a
+     * knob whose consequences reach outside the file, where the person about to change a number
+     * needs to read the warning at the moment they are changing it, not to have read a document
+     * some time earlier.</p>
+     *
+     * <p>The declared keys are added to {@link MapCodec#keys} so the closed check accepts them, and
+     * are otherwise ignored on decode and never written on encode. That is deliberate: a note is
+     * not state, and round-tripping it would make it part of the record's identity.</p>
+     */
+    public static <A> MapCodec<A> documented(MapCodec<A> codec, String... commentKeys) {
+        List<String> extra = List.of(commentKeys);
+        return new MapCodec<>() {
+            @Override
+            public <T> DataResult<A> decode(DynamicOps<T> ops, MapLike<T> input) {
+                return codec.decode(ops, input);
+            }
+
+            @Override
+            public <T> RecordBuilder<T> encode(A input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
+                return codec.encode(input, ops, prefix);
+            }
+
+            @Override
+            public <T> Stream<T> keys(DynamicOps<T> ops) {
+                return Stream.concat(codec.keys(ops), extra.stream().map(ops::createString));
+            }
+        };
+    }
+
+    /**
      * The error text. It names the nearest declared key when there is a plausible one, because the
      * whole point of this check is to catch a typo and "unknown key 'widht'" is a good deal less
      * useful than being told what was probably meant.

@@ -83,8 +83,8 @@ import java.util.Optional;
  * <h2>Anchoring</h2>
  * <p>{@link CourseAnchor#TOP} is not a convenience &mdash; it is required for the feature to work at
  * all. Crown molding is defined relative to the ceiling, and room height is
- * {@code min(rand(5..10), max(width, depth))}, so a course measured from the floor drifts away from
- * the ceiling as rooms vary. A wall is only {@code height - 2} rows tall, i.e. <strong>3 to
+ * a {@code 5 + rand(6)} roll clamped into the footprint's {@code RoomHeightBand} (#51), so a course
+ * measured from the floor drifts away from the ceiling as rooms vary. A wall is only {@code height - 2} rows tall, i.e. <strong>3 to
  * 8</strong>; a course that resolves outside that range is simply not drawn, so a scheme carrying
  * both a plinth and a crown wants a {@code minHeight} that leaves plain wall between them rather
  * than relying on this clipping.</p>

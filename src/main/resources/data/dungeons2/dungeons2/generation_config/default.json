@@ -1,4 +1,25 @@
 {
+  "_comment": [
+    "READ BEFORE CHANGING floorHeight OR gapBetweenFloors.",
+    "Their sum is the floor-to-floor PITCH (10 + 2 = 12), which is the exact distance every",
+    "entrance and transition template Dungeons2 ships was cut for. Change the pitch and you must",
+    "author your own: stairs_1 and ladder1 carry their two door markers 12 apart and cannot be",
+    "stretched, the stairs_2 chain only lands on multiples of 6, and the entrance's bottom door",
+    "marker DEFINES floor 0's walking plane, so a taller floor puts floor 0's ceiling above the",
+    "entrance chamber's own. Nothing here is a tuning knob you can turn and walk away from.",
+    "Watch the log for [D2-PITCH] and [D2-SPAN]. Every other field in this file is safe to tune."
+  ],
+
   "corridorWidth": 3,
-  "roomTemplateAttemptsPerFloor": 4
+  "roomTemplateAttemptsPerFloor": 4,
+
+  "floorHeight": 10,
+  "gapBetweenFloors": 2,
+
+  "roomHeightBands": [
+    { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10 },
+    { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 },
+    { "maxLongSide": 15, "minHeight": 5, "maxHeight": 8 },
+    { "minHeight": 5, "maxHeight": 7 }
+  ]
 }

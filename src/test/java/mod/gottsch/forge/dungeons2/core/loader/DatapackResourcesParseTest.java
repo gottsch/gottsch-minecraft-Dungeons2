@@ -22,8 +22,10 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
+import mod.gottsch.forge.dungeons2.core.config.RoomHeightBand;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import org.junit.jupiter.api.Disabled;
@@ -271,9 +273,12 @@ class DatapackResourcesParseTest {
      * notice a hole until they wondered why 11-wide rooms are always bare.</p>
      *
      * <p>Swept over what the planner actually produces, not over every integer pair: rooms are odd,
-     * 5..17 on a side, and height is {@code min(rand(5..10), max(width, depth))}, so a 5x5 room can
-     * never be 10 high. Testing impossible shapes would force authors to cover rooms that do not
-     * exist.</p>
+     * 5..17 on a side, and the height a footprint can reach is whatever #51's
+     * {@link RoomHeightBand} taper allows it &mdash; see {@link #shortestFor}/{@link #tallestFor}.
+     * Testing impossible shapes would force authors to cover rooms that do not exist, and the
+     * reachable set moved in <em>both</em> directions when the taper inverted the old
+     * {@code min(rand(5..10), max(width, depth))}: a 7x7 room can now be 10 high and can no longer
+     * be 5, while a 17x17 one is capped at 7.</p>
      *
      * <p><strong>5 is kept in the sweep even though the planner stopped building 5x5 rooms
      * procedurally</strong> (2026-08-07 -- the joiner-room floor was raised to 7x7, because a 3x3
@@ -287,8 +292,8 @@ class DatapackResourcesParseTest {
             for (int floorIndex = 0; floorIndex < DEEPEST_FLOOR_INDEX; floorIndex++) {
                 for (int width = 5; width <= 17; width += 2) {
                     for (int depth = 5; depth <= 17; depth += 2) {
-                        int tallest = Math.min(10, Math.max(width, depth));
-                        for (int height = 5; height <= tallest; height++) {
+                        for (int height = shortestFor(width, depth);
+                                height <= tallestFor(width, depth); height++) {
                             int w = width;
                             int d = depth;
                             int h = height;
@@ -302,6 +307,25 @@ class DatapackResourcesParseTest {
                 }
             }
         }
+    }
+
+    /**
+     * The height range a footprint can actually reach, from #51's shipped taper. Both sweeps below
+     * derive their bounds from here rather than restating a formula: the planner clamps its
+     * {@code 5 + rand(6)} roll into the band its long side selects, so a hard-coded
+     * {@code 5..min(10, max(w, d))} would now sweep shapes that cannot exist and skip ones that can
+     * &mdash; and a coverage sweep over the wrong set is worse than no sweep, because it reports
+     * green.
+     */
+    private static int tallestFor(int width, int depth) {
+        return RoomHeightBand.forLongSide(DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS,
+                Math.max(width, depth)).maxHeight();
+    }
+
+    /** See {@link #tallestFor}. */
+    private static int shortestFor(int width, int depth) {
+        return RoomHeightBand.forLongSide(DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS,
+                Math.max(width, depth)).minHeight();
     }
 
     /**
@@ -342,8 +366,8 @@ class DatapackResourcesParseTest {
                     }
                     for (int width = 5; width <= 17 && !everDraws; width += 2) {
                         for (int depth = 5; depth <= 17 && !everDraws; depth += 2) {
-                            int tallest = Math.min(10, Math.max(width, depth));
-                            for (int height = 5; height <= tallest; height++) {
+                            for (int height = shortestFor(width, depth);
+                                    height <= tallestFor(width, depth); height++) {
                                 if (!scheme.fits(width, depth, height)) {
                                     continue;
                                 }

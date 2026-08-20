@@ -43,8 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The two are not the same number, and the gap is the point. A scheme's weight is its share of
  * the roll <em>among schemes eligible for that room</em>, so a {@code minSize} or {@code minHeight}
  * that most rooms fail silently converts an authored 15% into something far smaller. Room height is
- * {@code min(rand(5..10), max(width, depth))} and the maze's minimum room is 5x5, so gates in the
- * 7-9 range bite much harder than they look.</p>
+ * a {@code 5 + rand(6)} roll clamped into the footprint's {@code RoomHeightBand} (#51), and the
+ * maze's smallest procedural room is 7x7, so gates in the 7-9 range bite much harder than they
+ * look. The taper moved that distribution &mdash; see {@code RoomHeightProbe} for the current
+ * numbers before reading anything into a threshold here.</p>
  *
  * <p>This exists because reasoning about that statically produced the wrong answer once already:
  * wall and ceiling trim were authored at ~17%/15% by weight and were nearly unfindable in game.</p>

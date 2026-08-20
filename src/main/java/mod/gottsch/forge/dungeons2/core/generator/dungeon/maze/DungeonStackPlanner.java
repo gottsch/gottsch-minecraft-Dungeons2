@@ -42,6 +42,8 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Room2D;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
+import mod.gottsch.forge.dungeons2.core.config.RoomHeightBand;
 import mod.gottsch.forge.dungeons2.core.config.TemplateLimit;
 
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Top-down planner that orchestrates a full multi-floor dungeon as a
@@ -91,11 +94,16 @@ import java.util.Set;
 public class DungeonStackPlanner {
 
     // Tunable later; for Phase 1 these are reasonable defaults.
-    private static final int DEFAULT_FLOOR_HEIGHT = 10;
-    private static final int DEFAULT_GAP_BETWEEN_FLOORS = 2;
+    // Delegated, not copied. These and the datapack's defaults are the same number, and a second
+    // literal here is exactly the drift that made the old MIN_TRANSITION_HEIGHT wrong (#52).
+    private static final int DEFAULT_FLOOR_HEIGHT = DungeonGenerationConfig.DEFAULT_FLOOR_HEIGHT;
+    private static final int DEFAULT_GAP_BETWEEN_FLOORS =
+            DungeonGenerationConfig.DEFAULT_GAP_BETWEEN_FLOORS;
     private static final int DEFAULT_ENTRANCE_DROP = 12;
     /** Max attempts to place a START/END room within a footprint without overlap. */
     private static final int PLACEMENT_ATTEMPTS = 20;
+    /** The synthetic terminal room this mod has always built. See {@link #terminalRoomWidth}. */
+    private static final int DEFAULT_TERMINAL_ROOM_SIZE = 7;
 
     /**
      * Overworld's floor, used when no caller supplies one. Worldgen always does &mdash; see
@@ -122,6 +130,19 @@ public class DungeonStackPlanner {
     private int gapBetweenFloors = DEFAULT_GAP_BETWEEN_FLOORS;
     private int entranceDrop = DEFAULT_ENTRANCE_DROP;
     private int minBuildY = DEFAULT_MIN_BUILD_Y;
+    /**
+     * #51's room-height taper. Defaults to the shipped table rather than to "uncapped", because an
+     * uncapped roll is the tall-box outcome the taper exists to prevent; a caller that never
+     * injects one (tests, the floor-plan harness) should still get the dungeon players see.
+     */
+    private List<RoomHeightBand> roomHeightBands = DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS;
+    /**
+     * Footprint reserved for the bottom floor's terminal (boss) room &mdash; backlog #46. 7x7 is the
+     * synthetic placeholder the mod has always built there; an authored boss template will hand over
+     * its own measured size instead.
+     */
+    private int terminalRoomWidth = DEFAULT_TERMINAL_ROOM_SIZE;
+    private int terminalRoomDepth = DEFAULT_TERMINAL_ROOM_SIZE;
     /**
      * Corridor width in cells, achieved via dilation. This default (3) only
      * applies to callers that never call {@link #withCorridorWidth(int)} (e.g.
@@ -223,7 +244,7 @@ public class DungeonStackPlanner {
      * stone buffer below it, so the two always travel together &mdash; and this is the number a
      * transition template has to span. 12 with the shipped defaults.</p>
      */
-    private int pitch() {
+    public int pitch() {
         return floorHeight + gapBetweenFloors;
     }
 
@@ -242,6 +263,34 @@ public class DungeonStackPlanner {
      * 3 = 3-wide, etc.). Default is 2. Wider corridors look better but
      * change the maze's effective topology (parallel corridors may merge).
      */
+    /**
+     * The vertical budget one floor gets, floor block through ceiling block. No room may exceed it
+     * without pushing its ceiling into the floor above, which is why {@code RoomHeightBand}'s table
+     * is checked against this at the call site rather than at load (a datapack cannot see it).
+     */
+    public int floorHeight() {
+        return floorHeight;
+    }
+
+    /**
+     * Reserve a differently-sized terminal (boss) room on the bottom floor &mdash; #46.
+     *
+     * <p><strong>A size the bottom floor cannot fit fails the whole dungeon</strong>, not just the
+     * boss room: {@code plan()} returns empty when the terminal slot cannot be placed, because every
+     * floor is required to have an end. That is the number {@code TerminalRoomFitProbe} measures,
+     * and it is why an authored boss template needs a fallback rather than a bigger footprint and
+     * hope.</p>
+     *
+     * <p>Defaults to the synthetic 7x7, so a caller that never sets it plans byte-identically to
+     * before this existed.</p>
+     */
+    public DungeonStackPlanner withTerminalRoomSize(int width, int depth) {
+        this.terminalRoomWidth = width;
+        this.terminalRoomDepth = depth;
+        warnIfEvenSided("terminal (boss) room", width, depth);
+        return this;
+    }
+
     public DungeonStackPlanner withCorridorWidth(int cells) {
         this.corridorCells = Math.max(1, cells);
         return this;
@@ -256,6 +305,23 @@ public class DungeonStackPlanner {
      */
     public DungeonStackPlanner withRoomTemplateAttempts(int attempts) {
         this.roomTemplateAttempts = Math.max(0, attempts);
+        return this;
+    }
+
+    /**
+     * Override the room-height taper (#51). Bands are matched in order against a room's long side;
+     * see {@link RoomHeightBand}. The caller hands over an already-validated table &mdash;
+     * {@code RoomHeightBand.LIST_CODEC} is where a mis-ordered or non-total one becomes a load
+     * error &mdash; so there is deliberately no repair here that could turn a bad datapack into a
+     * quietly different dungeon.
+     *
+     * <p>A null or empty list restores the shipped table rather than removing the cap, for the
+     * reason on {@link #roomHeightBands}.</p>
+     */
+    public DungeonStackPlanner withRoomHeightBands(List<RoomHeightBand> bands) {
+        this.roomHeightBands = (bands == null || bands.isEmpty())
+                ? DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS
+                : List.copyOf(bands);
         return this;
     }
 
@@ -635,6 +701,7 @@ public class DungeonStackPlanner {
             int startMinX = entranceStart(gridW, ew, 0);
             int startMinZ = entranceStart(gridH, ed, 1);
             entranceLocalFootprint = new Rectangle2D(startMinX, startMinZ, ew, ed);
+            warnIfEvenSided("assembled entrance", ew, ed);
             int worldAnchorX = assembledEntranceWorldRect.getMinX() - startMinX;
             int worldAnchorZ = assembledEntranceWorldRect.getMinY() - startMinZ;
             planAnchor = new Coords(worldAnchorX, 0, worldAnchorZ);
@@ -826,6 +893,8 @@ public class DungeonStackPlanner {
                     continue;
                 }
                 AssembledTransition at = assembled.get();
+                warnIfEvenSided("assembled transition", at.worldFootprint().getWidth(),
+                        at.worldFootprint().getHeight());
                 Rectangle2D wf = at.worldFootprint();
                 Rectangle2D realFootprint = new Rectangle2D(
                         wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
@@ -900,9 +969,10 @@ public class DungeonStackPlanner {
             if (i < floorCount - 1) {
                 endFootprint = transitionLocalFootprints.get(i);
             } else {
-                // Bottom-floor terminal room. Synthetic 7x7 placeholder for now;
-                // can become its own template category in a later phase.
-                endFootprint = placeAvoidingStart(footprint, 7, 7, startFootprint, random);
+                // Bottom-floor terminal room. 7x7 synthetic by default; an authored boss template
+                // hands over its own measured footprint via withTerminalRoomSize (#46).
+                endFootprint = placeAvoidingStart(footprint, terminalRoomWidth, terminalRoomDepth,
+                        startFootprint, random);
                 if (endFootprint == null) {
                     return Optional.empty();
                 }
@@ -1008,6 +1078,8 @@ public class DungeonStackPlanner {
                         continue;
                     }
                     AssembledRoom ar = assembledRoom.get();
+                    warnIfEvenSided("assembled template room", ar.worldFootprint().getWidth(),
+                            ar.worldFootprint().getHeight());
                     Rectangle2D wf = ar.worldFootprint();
                     Rectangle2D realFootprint = new Rectangle2D(
                             wf.getMinX() - planAnchor.getX(), wf.getMinY() - planAnchor.getZ(),
@@ -1312,6 +1384,59 @@ public class DungeonStackPlanner {
      * entrance dominates the center and random tries often miss the few valid
      * edge positions.</p>
      */
+    /**
+     * Footprints already reported, so an even-sided template is named once rather than once per
+     * chunk. Keyed by what-and-size, not a one-shot latch: a pack with two such templates has two
+     * things to be told about. Same shape as {@code DungeonStructure#WARNED_PITCHES}.
+     */
+    private static final Set<String> WARNED_EVEN_FOOTPRINTS = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Reports an <strong>authored</strong> footprint with an even side.
+     *
+     * <h2>Why this is a log and not a rejection</h2>
+     * <p>Two different parity rules get conflated as "rooms must be odd", and only one of them is
+     * real. A room's <em>origin</em> must be even and {@code MazeLevelGenerator2D.isRoomValid}
+     * enforces that. A room's <em>size</em> is a different matter: {@code generateRoomSize} forces
+     * odd, but only for rooms the maze generates itself, and {@code isRoomValid} never checks size
+     * at all &mdash; so a supplied footprint with an even side passes straight through, silently.</p>
+     *
+     * <p>Measured over 200 seeds, an even-sided supplied room plans, gets its doorway and renders a
+     * complete wall ring every time. It is <strong>not broken</strong>, which is exactly why this
+     * refuses nothing. What it costs is one wasted cell per axis: an even origin plus an odd size
+     * puts the far edge on an even cell, while an even size puts it on the odd <em>passage</em>
+     * lane, so the maze's own wall column lands alongside the room's and the two read as a doubled
+     * wall.</p>
+     *
+     * <p>There is a second cost this does <em>not</em> warn about, because it does not apply to
+     * authored content: an even interior has no centre cell, so the centred pattern providers
+     * ({@code CentrePillar}, {@code Quartet}, {@code CentreSurface}, {@code CrossFloor}) compute
+     * {@code (n-1)/2} and sit one cell off. An authored template lays out its own interior, so it
+     * never meets them. That is why an even boss room is a reasonable thing to author and an even
+     * procedural room is not.</p>
+     *
+     * <p>Per the PARITY NOTE above, this covers every authored footprint &mdash; entrance,
+     * transition, template room and terminal room &mdash; rather than only the one that prompted
+     * it.</p>
+     */
+    private static void warnIfEvenSided(String what, int width, int depth) {
+        if ((width & 1) == 1 && (depth & 1) == 1) {
+            return;
+        }
+        if (!WARNED_EVEN_FOOTPRINTS.add(what + " " + width + "x" + depth)) {
+            return;
+        }
+        Dungeons.LOGGER.warn(
+                "[D2-PARITY] {} footprint is {}x{} -- {} even. Rooms are laid out on an odd-cell "
+                        + "maze lattice, so an even side puts the far wall on a corridor lane and "
+                        + "the maze's own wall column lands beside it: a doubled wall, and one "
+                        + "wasted cell on that axis. Nothing breaks and nothing is rejected -- use "
+                        + "odd sides if you want the cell back.",
+                what, width, depth,
+                (width & 1) == 0 && (depth & 1) == 0 ? "both sides are"
+                        : ((width & 1) == 0 ? "the width is" : "the depth is"));
+    }
+
     private Rectangle2D placeAvoidingStart(Rectangle2D footprint, int w, int d,
                                             Rectangle2D reserved, Random random) {
         return placeAvoidingReserved(footprint, w, d,
@@ -1576,11 +1701,25 @@ public class DungeonStackPlanner {
         return grid.get(x, z).getType() == CellType.DOOR;
     }
 
+    /**
+     * Rolls a room's interior height and tapers it by footprint &mdash; backlog #51.
+     *
+     * <p>This used to be {@code min(rolled, max(width, depth))}, a cap that <em>rose</em> with the
+     * footprint, so the only rooms that could be tall were the big ones. That is the wrong way
+     * round: a big tall room is a box, a small tall room is a shaft. {@link RoomHeightBand} carries
+     * the inverted table.</p>
+     *
+     * <p><strong>The roll stays where it is and the band clamps it.</strong> Same argument as #50's
+     * world-bottom clamp: {@code 5 + nextInt(6)} consumes an identical amount of the stream
+     * whatever band matches, so the maze, the footprints and the corridors of every existing seed
+     * come out byte-identical and only the heights move. Drawing inside the band instead
+     * (`min + nextInt(span)`) would draw a different amount &mdash; {@code java.util.Random}
+     * rejection-samples for a non-power-of-two bound &mdash; and relayout every dungeon in every
+     * existing world.</p>
+     */
     private int pickRoomHeight(Random random, int width, int depth) {
-        // Same heuristic the original DungeonGenerator.convertRooms used:
-        // height = min(randomInt(5, 10), max(width, depth))
         int rolled = 5 + random.nextInt(6); // 5..10 inclusive
-        return Math.min(rolled, Math.max(width, depth));
+        return RoomHeightBand.forLongSide(roomHeightBands, Math.max(width, depth)).clamp(rolled);
     }
 
     private void computeBoundingBox(DungeonLayout layout) {

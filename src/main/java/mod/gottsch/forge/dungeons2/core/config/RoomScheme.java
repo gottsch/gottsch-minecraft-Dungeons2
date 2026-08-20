@@ -80,8 +80,9 @@ import java.util.Optional;
  * <h2>Eligibility</h2>
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
  * carry it, <em>before</em> weights are totalled. This matters more than it did for floors:
- * {@code DungeonStackPlanner#pickRoomHeight} rolls {@code min(rand(5..10), max(width, depth))}, so a
- * room has only {@code height - 2} interior wall rows &mdash; between <strong>3 and 8</strong>. At
+ * {@code DungeonStackPlanner#pickRoomHeight} rolls {@code 5 + rand(6)} and clamps it into the
+ * footprint's {@link RoomHeightBand} (#51), so a room has only {@code height - 2} interior wall
+ * rows &mdash; between <strong>3 and 8</strong> under the shipped taper. At
  * the low end, rows 1 and 2 are the door halves and row 3 is the door lintel, leaving nowhere to put
  * a crown molding course. A vaulted ceiling or a two-course wall is not a pattern that degrades
  * gracefully in a 5-high room; it is a pattern that must not be rolled there.</p>

@@ -386,6 +386,97 @@ no outgoing joint) plus the `.nbt` files it references — nothing else needs to
 mechanism already reads whatever pool entries exist. `classic/normal.json` is the only one
 authored today.
 
+#### Floor pitch (`floorHeight`, `gapBetweenFloors`) — read this before changing it
+
+> **This is not a tuning knob.** Their sum is the floor-to-floor **pitch**, and the pitch is the
+> exact distance every entrance and transition template Dungeons2 ships was cut for. Change it and
+> **you must author your own entrances and transitions.** Nothing in the code can fix that from
+> inside the config — the geometry lives in `.nbt` files.
+
+```json
+{
+  "floorHeight": 10,
+  "gapBetweenFloors": 2
+}
+```
+
+`floorHeight` is the budget above a walking plane (**6–24**, default 10); `gapBetweenFloors` is the
+stone buffer below it (**0–8**, default 2). Pitch = 12 as shipped.
+
+What breaks, concretely:
+
+| template | how it spans 12 | at another pitch |
+|---|---|---|
+| `stairs_1` | two door markers 12 apart, in one 21-tall piece | cannot stretch — re-cut |
+| `ladder1` | two door markers 12 apart, in one 18-tall piece | cannot stretch — re-cut |
+| `stairs_2` chain | `bottom` + *n* × `mid`, **6 of rise per segment** | lands only on multiples of 6 |
+| entrance | its bottom door marker **defines** floor 0's walking plane | floor 0's ceiling moves away from the entrance chamber's own |
+
+So pitch 18 needs only the two monolithic templates re-cut — the chain follows for free. **Pitch 15
+needs all three**, because 6 does not divide 15 and the chain would stop 3 blocks off the plane.
+
+Three things tell you when it is wrong, and none of them is silent:
+
+- the shipped `default.json` carries a `_comment` saying all of the above, in the file;
+- `[D2-PITCH]` logs at **WARN**, once, when a non-shipped pitch is loaded;
+- `[D2-SPAN]` logs at **ERROR**, per assembled transition, when the templates in play cannot reach.
+
+`TransitionSpanTest` also fails the build for the shipped templates, so this cannot be changed in
+the mod itself without noticing.
+
+> The `_comment` key is declared purely so the file can carry that warning — it decodes to nothing
+> and is never written back. **The schema is otherwise still closed:** any other unrecognized key is
+> a load error, so a typo does not go quiet.
+
+#### Room height (`roomHeightBands`)
+
+A room's height is a `5 + rand(6)` roll (5–10) **clamped into the band its footprint selects**.
+Bands live in the same `data/dungeons2/dungeons2/generation_config/<name>.json`, are matched *in
+order* against the room's long side (`max(width, depth)`), and the first match wins:
+
+```json
+{
+  "roomHeightBands": [
+    { "maxLongSide": 7,  "minHeight": 6, "maxHeight": 10 },
+    { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 },
+    { "maxLongSide": 15, "minHeight": 5, "maxHeight": 8 },
+    { "minHeight": 5, "maxHeight": 7 }
+  ]
+}
+```
+
+**The ceiling falls as the footprint grows, and that is the whole point.** The rule this replaced
+was `min(rolled, max(width, depth))` — a cap that *rose* with the footprint, so the only rooms that
+could be tall were the big ones. A big tall room is a box; a small tall room is a shaft or a nave.
+
+Rules the loader enforces, because both ways of getting the table wrong are otherwise silent:
+
+- the last band **must** omit `maxLongSide` (it is the catch-all, so every footprint matches
+  something), and no earlier band may omit it (an open-ended band in the middle makes every band
+  after it unreachable while still loading cleanly);
+- `maxLongSide` values must strictly increase;
+- `minHeight <= maxHeight`;
+- an undeclared key or a malformed value is a load error, not a silent default.
+
+Omitting `roomHeightBands` entirely keeps the shipped taper rather than removing the cap — "absent"
+must not mean "uncapped", because uncapped is the tall-box outcome this exists to prevent. A band
+whose `maxHeight` exceeds the planner's floor height is refused at generation time with a
+`[D2-HEIGHT]` log line, since a taller room would push its ceiling into the floor above.
+
+Measured over 76,285 procedural rooms (`RoomHeightProbe`):
+
+| | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|
+| before | 16.7% | 16.2% | 30.1% | 12.3% | 15.2% | 9.5% |
+| **after** | **12.3%** | **20.6%** | **24.6%** | **22.8%** | **15.2%** | **4.4%** |
+
+Heights pile up at a band's edges — every roll above `maxHeight` lands on `maxHeight`. That is not
+new; the old cap piled on the long side in exactly the same way.
+
+> **Editing this changes existing seeds' room heights, but not their layouts.** The roll stays
+> where it is and the band clamps the result, so the planner's random stream is identical whatever
+> table is loaded: mazes, footprints and corridors of existing worlds are untouched.
+
 #### Prefab frequency (`roomTemplateAttemptsPerFloor`)
 
 How many prefab rooms a dungeon gets is a datapack knob, in
@@ -718,8 +809,9 @@ that element", so `{ "name": "plain", "weight": 8 }` is the whole no-decoration 
 
 **Eligibility is filtered before weights are totalled**, so an ineligible scheme's weight leaves the
 denominator entirely and the survivors keep their relative proportions in a small room. This matters
-more than it looks: room height is `min(rand(5..10), max(width, depth))`, so a room has only
-`height - 2` interior wall rows — between **3 and 8**. In a 5-high room rows 1 and 2 are the door
+more than it looks: room height is a `5 + rand(6)` roll clamped into the footprint's height band
+(see `roomHeightBands` in the generation config), so a room has only `height - 2` interior wall
+rows — between **3 and 8** under the shipped taper. In a 5-high room rows 1 and 2 are the door
 halves and row 3 is the lintel, so there is nowhere to put a crown molding course. A vaulted ceiling
 is not a treatment that degrades gracefully in a short room; it is one that must not be rolled there,
 and `minHeight` is how you say so. Keep at least one unconstrained scheme in the list — a room
@@ -746,8 +838,8 @@ at generation time that looks exactly like a scheme that merely never won its ro
 > **Upper bounds make it possible to leave a hole.** With minimums only, one unconstrained scheme
 > guarantees every room matches something. With bounds, a band of room sizes can fall through every
 > scheme at once and silently generate undecorated. `DatapackResourcesParseTest` sweeps every room
-> shape the planner can build (odd sides 5–17, height `min(rand(5..10), max(width, depth))`) and
-> fails if any of them matches nothing.
+> shape the planner can build (odd sides 5–17, height bounded by the footprint's `roomHeightBands`
+> entry) and fails if any of them matches nothing.
 
 > Adding any of the four gates to a shipped motif **changes existing seeds**. The roll draws one
 > value against the eligible total weight, so gating a scheme out shifts the whole downstream random
@@ -1134,9 +1226,9 @@ all four:
 > room whose trim leaves too few cells simply gets fewer pots, the same degradation a small room
 > already had. You no longer have to keep the two out of one scheme.
 
-**Anchoring from the top is the point.** A wall is `height - 2` rows tall and room height is
-`min(rand(5..10), max(width, depth))` — so a course measured from the floor drifts away from the
-ceiling as rooms vary, while a top-anchored one stays put.
+**Anchoring from the top is the point.** A wall is `height - 2` rows tall and room height is a
+`5 + rand(6)` roll clamped into the footprint's `roomHeightBands` entry — so a course measured from
+the floor drifts away from the ceiling as rooms vary, while a top-anchored one stays put.
 
 **Mind the height budget.** That leaves only **3 to 8** wall rows. A course that resolves outside
 the wall is silently dropped rather than clamped (a crown squashed onto the plinth row reads worse

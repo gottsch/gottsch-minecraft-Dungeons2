@@ -25,6 +25,7 @@ import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
+import mod.gottsch.forge.dungeons2.core.config.RoomHeightBand;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -281,23 +282,32 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Valid range for an assembled transition's realized height. Diagnostic only,
-     * for the height-mismatch warning in {@link #scanTransitionGeometry} -- kept
-     * in sync by hand since this class doesn't have a live reference to the
-     * planner's (currently un-customized) floor constants.
+     * How much taller than the pitch an assembled transition's <em>door span</em> may be before it
+     * is reported &mdash; backlog #52.
      *
-     * <p>The floor-to-floor pitch a transition bridges is {@code floorHeight +
-     * gapBetweenFloors} (10+2=12 with current defaults) -- that's the MINIMUM a
-     * transition must reach to actually connect the two floor planes. It can be
-     * taller than that, up to {@code floorHeight*2 + gapBetweenFloors} (10*2+2=22):
-     * the transition's own footprint is reserved as the upper floor's START room,
-     * which already budgets a full {@code floorHeight} of vertical room at that XZ
-     * column regardless of what's built there, so the transition can use any of
-     * that slack without overflowing into unreserved territory. 22 is a max, not
-     * an exact target -- a shorter (but still &ge; 12) transition is fine.</p>
+     * <h2>The span is the traverse; the volume is not</h2>
+     * <p>What has to reach is the distance between the transition's two {@code dungeons2:door}
+     * markers, because those are the points the maze attaches the two floors' corridors to. The
+     * piece's own bounding box is a different and larger number: {@code stairs_1} is a 21-block-tall
+     * building whose doors are 12 apart, and {@code ladder1} is 18 tall with the same 12-block
+     * traverse. The top 8 blocks of {@code stairs_1} are structure <em>above</em> the upper door.</p>
+     *
+     * <p>This check used to compare the assembly's {@code maxY - minY + 1} against a hand-copied
+     * {@code 12}, which is the wrong quantity twice over: it passed {@code stairs_1} on the strength
+     * of the 21 (never looking at where its doors were), and it would equally have passed a template
+     * whose volume was 21 but whose doors were only 8 apart &mdash; the exact fault it existed to
+     * catch. The span is now measured directly and compared against
+     * {@code DungeonStackPlanner#pitch()} rather than a copy of it.</p>
+     *
+     * <h2>Why over is a warning and under is an error</h2>
+     * <p>A span <strong>shorter</strong> than the pitch cannot connect the floors at all: the upper
+     * door marker is handed to the maze as if it sat on the upper walking plane when it does not,
+     * and nothing downstream re-checks it. A span <strong>longer</strong> than the pitch is merely
+     * using slack &mdash; the transition's footprint is reserved as the upper floor's START room,
+     * which already budgets a full {@code floorHeight} at that XZ column &mdash; so it is fine up to
+     * one extra floor's worth, and only reported past that.</p>
      */
-    private static final int MIN_TRANSITION_HEIGHT = 12;
-    private static final int MAX_TRANSITION_HEIGHT = 22;
+    private static final int MAX_SPAN_OVERSHOOT_FACTOR = 2;
 
     public DungeonStructure(Structure.StructureSettings settings) {
         super(settings);
@@ -381,6 +391,14 @@ public class DungeonStructure extends Structure {
         // template. Keyed by world footprint so accepted groups can be picked out
         // once plan() has decided; see commitStagedTransitions.
         List<StagedTransition> stagedTransitions = new ArrayList<>();
+        // Constructed BEFORE the assembler that captures it, because #52's span check has to ask
+        // the planner what pitch it is actually planning at. The `with*` knobs below still run
+        // first in wall-clock terms -- the lambda only fires from inside plan() -- so reading
+        // planner.pitch() there sees the configured value, not the default. Hand-copying the
+        // number instead is what let the old MIN/MAX_TRANSITION_HEIGHT constants drift.
+        DungeonStackPlanner planner =
+                new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
+                        surfaceY, motifValue, new TemplateCatalog());
         DungeonStackPlanner.TransitionAssembler transitionAssembler = (worldX, worldY, worldZ, assemblySeed, commit) -> {
             // Seed the WorldgenRandom that JigsawPlacement.addPieces draws EVERY
             // choice from -- the start template, the rotation, the shuffled child
@@ -402,7 +420,8 @@ public class DungeonStructure extends Structure {
             // the piece's real local Y=0 lands exactly at worldY after that shift.
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
             List<StructurePiece> assembled = assembleTransition(context, candidatePos, motifValue);
-            TransitionGeometry tgeo = scanTransitionGeometry(assembled, templateManager, seed, worldY);
+            TransitionGeometry tgeo = scanTransitionGeometry(
+                    assembled, templateManager, seed, worldY, planner.pitch());
             if (tgeo == null) {
                 return Optional.empty();
             }
@@ -458,9 +477,6 @@ public class DungeonStructure extends Structure {
         // space, and returns the world anchor via DungeonLayout#getAnchor. Falls
         // back to a chunk-centered synthetic layout (no rendered entrance) when
         // nothing assembled with door markers.
-        DungeonStackPlanner planner =
-                new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
-                        surfaceY, motifValue, new TemplateCatalog());
         // One resolve, both knobs. This is the ONLY planner call site: /d2-generate delegates to
         // vanilla PlaceCommand.placeStructure, which comes back through here, so a knob wired up
         // here reaches the command for free.
@@ -468,9 +484,15 @@ public class DungeonStructure extends Structure {
                 DungeonGenerationConfigHelper.get(context.registryAccess());
         planner.withCorridorWidth(generationConfig.corridorWidth());
         planner.withRoomTemplateAttempts(generationConfig.roomTemplateAttemptsPerFloor());
-        // #50: the world's floor, so the stack can be shortened rather than generating into (or
-        // below) bedrock in low terrain. From the height accessor rather than a hardcoded -64,
-        // because that number is the overworld's and this structure is not promised to stay there.
+        // The floor-to-floor pitch. Set BEFORE the height bands below, which are checked against it.
+        planner.withFloorHeight(generationConfig.floorHeight());
+        planner.withGapBetweenFloors(generationConfig.gapBetweenFloors());
+        warnIfPitchIsNotTheShippedOne(generationConfig);
+        // #51: the room-height taper, clamped into whatever vertical budget the pitch above leaves.
+        // Clamped rather than rejected -- see clampToBudget.
+        planner.withRoomHeightBands(
+                RoomHeightBand.clampToBudget(generationConfig.roomHeightBands(),
+                        generationConfig.floorHeight()));
         planner.withMinBuildY(context.heightAccessor().getMinBuildHeight());
         // Hoisted rather than resolved inline: the [D2-SCHEME] logging below needs the same
         // config, and a room's scheme roll must be read from the motif the planner actually ran
@@ -763,6 +785,41 @@ public class DungeonStructure extends Structure {
     }
 
     /**
+     * Non-shipped pitches already reported, so the warning appears once per pitch rather than once
+     * per dungeon &mdash; worldgen runs this per chunk, and a per-chunk warning is a warning nobody
+     * reads. Same shape as {@link #BORROWED_POOLS}, and keyed by the value rather than being a
+     * one-shot latch for the same reason: a pack author who edits the number and reloads has a new
+     * thing to be told about.
+     */
+    private static final Set<Integer> WARNED_PITCHES = ConcurrentHashMap.newKeySet();
+
+    /**
+     * The pitch is the one number in {@code generation_config} whose consequences live outside the
+     * file &mdash; in the {@code .nbt} templates. Changing it is an authoring decision, so it says
+     * so out loud, at WARN, in addition to the {@code _comment} in the shipped file.
+     *
+     * <p>Not an error and not a refusal: a pack that has authored its own entrance and transitions
+     * for a different pitch is doing exactly the supported thing. {@code [D2-SPAN]} is what reports
+     * the actual failure, per assembled transition, if the templates in play cannot reach.</p>
+     */
+    private static void warnIfPitchIsNotTheShippedOne(DungeonGenerationConfig config) {
+        if (config.pitchIsShipped() || !WARNED_PITCHES.add(config.pitch())) {
+            return;
+        }
+        Dungeons.LOGGER.warn(
+                "[D2-PITCH] generation_config sets a floor pitch of {} (floorHeight {} + "
+                        + "gapBetweenFloors {}); every entrance and transition Dungeons2 ships is cut "
+                        + "for {}. You will need to author your own -- the shipped stairs and ladder "
+                        + "carry their door markers {} apart and cannot stretch, and the stairs_2 "
+                        + "chain only lands on multiples of 6. Watch for [D2-SPAN] errors.",
+                config.pitch(), config.floorHeight(), config.gapBetweenFloors(),
+                DungeonGenerationConfig.DEFAULT_FLOOR_HEIGHT
+                        + DungeonGenerationConfig.DEFAULT_GAP_BETWEEN_FLOORS,
+                DungeonGenerationConfig.DEFAULT_FLOOR_HEIGHT
+                        + DungeonGenerationConfig.DEFAULT_GAP_BETWEEN_FLOORS);
+    }
+
+    /**
      * Scans assembled transition pieces for {@code dungeons2:door} and
      * {@code dungeons2:connector} jigsaw markers, bucketing each into the upper
      * floor's candidates vs. the lower floor's, plus the combined XZ footprint
@@ -778,10 +835,10 @@ public class DungeonStructure extends Structure {
      */
     private static TransitionGeometry scanTransitionGeometry(List<StructurePiece> pieces,
                                                              StructureTemplateManager templateManager,
-                                                             long seed, int placementY) {
+                                                             long seed, int placementY,
+                                                             int requiredPitch) {
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
-        int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
         boolean any = false;
         RandomSource random = RandomSource.create(seed);
         List<BlockPos> doorPositions = new ArrayList<>();
@@ -797,8 +854,6 @@ public class DungeonStructure extends Structure {
             maxX = Math.max(maxX, bb.maxX());
             minZ = Math.min(minZ, bb.minZ());
             maxZ = Math.max(maxZ, bb.maxZ());
-            minY = Math.min(minY, bb.minY());
-            maxY = Math.max(maxY, bb.maxY());
 
             List<StructureTemplate.StructureBlockInfo> jigsaws = pool.getElement()
                     .getShuffledJigsawBlocks(templateManager, pool.getPosition(), pool.getRotation(), random);
@@ -841,18 +896,33 @@ public class DungeonStructure extends Structure {
             (p.getY() >= splitY ? topPremade : bottomPremade).add(new Coords2D(p.getX(), p.getZ()));
         }
 
-        int realizedHeight = maxY - minY + 1;
-        if (realizedHeight < MIN_TRANSITION_HEIGHT) {
-            Dungeons.LOGGER.warn(
-                    "assembled transition height {} < minimum {} at placementY={} -- too short to bridge "
-                            + "the two floor planes; check the authored template heights",
-                    realizedHeight, MIN_TRANSITION_HEIGHT, placementY);
-        } else if (realizedHeight > MAX_TRANSITION_HEIGHT) {
-            Dungeons.LOGGER.warn(
-                    "assembled transition height {} > maximum {} at placementY={} -- taller than the upper "
-                            + "floor's own reserved room-height budget at that XZ column; check the authored "
-                            + "template heights",
-                    realizedHeight, MAX_TRANSITION_HEIGHT, placementY);
+        // #52. Measured across the DOOR markers only -- connector markers sit on a floor plane and
+        // would drag the span, and the piece volume is not the traverse at all (see
+        // MAX_SPAN_OVERSHOOT_FACTOR). A single-ended assembly has no span to check.
+        if (!topDoors.isEmpty() && !bottomDoors.isEmpty()) {
+            int minDoorY = Integer.MAX_VALUE, maxDoorY = Integer.MIN_VALUE;
+            for (BlockPos d : doorPositions) {
+                minDoorY = Math.min(minDoorY, d.getY());
+                maxDoorY = Math.max(maxDoorY, d.getY());
+            }
+            int span = maxDoorY - minDoorY;
+            if (span < requiredPitch) {
+                // ERROR, not warn: the floors do not connect. Logged at a level the shipped
+                // [logging] level cannot drop, because the symptom in game is a stairwell that
+                // ends in stone with nothing anywhere saying why.
+                Dungeons.LOGGER.error(
+                        "[D2-SPAN] assembled transition spans {} between its door markers but the "
+                                + "floor pitch is {} at placementY={} -- it falls {} block(s) short and "
+                                + "the two floors will NOT connect. The authored templates need "
+                                + "re-cutting for this pitch; see backlog #52.",
+                        span, requiredPitch, placementY, requiredPitch - span);
+            } else if (span > requiredPitch * MAX_SPAN_OVERSHOOT_FACTOR) {
+                Dungeons.LOGGER.warn(
+                        "[D2-SPAN] assembled transition spans {} between its door markers, more than "
+                                + "{}x the floor pitch of {} at placementY={} -- past the upper floor's "
+                                + "own reserved budget at that XZ column.",
+                        span, MAX_SPAN_OVERSHOOT_FACTOR, requiredPitch, placementY);
+            }
         }
 
         Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);

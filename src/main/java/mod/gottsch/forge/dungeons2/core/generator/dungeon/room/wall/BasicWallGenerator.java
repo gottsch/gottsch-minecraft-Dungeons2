@@ -49,9 +49,10 @@ import java.util.Set;
  * {@code [originX..originX+width-1] x [originZ..originZ+depth-1]} on the floor; vertically the
  * walls span {@code [floorY+1..floorY+height-2]} (the floor block at Y=floorY and the ceiling at
  * Y=floorY+height-1 are emitted by {@code BasicFloorGenerator} / {@code BasicCeilingGenerator}).
- * That gives a wall {@code height - 2} rows tall &mdash; between <strong>3 and 8</strong>, since
- * {@code DungeonStackPlanner#pickRoomHeight} rolls {@code min(rand(5..10), max(width, depth))}. Any
- * pattern measured from the top has to cope with the low end of that.</p>
+ * That gives a wall {@code height - 2} rows tall &mdash; between <strong>3 and 8</strong> under the
+ * shipped taper, since {@code DungeonStackPlanner#pickRoomHeight} rolls {@code 5 + rand(6)} and
+ * clamps it into the footprint's {@code RoomHeightBand} (#51). Any pattern measured from the top
+ * has to cope with the low end of that.</p>
  *
  * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026; surface frame Aug 1, 2026)
  */
