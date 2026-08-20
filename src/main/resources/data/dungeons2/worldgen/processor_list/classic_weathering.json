@@ -779,14 +779,10 @@
       // (No tall_grass or large_fern -- those are two blocks high and only the lower half
       // would be placed.)
       //
-      // The two dungeons2:*_marker entries are NOT blocks that stay. They are the handoff from this
-      // pass, which knows where the dirt ended up, to DungeonPiece, which has a level and can spawn:
-      // each one is swapped for its mob (dungeons2:shrieker / dungeons2:violet_fungus) before it is
-      // ever written. A StructureProcessor returns block states and cannot create an entity, which
-      // is the whole reason they exist -- see DungeonsBlocks#SHRIEKER_MARKER.
-      //
-      // They sit in this list rather than in Java so which fungus grows, and how often relative to
-      // the mushrooms, stays a datapack decision. A motif that wants none simply omits them.
+      // The two "entity" entries are MOBS grown as if they were plants. GMM's Shrieker and Violet
+      // Fungus root themselves and never move, so a patch of decayed dirt is exactly where they
+      // belong -- and dungeons2:decoration spawns them from its finalizeProcessing pass, which has
+      // a real ServerLevelAccessor and the chunk box to dedupe against. No marker block involved.
       //
       // THE PALETTE IS WEIGHTED. An entry is either a bare id (weight 1) or {block, weight}, and
       // the draw is one roll over the total. Weights matter here more than anywhere else in this
@@ -802,8 +798,8 @@
           { "block": "minecraft:grass", "weight": 10 },
           { "block": "minecraft:fern", "weight": 10 },
           { "block": "minecraft:dead_bush", "weight": 10 },
-          { "block": "dungeons2:shrieker_marker", "weight": 1 },
-          { "block": "dungeons2:violet_fungus_marker", "weight": 1 }
+          { "entity": "dungeons2:shrieker", "weight": 1 },
+          { "entity": "dungeons2:violet_fungus", "weight": 1 }
         ]
       },
       // Underneath a dirt block, where the cell below it is air.

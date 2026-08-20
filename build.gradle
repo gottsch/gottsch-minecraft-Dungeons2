@@ -104,7 +104,11 @@ dependencies {
     implementation fg.deobf("gottsch:dungeonblocks:1.20.1-3.0.0")
     // gottsch's Monster Manual (gmm) - shared mob base-class/asset library. It REGISTERS NOTHING;
     // this mod registers the mobs it wants under its own namespace (see DungeonsEntities).
-    implementation fg.deobf("gottsch:monster-manual:[1.20.1-1.0.1,1.20.1-2.0.0)")
+    //
+    // Floor raised to 1.1.0 (2026-08-20): the Shrieker and Violet Fungus this mod grows as floor
+    // decoration are only rooted from that version -- 1.0.1 lets a player shove them off their
+    // square. Keep this in step with mods.toml's range; DependencyFloorsAgreeTest pins that.
+    implementation fg.deobf("gottsch:monster-manual:[1.20.1-1.1.0,1.20.1-2.0.0)")
     // Treasure2 - OPTIONAL soft dependency (backlog #48). compileOnly, NOT implementation: a chest
     // marker can opt in to a real Treasure2 chest, and the dungeon has to generate perfectly well
     // without the mod installed, so no Treasure2 class may be loaded unless

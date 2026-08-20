@@ -9,7 +9,5 @@
   "item.dungeons2.violet_fungus_egg": "Violet Fungus Spawn Egg",
   "block.dungeons2.mob_set_spawner": "Mob Set Spawner",
   "block.dungeons2.spawner_marker": "Spawner Marker",
-  "block.dungeons2.chest_marker": "Chest Marker",
-  "block.dungeons2.shrieker_marker": "Shrieker Marker",
-  "block.dungeons2.violet_fungus_marker": "Violet Fungus Marker"
+  "block.dungeons2.chest_marker": "Chest Marker"
 }

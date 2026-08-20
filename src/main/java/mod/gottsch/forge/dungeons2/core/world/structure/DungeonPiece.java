@@ -238,25 +238,8 @@ public abstract class DungeonPiece extends StructurePiece {
                 PieceProcessors.decorate(level, origin, box, infos, motifValue);
 
         List<BlockPos> jointed = new ArrayList<>();
-        // Fungi grown by the decoration pass. Collected here rather than spawned inline so they go
-        // through placeEntities, which owns the chunk-box clip that keeps a piece spanning four
-        // chunks from spawning four copies of each one.
-        List<EntityPlacement> grown = new ArrayList<>();
         for (StructureTemplate.StructureBlockInfo info : processed) {
             BlockPos worldPos = info.pos();
-            // A fungus marker is a message from the decoration pass, not a block: it names a cell
-            // of dirt that grew something the processor could not create, because a
-            // StructureProcessor returns block states and never entities. Swap it and skip the
-            // write -- letting it fall through would leave the marker standing in the finished
-            // dungeon, which is exactly what still happens in AUTHORED rooms (backlog #53).
-            if (FungusGrowth.isMarker(info.state())) {
-                EntityPlacement fungus = FungusGrowth.toPlacement(info.state(), worldPos,
-                        anchorX, anchorZ);
-                if (fungus != null) {
-                    grown.add(fungus);
-                }
-                continue;
-            }
             // Vanilla StructurePiece#getWorldZ mirrors Z for NORTH orientation
             // (`boundingBox.maxZ() - z`), not a plain `minZ() + z` offset like X and Y
             // get. This piece is never rotated, so undo exactly that reflection here;
@@ -303,15 +286,6 @@ public abstract class DungeonPiece extends StructurePiece {
             // generation and would turn a walk through a finished dungeon into a log flood.
             Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
                     p.getBlockEntityNbt());
-        }
-
-        // After the blocks, so a fungus is never spawned into a cell a later write would have
-        // filled. Every piece that renders through placeAll gets this -- rooms, corridors and doors
-        // alike -- because they all run the same weathering list and all of them can grow dirt.
-        // Only DungeonRoomPiece calls placeEntities itself (for its pots), so routing this through
-        // placeAll is what keeps a corridor's fungi from being left as marker blocks.
-        if (!grown.isEmpty()) {
-            placeEntities(level, box, grown);
         }
 
         settleJoinShapes(level, box, jointed);

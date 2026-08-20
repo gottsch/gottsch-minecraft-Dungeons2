@@ -149,7 +149,7 @@ public final class PieceProcessors {
         // Pass 1, over the WHOLE piece.
         List<StructureTemplate.StructureBlockInfo> decorated = levelIndependent.isEmpty()
                 ? toWorld(relativeInfos, origin)
-                : process(level, origin, relativeInfos, levelIndependent);
+                : process(level, origin, chunkBox, relativeInfos, levelIndependent);
 
         // Clip, and go back to origin-relative so pass 2 can offset them again.
         List<StructureTemplate.StructureBlockInfo> clipped = new ArrayList<>(decorated.size());
@@ -163,12 +163,12 @@ public final class PieceProcessors {
         // Pass 2, over this chunk's slice only.
         return levelReading.isEmpty()
                 ? toWorld(clipped, origin)
-                : process(level, origin, clipped, levelReading);
+                : process(level, origin, chunkBox, clipped, levelReading);
     }
 
     /** One pass of vanilla's processing loop, with no template involved. */
     private static List<StructureTemplate.StructureBlockInfo> process(
-            WorldGenLevel level, BlockPos origin,
+            WorldGenLevel level, BlockPos origin, BoundingBox chunkBox,
             List<StructureTemplate.StructureBlockInfo> relativeInfos,
             List<StructureProcessor> processors) {
 
@@ -177,6 +177,23 @@ public final class PieceProcessors {
         // info's world position is exactly origin + its relative position.
         StructurePlaceSettings settings = new StructurePlaceSettings();
         processors.forEach(settings::addProcessor);
+
+        // The chunk box, which vanilla's own template path always sets (SinglePoolElement does it
+        // from the box postProcess was handed) and this path never did.
+        //
+        // It changes NOTHING about the blocks: this method returns a list and the clipping of
+        // writes happens elsewhere. It matters because a processor's finalizeProcessing may create
+        // ENTITIES -- growth that names a mob rather than a block does -- and entity creation is
+        // not idempotent across the per-chunk re-runs of postProcess the way rewriting a block
+        // state is. getBoundingBox() is the only thing telling such a processor which chunk owns a
+        // given cell; left unset it is NULL, and a processor that treats null as "no clip" would
+        // spawn one copy per chunk the piece spans.
+        //
+        // Safe on the unclipped first pass too, and that is the pass that matters here: the
+        // neighbour-aware processors see the whole piece to DECIDE, and this only governs which of
+        // their decisions this particular chunk is responsible for realising.
+        settings.setBoundingBox(chunkBox);
+
         return StructureTemplate.processBlockInfos(level, origin, origin, settings, relativeInfos, null);
     }
 

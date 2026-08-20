@@ -87,7 +87,10 @@ side="BOTH"
 [[dependencies.dungeons2]]
 modId="gmm"
 mandatory=true
-versionRange="[1.0.1,2.0.0)"
+# 1.1.0 is where the Shrieker and Violet Fungus became unpushable. This mod grows them as floor
+# decoration, so on 1.0.1 they can be shoved off their square -- degraded rather than broken, but
+# not worth shipping. Keep in step with build.gradle.
+versionRange="[1.1.0,2.0.0)"
 ordering="AFTER"
 side="BOTH"
 

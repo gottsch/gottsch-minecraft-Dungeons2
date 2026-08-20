@@ -99,45 +99,6 @@ public class DungeonsBlocks {
                     .mapColor(MapColor.WOOD).strength(2.5F).sound(SoundType.WOOD).noLootTable()));
 
     /**
-     * The fungus growth markers. Unlike the two markers above, <strong>nobody authors these</strong>
-     * &mdash; the weathering pass emits them into {@code floor_growth} and {@code DungeonPiece}
-     * swaps each one for its entity before it is ever written to the world.
-     *
-     * <h2>Why a marker at all, when the growth rule could just name the mob</h2>
-     * <p>It could not. {@code floor_growth} is a {@code DecorationRule} of
-     * {@code {probability, blocks}} and a {@code StructureProcessor} returns block states &mdash;
-     * there is no point in that pass where an entity can be created. A marker block is the smallest
-     * thing that carries the decision from the processor, which knows <em>where the dirt is</em>, to
-     * the piece, which has the level and can spawn. It is the same handoff {@code spawner_marker}
-     * and {@code chest_marker} make, for the same reason.</p>
-     *
-     * <h2>Two markers, not one with a block entity</h2>
-     * <p>One marker per mob, so <em>which</em> fungus grows is a datapack decision: the two sit in
-     * the {@code floor_growth} list beside the mushrooms and take their share of the same uniform
-     * pick, and a motif that wants only shriekers simply lists one. A single marker would have to
-     * carry the choice in Java or in a block entity, and both put a weight somewhere no other growth
-     * knob lives. Same "ONE MARKER = ONE SET" reasoning the spawner processor records.</p>
-     *
-     * <h2>They still have to look like something</h2>
-     * <p>Solid, textured with mushroom stem, and not air-like &mdash; because a marker that reaches
-     * an <em>authored</em> room's dirt is not consumed today (see backlog #53) and will sit there.
-     * A recognisably fungal block is the least confusing thing to find in that case, and it is also
-     * what makes the gap visible rather than silent. {@code noLootTable}: scaffolding, not content.</p>
-     */
-    public static final RegistryObject<Block> SHRIEKER_MARKER = Registration.BLOCKS.register(
-            "shrieker_marker",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_PURPLE).strength(0.5F).sound(SoundType.FUNGUS)
-                    .noLootTable()));
-
-    /** See {@link #SHRIEKER_MARKER}. */
-    public static final RegistryObject<Block> VIOLET_FUNGUS_MARKER = Registration.BLOCKS.register(
-            "violet_fungus_marker",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_PURPLE).strength(0.5F).sound(SoundType.FUNGUS)
-                    .noLootTable()));
-
-    /**
      * Forces this class to load so the fields above actually register. Called from
      * {@link Registration#init()}; see that method's comment for why a holder nothing references
      * registers nothing at all.

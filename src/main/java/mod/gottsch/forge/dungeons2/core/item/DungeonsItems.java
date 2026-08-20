@@ -57,10 +57,9 @@ public class DungeonsItems {
      *
      * <p>The two are opposite cases. An egg is worth having for a mob nothing spawns naturally --
      * it is the only way to look at one without generating a dungeon and finding decayed dirt. The
-     * fungus markers, by contrast, are never placed by hand: the weathering pass emits them and
-     * {@code DungeonPiece} consumes them in the same tick, so unlike the spawner marker there is no
-     * authoring workflow for them to serve. The chest marker sets the same precedent in reverse --
-     * it has no item either.</p>
+     * fungi themselves are never placed by hand: the weathering pass names them directly in its
+     * growth palette and {@code dungeons2:decoration} spawns them, so there is no authoring
+     * workflow and no marker block to give an item to.</p>
      *
      * <p>Colours match Dungeon Denizens', so the same mob reads the same in any pack carrying both.</p>
      */
