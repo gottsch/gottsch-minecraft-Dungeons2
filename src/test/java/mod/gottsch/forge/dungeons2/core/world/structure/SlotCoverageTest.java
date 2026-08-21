@@ -85,6 +85,10 @@ class SlotCoverageTest {
             case END -> floorIndex < floorCount - 1 ? "the transition below" : null;
             case NORMAL -> room.getTemplateId() != null ? "an assembled prefab room" : null;
             case TERMINAL -> null;
+            // #46. BOSS is set ONLY when an authored end_rooms template assembled and the planner
+            // adopted it, so unlike the TERMINAL-as-END mistake this bucket really does have a
+            // coverer. An attempt that failed leaves the slot TERMINAL and the row above.
+            case BOSS -> "the assembled boss room";
         };
     }
 

@@ -284,6 +284,17 @@ public class DungeonStackPlanner {
      * <p>Defaults to the synthetic 7x7, so a caller that never sets it plans byte-identically to
      * before this existed.</p>
      */
+    /**
+     * Supplies the boss-room assembler (#46). Absent &mdash; no {@code end_rooms} pool authored, or
+     * no Forge shell to assemble in &mdash; and the bottom floor's terminal room is built
+     * procedurally exactly as it is today. Degrade toward generating, the convention every
+     * missing-content path here follows.
+     */
+    public DungeonStackPlanner withBossRoomAssembler(RoomAssembler assembler) {
+        this.bossRoomAssembler = assembler;
+        return this;
+    }
+
     public DungeonStackPlanner withTerminalRoomSize(int width, int depth) {
         this.terminalRoomWidth = width;
         this.terminalRoomDepth = depth;
@@ -518,6 +529,30 @@ public class DungeonStackPlanner {
     // the floor edge. The entrance is a THIRD variant and is not part of this parity:
     // it has no assembler and drives the layout anchor rather than fitting a slot.
     private Map<String, TemplateLimit> templateLimits = Map.of();
+
+    /**
+     * Assembles the authored boss room for the bottom floor's terminal slot &mdash; backlog #46.
+     * Same {@link RoomAssembler} contract as the interior-room path, drawing from a different pool
+     * ({@code end_rooms/<motif>/}); a separate interface of identical shape would have been two
+     * names for one protocol.
+     *
+     * <p><strong>Null consumes no randomness and takes no branch</strong>, so a dungeon planned
+     * without a boss assembler is byte-identical to one planned before this existed. That is
+     * load-bearing: the probe below draws from {@code random}, so a boss room that is merely
+     * <em>attempted</em> already shifts the stream. Same contract as {@link #templateLimits}.</p>
+     */
+    private RoomAssembler bossRoomAssembler;
+
+    /**
+     * How many pool draws the boss slot gets before falling back to the procedural terminal room.
+     *
+     * <p>The draw is random, not size-ordered, so "the largest template that fits" is not something
+     * one probe can ask for &mdash; each attempt is a fresh draw that may or may not fit the floor.
+     * Measured (see {@code TerminalRoomFitProbe}), MEDIUM and LARGE bottom floors hold anything up
+     * to 19x19, so retries only matter on SMALL, where a large template genuinely will not fit and
+     * more attempts buy a smaller draw rather than luck.</p>
+     */
+    private static final int BOSS_ASSEMBLY_ATTEMPTS = 4;
 
     private RoomAssembler roomAssembler;
 
@@ -966,15 +1001,25 @@ public class DungeonStackPlanner {
             // planner doesn't have to auto-generate one (which often fails in small footprints
             // due to its hardcoded 5-attempt cap).
             Rectangle2D endFootprint;
+            // #46: set only when an authored boss template actually assembled AND was adopted. The
+            // role follows this rather than the floor index, which is what keeps #38's invariant
+            // intact -- an attempted-but-failed boss room must leave a slot this mod still builds.
+            BossSlot bossSlot = null;
             if (i < floorCount - 1) {
                 endFootprint = transitionLocalFootprints.get(i);
             } else {
-                // Bottom-floor terminal room. 7x7 synthetic by default; an authored boss template
-                // hands over its own measured footprint via withTerminalRoomSize (#46).
-                endFootprint = placeAvoidingStart(footprint, terminalRoomWidth, terminalRoomDepth,
-                        startFootprint, random);
-                if (endFootprint == null) {
-                    return Optional.empty();
+                bossSlot = placeBossRoom(footprint, startFootprint, planAnchor, floorFloors[i],
+                        random);
+                if (bossSlot != null) {
+                    endFootprint = bossSlot.footprint();
+                } else {
+                    // Bottom-floor terminal room. 7x7 synthetic by default; an authored boss
+                    // template hands over its own measured footprint instead (#46).
+                    endFootprint = placeAvoidingStart(footprint, terminalRoomWidth,
+                            terminalRoomDepth, startFootprint, random);
+                    if (endFootprint == null) {
+                        return Optional.empty();
+                    }
                 }
             }
 
@@ -1006,6 +1051,10 @@ public class DungeonStackPlanner {
             // doorways to that transition's real top-floor door markers the same way.
             if (i < floorCount - 1 && !transitionTopDoorLocalCells.get(i).isEmpty()) {
                 endRoom.setCandidateDoorways(transitionTopDoorLocalCells.get(i));
+            } else if (bossSlot != null && !bossSlot.doorLocalCells().isEmpty()) {
+                // An authored boss room's own dungeons2:door markers, exactly where a transition's
+                // go. degrees stays 1 above: one path in is the point of the room.
+                endRoom.setCandidateDoorways(bossSlot.doorLocalCells());
             }
 
             // Phase 8: try to place a few jigsaw-assembled interior rooms before the
@@ -1020,6 +1069,12 @@ public class DungeonStackPlanner {
             List<IRoom2D> templateRooms = new ArrayList<>();
             Map<String, Integer> templatesOnFloor = new HashMap<>();
             Map<IRoom2D, String> templateIdByRoom = new IdentityHashMap<>();
+            if (bossSlot != null) {
+                // Tags the END room as template-covered, which is what makes commitStagedRooms
+                // adopt the staged boss pieces -- it keys adoption on a non-null templateId, so a
+                // boss room without one would be staged, never matched, and silently discarded.
+                templateIdByRoom.put(endRoom, "dungeons2:end_rooms/assembled");
+            }
             Set<Coords2D> templateRoomPremadeLocalCells = new HashSet<>();
             if (roomAssembler != null) {
                 List<Rectangle2D> roomReserved = new ArrayList<>();
@@ -1162,10 +1217,16 @@ public class DungeonStackPlanner {
                 premadeCells.addAll(transitionTopPremadeLocalCells.get(i));
             }
             premadeCells.addAll(templateRoomPremadeLocalCells);
+            if (bossSlot != null) {
+                // The boss template's dungeons2:connector cells: it built those doors itself, so
+                // the emitter must not put a DungeonDoorPiece on top of them.
+                premadeCells.addAll(bossSlot.premadeLocalCells());
+            }
 
             FloorLayout floor = convertLevel(
                     levelOpt.get(), i, floorFloors[i], floorCeilings[i],
-                    footprint, random, premadeCells, templateIdByRoom, i == floorCount - 1);
+                    footprint, random, premadeCells, templateIdByRoom, i == floorCount - 1,
+                    bossSlot != null);
             layout.getFloors().add(floor);
         }
 
@@ -1437,6 +1498,78 @@ public class DungeonStackPlanner {
                         : ((width & 1) == 0 ? "the width is" : "the depth is"));
     }
 
+    /**
+     * An adopted boss room: its floor-local footprint, the door cells the maze may open, and the
+     * {@code dungeons2:connector} cells whose doors the template already built.
+     */
+    private record BossSlot(Rectangle2D footprint, List<Coords2D> doorLocalCells,
+                            List<Coords2D> premadeLocalCells) {}
+
+    /**
+     * Tries to seat an authored boss room in the bottom floor's terminal slot &mdash; #46. Returns
+     * null when there is no assembler, no draw fits, or the assembler broke its contract; the caller
+     * then reserves the synthetic terminal room and the slot stays {@code TERMINAL}.
+     *
+     * <p>Measure-then-reserve, the same protocol the transition and interior-room paths use and for
+     * the same reason: vanilla rotates the prefab, which moves its bounding box's min corner off the
+     * position asked for, so a slot chosen before the real footprint is known is a guess.</p>
+     *
+     * <p><strong>The direction of constraint is the one difference.</strong> A transition proposes a
+     * position and the planner accepts or rejects it; here the footprint is measured first and then
+     * {@link #placeAvoidingStart} finds it a home on a floor whose size is already known. That is a
+     * simpler problem, not a new one.</p>
+     */
+    private BossSlot placeBossRoom(Rectangle2D footprint, Rectangle2D startFootprint,
+                                   ICoords planAnchor, int floorY, Random random) {
+        if (bossRoomAssembler == null) {
+            // Before any draw from `random` -- see the field's note on byte-identical plans.
+            return null;
+        }
+        for (int attempt = 0; attempt < BOSS_ASSEMBLY_ATTEMPTS; attempt++) {
+            long assemblySeed = random.nextLong();
+            Optional<AssembledRoom> probe = bossRoomAssembler.assemble(
+                    planAnchor.getX(), floorY, planAnchor.getZ(), assemblySeed, false);
+            if (probe.isEmpty()) {
+                continue;
+            }
+            Rectangle2D probeRect = probe.get().worldFootprint();
+            warnIfEvenSided("boss room", probeRect.getWidth(), probeRect.getHeight());
+            // No PREFAB_EDGE_MARGIN: unlike an interior prefab this slot is the floor's END, and the
+            // maze reserves it before routing anything, so its door candidates are the template's
+            // own rather than cells the corridor carver has to find room beside.
+            Rectangle2D slot = placeAvoidingStart(footprint, probeRect.getWidth(),
+                    probeRect.getHeight(), startFootprint, random);
+            if (slot == null) {
+                // Too big for this floor. Costs an attempt rather than re-rolling within one, the
+                // same bound the interior-room path applies to a capped template.
+                continue;
+            }
+            int offsetX = probeRect.getMinX() - planAnchor.getX();
+            int offsetZ = probeRect.getMinY() - planAnchor.getZ();
+            Optional<AssembledRoom> placed = bossRoomAssembler.assemble(
+                    planAnchor.getX() + slot.getMinX() - offsetX, floorY,
+                    planAnchor.getZ() + slot.getMinY() - offsetZ, assemblySeed, true);
+            if (placed.isEmpty()) {
+                continue;
+            }
+            Rectangle2D wf = placed.get().worldFootprint();
+            Rectangle2D real = new Rectangle2D(wf.getMinX() - planAnchor.getX(),
+                    wf.getMinY() - planAnchor.getZ(), wf.getWidth(), wf.getHeight());
+            if (!withinLocalBounds(real, footprint)
+                    || !noIntersections(real, List.of(startFootprint))) {
+                // Only reachable if the assembler did not honour its contract: the committed prefab
+                // came back a different shape than the probe and missed the slot reserved for it.
+                continue;
+            }
+            List<Coords2D> premadeLocal = toLocalCells(placed.get().premadeWorldCells(), planAnchor);
+            List<Coords2D> doorsLocal = new ArrayList<>(
+                    toLocalCells(placed.get().doorWorldCells(), planAnchor));
+            doorsLocal.addAll(premadeLocal);
+            return new BossSlot(real, doorsLocal, premadeLocal);
+        }
+        return null;
+    }
+
     private Rectangle2D placeAvoidingStart(Rectangle2D footprint, int w, int d,
                                             Rectangle2D reserved, Random random) {
         return placeAvoidingReserved(footprint, w, d,
@@ -1540,7 +1673,8 @@ public class DungeonStackPlanner {
      */
     private FloorLayout convertLevel(ILevel2D level, int floorIndex, int floorY, int ceilingY,
                                       Rectangle2D footprint, Random random, Set<Coords2D> premadeCells,
-                                      Map<IRoom2D, String> templateIdByRoom, boolean bottomFloor) {
+                                      Map<IRoom2D, String> templateIdByRoom, boolean bottomFloor,
+                                      boolean bossAdopted) {
         FloorLayout floor = new FloorLayout(floorIndex, floorY, ceilingY, footprint);
         // Stash the maze grid (transient) so the renderer's corridor builder can
         // resolve neighbor wall cells. Not serialized; see FloorLayout#grid.
@@ -1554,7 +1688,12 @@ public class DungeonStackPlanner {
             // last one is the one place that decides.
             RoomRole role = room2D.isStart() ? RoomRole.START
                     : (room2D.isEnd()
-                        ? (bottomFloor ? RoomRole.TERMINAL : RoomRole.END)
+                        ? (bottomFloor
+                            // #46: BOSS only when the authored template assembled AND was adopted.
+                            // TERMINAL otherwise -- see RoomRole, and #38 for what happens if a
+                            // slot is marked covered when nothing covers it.
+                            ? (bossAdopted ? RoomRole.BOSS : RoomRole.TERMINAL)
+                            : RoomRole.END)
                         : RoomRole.NORMAL);
             int width = room2D.getWidth();
             int depth = room2D.getHeight(); // 2D "height" = 3D depth

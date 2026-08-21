@@ -203,6 +203,24 @@ public class DungeonStructure extends Structure {
     private static final int ROOM_MAX_DISTANCE = 16;
 
     /**
+     * Backlog #46: the authored boss room for the bottom floor's terminal slot.
+     *
+     * <p>A fourth pool category alongside entrance / transitions / rooms, resolving through #5's
+     * fallback like the rest. <strong>Nothing ships one</strong>, deliberately: with no
+     * {@code end_rooms} pool authored the resolver returns empty, the assembler returns empty, and
+     * the planner builds the procedural terminal room exactly as it does today. Authoring the pool
+     * is what turns the feature on.</p>
+     *
+     * <p>Under #45 this is the one category that will <em>not</em> need a stratum tier: the terminal
+     * slot is always on the bottom floor, which is always in the deepest stratum, so there is
+     * exactly one stratum a boss room can ever be authored for. Stated here so nobody adds the
+     * folder level for symmetry.</p>
+     */
+    private static ResourceLocation bossRoomStartPool(String motifValue) {
+        return new ResourceLocation(Dungeons.MOD_ID, "end_rooms/" + motifValue + "/normal");
+    }
+
+    /**
      * Backlog #5: the motif whose pools stand in for a motif that has not authored its own.
      *
      * <p><strong>Why a fallback tier exists at all, and it is not about looks.</strong> Before this,
@@ -472,6 +490,33 @@ public class DungeonStructure extends Structure {
                     PoolElementIds.locationsOf(assembled)));
         };
 
+        // #46: the authored boss room. Same staging list as the interior prefabs -- both are
+        // adopted by commitStagedRooms on a non-null templateId, so there is nothing for a second
+        // list to key differently. Same contract, a different pool.
+        DungeonStackPlanner.RoomAssembler bossRoomAssembler =
+                (worldX, worldY, worldZ, assemblySeed, commit) -> {
+            context.random().setSeed(assemblySeed);
+            BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
+            List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue,
+                    DungeonStructure::bossRoomStartPool);
+            RoomGeometry rgeo = scanRoomGeometry(assembled, templateManager, seed);
+            if (rgeo == null) {
+                // No end_rooms pool authored is the normal case today, and it is silent on purpose:
+                // this category is optional content, unlike the entrance and transition pools whose
+                // absence #5 warns about because it breaks the dungeon structurally.
+                return Optional.empty();
+            }
+            if (commit) {
+                stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
+                Dungeons.LOGGER.info("[D2-BOSS] boss room {} at ({},{},{}) {}x{}",
+                        describeElements(assembled), worldX, worldY, worldZ,
+                        rgeo.worldFootprint().getWidth(), rgeo.worldFootprint().getHeight());
+            }
+            return Optional.of(new DungeonStackPlanner.AssembledRoom(
+                    rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells(),
+                    PoolElementIds.locationsOf(assembled)));
+        };
+
         // Hand the entrance's world geometry to the planner, which sizes floor 0's
         // grid (>= the size tier's rolled footprint), maps the door cells to grid
         // space, and returns the world anchor via DungeonLayout#getAnchor. Falls
@@ -510,6 +555,20 @@ public class DungeonStructure extends Structure {
         }
         planner.withTransitionAssembler(transitionAssembler);
         planner.withRoomAssembler(roomAssembler);
+        // ONLY when an end_rooms pool exists AND has something in it. This is not tidiness --
+        // placeBossRoom draws from the planner's stream for each attempt, so wiring an assembler
+        // that cannot produce anything would consume randomness on the bottom floor of every
+        // dungeon and re-roll every existing world for a feature that is switched off.
+        //
+        // The size() check is the load-bearing half: the shipped end_rooms/classic/normal.json is
+        // an EMPTY pool, present so the path and the schema are there to author into. A present
+        // but empty pool resolves happily, so testing only for presence would switch the feature
+        // "on" the moment that placeholder shipped -- which is the exact fault this guard exists
+        // to prevent, arriving through the file added to document it.
+        if (resolveStartPool(context, motifValue, DungeonStructure::bossRoomStartPool)
+                .map(pool -> pool.value().size() > 0).orElse(false)) {
+            planner.withBossRoomAssembler(bossRoomAssembler);
+        }
         if (geo != null) {
             Rectangle2D entranceWorldRect = new Rectangle2D(geo.minX(), geo.minZ(),
                     geo.maxX() - geo.minX() + 1, geo.maxZ() - geo.minZ() + 1);
@@ -1125,8 +1184,19 @@ public class DungeonStructure extends Structure {
      */
     private static List<StructurePiece> assembleRoom(GenerationContext context, BlockPos position,
                                                      String motifValue) {
+        return assembleRoom(context, position, motifValue, DungeonStructure::roomStartPool);
+    }
+
+    /**
+     * The pool-parametrized form, so the boss room (#46) and the interior prefabs share one
+     * assembly path rather than becoming two copies that drift. Both are a single self-contained
+     * piece at one Y anchor, so the depth and distance caps are the same for both.
+     */
+    private static List<StructurePiece> assembleRoom(GenerationContext context, BlockPos position,
+                                                     String motifValue,
+                                                     java.util.function.Function<String, ResourceLocation> poolFor) {
         Optional<Holder.Reference<StructureTemplatePool>> startPool =
-                resolveStartPool(context, motifValue, DungeonStructure::roomStartPool);
+                resolveStartPool(context, motifValue, poolFor);
         if (startPool.isEmpty()) {
             return List.of();
         }

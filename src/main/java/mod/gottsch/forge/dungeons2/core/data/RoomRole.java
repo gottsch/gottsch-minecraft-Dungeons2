@@ -29,6 +29,8 @@ package mod.gottsch.forge.dungeons2.core.data;
  *         downstairs {@link TransitionData} template.</li>
  *     <li>{@link #TERMINAL} &mdash; the bottom floor's final room, where the dungeon
  *         stops. Nothing covers it, so it is built procedurally.</li>
+ *     <li>{@link #BOSS} &mdash; the same slot as {@code TERMINAL}, but covered by an
+ *         authored {@code end_rooms} template that actually assembled. Backlog #46.</li>
  * </ul>
  *
  * <p>The piece emitter in the Forge shell skips rooms marked {@code START} or
@@ -58,11 +60,25 @@ package mod.gottsch.forge.dungeons2.core.data;
  *
  * @author Mark Gottschling on May 25, 2026
  */
+/*
+ * <h2>Why BOSS and TERMINAL are two roles for one slot</h2>
+ * <p>Backlog #46 promises the player an authored set-piece at the end of the descent, and a promise
+ * is exactly what makes the failure path matter. Flipping the bottom floor's slot to a covered role
+ * unconditionally would reintroduce #38 verbatim: if the boss template does not assemble, nothing
+ * fills the slot and the maze has still routed a door into it.
+ *
+ * <p>So the role records <em>what actually happened</em> rather than what was intended. The template
+ * assembled and was adopted, and the slot is {@code BOSS} and covered; anything else and it stays
+ * {@code TERMINAL} and this mod builds it, which is precisely today's behaviour. That keeps #38's
+ * invariant exhaustive -- every slot is either covered by a real piece or built here -- and
+ * {@code SlotCoverageTest} already asks that question.
+ */
 public enum RoomRole {
     NORMAL,
     START,
     END,
-    TERMINAL;
+    TERMINAL,
+    BOSS;
 
     /**
      * Whether a room in this role is built by this mod's own procedural builders, as opposed to
