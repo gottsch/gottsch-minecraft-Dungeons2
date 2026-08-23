@@ -1,11 +1,17 @@
 {
-  "name": "dungeons2:entrance/classic/descent_ladder",
+  "name": "dungeons2:decorations/classic/center_decor/center_decor",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "element": {
+        "element_type": "minecraft:empty_pool_element"
+      },
+      "weight": 20
+    },
+    {
+      "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:entrances/classic/entrance_ladder_2",
+        "location": "dungeons2:decorations/classic/5x5_well_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

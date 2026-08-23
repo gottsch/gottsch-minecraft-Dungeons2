@@ -560,7 +560,7 @@ public class DungeonStructure extends Structure {
         // that cannot produce anything would consume randomness on the bottom floor of every
         // dungeon and re-roll every existing world for a feature that is switched off.
         //
-        // The size() check is the load-bearing half: the shipped end_rooms/classic/normal.json is
+        // The size() check is the load-bearing half: the shipped end_rooms/classic/center_decor.json is
         // an EMPTY pool, present so the path and the schema are there to author into. A present
         // but empty pool resolves happily, so testing only for presence would switch the feature
         // "on" the moment that placeholder shipped -- which is the exact fault this guard exists

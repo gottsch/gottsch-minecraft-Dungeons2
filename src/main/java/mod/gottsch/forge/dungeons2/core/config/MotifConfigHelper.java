@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Static lookup helper for the {@link MotifConfigRegistries#MOTIF_CONFIG} datapack registry, and
  * the place a motif's folder of files becomes one {@link MotifConfig}.
  *
- * <p>Motif-scoped, same convention as {@code rooms/<motif>/normal.json} and the weathering
+ * <p>Motif-scoped, same convention as {@code rooms/<motif>/center_decor.json} and the weathering
  * processor lists ({@code PieceProcessors#weatheringList}). A motif with no files (or no registry,
  * or a blank motif) degrades to {@link MotifConfig#DEFAULT} so callers never deal with null.</p>
  *

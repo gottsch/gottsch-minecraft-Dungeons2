@@ -386,6 +386,73 @@ no outgoing joint) plus the `.nbt` files it references — nothing else needs to
 mechanism already reads whatever pool entries exist. `classic/normal.json` is the only one
 authored today.
 
+### Boss room pool (`end_rooms/<motif>/`) — backlog #46
+
+The bottom floor's final room. Same shape as the room pool above — one pool, no chaining, one Y
+anchor — but with two differences that matter.
+
+Lives at `data/dungeons2/worldgen/template_pool/end_rooms/<motif>/normal.json`. **The shipped
+`classic` one is empty**, on purpose: it is the path and the schema, there to author into. While it
+is empty the bottom floor builds the procedural terminal room it always has.
+
+| Pool | Role | Contents |
+|------|------|----------|
+| `dungeons2:end_rooms/<motif>/normal` | the only pool | Complete self-contained pieces, `dungeons2:door` (and optionally `dungeons2:connector`) markers around the perimeter at local Y=0. Identical to the room pool's entries. |
+
+**It is guaranteed, not opportunistic.** A prefab room that fails to place just means one fewer
+prefab. This slot is a promise to the player, so the failure path is the part that was designed:
+if the template does not assemble, does not fit, or the pool is empty, the slot stays the
+procedural terminal room. It is never left uncovered — a covered slot with nothing covering it is a
+door opening into unbuilt terrain, which is a bug this mod has already shipped once.
+
+**Size is nearly free, with one constrained tier.** Measured over 300 seeds per size tier — the
+figure is the share of seeds that still generate a dungeon at all, because a terminal slot that
+cannot be placed fails the whole plan, not just the boss room:
+
+| tier | 9x9 | 11x11 | 13x13 | 15x15 | 17x17 | 19x19 | 21x21 |
+|---|---|---|---|---|---|---|---|
+| SMALL | 99% | 88% | 62% | 46% | 43% | 36% | 26% |
+| MEDIUM | 100% | 100% | 100% | 100% | 100% | 100% | 98% |
+| LARGE | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
+
+So MEDIUM and LARGE — two thirds of dungeons — hold anything up to 19x19. SMALL's bottom floor is
+25x25 to 35x35 and has to fit the room *beside* the upstairs transition, which is what binds. A
+template too large for a SMALL dungeon does not break it; that dungeon falls back to the procedural
+terminal room.
+
+The planner takes up to **four pool draws** and uses the first that fits, so authoring more than one
+size gives SMALL dungeons something to land on. The draw is random rather than size-ordered, so this
+is "the first that fits", not "the largest that fits".
+
+Two smaller notes:
+
+- The template's own door markers become the maze's door candidates, exactly as a transition's do.
+  The room keeps **one** entrance by design — one path in is the point of it.
+- Unlike transitions there is no height budget to hit: the room is whatever height you build it to.
+
+> **When you add the first element**, `EndRoomPoolPlaceholderTest` fails on purpose. Its message is
+> the hand-off: delete it, and add an `end_rooms` row to `PoolWiringTest`'s `CATEGORIES` so the pool
+> gets the same wiring checks every other populated category gets.
+
+#### Room footprints: odd sides, and what an even one costs
+
+Rooms sit on an odd-cell maze lattice — corridors occupy even cells and step two at a time. Two
+rules follow, and only one of them is enforced:
+
+- **A room's origin must be even.** The maze rejects an odd one outright. You never set this; the
+  planner does.
+- **A room's size is conventionally odd, and nothing checks it.** An authored template with an even
+  side loads, places, connects and renders a complete wall ring. It is not broken.
+
+What an even side costs is one wasted cell on that axis: the far wall lands on a corridor lane, so
+the maze's own wall column ends up alongside the room's and the two read as a doubled wall. There is
+a second cost that applies only to *procedural* rooms — an even interior has no centre cell, so
+centred treatments (centre pillar, quartet, centre ceiling panel, cross floor) sit one cell off. An
+authored template lays out its own interior and never meets them.
+
+So an even-sided boss room is a reasonable thing to author. `[D2-PARITY]` logs at WARN naming any
+authored footprint with an even side, once per distinct size — it reports, it never refuses.
+
 #### Floor pitch (`floorHeight`, `gapBetweenFloors`) — read this before changing it
 
 > **This is not a tuning knob.** Their sum is the floor-to-floor **pitch**, and the pitch is the
