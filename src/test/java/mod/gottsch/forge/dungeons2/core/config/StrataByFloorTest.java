@@ -63,6 +63,15 @@ class StrataByFloorTest {
             CorridorConfig.DEFAULT.height(), CorridorConfig.DEFAULT.profile(),
             Optional.empty(), Optional.empty(), List.of(), List.of());
 
+    private static final CorridorStyle VAULTED = new CorridorStyle("vaulted", 3, 7,
+            CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs"),
+            Optional.of(6), List.of());
+
+    private static Stratum corridorBand(int minFloorIndex, CorridorConfig corridor) {
+        return new Stratum(minFloorIndex, Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.of(corridor), Optional.empty());
+    }
+
     private static Stratum stratum(int minFloorIndex, WallConfig wall) {
         return new Stratum(minFloorIndex, Optional.empty(), Optional.of(wall), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty());
@@ -198,13 +207,37 @@ class StrataByFloorTest {
 
     // ---------- the codec ----------
 
+    /**
+     * A band with no sections is legal, and it is how you end the band above it.
+     *
+     * <p>Bands overlay the MOTIF, not each other, so {@code {"minFloorIndex": 1}} resolves to the
+     * motif exactly as authored. Rejecting it used to force the author to restate a section they
+     * did not want to change &mdash; the drift an overlay exists to prevent.</p>
+     */
     @Test
-    void aBandDeclaringNoSectionsFailsToLoad() {
+    void aBandDeclaringNoSectionsIsTheMotifAsAuthored() {
         DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
-                { "minFloorIndex": 2 }"""));
-        assertTrue(result.error().isPresent());
-        assertTrue(result.error().get().message().contains("would change nothing"),
-                result.error().get().message());
+                { "minFloorIndex": 1 }"""));
+        assertTrue(result.result().isPresent(), String.valueOf(result.error().orElse(null)));
+
+        MotifConfig source = motif(List.of(stratum(0, COBBLE), result.result().get()));
+        assertEquals(COBBLE, source.forFloor(0).wall());
+        assertEquals(WallConfig.DEFAULT, source.forFloor(1).wall(),
+                "floor 1 takes the motif's wall, NOT floor 0's band");
+        assertEquals(CeilingConfig.DEFAULT, source.forFloor(1).ceiling());
+    }
+
+    /** The overlay's base is the motif. A band never inherits from the band above it. */
+    @Test
+    void aBandInheritsFromTheMotifNotFromTheBandAbove() {
+        Stratum mud = new Stratum(0, Optional.empty(), Optional.of(COBBLE), Optional.of(MOSSY),
+                Optional.empty(), Optional.empty(), Optional.empty());
+        Stratum wallOnly = stratum(2, CHISELED);
+        MotifConfig source = motif(List.of(mud, wallOnly));
+
+        assertEquals(MOSSY, source.forFloor(0).ceiling());
+        assertEquals(CeilingConfig.DEFAULT, source.forFloor(2).ceiling(),
+                "band 2 says nothing about the ceiling, so it takes the MOTIF's -- not band 0's mossy");
     }
 
     /** #31's closed schema reaches this type too: a misspelled section is an error, not a no-op. */
@@ -233,125 +266,73 @@ class StrataByFloorTest {
                 .result().orElseThrow());
     }
 
-    // ---------- corridor: repaint yes, reshape no ----------
-
-    @Test
-    void repaintingACorridorIsNotReshapingIt() {
-        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(REPAINTED), Optional.empty());
-        assertEquals(List.of(), band.reshapedCorridorFields(CorridorConfig.DEFAULT));
-    }
+    // ---------- the corridor band is simply used ----------
 
     /**
-     * A band that does not mention {@code styles} keeps the motif's, and the projection really
-     * carries them.
+     * A band with no styles renders as a PLAIN corridor built from its own materials.
      *
-     * <p>The substitution is the point, not the tolerance. {@code BasicCorridorGenerator} calls
-     * {@code styleFor(name)} on the PROJECTED config at render time; a projection with no styles
-     * would miss and fall through to {@code baseline()}, rebuilding the floor's corridors from the
-     * band's own profile and courses.</p>
+     * <p>This is the whole corridor story. {@code BasicCorridorGenerator} calls
+     * {@code styleFor(rolledName)}; with no styles that misses and returns {@code baseline()}, which
+     * carries the band's own arch and courses. "No styles" means "no flourishes, build it from the
+     * base elements" &mdash; exactly what an unstyled motif has always meant.</p>
      */
     @Test
-    void aBandThatNamesNoStylesKeepsTheMotifs() {
-        CorridorStyle vaulted = new CorridorStyle("vaulted", 3, 7, CorridorConfig.Profile.ARCHED,
-                Optional.of("minecraft:stone_brick_stairs"), Optional.of(6), List.of());
+    void aBandWithNoStylesRendersFromItsOwnBaseline() {
         CorridorConfig base = new CorridorConfig(
                 "minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:stone_bricks",
                 7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs"),
-                Optional.of(6), List.of(vaulted), List.of());
-        // Repaints the three material fields; restates the three plan-time scalars; says nothing
-        // about styles.
-        CorridorConfig repaint = new CorridorConfig(
+                Optional.of(6), List.of(VAULTED), List.of());
+        CorridorConfig mud = new CorridorConfig(
                 "minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:mud_bricks",
                 7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:mud_brick_stairs"),
                 Optional.of(6), List.of(), List.of());
-        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.of(repaint), Optional.empty());
 
-        assertEquals(List.of(), band.reshapedCorridorFields(base),
-                "an unmentioned styles list is not a reshape");
+        CorridorConfig projected = motif(base, List.of(corridorBand(0, mud))).forFloor(0).corridor();
 
-        CorridorConfig projected = motif(base, List.of(band)).forFloor(0).corridor();
-        assertEquals("minecraft:packed_mud", projected.floor(), "the repaint must survive");
-        assertEquals(List.of(vaulted), projected.styles(),
-                "the motif's styles must be substituted back in");
-        assertEquals(vaulted, projected.styleFor("vaulted"),
-                "styleFor is what the renderer calls; without the substitution it would fall back"
-                        + " to baseline() and rebuild the floor from the band's own geometry");
-    }
-
-    /** A band that DOES name its own styles is still a reshape. */
-    @Test
-    void aBandThatNamesItsOwnStylesIsStillRejected() {
-        CorridorConfig base = new CorridorConfig(
-                "minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:stone_bricks",
-                CorridorConfig.DEFAULT.height(), CorridorConfig.DEFAULT.profile(),
-                Optional.empty(), Optional.empty(),
-                List.of(new CorridorStyle("vaulted", 3, 7, CorridorConfig.Profile.ARCHED,
-                        Optional.of("minecraft:stone_brick_stairs"), Optional.of(6), List.of())),
-                List.of());
-        CorridorConfig ownStyles = new CorridorConfig(
-                "minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:mud_bricks",
-                CorridorConfig.DEFAULT.height(), CorridorConfig.DEFAULT.profile(),
-                Optional.empty(), Optional.empty(),
-                List.of(new CorridorStyle("muddy", 1, 7, CorridorConfig.Profile.ARCHED,
-                        Optional.of("minecraft:mud_brick_stairs"), Optional.of(6), List.of())),
-                List.of());
-        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.of(ownStyles), Optional.empty());
-
-        assertEquals(List.of("styles"), band.reshapedCorridorFields(base));
-    }
-
-    @Test
-    void aBandThatChangesCorridorGeometryNamesEveryFieldItChanged() {
-        CorridorConfig reshaped = new CorridorConfig(
-                "minecraft:cobblestone", "minecraft:gravel", "minecraft:cobblestone",
-                7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs"),
-                Optional.of(6), List.of(), List.of());
-        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(reshaped), Optional.empty());
-
-        assertEquals(List.of("height", "profile", "narrowHeight"),
-                band.reshapedCorridorFields(CorridorConfig.DEFAULT));
+        assertEquals(mud, projected, "the band's corridor is handed through untouched");
+        assertEquals(projected.baseline(), projected.styleFor("vaulted"),
+                "the rolled name misses, so the corridor builds from the band's baseline");
+        assertEquals(Optional.of("minecraft:mud_brick_stairs"),
+                projected.styleFor("vaulted").archBlock(),
+                "which is what makes floor 0 mud all the way through, arch included");
     }
 
     /**
-     * The fold drops a reshaping band's corridor and says so, rather than half-honouring it.
+     * A band that DOES want flourishes declares styles under the same names. No new mechanism.
      *
-     * <p>It cannot be a load error: the comparison needs the motif's own corridor section, which is
-     * not settled until every fragment has been folded.</p>
+     * <p>The planner rolled one of the motif's names for this floor, so a band entry under that
+     * name is what {@code styleFor} finds. That is per-style banding, and it needs nothing built.</p>
      */
     @Test
-    void theFoldDropsAReshapingCorridorAndReportsIt() {
-        CorridorConfig reshaped = new CorridorConfig(
-                "minecraft:cobblestone", "minecraft:gravel", "minecraft:cobblestone",
-                7, CorridorConfig.DEFAULT.profile(), Optional.empty(), Optional.empty(),
-                List.of(), List.of());
-        Stratum band = new Stratum(0, Optional.empty(), Optional.of(COBBLE), Optional.empty(), Optional.empty(),
-                Optional.of(reshaped), Optional.empty());
+    void aBandMayRestateAStyleUnderTheSameNameToRepaintIt() {
+        CorridorConfig base = new CorridorConfig(
+                "minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:stone_bricks",
+                7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs"),
+                Optional.of(6), List.of(VAULTED), List.of());
+        CorridorStyle mudVaulted = new CorridorStyle("vaulted", 3, 7, CorridorConfig.Profile.ARCHED,
+                Optional.of("minecraft:mud_brick_stairs"), Optional.of(6), List.of());
+        CorridorConfig mud = new CorridorConfig(
+                "minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:mud_bricks",
+                7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:mud_brick_stairs"),
+                Optional.of(6), List.of(mudVaulted), List.of());
 
-        List<String> problems = new ArrayList<>();
-        MotifConfig resolved = MotifConfigFragment.resolve(
-                List.of(fragmentWithStrata(List.of(band))), problems::add);
-
-        assertEquals(1, problems.size(), problems.toString());
-        assertTrue(problems.get(0).contains("height"), problems.get(0));
-        // The band survives, minus the override that could never have been read.
-        assertEquals(COBBLE, resolved.forFloor(0).wall());
-        assertEquals(CorridorConfig.DEFAULT, resolved.forFloor(0).corridor());
+        CorridorConfig projected = motif(base, List.of(corridorBand(0, mud))).forFloor(0).corridor();
+        assertEquals(mudVaulted, projected.styleFor("vaulted"));
     }
 
+    /** Nothing is rejected and nothing is reported: a corridor band is data, not a claim to check. */
     @Test
-    void theFoldLeavesARepaintingCorridorAlone() {
-        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(REPAINTED), Optional.empty());
+    void aCorridorBandIsNeverRejectedOrReported() {
+        CorridorConfig anything = new CorridorConfig(
+                "minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:mud_bricks",
+                5, CorridorConfig.Profile.FLAT, Optional.empty(), Optional.empty(),
+                List.of(), List.of());
         List<String> problems = new ArrayList<>();
         MotifConfig resolved = MotifConfigFragment.resolve(
-                List.of(fragmentWithStrata(List.of(band))), problems::add);
+                List.of(fragmentWithStrata(List.of(corridorBand(0, anything)))), problems::add);
 
         assertTrue(problems.isEmpty(), problems.toString());
-        assertEquals(REPAINTED, resolved.forFloor(0).corridor());
+        assertEquals(anything, resolved.forFloor(0).corridor());
     }
 
     // ---------- fragment merge ----------
@@ -446,14 +427,19 @@ class StrataByFloorTest {
         }
     }
 
-    /** A name is not a section: naming a stratum does not save a band that declares nothing. */
+    /**
+     * A band carrying only a name is legal: it moves that depth's room pools and leaves the shell
+     * alone, which is a coherent thing to author.
+     */
     @Test
-    void aNamedBandStillHasToDeclareASection() {
+    void aBandMayCarryOnlyAName() {
         DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
                 { "minFloorIndex": 0, "name": "ancient" }"""));
-        assertTrue(result.error().isPresent());
-        assertTrue(result.error().get().message().contains("would change nothing"),
-                result.error().get().message());
+        assertTrue(result.result().isPresent(), String.valueOf(result.error().orElse(null)));
+
+        MotifConfig source = motif(List.of(result.result().get()));
+        assertEquals(Optional.of("ancient"), source.stratumNameFor(0));
+        assertEquals(WallConfig.DEFAULT, source.forFloor(0).wall());
     }
 
     /** Guards the guard: the fixtures really are different, so the assertions above can fail. */

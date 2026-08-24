@@ -219,40 +219,11 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         stratum.wall().orElse(wall),
                         stratum.ceiling().orElse(ceiling),
                         stratum.door().orElse(door),
-                        bandedCorridor(stratum),
+                        stratum.corridor().orElse(corridor),
                         stratum.floor().orElse(floor),
                         schemes, mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
                         List.of()))
                 .orElse(this);
     }
 
-    /**
-     * The band's corridor, with this motif's {@code styles} put back when the band names none.
-     *
-     * <p>Every other section is all-or-nothing, but {@code styles} cannot be: it is optional with an
-     * empty default, so a band that never mentions it decodes identically to one that set it to
-     * none. Omitting it therefore has to mean "keep the motif's".
-     *
-     * <p><strong>Substituting, not merely tolerating, is the load-bearing half.</strong>
-     * {@code BasicCorridorGenerator} calls {@code corridor().styleFor(name)} at RENDER time on this
-     * projected config, with the style name stamped on the piece. A projection carrying no styles
-     * would miss that lookup and fall through to {@code baseline()} &mdash; rebuilding the floor's
-     * corridors from the <em>band's</em> height, profile and courses instead of the style the
-     * planner actually rolled. Silently, and only on floors with a band.
-     *
-     * <p>A band that <em>does</em> name styles is still a reshape and is rejected upstream; see
-     * {@link Stratum#reshapedCorridorFields}.
-     */
-    private CorridorConfig bandedCorridor(Stratum stratum) {
-        if (stratum.corridor().isEmpty()) {
-            return corridor;
-        }
-        CorridorConfig banded = stratum.corridor().get();
-        if (!banded.styles().isEmpty()) {
-            return banded;
-        }
-        return new CorridorConfig(banded.floor(), banded.alternateFloor(), banded.ceiling(),
-                banded.height(), banded.profile(), banded.archBlock(), banded.narrowHeight(),
-                corridor.styles(), banded.courses());
-    }
 }

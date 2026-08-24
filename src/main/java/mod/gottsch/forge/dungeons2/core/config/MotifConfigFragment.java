@@ -131,9 +131,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                     .forGetter(MotifConfigFragment::templateLimits),
             // #45. Replaced wholesale, like the two depth tables above and for the same reason: a
             // progression from cobble to chiseled brick is one coherent whole, and two halves
-            // spliced together is a curve nobody authored. The corridor-reshaping half of its
-            // validation cannot run here -- it needs the motif's own corridor section, which is not
-            // known until every fragment has been folded. See #repaintOnly.
+            // spliced together is a curve nobody authored.
             Codecs.strictOptionalFieldOf(
                             Stratum.CODEC.listOf().flatXmap(Stratum::validate, Stratum::validate),
                             "strataByFloorIndex")
@@ -212,48 +210,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         List<RoomScheme> rolled = inherit(schemes, problems);
         return new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
-                Map.copyOf(templateLimits), repaintOnly(strata, corridor, problems));
-    }
-
-    /**
-     * Strips the corridor override from any stratum that <em>reshapes</em> rather than repaints,
-     * reporting each one.
-     *
-     * <p>Backlog #45. This cannot be a codec-level error like the rest of a stratum's validation:
-     * the comparison needs the motif's own corridor section, and that is only settled here, after
-     * every fragment has been folded. So it is reported through {@code problems} &mdash; which
-     * {@code MotifConfigHelper} logs once per motif at ERROR &mdash; and the offending override is
-     * dropped rather than half-honoured.
-     *
-     * <p>Dropped, not repaired: the band's plan-time values were never going to be read (see
-     * {@link Stratum}), and silently keeping its materials while discarding its geometry would make
-     * the file and the dungeon disagree with no way to tell from either. A band left with nothing
-     * at all after the strip is kept, and simply falls through to the motif on every section; the
-     * codec forbids authoring one, but a band reduced to that <em>here</em> is the honest
-     * consequence of what was authored.
-     */
-    private static List<Stratum> repaintOnly(List<Stratum> strata, CorridorConfig corridor,
-                                             Consumer<String> problems) {
-        if (strata.stream().allMatch(s -> s.reshapedCorridorFields(corridor).isEmpty())) {
-            return strata;
-        }
-        List<Stratum> repainted = new ArrayList<>(strata.size());
-        for (Stratum stratum : strata) {
-            List<String> reshaped = stratum.reshapedCorridorFields(corridor);
-            if (reshaped.isEmpty()) {
-                repainted.add(stratum);
-                continue;
-            }
-            problems.accept("stratum at floor " + stratum.minFloorIndex()
-                    + ": a band may repaint a corridor but not reshape one, and it changes "
-                    + reshaped + ". Those are read once for the whole dungeon at plan time, before"
-                    + " any floor has a stratum, so the band's values could only ever be ignored."
-                    + " Its corridor override has been dropped; move those fields to the motif's"
-                    + " own corridor section.");
-            repainted.add(new Stratum(stratum.minFloorIndex(), stratum.name(), stratum.wall(),
-                    stratum.ceiling(), stratum.door(), Optional.empty(), stratum.floor()));
-        }
-        return List.copyOf(repainted);
+                Map.copyOf(templateLimits), strata);
     }
 
     /**

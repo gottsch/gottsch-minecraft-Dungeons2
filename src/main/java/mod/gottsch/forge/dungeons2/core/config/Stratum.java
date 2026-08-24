@@ -21,7 +21,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -40,12 +39,18 @@ import java.util.Set;
  * Ancient dressing over cobblestone walls in cobblestone corridors is worse than not doing this, so
  * the element sections are the real subject.
  *
- * <h2>An overlay, not a second config</h2>
- * <p>A section omitted from a band <strong>falls through to the motif's own</strong>. A band is
- * therefore a handful of lines rather than a second copy of a 670-line {@code base.json}, which is
- * the whole argument for an overlay: the alternative makes every band an invitation to drift from
- * the base on the sections it did not mean to change. {@link MotifConfig#forFloor} is where the
- * fall-through happens.
+ * <h2>An overlay on the MOTIF &mdash; bands do not inherit from each other</h2>
+ * <p>A section omitted from a band <strong>falls through to the motif's own</strong>, never to the
+ * band above it. Each band is an independent overlay on one base, which is what makes a band
+ * readable on its own: what floor 3 looks like depends on the motif and on band 3, and on nothing
+ * in between. {@link MotifConfig#forFloor} is the whole of it &mdash; select the band for the
+ * floor, {@code orElse} each section to the motif's.
+ *
+ * <p>Two things follow, and both are the reason this is an overlay rather than a config per band.
+ * A band is a handful of lines rather than a second copy of a 670-line {@code base.json}, so it
+ * cannot drift from the base on sections it never meant to touch. And <strong>a band that declares
+ * nothing at all is legal and useful</strong>: {@code {"minFloorIndex": 1}} says "from floor 1 down,
+ * the motif as authored", which is how you end the band above it.
  *
  * <h2>Everything true of {@link MobSetBand} is true here</h2>
  * <p>Same shape, deliberately &mdash; bands are <strong>open-ended downward</strong>, each running
@@ -63,21 +68,28 @@ import java.util.Set;
  * {@code deepslate_shallow}). Motif is the <em>theme</em> selector; strata must compose with it,
  * not enumerate against it.
  *
- * <h2>Why corridor GEOMETRY may not be banded</h2>
- * <p>A stratum may repaint a corridor and may not reshape one. {@code height}, {@code profile},
- * {@code narrowHeight} and {@code styles} are consumed at <strong>plan</strong> time &mdash;
- * {@code DungeonStructure} hands {@code planner.withCorridorStyles} a single list for the whole
- * dungeon, resolved from the unbanded motif, before any floor exists to have a stratum. A band
- * declaring its own would therefore be <em>silently ignored</em>, and if it were honoured it would
- * change the layout and re-roll every existing seed. {@link #reshapedCorridorFields} names them, and
- * {@code MotifConfigFragment#repaintOnly} drops such an override and says so at ERROR &mdash; the
- * only outcome that is neither silent nor destructive.
+ * <h2>The corridor band is simply used, and a band with no styles is a plain corridor</h2>
+ * <p>There is no guard on what a band's {@code corridor} may say, because there is nothing to
+ * guard. Everything {@code BasicCorridorGenerator} emits is bounded by
+ * {@code floorY .. floorY + CorridorData.getWallHeight() - 1} &mdash; the height the PIECE carries,
+ * set by the planner &mdash; and the arch sits at {@code ceilingHeight - 2}, strictly inside it. So
+ * {@code profile}, {@code archBlock}, {@code narrowHeight} and {@code courses} cannot put a block
+ * outside the box no matter what a band says.
  *
- * <p><strong>{@code styles} is the exception, and it has to be:</strong> it is optional with an
- * empty default, so a band that simply does not mention it is indistinguishable from one that set
- * it to none. Omitting it therefore means "keep the motif's", and {@link MotifConfig#forFloor}
- * substitutes them back in. The other three have real defaults an author must restate to match
- * &mdash; three short lines, and unlike {@code styles} they are three lines rather than eighty.
+ * <p>{@code styles} needs no special case either. A band that declares none renders through
+ * {@link CorridorConfig#baseline()} &mdash; the band's own floor, ceiling, arch and courses, which
+ * is exactly what "this floor has no flourishes, build it from the base elements" should mean, and
+ * exactly what an unstyled motif has always done. A band that DOES want flourishes declares
+ * {@code styles} using the same names; the planner rolled one of the motif's names, and
+ * {@code styleFor} finds the band's entry under it. Per-style banding therefore needs no mechanism
+ * at all.
+ *
+ * <p><strong>The one field that cannot do what it looks like it does is {@code height}.</strong>
+ * The corridor's real height is rolled once for the whole dungeon at plan time, from the unbanded
+ * motif, and travels on the piece &mdash; so a band's {@code height} never sets it. It is not
+ * inert, though: {@link CorridorStyle#narrowCellHeight()} falls back to it when
+ * {@code narrowHeight} is absent, so it still sets the dropped ceiling of 1-cell-wide runs. Author
+ * a band's {@code height} to match the motif's unless that is what you want to move.
  *
  * @author Mark Gottschling on Aug 23, 2026
  */
@@ -110,19 +122,16 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
     ).apply(instance, Stratum::new))).flatXmap(Stratum::validateBand, Stratum::validateBand);
 
     /**
-     * Rejects a band that changes nothing.
+     * The only thing a band can get wrong on its own: a {@link #name} that is not a path segment.
      *
-     * <p>An error rather than a no-op because there is no reading of a band with no sections that an
-     * author meant: either they intended sections and lost them, or the entry is a leftover. Both
-     * are worth a load failure, and neither shows up in game &mdash; the dungeon would simply look
-     * like it has no strata.
+     * <p>Notably absent is any objection to a band that declares <strong>no sections at all</strong>.
+     * {@code {"minFloorIndex": 1}} is not an authoring slip &mdash; it reads "from floor 1 down, the
+     * motif as authored", which is exactly how you end the band above it. Rejecting it forced the
+     * author to restate a section they did not want to change, which is the drift an overlay exists
+     * to prevent. A band carrying only a {@code name} is legal for the same reason: it moves the
+     * room pools for that depth and leaves the shell alone.
      */
     private static DataResult<Stratum> validateBand(Stratum stratum) {
-        if (stratum.declaresNothing()) {
-            return DataResult.error(() -> "stratum at floor " + stratum.minFloorIndex
-                    + ": declares no element sections, so it would change nothing. Give it at least"
-                    + " one of wall/ceiling/door/corridor/floor, or remove the band");
-        }
         if (stratum.name.isPresent() && !NAME.matcher(stratum.name.get()).matches()) {
             return DataResult.error(() -> "stratum at floor " + stratum.minFloorIndex
                     + ": name '" + stratum.name.get() + "' is not a usable path segment. It becomes"
@@ -131,19 +140,6 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
                     + " resolver would silently fall back to the motif's own rooms");
         }
         return DataResult.success(stratum);
-    }
-
-    /**
-     * True when every <em>section</em> fell through, i.e. the band is indistinguishable from absent.
-     *
-     * <p>{@link #name} deliberately does not count. A band that names a stratum but declares no
-     * sections would change the room pools while leaving the shell alone &mdash; which is a coherent
-     * thing to want, but not one this design supports, because the name is only reachable from a
-     * band and a band with nothing in it is far more likely to be an authoring slip.
-     */
-    public boolean declaresNothing() {
-        return wall.isEmpty() && ceiling.isEmpty() && door.isEmpty() && corridor.isEmpty()
-                && floor.isEmpty();
     }
 
     /**
@@ -181,10 +177,6 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
      *       on file order &mdash; not something an author should have to reason about.</li>
      * </ul>
      *
-     * <p>The corridor-reshaping check is <strong>not</strong> here and cannot be: it needs the
-     * motif's own corridor section to compare against, and a fragment's table is validated as it
-     * decodes, before the fragments have been folded. {@code MotifConfigFragment#repaintOnly} runs
-     * {@link #reshapedCorridorFields} once the base section is known.
      */
     public static DataResult<List<Stratum>> validate(List<Stratum> table) {
         if (table.isEmpty()) {
@@ -203,36 +195,5 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
                     + " start at 0. Found: " + starts);
         }
         return DataResult.success(table);
-    }
-
-    /**
-     * The plan-time corridor fields this band disagrees with {@code base} on; empty when it only
-     * repaints. See the class note for why these four are special.
-     */
-    public List<String> reshapedCorridorFields(CorridorConfig base) {
-        if (corridor.isEmpty()) {
-            return List.of();
-        }
-        CorridorConfig banded = corridor.get();
-        List<String> reshaped = new ArrayList<>();
-        if (banded.height() != base.height()) {
-            reshaped.add("height");
-        }
-        if (banded.profile() != base.profile()) {
-            reshaped.add("profile");
-        }
-        if (!banded.narrowHeight().equals(base.narrowHeight())) {
-            reshaped.add("narrowHeight");
-        }
-        // An EMPTY styles list is "not mentioned", not "changed to none" -- it is the codec's
-        // default, and a band that does not mention styles inherits the motif's, exactly like a band
-        // that does not mention walls. MotifConfig#forFloor does the substituting; without it the
-        // projection would carry no styles and BasicCorridorGenerator's styleFor() would fall back
-        // to baseline(), silently rebuilding the floor's corridors from the BAND's profile and
-        // courses. A band that declares styles of its own is still a reshape.
-        if (!banded.styles().isEmpty() && !banded.styles().equals(base.styles())) {
-            reshaped.add("styles");
-        }
-        return reshaped;
     }
 }

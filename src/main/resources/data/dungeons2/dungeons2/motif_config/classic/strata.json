@@ -29,32 +29,7 @@
       }
     },
     {
-      "minFloorIndex": 1,
-      "wall": {
-        "wall": "minecraft:stone_bricks"
-      },
-      "ceiling": {
-        "ceiling": "minecraft:stone_bricks"
-      },
-      "floor": {
-        "base": "minecraft:stone_bricks",
-        "alternateBase": "minecraft:stone_bricks"
-      },
-      "door": {
-        "door": "dungeonblocks:spruce_dungeon_door",
-        "lintel": "minecraft:polished_andesite",
-        "floor": "minecraft:polished_andesite",
-        "probability": 0.5
-      },
-      "corridor": {
-        "floor": "minecraft:cobblestone",
-        "alternateFloor": "minecraft:stone_bricks",
-        "ceiling": "minecraft:stone_bricks",
-        "height": 7,
-        "narrowHeight": 6,
-        "profile": "arched",
-        "archBlock": "minecraft:stone_brick_stairs"
-      }
+      "minFloorIndex": 1
     }
   ]
 }
