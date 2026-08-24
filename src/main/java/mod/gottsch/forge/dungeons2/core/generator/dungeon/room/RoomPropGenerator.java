@@ -66,7 +66,8 @@ public final class RoomPropGenerator {
     /**
      * Emits this room's pots. A count is rolled from the config's inclusive range, then that many
      * distinct cells are drawn from the eligible set; a room with fewer eligible cells than the
-     * rolled count simply gets fewer pots rather than stacking two in one cell.
+     * rolled count simply gets fewer pots rather than stacking two in one cell. Both of those are
+     * {@link CellDraw}'s job &mdash; see there for why it hands cells out one at a time.
      */
     public static void placePots(RoomData room, int floorY, PotConfig config, RandomSource random,
                                  List<EntityPlacement> out) {
@@ -94,18 +95,9 @@ public final class RoomPropGenerator {
             return;
         }
 
-        int min = config.minCount();
-        int max = config.clampedMaxCount();
-        int count = min + (max > min ? random.nextInt(max - min + 1) : 0);
-        count = Math.min(count, candidates.size());
-
-        for (int i = 0; i < count; i++) {
-            // Draw without replacement: swap the chosen cell to the end and shrink the range, so
-            // two pots never land in the same cell.
-            int pick = random.nextInt(candidates.size() - i);
-            Coords2D cell = candidates.get(pick);
-            candidates.set(pick, candidates.get(candidates.size() - 1 - i));
-            candidates.set(candidates.size() - 1 - i, cell);
+        CellDraw draw = CellDraw.of(candidates, config.minCount(), config.clampedMaxCount(), random);
+        while (draw.hasNext()) {
+            Coords2D cell = draw.next();
 
             EntityPlacement pot = new EntityPlacement(
                     cell.getX(), floorY + 1, cell.getY(),

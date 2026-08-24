@@ -34,7 +34,7 @@ import java.util.Set;
  * Places a room scheme's chests. Backlog #48, the procedural route.
  *
  * <p>Structurally this is {@link RoomSpawnerGenerator}: roll a count, draw that many distinct
- * wall-adjacent cells without replacement, emit a block carrying block-entity data, and hand the
+ * wall-adjacent cells without replacement (both via {@link CellDraw}), emit a block carrying block-entity data, and hand the
  * claimed cells back so the props placed afterwards keep out of them. The differences are the two
  * things a chest has and a spawner has not &mdash; a facing, and loot.</p>
  *
@@ -97,19 +97,10 @@ public final class RoomChestGenerator {
             return Set.of();
         }
 
-        int min = config.minCount();
-        int max = config.clampedMaxCount();
-        int count = min + (max > min ? random.nextInt(max - min + 1) : 0);
-        count = Math.min(count, candidates.size());
-
+        CellDraw draw = CellDraw.of(candidates, config.minCount(), config.clampedMaxCount(), random);
         Set<Coords2D> used = new LinkedHashSet<>();
-        for (int i = 0; i < count; i++) {
-            // Draw without replacement -- the same swap-to-the-end trick RoomPropGenerator and
-            // RoomSpawnerGenerator use, so two chests never land in one cell.
-            int pick = random.nextInt(candidates.size() - i);
-            Coords2D cell = candidates.get(pick);
-            candidates.set(pick, candidates.get(candidates.size() - 1 - i));
-            candidates.set(candidates.size() - 1 - i, cell);
+        while (draw.hasNext()) {
+            Coords2D cell = draw.next();
 
             Map<String, String> properties = new LinkedHashMap<>();
             properties.put(FACING, facingAwayFromWall(room, cell));

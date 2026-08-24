@@ -96,9 +96,10 @@ public final class RoomSpawnerGenerator {
     /**
      * Emits this room's spawners and returns the floor cells they took.
      *
-     * <p>A count is rolled from the config's inclusive range, then that many distinct cells are
-     * drawn; a room with fewer eligible cells than the rolled count gets fewer spawners rather than
-     * two in one cell. The returned cells are what lets the caller keep the pots out of them &mdash;
+     * <p>{@link CellDraw} rolls a count from the config's inclusive range and hands out that many
+     * distinct cells; a room with fewer eligible cells than the rolled count gets fewer spawners
+     * rather than two in one cell. This is the caller that shaped {@code CellDraw}'s one-at-a-time
+     * interface: an unresolvable mob set consumes a draw and claims nothing. The returned cells are what lets the caller keep the pots out of them &mdash;
      * a spawner is invisible and its block does not collide, so a pot could stand in one quite
      * happily, but the mobs would then materialise inside the pot and smash it on the way out.</p>
      */
@@ -120,19 +121,10 @@ public final class RoomSpawnerGenerator {
             return Set.of();
         }
 
-        int min = config.minCount();
-        int max = config.clampedMaxCount();
-        int count = min + (max > min ? random.nextInt(max - min + 1) : 0);
-        count = Math.min(count, candidates.size());
-
+        CellDraw draw = CellDraw.of(candidates, config.minCount(), config.clampedMaxCount(), random);
         Set<Coords2D> used = new LinkedHashSet<>();
-        for (int i = 0; i < count; i++) {
-            // Draw without replacement -- the same swap-to-the-end trick RoomPropGenerator uses, so
-            // two spawners never land in one cell.
-            int pick = random.nextInt(candidates.size() - i);
-            Coords2D cell = candidates.get(pick);
-            candidates.set(pick, candidates.get(candidates.size() - 1 - i));
-            candidates.set(candidates.size() - 1 - i, cell);
+        while (draw.hasNext()) {
+            Coords2D cell = draw.next();
 
             String mobSet = pickMobSet(sets, totalWeight, random);
             // floorY + 1: the cell resting on the floor, which is where a mob standing in the room
