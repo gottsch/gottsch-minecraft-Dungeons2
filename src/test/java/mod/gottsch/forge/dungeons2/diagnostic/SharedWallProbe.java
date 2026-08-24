@@ -49,7 +49,7 @@ class SharedWallProbe {
 
     /** See {@code RoomAssemblyPlacementTest.ROTATED_7X7} -- same model, kept local to this probe. */
     private static final DungeonStackPlanner.RoomAssembler ROTATED_7X7 =
-            (wx, wy, wz, seed, commit) -> {
+            (wx, wy, wz, floorIndex, seed, commit) -> {
                 int[] o = ROTATION_OFFSET[Math.floorMod(new java.util.Random(seed).nextInt(), 4)];
                 Rectangle2D fp = new Rectangle2D(wx + o[0], wz + o[1], 7, 7);
                 int minX = fp.getMinX();

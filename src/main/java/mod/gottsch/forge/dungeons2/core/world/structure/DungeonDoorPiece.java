@@ -76,7 +76,11 @@ public class DungeonDoorPiece extends DungeonPiece {
     @Override
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
-        MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue);
+        // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
+        // so this is a no-op for everything shipped today. Build time, not plan time -- both
+        // inputs are in hand right here and nothing needs serialising.
+        MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue)
+                .forFloor(floorIndex);
         // Render from a piece-stable seed, not the chunk-seeded `random`.
         safePlaceAll(level, box, () -> renderPlacements(motifConfig));
     }

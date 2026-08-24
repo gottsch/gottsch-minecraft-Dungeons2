@@ -76,7 +76,18 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                           CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                           List<MobSetBand> mobSetsByFloorIndex,
                           List<ChestLootBand> chestLootByFloorIndex,
-                          Map<String, TemplateLimit> templateLimits) {
+                          Map<String, TemplateLimit> templateLimits,
+                          List<Stratum> strataByFloorIndex) {
+
+    /** The shape before {@code strataByFloorIndex}: a motif that looks the same all the way down. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       List<ChestLootBand> chestLootByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, List.of());
+    }
 
     /** The shape before {@code chestLootByFloorIndex}: a motif whose chests must name their own tables. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
@@ -158,5 +169,60 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
      */
     public Optional<TemplateLimit> limitFor(String templateId) {
         return Optional.ofNullable(templateLimits.get(templateId));
+    }
+
+    /**
+     * This motif as it is built on {@code floorIndex}: the element sections swapped for the
+     * covering stratum's, everything else untouched. Backlog #45.
+     *
+     * <p><strong>A motif with no strata returns itself</strong> &mdash; not a copy, the same
+     * instance &mdash; which is what makes this safe to call unconditionally from every piece. That
+     * is also the guarantee that every dungeon in every existing world renders byte-identically:
+     * nothing ships a stratum, so nothing changes until an author writes one.
+     *
+     * <p>Sections the band does not declare fall through to this config's own; see {@link Stratum}.
+     * The projection is a pure function of (motif, floorIndex) and both are in hand where a piece
+     * renders, so it happens at <strong>build</strong> time. Resolving at plan time would buy
+     * nothing and would add a field to serialise.
+     *
+     * <p>The result carries an <strong>empty</strong> strata table, so a projection cannot be
+     * projected again. That is deliberate rather than tidy: re-projecting a floor-0 config onto
+     * floor 3 would resolve floor 3's undeclared sections against floor 0's <em>banded</em>
+     * sections instead of the motif's base, silently. Making the second call a no-op removes the
+     * question.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    /**
+     * The name of the stratum covering {@code floorIndex}, when it has one. Backlog #45 step 3.
+     *
+     * <p>This is the segment that opts a depth into its own template pools:
+     * {@code rooms/<motif>/<stratum>/normal}, resolved ahead of the motif's own by
+     * {@code DungeonStructure.chooseStartPool}. Empty means "this depth draws from the motif's
+     * rooms", which is every motif shipped today.
+     *
+     * <p>Read from the <em>unprojected</em> config: {@link #forFloor} clears the table, so a
+     * projection has no stratum to name. The assembler asks the motif, not the projection.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    public Optional<String> stratumNameFor(int floorIndex) {
+        return Stratum.forFloor(strataByFloorIndex, floorIndex).flatMap(Stratum::name);
+    }
+
+    public MotifConfig forFloor(int floorIndex) {
+        if (strataByFloorIndex.isEmpty()) {
+            return this;
+        }
+        return Stratum.forFloor(strataByFloorIndex, floorIndex)
+                .map(stratum -> new MotifConfig(
+                        stratum.wall().orElse(wall),
+                        stratum.ceiling().orElse(ceiling),
+                        stratum.door().orElse(door),
+                        stratum.corridor().orElse(corridor),
+                        stratum.floor().orElse(floor),
+                        schemes, mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
+                        List.of()))
+                .orElse(this);
     }
 }

@@ -144,7 +144,7 @@ class RoomAssemblyPlacementTest {
      * changes is where that min corner lands relative to the assembly point.</p>
      */
     private static final DungeonStackPlanner.RoomAssembler ROTATED_7X7 =
-            (wx, wy, wz, seed, commit) -> {
+            (wx, wy, wz, floorIndex, seed, commit) -> {
                 int[] o = ROTATION_OFFSET[Math.floorMod(new java.util.Random(seed).nextInt(), 4)];
                 Rectangle2D fp = new Rectangle2D(wx + o[0], wz + o[1], 7, 7);
                 int minX = fp.getMinX();
@@ -155,4 +155,43 @@ class RoomAssemblyPlacementTest {
                         List.of()));
             };
 
+
+    /**
+     * #45 step 3: the planner asks for a room with the <strong>floor's own index</strong>.
+     *
+     * <p>This is the fault the parameter exists to prevent, and it is why {@code floorIndex} is a
+     * parameter rather than a setter on the assembler ({@code #10}'s rule). The implementation
+     * resolves the rooms pool through the motif's stratum for that depth, so a value stuck at 0
+     * would assemble every floor of the dungeon out of the entrance floor's rooms &mdash; silently,
+     * correctly-looking, and only for packs that author strata.
+     *
+     * <p>Asserts both directions: every index the planner asked for is a real floor of the plan,
+     * and more than one distinct index was asked for at all. Without the second half the test would
+     * pass on a planner that only ever asked for floor 0.
+     */
+    @Test
+    void theAssemblerIsToldWhichFloorItIsAssemblingFor() {
+        java.util.Set<Integer> asked = new java.util.HashSet<>();
+        DungeonStackPlanner.RoomAssembler recording = (wx, wy, wz, floorIndex, seed, commit) -> {
+            asked.add(floorIndex);
+            return ROTATED_7X7.assemble(wx, wy, wz, floorIndex, seed, commit);
+        };
+
+        Optional<DungeonLayout> opt = new DungeonStackPlanner(
+                7L, new Coords(128, 0, 256), 72, "classic", new TemplateCatalog())
+                .withSize(DungeonSize.MEDIUM)
+                .withFloorCount(FLOORS)
+                .withRoomTemplateAttempts(SHIPPED_ATTEMPTS_PER_FLOOR)
+                .withRoomAssembler(recording)
+                .plan();
+
+        assertTrue(opt.isPresent(), "the fixture seed must produce a plan for this to mean anything");
+        java.util.Set<Integer> floors = opt.get().getFloors().stream()
+                .map(FloorLayout::getFloorIndex).collect(java.util.stream.Collectors.toSet());
+        assertTrue(floors.containsAll(asked),
+                "the planner asked for floors " + asked + " but the plan only has " + floors);
+        assertTrue(asked.size() > 1,
+                "only floor " + asked + " was ever asked for, so this test could not tell a real"
+                        + " floorIndex from a hardcoded 0");
+    }
 }

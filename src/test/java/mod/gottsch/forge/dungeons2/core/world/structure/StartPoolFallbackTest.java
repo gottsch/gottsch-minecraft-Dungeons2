@@ -115,4 +115,75 @@ class StartPoolFallbackTest {
                             + " -- every other motif's degradation path leads here");
         }
     }
+
+    // ---------- #45 step 3: the stratum tier in front of the two above ----------
+
+    private static ResourceLocation chooseBanded(String motif, String stratum, String... shipped) {
+        Set<ResourceLocation> exists = Set.of(shipped).stream()
+                .map(ResourceLocation::new).collect(java.util.stream.Collectors.toSet());
+        return DungeonStructure.chooseRoomStartPool(motif,
+                java.util.Optional.ofNullable(stratum), exists::contains);
+    }
+
+    /**
+     * The guarantee that keeps every existing world's prefab draws unchanged: with no stratum, the
+     * three-tier chooser resolves <em>exactly</em> what the two-tier one does, in every case.
+     */
+    @Test
+    void withNoStratumTheChooserIsTheOldOne() {
+        String[][] worlds = {
+                {"dungeons2:rooms/desert/normal", "dungeons2:rooms/classic/normal"},
+                {"dungeons2:rooms/classic/normal"},
+                {},
+                {"dungeons2:rooms/desert/normal"},
+        };
+        for (String[] shipped : worlds) {
+            for (String motif : new String[] {"desert", "classic"}) {
+                assertEquals(choose(motif, shipped), chooseBanded(motif, null, shipped),
+                        "motif " + motif + " with " + java.util.Arrays.toString(shipped));
+            }
+        }
+    }
+
+    @Test
+    void aStratumWithItsOwnRoomsUsesThem() {
+        assertEquals(new ResourceLocation("dungeons2:rooms/desert/ancient/normal"),
+                chooseBanded("desert", "ancient",
+                        "dungeons2:rooms/desert/ancient/normal",
+                        "dungeons2:rooms/desert/normal",
+                        "dungeons2:rooms/classic/normal"));
+    }
+
+    @Test
+    void aStratumWithNoRoomsFallsToTheMotifsOwn() {
+        assertEquals(new ResourceLocation("dungeons2:rooms/desert/normal"),
+                chooseBanded("desert", "ancient",
+                        "dungeons2:rooms/desert/normal",
+                        "dungeons2:rooms/classic/normal"),
+                "a stratum that authors no rooms is the ordinary case, not a broken pack");
+    }
+
+    @Test
+    void aStratumStillReachesTheClassicBorrow() {
+        assertEquals(new ResourceLocation("dungeons2:rooms/classic/normal"),
+                chooseBanded("desert", "ancient", "dungeons2:rooms/classic/normal"));
+    }
+
+    /**
+     * There is deliberately no {@code rooms/classic/&lt;stratum&gt;/} tier.
+     *
+     * <p>Stratum names are per-motif, so {@code desert}'s "ancient" and {@code classic}'s "ancient"
+     * are unrelated authoring decisions that happen to share a word. Borrowing across both axes at
+     * once would hand a motif someone else's idea of a depth.</p>
+     */
+    @Test
+    void theStratumTierIsNeverBorrowedFromClassic() {
+        assertEquals(new ResourceLocation("dungeons2:rooms/classic/normal"),
+                chooseBanded("desert", "ancient",
+                        "dungeons2:rooms/classic/ancient/normal",
+                        "dungeons2:rooms/classic/normal"),
+                "classic's own 'ancient' rooms must not stand in for desert's");
+        assertNull(chooseBanded("desert", "ancient", "dungeons2:rooms/classic/ancient/normal"),
+                "and it is not a last resort either -- with nothing else, this degrades");
+    }
 }

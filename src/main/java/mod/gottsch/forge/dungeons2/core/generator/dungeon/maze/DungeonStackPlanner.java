@@ -586,8 +586,16 @@ public class DungeonStackPlanner {
          * and/or north. Measured 2026-07-30 across 200 seeds, choosing the slot
          * before knowing where the footprint would land cost <strong>44% of all
          * prefab room slots</strong>.</p>
+         *
+         * <p><strong>{@code floorIndex} is a parameter, not a setter</strong> &mdash; backlog #45
+         * step 3, following #10's rule for the same reason. The implementation resolves the room
+         * pool through the motif's stratum for that depth, and a setter left unset would assemble
+         * every floor of the dungeon as if it were the entrance, silently and only for packs that
+         * author strata. A parameter cannot be forgotten.</p>
+         *
+         * @param floorIndex 0 at the entrance, counting downward
          */
-        Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ,
+        Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ, int floorIndex,
                                          long assemblySeed, boolean commit);
     }
 
@@ -1008,7 +1016,7 @@ public class DungeonStackPlanner {
             if (i < floorCount - 1) {
                 endFootprint = transitionLocalFootprints.get(i);
             } else {
-                bossSlot = placeBossRoom(footprint, startFootprint, planAnchor, floorFloors[i],
+                bossSlot = placeBossRoom(footprint, startFootprint, planAnchor, floorFloors[i], i,
                         random);
                 if (bossSlot != null) {
                     endFootprint = bossSlot.footprint();
@@ -1090,7 +1098,7 @@ public class DungeonStackPlanner {
                     int probeWorldX = planAnchor.getX();
                     int probeWorldZ = planAnchor.getZ();
                     Optional<AssembledRoom> probe = roomAssembler.assemble(
-                            probeWorldX, floorFloors[i], probeWorldZ, assemblySeed, false);
+                            probeWorldX, floorFloors[i], probeWorldZ, i, assemblySeed, false);
                     if (probe.isEmpty()) {
                         continue;
                     }
@@ -1128,7 +1136,7 @@ public class DungeonStackPlanner {
 
                     Optional<AssembledRoom> assembledRoom = roomAssembler.assemble(
                             planAnchor.getX() + slot.getMinX() - offsetX, floorFloors[i],
-                            planAnchor.getZ() + slot.getMinY() - offsetZ, assemblySeed, true);
+                            planAnchor.getZ() + slot.getMinY() - offsetZ, i, assemblySeed, true);
                     if (assembledRoom.isEmpty()) {
                         continue;
                     }
@@ -1520,7 +1528,7 @@ public class DungeonStackPlanner {
      * simpler problem, not a new one.</p>
      */
     private BossSlot placeBossRoom(Rectangle2D footprint, Rectangle2D startFootprint,
-                                   ICoords planAnchor, int floorY, Random random) {
+                                   ICoords planAnchor, int floorY, int floorIndex, Random random) {
         if (bossRoomAssembler == null) {
             // Before any draw from `random` -- see the field's note on byte-identical plans.
             return null;
@@ -1528,7 +1536,7 @@ public class DungeonStackPlanner {
         for (int attempt = 0; attempt < BOSS_ASSEMBLY_ATTEMPTS; attempt++) {
             long assemblySeed = random.nextLong();
             Optional<AssembledRoom> probe = bossRoomAssembler.assemble(
-                    planAnchor.getX(), floorY, planAnchor.getZ(), assemblySeed, false);
+                    planAnchor.getX(), floorY, planAnchor.getZ(), floorIndex, assemblySeed, false);
             if (probe.isEmpty()) {
                 continue;
             }
@@ -1548,7 +1556,7 @@ public class DungeonStackPlanner {
             int offsetZ = probeRect.getMinY() - planAnchor.getZ();
             Optional<AssembledRoom> placed = bossRoomAssembler.assemble(
                     planAnchor.getX() + slot.getMinX() - offsetX, floorY,
-                    planAnchor.getZ() + slot.getMinY() - offsetZ, assemblySeed, true);
+                    planAnchor.getZ() + slot.getMinY() - offsetZ, floorIndex, assemblySeed, true);
             if (placed.isEmpty()) {
                 continue;
             }

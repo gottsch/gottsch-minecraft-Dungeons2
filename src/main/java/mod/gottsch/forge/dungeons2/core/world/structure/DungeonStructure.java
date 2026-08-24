@@ -199,6 +199,19 @@ public class DungeonStructure extends Structure {
     private static ResourceLocation roomStartPool(String motifValue) {
         return new ResourceLocation(Dungeons.MOD_ID, "rooms/" + motifValue + "/normal");
     }
+
+    /**
+     * The room pool for one stratum of a motif &mdash; backlog #45 step 3.
+     *
+     * <p>{@code rooms/<motif>/<stratum>/normal}, tried ahead of {@link #roomStartPool}. Without it,
+     * prefabs are ~20% of a dungeon's rooms and all baked stone brick, so a stone-brick prefab lands
+     * in a cobblestone floor 0 &mdash; #5's own "the rooms case is the weak one" problem in new
+     * clothes, except here the mismatch is guaranteed rather than merely possible.</p>
+     */
+    private static ResourceLocation roomStartPool(String motifValue, String stratum) {
+        return new ResourceLocation(Dungeons.MOD_ID,
+                "rooms/" + motifValue + "/" + stratum + "/normal");
+    }
     private static final int ROOM_MAX_DEPTH = 1;
     private static final int ROOM_MAX_DISTANCE = 16;
 
@@ -278,6 +291,50 @@ public class DungeonStructure extends Structure {
         }
         ResourceLocation borrowed = poolFor.apply(FALLBACK_MOTIF);
         return exists.test(borrowed) ? borrowed : null;
+    }
+
+    /**
+     * Which room pool to use, with the stratum tier in front of #5's two &mdash; backlog #45 step 3.
+     *
+     * <p>Three tiers: {@code rooms/<motif>/<stratum>/normal}, then {@code rooms/<motif>/normal},
+     * then {@code rooms/classic/normal}. A motif with no strata, or a stratum that authors no rooms
+     * of its own, resolves <strong>exactly</strong> what it resolved before &mdash; which is what
+     * keeps every existing world's prefab draws unchanged.
+     *
+     * <p><strong>There is deliberately no {@code rooms/classic/<stratum>/} tier.</strong> Stratum
+     * names are per-motif: {@code catacombs}'s "ancient" and {@code classic}'s "ancient" are two
+     * unrelated authoring decisions that happen to share a word, so borrowing across both axes at
+     * once would hand a motif someone else's idea of a depth. Falling back to {@code classic}'s
+     * undifferentiated rooms is the honest degrade.
+     *
+     * <p>Missing the stratum tier is <strong>silent</strong>, unlike missing the motif tier: a
+     * stratum that does not author rooms is the ordinary case, not a half-authored pack.
+     */
+    static ResourceLocation chooseRoomStartPool(String motifValue, Optional<String> stratum,
+                                                Predicate<ResourceLocation> exists) {
+        if (stratum.isPresent()) {
+            ResourceLocation banded = roomStartPool(motifValue, stratum.get());
+            if (exists.test(banded)) {
+                return banded;
+            }
+        }
+        return chooseStartPool(motifValue, DungeonStructure::roomStartPool, exists);
+    }
+
+    /** {@link #chooseRoomStartPool} against the live registry. */
+    private static Optional<Holder.Reference<StructureTemplatePool>> resolveRoomStartPool(
+            GenerationContext context, String motifValue, Optional<String> stratum) {
+        if (stratum.isEmpty()) {
+            // Byte-for-byte the pre-#45 path, taken by every motif shipped today.
+            return resolveStartPool(context, motifValue, DungeonStructure::roomStartPool);
+        }
+        Registry<StructureTemplatePool> poolRegistry =
+                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        ResourceLocation banded = roomStartPool(motifValue, stratum.get());
+        if (poolRegistry.containsKey(banded)) {
+            return poolRegistry.getHolder(ResourceKey.create(Registries.TEMPLATE_POOL, banded));
+        }
+        return resolveStartPool(context, motifValue, DungeonStructure::roomStartPool);
     }
 
     /** {@link #chooseStartPool} against the live registry, warning once per borrowed pool. */
@@ -417,6 +474,12 @@ public class DungeonStructure extends Structure {
         DungeonStackPlanner planner =
                 new DungeonStackPlanner(seed, new Coords(chunkCenterX, 0, chunkCenterZ),
                         surfaceY, motifValue, new TemplateCatalog());
+        // Hoisted rather than resolved inline: the [D2-SCHEME] logging below needs the same
+        // config, and a room's scheme roll must be read from the motif the planner actually ran
+        // with or the log would name a scheme the room does not have. Hoisted ABOVE the assemblers
+        // as of #45 step 3, because the room assembler now reads the stratum table off it -- a pure
+        // registry lookup, so moving it earlier changes nothing but what can capture it.
+        final MotifConfig motifConfig = MotifConfigHelper.get(context.registryAccess(), motifValue);
         DungeonStackPlanner.TransitionAssembler transitionAssembler = (worldX, worldY, worldZ, assemblySeed, commit) -> {
             // Seed the WorldgenRandom that JigsawPlacement.addPieces draws EVERY
             // choice from -- the start template, the rotation, the shuffled child
@@ -463,7 +526,7 @@ public class DungeonStructure extends Structure {
         // committed prefab, and a prefab room the maze reserved nothing for gets
         // corridors and other rooms carved straight through it.
         List<StagedRoom> stagedRooms = new ArrayList<>();
-        DungeonStackPlanner.RoomAssembler roomAssembler = (worldX, worldY, worldZ, assemblySeed, commit) -> {
+        DungeonStackPlanner.RoomAssembler roomAssembler = (worldX, worldY, worldZ, floorIndex, assemblySeed, commit) -> {
             // Same reseeding as transitions -- it is what lets the planner measure a
             // prefab (including whichever rotation vanilla picked) with one call and
             // then reproduce that same prefab with another.
@@ -472,7 +535,11 @@ public class DungeonStructure extends Structure {
             // transitions (see transitionAssembler above) -- request one block
             // higher so the piece's real local Y=0 lands exactly at worldY.
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
-            List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue);
+            // #45 step 3: which stratum this depth is in decides which rooms pool is tried first.
+            // Read off the UNPROJECTED motif -- MotifConfig#forFloor clears the table, so a
+            // projection has no stratum to name.
+            List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue,
+                    motifConfig.stratumNameFor(floorIndex));
             RoomGeometry rgeo = scanRoomGeometry(assembled, templateManager, seed);
             if (rgeo == null) {
                 return Optional.empty();
@@ -494,7 +561,11 @@ public class DungeonStructure extends Structure {
         // adopted by commitStagedRooms on a non-null templateId, so there is nothing for a second
         // list to key differently. Same contract, a different pool.
         DungeonStackPlanner.RoomAssembler bossRoomAssembler =
-                (worldX, worldY, worldZ, assemblySeed, commit) -> {
+                (worldX, worldY, worldZ, floorIndex, assemblySeed, commit) -> {
+            // floorIndex is deliberately unused: the terminal slot is always on the bottom floor,
+            // which is always in the deepest stratum, so there is exactly one stratum a boss room
+            // could ever be authored for and a per-stratum tier would be a folder level with one
+            // possible value. See bossRoomStartPool.
             context.random().setSeed(assemblySeed);
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
             List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue,
@@ -539,10 +610,6 @@ public class DungeonStructure extends Structure {
                 RoomHeightBand.clampToBudget(generationConfig.roomHeightBands(),
                         generationConfig.floorHeight()));
         planner.withMinBuildY(context.heightAccessor().getMinBuildHeight());
-        // Hoisted rather than resolved inline: the [D2-SCHEME] logging below needs the same
-        // config, and a room's scheme roll must be read from the motif the planner actually ran
-        // with or the log would name a scheme the room does not have.
-        final MotifConfig motifConfig = MotifConfigHelper.get(context.registryAccess(), motifValue);
         planner.withCorridorStyles(corridorStyleWeights(motifConfig.corridor()));
         // #44: how often an authored template may repeat. Same resolved-motif source as the
         // corridor styles above, so an addon's own limits arrive through its own fragment.
@@ -1183,8 +1250,8 @@ public class DungeonStructure extends Structure {
      * per chunk (once per candidate interior-room slot the planner tries).
      */
     private static List<StructurePiece> assembleRoom(GenerationContext context, BlockPos position,
-                                                     String motifValue) {
-        return assembleRoom(context, position, motifValue, DungeonStructure::roomStartPool);
+                                                     String motifValue, Optional<String> stratum) {
+        return assembleFrom(context, position, resolveRoomStartPool(context, motifValue, stratum));
     }
 
     /**
@@ -1195,8 +1262,16 @@ public class DungeonStructure extends Structure {
     private static List<StructurePiece> assembleRoom(GenerationContext context, BlockPos position,
                                                      String motifValue,
                                                      java.util.function.Function<String, ResourceLocation> poolFor) {
-        Optional<Holder.Reference<StructureTemplatePool>> startPool =
-                resolveStartPool(context, motifValue, poolFor);
+        return assembleFrom(context, position, resolveStartPool(context, motifValue, poolFor));
+    }
+
+    /**
+     * The assembly itself, once a pool has been resolved. Split out by #45 step 3 so the interior
+     * rooms can resolve through three tiers and the boss room through two without either growing a
+     * second copy of the {@code addPieces} call.
+     */
+    private static List<StructurePiece> assembleFrom(GenerationContext context, BlockPos position,
+                                                     Optional<Holder.Reference<StructureTemplatePool>> startPool) {
         if (startPool.isEmpty()) {
             return List.of();
         }

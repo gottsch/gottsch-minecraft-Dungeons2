@@ -62,6 +62,8 @@ class TemplateLimitPlacementTest {
      */
     private static final class CountingAssembler implements DungeonStackPlanner.RoomAssembler {
         private final List<String> committed = new ArrayList<>();
+        /** Every floorIndex the planner asked for -- #45 step 3's contract, see the test below. */
+        private final List<Integer> floorsAsked = new ArrayList<>();
         private final List<String> only;
 
         CountingAssembler(List<String> only) {
@@ -70,8 +72,10 @@ class TemplateLimitPlacementTest {
 
         @Override
         public Optional<DungeonStackPlanner.AssembledRoom> assemble(int worldX, int worldY,
-                                                                    int worldZ, long assemblySeed,
+                                                                    int worldZ, int floorIndex,
+                                                                    long assemblySeed,
                                                                     boolean commit) {
+            floorsAsked.add(floorIndex);
             String id = only.get(Math.floorMod(Long.hashCode(assemblySeed), only.size()));
             Rectangle2D footprint = new Rectangle2D(worldX, worldZ, 7, 7);
             if (commit) {
@@ -239,7 +243,7 @@ class TemplateLimitPlacementTest {
      */
     @Test
     void anUnidentifiableTemplateIsStillPlaced() {
-        DungeonStackPlanner.RoomAssembler anonymous = (wx, wy, wz, seed, commit) ->
+        DungeonStackPlanner.RoomAssembler anonymous = (wx, wy, wz, floorIndex, seed, commit) ->
                 Optional.of(new DungeonStackPlanner.AssembledRoom(
                         new Rectangle2D(wx, wz, 7, 7),
                         List.of(new Coords2D(wx, wz + 3), new Coords2D(wx + 3, wz)),

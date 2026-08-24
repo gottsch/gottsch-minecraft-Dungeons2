@@ -370,7 +370,7 @@ class DungeonStackPlannerTest {
     // -------- Phase 8: jigsaw-assembled interior rooms --------
 
     /** Always succeeds with a fixed 7x7 footprint at the requested world position. */
-    private static final DungeonStackPlanner.RoomAssembler FAKE_ROOM_ASSEMBLER = (worldX, worldY, worldZ, seed, commit) -> {
+    private static final DungeonStackPlanner.RoomAssembler FAKE_ROOM_ASSEMBLER = (worldX, worldY, worldZ, floorIndex, seed, commit) -> {
         Rectangle2D worldFootprint = new Rectangle2D(worldX, worldZ, 7, 7);
         List<Coords2D> doors = List.of(
                 new Coords2D(worldX, worldZ + 3),
@@ -419,7 +419,7 @@ class DungeonStackPlannerTest {
         // there at all. What this stub does instead is ignore the position it is
         // asked for -- a contract violation -- which is the only remaining way to
         // reach the boundary, and must still be caught.
-        DungeonStackPlanner.RoomAssembler flushAgainstOrigin = (worldX, worldY, worldZ, seed, commit) ->
+        DungeonStackPlanner.RoomAssembler flushAgainstOrigin = (worldX, worldY, worldZ, floorIndex, seed, commit) ->
                 Optional.of(new DungeonStackPlanner.AssembledRoom(
                         new Rectangle2D(planAnchorX(), planAnchorZ(), 7, 7), List.of(), List.of()));
 
@@ -448,7 +448,7 @@ class DungeonStackPlannerTest {
     void assemblerlessRoomAttemptDoesNotBreakPlanning() {
         // An assembler that always refuses must degrade gracefully -- planning still
         // succeeds, just with zero templated rooms (ordinary procedural fill instead).
-        DungeonStackPlanner.RoomAssembler refusing = (worldX, worldY, worldZ, seed, commit) -> Optional.empty();
+        DungeonStackPlanner.RoomAssembler refusing = (worldX, worldY, worldZ, floorIndex, seed, commit) -> Optional.empty();
         DungeonLayout layout = new DungeonStackPlanner(SEED, ANCHOR, SURFACE_Y, "classic", buildCatalog())
                 .withSize(DungeonSize.MEDIUM)
                 .withRoomAssembler(refusing)
@@ -469,7 +469,7 @@ class DungeonStackPlannerTest {
         // all room slots lost). The planner now measures that displacement with a
         // probe and anchors the real placement to compensate for it, so an offset
         // prefab is adopted rather than thrown away.
-        DungeonStackPlanner.RoomAssembler rotatedOffscreen = (worldX, worldY, worldZ, seed, commit) ->
+        DungeonStackPlanner.RoomAssembler rotatedOffscreen = (worldX, worldY, worldZ, floorIndex, seed, commit) ->
                 Optional.of(new DungeonStackPlanner.AssembledRoom(
                         new Rectangle2D(worldX - 1000, worldZ - 1000, 7, 7), List.of(), List.of()));
 
