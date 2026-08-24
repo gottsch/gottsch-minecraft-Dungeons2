@@ -26,6 +26,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -82,6 +83,25 @@ import static org.junit.jupiter.api.Assertions.fail;
  * these checks are relative to. Anything appearing there is either a stray or belongs under a motif
  * folder.</p>
  *
+ * <h2>Joints cross categories, and a pool is identified by its PATH</h2>
+ * <p>Two things this got wrong until 2026-08-22, both exposed by the {@code decorations} category
+ * arriving:</p>
+ * <ol>
+ *   <li><strong>A joint may name a pool in another category.</strong> {@code 13x13_cavern_1} is a
+ *       room with a jigsaw at its centre pointing at {@code decorations/classic/center_decor}. The
+ *       checks used to resolve a joint's pool only within its own category, so a legitimate
+ *       cross-category reference read as broken. What is actually required is that the pool be
+ *       scoped to the joint's own <em>motif</em> &mdash; which category it lives in is free.</li>
+ *   <li><strong>The pool's id is its file path, not its {@code "name"} field.</strong>
+ *       {@code StructureTemplatePool.DIRECT_CODEC} in 1.20.1 reads {@code fallback} and
+ *       {@code elements} and <em>nothing else</em> &mdash; {@code name} was dropped from the codec
+ *       in 1.19 and is now inert decoration in the JSON. Keying this test's pool map by it meant a
+ *       pool with a mistyped {@code name} was invisible here while resolving perfectly in game, and
+ *       that is exactly what happened. The map is keyed by path now, and
+ *       {@link #everyPoolsNameFieldAgreesWithItsPath} keeps the inert field from drifting rather
+ *       than letting it lie.</li>
+ * </ol>
+ *
  * @author Mark Gottschling on Aug 13, 2026
  */
 class PoolWiringTest {
@@ -91,10 +111,13 @@ class PoolWiringTest {
     /**
      * One pool category.
      *
-     * <p>{@code poolPrefix} and {@code startPool} mirror {@code DungeonStructure}'s three
-     * {@code *StartPool} methods &mdash; if one of those changes, this must. {@code chained} says
-     * whether the category's pieces reference each other at all, which is what
-     * {@link #theChainsAreActuallyBeingRead} needs in order to be able to fail.</p>
+     * <p>{@code poolPrefix} and {@code startPool} mirror {@code DungeonStructure}'s
+     * {@code *StartPool} methods &mdash; if one of those changes, this must. {@code startPool} is
+     * <strong>null</strong> for a category nothing starts an assembly from: {@code decorations} is
+     * only ever reached from another piece's joint, so there is no id for the structure to ask for
+     * and demanding one would invent a requirement. {@code chained} says whether the category's
+     * pieces reference each other at all, which is what {@link #theChainsAreActuallyBeingRead}
+     * needs in order to be able to fail.</p>
      */
     private record Category(String id, String templateRoot, String poolRoot,
                             String poolPrefix, String startPool, boolean chained) {
@@ -112,7 +135,13 @@ class PoolWiringTest {
             new Category("rooms",
                     "/data/dungeons2/structures/rooms",
                     "/data/dungeons2/worldgen/template_pool/rooms",
-                    "dungeons2:rooms/%s/", "dungeons2:rooms/%s/normal", false));
+                    "dungeons2:rooms/%s/", "dungeons2:rooms/%s/normal", false),
+            // Reached only from another piece's joint -- a room's centre jigsaw today. No start
+            // pool, hence the null; see Category.
+            new Category("decorations",
+                    "/data/dungeons2/structures/decorations",
+                    "/data/dungeons2/worldgen/template_pool/decorations",
+                    "dungeons2:decorations/%s/", null, false));
 
     /** One jigsaw block, reduced to the fields that matter here. */
     private record Joint(String category, String template, String motif,
@@ -124,7 +153,10 @@ class PoolWiringTest {
     @Test
     void everyMotifHasTheStartPoolTheStructureAsksFor() {
         for (Category category : CATEGORIES) {
-            Map<String, List<String>> pools = poolsByName(category);
+            if (category.startPool() == null) {
+                continue;
+            }
+            Map<String, List<String>> pools = poolsById(category);
             for (String motif : motifs(category)) {
                 String expected = String.format(category.startPool(), motif);
                 assertTrue(pools.containsKey(expected),
@@ -135,20 +167,30 @@ class PoolWiringTest {
         }
     }
 
+    /**
+     * A joint's pool must be scoped to the joint's own motif, and must ship.
+     *
+     * <p>Scoped to its <em>motif</em>, not to its category: a room's centre jigsaw naming a
+     * {@code decorations} pool is how {@code 13x13_cavern_1} works. So the pool is accepted if it
+     * carries the joint's motif under <em>any</em> category prefix, and is then looked up in the
+     * pools of every category at once.</p>
+     */
     @Test
     void everyBakedPoolReferenceResolvesAndIsScopedToItsOwnMotif() {
         List<String> broken = new ArrayList<>();
+        Map<String, List<String>> pools = allPoolsById();
         for (Category category : CATEGORIES) {
-            Map<String, List<String>> pools = poolsByName(category);
             for (Joint joint : joints(category)) {
                 if (joint.pool().isEmpty() || EMPTY.equals(joint.pool())) {
                     continue;
                 }
-                String expectedPrefix = String.format(category.poolPrefix(), joint.motif());
-                if (!joint.pool().startsWith(expectedPrefix)) {
+                List<String> allowed = CATEGORIES.stream()
+                        .map(other -> String.format(other.poolPrefix(), joint.motif()))
+                        .toList();
+                if (allowed.stream().noneMatch(prefix -> joint.pool().startsWith(prefix))) {
                     broken.add(joint.category() + "/" + joint.template() + " joint '" + joint.name()
                             + "' -> pool " + joint.pool() + "  (not scoped to motif '"
-                            + joint.motif() + "'; expected " + expectedPrefix + "...). An in-game"
+                            + joint.motif() + "'; expected one of " + allowed + "). An in-game"
                             + " re-save reverts this field.");
                 } else if (!pools.containsKey(joint.pool())) {
                     broken.add(joint.category() + "/" + joint.template() + " joint '" + joint.name()
@@ -163,22 +205,31 @@ class PoolWiringTest {
         }
     }
 
+    /**
+     * Every joint label targeted by something is provided by something, within the same motif.
+     *
+     * <p>Across all categories at once, for the same reason the pool check is: the cavern's centre
+     * joint targets {@code dungeons2:center_decor} and the jigsaw answering it lives in a
+     * {@code decorations} template. Per-category matching declared that dangling when it was wired
+     * correctly.</p>
+     */
     @Test
     void everyJointTargetIsAnsweredWithinItsMotif() {
         List<String> dangling = new ArrayList<>();
+        List<Joint> allJoints = CATEGORIES.stream().flatMap(c -> joints(c).stream()).toList();
         for (Category category : CATEGORIES) {
-            List<Joint> joints = joints(category);
-            for (Joint joint : joints) {
+            for (Joint joint : joints(category)) {
                 if (joint.target().isEmpty() || EMPTY.equals(joint.target())) {
                     continue;
                 }
-                boolean answered = joints.stream()
+                boolean answered = allJoints.stream()
                         .anyMatch(other -> other.motif().equals(joint.motif())
                                 && other.name().equals(joint.target()));
                 if (!answered) {
                     dangling.add(joint.category() + "/" + joint.template() + " joint '"
                             + joint.name() + "' targets '" + joint.target() + "', which no jigsaw"
-                            + " in motif '" + joint.motif() + "' answers");
+                            + " in motif '" + joint.motif() + "' answers (checked across every"
+                            + " category, not just " + joint.category() + ")");
                 }
             }
         }
@@ -192,7 +243,7 @@ class PoolWiringTest {
     void everyPoolElementNamesATemplateThatShips() {
         List<String> missing = new ArrayList<>();
         for (Category category : CATEGORIES) {
-            poolsByName(category).forEach((name, elements) -> elements.forEach(location -> {
+            poolsById(category).forEach((name, elements) -> elements.forEach(location -> {
                 String path = location.substring(location.indexOf(':') + 1);
                 if (PoolWiringTest.class.getResource(
                         "/data/dungeons2/structures/" + path + ".nbt") == null) {
@@ -212,13 +263,47 @@ class PoolWiringTest {
         for (Category category : CATEGORIES) {
             assertTrue(motifs(category).contains("classic"),
                     "expected a classic " + category.id() + ", found " + motifs(category));
-            assertTrue(!poolsByName(category).isEmpty(),
+            assertTrue(!poolsById(category).isEmpty(),
                     "no " + category.id() + " pools were read at all");
             if (category.chained()) {
                 assertTrue(joints(category).stream().anyMatch(joint -> !EMPTY.equals(joint.pool())),
                         category.id() + " is a chained category, so finding no outgoing pool"
                                 + " reference means the NBT is not being read");
             }
+        }
+    }
+
+    /**
+     * The JSON's {@code "name"} agrees with the file it is in.
+     *
+     * <p>{@code name} is <strong>inert</strong> &mdash; 1.20.1's {@code StructureTemplatePool}
+     * codec reads {@code fallback} and {@code elements} only, so a wrong value here changes nothing
+     * in game and no other test can see it. That is precisely why it drifts: {@code center_decor}
+     * shipped with its last path segment doubled, and the only symptom was this suite resolving
+     * pools against a key no jigsaw would ever name. Either the field agrees with the path or it
+     * should not be in the file.</p>
+     */
+    @Test
+    void everyPoolsNameFieldAgreesWithItsPath() {
+        List<String> wrong = new ArrayList<>();
+        for (Category category : CATEGORIES) {
+            Path root = resourceRoot(category.poolRoot());
+            for (Path file : filesUnder(category.poolRoot(), ".json")) {
+                JsonObject pool = parse(file).getAsJsonObject();
+                if (!pool.has("name")) {
+                    continue;
+                }
+                String expected = poolId(category, root, file);
+                String declared = pool.get("name").getAsString();
+                if (!declared.equals(expected)) {
+                    wrong.add(declared + "  (in " + expected + ".json)");
+                }
+            }
+        }
+        if (!wrong.isEmpty()) {
+            fail(wrong.size() + " template_pool(s) declare a 'name' that is not their own id. The"
+                    + " field is ignored by vanilla's codec, so this is invisible in game and"
+                    + " misleads anyone reading the file:\n  " + String.join("\n  ", wrong));
         }
     }
 
@@ -273,9 +358,25 @@ class PoolWiringTest {
         return joints;
     }
 
-    /** Pool id -> the element locations it offers. */
-    private static Map<String, List<String>> poolsByName(Category category) {
+    /** Every category's pools in one map, for the cross-category joint checks. */
+    private static Map<String, List<String>> allPoolsById() {
         Map<String, List<String>> pools = new LinkedHashMap<>();
+        for (Category category : CATEGORIES) {
+            pools.putAll(poolsById(category));
+        }
+        return pools;
+    }
+
+    /**
+     * Pool id -&gt; the element locations it offers, keyed by the id the <em>registry</em> uses.
+     *
+     * <p>That id is the resource path, which is what a jigsaw's {@code pool} field is resolved
+     * against. It is deliberately NOT the JSON's {@code "name"}: see the class doc &mdash; that
+     * field is not in 1.20.1's pool codec at all.</p>
+     */
+    private static Map<String, List<String>> poolsById(Category category) {
+        Map<String, List<String>> pools = new LinkedHashMap<>();
+        Path root = resourceRoot(category.poolRoot());
         for (Path file : filesUnder(category.poolRoot(), ".json")) {
             JsonObject pool = parse(file).getAsJsonObject();
             List<String> locations = new ArrayList<>();
@@ -288,9 +389,15 @@ class PoolWiringTest {
                     }
                 }
             }
-            pools.put(pool.get("name").getAsString(), locations);
+            pools.put(poolId(category, root, file), locations);
         }
         return pools;
+    }
+
+    /** The registry id of a pool file: {@code dungeons2:<category>/<path below the root>}. */
+    private static String poolId(Category category, Path root, Path file) {
+        String tail = root.relativize(file).toString().replace(File.separatorChar, '/');
+        return "dungeons2:" + category.id() + "/" + tail.substring(0, tail.length() - ".json".length());
     }
 
     private static CompoundTag readTemplate(Path file) {

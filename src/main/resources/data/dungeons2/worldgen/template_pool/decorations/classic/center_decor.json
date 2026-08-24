@@ -1,5 +1,5 @@
 {
-  "name": "dungeons2:decorations/classic/center_decor/center_decor",
+  "name": "dungeons2:decorations/classic/center_decor",
   "fallback": "minecraft:empty",
   "elements": [
     {
