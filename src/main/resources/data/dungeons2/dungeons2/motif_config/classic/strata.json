@@ -1,0 +1,60 @@
+{
+  "strataByFloorIndex": [
+    {
+      "minFloorIndex": 0,
+      "wall": {
+        "wall": "minecraft:mud_bricks"
+      },
+      "ceiling": {
+        "ceiling": "minecraft:mud_bricks"
+      },
+      "floor": {
+        "base": "minecraft:mud_bricks",
+        "alternateBase": "minecraft:packed_mud"
+      },
+      "door": {
+        "door": "dungeonblocks:spruce_dungeon_door",
+        "lintel": "minecraft:packed_mud",
+        "floor": "minecraft:packed_mud",
+        "probability": 0.5
+      },
+      "corridor": {
+        "floor": "minecraft:packed_mud",
+        "alternateFloor": "minecraft:mud_bricks",
+        "ceiling": "minecraft:mud_bricks",
+        "height": 7,
+        "narrowHeight": 6,
+        "profile": "arched",
+        "archBlock": "minecraft:mud_brick_stairs"
+      }
+    },
+    {
+      "minFloorIndex": 1,
+      "wall": {
+        "wall": "minecraft:stone_bricks"
+      },
+      "ceiling": {
+        "ceiling": "minecraft:stone_bricks"
+      },
+      "floor": {
+        "base": "minecraft:stone_bricks",
+        "alternateBase": "minecraft:stone_bricks"
+      },
+      "door": {
+        "door": "dungeonblocks:spruce_dungeon_door",
+        "lintel": "minecraft:polished_andesite",
+        "floor": "minecraft:polished_andesite",
+        "probability": 0.5
+      },
+      "corridor": {
+        "floor": "minecraft:cobblestone",
+        "alternateFloor": "minecraft:stone_bricks",
+        "ceiling": "minecraft:stone_bricks",
+        "height": 7,
+        "narrowHeight": 6,
+        "profile": "arched",
+        "archBlock": "minecraft:stone_brick_stairs"
+      }
+    }
+  ]
+}

@@ -242,6 +242,67 @@ class StrataByFloorTest {
         assertEquals(List.of(), band.reshapedCorridorFields(CorridorConfig.DEFAULT));
     }
 
+    /**
+     * A band that does not mention {@code styles} keeps the motif's, and the projection really
+     * carries them.
+     *
+     * <p>The substitution is the point, not the tolerance. {@code BasicCorridorGenerator} calls
+     * {@code styleFor(name)} on the PROJECTED config at render time; a projection with no styles
+     * would miss and fall through to {@code baseline()}, rebuilding the floor's corridors from the
+     * band's own profile and courses.</p>
+     */
+    @Test
+    void aBandThatNamesNoStylesKeepsTheMotifs() {
+        CorridorStyle vaulted = new CorridorStyle("vaulted", 3, 7, CorridorConfig.Profile.ARCHED,
+                Optional.of("minecraft:stone_brick_stairs"), Optional.of(6), List.of());
+        CorridorConfig base = new CorridorConfig(
+                "minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:stone_bricks",
+                7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:stone_brick_stairs"),
+                Optional.of(6), List.of(vaulted), List.of());
+        // Repaints the three material fields; restates the three plan-time scalars; says nothing
+        // about styles.
+        CorridorConfig repaint = new CorridorConfig(
+                "minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:mud_bricks",
+                7, CorridorConfig.Profile.ARCHED, Optional.of("minecraft:mud_brick_stairs"),
+                Optional.of(6), List.of(), List.of());
+        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.of(repaint), Optional.empty());
+
+        assertEquals(List.of(), band.reshapedCorridorFields(base),
+                "an unmentioned styles list is not a reshape");
+
+        CorridorConfig projected = motif(base, List.of(band)).forFloor(0).corridor();
+        assertEquals("minecraft:packed_mud", projected.floor(), "the repaint must survive");
+        assertEquals(List.of(vaulted), projected.styles(),
+                "the motif's styles must be substituted back in");
+        assertEquals(vaulted, projected.styleFor("vaulted"),
+                "styleFor is what the renderer calls; without the substitution it would fall back"
+                        + " to baseline() and rebuild the floor from the band's own geometry");
+    }
+
+    /** A band that DOES name its own styles is still a reshape. */
+    @Test
+    void aBandThatNamesItsOwnStylesIsStillRejected() {
+        CorridorConfig base = new CorridorConfig(
+                "minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:stone_bricks",
+                CorridorConfig.DEFAULT.height(), CorridorConfig.DEFAULT.profile(),
+                Optional.empty(), Optional.empty(),
+                List.of(new CorridorStyle("vaulted", 3, 7, CorridorConfig.Profile.ARCHED,
+                        Optional.of("minecraft:stone_brick_stairs"), Optional.of(6), List.of())),
+                List.of());
+        CorridorConfig ownStyles = new CorridorConfig(
+                "minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:mud_bricks",
+                CorridorConfig.DEFAULT.height(), CorridorConfig.DEFAULT.profile(),
+                Optional.empty(), Optional.empty(),
+                List.of(new CorridorStyle("muddy", 1, 7, CorridorConfig.Profile.ARCHED,
+                        Optional.of("minecraft:mud_brick_stairs"), Optional.of(6), List.of())),
+                List.of());
+        Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.of(ownStyles), Optional.empty());
+
+        assertEquals(List.of("styles"), band.reshapedCorridorFields(base));
+    }
+
     @Test
     void aBandThatChangesCorridorGeometryNamesEveryFieldItChanged() {
         CorridorConfig reshaped = new CorridorConfig(

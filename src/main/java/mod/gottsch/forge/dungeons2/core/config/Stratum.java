@@ -73,6 +73,12 @@ import java.util.Set;
  * {@code MotifConfigFragment#repaintOnly} drops such an override and says so at ERROR &mdash; the
  * only outcome that is neither silent nor destructive.
  *
+ * <p><strong>{@code styles} is the exception, and it has to be:</strong> it is optional with an
+ * empty default, so a band that simply does not mention it is indistinguishable from one that set
+ * it to none. Omitting it therefore means "keep the motif's", and {@link MotifConfig#forFloor}
+ * substitutes them back in. The other three have real defaults an author must restate to match
+ * &mdash; three short lines, and unlike {@code styles} they are three lines rather than eighty.
+ *
  * @author Mark Gottschling on Aug 23, 2026
  */
 public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
@@ -218,7 +224,13 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
         if (!banded.narrowHeight().equals(base.narrowHeight())) {
             reshaped.add("narrowHeight");
         }
-        if (!banded.styles().equals(base.styles())) {
+        // An EMPTY styles list is "not mentioned", not "changed to none" -- it is the codec's
+        // default, and a band that does not mention styles inherits the motif's, exactly like a band
+        // that does not mention walls. MotifConfig#forFloor does the substituting; without it the
+        // projection would carry no styles and BasicCorridorGenerator's styleFor() would fall back
+        // to baseline(), silently rebuilding the floor's corridors from the BAND's profile and
+        // courses. A band that declares styles of its own is still a reshape.
+        if (!banded.styles().isEmpty() && !banded.styles().equals(base.styles())) {
             reshaped.add("styles");
         }
         return reshaped;
