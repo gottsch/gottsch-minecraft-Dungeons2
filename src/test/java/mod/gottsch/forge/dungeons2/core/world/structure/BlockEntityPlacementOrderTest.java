@@ -105,7 +105,7 @@ class BlockEntityPlacementOrderTest {
     private static FakeWorldGenLevel place(List<BlockPlacement> placements) {
         FakeWorldGenLevel level = FakeWorldGenLevel.create();
         DungeonCorridorPiece piece = piece();
-        piece.placeAll(level.level(), piece.getBoundingBox(), placements);
+        piece.placeAll(level.level(), piece.getBoundingBox(), java.util.Optional.empty(), placements);
         return level;
     }
 
@@ -134,7 +134,7 @@ class BlockEntityPlacementOrderTest {
         FakeWorldGenLevel level = FakeWorldGenLevel.create();
         DungeonCorridorPiece piece = piece();
         BoundingBox elsewhere = new BoundingBox(512, FLOOR_Y, 512, 520, FLOOR_Y + 8, 520);
-        piece.placeAll(level.level(), elsewhere, List.of(withBlockEntity()));
+        piece.placeAll(level.level(), elsewhere, java.util.Optional.empty(), List.of(withBlockEntity()));
         assertTrue(level.blocks().isEmpty(),
                 "a placement outside the chunk box was written anyway: " + level.blocks());
     }

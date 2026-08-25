@@ -103,16 +103,61 @@ public final class PieceProcessors {
 
     private PieceProcessors() {}
 
-    /** The processor list for {@code motifValue}, or empty when none is registered. */
+    /** The motif's own list, for a piece with no stratum. */
     public static Optional<StructureProcessorList> weatheringList(WorldGenLevel level, String motifValue) {
+        return weatheringList(level, motifValue, Optional.empty());
+    }
+
+    /**
+     * The processor list a piece on this stratum weathers from, or empty when neither tier is
+     * registered. Backlog #45 step 4.
+     *
+     * <h2>Two tiers, and the stratum's list REPLACES the motif's</h2>
+     * <ol>
+     *   <li>{@code dungeons2:<motif>_<stratum>_weathering}</li>
+     *   <li>{@code dungeons2:<motif>_weathering}</li>
+     * </ol>
+     *
+     * <p>Replacement rather than a delta appended to the motif's, because <strong>the prefab half
+     * can only be a replacement</strong>: a pool element names exactly ONE {@code processor_list},
+     * so a stratum's pool JSON names that stratum's file and the motif's never runs. Composing the
+     * two here would give a procedural room and the prefab beside it different rules from the same
+     * pair of files, which is the one thing this class exists to prevent.</p>
+     *
+     * <p>The cost is that a stratum's file must restate the processors that are not weathering at
+     * all &mdash; {@code dungeons2:decoration} and the #10 {@code dungeons2:spawner} marker. That
+     * is deliberate: the file is really "this stratum's placement processors", and a stratum that
+     * silently inherited a spawner it never named would be worse. See the header of
+     * {@code classic_mud_weathering.json}.</p>
+     *
+     * <p><strong>No cross-motif tier</strong>, matching step 3's pool resolver: stratum names are
+     * per-motif, so {@code classic_<stratum>_weathering} would hand a motif someone else's idea of
+     * a depth. And a missing stratum list is SILENT &mdash; it is the ordinary case, since a band
+     * usually only repaints.</p>
+     *
+     * @param stratum the band's {@code name}, from {@code MotifConfig#stratumNameFor}; empty for a
+     *                motif with no strata or a band that never named itself
+     */
+    public static Optional<StructureProcessorList> weatheringList(
+            WorldGenLevel level, String motifValue, Optional<String> stratum) {
         if (motifValue == null || motifValue.isBlank()) {
             return Optional.empty();
         }
-        ResourceLocation id = new ResourceLocation(Dungeons.MOD_ID,
-                motifValue.trim().toLowerCase(Locale.ROOT) + WEATHERING_SUFFIX);
+        String motif = motifValue.trim().toLowerCase(Locale.ROOT);
         Registry<StructureProcessorList> registry =
                 level.registryAccess().registryOrThrow(Registries.PROCESSOR_LIST);
-        return registry.getOptional(ResourceKey.create(Registries.PROCESSOR_LIST, id));
+
+        Optional<StructureProcessorList> stratumList = stratum
+                .filter(name -> !name.isBlank())
+                .flatMap(name -> lookup(registry, motif + "_"
+                        + name.trim().toLowerCase(Locale.ROOT) + WEATHERING_SUFFIX));
+        return stratumList.isPresent() ? stratumList : lookup(registry, motif + WEATHERING_SUFFIX);
+    }
+
+    private static Optional<StructureProcessorList> lookup(
+            Registry<StructureProcessorList> registry, String path) {
+        return registry.getOptional(ResourceKey.create(Registries.PROCESSOR_LIST,
+                new ResourceLocation(Dungeons.MOD_ID, path)));
     }
 
     /**
@@ -133,14 +178,17 @@ public final class PieceProcessors {
      *                      is an option.
      * @param relativeInfos the piece's blocks in {@code origin}-relative space,
      *                      <strong>unclipped</strong>.
+     * @param stratum       the depth band this piece is on, which selects the list &mdash; see
+     *                      {@link #weatheringList(WorldGenLevel, String, Optional)}.
      */
     public static List<StructureTemplate.StructureBlockInfo> decorate(
             WorldGenLevel level, BlockPos origin, BoundingBox chunkBox,
-            List<StructureTemplate.StructureBlockInfo> relativeInfos, String motifValue) {
+            List<StructureTemplate.StructureBlockInfo> relativeInfos, String motifValue,
+            Optional<String> stratum) {
 
         List<StructureProcessor> levelIndependent = new ArrayList<>();
         List<StructureProcessor> levelReading = new ArrayList<>();
-        for (StructureProcessor processor : weatheringList(level, motifValue)
+        for (StructureProcessor processor : weatheringList(level, motifValue, stratum)
                 .map(StructureProcessorList::list).orElse(List.of())) {
             (processor instanceof LevelIndependentProcessor ? levelIndependent : levelReading)
                     .add(processor);

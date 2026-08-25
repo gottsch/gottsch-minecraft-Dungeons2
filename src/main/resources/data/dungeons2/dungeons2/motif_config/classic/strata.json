@@ -2,6 +2,10 @@
   "strataByFloorIndex": [
     {
       "minFloorIndex": 0,
+      // #45 step 4: this is what selects dungeons2:classic_mud_weathering. The SAME name also
+      // opts the depth into rooms/classic/mud/normal (step 3) -- nothing ships that pool, so the
+      // resolver falls back to the motif's rooms, which is the ordinary case and is silent.
+      "name": "mud",
       "wall": {
         "wall": "minecraft:mud_bricks"
       },

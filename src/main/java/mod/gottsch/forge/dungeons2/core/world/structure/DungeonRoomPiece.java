@@ -36,6 +36,7 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Procedural piece wrapping one {@link RoomData} (a NORMAL maze room). At
@@ -92,12 +93,15 @@ public class DungeonRoomPiece extends DungeonPiece {
         // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
         // so this is a no-op for everything shipped today. Build time, not plan time -- both
         // inputs are in hand right here and nothing needs serialising.
-        MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue)
-                .forFloor(floorIndex);
+        MotifConfig motif = MotifConfigHelper.get(level.registryAccess(), motifValue);
+        // #45 step 4: asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
+        // projection has no band left to name. Same reason DungeonStructure asks it of the motif.
+        Optional<String> stratum = motif.stratumNameFor(floorIndex);
+        MotifConfig motifConfig = motif.forFloor(floorIndex);
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
         RoomPlacements placements = renderRoom(motifConfig);
-        safePlaceAll(level, box, placements::getBlocks);
+        safePlaceAll(level, box, stratum, placements::getBlocks);
         // Entities are spawned separately and clipped to the chunk box -- unlike blocks they are
         // not idempotent across the per-chunk postProcess re-runs. See DungeonPiece#placeEntities.
         placeEntities(level, box, placements.getEntities());

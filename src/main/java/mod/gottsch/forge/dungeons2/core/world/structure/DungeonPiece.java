@@ -49,6 +49,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
@@ -192,8 +193,13 @@ public abstract class DungeonPiece extends StructurePiece {
      * Writes every placement into the world, translated from floor-local to
      * world to piece-local, clipped to the chunk {@code box}. Applies any
      * {@link BlockEntityData} for positions that actually landed inside the box.
+     *
+     * @param stratum the depth band this piece is on (#45 step 4), which selects the processor
+     *                list it weathers from. Empty for every motif with no strata, which is the
+     *                whole of the {@code MotifConfig.DEFAULT} path.
      */
-    protected void placeAll(WorldGenLevel level, BoundingBox box, List<BlockPlacement> placements) {
+    protected void placeAll(WorldGenLevel level, BoundingBox box, Optional<String> stratum,
+                            List<BlockPlacement> placements) {
         BoundingBox pieceBox = getBoundingBox();
         // Origin the processor pass works relative to. Placements are floor-local XZ
         // with absolute Y, so relative-to-origin is (x, y - floorY, z) and vanilla's
@@ -235,7 +241,7 @@ public abstract class DungeonPiece extends StructurePiece {
         // and the procedural room next to it weather identically. Absent list = no
         // decoration, matching the "pool absent" degradation convention.
         List<StructureTemplate.StructureBlockInfo> processed =
-                PieceProcessors.decorate(level, origin, box, infos, motifValue);
+                PieceProcessors.decorate(level, origin, box, infos, motifValue, stratum);
 
         List<BlockPos> jointed = new ArrayList<>();
         for (StructureTemplate.StructureBlockInfo info : processed) {
@@ -532,9 +538,10 @@ public abstract class DungeonPiece extends StructurePiece {
      * (wall/floor/ceiling generator, etc.) is nearly impossible to diagnose from
      * a live game session.
      */
-    protected void safePlaceAll(WorldGenLevel level, BoundingBox box, Supplier<List<BlockPlacement>> placementsSupplier) {
+    protected void safePlaceAll(WorldGenLevel level, BoundingBox box, Optional<String> stratum,
+                                Supplier<List<BlockPlacement>> placementsSupplier) {
         try {
-            placeAll(level, box, placementsSupplier.get());
+            placeAll(level, box, stratum, placementsSupplier.get());
         } catch (RuntimeException e) {
             Dungeons.LOGGER.error("{} postProcess threw at anchor=({},{}) floorY={} box={}",
                     getClass().getSimpleName(), anchorX, anchorZ, floorY, box, e);

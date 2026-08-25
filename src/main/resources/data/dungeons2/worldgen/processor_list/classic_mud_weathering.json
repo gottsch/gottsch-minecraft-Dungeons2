@@ -1,0 +1,243 @@
+// Weathering for the CLASSIC motif's `mud` STRATUM -- backlog #45 step 4. Selected by the band's
+// `name` in motif_config/classic/strata.json: PieceProcessors looks for
+// dungeons2:<motif>_<stratum>_weathering and falls back to dungeons2:<motif>_weathering.
+//
+// THIS FILE REPLACES classic_weathering.json ON THIS DEPTH, it does not extend it. That is forced
+// by the prefab half: a pool element names exactly ONE processor_list, so a stratum's pool JSON
+// names this file and the motif's never runs. Composing them here would give a procedural room
+// and the prefab beside it different rules from the same pair of files.
+//
+// The consequence is the duplication below: dungeons2:decoration and the #10 dungeons2:spawner
+// marker are COPIED VERBATIM from classic_weathering.json, because they are not weathering and a
+// stratum has no reason to differ on them -- but a list that silently inherited a spawner it
+// never named would be worse than a copy. Keep them in step by hand; #47 rewrites both files.
+//
+// PROBABILITIES ARE CONDITIONAL, NOT ABSOLUTE, exactly as in classic_weathering.json -- read that
+// file's header for the arithmetic. It does not bite here, because mud_bricks has ONE chain.
+//
+// Only processors vetted for a procedural piece belong here; see PieceProcessors and
+// WeatheringProcessorListTest.
+{
+  "processors": [
+    {
+      // dungeons2:aging, and it is the right processor even though mud_bricks is a plain full
+      // cube with no properties to carry: minecraft:rule cannot express a MULTI-STAGE chain, and
+      // this is one. Same reason classic's own deep-decay chains live here.
+      "processor_type": "dungeons2:aging",
+      // 3 -- exactly the length of the one chain below. Raise it if a stage is added.
+      "agings": 3,
+      "rules": [
+        // ===================================================================================
+        // The mud stratum's ONE decay family:
+        //
+        //     mud_bricks -> packed_mud -> dirt -> air
+        //
+        // Composed rates -- what a player actually SEES, i.e. net of the next stage having fired
+        // instead, the same convention classic_weathering.json quotes and AgingChainRatesTest
+        // asserts. Nothing else claims mud_bricks, so no chain-to-chain conditioning applies:
+        //
+        //     packed_mud  21%      dirt  7.65%      air  1.35%
+        //
+        // Raise the FIRST stage to make the depth more ruinous; raise the LAST to trade
+        // crumbled earth for open holes.
+        //
+        // AIR IS THE TERMINUS, AND CLASSIC DELIBERATELY REFUSES TO GO THERE. classic_weathering
+        // ends its deep decay at gravel and says why: wall, floor and ceiling all share one
+        // block (#15), a processor only ever sees the block and never the surface, so an air
+        // stage that is a welcome hole in a floor is a BREACH in an outer wall -- and any water
+        // in the terrain behind it then flows in, which placing the room's air cannot prevent
+        // because the room is filled at generation and the water arrives afterwards.
+        //
+        // This stratum shares its block the same way (wall, ceiling and floor base are all
+        // mud_bricks), so it inherits the same exposure. Shipped at Gottsch's explicit request;
+        // 1.35% is where the risk was priced. The lever that would remove it rather than price
+        // it is #15 -- give the band's wall a block its floor does not use, and the air stage
+        // can be scoped to the floor alone.
+        //
+        // What it buys, besides holes: `unsupported` in the decoration pass below can only fire
+        // where weathering produced air, and floor_growth/hanging_growth need the dirt stage to
+        // sprout from. A chain that stopped at packed_mud would leave both inert on this floor.
+        // ===================================================================================
+        {
+          "block": "minecraft:mud_bricks",
+          "output_blocks": [
+            { "block": "minecraft:packed_mud", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        }
+      ]
+    },
+    {
+      // dungeons2:decoration -- the NEIGHBOUR-aware pass. Everything above decides one
+      // block at a time; this one decides from a block's surroundings, which is what
+      // cobwebs (air with a wall beside it) and creeping growth need.
+      //
+      // Its probabilities are ABSOLUTE, not conditional -- one roll per candidate
+      // position, unlike the rule/aging chains above.
+      //
+      // It only ever writes into a cell the piece itself places as AIR (bar underwater
+      // growth, which replaces the piece's own water). Nothing here can touch terrain.
+      "processor_type": "dungeons2:decoration",
+
+      // Air with at least one horizontally adjacent solid block. Corners and wall faces
+      // web up; the middle of a room stays clear.
+      "cobwebs": {
+        "probability": 0.02,
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // The angle webs are a DIFFERENT behaviour, not more entries in the palette above.
+      // They are modelled as a triangular sheet gathering into the angle where two
+      // surfaces meet and tapering away from it, so they need a wall AND a floor or
+      // ceiling -- one halfway up a bare wall has nothing to gather into and reads as a
+      // sheet hanging in mid-air. Both surfaces must be full cubes for the same reason
+      // wall growth needs one; the processor works out the facing from the neighbours,
+      // and picks the junction with the block's `half` (top = ceiling, bottom = floor).
+      //
+      // Higher than the plain web's rate on purpose: this fires on far fewer cells --
+      // only wall/floor and wall/ceiling junctions -- so 0.02 here would be nearly
+      // invisible.
+      "corner_cobwebs": {
+        "probability": 0.06,
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+
+      // Growth in the air beside a wall, attached to the wall's face. "probability" is
+      // the chance with nothing already growing next to the spot; each of the 6
+      // neighbours that IS growth adds "bonus", capped at "max", and the spot inherits
+      // its neighbour's species. That's what makes it spread in patches rather than an
+      // even speckle -- turn "bonus" up for bigger, blotchier patches. Blocks should be
+      // multiface (glow-lichen-like) to take a face; anything else is placed as-is.
+      "wall_growth": {
+        "probability": 0.04,
+        "bonus": 0.22,
+        "max": 0.55,
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // What counts as dirt for floor_growth/hanging_growth below. Classic dungeons are
+      // not authored with dirt -- this catches the dirt the AGING processor above makes
+      // out of decayed stairs, which is exactly where a tuft of growth belongs.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+      // On top of a dirt block, where the cell above it is air. All single-block plants that
+      // survive in the dark: mushrooms need darkness, and grass/fern/moss only need light to
+      // SPREAD, not to stay put, so none of these pop off in an unlit dungeon.
+      // (No tall_grass or large_fern -- those are two blocks high and only the lower half
+      // would be placed.)
+      //
+      // The two "entity" entries are MOBS grown as if they were plants. GMM's Shrieker and Violet
+      // Fungus root themselves and never move, so a patch of decayed dirt is exactly where they
+      // belong -- and dungeons2:decoration spawns them from its finalizeProcessing pass, which has
+      // a real ServerLevelAccessor and the chunk box to dedupe against. No marker block involved.
+      //
+      // THE PALETTE IS WEIGHTED. An entry is either a bare id (weight 1) or {block, weight}, and
+      // the draw is one roll over the total. Weights matter here more than anywhere else in this
+      // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
+      // which is ground-cover frequency for something that is actually a monster. At 1 each against
+      // the mushrooms' 10 they are 2 of 62, about 3%.
+      "floor_growth": {
+        "probability": 0.35,
+        "blocks": [
+          { "block": "minecraft:brown_mushroom", "weight": 10 },
+          { "block": "minecraft:red_mushroom", "weight": 10 },
+          { "block": "minecraft:moss_carpet", "weight": 10 },
+          { "block": "minecraft:grass", "weight": 10 },
+          { "block": "minecraft:fern", "weight": 10 },
+          { "block": "minecraft:dead_bush", "weight": 10 },
+          { "entity": "dungeons2:shrieker", "weight": 1 },
+          { "entity": "dungeons2:violet_fungus", "weight": 1 }
+        ]
+      },
+      // Underneath a dirt block, where the cell below it is air.
+      "hanging_growth": {
+        "probability": 0.3,
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // Architectural blocks that delete themselves once the wall behind them is gone --
+      // a corbel or ledge left hanging in the air after what it was bracketed onto
+      // crumbled away. Structural, so no probability: it either has a wall or it doesn't.
+      //
+      // A block with a "facing" property is held up from BEHIND and by nothing else: it
+      // GIVES support to what sits on top of it, it doesn't TAKE support from there, nor
+      // from below, nor from whatever happens to sit beside it. Only the neighbour at
+      // facing.getOpposite() is consulted.
+      //
+      // Deliberately generous otherwise, since a false positive deletes authored
+      // architecture: any non-air block behind counts (a ledge mounted on a stair or on
+      // another ledge stays put), and so does a neighbour that simply isn't part of this
+      // piece -- absent means "nothing placed here", not "nothing is here".
+      //
+      // It follows that this fires only where weathering actually produced air, so how
+      // often you see it is really a property of the aging rules above.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+
+      // -----------------------------------------------------------------------------
+      // Water growth is OFF for classic -- classic dungeons have no standing water.
+      // Copy this into a motif that does. Water on a solid floor becomes seagrass; the
+      // air on top of water gets lily pads:
+      //
+      //   "underwater_growth": { "probability": 0.15, "blocks": ["minecraft:seagrass"] },
+      //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
+      // -----------------------------------------------------------------------------
+    },
+
+    // =========================================================================================
+    // dungeons2:spawner (Backlog #10, added 2026-08-14) -- swaps an authored
+    // dungeons2:spawner_marker block for the invisible dungeons2:mob_set_spawner, which spawns
+    // this set when a player comes within `proximity` blocks.
+    //
+    // IT MATCHES A BLOCK, NOT A `d2:spawner` DATA MARKER, and that is not a preference.
+    // SinglePoolElement.getSettings installs BlockIgnoreProcessor.STRUCTURE_BLOCK BEFORE
+    // appending this list, and that processor returns null for a structure block -- REMOVING it
+    // rather than replacing it. A pool processor never sees one. The observed symptom was neither
+    // a spawner nor a visible structure block but the terrain the dungeon was carved out of,
+    // because the cell was never written at all. See JigsawStripsStructureBlocksTest.
+    //
+    // WHY IT LIVES IN THE WEATHERING LIST, despite not weathering anything: a pool element names
+    // exactly ONE processor_list, and all four pools already name this one. Splitting it would
+    // mean every pool JSON growing a second reference and every future motif remembering both.
+    // The file is really "the classic motif's placement processors"; the name predates having
+    // any that were not weathering.
+    //
+    // IT ONLY EVER FIRES ON AUTHORED TEMPLATES, since nothing procedural places the marker.
+    // A procedural room reaches the same spawner through the motif config's `spawners` scheme
+    // slot instead (RoomSpawnerGenerator -> BlockEntityData -> DungeonPiece.applyBlockEntity).
+    // The two build the same block-entity tag; SpawnerTagParityTest is what keeps them agreeing,
+    // so a field renamed here must be renamed there.
+    //
+    // ONE MARKER = ONE SET. A block carries no free text, so the per-cell override the DATA
+    // marker allowed is gone. A motif wanting a second set registers a second marker block and
+    // adds a second entry here naming it via `marker_block`.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:spawner",
+      // Required -- a spawner with no set is a block that does nothing, and defaulting it would
+      // make that failure silent. Shipped set is the dungeon's own vermin (#40/#41).
+      "mob_set": "dungeons2:classic_vermin",
+      // Defaults to dungeons2:spawner_marker; stated explicitly because it is the authored half
+      // of this contract and a template author has to know what to place.
+      "marker_block": "dungeons2:spawner_marker",
+      // 8 blocks: rooms run 5-13 across, so this fires as the player enters the room rather
+      // than as they step onto the cell.
+      "proximity": 8.0,
+      "min_mobs": 1,
+      "max_mobs": 3
+    }
+  ]
+}

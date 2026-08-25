@@ -34,6 +34,7 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Procedural piece wrapping one {@link DoorData} doorway. Renders the 4-block
@@ -79,10 +80,13 @@ public class DungeonDoorPiece extends DungeonPiece {
         // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
         // so this is a no-op for everything shipped today. Build time, not plan time -- both
         // inputs are in hand right here and nothing needs serialising.
-        MotifConfig motifConfig = MotifConfigHelper.get(level.registryAccess(), motifValue)
-                .forFloor(floorIndex);
+        MotifConfig motif = MotifConfigHelper.get(level.registryAccess(), motifValue);
+        // #45 step 4: asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
+        // projection has no band left to name. Same reason DungeonStructure asks it of the motif.
+        Optional<String> stratum = motif.stratumNameFor(floorIndex);
+        MotifConfig motifConfig = motif.forFloor(floorIndex);
         // Render from a piece-stable seed, not the chunk-seeded `random`.
-        safePlaceAll(level, box, () -> renderPlacements(motifConfig));
+        safePlaceAll(level, box, stratum, () -> renderPlacements(motifConfig));
     }
 
     /** Builds this door's placements deterministically (no external RNG), motif defaults. */
