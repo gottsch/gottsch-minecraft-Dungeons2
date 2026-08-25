@@ -146,10 +146,41 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // Checks that only make sense on FINISHED content. A template is blocked out in
+        // minecraft:bedrock while it is being authored and only swapped to structure_void when
+        // the room is finalised, so a bedrock assertion would fail continuously during authoring
+        // -- and a permanently red build is worse than no build, because a real failure hides in
+        // the noise. Run these deliberately instead:
+        //
+        //   ./gradlew releaseCheck
+        //
+        // BEFORE PUBLISHING A JAR. Nothing runs it for you.
+        excludeTags 'release'
+    }
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
+}
+
+// The @Tag("release") tests `test` skips -- the ones that assert authoring is FINISHED rather
+// than that the code is correct. Run before publishing.
+//
+//   ./gradlew releaseCheck
+tasks.register('releaseCheck', Test) {
+    group = 'verification'
+    description = 'Runs the release-gate checks excluded from `test` (finished-content assertions).'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'release'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+    // Otherwise an unchanged tree reports UP-TO-DATE and prints nothing, which reads as "passed"
+    // for a task whose whole job is to be run at a moment that matters.
+    outputs.upToDateWhen { false }
 }
 
 // Diagnostic: sweeps the minimum gap between rooms and reports what each setting costs
