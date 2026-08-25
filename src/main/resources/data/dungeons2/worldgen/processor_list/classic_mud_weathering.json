@@ -41,18 +41,21 @@
         // Raise the FIRST stage to make the depth more ruinous; raise the LAST to trade
         // crumbled earth for open holes.
         //
-        // AIR IS THE TERMINUS, AND CLASSIC DELIBERATELY REFUSES TO GO THERE. classic_weathering
-        // ends its deep decay at gravel and says why: wall, floor and ceiling all share one
-        // block (#15), a processor only ever sees the block and never the surface, so an air
-        // stage that is a welcome hole in a floor is a BREACH in an outer wall -- and any water
-        // in the terrain behind it then flows in, which placing the room's air cannot prevent
-        // because the room is filled at generation and the water arrives afterwards.
+        // AIR IS THE TERMINUS, AND IT DOES BREACH THE SHELL SOMETIMES. Wall, ceiling and floor
+        // base on this band are all mud_bricks, and a processor only ever sees the block, never
+        // the surface -- so the air stage that is a welcome hole in a floor is the same rule as
+        // a hole in an OUTER wall, and any water in the terrain behind it then flows in. Placing
+        // the room's air cannot prevent that: the room is filled at generation and the water
+        // arrives afterwards, through the hole.
         //
-        // This stratum shares its block the same way (wall, ceiling and floor base are all
-        // mud_bricks), so it inherits the same exposure. Shipped at Gottsch's explicit request;
-        // 1.35% is where the risk was priced. The lever that would remove it rather than price
-        // it is #15 -- give the band's wall a block its floor does not use, and the air stage
-        // can be scoped to the floor alone.
+        // MARK ACCEPTED THAT ON 2026-08-25, for this file and for classic_weathering alike: if
+        // it leaves a hole, it leaves a hole. A dungeon breached by the ground around it is the
+        // look, and the occasional wet room is its price. This band shipped with the air stage
+        // a day before the ban was lifted generally, so it is no longer the exception it reads
+        // as -- it is just the only chain that has been authored to use the freedom yet.
+        //
+        // 1.35% is a taste decision, not a risk price. Raise it for a wetter, more ruined
+        // depth.
         //
         // What it buys, besides holes: `unsupported` in the decoration pass below can only fire
         // where weathering produced air, and floor_growth/hanging_growth need the dirt stage to

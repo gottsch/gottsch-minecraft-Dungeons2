@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -73,6 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class StratumWeatheringListTest {
 
     private static final String PROCESSOR_ROOT = "/data/dungeons2/worldgen/processor_list";
+    private static final String ROOM_POOL_ROOT = "/data/dungeons2/worldgen/template_pool/rooms";
+    private static final String WEATHERING = "_weathering";
     private static final String MOTIF = "classic";
 
     /** The one stratum shipped today, from {@code motif_config/classic/strata.json}. */
@@ -208,6 +211,69 @@ class StratumWeatheringListTest {
     }
 
     @Test
+    void everyStratumPoolElementNamesThatStratumsWeatheringList() {
+        // The prefab half of step 4, and the one thing about it that is silent. A pool element
+        // names exactly ONE processor_list; a mud room that named dungeons2:classic_weathering
+        // would load, place, and sit factory-fresh in an aging dungeon, because classic's 110
+        // rules are keyed on stone and this template is mud. Nothing logs that.
+        //
+        // Swept by PATH rather than named, so the next stratum pool is covered on the day it is
+        // authored: any pool under template_pool/rooms/<motif>/<stratum>/ must name
+        // dungeons2:<motif>_<stratum>_weathering on every element.
+        List<Path> pools = stratumPools();
+        assertFalse(pools.isEmpty(), "expected at least rooms/classic/mud/normal.json");
+
+        for (Path pool : pools) {
+            // .../rooms/<motif>/<stratum>/<pool>.json
+            String stratum = pool.getParent().getFileName().toString();
+            String motif = pool.getParent().getParent().getFileName().toString();
+            String expected = "dungeons2:" + motif + "_" + stratum + WEATHERING;
+
+            JsonObject json = parse(pool);
+            for (var entry : json.getAsJsonArray("elements")) {
+                JsonObject element = entry.getAsJsonObject().getAsJsonObject("element");
+                assertEquals(expected, element.get("processors").getAsString(),
+                        pool.getFileName() + ": element " + element.get("location").getAsString()
+                                + " names the wrong processor list. A stratum pool must name its"
+                                + " own stratum's, or its rooms never weather and nothing says so");
+
+                // And the template it points at must live under the same stratum folder, or the
+                // pool is quietly serving another depth's rooms.
+                assertTrue(element.get("location").getAsString()
+                                .startsWith("dungeons2:rooms/" + motif + "/" + stratum + "/"),
+                        pool.getFileName() + ": element " + element.get("location").getAsString()
+                                + " is not a " + stratum + " template");
+            }
+        }
+    }
+
+    @Test
+    void noShippedWeatheringListPlacesAFallingBlock() {
+        // The general form of AgingChainRatesTest#deepDecayNoLongerProducesAFallingBlock, which is
+        // scoped to classic's deep-decay chains. This sweeps EVERY weathering list and every output
+        // in it -- aging stages and minecraft:rule output_states alike -- so a stratum list cannot
+        // reintroduce the hazard the rubble swap removed.
+        //
+        // Why it is a hazard at all: gravel and sand fall when the block below them turns to air.
+        // These lists are applied to the ceiling as well as the wall and the floor, because a motif
+        // uses one block for all three (#15) and a processor only ever sees the block, never the
+        // surface. A falling block overhead rains debris onto the player, and the ONLY control was
+        // the rate. dungeonblocks:rubble reads like gravel and does not fall, which is why it is
+        // the terminus everywhere as of 2026-08-25.
+        Set<String> falling = Set.of("minecraft:gravel", "minecraft:sand", "minecraft:red_sand",
+                "minecraft:suspicious_gravel", "minecraft:suspicious_sand");
+
+        for (String file : weatheringFiles()) {
+            for (String output : outputBlocks(readList(file))) {
+                assertFalse(falling.contains(output),
+                        file + " places " + output + ", which falls when the block below it is air."
+                                + " Use dungeonblocks:rubble -- it reads the same and does not fall,"
+                                + " which is the whole reason it exists");
+            }
+        }
+    }
+
+    @Test
     void theCopiedProcessorsStillMatchClassicVerbatim() {
         // The cost of replacement-not-delta: decoration and the spawner marker are duplicated into
         // every stratum file. Nothing but this test stops the copy drifting from its source, and a
@@ -247,10 +313,11 @@ class StratumWeatheringListTest {
         assertEquals(0.21, rates.getOrDefault("minecraft:packed_mud", 0.0), EPSILON);
         assertEquals(0.0765, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON);
         assertEquals(0.0135, rates.getOrDefault("minecraft:air", 0.0), EPSILON,
-                "the air terminus is priced, not incidental -- read the block comment above the"
-                        + " chain before changing it. classic refuses to reach air at all because"
-                        + " wall, floor and ceiling share one block (#15), and this band shares"
-                        + " its own the same way");
+                "the air terminus is deliberate. It does breach the shell sometimes -- wall,"
+                        + " ceiling and floor base are all mud_bricks and a processor never sees"
+                        + " which surface it is on (#15) -- and Mark accepted that on 2026-08-25:"
+                        + " if it leaves a hole, it leaves a hole. This is a taste number, so"
+                        + " move it freely; it is pinned only so the move is deliberate");
     }
 
     @Test
@@ -315,6 +382,34 @@ class StratumWeatheringListTest {
         return rates;
     }
 
+    /**
+     * Every block id a list can WRITE: an aging chain's stages and a {@code minecraft:rule}'s
+     * {@code output_state}. Deliberately not the inputs &mdash; a rule keyed on gravel would be
+     * harmless, it is placing one that is not.
+     */
+    private static Set<String> outputBlocks(JsonObject list) {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        for (var element : list.getAsJsonArray("processors")) {
+            JsonObject processor = element.getAsJsonObject();
+            String type = processor.get("processor_type").getAsString();
+            if (AGING_TYPE.equals(type)) {
+                for (var ruleElement : processor.getAsJsonArray("rules")) {
+                    for (var stage : ruleElement.getAsJsonObject().getAsJsonArray("output_blocks")) {
+                        out.add(stage.getAsJsonObject().get("block").getAsString());
+                    }
+                }
+            } else if ("minecraft:rule".equals(type)) {
+                for (var ruleElement : processor.getAsJsonArray("rules")) {
+                    JsonObject state = ruleElement.getAsJsonObject().getAsJsonObject("output_state");
+                    if (state != null && state.has("Name")) {
+                        out.add(state.get("Name").getAsString());
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
     private static List<String> processorTypes(JsonObject list) {
         List<String> types = new ArrayList<>();
         list.getAsJsonArray("processors")
@@ -330,6 +425,37 @@ class StratumWeatheringListTest {
             }
         }
         return null;
+    }
+
+    /**
+     * Every room pool that sits one level deeper than {@code rooms/<motif>/}, i.e. a per-stratum
+     * pool. {@code rooms/classic/normal.json} is the motif's own and is deliberately excluded.
+     */
+    private static List<Path> stratumPools() {
+        try {
+            var url = StratumWeatheringListTest.class.getResource(ROOM_POOL_ROOT);
+            assertNotNull(url, "Missing " + ROOM_POOL_ROOT);
+            Path root = Paths.get(url.toURI());
+            try (Stream<Path> paths = Files.walk(root)) {
+                return paths.filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().endsWith(".json"))
+                        // root/<motif>/<stratum>/<pool>.json -> 3 names below the root
+                        .filter(path -> root.relativize(path).getNameCount() == 3)
+                        .sorted()
+                        .toList();
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Could not walk " + ROOM_POOL_ROOT, e);
+        }
+    }
+
+    private static JsonObject parse(Path file) {
+        try (var in = Files.newInputStream(file)) {
+            return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8))
+                    .getAsJsonObject();
+        } catch (Exception e) {
+            throw new AssertionError("Could not read " + file, e);
+        }
     }
 
     /** Every shipped {@code *_weathering.json} under the processor_list root, by bare id. */

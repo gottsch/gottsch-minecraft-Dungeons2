@@ -345,6 +345,11 @@ class CorridorPostProcessTest {
      */
     @Test
     void anArchHaunchNeverWeathersIntoAHole() {
+        // dungeonblocks:rubble is deliberately NOT in this set. It replaced gravel as the
+        // deep-decay terminus on 2026-08-25 precisely because it is a plain full block that does
+        // not fall, so it roofs the haunch row as well as the stone it replaced. Gravel and sand
+        // stay listed: they are not placed anywhere today, and this is where reintroducing one
+        // would be caught.
         Set<String> holes = Set.of("minecraft:air", "minecraft:gravel", "minecraft:sand");
         List<String> offenders = new ArrayList<>();
         int haunches = 0;

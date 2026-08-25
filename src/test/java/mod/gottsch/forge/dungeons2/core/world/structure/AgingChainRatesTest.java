@@ -109,19 +109,27 @@ class AgingChainRatesTest {
 
     /** The looser bound the wall-only sources are held to: still bounded, just not ceiling-safe. */
     private static final double WALL_ONLY_MAX_DIRT = 0.05;
-    private static final double WALL_ONLY_MAX_FALLING = 0.02;
+    private static final double WALL_ONLY_MAX_DEBRIS = 0.02;
 
     /** The composed rates the shipped numbers work out to. Tolerance covers 4dp rounding. */
     private static final double DIRT_RATE = 0.0180;
-    private static final double GRAVEL_RATE = 0.0060;
+    private static final double RUBBLE_RATE = 0.0060;
     private static final double EPSILON = 1.0e-3;
 
     /**
-     * Ceiling gravel falls onto the floor as debris, and the ceiling is the same block as the
-     * wall, so gravel cannot be scoped to the surfaces where it is harmless. It is kept as the
-     * chain's LAST stage instead, which is what holds it to this rate.
+     * Blocks that fall when the block under them is air.
+     *
+     * <p>The deep-decay chains ended in {@code minecraft:gravel} until 2026-08-25, and its
+     * <em>position</em> as the last stage was the only control there was: a ceiling made of it
+     * rains debris onto the player, and the ceiling is the same block as the wall (#15), so the
+     * rate was all that could be tuned. {@code dungeonblocks:rubble} reads the same and does not
+     * fall, so the constraint is GONE rather than merely respected -- which is why this set is now
+     * asserted absent from the output rather than held to a budget. See
+     * {@link #deepDecayNoLongerProducesAFallingBlock}.</p>
      */
-    private static final double MAX_FALLING_RATE = 0.01;
+    private static final Set<String> FALLING = Set.of(
+            "minecraft:gravel", "minecraft:sand", "minecraft:red_sand",
+            "minecraft:suspicious_gravel", "minecraft:suspicious_sand");
 
     private static JsonObject readJson() {
         try (InputStream in = AgingChainRatesTest.class.getResourceAsStream(RESOURCE)) {
@@ -197,11 +205,11 @@ class AgingChainRatesTest {
     }
 
     @Test
-    void deepDecayProducesDirtAndGravelAtTheDocumentedRates() {
+    void deepDecayProducesDirtAndRubbleAtTheDocumentedRates() {
         for (String source : DEEP_DECAY_SOURCES) {
             Map<String, Double> rates = composedRates(source);
             double dirt = rates.getOrDefault("minecraft:dirt", 0.0);
-            double gravel = rates.getOrDefault("minecraft:gravel", 0.0);
+            double rubble = rates.getOrDefault("dungeonblocks:rubble", 0.0);
 
             if (WALL_ONLY_SOURCES.contains(source)) {
                 // Bounded, not pinned -- see WALL_ONLY_SOURCES. The point is that it stays a
@@ -209,13 +217,13 @@ class AgingChainRatesTest {
                 assertTrue(dirt <= WALL_ONLY_MAX_DIRT + EPSILON,
                         source + " dirt " + dirt + " exceeds the wall-only bound "
                                 + WALL_ONLY_MAX_DIRT);
-                assertTrue(gravel <= WALL_ONLY_MAX_FALLING + EPSILON,
-                        source + " gravel " + gravel + " exceeds the wall-only bound "
-                                + WALL_ONLY_MAX_FALLING);
+                assertTrue(rubble <= WALL_ONLY_MAX_DEBRIS + EPSILON,
+                        source + " rubble " + rubble + " exceeds the wall-only bound "
+                                + WALL_ONLY_MAX_DEBRIS);
                 continue;
             }
             assertEquals(DIRT_RATE, dirt, EPSILON, source + " dirt rate drifted");
-            assertEquals(GRAVEL_RATE, gravel, EPSILON, source + " gravel rate drifted");
+            assertEquals(RUBBLE_RATE, rubble, EPSILON, source + " rubble rate drifted");
         }
     }
 
@@ -242,12 +250,12 @@ class AgingChainRatesTest {
                     source + " -> cobblestone");
             assertEquals(0.0315, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON,
                     source + " -> dirt");
-            assertEquals(0.0105, rates.getOrDefault("minecraft:gravel", 0.0), EPSILON,
-                    source + " -> gravel");
+            assertEquals(0.0105, rates.getOrDefault("dungeonblocks:rubble", 0.0), EPSILON,
+                    source + " -> rubble");
 
-            double falling = rates.getOrDefault("minecraft:gravel", 0.0);
-            assertTrue(falling <= WALL_ONLY_MAX_FALLING + EPSILON,
-                    source + " gravel " + falling + " exceeds the wall-only bound");
+            double debris = rates.getOrDefault("dungeonblocks:rubble", 0.0);
+            assertTrue(debris <= WALL_ONLY_MAX_DEBRIS + EPSILON,
+                    source + " rubble " + debris + " exceeds the wall-only bound");
         }
     }
 
@@ -306,29 +314,40 @@ class AgingChainRatesTest {
                 "cobblestone authored at 0.14 must compose to less: " + rates);
         assertTrue(rates.get("minecraft:dirt") < 0.0523 - EPSILON,
                 "dirt authored at 0.0523 must compose to less: " + rates);
-        assertTrue(rates.get("minecraft:gravel") < 0.0184,
-                "gravel authored at 0.0184 must compose to less: " + rates);
+        assertTrue(rates.get("dungeonblocks:rubble") < 0.0184,
+                "rubble authored at 0.0184 must compose to less: " + rates);
 
         // And the first rule is the one exception: nothing shields it, so it lands as authored.
         assertEquals(0.30, rates.get("dungeonblocks:mossy_left_large_stone_brick"), EPSILON,
                 "the first rule in a run has nothing above it and does land at its authored rate");
     }
 
+    /**
+     * <strong>There is deliberately no test barring air from a wall block.</strong> There was one
+     * until 2026-08-25, and this note stands in its place so its deletion does not read as an
+     * oversight and get "restored".
+     *
+     * <p>The old rule: these chains apply to the wall, the floor and the ceiling alike (#15), so a
+     * hole that is welcome in a floor is the same rule as a hole in an outer wall &mdash; which
+     * breaches the shell and lets the terrain's water into the room. <strong>Mark accepted that
+     * consequence.</strong> If it leaves a hole, it leaves a hole; a breached ruin is the look and
+     * the occasional wet room is its price.
+     *
+     * <p>So air is now an ordinary rate to judge here, and a rate nobody has picked: the chains
+     * produce no air today. Pinning that zero would be pinning an absence that is not a rule
+     * &mdash; a test that fails the moment someone does the authoring it is waiting for. The one
+     * air assertion left in this class is {@link #timberAgesAtTheIntendedRates}, which pins real
+     * shipped numbers.
+     */
     @Test
-    void noWallBlockDecaysToAir() {
-        // A hole in a FLOOR is fine. A hole in an outer WALL breaches the dungeon shell, and
-        // any water in the terrain behind it flows into the room -- which placing the room's
-        // air cannot prevent, because the room is filled once at generation and the water
-        // arrives afterwards.
-        //
-        // These blocks are the wall, the floor AND the ceiling (classic.json uses
-        // minecraft:stone_bricks for all three), so there is no way to allow the safe case
-        // without also allowing the breach. Air comes back only once the surfaces use
-        // distinct blocks.
+    void deepDecayReachesDirtOnEveryCommonWallBlock() {
+        // What survives the ban's deletion as a real invariant: every one of these chains must
+        // still pass THROUGH dirt, because dirt is what floor_growth and hanging_growth sprout
+        // from and classic authors none (see theDungeonHasADirtSourceForTheGrowthBehaviours).
+        // Lengthening a chain to reach air must not come at the cost of the dirt stage.
         for (String source : DEEP_DECAY_SOURCES) {
-            assertEquals(0.0, composedRates(source).getOrDefault("minecraft:air", 0.0), 0.0,
-                    source + " is a wall block and must not decay to air -- see the comment"
-                            + " above the deep-decay chains in classic_weathering.json");
+            assertTrue(composedRates(source).getOrDefault("minecraft:dirt", 0.0) > 0.0,
+                    source + " no longer decays to dirt at all, so nothing can grow on it");
         }
     }
 
@@ -365,27 +384,26 @@ class AgingChainRatesTest {
     }
 
     @Test
-    void fallingDebrisStaysRare() {
-        // Gravel and sand fall when the block under them is air. Harmless in a wall or a
-        // floor, but a ceiling made of them rains debris onto the floor -- and the ceiling is
-        // the same block as the wall, so the only control available is the RATE.
+    void deepDecayNoLongerProducesAFallingBlock() {
+        // This was a BUDGET -- falling debris <= 1% for anything that can be a ceiling -- because
+        // gravel was the terminus and its rate was the only lever available. Since 2026-08-25 the
+        // terminus is dungeonblocks:rubble, which does not fall, so the budget would now pass on
+        // zero and assert nothing. A test that cannot fail is worse than no test (#46), so it
+        // asserts the stronger thing the swap actually bought: these chains produce NO falling
+        // block at all.
         //
-        // Which in turn means the rate is controlled by chain POSITION: gravel is the third
-        // stage, so it inherits the compounding of the two before it. Promote it to the first
-        // stage and it is ~9x more common, which is what the floor debris looked like.
-        Set<String> falling = Set.of("minecraft:gravel", "minecraft:sand",
-                "minecraft:red_sand", "minecraft:suspicious_gravel", "minecraft:suspicious_sand");
+        // What that protects: putting gravel or sand back into a deep-decay chain reintroduces a
+        // hazard whose only mitigation -- burying it two stages deep -- has since been removed
+        // from the file's rationale, so it would come back UNPRICED.
         for (String source : DEEP_DECAY_SOURCES) {
-            // A wall-only block cannot rain anything onto a floor, so the ceiling-debris budget is
-            // not the bound that applies to it -- see WALL_ONLY_SOURCES.
-            double budget = WALL_ONLY_SOURCES.contains(source)
-                    ? WALL_ONLY_MAX_FALLING : MAX_FALLING_RATE;
-            double total = composedRates(source).entrySet().stream()
-                    .filter(entry -> falling.contains(entry.getKey()))
-                    .mapToDouble(Map.Entry::getValue).sum();
-            assertTrue(total <= budget + EPSILON,
-                    source + " decays to falling blocks " + total + " of the time -- above the "
-                            + budget + " budget");
+            Map<String, Double> rates = composedRates(source);
+            for (String block : FALLING) {
+                assertEquals(0.0, rates.getOrDefault(block, 0.0), 0.0,
+                        source + " decays to " + block + ", which falls when the block below it is"
+                                + " air. These chains are applied to the ceiling as well as the"
+                                + " wall and the floor (#15), and rubble replaced gravel exactly"
+                                + " so this could not happen -- use dungeonblocks:rubble");
+            }
         }
     }
 
@@ -410,15 +428,15 @@ class AgingChainRatesTest {
     /**
      * Backlog #37's timber chains, pinned the same way the stone budgets are.
      *
-     * <p><strong>Timber is allowed to reach air and the stone chains are not</strong>, which looks
-     * like an inconsistency and is not. The ban in {@link #noWallBlockDecaysToAir} exists because
-     * {@code classic} uses one block for wall, floor <em>and</em> ceiling (#15), so a hole in a
-     * floor and a breach of the outer shell are indistinguishable to a rule. {@code spruce_log} and
-     * the spruce corbel are used for beams and brackets and nothing else, and a joist hangs
-     * <em>below</em> the ceiling slab rather than forming it &mdash; so decaying one leaves a gap
-     * in the run with the shell intact. The exemption is about where the block lands, not about
-     * timber being special; if a motif ever puts {@code spruce_log} in a wall or ceiling, this test
-     * and the rules it guards both have to change.</p>
+     * <p><strong>Timber is the only material here whose air is free of the #15 problem</strong>,
+     * and that stayed true when the stone chains' air ban was lifted on 2026-08-25.
+     * {@code classic} uses one block for wall, floor <em>and</em> ceiling, so a stone chain that
+     * reaches air cannot tell a hole in a floor from a breach of the outer shell &mdash; Mark
+     * accepted that. {@code spruce_log} and the spruce corbel are used for beams and brackets and
+     * nothing else, and a joist hangs <em>below</em> the ceiling slab rather than forming it, so
+     * decaying one leaves a gap in the run with the shell intact: nothing is being traded at all.
+     * That is about where the block lands, not about timber being special; if a motif ever puts
+     * {@code spruce_log} in a wall or ceiling, these rates become a compromise like any other.</p>
      */
     @Test
     void timberAgesAtTheIntendedRates() {

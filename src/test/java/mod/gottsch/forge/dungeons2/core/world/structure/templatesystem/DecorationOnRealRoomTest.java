@@ -259,8 +259,10 @@ class DecorationOnRealRoomTest {
                         + " aging-before-decoration ordering is what makes this work");
 
         // For reference, this room at the time of writing: 41 dirt, 323 cobblestone,
-        // 6 mushrooms, 2 hanging roots -- and zero gravel, which is the point of the chain
-        // ending in dirt rather than rubble (see classic_weathering.json).
+        // 6 mushrooms, 2 hanging roots. What matters for growth is that the chain passes THROUGH
+        // dirt: the stage after it (dungeonblocks:rubble as of 2026-08-25, minecraft:gravel
+        // before that) sprouts nothing, so every block that reaches the last stage is one that
+        // cannot grow. See classic_weathering.json.
         //
         // Note how few of the 41 dirt blocks grow anything. Dirt in a WALL is sandwiched
         // between other wall blocks, so it has no air above or below and is a dead end by

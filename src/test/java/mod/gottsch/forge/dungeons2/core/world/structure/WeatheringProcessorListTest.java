@@ -239,7 +239,7 @@ class WeatheringProcessorListTest {
         expected.put("minecraft:cracked_stone_bricks", 0.10);
         expected.put("minecraft:cobblestone", 0.10);
         expected.put("minecraft:mossy_cobblestone", 0.15);
-        expected.put("minecraft:gravel", 0.15);
+        expected.put("dungeonblocks:rubble", 0.15);
         expected.put("minecraft:andesite", 0.30);
         // Added Aug 2026: chiseled_stone_bricks is the accent used by the speckle/cross/spokes
         // floors and the ceiling boss, and this chain converts it from "never ages" to the
@@ -321,7 +321,7 @@ class WeatheringProcessorListTest {
      * <p>Restricted because this processor stopped being about one block family on 2026-08-05, when
      * {@code left_/right_large_stone_brick} moved here from {@code dungeons2:aging}. Summing every
      * rule's output across all sources conflates two independent budgets -- both families produce
-     * {@code cobblestone} and {@code gravel}, so the totals would no longer correspond to any
+     * {@code cobblestone} and {@code dungeonblocks:rubble}, so the totals would no longer correspond to any
      * decision anyone made.</p>
      */
     private static Map<String, Double> composedRates(Set<String> sources) {

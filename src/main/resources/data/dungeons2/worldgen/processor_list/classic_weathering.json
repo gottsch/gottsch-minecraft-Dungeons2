@@ -139,8 +139,9 @@
           ]
         },
         {
-          // LATENT -- nothing places brick_stairs. If authored: air 3.0%, barred outright for a
-          // wall block, which in classic is every surface. Retune before authoring.
+          // LATENT -- nothing places brick_stairs. If authored: air 3.0%. That was barred
+          // outright while a wall block could not reach air; since 2026-08-25 it is merely a
+          // rate to judge, so this is authorable as it stands.
           "block": "minecraft:brick_stairs",
           "output_blocks": [
             {
@@ -196,7 +197,7 @@
         // RULES KEYED ON AN INTERMEDIATE BLOCK (backlog #26)
         //
         // The rules below read as a continuing chain -- stone_brick_stairs -> cobblestone_stairs
-        // -> andesite_stairs -> gravel -- and they are NOT one. AgingProcessor looks its rules up
+        // -> andesite_stairs -> rubble -- and they are NOT one. AgingProcessor looks its rules up
         // by the INPUT block once and never re-resolves what it just produced, so a rule keyed on
         // another rule's OUTPUT is only reachable if something PLACES that block directly.
         // Multi-stage decay works only WITHIN one rule's own output_blocks.
@@ -214,14 +215,16 @@
         // weathering the moment someone authored it, which is the same invisible failure as the
         // dormancy itself.
         //
-        // Budgets referred to below are AgingChainRatesTest's: falling blocks <= 1% for anything
-        // that can be a ceiling (classic uses one block for wall, floor AND ceiling, so gravel
-        // overhead rains debris on the player), and NO air at all for a wall block.
+        // BOTH BUDGETS THESE RULES WERE WRITTEN AGAINST ARE VOID as of 2026-08-25, so the
+        // "over budget" notes below are kept only as a record of what the rates used to mean.
+        // The falling-block budget went when the terminus became dungeonblocks:rubble, which
+        // does not fall; the no-air-in-a-wall rule went when Mark accepted the hole (see the
+        // deep-decay block above). What is left is ordinary rate judgement.
         // ===================================================================================
         {
           // LATENT -- nothing places cobblestone_stairs: not a scheme, not a prefab palette.
-          // If authored: gravel 1.5%, over the 1% ceiling budget and inside the 2% wall-only
-          // bound. Fine on a wall, retune before putting it overhead.
+          // If authored: rubble 1.5%. That was over the old 1% ceiling budget when the terminus
+          // fell; rubble does not, so the rate now needs no ceiling caveat.
           "block": "minecraft:cobblestone_stairs",
           "output_blocks": [
             {
@@ -229,7 +232,7 @@
               "probability": 0.3
             },
             {
-              "block": "minecraft:gravel",
+              "block": "dungeonblocks:rubble",
               "probability": 0.05
             }
           ]
@@ -237,8 +240,9 @@
         {
           // LIVE, via prefabs -- 8 of them place polished_andesite_stairs, including
           // entrance_1, entrance_exit_1 and every stairs_2_* segment, and every pool attaches
-          // this processor list. So this rule fires today: gravel 1.5%, ABOVE the 1% ceiling
-          // budget, in the entrance and the staircases. #26 recorded it as unreachable; that
+          // this processor list. So this rule fires today: rubble 1.5%, in the entrance and the
+          // staircases. It was ABOVE the old 1% ceiling budget while the terminus was falling
+          // gravel -- a live over-budget rule, now moot. #26 recorded it as unreachable; that
           // was read off the motif JSON only and missed the .nbt palettes.
           "block": "minecraft:polished_andesite_stairs",
           "output_blocks": [
@@ -247,20 +251,22 @@
               "probability": 0.3
             },
             {
-              "block": "minecraft:gravel",
+              "block": "dungeonblocks:rubble",
               "probability": 0.05
             }
           ]
         },
         {
-          // LATENT, and the worst of the set. If authored: gravel 9.5% and air 0.5% -- 9x the
-          // ceiling budget, and air is barred from a wall block outright. Note the LIVE rules
-          // above produce andesite_stairs but cannot reach this rule, which is the only reason
-          // those rates are not already in the dungeon. Rewrite them before authoring it.
+          // LATENT. If authored: rubble 9.5% and air 0.5%. Both halves were over a budget once
+          // and neither is now -- the rubble half only counted because gravel fell, and the air
+          // half only because a wall block could not reach air at all. What is left is a rate to
+          // judge: 9.5% is a lot of debris for one rule. Note the LIVE rules above produce
+          // andesite_stairs but cannot reach this rule, which is why those rates are not already
+          // in the dungeon.
           "block": "minecraft:andesite_stairs",
           "output_blocks": [
             {
-              "block": "minecraft:gravel",
+              "block": "dungeonblocks:rubble",
               "probability": 0.1
             },
             {
@@ -359,25 +365,41 @@
         // ===================================================================================
         // DEEP DECAY -- the chains that take a plain wall/floor/ceiling block down to rubble:
         //
-        //     <wall block> -> cobblestone -> dirt -> gravel
+        //     <wall block> -> cobblestone -> dirt -> dungeonblocks:rubble
         //
         // This is the ONLY source of dirt in a classic dungeon, and floor_growth /
         // hanging_growth (below) have nothing to sprout from without it. Nothing authored in
         // motif_config/classic.json is ever dirt.
         //
-        // GRAVEL IS DELIBERATELY THE LAST STAGE, not the first. This chain is applied to the
-        // WALL, the FLOOR and the CEILING alike -- classic.json uses minecraft:stone_bricks
-        // for all three, and a processor only ever sees the block, never the surface it
-        // belongs to. Gravel falls when the block under it is air, which is harmless in a
-        // wall or floor but rains debris onto the floor from a ceiling. Putting it two stages
-        // deep makes it ~9x rarer than it would be as the first stage, which keeps the
-        // occasional spill of rubble without carpeting the room.
+        // THE LAST STAGE WAS minecraft:gravel UNTIL 2026-08-25, AND ITS POSITION WAS THE WHOLE
+        // POINT. Gravel falls when the block under it is air -- harmless in a wall or a floor,
+        // but from a CEILING it rains debris onto the player, and this chain is applied to the
+        // wall, the floor and the ceiling alike because classic uses one block for all three
+        // (#15) and a processor only ever sees the block, never the surface. Burying gravel two
+        // stages deep made it ~9x rarer, which was the only lever available.
         //
-        // AIR IS ABSENT for the same shared-block reason. A hole is fine in a floor, but a
-        // hole in an outer WALL breaches the dungeon shell, and any water in the terrain
-        // behind it then flows into the room. Placing the room's air cannot prevent that: the
-        // room is filled once at generation and the water arrives afterwards, through the
-        // hole.
+        // dungeonblocks:rubble reads like gravel and does NOT fall, so that hazard is gone and
+        // the chain position is no longer load-bearing. The rate was left where it was anyway:
+        // the swap is deliberately incidence-neutral so the change is judgeable in game against
+        // how classic looks today. If rubble should be commoner now that it is safe overhead,
+        // raise the last stage -- that is a free decision this block bought, not a fix.
+        //
+        // AIR IS NO LONGER BARRED (Mark, 2026-08-25). It used to be, and the reasoning was
+        // sound as far as it went: these chains apply to the wall, the floor AND the ceiling
+        // alike (#15), so a hole that is welcome in a floor is the same rule as a hole in an
+        // OUTER wall -- which breaches the shell, and any water in the terrain behind it then
+        // flows in. Placing the room's air cannot prevent that, because the room is filled once
+        // at generation and the water arrives afterwards, through the hole.
+        //
+        // THAT CONSEQUENCE IS ACCEPTED. If it leaves a hole, it leaves a hole. A ruined dungeon
+        // that has been breached by the ground around it is the look; the occasional wet room is
+        // the price, and it is a price rather than a bug. Do not "fix" a reported hole in a wall
+        // by reinstating the ban -- check first whether the report is really about water volume,
+        // which is a RATE question.
+        //
+        // So air is now an ordinary authoring choice here, bounded by taste rather than by rule.
+        // NOTHING IN THESE CHAINS PRODUCES AIR TODAY -- lifting the ban did not add any, since
+        // that is an incidence decision belonging with the rest of the weathering pass (#47).
         //
         // To scope either properly, give the surfaces DISTINCT BLOCKS in
         // motif_config/<motif>.json -- a ceiling block no wall uses can carry its own
@@ -389,18 +411,18 @@
         // 0.7 x 0.57 = 0.399 of the time. The 0.2 first stage is therefore worth
         // 0.2 x 0.399 = 8% absolute, and the stages after it compound from there:
         //
-        //     cobblestone  5.6%      dirt  1.8%      gravel  0.6%
+        //     cobblestone  5.6%      dirt  1.8%      rubble  0.6%
         //
         // To make the dungeon more ruinous, raise the FIRST stage (0.2). To trade dirt for
-        // rubble, raise the last. AgingChainRatesTest asserts these composed rates -- and
-        // asserts that none of these chains reaches air -- so update it if you retune.
+        // rubble, raise the last. AgingChainRatesTest asserts these composed rates, so update it
+        // if you retune. It no longer asserts anything about air: see the note above.
         // ===================================================================================
         {
           "block": "minecraft:stone_bricks",
           "output_blocks": [
             { "block": "minecraft:cobblestone", "probability": 0.2 },
             { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
         // left_/right_large_stone_brick's deep decay is in the minecraft:rule processor too --
@@ -410,7 +432,7 @@
           "output_blocks": [
             { "block": "minecraft:cobblestone", "probability": 0.2 },
             { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
         {
@@ -418,7 +440,7 @@
           "output_blocks": [
             { "block": "minecraft:cobblestone", "probability": 0.2 },
             { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
         {
@@ -426,7 +448,7 @@
           "output_blocks": [
             { "block": "minecraft:cobblestone", "probability": 0.2 },
             { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
         {
@@ -434,7 +456,7 @@
           "output_blocks": [
             { "block": "minecraft:cobblestone", "probability": 0.2 },
             { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
         {
@@ -442,7 +464,7 @@
           "output_blocks": [
             { "block": "minecraft:cobblestone", "probability": 0.2 },
             { "block": "minecraft:dirt", "probability": 0.3 },
-            { "block": "minecraft:gravel", "probability": 0.25 }
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
         {
@@ -467,15 +489,14 @@
         // one touched wood, so the joisted_hall's spruce hung factory-fresh in a room of
         // cracked, mossy, crumbling brick -- in the most visible position in the room.
         //
-        // AIR IS ALLOWED HERE, and the deep-decay chains' reason for banning it does not
-        // apply. That ban is about the surfaces SHARING minecraft:stone_bricks (#15): a hole
-        // is fine in a floor and a breach in the shell, and no rule can tell them apart.
-        // Timber is the one material in this dungeon that already has what #15 asks for --
-        // spruce_log and the spruce corbel are used for beams and brackets and NOTHING else,
-        // and a beam hangs BELOW the ceiling slab rather than being part of it. So a decayed
-        // beam leaves a gap in the run with the ceiling still intact. It is the only place in
-        // this file where a chain can safely reach air, and it is only safe because of what
-        // the block is used for -- move spruce_log into a wall or ceiling and this must go.
+        // AIR IS SAFE HERE IN A WAY IT IS NOT ELSEWHERE, and that is still worth knowing even
+        // though the deep-decay ban was lifted on 2026-08-25. Timber is the one material in this
+        // dungeon that already has what #15 asks for: spruce_log and the spruce corbel are used
+        // for beams and brackets and NOTHING else, and a beam hangs BELOW the ceiling slab
+        // rather than being part of it, so a decayed beam leaves a gap in the run with the shell
+        // intact. These rates were therefore never a compromise -- unlike a stone chain's air,
+        // which is now allowed but does breach. Move spruce_log into a wall or ceiling and that
+        // distinction is lost.
         //
         // ONE STAGE, AND STRIPPED IS NOT IT (revised 2026-08-14, after Mark walked it in game).
         // The original chain went spruce_log -> stripped -> air, which put ~30% of beams in a
@@ -562,7 +583,7 @@
       // THE NUMBERS ARE CONDITIONAL, like the ones below them. Each rule is only reached when
       // every rule above it missed, so the absolute rates are:
       //
-      //     mossy 30%    cobblestone 9.8%    dirt 3.15%    gravel 1.05%    unchanged 56%
+      //     mossy 30%    cobblestone 9.8%    dirt 3.15%    rubble 1.05%    unchanged 56%
       //
       // which is what the aging chains composed to before the move -- the conversion is a
       // no-op in the world. AgingChainRatesTest#largeStoneBrickKeepsItsRatesAfterTheMoveToVanillaRules
@@ -609,7 +630,7 @@
             "probability": 0.0184
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:gravel" }
+          "output_state": { "Name": "dungeonblocks:rubble" }
         },
         {
           "input_predicate": {
@@ -645,7 +666,7 @@
             "probability": 0.0184
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:gravel" }
+          "output_state": { "Name": "dungeonblocks:rubble" }
         },
         {
           "input_predicate": {
@@ -690,7 +711,7 @@
             "probability": 0.1765
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:gravel" }
+          "output_state": { "Name": "dungeonblocks:rubble" }
         },
         {
           "input_predicate": {

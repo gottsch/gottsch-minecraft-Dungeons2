@@ -649,7 +649,7 @@ motif-naming note above.
                 "floor": "minecraft:polished_andesite",
                 "probability": 0.7 },
   "corridor": { "floor": "minecraft:cobblestone",
-                "alternateFloor": "minecraft:gravel",
+                "alternateFloor": "dungeonblocks:rubble",
                 "ceiling": "minecraft:stone_bricks",
                 "height": 5 },
   "floor": {
