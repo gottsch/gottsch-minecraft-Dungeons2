@@ -18,7 +18,26 @@
       },
       "door": {
         "door": "dungeonblocks:spruce_dungeon_door",
-        "lintel": "minecraft:packed_mud",
+        // STONE, not mud. A lintel is a keystone -- it carries the load over the opening -- so it
+        // is where a builder reaches for the strongest material they have, however crude the wall
+        // around it. Ornament does not stop at a poor floor either.
+        //
+        // square_stone_brick specifically because it reads as MONOLITHIC: one undivided block of
+        // dressed stone, which is what a lintel actually is. (Gottsch, 2026-08-25.)
+        //
+        // WHY NOT polished_andesite, which is what classic's own door uses: the two motifs sit at
+        // different points of the SAME material ladder. Each tier's ornament is the tier above its
+        // walls -- polished andesite upgrades stone bricks, and stone upgrades mud bricks. Copying
+        // classic's answer here would skip a rung. The mud room templates follow the same ladder,
+        // building their crown molding, corbels and facades from the dungeonblocks stone_* family
+        // rather than the polished_andesite one.
+        //
+        // NAMESPACE: dungeonblocks, not dungeons2 -- the block ships in DungeonBlocks. A dungeons2:
+        // id here would fail ShippedBlockIdsTest (and, unguarded, become air -- backlog #13).
+        //
+        // Was minecraft:packed_mud until 2026-08-25: tan on tan made the opening vanish into the
+        // wall entirely.
+        "lintel": "dungeonblocks:square_stone_brick",
         "floor": "minecraft:packed_mud",
         "probability": 0.5
       },
