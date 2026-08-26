@@ -82,6 +82,42 @@
         "projection": "rigid"
       },
       "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/hallway/mud/5x11_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/hallway/mud/5x11_hallway_2",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/hallway/mud/5x17_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/hallway/mud/7x17_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
     }
   ]
 }
