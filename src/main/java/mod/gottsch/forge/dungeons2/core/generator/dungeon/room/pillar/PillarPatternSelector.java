@@ -23,7 +23,6 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -31,10 +30,17 @@ import java.util.Optional;
  * layouts to draw. Like its floor, wall and ceiling counterparts, <strong>this does not
  * roll</strong> &mdash; the choice was made once for the whole room by {@code RoomSchemeSelector}.
  *
- * <p>An entry whose {@code type} is unrecognized, or whose {@code block} will not resolve, is
- * <strong>dropped while the rest of the list still draws</strong> &mdash; the ceiling's rule rather
- * than the wall {@code courses} rule. Two layouts in a list are two authored decisions, and taking
- * the colonnade away because the quartet names a typo'd block would hide which of them is broken.</p>
+ * <h2>What is left after the layout registry</h2>
+ * <p>The {@code switch} over {@code type} is gone: a layout is a registry entry that builds its own
+ * provider, so adding one no longer means editing this file. <strong>An unrecognized type is no
+ * longer silently skipped either</strong> &mdash; it cannot reach here, because an unregistered id
+ * is a load error at decode. What remains is the block check, which is a different rule and still
+ * a runtime one.</p>
+ *
+ * <p>An entry whose {@code block} will not resolve is <strong>dropped while the rest of the list
+ * still draws</strong> &mdash; the ceiling's rule rather than the wall {@code courses} rule. Two
+ * layouts in a list are two authored decisions, and taking the colonnade away because the quartet
+ * names a typo'd block would hide which of them is broken.</p>
  *
  * @author Mark Gottschling on Aug 6, 2026
  */
@@ -61,29 +67,13 @@ public final class PillarPatternSelector {
     static List<PillarLayout> toLayouts(PillarPatternEntry entry) {
         List<PillarLayout> layouts = new ArrayList<>(entry.patterns().size());
         for (PillarEntry pattern : entry.patterns()) {
-            IPillarPatternProvider provider = toProvider(pattern);
-            if (provider != null) {
-                layouts.add(new PillarLayout(provider, pattern));
+            // The shaft has to resolve for the column to mean anything. Base and cap fall back to
+            // it, so a typo in either degrades to a uniform column rather than dropping the layout
+            // -- the same "absent means another authored value" rule the wall strips follow.
+            if (BlockStateCodec.blockOrNull(pattern.block()) != null) {
+                layouts.add(new PillarLayout(pattern.layout().provider(), pattern));
             }
         }
         return layouts;
-    }
-
-    private static IPillarPatternProvider toProvider(PillarEntry pattern) {
-        // The shaft has to resolve for the column to mean anything. Base and cap fall back to it, so
-        // a typo in either degrades to a uniform column rather than dropping the layout -- the same
-        // "absent means another authored value" rule the wall strips follow.
-        if (BlockStateCodec.blockOrNull(pattern.block()) == null) {
-            return null;
-        }
-        return switch (pattern.type().trim().toLowerCase(Locale.ROOT)) {
-            case PillarPatternEntry.GRID ->
-                    new GridPillarPatternProvider(pattern.spacing(), pattern.inset());
-            case PillarPatternEntry.COLONNADE ->
-                    new ColonnadePillarPatternProvider(pattern.spacing(), pattern.inset());
-            case PillarPatternEntry.QUARTET ->
-                    new QuartetPillarPatternProvider(pattern.spacing(), pattern.inset());
-            default -> null; // unrecognized type: skipped
-        };
     }
 }

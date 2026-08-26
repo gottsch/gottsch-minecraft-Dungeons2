@@ -17,31 +17,31 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform;
 
-import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry.PlatformEntry;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.CentrePillarPatternProvider;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.ColonnadePillarPatternProvider;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.CornersPillarPatternProvider;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.GridPillarPatternProvider;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.IPillarPatternProvider;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.QuartetPillarPatternProvider;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
  * Maps a scheme's {@code platforms} slot to the daises to draw.
  *
- * <p><strong>The layout vocabulary is shared with the {@code pillars} slot.</strong> A layout
- * provider answers only "which interior cells", which is the same question whether the answer
- * carries a column or a platform &mdash; so {@code centre}, {@code corners}, {@code grid},
- * {@code quartet} and {@code colonnade} all work here, and any layout added later works in both
- * slots for free. Splitting <em>where</em> from <em>what</em> is what makes "a brazier on a central
- * platform" and "a brazier in every corner" one feature rather than two.</p>
+ * <p><strong>The layout vocabulary MIRRORS the {@code pillars} slot without sharing its
+ * registry.</strong> A layout provider answers only "which interior cells", which is the same
+ * question whether the answer carries a column or a platform, so {@code centre}, {@code corners},
+ * {@code grid}, {@code quartet} and {@code colonnade} exist in both and build the same provider
+ * classes. They are registered <em>separately</em> though ({@code PlatformLayoutRegistry} against
+ * {@code PillarLayoutRegistry}), because the two slots author the same footprint from different
+ * words: a pillar layout takes {@code spacing}, a platform takes the dais's {@code size} and
+ * derives spacing from it. One registry would have to force one vocabulary on both. So a
+ * third-party layout does NOT work in both slots for free -- it registers to each it wants to
+ * serve, having decided what its config words mean there.</p>
+ *
+ * <p>Splitting <em>where</em> from <em>what</em> is still what makes "a brazier on a central
+ * platform" and "a brazier in every corner" one feature rather than two; that is the {@code type}
+ * / {@code layout} split, and it is untouched.</p>
  *
  * @author Mark Gottschling on Aug 6, 2026
  */
@@ -70,30 +70,17 @@ public final class PlatformPatternSelector {
     static List<PlatformLayout> toLayouts(PlatformPatternEntry entry) {
         List<PlatformLayout> layouts = new ArrayList<>(entry.patterns().size());
         for (PlatformEntry pattern : entry.patterns()) {
-            IPillarPatternProvider provider = toProvider(pattern);
-            if (provider != null) {
-                layouts.add(new PlatformLayout(provider, pattern));
+            // The dais block has to resolve; stair/centre/top all fall back to it or are optional,
+            // so a typo in those degrades rather than dropping the platform.
+            //
+            // The `isDais` half of this check is gone: a non-dais `type` is now a LOAD ERROR in
+            // PlatformPatternEntry.validate, and an unregistered `layout` cannot decode at all, so
+            // neither can reach here. What is left is the one condition that is genuinely a
+            // runtime question.
+            if (BlockStateCodec.blockOrNull(pattern.block()) != null) {
+                layouts.add(new PlatformLayout(pattern.layout().provider(pattern.size()), pattern));
             }
         }
         return layouts;
-    }
-
-    private static IPillarPatternProvider toProvider(PlatformEntry pattern) {
-        // The dais block has to resolve; stair/centre/top all fall back to it or are optional, so a
-        // typo in those degrades rather than dropping the platform.
-        if (!pattern.isDais() || BlockStateCodec.blockOrNull(pattern.block()) == null) {
-            return null;
-        }
-        return switch (pattern.layout().trim().toLowerCase(Locale.ROOT)) {
-            case CENTRE -> new CentrePillarPatternProvider(pattern.inset());
-            case CORNERS -> new CornersPillarPatternProvider(pattern.inset());
-            case PillarPatternEntry.GRID ->
-                    new GridPillarPatternProvider(Math.max(2, pattern.size() + 1), pattern.inset());
-            case PillarPatternEntry.QUARTET ->
-                    new QuartetPillarPatternProvider(Math.max(2, pattern.size() + 1), pattern.inset());
-            case PillarPatternEntry.COLONNADE ->
-                    new ColonnadePillarPatternProvider(Math.max(2, pattern.size() + 1), pattern.inset());
-            default -> null; // unrecognized layout: skipped
-        };
     }
 }

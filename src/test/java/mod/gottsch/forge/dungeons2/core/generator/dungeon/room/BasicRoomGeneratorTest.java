@@ -25,6 +25,9 @@ import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorRange;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.pillar.ColonnadePillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.pillar.QuartetPillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.MobSetBand;
 import mod.gottsch.forge.dungeons2.core.config.PotConfig;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
@@ -215,8 +218,7 @@ class BasicRoomGeneratorTest {
                 Optional.of(new PotConfig(12, 12, "dungeons2:pots/classic",
                         List.of(new PotConfig.PotVariant("dungeonblocks:medium_pot", 1)))),
                 Optional.of(new PillarPatternEntry(List.of(
-                        new PillarPatternEntry.PillarEntry("grid", "minecraft:stone_bricks",
-                                Optional.empty(), Optional.empty(), 2, 0, Map.of(),
+                        new PillarPatternEntry.PillarEntry(new GridPillarLayout(2, 0), "minecraft:stone_bricks", Optional.empty(), Optional.empty(), Map.of(),
                                 Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED)))));
 
         MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,

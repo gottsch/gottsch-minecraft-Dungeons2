@@ -139,12 +139,12 @@ class ClosedSchemaCodecTest {
     void thePillarsSlotDecodes() {
         RoomScheme scheme = parse(RoomScheme.CODEC,
                 "{\"name\": \"hypostyle\", \"pillars\": {\"minSize\": 13, \"patterns\": ["
-                        + "{\"type\": \"grid\", \"block\": \"dungeonblocks:stone_bricks_pillar_block\","
+                        + "{\"type\": \"dungeons2:grid\", \"block\": \"dungeonblocks:stone_bricks_pillar_block\","
                         + " \"baseBlock\": \"dungeonblocks:stone_bricks_pillar_base_block\","
                         + " \"capBlock\": \"dungeonblocks:stone_bricks_pillar_base_block\","
                         + " \"baseProperties\": {\"base\": \"up\"},"
                         + " \"capProperties\": {\"base\": \"down\"},"
-                        + " \"spacing\": 4, \"inset\": 2}]}}")
+                        + " \"config\": {\"spacing\": 4, \"inset\": 2}}]}}")
                 .result().orElseThrow();
 
         assertTrue(scheme.pillars().isPresent());
@@ -156,7 +156,7 @@ class ClosedSchemaCodecTest {
     /** A pillar entry with no {@code block} fails: there is no default material for a column. */
     @Test
     void aPillarWithNoBlockIsALoadError() {
-        assertTrue(parse(PillarPatternEntry.PillarEntry.CODEC, "{\"type\": \"grid\"}")
+        assertTrue(parse(PillarPatternEntry.PillarEntry.CODEC, "{\"type\": \"dungeons2:grid\"}")
                 .error().isPresent());
     }
 

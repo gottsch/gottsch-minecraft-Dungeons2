@@ -212,12 +212,16 @@
         "patterns": [
           {
             "type": "dais",
-            "layout": "centre",
+            "layout": "dungeons2:centre",
             "block": "minecraft:stone_bricks",
             "stairBlock": "minecraft:stone_brick_stairs",
             "centreBlock": "minecraft:chiseled_stone_bricks",
+            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
+            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
-            "inset": 1,
+            "config": {
+              "inset": 1
+            },
             "orient": "inward"
           }
         ]
@@ -429,12 +433,16 @@
         "patterns": [
           {
             "type": "dais",
-            "layout": "centre",
+            "layout": "dungeons2:centre",
             "block": "minecraft:stone_bricks",
             "stairBlock": "minecraft:stone_brick_stairs",
             "centreBlock": "minecraft:chiseled_stone_bricks",
+            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
+            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
-            "inset": 1,
+            "config": {
+              "inset": 1
+            },
             "orient": "inward",
             "topBlock": "dungeonblocks:brazier_block",
             "topProperties": {
@@ -527,7 +535,7 @@
       "pillars": {
         "patterns": [
           {
-            "type": "grid",
+            "type": "dungeons2:grid",
             "block": "dungeonblocks:stone_bricks_pillar_block",
             "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
             "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
@@ -537,8 +545,14 @@
             "capProperties": {
               "base": "down"
             },
-            "spacing": 4,
-            "inset": 2
+            // spacing/inset belong to the LAYOUT now, not the entry: they are the
+            // geometry the registered type consumes, while block/baseBlock/capBlock and
+            // the property maps stay on the entry because a pillar layout is a bare
+            // footprint and its materials travel alongside it. See PillarLayoutPattern.
+            "config": {
+              "spacing": 4,
+              "inset": 2
+            }
           }
         ]
       },
@@ -579,7 +593,7 @@
       "pillars": {
         "patterns": [
           {
-            "type": "colonnade",
+            "type": "dungeons2:colonnade",
             "block": "dungeonblocks:stone_bricks_pillar_block",
             "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
             "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
@@ -589,8 +603,14 @@
             "capProperties": {
               "base": "down"
             },
-            "spacing": 4,
-            "inset": 2
+            // spacing/inset belong to the LAYOUT now, not the entry: they are the
+            // geometry the registered type consumes, while block/baseBlock/capBlock and
+            // the property maps stay on the entry because a pillar layout is a bare
+            // footprint and its materials travel alongside it. See PillarLayoutPattern.
+            "config": {
+              "spacing": 4,
+              "inset": 2
+            }
           }
         ]
       },
@@ -622,7 +642,7 @@
       "pillars": {
         "patterns": [
           {
-            "type": "quartet",
+            "type": "dungeons2:quartet",
             "block": "dungeonblocks:stone_bricks_pillar_block",
             "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
             "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
@@ -632,8 +652,14 @@
             "capProperties": {
               "base": "down"
             },
-            "spacing": 6,
-            "inset": 1
+            // spacing/inset belong to the LAYOUT now, not the entry: they are the
+            // geometry the registered type consumes, while block/baseBlock/capBlock and
+            // the property maps stay on the entry because a pillar layout is a bare
+            // footprint and its materials travel alongside it. See PillarLayoutPattern.
+            "config": {
+              "spacing": 6,
+              "inset": 1
+            }
           }
         ]
       },
@@ -665,12 +691,16 @@
         "patterns": [
           {
             "type": "dais",
-            "layout": "centre",
+            "layout": "dungeons2:centre",
             "block": "minecraft:stone_bricks",
             "stairBlock": "minecraft:stone_brick_stairs",
             "centreBlock": "minecraft:chiseled_stone_bricks",
+            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
+            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
-            "inset": 1,
+            "config": {
+              "inset": 1
+            },
             "orient": "inward",
             "topBlock": "dungeonblocks:brazier_block",
             "topProperties": {
@@ -706,12 +736,16 @@
         "patterns": [
           {
             "type": "dais",
-            "layout": "corners",
+            "layout": "dungeons2:corners",
             "block": "minecraft:stone_bricks",
             "stairBlock": "minecraft:stone_brick_stairs",
             "centreBlock": "minecraft:chiseled_stone_bricks",
+            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
+            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 1,
-            "inset": 1,
+            "config": {
+              "inset": 1
+            },
             "orient": "inward",
             "topBlock": "dungeonblocks:brazier_block",
             "topProperties": {

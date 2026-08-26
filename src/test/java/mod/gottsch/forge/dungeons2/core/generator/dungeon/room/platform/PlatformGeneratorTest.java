@@ -4,6 +4,12 @@ import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry.PlatformEntry;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
+import mod.gottsch.forge.dungeons2.core.config.platform.CentrePlatformLayout;
+import mod.gottsch.forge.dungeons2.core.config.platform.CornersPlatformLayout;
+import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutPattern;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
@@ -45,9 +51,9 @@ class PlatformGeneratorTest {
     private static final String STAIR = "minecraft:stone_brick_stairs";
     private static final String TOP = "minecraft:campfire";
 
-    private static PlatformEntry dais(String layout, int size, Optional<String> top) {
+    private static PlatformEntry dais(PlatformLayoutPattern layout, int size, Optional<String> top) {
         return new PlatformEntry("dais", layout, BLOCK, Optional.of(STAIR),
-                Optional.of("minecraft:chiseled_stone_bricks"), top, size, 1,
+                Optional.of("minecraft:chiseled_stone_bricks"), top, size,
                 SurfaceOrient.INWARD, Map.of(), Optional.empty(), SizeGate.UNBOUNDED);
     }
 
@@ -66,7 +72,7 @@ class PlatformGeneratorTest {
 
     @Test
     void aDaisIsOneRowAboveTheFloor() {
-        List<BlockPlacement> out = build(room(11, 11, 7), dais("centre", 3, Optional.empty()),
+        List<BlockPlacement> out = build(room(11, 11, 7), dais(new CentrePlatformLayout(), 3, Optional.empty()),
                 new BasicPlatformGenerator());
         assertEquals(Set.of(61), out.stream().map(BlockPlacement::getY).collect(Collectors.toSet()),
                 "the dais sits in the air above the finished floor, it does not replace it");
@@ -76,7 +82,7 @@ class PlatformGeneratorTest {
     /** Centre block, stairs on the mid-sides, plain block on the corners. */
     @Test
     void theMidSidesAreStepsAndTheCornersAreNot() {
-        List<BlockPlacement> out = build(room(11, 11, 7), dais("centre", 3, Optional.empty()),
+        List<BlockPlacement> out = build(room(11, 11, 7), dais(new CentrePlatformLayout(), 3, Optional.empty()),
                 new BasicPlatformGenerator());
         // 11-wide room -> interior 9 -> centre at interior 4 -> floor-local 5.
         assertEquals("minecraft:chiseled_stone_bricks", at(out, 5, 5).getBlockId(), "centre");
@@ -97,7 +103,7 @@ class PlatformGeneratorTest {
      */
     @Test
     void theStepsFaceInwardSoYouCanWalkUp() {
-        List<BlockPlacement> out = build(room(11, 11, 7), dais("centre", 3, Optional.empty()),
+        List<BlockPlacement> out = build(room(11, 11, 7), dais(new CentrePlatformLayout(), 3, Optional.empty()),
                 new BasicPlatformGenerator());
         assertEquals("west", at(out, 6, 5).getProperties().get("facing"),
                 "the east step's solid half must point back at the centre");
@@ -108,9 +114,9 @@ class PlatformGeneratorTest {
 
     @Test
     void outwardIsTheOppositeOnEverySide() {
-        PlatformEntry entry = new PlatformEntry("dais", "centre", BLOCK, Optional.of(STAIR),
-                Optional.empty(), Optional.empty(), 3, 1, SurfaceOrient.OUTWARD, Map.of(),
-                Optional.empty(), SizeGate.UNBOUNDED);
+        PlatformEntry entry = new PlatformEntry("dais", new CentrePlatformLayout(), BLOCK,
+                Optional.of(STAIR), Optional.empty(), Optional.empty(), 3,
+                SurfaceOrient.OUTWARD, Map.of(), Optional.empty(), SizeGate.UNBOUNDED);
         List<BlockPlacement> out = build(room(11, 11, 7), entry, new BasicPlatformGenerator());
         assertEquals("east", at(out, 6, 5).getProperties().get("facing"));
         assertEquals("west", at(out, 4, 5).getProperties().get("facing"));
@@ -118,7 +124,7 @@ class PlatformGeneratorTest {
 
     @Test
     void theTopBlockStandsOnTheCentreOneRowUp() {
-        List<BlockPlacement> out = build(room(11, 11, 7), dais("centre", 3, Optional.of(TOP)),
+        List<BlockPlacement> out = build(room(11, 11, 7), dais(new CentrePlatformLayout(), 3, Optional.of(TOP)),
                 new BasicPlatformGenerator());
         BlockPlacement top = out.stream().filter(bp -> TOP.equals(bp.getBlockId()))
                 .findFirst().orElseThrow();
@@ -130,7 +136,7 @@ class PlatformGeneratorTest {
     /** Four daises, and the middle of the room left completely open. */
     @Test
     void aCornersLayoutPutsOneInEachCorner() {
-        List<BlockPlacement> out = build(room(17, 17, 7), dais("corners", 3, Optional.of(TOP)),
+        List<BlockPlacement> out = build(room(17, 17, 7), dais(new CornersPlatformLayout(), 3, Optional.of(TOP)),
                 new BasicPlatformGenerator());
         assertEquals(4, out.stream().filter(bp -> TOP.equals(bp.getBlockId())).count());
         assertEquals(4 * 9 + 4, out.size(), "four 3x3 daises, each carrying one top block");
@@ -144,9 +150,9 @@ class PlatformGeneratorTest {
     void aDaisTooBigForTheRoomIsSkipped() {
         RoomData tight = room(5, 5, 7);
         tight.getDoorways().add(new Coords2D(2, 0));
-        assertTrue(build(tight, dais("centre", 3, Optional.of(TOP)),
+        assertTrue(build(tight, dais(new CentrePlatformLayout(), 3, Optional.of(TOP)),
                 new BasicPlatformGenerator()).isEmpty());
-        assertFalse(build(room(9, 9, 7), dais("centre", 3, Optional.of(TOP)),
+        assertFalse(build(room(9, 9, 7), dais(new CentrePlatformLayout(), 3, Optional.of(TOP)),
                 new BasicPlatformGenerator()).isEmpty(), "a 9-wide room has room to spare");
     }
 
@@ -158,9 +164,9 @@ class PlatformGeneratorTest {
      */
     @Test
     void aDaisTouchingADoorwayApproachIsDroppedWhole() {
-        PlatformEntry wide = new PlatformEntry("dais", "centre", BLOCK, Optional.of(STAIR),
-                Optional.empty(), Optional.empty(), 5, 0, SurfaceOrient.INWARD, Map.of(),
-                Optional.empty(), SizeGate.UNBOUNDED);
+        PlatformEntry wide = new PlatformEntry("dais", new CentrePlatformLayout(0), BLOCK,
+                Optional.of(STAIR), Optional.empty(), Optional.empty(), 5,
+                SurfaceOrient.INWARD, Map.of(), Optional.empty(), SizeGate.UNBOUNDED);
 
         RoomData room = room(7, 7, 7);   // interior 5x5; a size-5 dais covers all of it
         assertEquals(25, build(room, wide, new BasicPlatformGenerator()).size(), "no doors yet");
@@ -177,7 +183,7 @@ class PlatformGeneratorTest {
         RoomData room = room(9, 9, 7);
         room.getDoorways().add(new Coords2D(4, 0));
         room.getDoorways().add(new Coords2D(0, 4));
-        assertEquals(9, build(room, dais("centre", 3, Optional.empty()),
+        assertEquals(9, build(room, dais(new CentrePlatformLayout(), 3, Optional.empty()),
                 new BasicPlatformGenerator()).size(),
                 "a centred dais keeps off the inner ring, so doorways never reach it");
     }
@@ -185,7 +191,7 @@ class PlatformGeneratorTest {
     @Test
     void occupiedCellsCoverTheWholeDaisSoPotsStayOff() {
         BasicPlatformGenerator gen = new BasicPlatformGenerator();
-        List<BlockPlacement> out = build(room(11, 11, 7), dais("centre", 3, Optional.empty()), gen);
+        List<BlockPlacement> out = build(room(11, 11, 7), dais(new CentrePlatformLayout(), 3, Optional.empty()), gen);
         assertEquals(9, gen.occupiedFloorCells().size());
         assertEquals(out.stream().map(bp -> bp.getX() + "," + bp.getZ()).collect(Collectors.toSet()),
                 gen.occupiedFloorCells().stream().map(c -> c.getX() + "," + c.getY())
@@ -195,19 +201,33 @@ class PlatformGeneratorTest {
     /** A size-1 dais is a single plinth cell -- the small-room form, with no steps to speak of. */
     @Test
     void aSizeOneDaisIsASinglePlinth() {
-        List<BlockPlacement> out = build(room(9, 9, 7), dais("centre", 1, Optional.of(TOP)),
+        List<BlockPlacement> out = build(room(9, 9, 7), dais(new CentrePlatformLayout(), 1, Optional.of(TOP)),
                 new BasicPlatformGenerator());
         assertEquals(2, out.size(), "one plinth cell and the thing standing on it");
     }
 
+    /**
+     * <strong>Replaces {@code anUnrecognizedLayoutOrTypeDrawsNothing}.</strong> Both halves of that
+     * test are now LOAD ERRORS rather than silent skips, and neither can reach the selector:
+     * an unregistered {@code layout} cannot decode, and a non-dais {@code type} is rejected by
+     * {@code PlatformPatternEntry.validate}. "Draws nothing" was the worst possible outcome for
+     * either -- the room simply came out flat with nothing logged.
+     */
     @Test
-    void anUnrecognizedLayoutOrTypeDrawsNothing() {
-        assertEquals(0, PlatformPatternSelector.toLayouts(new PlatformPatternEntry(List.of(
-                dais("spiral", 3, Optional.empty())))).size());
-        assertEquals(0, PlatformPatternSelector.toLayouts(new PlatformPatternEntry(List.of(
-                new PlatformEntry("gazebo", "centre", BLOCK, Optional.empty(), Optional.empty(),
-                        Optional.empty(), 3, 1, SurfaceOrient.INWARD, Map.of(),
-                        Optional.empty(), SizeGate.UNBOUNDED)))).size());
+    void anUnrecognizedLayoutOrTypeIsALoadError() {
+        DataResult<PlatformPatternEntry> badLayout = PlatformPatternEntry.CODEC.parse(
+                JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"patterns\": [{\"type\": \"dais\", \"layout\": \"dungeons2:spiral\","
+                                + " \"block\": \"" + BLOCK + "\"}]}"));
+        assertTrue(badLayout.result().isEmpty(), "an unregistered layout must not decode");
+        assertTrue(badLayout.error().orElseThrow().message().contains("dungeons2:spiral"));
+
+        DataResult<PlatformPatternEntry> badType = PlatformPatternEntry.CODEC.parse(
+                JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"patterns\": [{\"type\": \"gazebo\", \"layout\": \"dungeons2:centre\","
+                                + " \"block\": \"" + BLOCK + "\"}]}"));
+        assertTrue(badType.result().isEmpty(), "an unknown platform type must not decode");
+        assertTrue(badType.error().orElseThrow().message().contains("gazebo"));
     }
 
     private static BlockPlacement at(List<BlockPlacement> out, int x, int z) {

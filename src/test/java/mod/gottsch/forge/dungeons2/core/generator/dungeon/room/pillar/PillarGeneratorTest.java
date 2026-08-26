@@ -1,7 +1,13 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar;
 
 import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry.PillarEntry;
+import mod.gottsch.forge.dungeons2.core.config.pillar.ColonnadePillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.pillar.QuartetPillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -303,7 +309,7 @@ class PillarGeneratorTest {
     @Test
     void aColumnSpansFloorPlusOneToCeilingMinusOne() {
         RoomData room = room(13, 13, 8); // interior rows 6: y 61..66
-        List<BlockPlacement> out = build(room, new PillarEntry("grid", PILLAR), new BasicPillarGenerator());
+        List<BlockPlacement> out = build(room, new PillarEntry(new GridPillarLayout(4, 2), PILLAR), new BasicPillarGenerator());
 
         Set<Integer> ys = out.stream().map(BlockPlacement::getY).collect(Collectors.toSet());
         assertEquals(Set.of(61, 62, 63, 64, 65, 66), ys,
@@ -313,9 +319,7 @@ class PillarGeneratorTest {
 
     @Test
     void theBaseAndCapRowsTakeTheirOwnBlocks() {
-        PillarEntry entry = new PillarEntry("grid", PILLAR,
-                Optional.of("minecraft:polished_andesite"), Optional.of("minecraft:chiseled_stone_bricks"),
-                4, 2, Map.of(), Optional.of(Map.of("base", "up")), Optional.of(Map.of("base", "down")),
+        PillarEntry entry = new PillarEntry(new GridPillarLayout(), PILLAR, Optional.of("minecraft:polished_andesite"), Optional.of("minecraft:chiseled_stone_bricks"), Map.of(), Optional.of(Map.of("base", "up")), Optional.of(Map.of("base", "down")),
                 SizeGate.UNBOUNDED);
         List<BlockPlacement> out = build(room(13, 13, 8), entry, new BasicPillarGenerator());
 
@@ -335,9 +339,7 @@ class PillarGeneratorTest {
     /** A two-row column is all plinth and capital. That is what a short column looks like. */
     @Test
     void aTwoRowColumnIsBaseAndCapWithNoShaft() {
-        PillarEntry entry = new PillarEntry("grid", PILLAR,
-                Optional.of("minecraft:polished_andesite"), Optional.of("minecraft:chiseled_stone_bricks"),
-                4, 2, Map.of(), Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED);
+        PillarEntry entry = new PillarEntry(new GridPillarLayout(4, 2), PILLAR, Optional.of("minecraft:polished_andesite"), Optional.of("minecraft:chiseled_stone_bricks"), Map.of(), Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED);
         List<BlockPlacement> out = build(room(13, 13, 4), entry, new BasicPillarGenerator());
 
         assertTrue(out.stream().noneMatch(bp -> PILLAR.equals(bp.getBlockId())),
@@ -353,14 +355,14 @@ class PillarGeneratorTest {
     @Test
     void aColumnOnADoorwayApproachIsDroppedWhole() {
         RoomData room = room(13, 13, 8);
-        List<BlockPlacement> before = build(room, new PillarEntry("grid", PILLAR), new BasicPillarGenerator());
+        List<BlockPlacement> before = build(room, new PillarEntry(new GridPillarLayout(4, 2), PILLAR), new BasicPillarGenerator());
         Set<String> cells = distinctCells(before);
 
         // Put a door directly outside one of the columns the lattice placed.
         Coords2D column = distinctCoords(before).iterator().next();
         room.getDoorways().add(new Coords2D(column.getX(), column.getY() - 1));
 
-        List<BlockPlacement> after = build(room, new PillarEntry("grid", PILLAR), new BasicPillarGenerator());
+        List<BlockPlacement> after = build(room, new PillarEntry(new GridPillarLayout(), PILLAR), new BasicPillarGenerator());
         Set<String> remaining = distinctCells(after);
 
         assertEquals(cells.size() - 1, remaining.size(), "exactly one column went");
@@ -374,7 +376,7 @@ class PillarGeneratorTest {
     void occupiedCellsReportWhatWasActuallyBuilt() {
         RoomData room = room(13, 13, 8);
         BasicPillarGenerator gen = new BasicPillarGenerator();
-        List<BlockPlacement> out = build(room, new PillarEntry("grid", PILLAR), gen);
+        List<BlockPlacement> out = build(room, new PillarEntry(new GridPillarLayout(), PILLAR), gen);
 
         assertEquals(distinctCells(out), gen.occupiedFloorCells().stream()
                 .map(PillarGeneratorTest::key).collect(Collectors.toSet()));
@@ -384,8 +386,8 @@ class PillarGeneratorTest {
     @Test
     void overlappingLayoutsDoNotEmitACellTwice() {
         PillarPatternEntry entry = new PillarPatternEntry(List.of(
-                new PillarEntry("grid", PILLAR),
-                new PillarEntry("grid", "minecraft:polished_andesite")));
+                new PillarEntry(new GridPillarLayout(), PILLAR),
+                new PillarEntry(new GridPillarLayout(), "minecraft:polished_andesite")));
         List<BlockPlacement> out = new ArrayList<>();
         new BasicPillarGenerator().withPillarLayouts(PillarPatternSelector.toLayouts(entry))
                 .build(room(13, 13, 8), 60, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
@@ -399,27 +401,39 @@ class PillarGeneratorTest {
 
     @Test
     void aRoomWithNoInteriorGetsNoColumns() {
-        assertEquals(0, build(room(3, 3, 3), new PillarEntry("grid", PILLAR),
+        assertEquals(0, build(room(3, 3, 3), new PillarEntry(new GridPillarLayout(), PILLAR),
                 new BasicPillarGenerator()).size(), "3-high room has one interior row and one cell");
-        assertEquals(0, build(room(2, 9, 8), new PillarEntry("grid", PILLAR),
+        assertEquals(0, build(room(2, 9, 8), new PillarEntry(new GridPillarLayout(), PILLAR),
                 new BasicPillarGenerator()).size(), "no interior at all");
     }
 
     // ---------- the selector ----------
 
+    /**
+     * <strong>Replaces {@code anUnrecognizedTypeIsSkippedAndTheRestStillDraw}.</strong> That
+     * behaviour is gone by design: since the layouts moved to a registry, an unregistered type is
+     * a LOAD ERROR at decode and so can never reach the selector. Asserting the skip here would
+     * now require hand-constructing a layout the codec would have rejected, i.e. testing a state
+     * the mod cannot be in.
+     *
+     * <p>The rule it protected &mdash; one bad pattern must not take the others down with it
+     * &mdash; is unchanged and still covered, by {@code anUnresolvableShaftBlockDropsThatLayoutOnly}
+     * below. A block id is still resolved at draw time, so that one is genuinely a runtime skip.</p>
+     */
     @Test
-    void anUnrecognizedTypeIsSkippedAndTheRestStillDraw() {
-        List<PillarLayout> layouts = PillarPatternSelector.toLayouts(new PillarPatternEntry(List.of(
-                new PillarEntry("obelisks", PILLAR),
-                new PillarEntry("grid", PILLAR))));
-        assertEquals(1, layouts.size());
+    void anUnregisteredLayoutTypeIsALoadErrorRatherThanASilentSkip() {
+        DataResult<PillarEntry> result = PillarEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"type\": \"dungeons2:obelisks\", \"block\": \"" + PILLAR + "\"}"));
+        assertTrue(result.result().isEmpty(), "an unregistered layout must not decode");
+        assertTrue(result.error().orElseThrow().message().contains("dungeons2:obelisks"),
+                "the error must name the id it could not find");
     }
 
     @Test
     void anUnresolvableShaftBlockDropsThatLayoutOnly() {
         List<PillarLayout> layouts = PillarPatternSelector.toLayouts(new PillarPatternEntry(List.of(
-                new PillarEntry("grid", "minecraft:not_a_real_block"),
-                new PillarEntry("grid", PILLAR))));
+                new PillarEntry(new GridPillarLayout(), "minecraft:not_a_real_block"),
+                new PillarEntry(new GridPillarLayout(), PILLAR))));
         assertEquals(1, layouts.size());
         assertEquals(PILLAR, layouts.get(0).entry().block());
     }
@@ -427,7 +441,7 @@ class PillarGeneratorTest {
     @Test
     void aGatedPatternDropsOutOfSmallRooms() {
         PillarPatternEntry entry = new PillarPatternEntry(List.of(
-                new PillarEntry("grid", PILLAR, Optional.empty(), Optional.empty(), 4, 2, Map.of(),
+                new PillarEntry(new GridPillarLayout(), PILLAR, Optional.empty(), Optional.empty(), Map.of(),
                         Optional.empty(), Optional.empty(),
                         new SizeGate(0, 11, Optional.empty(), Optional.empty()))));
 
@@ -438,7 +452,7 @@ class PillarGeneratorTest {
     @Test
     void aColonnadeIsSelectedAndDrawsFullColumns() {
         List<BlockPlacement> out = build(room(17, 11, 8),
-                new PillarEntry("colonnade", PILLAR), new BasicPillarGenerator());
+                new PillarEntry(new ColonnadePillarLayout(), PILLAR), new BasicPillarGenerator());
 
         assertFalse(out.isEmpty(), "the colonnade should have drawn");
         assertEquals(Set.of(61, 62, 63, 64, 65, 66),
@@ -455,8 +469,8 @@ class PillarGeneratorTest {
     @Test
     void aGridAndAColonnadeCanShareASlot() {
         PillarPatternEntry entry = new PillarPatternEntry(List.of(
-                new PillarEntry("colonnade", PILLAR),
-                new PillarEntry("grid", "minecraft:polished_andesite")));
+                new PillarEntry(new ColonnadePillarLayout(), PILLAR),
+                new PillarEntry(new GridPillarLayout(), "minecraft:polished_andesite")));
         List<BlockPlacement> out = new ArrayList<>();
         new BasicPillarGenerator().withPillarLayouts(PillarPatternSelector.toLayouts(entry))
                 .build(room(23, 13, 8), 60, DungeonMotif.CLASSIC, RandomSource.create(3L), out);

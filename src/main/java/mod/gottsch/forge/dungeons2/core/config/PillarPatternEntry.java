@@ -20,7 +20,9 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.GridPillarPatternProvider;
+import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.pillar.PillarLayoutPattern;
+import mod.gottsch.forge.dungeons2.core.config.pillar.PillarLayoutRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -121,18 +123,16 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
      * standing on the floor and {@code base=down} at the capital &mdash; which reads backwards and
      * was authored inverted the first time, so it is pinned by a test rather than left to memory.</p>
      */
-    public record PillarEntry(String type, String block,
+    public record PillarEntry(PillarLayoutPattern layout, String block,
                               Optional<String> baseBlock, Optional<String> capBlock,
-                              int spacing, int inset, Map<String, String> properties,
+                              Map<String, String> properties,
                               Optional<Map<String, String>> baseProperties,
                               Optional<Map<String, String>> capProperties,
                               SizeGate gate) {
 
         /** A plain ungated column of one block, at the default rhythm. */
-        public PillarEntry(String type, String block) {
-            this(type, block, Optional.empty(), Optional.empty(),
-                    GridPillarPatternProvider.DEFAULT_SPACING,
-                    GridPillarPatternProvider.DEFAULT_INSET,
+        public PillarEntry(PillarLayoutPattern layout, String block) {
+            this(layout, block, Optional.empty(), Optional.empty(),
                     Map.of(), Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED);
         }
 
@@ -156,24 +156,26 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
             return capProperties.orElse(properties);
         }
 
-        /** Whether this entry is the grid layout, compared the way the selector dispatches. */
+        /**
+         * Whether this entry is the grid layout. Nothing in the mod calls this -- it was dead when
+         * the layouts moved to a registry -- but it is now a type test rather than a string
+         * comparison, which is the shape a caller would want if one ever appears.
+         */
         public boolean isGrid() {
-            return GRID.equals(type().trim().toLowerCase(Locale.ROOT));
+            return layout instanceof GridPillarLayout;
         }
 
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<PillarEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("type").forGetter(PillarEntry::type),
+                // `type` + `config`, dispatched over the layout registry -- see
+                // PillarLayoutRegistry. An unregistered id is a LOAD ERROR, not a skipped pattern.
+                PillarLayoutRegistry.MAP_CODEC.forGetter(PillarEntry::layout),
                 // Required, not an Optional that validate() rejects later: unlike a wall pattern
                 // there is no type here that draws from anything other than a single block, so the
                 // codec can say so directly.
                 Codec.STRING.fieldOf("block").forGetter(PillarEntry::block),
                 Codecs.strictOptionalFieldOf(Codec.STRING, "baseBlock").forGetter(PillarEntry::baseBlock),
                 Codecs.strictOptionalFieldOf(Codec.STRING, "capBlock").forGetter(PillarEntry::capBlock),
-                Codecs.strictOptionalFieldOf(Codec.intRange(2, Integer.MAX_VALUE), "spacing",
-                        GridPillarPatternProvider.DEFAULT_SPACING).forGetter(PillarEntry::spacing),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
-                        GridPillarPatternProvider.DEFAULT_INSET).forGetter(PillarEntry::inset),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "properties", Map.of()).forGetter(PillarEntry::properties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
@@ -201,7 +203,11 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
     private static DataResult<PillarPatternEntry> validate(PillarPatternEntry entry) {
         for (PillarEntry pattern : entry.patterns()) {
             DataResult<SizeGate> gate = pattern.gate()
-                    .validate("pillar pattern '" + pattern.type() + "'");
+                    // The layout's class name, since `type` is no longer a field on the entry --
+                    // the registry id would be better still, but a reverse lookup here would drag
+                    // the registry into a validate() that runs during its own class init.
+                    .validate("pillar pattern '"
+                            + pattern.layout().getClass().getSimpleName() + "'");
             if (gate.error().isPresent()) {
                 return DataResult.error(() -> gate.error().orElseThrow().message());
             }

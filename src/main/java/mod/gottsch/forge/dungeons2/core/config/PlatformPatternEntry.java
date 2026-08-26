@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import mod.gottsch.forge.dungeons2.core.config.platform.CentrePlatformLayout;
+import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutPattern;
+import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry;
 
 /**
  * A {@link RoomScheme}'s {@code platforms} slot: <strong>raised daises standing on the room's
@@ -91,18 +94,18 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
      * {@code outward} there; that is the same trap wall courses and ceiling rings both carry, and it
      * is not derivable at runtime.</p>
      */
-    public record PlatformEntry(String type, String layout, String block,
+    public record PlatformEntry(String type, PlatformLayoutPattern layout, String block,
                                 Optional<String> stairBlock, Optional<String> centreBlock,
-                                Optional<String> topBlock, int size, int inset,
+                                Optional<String> topBlock, int size,
                                 SurfaceOrient orient, Map<String, String> properties,
                                 Optional<Map<String, String>> topProperties,
                                 SizeGate gate) {
 
         /** A plain ungated dais of one block at the room's centre. */
         public PlatformEntry(String block) {
-            this(DAIS, "centre", block, Optional.empty(), Optional.empty(), Optional.empty(),
-                    DEFAULT_SIZE, 1, SurfaceOrient.INWARD, Map.of(), Optional.empty(),
-                    SizeGate.UNBOUNDED);
+            this(DAIS, new CentrePlatformLayout(), block, Optional.empty(), Optional.empty(),
+                    Optional.empty(), DEFAULT_SIZE, SurfaceOrient.INWARD, Map.of(),
+                    Optional.empty(), SizeGate.UNBOUNDED);
         }
 
         /** The stair block, falling back to {@link #block} when unauthored. */
@@ -128,8 +131,9 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<PlatformEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("type").forGetter(PlatformEntry::type),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "layout", "centre")
-                        .forGetter(PlatformEntry::layout),
+                // `layout` + `config`, dispatched over the platform layout registry. An
+                // unregistered id is a LOAD ERROR, not a skipped platform.
+                PlatformLayoutRegistry.MAP_CODEC.forGetter(PlatformEntry::layout),
                 Codec.STRING.fieldOf("block").forGetter(PlatformEntry::block),
                 Codecs.strictOptionalFieldOf(Codec.STRING, "stairBlock").forGetter(PlatformEntry::stairBlock),
                 Codecs.strictOptionalFieldOf(Codec.STRING, "centreBlock").forGetter(PlatformEntry::centreBlock),
@@ -138,8 +142,6 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                 // topBlock would have nowhere defensible to stand.
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, 15), "size", DEFAULT_SIZE)
                         .forGetter(PlatformEntry::size),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset", 1)
-                        .forGetter(PlatformEntry::inset),
                 Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.INWARD)
                         .forGetter(PlatformEntry::orient),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
@@ -161,6 +163,16 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
 
     private static DataResult<PlatformPatternEntry> validate(PlatformPatternEntry entry) {
         for (PlatformEntry pattern : entry.patterns()) {
+            // `type` is the OTHER discriminator -- what the platform is, as opposed to where the
+            // copies go, which is `layout` and is now registry-dispatched. Only `dais` exists, and
+            // an unrecognized value used to make the selector drop the whole platform silently:
+            // the room simply came out flat, with nothing logged and nothing to grep for. It is
+            // the same silent-degradation class the layout registry's load error closes, so it is
+            // closed here too rather than left as the last one standing.
+            if (!pattern.isDais()) {
+                return DataResult.error(() -> "unknown platform type '" + pattern.type()
+                        + "'. The only type is '" + DAIS + "'; did you mean to set `layout`?");
+            }
             // An even dais has no centre cell. Rejecting it rather than rounding keeps topBlock's
             // position meaningful, and a silently off-centre brazier is exactly the sort of thing
             // nobody notices until they are standing in the room.

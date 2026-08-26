@@ -117,6 +117,11 @@ class ShippedBlockIdsTest {
             // jigsaw / structure plumbing
             "name", "location", "fallback", "processors", "element_type", "processor_type",
             "predicate_type", "type", "structure", "feature", "features", "biomes", "values",
+            // The `platforms` slot's dispatch axis. It is a registered PLATFORM LAYOUT id, not a
+            // block -- the one slot that spells its type key something other than `type`, because
+            // it already has a `type` meaning what the platform IS. It only reached this sweep at
+            // all once the layouts became registry ids; as a bare word it was invisible here.
+            "layout",
             // content references
             "entity", "lootTable", "function", "condition", "random_sequence",
             // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
