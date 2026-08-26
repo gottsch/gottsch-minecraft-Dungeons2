@@ -84,10 +84,11 @@ class StratumWeatheringListTest {
     private static final String AGING_TYPE = "dungeons2:aging";
     private static final String DECORATION_TYPE = "dungeons2:decoration";
     private static final String SPAWNER_TYPE = "dungeons2:spawner";
+    private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
 
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
-            Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE);
+            Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE, SWEEP_TYPE);
 
     private static final double EPSILON = 1.0e-6;
 
@@ -192,6 +193,14 @@ class StratumWeatheringListTest {
                                 && types.indexOf(AGING_TYPE) < types.indexOf(DECORATION_TYPE),
                         file + ": dungeons2:aging must be authored before dungeons2:decoration or"
                                 + " growth decides from the un-aged piece. Got " + types);
+
+                // And the sweep after it, since it inspects what decoration decided. Every list
+                // that decorates must have one, or growth on that depth keeps stranding itself on
+                // whatever an authored piece re-skins a shared wall with.
+                assertTrue(types.contains(SWEEP_TYPE)
+                                && types.indexOf(DECORATION_TYPE) < types.indexOf(SWEEP_TYPE),
+                        file + ": dungeons2:decoration_sweep must be authored after"
+                                + " dungeons2:decoration. Got " + types);
             }
         }
     }

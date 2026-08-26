@@ -201,6 +201,97 @@
     },
 
     // =========================================================================================
+    // dungeons2:decoration_sweep (added 2026-08-26) -- undoes the decoration above in cells a
+    // LATER piece is about to invalidate. It must come after dungeons2:decoration: it inspects
+    // what that pass decided, and finalizeProcessing runs the list in order.
+    //
+    // THE DEFECT. Found at -38 1 1801: a dungeonblocks:mold with south=true clinging to a
+    // polished_andesite_quarter_facade_block -- a quarter slab, so the quad hung 12/16 of a block
+    // off its only support. wall_growth's isFullCube guard is what should have stopped that, and
+    // it did: the piece north of that wall row grew the mold against ITS OWN full-cube wall block,
+    // and the 5x11_hallway_2 prefab south of it -- authored, and therefore rendered last, per the
+    // shared-wall rule in backlog #18 -- then re-skinned the same cell with the facade. The
+    // processor validated inputs that were true when it ran and false by the time anyone saw them.
+    //
+    // WHY IT CANNOT BE FIXED INSIDE dungeons2:decoration. The piece that breaks the support is a
+    // DIFFERENT piece running later; at growth time the facade does not exist yet, and a
+    // piece-local processor is forbidden from reading the world anyway. Only the breaking piece is
+    // in a position to notice, which is why this is a second entry rather than another rule.
+    //
+    // WHAT IT TOUCHES. Only cells this piece does NOT itself write (anything it writes is about to
+    // be overwritten regardless), only blocks named below, and only when the support test that
+    // placed them now fails. Anything it cannot see counts as supported -- a false positive
+    // deletes somebody's architecture, a false negative is one mold quad that outstayed its
+    // welcome.
+    //
+    // EVERY FIELD MIRRORS ONE dungeons2:decoration BEHAVIOUR and must name the same blocks it
+    // does; a processor cannot see its siblings in the list, so the pairing is by convention and
+    // pinned by DecorationSweepParityTest, which reads both entries out of this file.
+    // (No underwater_growth/floating_growth counterparts, for the same reason there are none
+    // above: classic dungeons have no standing water.)
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:decoration_sweep",
+
+      // wall_growth. Multiface, so this repairs FACE BY FACE: a patch wrapping a corner keeps the
+      // faces whose walls survived and loses only the dead one. Air when nothing is left.
+      "growth": {
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // cobwebs -- needs one horizontally adjacent solid block. Mostly a no-op in practice: a
+      // facade still passes isSolid, so only a neighbour turning to AIR strands a plain web.
+      "webs": {
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // corner_cobwebs -- the pickier pair. Needs a full-cube wall behind its facing AND the
+      // full-cube floor or ceiling its `half` names, exactly as maybeCornerCobweb required.
+      "corner_webs": {
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+
+      // Must be the same match as dungeons2:decoration's `dirt` -- it is what floor_growth and
+      // hanging_growth below are tested against.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+
+      // floor_growth, minus the two entity entries: a Shrieker or a Violet Fungus is a MOB, and a
+      // block sweep neither sees nor removes one.
+      "floor_growth": {
+        "blocks": [
+          "minecraft:brown_mushroom",
+          "minecraft:red_mushroom",
+          "minecraft:moss_carpet",
+          "minecraft:grass",
+          "minecraft:fern",
+          "minecraft:dead_bush"
+        ]
+      },
+      "hanging_growth": {
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // The same corbels and ledges the `unsupported` rule clears, re-tested once the neighbouring
+      // piece has had its say: a ledge keeps whatever is behind its facing, and goes when that
+      // turns to air.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+    },
+
+    // =========================================================================================
     // dungeons2:spawner (Backlog #10, added 2026-08-14) -- swaps an authored
     // dungeons2:spawner_marker block for the invisible dungeons2:mob_set_spawner, which spawns
     // this set when a player comes within `proximity` blocks.

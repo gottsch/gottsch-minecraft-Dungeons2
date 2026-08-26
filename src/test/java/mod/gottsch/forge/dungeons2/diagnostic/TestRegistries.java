@@ -28,6 +28,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfigRegistries;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.MappedRegistry;
@@ -178,6 +179,15 @@ public final class TestRegistries {
         chestSelf[0] = chestType;
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.CHEST_PROCESSOR_NAME), chestType);
+
+        // The decoration sweep, which every shipped list names right after dungeons2:decoration.
+        StructureProcessorType<?>[] sweepSelf = new StructureProcessorType<?>[1];
+        Codec<DecorationSweepProcessor> sweepCodec = DecorationSweepProcessor.codec(() -> sweepSelf[0]);
+        StructureProcessorType<DecorationSweepProcessor> sweepType = () -> sweepCodec;
+        sweepSelf[0] = sweepType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.DECORATION_SWEEP_PROCESSOR_NAME),
+                sweepType);
 
         registry.freeze();
     }

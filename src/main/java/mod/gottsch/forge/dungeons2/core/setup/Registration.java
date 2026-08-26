@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.setup;
 import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
@@ -136,6 +137,23 @@ public class Registration {
 			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {
 				Codec<DecorationProcessor> codec =
 						DecorationProcessor.codec(() -> Registration.DECORATION_PROCESSOR.get());
+				return () -> codec;
+			});
+
+	/** Registry name of {@link DecorationSweepProcessor} under this mod's namespace. */
+	public static final String DECORATION_SWEEP_PROCESSOR_NAME = "decoration_sweep";
+
+	/**
+	 * Clears decoration a later piece's blocks would strand at a shared wall. Dungeons2's own,
+	 * like the two marker processors: the defect it repairs is a consequence of this mod's
+	 * shared-wall + render-order rules (#18), not of anything in the template system.
+	 * It must sit AFTER {@code dungeons2:decoration} in a processor list, or the growth it is
+	 * meant to inspect has not been decided yet. See {@link DecorationSweepProcessor}.
+	 */
+	public static final RegistryObject<StructureProcessorType<DecorationSweepProcessor>> DECORATION_SWEEP_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(DECORATION_SWEEP_PROCESSOR_NAME, () -> {
+				Codec<DecorationSweepProcessor> codec =
+						DecorationSweepProcessor.codec(() -> Registration.DECORATION_SWEEP_PROCESSOR.get());
 				return () -> codec;
 			});
 

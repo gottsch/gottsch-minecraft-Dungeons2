@@ -1648,13 +1648,14 @@ file simply generates undecorated — the same graceful degradation a missing po
 
 ### Which processor to use
 
-The shipped list runs three, deliberately split by what each can express:
+The shipped list runs four, deliberately split by what each can express:
 
 | Processor | Use it for | Why |
 |---|---|---|
 | `minecraft:rule` (vanilla) | plain full cubes — `stone_bricks`, `cobblestone`, `polished_andesite` | Standard vanilla, nothing custom needed. |
 | `dungeons2:aging` (ours) | **shaped blocks** — stairs, slabs, walls, fences, pillars | A vanilla `ProcessorRule` emits one fixed `output_state` and **drops the input's properties**, so ageing a stair with it silently resets facing/half/shape. `dungeons2:aging` copies every property the source and replacement share, so one rule ages a whole family. It also supports multi-stage decay chains. |
 | `dungeons2:decoration` (ours) | anything decided by a block's **neighbours** — cobwebs, creeping growth | The other two decide one block at a time and can't see what's next to it. This one gets the whole block list. |
+| `dungeons2:decoration_sweep` (ours) | nothing you author — it cleans up after `dungeons2:decoration` at a **shared wall** | Decoration is decided per piece, but a wall row can belong to two pieces, and the one that renders second can re-skin the block the first grew something on. This entry runs on the second piece and drops whatever it just stranded. Must come after `dungeons2:decoration` in the list. |
 
 `dungeons2:aging` entries look like:
 
@@ -1755,6 +1756,39 @@ attaches; anything else is placed in its default state.
 places), and take `blocks` and/or `tags` — the union of both. Prefer tags: `minecraft:dirt`
 already covers the whole family, and DungeonBlocks ships `dungeonblocks:corbels` /
 `dungeonblocks:ledges` covering one variant per stone type.
+
+### Why there is a sweep as well as a decoration pass
+
+Decoration is a **piece-local** decision, and a wall can belong to two pieces. Rooms and
+corridors share walls on purpose (backlog #18), and the standing rule is that anything
+authored renders *after* anything generated. So this sequence is legal and does happen:
+
+1. the generated piece renders, its decoration pass sees its own full-cube wall block, and
+   grows a mold against it in the air cell beside it;
+2. your prefab renders over the same wall cell and puts a quarter facade there.
+
+The growth's support test was correct when it ran and wrong by the time anyone saw it — the
+mold ends up clinging to a quarter slab with 12/16 of a block of air behind its quad. That
+was the 2026-08-26 report, at `-38 1 1801`.
+
+`dungeons2:decoration_sweep` closes it from the only side that can see it. It runs in
+`finalizeProcessing`, which happens **before** the piece's blocks are written, so it can
+compare what the world holds now against what this piece is about to put there, and append
+the repairs to the same list. Three things bound it, and they matter if you are authoring:
+
+- **It only touches cells your piece does not write.** Anything your template places stands
+  exactly as authored; a cell you own is about to be overwritten anyway.
+- **It only touches blocks the list names**, per behaviour — the growth, webs, plants and
+  ledges `dungeons2:decoration` is capable of having placed. It will not delete architecture
+  for failing a support test, including a cobweb or a vine *you* authored in a neighbouring
+  prefab, because those are not the blocks it is looking at in the cells it is looking in.
+- **What it cannot see counts as supported.** Reads are clipped to the chunk being generated,
+  so at a chunk seam it does less rather than something different.
+
+Nothing to author, and no reason to name it in a template. The one thing to remember is that
+a new motif or stratum `processor_list` that copies the `dungeons2:decoration` entry must copy
+this one too, and keep the two naming the same blocks — `DecorationSweepParityTest` fails the
+build if they drift.
 
 ### How `unsupported` decides
 

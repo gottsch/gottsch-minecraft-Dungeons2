@@ -24,6 +24,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
@@ -38,6 +39,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -76,6 +78,9 @@ class WeatheringProcessorListTest {
     /** The spawner-marker processor's dispatch key as authored in the JSON (#10). */
     private static final String SPAWNER_TYPE = "dungeons2:spawner";
 
+    /** The decoration sweep's dispatch key as authored in the JSON. */
+    private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
+
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
      * to 4 decimal places, which is worth ~1e-4 on the composed result.
@@ -110,8 +115,9 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(4, processors.size(),
-                "Expected the vanilla rule processor, aging, decoration and the #10 spawner marker");
+        assertEquals(5, processors.size(),
+                "Expected the vanilla rule processor, aging, decoration, the decoration sweep"
+                        + " and the #10 spawner marker");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -121,6 +127,7 @@ class WeatheringProcessorListTest {
                 case AGING_TYPE -> AgingProcessor.codec(NO_TYPE);
                 case DECORATION_TYPE -> DecorationProcessor.codec(NO_TYPE);
                 case SPAWNER_TYPE -> SpawnerMarkerProcessor.codec(NO_TYPE);
+                case SWEEP_TYPE -> DecorationSweepProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -138,12 +145,14 @@ class WeatheringProcessorListTest {
         // it against the JSON instead of two independent string literals.
         assertEquals("dungeons2:" + Registration.AGING_PROCESSOR_NAME, AGING_TYPE);
         assertEquals("dungeons2:" + Registration.DECORATION_PROCESSOR_NAME, DECORATION_TYPE);
+        assertEquals("dungeons2:" + Registration.DECORATION_SWEEP_PROCESSOR_NAME, SWEEP_TYPE);
 
         Set<String> used = new java.util.LinkedHashSet<>();
         readJson().getAsJsonArray("processors")
                 .forEach(e -> used.add(e.getAsJsonObject().get("processor_type").getAsString()));
         assertTrue(used.contains(AGING_TYPE), "Shipped list should use the aging processor");
         assertTrue(used.contains(DECORATION_TYPE), "Shipped list should use the decoration processor");
+        assertTrue(used.contains(SWEEP_TYPE), "Shipped list should use the decoration sweep");
     }
 
     @Test
@@ -158,12 +167,35 @@ class WeatheringProcessorListTest {
         // dungeons2:spawner (#10) is marked LevelIndependentProcessor like the other two, and in
         // practice cannot fire on a procedural piece at all -- it matches structure blocks, which
         // only an authored template contains.
-        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE);
+        //
+        // dungeons2:decoration_sweep is the ONE entry here that is deliberately NOT marked, and it
+        // is vetted by a third route: it reads the level, so it must land in the clipped pass, and
+        // it is written so that clipping can only make it do LESS. A cell it cannot see counts as
+        // supported, so a piece spanning two chunks repairs on the pass that can see both sides and
+        // does nothing on the pass that cannot -- never something different in each. It also cannot
+        // meaningfully fire on a procedural piece: it only repairs damage done by a piece rendered
+        // AFTER the one that decorated, and the standing rule (#18) is that procedural pieces
+        // render first.
+        Set<String> chunkSafe =
+                Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE, SWEEP_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),
                     type + " is not vetted as chunk-safe for procedural pieces -- see PieceProcessors");
         }
+    }
+
+    @Test
+    void theDecorationSweepIsAuthoredAfterTheDecorationProcessor() {
+        // finalizeProcessing runs the list in order, and the sweep inspects what the decoration
+        // pass decided. Authored before it, it would sweep against an un-decorated block list and
+        // silently repair nothing -- the exact failure mode that is invisible in game.
+        List<String> types = new java.util.ArrayList<>();
+        readJson().getAsJsonArray("processors")
+                .forEach(e -> types.add(e.getAsJsonObject().get("processor_type").getAsString()));
+
+        assertTrue(types.indexOf(DECORATION_TYPE) < types.indexOf(SWEEP_TYPE),
+                "dungeons2:decoration_sweep must be authored after dungeons2:decoration");
     }
 
     @Test
