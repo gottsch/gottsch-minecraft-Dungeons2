@@ -46,7 +46,7 @@ class MotifConfigCodecTest {
                 Optional.of(new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks")),
                 List.of(new RoomScheme("plain", 8, 0, 0),
                         new RoomScheme("bordered", 1, 6, 5,
-                                Optional.of(new FloorPatternEntry("border", 1, 2)),
+                                Optional.of(FloorPatternEntry.PLAIN),
                                 Optional.of(new WallPatternEntry("courses", List.of(
                                         new WallPatternEntry.CourseEntry("minecraft:polished_andesite",
                                                 WallPatternEntry.CourseAnchor.TOP, 0)))),

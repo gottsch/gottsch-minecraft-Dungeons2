@@ -1,6 +1,6 @@
 /*
  * This file is part of  Dungeons2.
- * Copyright (c) 2026 Mark Gottschling (gottsch)
+ * Copyright (c) 2024 Mark Gottschling (gottsch)
  *
  * Dungeons2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,129 +19,53 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
-import net.minecraft.world.level.block.Block;
+import mod.gottsch.forge.dungeons2.core.config.floor.PlainFloorPattern;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Maps the {@link FloorPatternEntry} in a room scheme's floor slot to a concrete
- * {@link IDungeonFloorGenerator}. Kept separate from the config records themselves (which stay pure
- * data, same split {@code DungeonGenerationConfig} keeps from the planner) since only this package
- * needs to know what a {@code type} string actually builds.
+ * Resolves a scheme's floor slot, the motif-or-stratum default under it, and the plain floor under
+ * that, into the {@link IDungeonFloorGenerator} a room actually draws with.
  *
- * <p><strong>This does not roll.</strong> It used to own a weighted pick over
- * {@code FloorConfig.patterns}; that roll moved up to {@code RoomSchemeSelector} so that a room's
- * floor is chosen together with its walls and ceiling rather than independently of them (see
- * {@code RoomScheme}). What is left here is the part that was always floor-specific: turning one
- * chosen entry into the generator that renders it.</p>
- *
- * <p>Every plain-floor outcome &mdash; the {@code "empty"} type, an unrecognized type, an absent
- * floor slot, or a pattern whose blocks failed to resolve &mdash; returns a
- * {@link BasicFloorGenerator} carrying the same {@link FloorConfig}, so a room that renders plain
- * still uses the motif's own base blocks rather than reverting to the hardcoded stone_bricks
- * fallback.</p>
- *
- * @author Mark Gottschling on Jul 30, 2026 (roll extracted to RoomSchemeSelector Jul 31, 2026)
+ * <h2>What is left of this class</h2>
+ * <p>It used to hold the {@code switch} over every {@code type} string, and the block resolution
+ * and degrade-to-plain rules for each. All of that moved onto the patterns themselves when they
+ * became registry entries &mdash; a pattern now builds its own generator, so adding one no longer
+ * means editing this file, which is the whole point of the registry. What remains is the one thing
+ * that genuinely belongs here: <strong>precedence</strong>.</p>
  */
-public final class FloorPatternSelector {
-
-    private FloorPatternSelector() {}
+public class FloorPatternSelector {
 
     /**
-     * The generator for a scheme's floor slot: the entry's own generator when present, plain floor
-     * when the slot is absent (an undecorated floor is what "no floor treatment in this scheme"
-     * means).
+     * The generator for a scheme's floor slot, resolved against the motif-or-stratum default
+     * underneath it. Three tiers, first match wins:
+     *
+     * <ol>
+     *   <li>the <strong>scheme's</strong> own {@code floor} entry, when it has one &mdash; a room
+     *       that asked for a mosaic asked for it at every depth, so a band never overrides it;</li>
+     *   <li>the {@link FloorConfig}'s own {@code pattern}, i.e. what this <strong>motif or
+     *       stratum</strong> paves with by default. This is what lets the mud band ship speckled
+     *       cobble without every scheme having to name it;</li>
+     *   <li>{@link #plain} &mdash; the {@code base}/{@code alternateBase} roll, unchanged.</li>
+     * </ol>
+     *
+     * <p>This is the ONLY place the two are combined. A nested {@code generators} entry inside a
+     * composite resolves through the pattern itself and so cannot reach back into the band
+     * default.</p>
      */
     public static IDungeonFloorGenerator generatorFor(Optional<FloorPatternEntry> entry, FloorConfig config) {
-        return entry.map(e -> toGenerator(e, config)).orElseGet(() -> plain(config));
+        return entry.or(config::pattern)
+                .map(e -> e.pattern().generator(config))
+                .orElseGet(() -> plain(config));
     }
 
     /** The plain floor, carrying the motif's own base blocks. */
     public static IDungeonFloorGenerator plain(FloorConfig config) {
-        return new BasicFloorGenerator().withFloorConfig(config);
+        return PlainFloorPattern.INSTANCE.generator(config);
     }
 
-    /**
-     * Maps a {@code type} to its generator. There is deliberately no Java-side default block for
-     * any pattern's material slots (see {@code FloorBorderPatternProvider}/{@code
-     * CheckerboardFloorPatternProvider}/{@code RandomSpeckleFloorPatternProvider}) &mdash; the
-     * motif config is the single source of truth for which blocks a pattern renders, so if a
-     * required slot fails to resolve (absent, malformed, or an unregistered id), the whole entry
-     * degrades to plain floor rather than silently substituting a guessed block.
-     */
+    /** The generator one authored entry draws, ignoring precedence. */
     public static IDungeonFloorGenerator toGenerator(FloorPatternEntry entry, FloorConfig config) {
-        return switch (entry.type().trim().toLowerCase(Locale.ROOT)) {
-            case "border" -> {
-                Block corner = resolveBlock(entry.cornerBlock());
-                Block edgeLeft = resolveBlock(entry.edgeLeftBlock());
-                Block edgeRight = resolveBlock(entry.edgeRightBlock());
-                yield (corner == null || edgeLeft == null || edgeRight == null)
-                        ? plain(config)
-                        : new FloorBorderPatternProvider(entry.inset(), corner, edgeLeft, edgeRight,
-                                config.baseState());
-            }
-            case "checkerboard" -> {
-                Block primary = resolveBlock(entry.primaryBlock());
-                Block secondary = resolveBlock(entry.secondaryBlock());
-                yield (primary == null || secondary == null)
-                        ? plain(config)
-                        : new CheckerboardFloorPatternProvider(primary, secondary);
-            }
-            case "speckle" -> {
-                Block base = resolveBlock(entry.primaryBlock());
-                Block accent = resolveBlock(entry.secondaryBlock());
-                yield (base == null || accent == null)
-                        ? plain(config)
-                        : new RandomSpeckleFloorPatternProvider(entry.probability(), base, accent);
-            }
-            case "cross" -> {
-                Block accent = resolveBlock(entry.primaryBlock());
-                yield accent == null ? plain(config)
-                        : new CrossFloorPatternProvider(entry.thickness(), accent, config.baseState());
-            }
-            case "spokes" -> {
-                Block accent = resolveBlock(entry.primaryBlock());
-                yield accent == null ? plain(config)
-                        : new RadialSpokesFloorPatternProvider(entry.spokes(), accent, config.baseState());
-            }
-            case "composite" -> toComposite(entry.generators(), config);
-            default -> plain(config); // "empty" or unrecognized
-        };
-    }
-
-    /**
-     * The first nested entry becomes the base full fill; every entry after it is only kept if
-     * its generator is overlay-capable ({@link IFloorOverlayGenerator}: {@code "border"},
-     * {@code "cross"} and {@code "spokes"}) &mdash; anything else in an overlay slot is silently skipped, same graceful
-     * degradation an unrecognized top-level {@code type} already gets. An empty {@code
-     * generators} list degrades to plain floor, same as an empty top-level pattern list.
-     */
-    private static IDungeonFloorGenerator toComposite(List<FloorPatternEntry> generators, FloorConfig config) {
-        if (generators.isEmpty()) {
-            return plain(config);
-        }
-        IDungeonFloorGenerator base = toGenerator(generators.get(0), config);
-        List<IFloorOverlayGenerator> overlays = new ArrayList<>();
-        for (int i = 1; i < generators.size(); i++) {
-            IDungeonFloorGenerator generator = toGenerator(generators.get(i), config);
-            if (generator instanceof IFloorOverlayGenerator overlay) {
-                overlays.add(overlay);
-            }
-        }
-        return new CompositeFloorPatternProvider(base, overlays);
-    }
-
-    /**
-     * Resolves an optional block-id string to a {@link Block}, or {@code null} when absent,
-     * malformed, or not a registered block id. {@code null} here means "this slot didn't resolve"
-     * -- the caller degrades the whole entry to plain floor, since there is no per-slot default to
-     * fall back to (see {@link #toGenerator}).
-     */
-    private static Block resolveBlock(Optional<String> id) {
-        return id.map(BlockStateCodec::blockOrNull).orElse(null);
+        return entry.pattern().generator(config);
     }
 }

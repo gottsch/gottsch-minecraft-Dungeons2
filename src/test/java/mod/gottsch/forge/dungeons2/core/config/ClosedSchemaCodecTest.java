@@ -98,7 +98,7 @@ class ClosedSchemaCodecTest {
                         + " \"minHeight\": 7, \"minSize\": 5, \"maxHeight\": 9, \"maxSize\": 11}");
         decodes(WallPatternEntry.CourseEntry.CODEC,
                 "{\"block\": \"minecraft:stone_bricks\", \"minHeight\": 7, \"maxSize\": 11}");
-        decodes(FloorPatternEntry.CODEC, "{\"type\": \"border\", \"minHeight\": 7, \"maxSize\": 11}");
+        decodes(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:plain\", \"minHeight\": 7, \"maxSize\": 11}");
         decodes(CeilingPatternEntry.CODEC, "{\"patterns\": [], \"minHeight\": 7, \"maxSize\": 11}");
         decodes(CeilingPatternEntry.SurfacePatternEntry.CODEC,
                 "{\"type\": \"centre\", \"block\": \"minecraft:stone_bricks\","
@@ -112,7 +112,7 @@ class ClosedSchemaCodecTest {
     @Test
     void everySchemeRecordRejectsAStrayKey() {
         assertTrue(parse(RoomScheme.CODEC, "{\"name\": \"n\", \"nonsense\": 1}").error().isPresent());
-        assertTrue(parse(FloorPatternEntry.CODEC, "{\"type\": \"border\", \"nonsense\": 1}").error().isPresent());
+        assertTrue(parse(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:plain\", \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(WallPatternEntry.CODEC,
                 "{\"patterns\": [], \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(WallPatternEntry.PatternEntry.CODEC,
@@ -170,7 +170,9 @@ class ClosedSchemaCodecTest {
     @Test
     void aStrayKeyInsideANestedFloorGeneratorIsALoadError() {
         assertTrue(parse(FloorPatternEntry.CODEC,
-                "{\"type\": \"composite\", \"generators\": [{\"type\": \"border\", \"insett\": 2}]}")
+                "{\"type\": \"dungeons2:composite\", \"config\": {\"generators\": ["
+                        + "{\"type\": \"dungeons2:cross\", \"config\": {"
+                        + "\"block\": \"minecraft:stone_bricks\", \"thicknesss\": 2}}]}}")
                 .error().isPresent());
     }
 

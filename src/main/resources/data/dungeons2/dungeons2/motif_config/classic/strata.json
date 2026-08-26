@@ -13,8 +13,55 @@
         "ceiling": "minecraft:mud_bricks"
       },
       "floor": {
-        "base": "minecraft:mud_bricks",
-        "alternateBase": "minecraft:packed_mud"
+        // COBBLESTONE, not mud brick, and this is the band's paving rather than any one scheme's
+        // (Gottsch, 2026-08-26). The story: stone is what the builders laid where feet go, and the
+        // mud is what the earth has pushed back in since. It also stops the room reading as one
+        // undifferentiated tan box, which is what wall, floor and ceiling all being mud_bricks
+        // gave.
+        //
+        // `base`/`alternateBase` are the SAME block on purpose -- see FloorConfig's javadoc. They
+        // are only what an unmarked cell renders as; the variety comes from `pattern` below, and
+        // pre-baking a second block here would both duplicate it and skip the deeper decay stages.
+        "base": "minecraft:cobblestone",
+        "alternateBase": "minecraft:cobblestone",
+
+        // WHY A PATTERN AND NOT A base/alternateBase PAIR. That pair is rolled per cell at 45/55
+        // by BasicFloorGenerator -- a fixed near-even split, which reads as a checkerboard rather
+        // than as wear and cannot express "mostly cobblestone" at all. `speckle` takes its own
+        // probability, so the ratio is authored rather than inherited.
+        //
+        // 0.12 is a taste number: about one cell in eight shows mud through the paving. Raise it
+        // for a more overgrown, less maintained depth.
+        //
+        // THE ACCENT IS packed_mud, NOT mud_bricks (Gottsch, 2026-08-26). What shows through
+        // paving is the earth the paving was laid over -- unworked ground, not a second course of
+        // masonry. A mud BRICK between cobbles reads as someone having bricked a gap deliberately;
+        // packed mud reads as the floor losing to the ground, which is the story this band tells.
+        //
+        // It also has a weathering consequence worth knowing: the aging chain in
+        // classic_mud_weathering.json is keyed on mud_bricks as its only SOURCE block, so a
+        // packed_mud accent is inert -- it will not decay further on its own. mud_bricks here
+        // would have carried on to dirt and air. That is a reason to want the floor's own rules
+        // (see PieceSurface), not a reason to pick the brick.
+        //
+        // FOOTPRINT NOTE: speckle fills the whole width x depth, where the plain floor insets by
+        // one and leaves the cells under the wall ring unplaced. So a mud room now gets a course
+        // of floor under its walls that a classic room does not. It is invisible in play (the wall
+        // starts a block higher) and it is arguably the better behaviour, but it is a change, and
+        // it is the reason a mud room's layer-0 placement count is higher than a classic one's.
+        //
+        // `type` is a REGISTRY ID now, not a bare word, and its arguments are nested under
+        // `config` -- see FloorPatternRegistry. A third-party mod registers `yourmod:yourpattern`
+        // and it is nameable here with no change to Dungeons2. An id nothing registered is a LOAD
+        // ERROR listing what is registered, rather than a silent fall back to plain floor.
+        "pattern": {
+          "type": "dungeons2:speckle",
+          "config": {
+            "primaryBlock": "minecraft:cobblestone",
+            "secondaryBlock": "minecraft:packed_mud",
+            "probability": 0.25
+          }
+        }
       },
       "door": {
         "door": "dungeonblocks:spruce_dungeon_door",
@@ -53,6 +100,70 @@
     },
     {
       "minFloorIndex": 1
+    },
+    // =============================================================================================
+    // FLOORS 2 AND DOWN -- the second stratum to pave, and it uses a DIFFERENT provider from the
+    // mud band above on purpose (Gottsch, 2026-08-26).
+    //
+    // The point is to exercise the floor-pattern registry with two live types rather than one:
+    // band 0 dispatches to dungeons2:speckle, this one to dungeons2:composite. Two providers
+    // resolving from the same file is what proves the dispatch is really dispatching, and not just
+    // hard-wired to the single type that happened to ship first. ShippedMotifConfigTest asserts
+    // both are present and distinct, so the check outlives anyone remembering to walk a dungeon.
+    //
+    // COMPOSITE is chosen over another flat pattern because it is the only type whose codec NESTS
+    // other patterns -- so this covers the recursive decode, the per-layer closed schema, and the
+    // overlay-capability filter, none of which any other shipped entry touches. It also looks
+    // nothing like speckle, so "did the right provider run?" is answerable at a glance in game.
+    //
+    // ONLY `floor` IS SET. Every other section falls through to the motif's -- see Stratum: a band
+    // is `orElse` per section, not all-or-nothing. So these floors keep classic's stone walls,
+    // ceiling, door and corridors and change only what is underfoot.
+    //
+    // NO `name`. A named band would look for dungeons2:classic_<name>_weathering and a
+    // rooms/classic/<name> pool, both of which would silently fall back since neither is authored.
+    // Naming it would imply content that does not exist.
+    //
+    // REACHABILITY: floor counts are SMALL 1-2, MEDIUM 2-4, LARGE 3-5, so this band never appears
+    // in a SMALL dungeon and is common in the other two. It deliberately does not touch floors 0
+    // and 1, which are the ones a player sees in every dungeon.
+    //
+    // THE LOOK IS A PLACEHOLDER, not a considered depth aesthetic -- it is a checkerboard with an
+    // andesite border, picked to be legible and obviously distinct. Retune or delete it freely.
+    // =============================================================================================
+    {
+      "minFloorIndex": 2,
+      "floor": {
+        "base": "minecraft:stone_bricks",
+        "alternateBase": "minecraft:stone_bricks",
+        "pattern": {
+          "type": "dungeons2:composite",
+          "config": {
+            // FIRST entry is the base full fill; every entry after it is an overlay, and only an
+            // overlay-capable one is kept (border, cross, spokes). A non-overlay type in a later
+            // slot is silently skipped -- the one place this package still degrades quietly,
+            // because overlay-ability is a property of the provider and no codec can see it.
+            "generators": [
+              {
+                "type": "dungeons2:checkerboard",
+                "config": {
+                  "primaryBlock": "minecraft:stone_bricks",
+                  "secondaryBlock": "minecraft:polished_andesite"
+                }
+              },
+              {
+                "type": "dungeons2:border",
+                "config": {
+                  "inset": 1,
+                  "cornerBlock": "minecraft:andesite",
+                  "edgeLeftBlock": "minecraft:polished_andesite",
+                  "edgeRightBlock": "minecraft:polished_andesite"
+                }
+              }
+            ]
+          }
+        }
+      }
     }
   ]
 }

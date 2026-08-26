@@ -2,6 +2,14 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.floor.BorderFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.CheckerboardFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.CompositeFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.CrossFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.FloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.PlainFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.SpeckleFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.SpokesFloorPattern;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,6 +20,14 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+/**
+ * The pattern-to-generator mapping, and the three-tier precedence in
+ * {@link FloorPatternSelector#generatorFor}.
+ *
+ * <p>Each pattern now builds its own generator, so most of what this used to assert about the
+ * selector is really an assertion about the pattern &mdash; kept here anyway, because what matters
+ * to a room is still "this authored entry draws that provider".</p>
+ */
 class FloorPatternSelectorTest {
 
     /** Plain stone_bricks base blocks -- what an unmarked cell renders as. */
@@ -24,166 +40,113 @@ class FloorPatternSelectorTest {
         Bootstrap.bootStrap();
     }
 
-    /** A "border" entry with all three required blocks filled in with valid vanilla ids. */
-    private static FloorPatternEntry borderEntry(int weight, int inset) {
-        return new FloorPatternEntry(
-                "border", weight, inset,
-                Optional.of("minecraft:andesite"), Optional.of("minecraft:polished_andesite"),
-                Optional.of("minecraft:polished_andesite"), Optional.empty(), Optional.empty(),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                List.of());
+    private static BorderFloorPattern border() {
+        return new BorderFloorPattern(2, "minecraft:andesite",
+                "minecraft:polished_andesite", "minecraft:polished_andesite");
     }
 
-    /** A "checkerboard" entry with both required blocks filled in with valid vanilla ids. */
-    private static FloorPatternEntry checkerboardEntry(int weight) {
-        return new FloorPatternEntry(
-                "checkerboard", weight, 0,
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of("minecraft:granite"), Optional.of("minecraft:diorite"),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                List.of());
+    private static CheckerboardFloorPattern checkerboard() {
+        return new CheckerboardFloorPattern("minecraft:stone_bricks", "minecraft:polished_andesite");
     }
 
-    /** A "speckle" entry with both required blocks filled in with valid vanilla ids. */
-    private static FloorPatternEntry speckleEntry(int weight) {
-        return new FloorPatternEntry(
-                "speckle", weight, 0,
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of("minecraft:granite"), Optional.of("minecraft:diorite"),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                List.of());
+    private static SpeckleFloorPattern speckle() {
+        return new SpeckleFloorPattern("minecraft:cobblestone", "minecraft:packed_mud", 0.12);
     }
 
-    /** A scheme with no floor slot renders the undecorated floor, not a hardcoded fallback. */
+    private static IDungeonFloorGenerator draw(FloorPattern pattern) {
+        return FloorPatternSelector.toGenerator(new FloorPatternEntry(pattern), CONFIG);
+    }
+
+    // ---------- each pattern builds its own provider ----------
+
     @Test
-    void absentFloorSlotFallsBackToBasic() {
+    void eachPatternMapsToItsProvider() {
+        assertInstanceOf(BasicFloorGenerator.class, draw(PlainFloorPattern.INSTANCE));
+        assertInstanceOf(FloorBorderPatternProvider.class, draw(border()));
+        assertInstanceOf(CheckerboardFloorPatternProvider.class, draw(checkerboard()));
+        assertInstanceOf(RandomSpeckleFloorPatternProvider.class, draw(speckle()));
+        assertInstanceOf(CrossFloorPatternProvider.class,
+                draw(new CrossFloorPattern(1, "minecraft:polished_andesite")));
+        assertInstanceOf(RadialSpokesFloorPatternProvider.class,
+                draw(new SpokesFloorPattern(4, "minecraft:polished_andesite")));
+    }
+
+    /**
+     * An unresolvable BLOCK id still degrades the entry to plain floor. Only the unknown
+     * <em>type</em> policy changed with the registry (that is now a load error and is asserted in
+     * {@code FloorPatternRegistryTest}); block-id policy was left alone deliberately.
+     */
+    @Test
+    void anUnresolvableBlockIdStillDegradesToPlain() {
+        assertInstanceOf(BasicFloorGenerator.class,
+                draw(new CheckerboardFloorPattern("minecraft:not_a_real_block", "minecraft:stone_bricks")));
+        assertInstanceOf(BasicFloorGenerator.class,
+                draw(new CrossFloorPattern(1, "minecraft:not_a_real_block")));
+        assertInstanceOf(BasicFloorGenerator.class,
+                draw(new BorderFloorPattern(2, "minecraft:not_a_real_block",
+                        "minecraft:stone_bricks", "minecraft:stone_bricks")));
+    }
+
+    // ---------- composite ----------
+
+    @Test
+    void compositeWiresACheckerboardBaseWithABorderOverlay() {
+        assertInstanceOf(CompositeFloorPatternProvider.class,
+                draw(new CompositeFloorPattern(List.of(checkerboard(), border()))));
+    }
+
+    @Test
+    void compositeWithNoGeneratorsDegradesToPlain() {
+        assertInstanceOf(BasicFloorGenerator.class, draw(new CompositeFloorPattern(List.of())));
+    }
+
+    /**
+     * A layer whose provider is not overlay-capable is silently skipped rather than wrapping the
+     * base twice. Still silent, and still deliberately so: whether a pattern can overlay is a
+     * property of its provider, which no codec can see at decode time.
+     */
+    @Test
+    void compositeSkipsNonOverlayCapableLayers() {
+        assertInstanceOf(CompositeFloorPatternProvider.class,
+                draw(new CompositeFloorPattern(List.of(checkerboard(), checkerboard()))));
+    }
+
+    @Test
+    void crossAndSpokesAreUsableAsCompositeOverlays() {
+        assertInstanceOf(CompositeFloorPatternProvider.class,
+                draw(new CompositeFloorPattern(List.of(checkerboard(),
+                        new CrossFloorPattern(1, "minecraft:polished_andesite"),
+                        new SpokesFloorPattern(4, "minecraft:polished_andesite")))));
+    }
+
+    // ---------- precedence: scheme slot > band pattern > plain ----------
+
+    /** {@link #CONFIG}, plus a band-level default of speckled floor. */
+    private static FloorConfig configPaving(FloorPattern pattern) {
+        return new FloorConfig("minecraft:stone_bricks", "minecraft:stone_bricks",
+                Optional.of(new FloorPatternEntry(pattern)));
+    }
+
+    @Test
+    void aBandsOwnPatternIsUsedWhenTheSchemeNamesNoFloor() {
+        assertInstanceOf(RandomSpeckleFloorPatternProvider.class,
+                FloorPatternSelector.generatorFor(Optional.empty(), configPaving(speckle())),
+                "a scheme with no floor slot must fall through to the band's own paving,"
+                        + " not straight to plain floor");
+    }
+
+    @Test
+    void aSchemesOwnFloorBeatsTheBandsPattern() {
+        assertInstanceOf(CheckerboardFloorPatternProvider.class,
+                FloorPatternSelector.generatorFor(
+                        Optional.of(new FloorPatternEntry(checkerboard())), configPaving(speckle())),
+                "a room that asked for a mosaic asked for it at every depth -- the band is the"
+                        + " default underneath, never an override on top");
+    }
+
+    @Test
+    void withNoSchemeFloorAndNoBandPatternTheFloorIsStillPlain() {
         assertInstanceOf(BasicFloorGenerator.class,
                 FloorPatternSelector.generatorFor(Optional.empty(), CONFIG));
     }
-
-    @Test
-    void unrecognizedTypeFallsBackToBasic() {
-        FloorPatternEntry entry = new FloorPatternEntry("nonsense", 1, 0);
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void borderEntryWithoutBlocksFallsBackToBasic() {
-        // No Java-side default for any of the three block slots -- the motif config must
-        // supply them, or the entry degrades to plain rather than guessing a block.
-        FloorPatternEntry entry = new FloorPatternEntry("border", 1, 2);
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void borderEntryMapsToBorderProvider() {
-        FloorPatternEntry entry = borderEntry(1, 2);
-        assertInstanceOf(FloorBorderPatternProvider.class,
-                FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void checkerboardEntryMapsToCheckerboardProvider() {
-        FloorPatternEntry entry = checkerboardEntry(1);
-        assertInstanceOf(CheckerboardFloorPatternProvider.class,
-                FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void speckleEntryMapsToSpeckleProvider() {
-        FloorPatternEntry entry = speckleEntry(1);
-        assertInstanceOf(RandomSpeckleFloorPatternProvider.class,
-                FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    /** An entry with one accent block, filled in with a valid vanilla id. */
-    private static FloorPatternEntry oneBlockEntry(String type, int weight) {
-        return new FloorPatternEntry(
-                type, weight, 0, Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of("minecraft:chiseled_stone_bricks"), Optional.empty(),
-                RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                List.of());
-    }
-
-    @Test
-    void crossEntryMapsToCrossProvider() {
-        FloorPatternEntry entry = oneBlockEntry("cross", 1);
-        assertInstanceOf(CrossFloorPatternProvider.class,
-                FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void spokesEntryMapsToSpokesProvider() {
-        FloorPatternEntry entry = oneBlockEntry("spokes", 1);
-        assertInstanceOf(RadialSpokesFloorPatternProvider.class,
-                FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void crossAndSpokesWithoutABlockFallBackToBasic() {
-        for (String type : new String[]{"cross", "spokes"}) {
-            FloorPatternEntry entry = new FloorPatternEntry(type, 1, 0);
-            assertInstanceOf(BasicFloorGenerator.class,
-                    FloorPatternSelector.toGenerator(entry, CONFIG),
-                    type + " with no primaryBlock should degrade to plain");
-        }
-    }
-
-    /** Both new patterns are overlay-capable, so they survive a composite's overlay slot. */
-    @Test
-    void crossAndSpokesAreUsableAsCompositeOverlays() {
-        for (String type : new String[]{"cross", "spokes"}) {
-            FloorPatternEntry composite = new FloorPatternEntry(
-                    "composite", 1, 0, Optional.empty(), Optional.empty(), Optional.empty(),
-                    Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                    CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                    List.of(checkerboardEntry(1), oneBlockEntry(type, 1)));
-            assertInstanceOf(CompositeFloorPatternProvider.class,
-                    FloorPatternSelector.toGenerator(composite, CONFIG));
-        }
-    }
-
-    @Test
-    void compositeEntryWithNoGeneratorsFallsBackToBasic() {
-        FloorPatternEntry entry = new FloorPatternEntry("composite", 1, 0);
-        assertInstanceOf(BasicFloorGenerator.class, FloorPatternSelector.toGenerator(entry, CONFIG));
-    }
-
-    @Test
-    void compositeEntryWiresCheckerboardBaseWithBorderOverlay() {
-        FloorPatternEntry checkerboardLayer = checkerboardEntry(1);
-        FloorPatternEntry borderLayer = borderEntry(1, 2);
-        FloorPatternEntry composite = new FloorPatternEntry(
-                "composite", 1, 0, Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                List.of(checkerboardLayer, borderLayer));
-
-        IDungeonFloorGenerator generator =
-                FloorPatternSelector.toGenerator(composite, CONFIG);
-        assertInstanceOf(CompositeFloorPatternProvider.class, generator);
-    }
-
-    @Test
-    void compositeEntrySkipsNonOverlayCapableSubsequentLayers() {
-        // A second "checkerboard" (not overlay-capable) after the base is silently dropped, same
-        // graceful degradation an unrecognized top-level type gets -- it should not throw or
-        // wrap the base a second time.
-        FloorPatternEntry base = checkerboardEntry(1);
-        FloorPatternEntry notOverlayable = checkerboardEntry(1);
-        FloorPatternEntry composite = new FloorPatternEntry(
-                "composite", 1, 0, Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), RandomSpeckleFloorPatternProvider.DEFAULT_PROBABILITY,
-                CrossFloorPatternProvider.DEFAULT_THICKNESS, RadialSpokesFloorPatternProvider.DEFAULT_SPOKES,
-                List.of(base, notOverlayable));
-
-        IDungeonFloorGenerator generator =
-                FloorPatternSelector.toGenerator(composite, CONFIG);
-        assertInstanceOf(CompositeFloorPatternProvider.class, generator);
-    }
-
 }

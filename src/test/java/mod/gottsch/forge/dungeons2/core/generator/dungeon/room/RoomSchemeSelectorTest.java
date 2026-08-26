@@ -170,7 +170,7 @@ class RoomSchemeSelectorTest {
 
     @Test
     void theChosenSchemeCarriesItsFloorSlotThrough() {
-        FloorPatternEntry border = new FloorPatternEntry("border", 1, 2);
+        FloorPatternEntry border = FloorPatternEntry.PLAIN;
         RoomScheme only = new RoomScheme("bordered", 1, 0, 0, Optional.of(border),
                 Optional.empty(), Optional.empty(), Optional.empty());
         assertEquals(Optional.of(border), select(List.of(only), RandomSource.create(1)).floor());
@@ -211,7 +211,7 @@ class RoomSchemeSelectorTest {
     void anElementOutsideItsGateIsDroppedButTheSchemeStillApplies() {
         RoomScheme scheme = new RoomScheme("bordered", 5, 0, 0,
                 Optional.empty(), Optional.empty(),
-                Optional.of(new FloorPatternEntry("border", 1, 2)),
+                Optional.of(FloorPatternEntry.PLAIN),
                 Optional.of(crown(from(6))), Optional.empty(), Optional.empty());
 
         assertTrue(scheme.fits(9, 9, 5), "the scheme itself is ungated, so it still gets rolled");
@@ -229,7 +229,7 @@ class RoomSchemeSelectorTest {
     void anElementGateDoesNotChangeTheRoll() {
         RoomScheme gatedWall = new RoomScheme("bordered", 50, 0, 0,
                 Optional.empty(), Optional.empty(),
-                Optional.of(new FloorPatternEntry("border", 1, 2)),
+                Optional.of(FloorPatternEntry.PLAIN),
                 Optional.of(crown(from(9))), Optional.empty(), Optional.empty());
         List<RoomScheme> schemes = List.of(scheme("plain", 1), gatedWall);
 

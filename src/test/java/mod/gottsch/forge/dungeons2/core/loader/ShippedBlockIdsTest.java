@@ -90,6 +90,11 @@ class ShippedBlockIdsTest {
             // scheme element slots
             "block", "alternateBlock", "cornerBlock", "baseBlock", "capBlock",
             "stairBlock", "centreBlock", "topBlock", "bracketBlock",
+            // floor-pattern material slots. Long-standing keys on FloorPatternEntry, but they only
+            // reached this sweep once a FloorConfig gained its own `pattern` -- until then every
+            // one lived in a scheme file the sweep does not read. Real block ids, so they are
+            // verified rather than exempted.
+            "primaryBlock", "secondaryBlock", "edgeLeftBlock", "edgeRightBlock",
             // motif material sections
             "wall", "ceiling", "floor", "door", "lintel", "base", "alternateBase",
             "alternateFloor", "archBlock",

@@ -173,6 +173,12 @@ public class Registration {
 		// which is now sharing a holder with a live block.
 		mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks.register();
 		mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities.register();
+		// Floor pattern types. Its own static initializer would get there anyway -- the first use
+		// of FloorPatternEntry.CODEC touches the class -- but "registered only if somebody happens
+		// to load the class first" is exactly the failure mode the DeferredRegister note above is
+		// about, and it is idempotent, so it is stated rather than relied upon. Registering here
+		// also puts this mod's own types in before any third-party setup can claim an id.
+		mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry.registerBuiltIns();
 
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(eventBus);

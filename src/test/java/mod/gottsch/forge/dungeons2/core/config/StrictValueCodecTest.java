@@ -47,7 +47,7 @@ class StrictValueCodecTest {
     @Test
     void aNonNumericWeightIsALoadErrorNotWeightOne() {
         fails(RoomScheme.CODEC, "{\"name\": \"n\", \"weight\": \"eight\"}");
-        fails(FloorPatternEntry.CODEC, "{\"type\": \"border\", \"weight\": \"eight\"}");
+        // (no floor entry here: `weight` was vestigial and is gone -- see FloorPatternEntry.)
         fails(PotConfig.PotVariant.CODEC, "{\"entity\": \"dungeonblocks:pot\", \"weight\": \"eight\"}");
     }
 
@@ -59,7 +59,8 @@ class StrictValueCodecTest {
                 "{\"block\": \"minecraft:stone_bricks\", \"cornerBlock\": 42}");
         fails(CeilingPatternEntry.SurfacePatternEntry.CODEC,
                 "{\"type\": \"border\", \"block\": \"minecraft:stone_bricks\", \"cornerBlock\": 42}");
-        fails(FloorPatternEntry.CODEC, "{\"type\": \"border\", \"primaryBlock\": 42}");
+        fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:checkerboard\", \"config\": {"
+                + "\"primaryBlock\": 42, \"secondaryBlock\": \"minecraft:stone_bricks\"}}");
     }
 
     /**
@@ -82,8 +83,11 @@ class StrictValueCodecTest {
     void anOutOfRangeValueIsALoadErrorNotASilentDefault() {
         fails(RoomScheme.CODEC, "{\"name\": \"n\", \"weight\": 0}");
         fails(RoomScheme.CODEC, "{\"name\": \"n\", \"minHeight\": -1}");
-        fails(FloorPatternEntry.CODEC, "{\"type\": \"speckle\", \"probability\": 1.5}");
-        fails(FloorPatternEntry.CODEC, "{\"type\": \"cross\", \"thickness\": -1}");
+        fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:speckle\", \"config\": {"
+                + "\"primaryBlock\": \"minecraft:cobblestone\","
+                + "\"secondaryBlock\": \"minecraft:packed_mud\", \"probability\": 1.5}}");
+        fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:cross\", \"config\": {"
+                + "\"block\": \"minecraft:stone_bricks\", \"thickness\": -1}}");
         fails(PotConfig.CODEC, "{\"lootTable\": \"dungeons2:pots/classic\", \"variants\": [],"
                 + " \"minCount\": -1}");
     }
@@ -145,9 +149,12 @@ class StrictValueCodecTest {
     void anAbsentFieldStillTakesItsDefault() {
         assertEquals(1, decode(RoomScheme.CODEC, "{\"name\": \"n\"}").weight());
         assertEquals(0, decode(RoomScheme.CODEC, "{\"name\": \"n\"}").minHeight());
-        assertEquals(1, decode(FloorPatternEntry.CODEC, "{\"type\": \"border\"}").weight());
+        // `weight` is gone from a floor entry (vestigial since the scheme migration -- see
+        // FloorPatternEntry). The gate default is the half of this that still applies, and
+        // `dungeons2:plain` is used because it is the one pattern with no required fields, so an
+        // absent `config` is legal and the assertion is about the gate alone.
         assertEquals(SizeGate.UNBOUNDED,
-                decode(FloorPatternEntry.CODEC, "{\"type\": \"border\"}").gate());
+                decode(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:plain\"}").gate());
         assertEquals(DungeonGenerationConfig.DEFAULT.corridorWidth(),
                 decode(DungeonGenerationConfig.CODEC, "{}").corridorWidth());
         assertTrue(decode(WallPatternEntry.CourseEntry.CODEC,
