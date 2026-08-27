@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling;
 
+import mod.gottsch.forge.dungeons2.core.config.CeilingConfig;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfacePatternEntry;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
@@ -69,7 +70,19 @@ public final class CeilingPatternSelector {
      */
     public static ISurfacePatternProvider providerFor(Optional<CeilingPatternEntry> entry,
                                                      int width, int depth, int height) {
-        return entry.map(ceiling -> ceiling.forRoom(width, depth, height))
+        return providerFor(entry, CeilingConfig.DEFAULT, width, depth, height);
+    }
+
+    /**
+     * As above, resolved against the motif-or-stratum default underneath it: the scheme's own
+     * {@code ceiling} entry wins, then the {@link CeilingConfig}'s own {@code pattern}, then plain.
+     * See {@code WallPatternSelector#providerFor} for the reasoning; it is the same three tiers.
+     */
+    public static ISurfacePatternProvider providerFor(Optional<CeilingPatternEntry> entry,
+                                                     CeilingConfig config,
+                                                     int width, int depth, int height) {
+        return entry.or(config::pattern)
+                .map(ceiling -> ceiling.forRoom(width, depth, height))
                 .map(CeilingPatternSelector::toProvider)
                 .orElse(null);
     }

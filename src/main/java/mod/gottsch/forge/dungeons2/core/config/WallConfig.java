@@ -23,6 +23,8 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Optional;
+
 /**
  * The room wall section of a {@link MotifConfig}.
  *
@@ -31,14 +33,37 @@ import net.minecraft.world.level.block.state.BlockState;
  * queried {@code WallPattern.WALL} &mdash; so they were dead data and are not carried forward.
  * Add them back alongside the generator code that actually places them.</p>
  *
+ * <h2>{@code pattern} &mdash; what this motif or stratum dresses its walls with</h2>
+ * <p>The counterpart to {@code FloorConfig}'s, added for the same reason and a day later: a
+ * <strong>stratum</strong> is a {@link WallConfig}, not a scheme, so without this a depth band
+ * could say "my walls are mud brick" but never "my walls are coursed". That left the mud band a
+ * repainted classic room rather than a different depth, since only its floor could be dressed.</p>
+ *
+ * <p><strong>Precedence: a scheme's own {@code wall} slot wins.</strong> A room that asked for
+ * pilasters asked for them at every depth; this is the default underneath, not an override on top.
+ * Resolved in one place, {@code WallPatternSelector#providerFor}.</p>
+ *
+ * <p>Note a stratum replaces this section <em>whole</em> ({@code MotifConfig#forFloor} is
+ * {@code orElse} per section), so a band that authors {@code wall} at all must restate the
+ * {@code pattern} it wants alongside it &mdash; it does not inherit the motif's.</p>
+ *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record WallConfig(String wall) {
+public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
+
+    /** An undressed wall &mdash; the shape every motif had before {@code pattern} existed. */
+    public WallConfig(String wall) {
+        this(wall, Optional.empty());
+    }
 
     public static final WallConfig DEFAULT = new WallConfig("minecraft:stone_bricks");
 
     public static final Codec<WallConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("wall").forGetter(WallConfig::wall)
+            Codec.STRING.fieldOf("wall").forGetter(WallConfig::wall),
+            // strictOptionalFieldOf: a malformed pattern is a load error, not silently the same as
+            // an absent one. See Codecs and #31.
+            Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "pattern")
+                    .forGetter(WallConfig::pattern)
     ).apply(instance, WallConfig::new));
 
     public BlockState wallState() {

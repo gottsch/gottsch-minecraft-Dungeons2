@@ -23,19 +23,33 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Optional;
+
 /**
  * The room ceiling section of a {@link MotifConfig}. The corridor's own ceiling is separate, in
  * {@link CorridorConfig} &mdash; they were separate patterns pre-merge too
  * ({@code ceiling_pattern} vs {@code corridor_ceiling_pattern}).
  *
+ * <h2>{@code pattern} &mdash; what this motif or stratum dresses its ceilings with</h2>
+ * <p>See {@code WallConfig}'s note; this is the same slot for the same reason. A scheme's own
+ * {@code ceiling} slot wins over it, and a stratum replaces this section whole rather than merging
+ * into it.</p>
+ *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record CeilingConfig(String ceiling) {
+public record CeilingConfig(String ceiling, Optional<CeilingPatternEntry> pattern) {
+
+    /** An undressed ceiling &mdash; the shape every motif had before {@code pattern} existed. */
+    public CeilingConfig(String ceiling) {
+        this(ceiling, Optional.empty());
+    }
 
     public static final CeilingConfig DEFAULT = new CeilingConfig("minecraft:stone_bricks");
 
     public static final Codec<CeilingConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("ceiling").forGetter(CeilingConfig::ceiling)
+            Codec.STRING.fieldOf("ceiling").forGetter(CeilingConfig::ceiling),
+            Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "pattern")
+                    .forGetter(CeilingConfig::pattern)
     ).apply(instance, CeilingConfig::new));
 
     public BlockState ceilingState() {

@@ -59,7 +59,7 @@
           "config": {
             "primaryBlock": "minecraft:cobblestone",
             "secondaryBlock": "minecraft:packed_mud",
-            "probability": 0.25
+            "probability": 0.125
           }
         }
       },

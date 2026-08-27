@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall;
 
+import mod.gottsch.forge.dungeons2.core.config.WallConfig;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
 
@@ -50,7 +51,31 @@ public final class WallPatternSelector {
      */
     public static ISurfacePatternProvider providerFor(Optional<WallPatternEntry> entry,
                                                       int width, int depth, int height) {
-        return entry.map(wall -> wall.forRoom(width, depth, height))
+        return providerFor(entry, WallConfig.DEFAULT, width, depth, height);
+    }
+
+    /**
+     * As above, resolved against the motif-or-stratum default underneath it. Three tiers, first
+     * match wins:
+     *
+     * <ol>
+     *   <li>the <strong>scheme's</strong> own {@code wall} entry, when it has one &mdash; a room
+     *       that asked for pilasters asked for them at every depth, so a band never overrides
+     *       it;</li>
+     *   <li>the {@link WallConfig}'s own {@code pattern}, i.e. what this <strong>motif or
+     *       stratum</strong> dresses its walls with by default;</li>
+     *   <li>plain wall, i.e. {@code null}.</li>
+     * </ol>
+     *
+     * <p>The band's own entry is gated by {@code forRoom} exactly as a scheme's is: a default is
+     * still a treatment, and a course gated on room size means the same thing whichever tier it
+     * was authored in.</p>
+     */
+    public static ISurfacePatternProvider providerFor(Optional<WallPatternEntry> entry,
+                                                      WallConfig config,
+                                                      int width, int depth, int height) {
+        return entry.or(config::pattern)
+                .map(wall -> wall.forRoom(width, depth, height))
                 .map(WallPatternSelector::toProvider)
                 .orElse(null);
     }

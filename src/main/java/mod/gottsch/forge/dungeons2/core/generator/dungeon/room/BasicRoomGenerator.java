@@ -202,7 +202,8 @@ public class BasicRoomGenerator implements IRoomGenerator {
         return new BasicWallGenerator()
                 .withMotifConfig(motifConfig)
                 .withWallPattern(WallPatternSelector.providerFor(
-                        scheme.wallFor(width, depth, height), width, depth, height));
+                        scheme.wallFor(width, depth, height), motifConfig.wall(),
+                        width, depth, height));
     }
 
     public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RoomScheme scheme,
@@ -215,6 +216,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         return new BasicCeilingGenerator()
                 .withMotifConfig(motifConfig)
                 .withCeilingPattern(CeilingPatternSelector.providerFor(
-                        scheme.ceilingFor(width, depth, height), width, depth, height));
+                        scheme.ceilingFor(width, depth, height), motifConfig.ceiling(),
+                        width, depth, height));
     }
 }
