@@ -44,9 +44,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.JoistsCeilingPattern;
 
 /**
  * What {@code classic}'s shipped {@code joisted_hall} scheme actually builds.
@@ -226,12 +228,12 @@ class JoistedHallSchemeTest {
      */
     @Test
     void theRunEndsAreAuthoredAsCorbelsTurnedIntoTheRoom() {
-        SurfacePatternEntry beams = joistedHall().ceiling().orElseThrow().patterns().get(0);
-        assertEquals("joists", beams.type());
+        SurfacePatternEntry entry = joistedHall().ceiling().orElseThrow().patterns().get(0);
+        JoistsCeilingPattern beams = assertInstanceOf(JoistsCeilingPattern.class, entry.pattern());
         assertEquals("dungeonblocks:spruce_corbel_block", beams.bracketBlock().orElse(null));
         assertEquals(SurfaceOrient.INWARD, beams.orient(),
                 "the corbel faces off its wall, not at it -- see the model, not the name");
-        assertEquals(1, beams.projection(),
+        assertEquals(1, entry.projection(),
                 "beams at floorY+5 and therefore corbels at floorY+4; see the minHeight assertion");
     }
 

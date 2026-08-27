@@ -161,25 +161,27 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "dungeonblocks:left_large_stone_brick",
-                "alternateBlock": "dungeonblocks:right_large_stone_brick",
-                "alternate": "strict"
-              },
-              {
-                "block": "minecraft:stone_brick_stairs",
-                "anchor": "top",
-                "offset": 0,
-                "projection": 1,
-                "orient": "toward_wall",
-                "properties": {
-                  "half": "top"
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "dungeonblocks:left_large_stone_brick",
+                  "alternateBlock": "dungeonblocks:right_large_stone_brick",
+                  "alternate": "strict"
                 },
-                "minHeight": 6
-              }
-            ]
+                {
+                  "block": "minecraft:stone_brick_stairs",
+                  "anchor": "top",
+                  "offset": 0,
+                  "projection": 1,
+                  "orient": "toward_wall",
+                  "properties": {
+                    "half": "top"
+                  },
+                  "minHeight": 6
+                }
+              ]
+            }
           }
         ]
       },
@@ -235,29 +237,35 @@
       "ceiling": {
         "patterns": [
           {
-            "type": "border",
-            "block": "minecraft:stone_brick_stairs",
-            "inset": 0,
+            "type": "dungeons2:border",
             "projection": 2,
-            "orient": "outward",
-            "properties": {
-              "half": "top"
+            "config": {
+              "block": "minecraft:stone_brick_stairs",
+              "inset": 0,
+              "orient": "outward",
+              "properties": {
+                "half": "top"
+              }
             }
           },
           {
-            "type": "border",
-            "block": "minecraft:stone_bricks",
-            "inset": 0,
-            "projection": 1
+            "type": "dungeons2:border",
+            "projection": 1,
+            "config": {
+              "block": "minecraft:stone_bricks",
+              "inset": 0
+            }
           },
           {
-            "type": "border",
-            "block": "minecraft:stone_brick_stairs",
-            "inset": 1,
+            "type": "dungeons2:border",
             "projection": 1,
-            "orient": "outward",
-            "properties": {
-              "half": "top"
+            "config": {
+              "block": "minecraft:stone_brick_stairs",
+              "inset": 1,
+              "orient": "outward",
+              "properties": {
+                "half": "top"
+              }
             }
           }
         ]
@@ -265,14 +273,16 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },
@@ -297,14 +307,16 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },
@@ -355,12 +367,14 @@
       "ceiling": {
         "patterns": [
           {
-            "type": "joists",
-            "block": "minecraft:polished_andesite",
-            "bracketBlock": "dungeonblocks:polished_andesite_corbel_block",
-            "orient": "inward",
-            "spacing": 3,
-            "projection": 1
+            "type": "dungeons2:joists",
+            "projection": 1,
+            "config": {
+              "block": "minecraft:polished_andesite",
+              "bracketBlock": "dungeonblocks:polished_andesite_corbel_block",
+              "orient": "inward",
+              "spacing": 3
+            }
           }
         ]
       }
@@ -373,26 +387,30 @@
       "ceiling": {
         "patterns": [
           {
-            "type": "joists",
-            "block": "minecraft:spruce_log",
-            "bracketBlock": "dungeonblocks:spruce_corbel_block",
-            "orient": "inward",
-            "spacing": 3,
-            "projection": 1
+            "type": "dungeons2:joists",
+            "projection": 1,
+            "config": {
+              "block": "minecraft:spruce_log",
+              "bracketBlock": "dungeonblocks:spruce_corbel_block",
+              "orient": "inward",
+              "spacing": 3
+            }
           }
         ]
       },
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },
@@ -454,48 +472,56 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           },
           {
-            "type": "panels",
-            "block": "dungeonblocks:stone_bricks_fluted_block",
-            "width": 3,
-            "spacing": 4,
-            "inset": 1
+            "type": "dungeons2:panels",
+            "config": {
+              "block": "dungeonblocks:stone_bricks_fluted_block",
+              "width": 3,
+              "spacing": 4,
+              "inset": 1
+            }
           },
           {
-            "type": "pilasters",
-            "block": "dungeonblocks:stone_bricks_pillar_block",
-            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
-            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
-            "baseProperties": {
-              "base": "up"
-            },
-            "capProperties": {
-              "base": "down"
-            },
-            "spacing": 4,
-            "projection": 1
+            "type": "dungeons2:pilasters",
+            "config": {
+              "block": "dungeonblocks:stone_bricks_pillar_block",
+              "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+              "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+              "baseProperties": {
+                "base": "up"
+              },
+              "capProperties": {
+                "base": "down"
+              },
+              "spacing": 4,
+              "projection": 1
+            }
           },
           {
-            "type": "end_pilasters",
-            "block": "dungeonblocks:stone_bricks_pillar_block",
-            "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
-            "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
-            "baseProperties": {
-              "base": "up"
-            },
-            "capProperties": {
-              "base": "down"
-            },
-            "projection": 1
+            "type": "dungeons2:end_pilasters",
+            "config": {
+              "block": "dungeonblocks:stone_bricks_pillar_block",
+              "baseBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+              "capBlock": "dungeonblocks:stone_bricks_pillar_base_block",
+              "baseProperties": {
+                "base": "up"
+              },
+              "capProperties": {
+                "base": "down"
+              },
+              "projection": 1
+            }
           }
         ]
       },
@@ -559,14 +585,16 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },
@@ -617,14 +645,16 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },
@@ -666,14 +696,16 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },
@@ -712,13 +744,15 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite"
+                }
+              ]
+            }
           }
         ]
       },
@@ -757,14 +791,16 @@
       "wall": {
         "patterns": [
           {
-            "type": "courses",
-            "courses": [
-              {
-                "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
-                "anchor": "top"
-              }
-            ]
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
           }
         ]
       },

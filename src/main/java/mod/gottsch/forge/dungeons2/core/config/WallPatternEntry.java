@@ -29,6 +29,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import mod.gottsch.forge.dungeons2.core.config.wall.CoursesWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.EndPilastersWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.PanelsWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.PilasterShape;
+import mod.gottsch.forge.dungeons2.core.config.wall.PilastersWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.WallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.WallPatternRegistry;
 
 /**
  * A {@link RoomScheme}'s {@code wall} slot: an <strong>ordered list</strong> of treatments laid over
@@ -103,13 +110,16 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * walls really are one pattern, and because it leaves every pre-Aug-2026 call site meaning
      * exactly what it used to.
      */
-    public WallPatternEntry(String type, List<CourseEntry> courses) {
-        this(List.of(new PatternEntry(type, courses)), SizeGate.UNBOUNDED);
+    // STATIC FACTORIES, not constructors: `courses` and `patterns` are both Lists, so the two
+    // convenience forms would have the same erasure. They were constructors while the courses one
+    // took a `type` String to tell them apart, and that String is what the registry replaced.
+    public static WallPatternEntry ofCourses(List<CourseEntry> courses) {
+        return ofCourses(courses, SizeGate.UNBOUNDED);
     }
 
     /** As above, with the slot gate the single treatment used to carry itself. */
-    public WallPatternEntry(String type, List<CourseEntry> courses, SizeGate gate) {
-        this(List.of(new PatternEntry(type, courses)), gate);
+    public static WallPatternEntry ofCourses(List<CourseEntry> courses, SizeGate gate) {
+        return new WallPatternEntry(List.of(new PatternEntry(new CoursesWallPattern(courses))), gate);
     }
 
     /**
@@ -140,161 +150,86 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * silent no-op, because a wall that draws correctly while quietly ignoring a line the author
      * wrote is the hardest kind of authoring mistake to see.</p>
      */
-    public record PatternEntry(String type, List<CourseEntry> courses,
-                               Optional<String> block, Optional<String> baseBlock,
-                               Optional<String> capBlock, int spacing, int projection,
-                               CourseOrient orient, Map<String, String> properties,
-                               Optional<Map<String, String>> baseProperties,
-                               Optional<Map<String, String>> capProperties,
-                               int inset, int width, SizeGate gate) {
-
-        /** A courses treatment, ungated -- the shape the whole slot used to have. */
-        public PatternEntry(String type, List<CourseEntry> courses) {
-            this(type, courses, Optional.empty(), Optional.empty(), Optional.empty(),
-                    PilastersWallPatternProvider.DEFAULT_SPACING, 0, CourseOrient.NONE,
-                    Map.of(), Optional.empty(), Optional.empty(),
-                    PilastersWallPatternProvider.DEFAULT_INSET,
-                    PanelsWallPatternProvider.DEFAULT_WIDTH, SizeGate.UNBOUNDED);
-        }
-
-        /** A strip's shape before the base and cap could be propertied separately. */
-        public PatternEntry(String type, List<CourseEntry> courses,
-                            Optional<String> block, Optional<String> baseBlock,
-                            Optional<String> capBlock, int spacing, int projection,
-                            CourseOrient orient, Map<String, String> properties,
-                            int inset, SizeGate gate) {
-            this(type, courses, block, baseBlock, capBlock, spacing, projection, orient,
-                    properties, Optional.empty(), Optional.empty(), inset,
-                    PanelsWallPatternProvider.DEFAULT_WIDTH, gate);
-        }
-
-        /** A strip's shape before {@code panels} added a width. */
-        public PatternEntry(String type, List<CourseEntry> courses,
-                            Optional<String> block, Optional<String> baseBlock,
-                            Optional<String> capBlock, int spacing, int projection,
-                            CourseOrient orient, Map<String, String> properties,
-                            Optional<Map<String, String>> baseProperties,
-                            Optional<Map<String, String>> capProperties,
-                            int inset, SizeGate gate) {
-            this(type, courses, block, baseBlock, capBlock, spacing, projection, orient,
-                    properties, baseProperties, capProperties, inset,
-                    PanelsWallPatternProvider.DEFAULT_WIDTH, gate);
-        }
-
-        /** The base block, falling back to {@link #block} when unauthored. */
-        public Optional<String> baseBlockOrBase() {
-            return baseBlock.or(() -> block);
-        }
-
-        /** The cap block, falling back to {@link #block} when unauthored. */
-        public Optional<String> capBlockOrBase() {
-            return capBlock.or(() -> block);
-        }
-
-        /**
-         * The base row's block properties, falling back to {@link #properties} when unauthored --
-         * the same defaulting {@link #baseBlockOrBase} does, and for the same reason: absent means
-         * "whatever the strip uses", not "no properties".
-         */
-        public Map<String, String> basePropertiesOrBase() {
-            return baseProperties.orElse(properties);
-        }
-
-        /** See {@link #basePropertiesOrBase}. */
-        public Map<String, String> capPropertiesOrBase() {
-            return capProperties.orElse(properties);
-        }
-
-        /** Whether this entry is the {@code courses} type, compared the way the selector dispatches. */
-        public boolean isCourses() {
-            return COURSES.equals(type().trim().toLowerCase(Locale.ROOT));
-        }
-
-        /** Whether this entry is either strip type. */
-        public boolean isPilasters() {
-            String name = type().trim().toLowerCase(Locale.ROOT);
-            return PILASTERS.equals(name) || END_PILASTERS.equals(name);
-        }
-
-        /** Whether this entry is specifically the end-strip type. */
-        public boolean isEndPilasters() {
-            return END_PILASTERS.equals(type().trim().toLowerCase(Locale.ROOT));
-        }
-
-        /** Whether this entry is the rectangular-field type. */
-        public boolean isPanels() {
-            return PANELS.equals(type().trim().toLowerCase(Locale.ROOT));
-        }
-
-        /**
-         * Whether this type draws from a single {@code block} rather than from {@code courses} --
-         * i.e. every type except {@code courses}. Those all require a block and none takes courses,
-         * which is the pair of rules {@link WallPatternEntry#validate} enforces.
-         */
-        public boolean needsBlock() {
-            return isPilasters() || isPanels();
-        }
-
-        // Codecs.closed -- see RoomScheme.CODEC. This is the record with the most fields to
-        // misspell, and the one the backlog note was raised against.
-        public static final Codec<PatternEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("type").forGetter(PatternEntry::type),
-                Codecs.strictOptionalFieldOf(CourseEntry.CODEC.listOf(), "courses", List.of())
-                        .forGetter(PatternEntry::courses),
-                // Bare Optionals for the same reason CourseEntry's alternateBlock is: absent means
-                // "fall back to another authored value", not "use this default block".
-                Codecs.strictOptionalFieldOf(Codec.STRING, "block").forGetter(PatternEntry::block),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "baseBlock").forGetter(PatternEntry::baseBlock),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "capBlock").forGetter(PatternEntry::capBlock),
-                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "spacing",
-                        PilastersWallPatternProvider.DEFAULT_SPACING).forGetter(PatternEntry::spacing),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_PROJECTION), "projection", 0)
-                        .forGetter(PatternEntry::projection),
-                Codecs.strictOptionalFieldOf(CourseOrient.CODEC, "orient", CourseOrient.NONE)
-                        .forGetter(PatternEntry::orient),
-                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "properties", Map.of()).forGetter(PatternEntry::properties),
-                // Bare Optionals, like baseBlock/capBlock: absent falls back to another AUTHORED
-                // value rather than to a default this record invented. Strict, though: DFU's own
-                // optionalFieldOf swallows the WHOLE map on one bad entry, so an unquoted boolean
-                // ("waterlogged": false) silently threw the author's entire property map away.
-                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "baseProperties").forGetter(PatternEntry::baseProperties),
-                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "capProperties").forGetter(PatternEntry::capProperties),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
-                                PilastersWallPatternProvider.DEFAULT_INSET)
-                        .forGetter(PatternEntry::inset),
-                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "width",
-                                PanelsWallPatternProvider.DEFAULT_WIDTH)
-                        .forGetter(PatternEntry::width),
-                SizeGate.MAP_CODEC.forGetter(PatternEntry::gate)
-        ).apply(instance, PatternEntry::new)));
-    }
-
-    /** The horizontal-band type. Lower-cased after trimming, matching how the selector dispatches. */
-    public static final String COURSES = "courses";
-
-    /** The evenly spaced vertical-strip type. See {@link #COURSES} for the comparison rule. */
-    public static final String PILASTERS = "pilasters";
-
     /**
-     * A strip at each end of a wall rather than a repeating rhythm &mdash; the paired corner, when
-     * two adjacent walls both draw one. Listed alongside {@link #PILASTERS} it gives corner piers
-     * with an even rhythm between them.
-     */
-    public static final String END_PILASTERS = "end_pilasters";
-
-    /**
-     * A repeating rectangular field, inset from the top and bottom of the wall.
+     * One authored treatment: the {@link WallPattern} itself and the gate deciding which rooms it
+     * draws in.
      *
-     * <p><strong>Only the field is new geometry.</strong> A panel's <em>frame</em> composes from the
-     * types that already exist &mdash; two {@code courses} for the horizontal edges and
-     * {@code pilasters} for the vertical ones &mdash; so this type deliberately does not draw one.
-     * What no existing type can draw is a rectangle: a course fills a whole row and a strip a whole
-     * column, and neither can stop short of the wall's ends vertically.</p>
+     * <h2>What this used to be</h2>
+     * <p>Fourteen fields for four types with near-disjoint needs, plus a {@code type} string the
+     * selector switched over. See {@link WallPattern} for the three validation rules that
+     * disappeared when each type took ownership of its own fields.</p>
      */
-    public static final String PANELS = "panels";
+    public record PatternEntry(WallPattern pattern, SizeGate gate) {
+
+        /** An ungated treatment -- drawn whenever its scheme is rolled. */
+        public PatternEntry(WallPattern pattern) {
+            this(pattern, SizeGate.UNBOUNDED);
+        }
+
+        // Type predicates. These were string comparisons against `type` before the registry; kept
+        // as type tests because a scheme test reading `isPilasters()` is clearer than one reading
+        // an instanceof, and because they are the last callers that care which type an entry is at
+        // all -- nothing in the generator does any more.
+        public boolean isCourses() {
+            return pattern instanceof CoursesWallPattern;
+        }
+
+        public boolean isPanels() {
+            return pattern instanceof PanelsWallPattern;
+        }
+
+        /** True for the evenly spaced rhythm only; see {@link #isEndPilasters}. */
+        public boolean isPilasters() {
+            return pattern instanceof PilastersWallPattern;
+        }
+
+        public boolean isEndPilasters() {
+            return pattern instanceof EndPilastersWallPattern;
+        }
+
+        /**
+         * This entry's bands when it is a courses pattern, empty otherwise. Convenience for the
+         * many callers that used to read {@code courses()} straight off the flat record; the list
+         * lives on {@link CoursesWallPattern} now, where only that type can see it.
+         */
+        public List<CourseEntry> coursesOrEmpty() {
+            return pattern instanceof CoursesWallPattern courses ? courses.courses() : List.of();
+        }
+
+        /**
+         * The strip's shape when this entry is either pilaster type, empty otherwise. The two
+         * share {@link PilasterShape}, so a caller that does not care which layout it is -- and
+         * most do not -- can read the materials without testing for both.
+         */
+        public Optional<PilasterShape> pilasterShape() {
+            if (pattern instanceof PilastersWallPattern even) {
+                return Optional.of(even.shape());
+            }
+            return pattern instanceof EndPilastersWallPattern ends
+                    ? Optional.of(ends.shape()) : Optional.empty();
+        }
+
+        /**
+         * How far this treatment stands out from the wall plane, or 0 for one that has no such
+         * notion. Delegating rather than a field, because projection belongs to the types that
+         * draw in relief -- a courses pattern's projection is authored per BAND, not per pattern.
+         */
+        public int projection() {
+            if (pattern instanceof PanelsWallPattern panels) {
+                return panels.projection();
+            }
+            return pilasterShape().map(PilasterShape::projection).orElse(0);
+        }
+
+        // Codecs.closed -- see RoomScheme.CODEC.
+        public static final Codec<PatternEntry> CODEC = Codecs.closed(
+                RecordCodecBuilder.mapCodec(instance -> instance.group(
+                        // `type` + `config`, dispatched over the wall pattern registry. An
+                        // unregistered id is a LOAD ERROR, not a plain wall.
+                        WallPatternRegistry.MAP_CODEC.forGetter(PatternEntry::pattern),
+                        SizeGate.MAP_CODEC.forGetter(PatternEntry::gate)
+                ).apply(instance, PatternEntry::new)));
+    }
 
     /**
      * How a course's block should be turned to face, for blocks that have a {@code facing} property
@@ -425,6 +360,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * course of stairs and its corner stair both want {@code half=top}), and a per-slot property map
      * would be a schema nobody needs yet.</p>
      */
+
     public record CourseEntry(String block, Optional<String> alternateBlock, Optional<String> cornerBlock,
                               CourseAnchor anchor, int offset,
                               int projection, CourseOrient orient, Map<String, String> properties,
@@ -516,10 +452,16 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                 changed = true;
                 continue;
             }
-            List<CourseEntry> courses = pattern.courses().stream()
+            // Only a courses pattern has per-band gates to filter; every other type is all or
+            // nothing and its own gate above has already decided.
+            if (!(pattern.pattern() instanceof CoursesWallPattern coursesPattern)) {
+                fitting.add(pattern);
+                continue;
+            }
+            List<CourseEntry> courses = coursesPattern.courses().stream()
                     .filter(course -> course.gate().fits(width, depth, height))
                     .toList();
-            if (courses.size() == pattern.courses().size()) {
+            if (courses.size() == coursesPattern.courses().size()) {
                 fitting.add(pattern);
                 continue;
             }
@@ -528,11 +470,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
             // rather than carrying an empty one keeps "no patterns left" the single test for
             // "plain wall" in the selector.
             if (!courses.isEmpty()) {
-                fitting.add(new PatternEntry(pattern.type(), courses, pattern.block(),
-                        pattern.baseBlock(), pattern.capBlock(), pattern.spacing(),
-                        pattern.projection(), pattern.orient(), pattern.properties(),
-                        pattern.baseProperties(), pattern.capProperties(),
-                        pattern.inset(), pattern.width(), pattern.gate()));
+                fitting.add(new PatternEntry(new CoursesWallPattern(courses), pattern.gate()));
             }
         }
         return changed ? new WallPatternEntry(fitting, gate) : this;
@@ -571,32 +509,35 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      */
     private static DataResult<WallPatternEntry> validate(WallPatternEntry entry) {
         for (PatternEntry pattern : entry.patterns()) {
-            if (!pattern.courses().isEmpty() && !pattern.isCourses()) {
-                return DataResult.error(() -> "wall pattern '" + pattern.type()
-                        + "': 'courses' is only meaningful on a 'courses' pattern");
-            }
-            if (pattern.block().isPresent() && pattern.isCourses()) {
-                return DataResult.error(() -> "wall pattern 'courses': 'block' belongs on each entry"
-                        + " of 'courses', not on the pattern itself");
-            }
-            if (pattern.needsBlock() && pattern.block().isEmpty()) {
-                return DataResult.error(() -> "wall pattern '" + pattern.type()
-                        + "': 'block' is required -- there is no default material for it");
-            }
-            // Inverted per-entry gates. RoomScheme#validate only ever reached the SLOT gate, so an
+            // ALL THREE OF THE TYPE RULES THAT USED TO BE HERE ARE GONE, and none was deleted --
+            // each became impossible to author once every type owned its own fields:
+            //
+            //   "courses is only meaningful on a courses pattern"  -> a stray key anywhere else
+            //   "block belongs on each course, not on the pattern" -> CoursesWallPattern has no
+            //                                                         `block` to write
+            //   "block is required, there is no default material"  -> a required fieldOf on the
+            //                                                         two types that take one
+            //
+            // The flat record forced every one of them: it was wider than any single type, so the
+            // schema could not say which fields belonged where and a hand-written check had to.
+            // What is left is the gates, which are about ROOMS rather than about types.
+            //
+            // Inverted per-entry gates: RoomScheme#validate only ever reached the SLOT gate, so an
             // inverted gate on a pattern or a course was accepted and then fit no room -- the
             // pattern silently never drew. Found while giving ceiling patterns the same gates
             // (backlog #24); it was latent on the wall side from the day per-course gates shipped.
-            DataResult<SizeGate> patternGate = pattern.gate()
-                    .validate("wall pattern '" + pattern.type() + "'");
+            DataResult<SizeGate> patternGate = pattern.gate().validate("wall pattern '"
+                    + pattern.pattern().getClass().getSimpleName() + "'");
             if (patternGate.error().isPresent()) {
                 return DataResult.error(() -> patternGate.error().orElseThrow().message());
             }
-            for (CourseEntry course : pattern.courses()) {
-                DataResult<SizeGate> courseGate = course.gate()
-                        .validate("wall course '" + course.block() + "'");
-                if (courseGate.error().isPresent()) {
-                    return DataResult.error(() -> courseGate.error().orElseThrow().message());
+            if (pattern.pattern() instanceof CoursesWallPattern courses) {
+                for (CourseEntry course : courses.courses()) {
+                    DataResult<SizeGate> courseGate = course.gate()
+                            .validate("wall course '" + course.block() + "'");
+                    if (courseGate.error().isPresent()) {
+                        return DataResult.error(() -> courseGate.error().orElseThrow().message());
+                    }
                 }
             }
         }

@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CeilingPatternRegistry;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.JoistsCeilingPattern;
 
 /**
  * A {@link RoomScheme}'s {@code ceiling} slot: an <strong>ordered list</strong> of treatments laid
@@ -100,27 +103,28 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * authoring mistake to see, since the pattern itself still draws.</p>
      */
     private static DataResult<CeilingPatternEntry> validate(CeilingPatternEntry entry) {
-        for (SurfacePatternEntry pattern : entry.patterns()) {
-            if (pattern.orient() != SurfaceOrient.NONE && !pattern.orientable()) {
-                return DataResult.error(() -> "ceiling pattern '" + pattern.type()
-                        + "': orient is only meaningful on a 'border' or 'joists', which have a"
-                        + " direction to face; this type has none");
-            }
-            if (pattern.orient() != SurfaceOrient.NONE && JOISTS.equals(pattern.normalizedType())
-                    && pattern.bracketBlock().isEmpty()) {
+        for (SurfacePatternEntry entryPattern : entry.patterns()) {
+            // TWO OF THE THREE RULES THAT USED TO BE HERE ARE GONE, and neither was deleted --
+            // both became impossible to author. "orient on a type with no direction to face" and
+            // "bracketBlock on something that is not a joists" were only expressible because every
+            // ceiling type shared one flat record; now `orient` is declared by border and joists
+            // alone and `bracketBlock` by joists alone, so either is a stray key and the closed
+            // schema rejects it with a better message than these checks gave.
+            //
+            // This one survives because it is a relationship between two fields of the SAME type,
+            // which no schema can see: orient turns the end BRACKET, so an oriented joists with no
+            // bracketBlock has nothing to turn and would silently do nothing.
+            if (entryPattern.pattern() instanceof JoistsCeilingPattern joists
+                    && joists.orientsNothing()) {
                 return DataResult.error(() -> "ceiling pattern 'joists': orient turns the end"
                         + " bracket, and this entry has no bracketBlock to turn; the beams"
                         + " themselves take their axis from the run");
             }
-            if (pattern.bracketBlock().isPresent() && !JOISTS.equals(pattern.normalizedType())) {
-                return DataResult.error(() -> "ceiling pattern '" + pattern.type()
-                        + "': bracketBlock is a 'joists' field -- only a beam has an end to bracket");
-            }
             // An inverted per-entry gate fits no room, so the pattern silently never draws --
             // indistinguishable at generation time from one that merely never came up, which is
             // exactly what SizeGate#validate exists to turn into a load error.
-            DataResult<SizeGate> gate = pattern.gate()
-                    .validate("ceiling pattern '" + pattern.type() + "'");
+            DataResult<SizeGate> gate = entryPattern.gate().validate("ceiling pattern '"
+                    + entryPattern.pattern().getClass().getSimpleName() + "'");
             if (gate.error().isPresent()) {
                 return DataResult.error(() -> gate.error().orElseThrow().message());
             }
@@ -233,84 +237,37 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * <p>All patterns gating out leaves an empty list, which the selector already renders as a plain
      * ceiling.</p>
      */
-    public record SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
-                                      Optional<String> bracketBlock,
-                                      int inset, int spacing, int size, int projection,
-                                      SurfaceOrient orient, Map<String, String> properties,
-                                      SizeGate gate) {
+    /**
+     * One authored treatment: the {@link CeilingPattern} itself, the depth it hangs at, and its
+     * gate.
+     *
+     * <h2>What this used to be</h2>
+     * <p>Eleven fields for four types with near-disjoint needs, plus a {@code type} string the
+     * selector switched over: {@code cornerBlock} meant nothing to {@code coffers},
+     * {@code bracketBlock} nothing to {@code centre}, {@code size} nothing outside {@code centre}.
+     * Each was a silent no-op. Every one of those fields now lives on the type that reads it.</p>
+     *
+     * <p><strong>{@code projection} stayed.</strong> It positions the pattern within the ceiling's
+     * stack rather than describing the pattern's own shape, and the bracket layer is authored at
+     * {@code projection + 1}, which is a fact about the stack rather than about joists.</p>
+     */
+    public record SurfacePatternEntry(CeilingPattern pattern, int projection, SizeGate gate) {
+
+        /** An ungated treatment drawn flush in the ceiling plane. */
+        public SurfacePatternEntry(CeilingPattern pattern) {
+            this(pattern, 0, SizeGate.UNBOUNDED);
+        }
 
         // Codecs.closed -- see RoomScheme.CODEC.
-        public static final Codec<SurfacePatternEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("type").forGetter(SurfacePatternEntry::type),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "block").forGetter(SurfacePatternEntry::block),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock")
-                        .forGetter(SurfacePatternEntry::cornerBlock),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "bracketBlock")
-                        .forGetter(SurfacePatternEntry::bracketBlock),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
-                        BorderSurfacePatternProvider.DEFAULT_INSET).forGetter(SurfacePatternEntry::inset),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
-                        GridSurfacePatternProvider.DEFAULT_SPACING).forGetter(SurfacePatternEntry::spacing),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "size",
-                        CentreSurfacePatternProvider.DEFAULT_SIZE).forGetter(SurfacePatternEntry::size),
-                Codecs.strictOptionalFieldOf(Codec.intRange(0, WallPatternEntry.MAX_PROJECTION),
-                        "projection", 0).forGetter(SurfacePatternEntry::projection),
-                Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.NONE)
-                        .forGetter(SurfacePatternEntry::orient),
-                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "properties", Map.of()).forGetter(SurfacePatternEntry::properties),
-                SizeGate.MAP_CODEC.forGetter(SurfacePatternEntry::gate)
-        ).apply(instance, SurfacePatternEntry::new)));
-
-        /** Convenience for tests and simple entries: type plus its one required block, drawn flush. */
-        public SurfacePatternEntry(String type, String block) {
-            this(type, Optional.of(block), Optional.empty(),
-                    BorderSurfacePatternProvider.DEFAULT_INSET,
-                    GridSurfacePatternProvider.DEFAULT_SPACING,
-                    CentreSurfacePatternProvider.DEFAULT_SIZE, 0);
-        }
-
-        /** The shape before {@code orient}/{@code properties} existed: an unoriented plain pattern. */
-        public SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
-                                   int inset, int spacing, int size, int projection) {
-            this(type, block, cornerBlock, inset, spacing, size, projection,
-                    SurfaceOrient.NONE, Map.of());
-        }
-
-        /** An ungated treatment -- drawn whenever its scheme is rolled. The shape before gates. */
-        public SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
-                                   int inset, int spacing, int size, int projection,
-                                   SurfaceOrient orient, Map<String, String> properties) {
-            this(type, block, cornerBlock, inset, spacing, size, projection, orient, properties,
-                    SizeGate.UNBOUNDED);
-        }
-
-        /** The shape before {@code bracketBlock} existed: no bracket, for the types that have none. */
-        public SurfacePatternEntry(String type, Optional<String> block, Optional<String> cornerBlock,
-                                   int inset, int spacing, int size, int projection,
-                                   SurfaceOrient orient, Map<String, String> properties,
-                                   SizeGate gate) {
-            this(type, block, cornerBlock, Optional.empty(), inset, spacing, size, projection,
-                    orient, properties, gate);
-        }
-
-        /**
-         * Whether this type has a direction for {@link #orient} to mean anything by &mdash;
-         * {@code border} (the ring's outward edge) and {@code joists} (the wall each bracket rests
-         * on). See {@link CeilingPatternEntry#validate}.
-         */
-        public boolean orientable() {
-            String type = normalizedType();
-            return BORDER.equals(type) || JOISTS.equals(type);
-        }
-
-        /**
-         * Lower-cased and trimmed, matching how {@code CeilingPatternSelector} dispatches, so
-         * validation and dispatch cannot disagree about whether {@code " Border "} is a border.
-         */
-        String normalizedType() {
-            return type().trim().toLowerCase(Locale.ROOT);
-        }
+        public static final Codec<SurfacePatternEntry> CODEC = Codecs.closed(
+                RecordCodecBuilder.mapCodec(instance -> instance.group(
+                        // `type` + `config`, dispatched over the ceiling pattern registry. An
+                        // unregistered id is a LOAD ERROR, not a skipped pattern.
+                        CeilingPatternRegistry.MAP_CODEC.forGetter(SurfacePatternEntry::pattern),
+                        Codecs.strictOptionalFieldOf(Codec.intRange(0, WallPatternEntry.MAX_PROJECTION),
+                                "projection", 0).forGetter(SurfacePatternEntry::projection),
+                        SizeGate.MAP_CODEC.forGetter(SurfacePatternEntry::gate)
+                ).apply(instance, SurfacePatternEntry::new)));
     }
 
     /** A ring following the surface's edge: the first orientable type. */

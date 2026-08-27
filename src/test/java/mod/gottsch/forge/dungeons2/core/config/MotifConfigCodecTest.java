@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CoffersCeilingPattern;
 
 /**
  * Round-trip, defaulting and merge tests for the {@link MotifConfigFragment} codec and the
@@ -47,12 +48,11 @@ class MotifConfigCodecTest {
                 List.of(new RoomScheme("plain", 8, 0, 0),
                         new RoomScheme("bordered", 1, 6, 5,
                                 Optional.of(FloorPatternEntry.PLAIN),
-                                Optional.of(new WallPatternEntry("courses", List.of(
+                                Optional.of(WallPatternEntry.ofCourses(List.of(
                                         new WallPatternEntry.CourseEntry("minecraft:polished_andesite",
                                                 WallPatternEntry.CourseAnchor.TOP, 0)))),
                                 Optional.of(new CeilingPatternEntry(List.of(
-                                        new CeilingPatternEntry.SurfacePatternEntry(
-                                                "coffers", "minecraft:polished_andesite")))),
+                                        new CeilingPatternEntry.SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite"))))),
                                 Optional.empty())));
 
         JsonElement json = MotifConfigFragment.CODEC.encodeStart(JsonOps.INSTANCE, config).result().orElseThrow();
@@ -443,12 +443,10 @@ class MotifConfigCodecTest {
      */
     @Test
     void courseAlternateAndCornerDefaultToTheBaseBlock() {
-        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": "
-                + "{\"patterns\": [{\"type\": \"courses\", "
-                + "\"courses\": [{\"block\": \"minecraft:polished_andesite\"}]}]}}]}");
+        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\"}]}}]}}]}");
 
         WallPatternEntry.CourseEntry course =
-                config.schemes().get(0).wall().orElseThrow().patterns().get(0).courses().get(0);
+                config.schemes().get(0).wall().orElseThrow().patterns().get(0).coursesOrEmpty().get(0);
         assertTrue(course.alternateBlock().isEmpty());
         assertTrue(course.cornerBlock().isEmpty());
         assertEquals("minecraft:polished_andesite", course.alternateBlockOrBase());
@@ -457,14 +455,10 @@ class MotifConfigCodecTest {
 
     @Test
     void courseAlternateAndCornerAreReadWhenAuthored() {
-        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": "
-                + "{\"patterns\": [{\"type\": \"courses\", "
-                + "\"courses\": [{\"block\": \"minecraft:polished_andesite\", "
-                + "\"alternateBlock\": \"minecraft:andesite\", "
-                + "\"cornerBlock\": \"minecraft:chiseled_stone_bricks\"}]}]}}]}");
+        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\",\"alternateBlock\":\"minecraft:andesite\",\"cornerBlock\":\"minecraft:chiseled_stone_bricks\"}]}}]}}]}");
 
         WallPatternEntry.CourseEntry course =
-                config.schemes().get(0).wall().orElseThrow().patterns().get(0).courses().get(0);
+                config.schemes().get(0).wall().orElseThrow().patterns().get(0).coursesOrEmpty().get(0);
         assertEquals("minecraft:andesite", course.alternateBlockOrBase());
         assertEquals("minecraft:chiseled_stone_bricks", course.cornerBlockOrBase());
     }
@@ -475,20 +469,17 @@ class MotifConfigCodecTest {
      */
     @Test
     void aWallSlotHoldsSeveralPatternsInOrder() {
-        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": "
-                + "{\"patterns\": ["
-                + "{\"type\": \"courses\", \"courses\": [{\"block\": \"minecraft:polished_andesite\"}]},"
-                + "{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\", \"spacing\": 3}"
-                + "]}}]}");
+        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\"}]}},{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"spacing\":3}}]}}]}");
 
         List<WallPatternEntry.PatternEntry> patterns =
                 config.schemes().get(0).wall().orElseThrow().patterns();
         assertEquals(2, patterns.size());
         assertTrue(patterns.get(0).isCourses());
         assertTrue(patterns.get(1).isPilasters());
-        assertEquals(3, patterns.get(1).spacing());
+        assertEquals(3, patterns.get(1).pilasterShape().orElseThrow().spacing());
         // base/cap fall back to the shaft block, so a strip authored with `block` alone is uniform.
-        assertEquals("minecraft:stone_bricks", patterns.get(1).baseBlockOrBase().orElseThrow());
+        assertEquals("minecraft:stone_bricks",
+                patterns.get(1).pilasterShape().orElseThrow().baseBlockOrBase());
     }
 
     /**
@@ -498,17 +489,13 @@ class MotifConfigCodecTest {
      */
     @Test
     void aFieldTheTypeCannotUseFailsTheLoad() {
-        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": "
-                + "[{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\", "
-                + "\"courses\": [{\"block\": \"minecraft:andesite\"}]}]}}]}"));
-        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": "
-                + "[{\"type\": \"courses\", \"block\": \"minecraft:stone_bricks\"}]}}]}"));
+        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"courses\":[{\"block\":\"minecraft:andesite\"}]}}]}}]}"));
+        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}}]}"));
     }
 
     /** A pilaster has no default material, so an absent block is an error rather than a guess. */
     @Test
     void aPilasterWithoutABlockFailsTheLoad() {
-        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": "
-                + "[{\"type\": \"pilasters\", \"spacing\": 3}]}}]}"));
+        assertTrue(fails("{\"schemes\": [{\"name\": \"x\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"config\":{\"spacing\":3}}]}}]}"));
     }
 }

@@ -83,7 +83,11 @@ public final class CeilingPatternSelector {
         List<Layer> layers = new ArrayList<>(entry.patterns().size());
         boolean anyProjects = false;
         for (SurfacePatternEntry pattern : entry.patterns()) {
-            addLayers(pattern, layers);
+            // Each registered pattern adds its own layers -- usually one, and two for a bracketed
+            // joists. That used to be a switch here plus a JOISTS string test; both moved onto the
+            // types when they became registry entries, which is why this file no longer knows what
+            // a joist is.
+            pattern.pattern().addLayers(pattern.projection(), layers);
         }
         for (Layer layer : layers) {
             anyProjects |= layer.depth() > 0;
@@ -99,71 +103,9 @@ public final class CeilingPatternSelector {
         return new LayeredSurfacePatternProvider(layers);
     }
 
-    /**
-     * Appends the layers one authored pattern draws &mdash; usually one, and <strong>two for a
-     * bracketed {@code joists}</strong>: the beams at the authored projection and the brackets one
-     * row below them, because a bracket carries its beam from underneath rather than standing in
-     * its row. Splitting them here rather than inside the provider is what lets the existing
-     * depth-grouping in {@link LayeredSurfacePatternProvider} do the work.
-     */
-    private static void addLayers(SurfacePatternEntry pattern, List<Layer> layers) {
-        ISurfacePatternProvider provider = toLayer(pattern);
-        if (provider == null) {
-            return;
-        }
-        layers.add(new Layer(pattern.projection(), provider));
-
-        if (!CeilingPatternEntry.JOISTS.equals(pattern.type().trim().toLowerCase(Locale.ROOT))) {
-            return;
-        }
-        // Absent bracket means beams run bare; a bracket that will not resolve is the same answer,
-        // for the same reason cornerBlock falls back to block rather than dropping the ring -- a
-        // typo in the trim should not delete the beams it was decorating.
-        Block bracket = pattern.bracketBlock().map(BlockStateCodec::blockOrNull).orElse(null);
-        if (bracket != null) {
-            layers.add(new Layer(pattern.projection() + 1,
-                    JoistSurfacePatternProvider.brackets(pattern.spacing(),
-                            BlockStateCodec.withProperties(bracket.defaultBlockState(),
-                                    pattern.properties()),
-                            pattern.orient(),
-                            CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION)));
-        }
-    }
-
-    private static ISurfacePatternProvider toLayer(SurfacePatternEntry pattern) {
-        Block block = resolve(pattern.block());
-        if (block == null) {
-            return null;
-        }
-        // Author-named properties are applied here, once, to every state this pattern will place --
-        // they are one block family (a ring of stairs and its corner stair both want half=top), the
-        // same rule a wall course's `properties` follows.
-        BlockState state = BlockStateCodec.withProperties(block.defaultBlockState(), pattern.properties());
-        return switch (pattern.type().trim().toLowerCase(Locale.ROOT)) {
-            case CeilingPatternEntry.BORDER -> {
-                Block corner = pattern.cornerBlock().map(BlockStateCodec::blockOrNull).orElse(block);
-                yield corner == null ? null : new BorderSurfacePatternProvider(
-                        pattern.inset(), state,
-                        BlockStateCodec.withProperties(corner.defaultBlockState(), pattern.properties()),
-                        pattern.orient(),
-                        // The ring's outward direction is per cell, so it needs the surface's axes;
-                        // this selector only ever builds for a ceiling, so it knows them.
-                        CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION);
-            }
-            case "coffers" -> new GridSurfacePatternProvider(pattern.spacing(), state);
-            // The beams only -- their brackets are a second layer, added by addLayers.
-            case CeilingPatternEntry.JOISTS -> JoistSurfacePatternProvider.beams(pattern.spacing(), state);
-            case "centre", "center" -> new CentreSurfacePatternProvider(pattern.size(), state);
-            default -> null; // unrecognized type: skipped
-        };
-    }
-
-    private static Block resolve(Optional<String> id) {
-        return id.map(BlockStateCodec::blockOrNull).orElse(null);
-    }
 
     /** One treatment and the depth it hangs at. Depth 0 is flush in the ceiling plane. */
-    record Layer(int depth, ISurfacePatternProvider provider) {}
+    public record Layer(int depth, ISurfacePatternProvider provider) {}
 
     /**
      * Applies several treatments in order, later non-null cells winning, keeping each depth in its

@@ -162,12 +162,12 @@ class PilasteredHallSchemeTest {
             if (!pattern.isPilasters()) {
                 continue;
             }
-            assertEquals(pattern.baseBlockOrBase(), pattern.capBlockOrBase(),
+            assertEquals(pattern.pilasterShape().orElseThrow().baseBlockOrBase(), pattern.pilasterShape().orElseThrow().capBlockOrBase(),
                     "a capital is the plinth block, not a different one");
-            assertEquals("up", pattern.basePropertiesOrBase().get("base"),
-                    pattern.type() + ": the plinth sits on the floor -- 'up', counter-intuitively");
-            assertEquals("down", pattern.capPropertiesOrBase().get("base"),
-                    pattern.type() + ": the capital is the same block inverted");
+            assertEquals("up", pattern.pilasterShape().orElseThrow().basePropertiesOrBase().get("base"),
+                    pattern.pattern().getClass().getSimpleName() + ": the plinth sits on the floor -- 'up', counter-intuitively");
+            assertEquals("down", pattern.pilasterShape().orElseThrow().capPropertiesOrBase().get("base"),
+                    pattern.pattern().getClass().getSimpleName() + ": the capital is the same block inverted");
         }
     }
 

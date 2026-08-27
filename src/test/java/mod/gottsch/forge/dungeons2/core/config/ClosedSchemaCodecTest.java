@@ -47,7 +47,7 @@ class ClosedSchemaCodecTest {
     @Test
     void aMisspelledWidthOnAPanelIsALoadError() {
         String message = errorOf(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\": \"panels\", \"block\": \"minecraft:stone_bricks\", \"widht\": 3}");
+                "{\"type\":\"dungeons2:panels\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"widht\":3}}");
         assertTrue(message.contains("widht"), () -> "the error must name the offending key: " + message);
         assertTrue(message.contains("width"), () -> "and suggest the one meant: " + message);
     }
@@ -77,8 +77,7 @@ class ClosedSchemaCodecTest {
     @Test
     void aKnownFieldOnTheWrongTypeStillFailsThroughValidate() {
         String message = errorOf(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\","
-                        + " \"courses\": [{\"block\": \"minecraft:stone_bricks\"}]}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"courses\":[{\"block\":\"minecraft:stone_bricks\"}]}}]}");
         assertTrue(message.contains("courses"), () -> message);
     }
 
@@ -94,15 +93,13 @@ class ClosedSchemaCodecTest {
     @Test
     void theFlatSizeGateKeysAreNotMistakenForStrays() {
         decodes(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\","
-                        + " \"minHeight\": 7, \"minSize\": 5, \"maxHeight\": 9, \"maxSize\": 11}");
+                "{\"type\":\"dungeons2:pilasters\",\"minHeight\":7,\"minSize\":5,\"maxHeight\":9,\"maxSize\":11,\"config\":{\"block\":\"minecraft:stone_bricks\"}}");
         decodes(WallPatternEntry.CourseEntry.CODEC,
                 "{\"block\": \"minecraft:stone_bricks\", \"minHeight\": 7, \"maxSize\": 11}");
         decodes(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:plain\", \"minHeight\": 7, \"maxSize\": 11}");
         decodes(CeilingPatternEntry.CODEC, "{\"patterns\": [], \"minHeight\": 7, \"maxSize\": 11}");
         decodes(CeilingPatternEntry.SurfacePatternEntry.CODEC,
-                "{\"type\": \"centre\", \"block\": \"minecraft:stone_bricks\","
-                        + " \"minSize\": 11, \"maxHeight\": 9}");
+                "{\"type\":\"dungeons2:centre\",\"minSize\":11,\"maxHeight\":9,\"config\":{\"block\":\"minecraft:stone_bricks\"}}");
         decodes(PotConfig.CODEC, "{\"lootTable\": \"dungeons2:pots/classic\","
                 + " \"variants\": [{\"entity\": \"dungeonblocks:pot\"}], \"minHeight\": 7, \"maxSize\": 11}");
     }
@@ -116,13 +113,13 @@ class ClosedSchemaCodecTest {
         assertTrue(parse(WallPatternEntry.CODEC,
                 "{\"patterns\": [], \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\": \"courses\", \"nonsense\": 1}").error().isPresent());
+                "{\"type\":\"dungeons2:courses\",\"config\":{\"nonsense\":1}}").error().isPresent());
         assertTrue(parse(WallPatternEntry.CourseEntry.CODEC,
                 "{\"block\": \"minecraft:stone_bricks\", \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(CeilingPatternEntry.CODEC,
                 "{\"patterns\": [], \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(CeilingPatternEntry.SurfacePatternEntry.CODEC,
-                "{\"type\": \"border\", \"nonsense\": 1}").error().isPresent());
+                "{\"type\":\"dungeons2:border\",\"config\":{\"nonsense\":1}}").error().isPresent());
         assertTrue(parse(PotConfig.CODEC, "{\"lootTable\": \"dungeons2:pots/classic\","
                 + " \"variants\": [], \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(PotConfig.PotVariant.CODEC,
@@ -183,7 +180,7 @@ class ClosedSchemaCodecTest {
     @Test
     void anUnmigratedSingleTypeWallSlotFails() {
         assertTrue(parse(WallPatternEntry.CODEC,
-                "{\"type\": \"courses\", \"courses\": [{\"block\": \"minecraft:stone_bricks\"}]}")
+                "{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:stone_bricks\"}]}}")
                 .error().isPresent());
     }
 
@@ -192,7 +189,7 @@ class ClosedSchemaCodecTest {
     @Test
     void theErrorListsEveryStrayKeyAndTheKnownSet() {
         String message = errorOf(CeilingPatternEntry.SurfacePatternEntry.CODEC,
-                "{\"type\": \"border\", \"blokc\": \"minecraft:stone_bricks\", \"zzzzzzzzzz\": 1}");
+                "{\"type\":\"dungeons2:border\",\"config\":{\"blokc\":\"minecraft:stone_bricks\",\"zzzzzzzzzz\":1}}");
         assertTrue(message.contains("blokc") && message.contains("zzzzzzzzzz"),
                 () -> "both strays should be reported in one pass: " + message);
         assertTrue(message.contains("known fields:") && message.contains("cornerBlock"),

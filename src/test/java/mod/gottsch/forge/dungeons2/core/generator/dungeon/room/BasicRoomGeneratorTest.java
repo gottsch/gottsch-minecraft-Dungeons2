@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.CeilingConfig;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfacePatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.DoorConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
@@ -56,6 +57,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CoffersCeilingPattern;
 
 /**
  * Verifies {@link BasicRoomGenerator} orchestrates wall + floor + ceiling
@@ -158,14 +160,12 @@ class BasicRoomGeneratorTest {
     void aHangingCofferOverridesTheWallsCorniceWhereTheyMeet() {
         RoomScheme scheme = new RoomScheme("cornice_and_coffers", 1, 0, 0,
                 Optional.empty(),
-                Optional.of(new WallPatternEntry("courses", List.of(
+                Optional.of(WallPatternEntry.ofCourses(List.of(
                         new WallPatternEntry.CourseEntry("minecraft:stone_brick_stairs",
                                 Optional.empty(), Optional.empty(), CourseAnchor.TOP, 0, 1,
                                 CourseOrient.TOWARD_WALL, Map.of())))),
                 Optional.of(new CeilingPatternEntry(List.of(
-                        new CeilingPatternEntry.SurfacePatternEntry("coffers",
-                                Optional.of("minecraft:polished_andesite"), Optional.empty(),
-                                0, 3, 1, 1)))),
+                        new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite"), 1, SizeGate.UNBOUNDED)))),
                 Optional.empty());
 
         MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,

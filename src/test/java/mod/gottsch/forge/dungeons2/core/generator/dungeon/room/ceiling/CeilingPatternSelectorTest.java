@@ -3,6 +3,12 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import com.google.gson.JsonParser;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.BorderCeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CentreCeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.CoffersCeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.JoistsCeilingPattern;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfacePatternEntry;
@@ -71,19 +77,19 @@ class CeilingPatternSelectorTest {
     @Test
     void eachTypeMapsToItsProvider() {
         assertInstanceOf(GridSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("coffers", "minecraft:polished_andesite"))));
+                entry(new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite")))));
         assertInstanceOf(BorderSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("border", "minecraft:polished_andesite"))));
+                entry(new SurfacePatternEntry(new BorderCeilingPattern("minecraft:polished_andesite")))));
         assertInstanceOf(CentreSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("centre", "minecraft:chiseled_stone_bricks"))));
+                entry(new SurfacePatternEntry(new CentreCeilingPattern("minecraft:chiseled_stone_bricks")))));
     }
 
     // ---------- orient and properties ----------
 
     /** Flush (projection 0), so {@code plan()} is the layer under test rather than an empty one. */
     private static SurfacePatternEntry ring(SurfaceOrient orient, Map<String, String> properties) {
-        return new SurfacePatternEntry("border", Optional.of("minecraft:stone_brick_stairs"),
-                Optional.empty(), 0, 3, 1, 0, orient, properties);
+        return new SurfacePatternEntry(new BorderCeilingPattern(
+                "minecraft:stone_brick_stairs", Optional.empty(), 0, orient, properties));
     }
 
     private static SurfacePlan planOf(SurfacePatternEntry pattern, int uSize, int vSize) {
@@ -120,9 +126,8 @@ class CeilingPatternSelectorTest {
     /** A property the block does not have is ignored rather than fatal, per BlockStateCodec. */
     @Test
     void anUnknownPropertyIsIgnored() {
-        SurfacePatternEntry pattern = new SurfacePatternEntry("coffers",
-                Optional.of("minecraft:polished_andesite"), Optional.empty(), 0, 3, 1, 0,
-                SurfaceOrient.NONE, Map.of("half", "top"));
+        SurfacePatternEntry pattern = new SurfacePatternEntry(new CoffersCeilingPattern(
+                "minecraft:polished_andesite", 3, Map.of("half", "top")));
         assertSame(Blocks.POLISHED_ANDESITE.defaultBlockState(), planOf(pattern, 7, 7).get(3, 3));
     }
 
@@ -133,7 +138,7 @@ class CeilingPatternSelectorTest {
      */
     @Test
     void anUnorientedRingIsUnchangedFromBeforeTheFeature() {
-        SurfacePlan plan = planOf(new SurfacePatternEntry("border", "minecraft:polished_andesite"), 7, 7);
+        SurfacePlan plan = planOf(new SurfacePatternEntry(new BorderCeilingPattern("minecraft:polished_andesite")), 7, 7);
         assertSame(Blocks.POLISHED_ANDESITE.defaultBlockState(), plan.get(3, 0));
         assertSame(Blocks.POLISHED_ANDESITE.defaultBlockState(), plan.get(0, 0));
     }
@@ -146,28 +151,33 @@ class CeilingPatternSelectorTest {
      */
     @Test
     void orientOnANonBorderPatternFailsTheLoad() {
-        SurfacePatternEntry coffers = new SurfacePatternEntry("coffers",
-                Optional.of("minecraft:polished_andesite"), Optional.empty(), 0, 3, 1, 0,
-                SurfaceOrient.OUTWARD, Map.of());
-        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(
-                JsonOps.INSTANCE, new CeilingPatternEntry(List.of(coffers)));
-        assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
-        assertTrue(encoded.error().get().message().contains("orient"),
-                "the message should name the offending field: " + encoded.error().get().message());
+        // Asserted through JSON now, and it HAS to be: since the pattern types became registry
+        // entries, `coffers` does not declare `orient` at all, so an oriented coffers cannot be
+        // constructed in Java to encode. That is the improvement -- the rule stopped being a
+        // hand-written check in CeilingPatternEntry.validate and became the schema itself. The
+        // authoring mistake this protects against is unchanged, and this is the form an author
+        // would actually write it in.
+        DataResult<CeilingPatternEntry> parsed = CeilingPatternEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"patterns\": [{\"type\": \"dungeons2:coffers\","
+                        + " \"config\": {\"block\": \"minecraft:polished_andesite\","
+                        + " \"orient\": \"outward\"}}]}"));
+        assertTrue(parsed.result().isEmpty(), "expected a load error, got " + parsed.result());
+        assertTrue(parsed.error().orElseThrow().message().contains("orient"),
+                "the message should name the offending field: " + parsed.error().orElseThrow().message());
     }
 
     // ---------- joists (backlog #36) ----------
 
     /** Flush (projection 0), so {@code plan()} is the layer under test rather than an empty one. */
     private static SurfacePatternEntry joists(Optional<String> bracket, SurfaceOrient orient) {
-        return new SurfacePatternEntry("joists", Optional.of("minecraft:spruce_log"),
-                Optional.empty(), bracket, 0, 3, 1, 0, orient, Map.of(), SizeGate.UNBOUNDED);
+        return new SurfacePatternEntry(new JoistsCeilingPattern(
+                "minecraft:spruce_log", 3, bracket, orient, Map.of()));
     }
 
     @Test
     void joistsDispatchToTheirOwnProvider() {
         assertInstanceOf(JoistSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("joists", "minecraft:spruce_log"))));
+                entry(new SurfacePatternEntry(new JoistsCeilingPattern("minecraft:spruce_log")))));
     }
 
     /** A bracket is optional, so an entry without one is a single flush layer of bare beams. */
@@ -245,15 +255,15 @@ class CeilingPatternSelectorTest {
     /** And the field is joists-only: a ring has corners, not ends. */
     @Test
     void aBracketOnANonJoistPatternFailsTheLoad() {
-        SurfacePatternEntry border = new SurfacePatternEntry("border",
-                Optional.of("minecraft:stone_brick_stairs"), Optional.empty(),
-                Optional.of("dungeonblocks:spruce_corbel_block"), 0, 3, 1, 0,
-                SurfaceOrient.NONE, Map.of(), SizeGate.UNBOUNDED);
-        DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(
-                JsonOps.INSTANCE, new CeilingPatternEntry(List.of(border)));
-        assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
-        assertTrue(encoded.error().get().message().contains("bracketBlock"),
-                "the message should name the offending field: " + encoded.error().get().message());
+        // Through JSON for the same reason as orientOnANonBorderPatternFailsTheLoad: `border` has
+        // no bracketBlock field to set.
+        DataResult<CeilingPatternEntry> parsed = CeilingPatternEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"patterns\": [{\"type\": \"dungeons2:border\","
+                        + " \"config\": {\"block\": \"minecraft:stone_brick_stairs\","
+                        + " \"bracketBlock\": \"dungeonblocks:spruce_corbel_block\"}}]}"));
+        assertTrue(parsed.result().isEmpty(), "expected a load error, got " + parsed.result());
+        assertTrue(parsed.error().orElseThrow().message().contains("bracketBlock"),
+                "the message should name the offending field: " + parsed.error().orElseThrow().message());
     }
 
     /** The same field on a border is of course fine -- the guard must not be a blanket ban. */
@@ -268,19 +278,30 @@ class CeilingPatternSelectorTest {
     @Test
     void centerAndCentreAreBothAccepted() {
         assertInstanceOf(CentreSurfacePatternProvider.class, CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("center", "minecraft:chiseled_stone_bricks"))));
+                entry(new SurfacePatternEntry(new CentreCeilingPattern("minecraft:chiseled_stone_bricks")))));
     }
 
     @Test
-    void anUnrecognizedTypeIsSkipped() {
-        assertNull(CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("vault", "minecraft:polished_andesite"))));
+    void anUnrecognizedTypeIsALoadError() {
+        // Was anUnrecognizedTypeIsSkipped. An unregistered type cannot reach the selector any more
+        // -- it fails at decode, naming the id and listing what IS registered, which beats a
+        // ceiling that silently came out flat.
+        DataResult<CeilingPatternEntry> parsed = CeilingPatternEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"patterns\": [{\"type\": \"dungeons2:vault\","
+                        + " \"config\": {\"block\": \"minecraft:polished_andesite\"}}]}"));
+        assertTrue(parsed.result().isEmpty());
+        assertTrue(parsed.error().orElseThrow().message().contains("dungeons2:vault"));
     }
 
     @Test
-    void aPatternWithNoBlockIsSkipped() {
-        assertNull(CeilingPatternSelector.toProvider(entry(
-                new SurfacePatternEntry("coffers", Optional.empty(), Optional.empty(), 0, 3, 1, 0))));
+    void aPatternWithNoBlockIsALoadError() {
+        // Was aPatternWithNoBlockIsSkipped. `block` is a required fieldOf on every ceiling type
+        // now, which the flat record could not express -- it had to be Optional because some type
+        // or other always left it out.
+        DataResult<CeilingPatternEntry> parsed = CeilingPatternEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"patterns\": [{\"type\": \"dungeons2:coffers\"}]}"));
+        assertTrue(parsed.result().isEmpty());
+        assertTrue(parsed.error().orElseThrow().message().contains("block"));
     }
 
     /**
@@ -290,8 +311,8 @@ class CeilingPatternSelectorTest {
     @Test
     void oneBadPatternIsDroppedAndTheRestSurvive() {
         ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(entry(
-                new SurfacePatternEntry("coffers", "minecraft:polished_andesite"),
-                new SurfacePatternEntry("centre", "minecraft:not_a_real_block")));
+                new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite")),
+                new SurfacePatternEntry(new CentreCeilingPattern("minecraft:not_a_real_block"))));
 
         assertInstanceOf(GridSurfacePatternProvider.class, provider,
                 "a single surviving layer should not be wrapped");
@@ -302,8 +323,8 @@ class CeilingPatternSelectorTest {
     @Test
     void patternsLayerInListOrder() {
         ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(entry(
-                new SurfacePatternEntry("coffers", "minecraft:polished_andesite"),
-                new SurfacePatternEntry("centre", "minecraft:chiseled_stone_bricks")));
+                new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite")),
+                new SurfacePatternEntry(new CentreCeilingPattern("minecraft:chiseled_stone_bricks"))));
 
         SurfacePlan plan = provider.plan(7, 7, Direction.DOWN);
         assertSame(net.minecraft.world.level.block.Blocks.CHISELED_STONE_BRICKS.defaultBlockState(),
@@ -314,7 +335,7 @@ class CeilingPatternSelectorTest {
     @Test
     void anAbsentCornerBlockFallsBackToTheEdgeBlock() {
         ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(
-                entry(new SurfacePatternEntry("border", "minecraft:polished_andesite")));
+                entry(new SurfacePatternEntry(new BorderCeilingPattern("minecraft:polished_andesite"))));
         SurfacePlan plan = provider.plan(5, 5, Direction.DOWN);
         assertSame(plan.get(2, 0), plan.get(0, 0), "corner and edge should be the same state");
     }
@@ -332,7 +353,7 @@ class CeilingPatternSelectorTest {
         List<BlockPlacement> out = new ArrayList<>();
         new BasicCeilingGenerator()
                 .withCeilingPattern(CeilingPatternSelector.providerFor(Optional.of(
-                        entry(new SurfacePatternEntry("coffers", "minecraft:polished_andesite")))))
+                        entry(new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite"))))))
                 .build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
 
         int ceilingY = floorY + room.getHeight() - 1;
@@ -355,7 +376,18 @@ class CeilingPatternSelectorTest {
     // ---------- projection ----------
 
     private static SurfacePatternEntry hanging(String type, String block) {
-        return new SurfacePatternEntry(type, Optional.of(block), Optional.empty(), 0, 3, 1, 1);
+        return new SurfacePatternEntry(pattern(type, block), 1, SizeGate.UNBOUNDED);
+    }
+
+    /** Test-local name-to-type mapping, replacing the selector switch these tests used to drive. */
+    private static CeilingPattern pattern(String type, String block) {
+        return switch (type) {
+            case "coffers" -> new CoffersCeilingPattern(block);
+            case "border" -> new BorderCeilingPattern(block);
+            case "joists" -> new JoistsCeilingPattern(block);
+            case "centre", "center" -> new CentreCeilingPattern(block);
+            default -> throw new IllegalArgumentException("no such ceiling pattern: " + type);
+        };
     }
 
     /**
@@ -429,7 +461,7 @@ class CeilingPatternSelectorTest {
     @Test
     void flushAndHangingPatternsSeparateByDepth() {
         ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(entry(
-                new SurfacePatternEntry("border", "minecraft:andesite"),
+                new SurfacePatternEntry(new BorderCeilingPattern("minecraft:andesite")),
                 hanging("coffers", "minecraft:polished_andesite")));
 
         assertInstanceOf(IProjectingPatternProvider.class, provider);
@@ -458,9 +490,7 @@ class CeilingPatternSelectorTest {
     // ---------- per-entry gates (backlog #24) ----------
 
     private static SurfacePatternEntry gated(String type, String block, int minSize) {
-        return new SurfacePatternEntry(type, Optional.of(block), Optional.empty(),
-                BorderSurfacePatternProvider.DEFAULT_INSET, GridSurfacePatternProvider.DEFAULT_SPACING,
-                CentreSurfacePatternProvider.DEFAULT_SIZE, 0, SurfaceOrient.NONE, Map.of(),
+        return new SurfacePatternEntry(pattern(type, block), 0,
                 new mod.gottsch.forge.dungeons2.core.config.SizeGate(0, minSize,
                         Optional.empty(), Optional.empty()));
     }
@@ -473,21 +503,22 @@ class CeilingPatternSelectorTest {
     @Test
     void aPatternGatesOutWhileTheRestOfTheListStillDraws() {
         CeilingPatternEntry entry = entry(
-                new SurfacePatternEntry("coffers", "minecraft:polished_andesite"),
+                new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite")),
                 gated("centre", "minecraft:chiseled_stone_bricks", 11));
 
         assertEquals(1, entry.forRoom(7, 7, 6).patterns().size(),
                 "the boss gates out of a 7-wide room");
         assertEquals(2, entry.forRoom(13, 13, 6).patterns().size(),
                 "and is back in a 13-wide one");
-        assertEquals("coffers", entry.forRoom(7, 7, 6).patterns().get(0).type(),
+        assertInstanceOf(CoffersCeilingPattern.class,
+                entry.forRoom(7, 7, 6).patterns().get(0).pattern(),
                 "the lattice is the one that survives");
     }
 
     /** Nothing gated means the same instance back, not a copy -- the wall's rule, mirrored. */
     @Test
     void anUngatedListIsReturnedUnchanged() {
-        CeilingPatternEntry entry = entry(new SurfacePatternEntry("coffers", "minecraft:polished_andesite"));
+        CeilingPatternEntry entry = entry(new SurfacePatternEntry(new CoffersCeilingPattern("minecraft:polished_andesite")));
         assertSame(entry, entry.forRoom(7, 7, 6));
     }
 

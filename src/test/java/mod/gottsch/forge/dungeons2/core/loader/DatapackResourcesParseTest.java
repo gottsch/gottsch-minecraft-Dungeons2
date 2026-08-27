@@ -171,7 +171,7 @@ class DatapackResourcesParseTest {
     private static List<WallPatternEntry.CourseEntry> courses(RoomScheme scheme) {
         return scheme.wall().stream()
                 .flatMap(wall -> wall.patterns().stream())
-                .flatMap(pattern -> pattern.courses().stream())
+                .flatMap(pattern -> pattern.coursesOrEmpty().stream())
                 .toList();
     }
 

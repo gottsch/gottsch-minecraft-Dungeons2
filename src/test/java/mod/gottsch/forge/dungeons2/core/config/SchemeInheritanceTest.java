@@ -55,8 +55,7 @@ class SchemeInheritanceTest {
     /** A parent worth inheriting: a wall course and a pot config, both nameable in an assertion. */
     private static final String ABSTRACT_PARENT = """
             {"name":"grand","abstract":true,
-             "wall":{"patterns":[{"type":"courses","courses":[
-                 {"block":"minecraft:polished_andesite","anchor":"top"}]}]},
+             "wall":{"patterns":[{"type":"dungeons2:courses","config":{"courses":[{"block":"minecraft:polished_andesite","anchor":"top"}]}}]},
              "pots":{"minCount":1,"maxCount":2,"lootTable":"dungeons2:pots/classic",
                      "variants":[{"entity":"dungeonblocks:pot","weight":1}]}}""";
 
@@ -99,13 +98,12 @@ class SchemeInheritanceTest {
     void aSlotTheChildFillsWinsOutrightRatherThanMerging() {
         List<RoomScheme> schemes = resolved(schemes(ABSTRACT_PARENT, """
                 {"name":"child","extends":"grand",
-                 "wall":{"patterns":[{"type":"courses","courses":[
-                     {"block":"minecraft:deepslate_bricks","anchor":"bottom"}]}]}}"""));
+                 "wall":{"patterns":[{"type":"dungeons2:courses","config":{"courses":[{"block":"minecraft:deepslate_bricks","anchor":"bottom"}]}}]}}"""));
 
         WallPatternEntry wall = byName(schemes, "child").wall().orElseThrow();
         assertEquals(1, wall.patterns().size(), "one pattern, not the parent's plus the child's");
         assertEquals("minecraft:deepslate_bricks",
-                wall.patterns().get(0).courses().get(0).block());
+                wall.patterns().get(0).coursesOrEmpty().get(0).block());
     }
 
     /**
@@ -195,11 +193,10 @@ class SchemeInheritanceTest {
                 schemes(ABSTRACT_PARENT, "{\"name\":\"child\",\"extends\":\"grand\"}"),
                 schemes("""
                         {"name":"grand","abstract":true,
-                         "wall":{"patterns":[{"type":"courses","courses":[
-                             {"block":"minecraft:deepslate_bricks","anchor":"top"}]}]}}"""));
+                         "wall":{"patterns":[{"type":"dungeons2:courses","config":{"courses":[{"block":"minecraft:deepslate_bricks","anchor":"top"}]}}]}}"""));
 
         WallPatternEntry wall = byName(schemes, "child").wall().orElseThrow();
-        assertEquals("minecraft:deepslate_bricks", wall.patterns().get(0).courses().get(0).block());
+        assertEquals("minecraft:deepslate_bricks", wall.patterns().get(0).coursesOrEmpty().get(0).block());
         assertTrue(byName(schemes, "child").pots().isEmpty(),
                 "the override replaced the parent wholesale, so its pots went with it");
     }

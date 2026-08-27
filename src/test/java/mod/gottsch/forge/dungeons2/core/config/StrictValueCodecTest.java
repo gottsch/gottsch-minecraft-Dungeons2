@@ -58,7 +58,7 @@ class StrictValueCodecTest {
         fails(WallPatternEntry.CourseEntry.CODEC,
                 "{\"block\": \"minecraft:stone_bricks\", \"cornerBlock\": 42}");
         fails(CeilingPatternEntry.SurfacePatternEntry.CODEC,
-                "{\"type\": \"border\", \"block\": \"minecraft:stone_bricks\", \"cornerBlock\": 42}");
+                "{\"type\":\"dungeons2:border\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"cornerBlock\":42}}");
         fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:checkerboard\", \"config\": {"
                 + "\"primaryBlock\": 42, \"secondaryBlock\": \"minecraft:stone_bricks\"}}");
     }
@@ -70,11 +70,9 @@ class StrictValueCodecTest {
     @Test
     void anUnquotedPropertyValueIsALoadErrorNotAnEmptyMap() {
         fails(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\": \"pilasters\", \"block\": \"minecraft:stone_brick_stairs\","
-                        + " \"capProperties\": {\"half\": \"top\", \"waterlogged\": false}}");
+                "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_brick_stairs\",\"capProperties\":{\"half\":\"top\",\"waterlogged\":false}}}");
         fails(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\": \"pilasters\", \"block\": \"minecraft:stone_brick_stairs\","
-                        + " \"baseProperties\": {\"layers\": 4}}");
+                "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_brick_stairs\",\"baseProperties\":{\"layers\":4}}}");
     }
 
     // ---- out of range -------------------------------------------------------------------------
@@ -120,26 +118,22 @@ class StrictValueCodecTest {
     @Test
     void anInvertedGateOnAPatternIsALoadError() {
         fails(CeilingPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\": \"centre\", \"block\": \"minecraft:stone_bricks\","
-                        + " \"minSize\": 11, \"maxSize\": 5}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:centre\",\"minSize\":11,\"maxSize\":5,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}");
         fails(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\","
-                        + " \"minHeight\": 9, \"maxHeight\": 6}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"minHeight\":9,\"maxHeight\":6,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}");
     }
 
     @Test
     void anInvertedGateOnASingleCourseIsALoadError() {
         fails(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\": \"courses\", \"courses\": ["
-                        + "{\"block\": \"minecraft:stone_bricks\", \"minHeight\": 9, \"maxHeight\": 6}]}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:stone_bricks\",\"minHeight\":9,\"maxHeight\":6}]}}]}");
     }
 
     /** A gate that is merely narrow is fine -- only an empty range is the error. */
     @Test
     void aNarrowButSatisfiableGateStillDecodes() {
         assertEquals(1, decode(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\": \"pilasters\", \"block\": \"minecraft:stone_bricks\","
-                        + " \"minHeight\": 7, \"maxHeight\": 7}]}").patterns().size());
+                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"minHeight\":7,\"maxHeight\":7,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}").patterns().size());
     }
 
     // ---- absent still defaults ------------------------------------------------------------------
@@ -168,8 +162,9 @@ class StrictValueCodecTest {
                 "{\"name\": \"n\", \"weight\": 9, \"minHeight\": 7, \"minSize\": 5}").weight());
         assertEquals(2, decode(DungeonGenerationConfig.CODEC, "{\"corridorWidth\": 2}").corridorWidth());
         assertEquals("minecraft:polished_andesite", decode(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\": \"pilasters\", \"block\": \"minecraft:polished_andesite\","
-                        + " \"spacing\": 4, \"capProperties\": {\"half\": \"top\"}}")
-                .block().orElseThrow());
+                "{\"type\": \"dungeons2:pilasters\", \"config\": {"
+                        + "\"block\": \"minecraft:polished_andesite\", \"spacing\": 4,"
+                        + " \"capProperties\": {\"half\": \"top\"}}}")
+                .pilasterShape().orElseThrow().block());
     }
 }

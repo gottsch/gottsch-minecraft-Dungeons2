@@ -31,6 +31,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import mod.gottsch.forge.dungeons2.core.config.wall.CoursesWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.EndPilastersWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.PilasterShape;
+import mod.gottsch.forge.dungeons2.core.config.wall.PanelsWallPattern;
+import mod.gottsch.forge.dungeons2.core.config.wall.PilastersWallPattern;
 
 /**
  * Entry &rarr; provider mapping, and the anchor codec. Like {@code FloorPatternSelector} this does
@@ -47,7 +52,7 @@ class WallPatternSelectorTest {
     }
 
     private static WallPatternEntry courses(CourseEntry... entries) {
-        return new WallPatternEntry("courses", List.of(entries));
+        return WallPatternEntry.ofCourses(List.of(entries));
     }
 
     /**
@@ -55,13 +60,14 @@ class WallPatternSelectorTest {
      * what the whole slot used to be before it became an ordered list of patterns.
      */
     private static List<CourseEntry> bands(WallPatternEntry entry) {
-        return entry.patterns().isEmpty() ? List.of() : entry.patterns().get(0).courses();
+        return entry.patterns().isEmpty() ? List.of() : entry.patterns().get(0).coursesOrEmpty();
     }
 
     /** A one-pattern courses slot in its authored form, which is what the codec now expects. */
     private static WallPatternEntry parse(String coursesJson) {
         JsonElement json = GSON.fromJson(
-                "{\"patterns\": [{\"type\": \"courses\", \"courses\": " + coursesJson + "}]}",
+                "{\"patterns\": [{\"type\": \"dungeons2:courses\","
+                        + " \"config\": {\"courses\": " + coursesJson + "}}]}",
                 JsonElement.class);
         return WallPatternEntry.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
     }
@@ -69,7 +75,8 @@ class WallPatternSelectorTest {
     /** As {@link #parse}, for the cases that are supposed to fail. */
     private static boolean parseFails(String coursesJson) {
         JsonElement json = GSON.fromJson(
-                "{\"patterns\": [{\"type\": \"courses\", \"courses\": " + coursesJson + "}]}",
+                "{\"patterns\": [{\"type\": \"dungeons2:courses\","
+                        + " \"config\": {\"courses\": " + coursesJson + "}}]}",
                 JsonElement.class);
         return WallPatternEntry.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent();
     }
@@ -87,9 +94,17 @@ class WallPatternSelectorTest {
         assertEquals(4, provider.plan(4, 5, Direction.SOUTH).markedCells());
     }
 
+    /**
+     * Was {@code anUnrecognizedTypeMeansPlainWall}. An unregistered type cannot reach the selector
+     * any more -- it fails at decode, naming the id and listing what IS registered, which beats a
+     * wall that silently came out plain. What this asserts instead is the one remaining way a
+     * pattern is skipped at draw time: a block that does not resolve.
+     */
     @Test
-    void anUnrecognizedTypeMeansPlainWall() {
-        assertNull(WallPatternSelector.toProvider(new WallPatternEntry("pilasters", List.of())));
+    void anUnresolvableBlockMeansPlainWall() {
+        assertNull(WallPatternSelector.toProvider(new WallPatternEntry(List.of(
+                new WallPatternEntry.PatternEntry(new PanelsWallPattern(
+                        "minecraft:not_a_real_block", 3, 3, 0, 0, CourseOrient.NONE, Map.of()))))));
     }
 
     @Test
@@ -312,15 +327,16 @@ class WallPatternSelectorTest {
 
     private static WallPatternEntry.PatternEntry strips(String type, String block, int spacing,
                                                         int projection) {
-        return new WallPatternEntry.PatternEntry(type, List.of(),
-                Optional.of(block), Optional.empty(), Optional.empty(), spacing, projection,
-                CourseOrient.NONE, Map.of(), PilastersWallPatternProvider.DEFAULT_INSET,
-                SizeGate.UNBOUNDED);
+        PilasterShape shape = new PilasterShape(block, Optional.empty(), Optional.empty(),
+                spacing, PilastersWallPatternProvider.DEFAULT_INSET, projection,
+                CourseOrient.NONE, Map.of(), Optional.empty(), Optional.empty());
+        return new WallPatternEntry.PatternEntry("end_pilasters".equals(type)
+                ? new EndPilastersWallPattern(shape) : new PilastersWallPattern(shape));
     }
 
     private static WallPatternEntry.PatternEntry band(String block) {
-        return new WallPatternEntry.PatternEntry("courses",
-                List.of(new CourseEntry(block, CourseAnchor.BOTTOM, 0)));
+        return new WallPatternEntry.PatternEntry(new CoursesWallPattern(
+                List.of(new CourseEntry(block, CourseAnchor.BOTTOM, 0))));
     }
 
     /** One pattern is handed back unwrapped, so the common case renders exactly as it always did. */
@@ -361,9 +377,9 @@ class WallPatternSelectorTest {
     @Test
     void patternsProjectingToTheSameDepthMergeInOrder() {
         WallPatternEntry entry = new WallPatternEntry(List.of(
-                new WallPatternEntry.PatternEntry("courses", List.of(new CourseEntry(
+                new WallPatternEntry.PatternEntry(new CoursesWallPattern(List.of(new CourseEntry(
                         "minecraft:andesite", Optional.empty(), Optional.empty(),
-                        CourseAnchor.BOTTOM, 0, 1, CourseOrient.NONE, Map.of()))),
+                        CourseAnchor.BOTTOM, 0, 1, CourseOrient.NONE, Map.of())))),
                 pilasters("minecraft:chiseled_stone_bricks", 4, 1)));
 
         var layers = ((IProjectingPatternProvider) WallPatternSelector.toProvider(entry))
@@ -402,12 +418,12 @@ class WallPatternSelectorTest {
      */
     @Test
     void thePlinthAndCapitalTakeTheirOwnProperties() {
-        WallPatternEntry.PatternEntry entry = new WallPatternEntry.PatternEntry("pilasters",
-                List.of(), Optional.of("minecraft:stone_brick_stairs"),
-                Optional.of("minecraft:stone_brick_stairs"), Optional.of("minecraft:stone_brick_stairs"),
-                4, 0, CourseOrient.NONE, Map.of(),
-                Optional.of(Map.of("half", "bottom")), Optional.of(Map.of("half", "top")),
-                0, SizeGate.UNBOUNDED);
+        WallPatternEntry.PatternEntry entry = new WallPatternEntry.PatternEntry(
+                new PilastersWallPattern(new PilasterShape("minecraft:stone_brick_stairs",
+                        Optional.of("minecraft:stone_brick_stairs"),
+                        Optional.of("minecraft:stone_brick_stairs"),
+                        4, 0, 0, CourseOrient.NONE, Map.of(),
+                        Optional.of(Map.of("half", "bottom")), Optional.of(Map.of("half", "top")))));
 
         SurfacePlan plan = WallPatternSelector.toProvider(new WallPatternEntry(List.of(entry)))
                 .plan(11, 5, Direction.SOUTH);
@@ -420,10 +436,10 @@ class WallPatternSelectorTest {
     /** Unauthored, both fall back to the strip's own properties -- the behaviour before the split. */
     @Test
     void anUnauthoredBaseAndCapInheritTheStripProperties() {
-        WallPatternEntry.PatternEntry entry = new WallPatternEntry.PatternEntry("pilasters",
-                List.of(), Optional.of("minecraft:stone_brick_stairs"),
-                Optional.empty(), Optional.empty(), 4, 0, CourseOrient.NONE,
-                Map.of("half", "top"), 0, SizeGate.UNBOUNDED);
+        WallPatternEntry.PatternEntry entry = new WallPatternEntry.PatternEntry(
+                new PilastersWallPattern(new PilasterShape("minecraft:stone_brick_stairs",
+                        Optional.empty(), Optional.empty(), 4, 0, 0, CourseOrient.NONE,
+                        Map.of("half", "top"), Optional.empty(), Optional.empty())));
 
         SurfacePlan plan = WallPatternSelector.toProvider(new WallPatternEntry(List.of(entry)))
                 .plan(11, 5, Direction.SOUTH);
@@ -463,7 +479,7 @@ class WallPatternSelectorTest {
     @Test
     void theLegacySingleEntryShapeFailsToDecode() {
         JsonElement json = GSON.fromJson(
-                "{\"type\": \"courses\", \"courses\": [{\"block\": \"minecraft:andesite\"}]}",
+                "{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:andesite\"}]}}",
                 JsonElement.class);
         assertTrue(WallPatternEntry.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent(),
                 "the old wall-slot shape must fail loudly, not decode to an empty slot");

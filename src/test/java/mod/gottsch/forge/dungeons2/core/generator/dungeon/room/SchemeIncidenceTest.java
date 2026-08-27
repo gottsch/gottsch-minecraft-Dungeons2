@@ -174,7 +174,7 @@ class SchemeIncidenceTest {
     private static boolean hasTopCourse(RoomScheme scheme, RoomData room) {
         return scheme.wallFor(room.getWidth(), room.getDepth(), room.getHeight())
                 .map(wall -> wall.patterns().stream()
-                        .flatMap(pattern -> pattern.courses().stream())
+                        .flatMap(pattern -> pattern.coursesOrEmpty().stream())
                         .anyMatch(course -> course.anchor() == CourseAnchor.TOP))
                 .orElse(false);
     }

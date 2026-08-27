@@ -197,7 +197,7 @@ class RoomSchemeSelectorTest {
     // ---------- per-element gates ----------
 
     private static WallPatternEntry crown(SizeGate gate) {
-        return new WallPatternEntry("courses", List.of(
+        return WallPatternEntry.ofCourses(List.of(
                 new WallPatternEntry.CourseEntry("minecraft:polished_andesite", CourseAnchor.TOP, 0)),
                 gate);
     }
@@ -293,9 +293,7 @@ class RoomSchemeSelectorTest {
     /** An inverted range is rejected at load rather than silently fitting nothing. */
     @Test
     void anInvertedElementGateIsALoadError() {
-        String json = "{\"name\": \"broken\", \"wall\": {"
-                + "\"minHeight\": 7, \"maxHeight\": 5, \"patterns\": [{\"type\": \"courses\", "
-                + "\"courses\": [{\"block\": \"minecraft:polished_andesite\"}]}]}}";
+        String json = "{\"name\": \"broken\", \"wall\": {\"minHeight\": 7, \"maxHeight\": 5, \"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\"}]}}]}}";
         var result = RoomScheme.CODEC.parse(JsonOps.INSTANCE,
                 new com.google.gson.Gson().fromJson(json, com.google.gson.JsonElement.class));
         assertTrue(result.error().isPresent(), "maxHeight below minHeight should fail to decode");
