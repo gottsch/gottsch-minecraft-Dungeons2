@@ -18,10 +18,10 @@
 package mod.gottsch.forge.dungeons2.core.loader;
 
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.Tag;
+import mod.gottsch.forge.dungeons2.core.loader.JigsawChains.Template;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -35,10 +35,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.Optional;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -66,9 +70,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * working.</strong> The templates named in the failure need re-cutting; see backlog #52 for which
  * of them can be stretched and which are monolithic.</p>
  */
+@org.junit.jupiter.api.Tag("release") // fully qualified: net.minecraft.nbt.Tag is imported below
 class TransitionSpanTest {
 
     private static final String TRANSITION_ROOT = "/data/dungeons2/structures/transitions";
+    private static final String POOL_ROOT = "/data/dungeons2/worldgen/template_pool/transitions";
 
     private static final String DOOR = "dungeons2:door";
     private static final String CONNECTOR = "dungeons2:connector";
@@ -104,7 +110,7 @@ class TransitionSpanTest {
         int pitch = pitch();
         List<String> offenders = new ArrayList<>();
         int checked = 0;
-        for (Map.Entry<String, Template> entry : templates().entrySet()) {
+        for (Map.Entry<String, Template> entry : reachable().entrySet()) {
             Template template = entry.getValue();
             if (!template.isMonolithic()) {
                 continue;
@@ -115,7 +121,11 @@ class TransitionSpanTest {
                         + " span " + template.doorSpan() + ", pitch is " + pitch);
             }
         }
-        assertTrue(checked >= 2, "expected the shipped monolithic transitions, found " + checked);
+        // No "checked >= 1" guard. ZERO monolithic transitions in a pool is a legitimate state --
+        // a motif may ship only chained ones, which is exactly where classic stands since ladder1
+        // and stairs_1 were retired for the pitch raise. Vacuity is guarded elsewhere and better:
+        // reachable() fails if no pool names anything, and theSweepFindsTheShippedTransitions fails
+        // if the markers are not being read.
         if (!offenders.isEmpty()) {
             fail(offenders.size() + " shipped transition(s) do not span the floor pitch of " + pitch
                     + ". The two floors would not connect, silently -- re-cut the template(s) or "
@@ -124,35 +134,76 @@ class TransitionSpanTest {
     }
 
     /**
-     * A chained transition stretches by repeating its middle segment, so it does not need to span
-     * the pitch in one piece &mdash; but it does need to land <em>exactly</em> on the upper plane,
-     * and it can only land on multiples of its segment rise. A pitch its segments cannot sum to is
-     * as broken as a template that is too short, and considerably less obvious.
+     * A chained transition must land <strong>exactly</strong> on the upper plane, and the only way
+     * to know is to WALK IT: follow each link's {@code target} to the template carrying that
+     * {@code name}, seat it, and add up the rise until a piece with a door plane terminates the
+     * chain.
+     *
+     * <h2>The model this replaced was wrong, and passed anyway</h2>
+     * <p>It assumed a chain <em>repeats one middle segment</em>, so it asked whether the per-segment
+     * rise divided the pitch. Neither shipped chain repeats: {@code stairs_2} is
+     * bottom&rarr;mid&rarr;top and {@code winding_stairs_1} is bottom&rarr;mid_bottom&rarr;
+     * mid_top&rarr;top, each link naming exactly one successor. The old check agreed with reality
+     * at the old pitch of 12 only because 12 happens to be a multiple of 6 &mdash; a coincidence,
+     * not a measurement. At 22 it called the correct {@code winding_stairs_1} chain broken (its
+     * last piece contributes its door offset of 4, not another full segment of 6, for 6+6+6+4=22),
+     * which is the failure mode that gets a release gate ignored.</p>
+     *
+     * <p>The walk needs no new information &mdash; the names were always in the files.</p>
      */
     @Test
-    void aChainedTransitionCanLandExactlyOnThePitch() {
+    void aChainedTransitionLandsExactlyOnThePitch() {
         int pitch = pitch();
+        Map<String, Template> shipped = reachable();
         List<String> offenders = new ArrayList<>();
         int checked = 0;
-        for (Map.Entry<String, Template> entry : templates().entrySet()) {
+        for (Map.Entry<String, Template> entry : shipped.entrySet()) {
             Template template = entry.getValue();
-            if (template.isMonolithic() || template.continuationY() == null) {
-                continue;
+            if (template.isMonolithic() || template.outgoing() == null
+                    || template.doorYs().isEmpty()) {
+                continue; // not an ENTRY piece: no door plane to start from, or nothing to follow
             }
             checked++;
-            int rise = template.continuationY() + JIGSAW_JOIN_OFFSET;
-            if (pitch % rise != 0) {
-                offenders.add(entry.getKey() + ": rises " + rise + " per segment ("
-                        + template.continuationY() + " by marker + " + JIGSAW_JOIN_OFFSET
-                        + " for the join), which does not divide the pitch of " + pitch
-                        + " -- the chain would stop " + (pitch % rise) + " block(s) off the plane");
-            }
+            walk(entry.getKey(), template, shipped, pitch).ifPresent(offenders::add);
         }
         assertTrue(checked >= 1, "expected at least one chained transition, found " + checked);
         if (!offenders.isEmpty()) {
-            fail(offenders.size() + " chained transition(s) cannot land on the floor pitch of "
+            fail(offenders.size() + " chained transition(s) do not land on the floor pitch of "
                     + pitch + ":\n  " + String.join("\n  ", offenders));
         }
+    }
+
+    /**
+     * Follows one chain from its entry piece, returning a complaint or empty if it lands.
+     *
+     * <p>The walking is {@code JigsawChains}'; what belongs here is the terminal question, which is
+     * the half that differs between the two gates. A transition must span the pitch EXACTLY,
+     * because both planes it joins are already fixed; an entrance only has to drop far enough
+     * &mdash; see {@code EntranceSpanTest}.</p>
+     */
+    private static Optional<String> walk(String name, Template entry,
+                                         Map<String, Template> shipped, int pitch) {
+        int entryDoorY = entry.doorYs().get(0);
+        List<String> problems = new ArrayList<>();
+        for (JigsawChains.Walk walk : JigsawChains.walk(name, shipped)) {
+            if (walk.failed()) {
+                problems.add(walk.trail() + ": " + walk.failure());
+                continue;
+            }
+            if (walk.end().doorYs().isEmpty()) {
+                problems.add(walk.trail() + ": ends at " + walk.endName() + ", which carries no"
+                        + " door plane -- the chain arrives nowhere");
+                continue;
+            }
+            int landed = walk.endOriginY() + walk.end().doorYs().get(0) - entryDoorY;
+            if (landed != pitch) {
+                problems.add(walk.trail() + ": lands " + landed + " above its own door plane, but"
+                        + " the pitch is " + pitch + " -- it stops " + Math.abs(pitch - landed)
+                        + " block(s) " + (landed < pitch ? "short of" : "past") + " the floor above");
+            }
+        }
+        return problems.isEmpty() ? Optional.empty()
+                : Optional.of(String.join("\n  ", problems));
     }
 
     /**
@@ -163,7 +214,7 @@ class TransitionSpanTest {
     @Test
     void everyTransitionEitherSpansOrContinues() {
         List<String> orphans = new ArrayList<>();
-        for (Map.Entry<String, Template> entry : templates().entrySet()) {
+        for (Map.Entry<String, Template> entry : reachable().entrySet()) {
             Template template = entry.getValue();
             if (!template.isMonolithic() && template.continuationY() == null
                     && template.doorYs().isEmpty()) {
@@ -193,80 +244,24 @@ class TransitionSpanTest {
     void report() {
         int pitch = pitch();
         System.out.println("=== #52 transition spans, planner pitch " + pitch + " ===");
+        Map<String, Template> shipped = reachable();
         templates().forEach((name, t) -> System.out.println("  " + name
+                + (shipped.containsKey(name) ? "" : "  [RETIRED -- in no pool]")
                 + "  doorY=" + t.doorYs()
                 + (t.isMonolithic() ? "  span=" + t.doorSpan() : "")
                 + (t.continuationY() != null ? "  continues at Y=" + t.continuationY() : "")));
     }
 
-    // ---------- reading the binary templates ----------
-
-    /**
-     * One template's vertical marker geometry. {@code doorYs} holds the distinct Y planes carrying a
-     * {@code dungeons2:door} <em>or</em> {@code dungeons2:connector} marker: the chain's ends use
-     * connectors (its doors are prebuilt), the monolithic ones use doors, and both are a floor
-     * plane as far as reaching is concerned.
-     */
-    private record Template(List<Integer> doorYs, Integer continuationY) {
-        boolean isMonolithic() {
-            return doorYs.size() >= 2;
-        }
-
-        int doorSpan() {
-            return doorYs.get(doorYs.size() - 1) - doorYs.get(0);
-        }
-    }
+    // ---------- what ships ----------
 
     private static Map<String, Template> templates() {
-        Map<String, Template> out = new LinkedHashMap<>();
-        for (Path file : transitionFiles()) {
-            CompoundTag root = read(file);
-            List<Integer> planes = new ArrayList<>();
-            Integer continuation = null;
-            ListTag blocks = root.getList("blocks", Tag.TAG_COMPOUND);
-            for (int i = 0; i < blocks.size(); i++) {
-                CompoundTag block = blocks.getCompound(i);
-                if (!block.contains("nbt", Tag.TAG_COMPOUND)) {
-                    continue;
-                }
-                String name = block.getCompound("nbt").getString("name");
-                int y = block.getList("pos", Tag.TAG_INT).getInt(1);
-                if (DOOR.equals(name) || CONNECTOR.equals(name)) {
-                    if (!planes.contains(y)) {
-                        planes.add(y);
-                    }
-                } else if (!block.getCompound("nbt").getString("pool").isEmpty()
-                        && !"minecraft:empty".equals(block.getCompound("nbt").getString("pool"))) {
-                    // A jigsaw naming a real continuation pool is what makes this a chain link.
-                    continuation = continuation == null ? y : Math.max(continuation, y);
-                }
-            }
-            planes.sort(Integer::compareTo);
-            out.put(file.getFileName().toString(), new Template(planes, continuation));
-        }
-        return out;
+        return JigsawChains.templates(TRANSITION_ROOT);
     }
 
-    private static CompoundTag read(Path file) {
-        try (InputStream in = Files.newInputStream(file)) {
-            return NbtIo.readCompressed(in);
-        } catch (IOException unreadable) {
-            throw new UncheckedIOException("could not read template " + file, unreadable);
-        }
-    }
-
-    private static List<Path> transitionFiles() {
-        URL url = TransitionSpanTest.class.getResource(TRANSITION_ROOT);
-        if (url == null) {
-            return fail("no shipped transitions at " + TRANSITION_ROOT);
-        }
-        try (Stream<Path> paths = Files.walk(Paths.get(url.toURI()))) {
-            return paths.filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().endsWith(".nbt"))
-                    .sorted()
-                    .toList();
-        } catch (IOException | URISyntaxException unreadable) {
-            return fail("could not walk " + TRANSITION_ROOT + ": " + unreadable);
-        }
+    /** See {@code JigsawChains#reachable}: the gate judges what ships IN PLAY, not what is on disk. */
+    private static Map<String, Template> reachable() {
+        Map<String, Template> shipped = JigsawChains.reachable(templates(), POOL_ROOT);
+        assertFalse(shipped.isEmpty(), "no transition template pool named any element");
+        return shipped;
     }
 }

@@ -1,21 +1,55 @@
 {
   "_comment": [
     "READ BEFORE CHANGING floorHeight OR gapBetweenFloors.",
-    "Their sum is the floor-to-floor PITCH (10 + 2 = 12), which is the exact distance every",
-    "entrance and transition template Dungeons2 ships was cut for. Change the pitch and you must",
-    "author your own: stairs_1 and ladder1 carry their two door markers 12 apart and cannot be",
+    "Their sum is the floor-to-floor PITCH, now 20 + 2 = 22 (Gottsch, 2026-08-27, backlog #29",
+    "stage 2). The pitch is the exact distance every entrance and transition template has to span.",
+    "",
+    "THE SHIPPED TEMPLATES DO NOT SPAN 22 YET. They are cut for the old pitch of 12, and they are",
+    "being re-authored: stairs_1 and ladder1 carry their two door markers 12 apart and cannot be",
     "stretched, the stairs_2 chain only lands on multiples of 6, and the entrance's bottom door",
-    "marker DEFINES floor 0's walking plane, so a taller floor puts floor 0's ceiling above the",
-    "entrance chamber's own. Nothing here is a tuning knob you can turn and walk away from.",
+    "marker DEFINES floor 0's walking plane. Until the new ones land, a generated dungeon has",
+    "transitions that stop short -- expected, and the reason TransitionSpanTest is now a release",
+    "gate (./gradlew releaseCheck) rather than part of `test`.",
+    "",
     "Watch the log for [D2-PITCH] and [D2-SPAN]. Every other field in this file is safe to tune."
   ],
 
   "corridorWidth": 3,
   "roomTemplateAttemptsPerFloor": 4,
 
-  "floorHeight": 10,
+  "floorHeight": 20,
   "gapBetweenFloors": 2,
 
+  "//sinkOffset": [
+    "How far the walking plane sits UP into its own floor's slab -- the depth a sunken pit has to",
+    "sink into (backlog #3). SHIPPED AT 0, which makes the whole mechanism arithmetically absent.",
+    "",
+    "It is bought from the CEILING, not from the descent. A floor owns exactly floorHeight blocks",
+    "either way; sinkOffset just moves the boundary inside that budget, leaving",
+    "floorHeight - sinkOffset above the walking plane and sinkOffset below it. So the floor-to-floor",
+    "pitch does NOT move and no transition template has to be re-cut to allow pits -- which is the",
+    "whole reason pits are separable from the floorHeight raise rather than blocked behind it.",
+    "",
+    "5 as of 2026-08-27, bought by raising floorHeight to 20: a 15-block ceiling budget for",
+    "authored rooms, 5 for pits, and a",
+    "transition drop of 22. It trades one-for-one against room height, so raising this without",
+    "raising floorHeight takes the height straight back out of the rooms; the file fails to load if",
+    "it leaves less headroom than a roomHeightBand asks for."
+  ],
+  "sinkOffset": 5,
+
+  "//roomHeightBands": [
+    "UNCHANGED by the floorHeight raise, deliberately (Gottsch, 2026-08-27). The 15-block ceiling",
+    "budget is headroom for AUTHORED rooms -- a template may be cut 15 high and now fits. A",
+    "PROCEDURAL room stays capped at 10: a tall empty box is a worse room than a short one, and",
+    "what makes height worth having is content, which a template has and a rolled room does not.",
+    "The slack above a procedural room costs nothing -- unused floor height is unexcavated stone,",
+    "not empty volume, and is invisible in play.",
+    "",
+    "The taper itself is #51: the ceiling FALLS as the footprint grows, so a 7x7 may be a shaft",
+    "and a 19x19 may not be a box. No band may ask for more than floorHeight - sinkOffset, or the",
+    "file fails to load."
+  ],
   "roomHeightBands": [
     { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10 },
     { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 },

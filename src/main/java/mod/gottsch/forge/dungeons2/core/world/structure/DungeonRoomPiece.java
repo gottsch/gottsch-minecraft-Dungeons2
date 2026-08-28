@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
@@ -56,8 +57,18 @@ public class DungeonRoomPiece extends DungeonPiece {
 
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
                             int anchorX, int anchorZ) {
+        this(room, motifValue, floorY, floorIndex, anchorX, anchorZ, 0);
+    }
+
+    /**
+     * @param sinkOffset the floor's budget BELOW its walking plane (#29), which the box has to
+     *                   cover whether or not this room's scheme digs a pit into it &mdash; see
+     *                   {@link #computeBox}
+     */
+    public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
+                            int anchorX, int anchorZ, int sinkOffset) {
         super(StructurePieces.ROOM, motifValue, floorY, floorIndex, anchorX, anchorZ,
-                computeBox(room, floorY, anchorX, anchorZ));
+                computeBox(room, floorY, anchorX, anchorZ, sinkOffset));
         this.room = room;
     }
 
@@ -67,15 +78,31 @@ public class DungeonRoomPiece extends DungeonPiece {
     }
 
     /**
-     * World bounding box: the room footprint with a 1-cell XZ margin for walls,
-     * and Y from the floor plane up through the room's height.
+     * World bounding box: the room footprint with a 1-cell XZ margin for walls, and Y from the
+     * floor plane up through the room's height &mdash; extended DOWNWARD by {@code sinkOffset}.
+     *
+     * <h2>Why the sink is unconditional and the pit's actual depth is not consulted</h2>
+     * <p>The box is computed at CONSTRUCTION, and a room's {@code pit} slot is not known then: the
+     * scheme is rolled at render time, per piece, from a piece-stable seed. So the box cannot be
+     * sized to the pit &mdash; it is sized to the floor's <em>budget</em> below its walking plane,
+     * which is a property of the floor and is the same for every room on it.</p>
+     *
+     * <p>That is the right bound anyway. {@code sinkOffset} is exactly how far a pit may ever be
+     * dug ({@code PitPatternEntry#depthWithin} clamps to it), so a box covering the budget covers
+     * every pit that could ever be authored into this room, and a pit can never fall outside its
+     * own piece. With the shipped {@code sinkOffset} of 0 the box is what it always was.</p>
+     *
+     * <p>It matters beyond block writes: the box is what {@code spawn_overrides} with
+     * {@code bounding_box: piece} tests against, so a mob standing at the bottom of a pit needs the
+     * pit inside it to count as being in the dungeon at all.</p>
      */
-    private static BoundingBox computeBox(RoomData room, int floorY, int anchorX, int anchorZ) {
+    private static BoundingBox computeBox(RoomData room, int floorY, int anchorX, int anchorZ,
+                                          int sinkOffset) {
         int minX = anchorX + room.getOriginX() - 1;
         int minZ = anchorZ + room.getOriginZ() - 1;
         int maxX = anchorX + room.getOriginX() + room.getWidth();
         int maxZ = anchorZ + room.getOriginZ() + room.getDepth();
-        int minY = floorY;
+        int minY = floorY - Math.max(0, sinkOffset);
         int maxY = floorY + Math.max(1, room.getHeight()) - 1;
         return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
@@ -98,9 +125,13 @@ public class DungeonRoomPiece extends DungeonPiece {
         // projection has no band left to name. Same reason DungeonStructure asks it of the motif.
         Optional<String> stratum = motif.stratumNameFor(floorIndex);
         MotifConfig motifConfig = motif.forFloor(floorIndex);
+        // #3: how far this floor was sunk below its walking plane, which is the hard cap on any
+        // pit a scheme may dig. Read here rather than serialised -- it is a datapack value and a
+        // reload should move it.
+        int sinkOffset = DungeonGenerationConfigHelper.get(level.registryAccess()).sinkOffset();
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
-        RoomPlacements placements = renderRoom(motifConfig);
+        RoomPlacements placements = renderRoom(motifConfig, sinkOffset);
         safePlaceAll(level, box, stratum, placements::getBlocks);
         // Entities are spawned separately and clipped to the chunk box -- unlike blocks they are
         // not idempotent across the per-chunk postProcess re-runs. See DungeonPiece#placeEntities.
@@ -124,8 +155,13 @@ public class DungeonRoomPiece extends DungeonPiece {
      * {@code DungeonPiece#placeEntities}).
      */
     public RoomPlacements renderRoom(MotifConfig motifConfig) {
+        return renderRoom(motifConfig, 0);
+    }
+
+    /** As above, on a floor sunk {@code sinkOffset} below its walking plane (#3/#29). */
+    public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset) {
         RoomPlacements out = new RoomPlacements();
-        new BasicRoomGenerator().withMotifConfig(motifConfig)
+        new BasicRoomGenerator().withMotifConfig(motifConfig).withSinkOffset(sinkOffset)
                 .build(room, floorY, floorIndex, motif(), deterministicRandom(room.getId()), out);
         return out;
     }

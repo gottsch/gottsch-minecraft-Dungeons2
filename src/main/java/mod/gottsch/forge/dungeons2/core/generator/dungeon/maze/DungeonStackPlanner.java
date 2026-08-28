@@ -99,6 +99,7 @@ public class DungeonStackPlanner {
     private static final int DEFAULT_FLOOR_HEIGHT = DungeonGenerationConfig.DEFAULT_FLOOR_HEIGHT;
     private static final int DEFAULT_GAP_BETWEEN_FLOORS =
             DungeonGenerationConfig.DEFAULT_GAP_BETWEEN_FLOORS;
+    private static final int DEFAULT_SINK_OFFSET = DungeonGenerationConfig.DEFAULT_SINK_OFFSET;
     private static final int DEFAULT_ENTRANCE_DROP = 12;
     /** Max attempts to place a START/END room within a footprint without overlap. */
     private static final int PLACEMENT_ATTEMPTS = 20;
@@ -128,6 +129,10 @@ public class DungeonStackPlanner {
     private Integer forcedFloorCount;
     private int floorHeight = DEFAULT_FLOOR_HEIGHT;
     private int gapBetweenFloors = DEFAULT_GAP_BETWEEN_FLOORS;
+    // DEFAULT_SINK_OFFSET, not 0 -- the same reason floorHeight and gapBetweenFloors take theirs
+    // from the config's constants. A planner built without a config (the probes, the floor-plan
+    // exporter, most tests) must measure the dungeon that SHIPS, not a differently-shaped one.
+    private int sinkOffset = DEFAULT_SINK_OFFSET;
     private int entranceDrop = DEFAULT_ENTRANCE_DROP;
     private int minBuildY = DEFAULT_MIN_BUILD_Y;
     /**
@@ -223,6 +228,29 @@ public class DungeonStackPlanner {
     public DungeonStackPlanner withGapBetweenFloors(int gap) {
         this.gapBetweenFloors = gap;
         return this;
+    }
+
+    /**
+     * How far the walking plane sits up into its own floor slab &mdash; the depth a pit has to sink
+     * into (#3). See {@code DungeonGenerationConfig#DEFAULT_SINK_OFFSET}; 0 makes it arithmetically
+     * absent.
+     */
+    public DungeonStackPlanner withSinkOffset(int sinkOffset) {
+        this.sinkOffset = Math.max(0, sinkOffset);
+        return this;
+    }
+
+    /**
+     * The budget ABOVE a walking plane, which is what a room's height is really bounded by:
+     * {@code floorHeight - sinkOffset}.
+     *
+     * <p>Equal to {@link #floorHeight} until a pack sinks its floors. Everything that used to read
+     * {@code floorHeight} to place a CEILING reads this instead; {@link #pitch}, which is about the
+     * descent, deliberately still reads {@code floorHeight} &mdash; that is the whole reason pit
+     * depth is free.</p>
+     */
+    public int ceilingBudget() {
+        return floorHeight - sinkOffset;
     }
 
     /**
@@ -764,7 +792,7 @@ public class DungeonStackPlanner {
             // The door markers' Y is floor 0's walking plane; ceiling is one
             // floor-height above it. Lower floors still stack downward below.
             floorFloors[0] = assembledFloor0Y;
-            floorCeilings[0] = floorFloors[0] + floorHeight - 1;
+            floorCeilings[0] = floorFloors[0] + ceilingBudget() - 1;
         } else {
             TemplateEntry entranceTemplate = catalog.pick(
                     TemplateCatalog.Category.ENTRANCE, motifValue, size, random);
@@ -773,7 +801,7 @@ public class DungeonStackPlanner {
             int entranceHeight = entranceTemplate != null ? entranceTemplate.getHeight() : entranceDrop;
 
             floorCeilings[0] = surfaceY - entranceHeight;
-            floorFloors[0] = floorCeilings[0] - floorHeight + 1;
+            floorFloors[0] = floorCeilings[0] - ceilingBudget() + 1;
 
             // Place the entrance footprint centered on floor 0.
             entranceLocalFootprint = centerWithin(
@@ -831,8 +859,12 @@ public class DungeonStackPlanner {
         }
 
         for (int i = 1; i < floorCount; i++) {
-            floorCeilings[i] = floorFloors[i - 1] - gapBetweenFloors - 1;
-            floorFloors[i] = floorCeilings[i] - floorHeight + 1;
+            // THE BUFFER IS MEASURED FROM THE PIT BOTTOM, not from the walking plane. Floor i-1
+            // owns everything down to floorFloors[i-1] - sinkOffset, so starting the gap at the
+            // walking plane would let a pit eat the stone buffer and, at sinkOffset > gap, open
+            // into the ceiling below. With sinkOffset 0 this is the arithmetic it always was.
+            floorCeilings[i] = floorFloors[i - 1] - sinkOffset - gapBetweenFloors - 1;
+            floorFloors[i] = floorCeilings[i] - ceilingBudget() + 1;
         }
 
         // Resolve transitions up front for floors 0..N-2 (each link). A transition's
@@ -1865,8 +1897,24 @@ public class DungeonStackPlanner {
      * existing world.</p>
      */
     private int pickRoomHeight(Random random, int width, int depth) {
+        // 5..10, and it deliberately does NOT reach the floor's ceiling budget (Gottsch,
+        // 2026-08-27). Raising floorHeight to 20 bought 15 blocks of headroom, and that headroom
+        // is for AUTHORED rooms -- a template can be cut 15 high and now fits. A PROCEDURAL room
+        // stays capped at 10: a tall box with nothing in it is a worse room than a short one, and
+        // the thing that makes height worth having is content, which a template has and a rolled
+        // room does not.
+        //
+        // So the budget is a ceiling this roll never approaches, and the slack above a procedural
+        // room costs nothing -- unused floor height is unexcavated stone, not empty volume, and is
+        // invisible in play.
         int rolled = 5 + random.nextInt(6); // 5..10 inclusive
-        return RoomHeightBand.forLongSide(roomHeightBands, Math.max(width, depth)).clamp(rolled);
+        int banded = RoomHeightBand.forLongSide(roomHeightBands, Math.max(width, depth)).clamp(rolled);
+        // #29 stage 1: A ROOM IS NEVER TALLER THAN THE FLOOR HOLDING IT. Until now that held by
+        // coincidence -- DEFAULT_FLOOR_HEIGHT and this roll's maximum are both 10, and nothing
+        // asserted the invariant they encode. A room over budget puts its ceiling through
+        // gapBetweenFloors and into the floor above, which is silent until someone walks into it.
+        // Clamping (not re-rolling) keeps the stream identical, exactly as the band clamp does.
+        return Math.min(banded, ceilingBudget());
     }
 
     private void computeBoundingBox(DungeonLayout layout) {

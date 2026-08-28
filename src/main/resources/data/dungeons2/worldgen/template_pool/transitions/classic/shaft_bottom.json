@@ -1,29 +1,26 @@
 {
+  "//": [
+    "The transition ENTRY pool: the piece the planner places at the bottom of a floor-to-floor",
+    "link. Everything after it is attached by jigsaw from the chain's own continuation pool.",
+    "",
+    "REDUCED TO ONE ENTRY on 2026-08-27 (Gottsch). ladder1, stairs_1 and stairs_2_bottom were all",
+    "cut for the old pitch of 12 and cannot reach the new 22 -- ladder1 and stairs_1 carry their",
+    "door markers exactly 12 apart and cannot be stretched, and the stairs_2 chain rises 6 per",
+    "segment, which does not divide 22. Their .nbt files are still shipped and are still named by",
+    "TransitionSpanTest (./gradlew releaseCheck) until they are re-cut or deleted; taking them out",
+    "of this pool is what stops them being CHOSEN in the meantime.",
+    "",
+    "ONE ENTRY IS A SINGLE POINT OF FAILURE. Every floor-to-floor link in every dungeon now uses",
+    "winding_stairs_1, so a fault in that chain is a fault in every dungeon rather than in a third",
+    "of them. Worth restoring variety as soon as a second chain is cut for 22."
+  ],
   "name": "dungeons2:transitions/classic/shaft_bottom",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/classic/ladder1",
-        "processors": "dungeons2:classic_weathering",
-        "projection": "rigid"
-      },
-      "weight": 1
-    },
-    {
-      "element": {
-        "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/classic/stairs_1",
-        "processors": "dungeons2:classic_weathering",
-        "projection": "rigid"
-      },
-      "weight": 1
-    },
-    {
-      "element": {
-        "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:transitions/classic/stairs_2_bottom",
+        "location": "dungeons2:transitions/classic/winding_stairs_bottom_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },

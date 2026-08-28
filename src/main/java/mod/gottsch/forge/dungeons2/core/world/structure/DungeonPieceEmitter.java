@@ -68,7 +68,14 @@ public final class DungeonPieceEmitter {
      * emitter's own tests &mdash; and must stay equal to the two halves concatenated.</p>
      */
     public static List<StructurePiece> emit(DungeonLayout layout, int anchorX, int anchorZ) {
-        List<StructurePiece> pieces = new ArrayList<>(emitTerrain(layout, anchorX, anchorZ));
+        return emit(layout, anchorX, anchorZ, 0);
+    }
+
+    /** As above, on floors sunk {@code sinkOffset} below their walking planes (#3/#29). */
+    public static List<StructurePiece> emit(DungeonLayout layout, int anchorX, int anchorZ,
+                                            int sinkOffset) {
+        List<StructurePiece> pieces =
+                new ArrayList<>(emitTerrain(layout, anchorX, anchorZ, sinkOffset));
         pieces.addAll(emitDoors(layout, anchorX, anchorZ));
         return pieces;
     }
@@ -81,6 +88,18 @@ public final class DungeonPieceEmitter {
      * for different reasons: see {@link #emitDoors}.</p>
      */
     public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ) {
+        return emitTerrain(layout, anchorX, anchorZ, 0);
+    }
+
+    /**
+     * As above, on floors sunk {@code sinkOffset} below their walking planes.
+     *
+     * <p>Only the room pieces care: it widens their bounding box downward so a pit cannot fall
+     * outside its own piece. Corridors have no pit slot, and a corridor floor is the walking plane
+     * itself.</p>
+     */
+    public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
+                                                   int sinkOffset) {
         List<StructurePiece> pieces = new ArrayList<>();
         String motif = layout.getMotifValue();
 
@@ -117,7 +136,8 @@ public final class DungeonPieceEmitter {
                 // A NORMAL room that got a Phase 8 jigsaw-assembled prefab instead of a
                 // procedural build (templateId non-null) is skipped for the same reason.
                 if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
-                    pieces.add(new DungeonRoomPiece(room, motif, floorY, floorIndex, anchorX, anchorZ));
+                    pieces.add(new DungeonRoomPiece(room, motif, floorY, floorIndex, anchorX,
+                            anchorZ, sinkOffset));
                 }
             }
         }

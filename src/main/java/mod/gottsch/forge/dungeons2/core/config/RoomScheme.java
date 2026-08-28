@@ -139,8 +139,23 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                          Optional<PlatformPatternEntry> platforms,
                          Optional<SpawnerConfig> spawners,
                          Optional<ChestConfig> chests,
+                         Optional<PitPatternEntry> pit,
                          FloorRange floors,
                          Optional<String> parent, boolean isAbstract) {
+
+    /** The shape before the {@code pit} slot (#3): a scheme whose floor is flat everywhere. */
+    public RoomScheme(String name, int weight, SizeGate gate,
+                      Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
+                      Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
+                      Optional<PillarPatternEntry> pillars,
+                      Optional<PlatformPatternEntry> platforms,
+                      Optional<SpawnerConfig> spawners,
+                      Optional<ChestConfig> chests,
+                      FloorRange floors,
+                      Optional<String> parent, boolean isAbstract) {
+        this(name, weight, gate, floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
+                Optional.empty(), floors, parent, isAbstract);
+    }
 
     /**
      * The scheme's own eligibility range, folded into a {@link SizeGate} when the {@code chests}
@@ -187,7 +202,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                       Optional<String> parent, boolean isAbstract) {
         this(name, weight, new SizeGate(minHeight, minSize, maxHeight, maxSize),
                 floor, wall, ceiling, pots, pillars, platforms, spawners, Optional.empty(),
-                floors, parent, isAbstract);
+                Optional.empty(), floors, parent, isAbstract);
     }
 
     /** The entrance-floor index; 0, and named so the arithmetic in a gate reads as depth. */
@@ -268,6 +283,10 @@ public record RoomScheme(String name, int weight, SizeGate gate,
             Codecs.strictOptionalFieldOf(PlatformPatternEntry.CODEC, "platforms").forGetter(RoomScheme::platforms),
             Codecs.strictOptionalFieldOf(SpawnerConfig.CODEC, "spawners").forGetter(RoomScheme::spawners),
             Codecs.strictOptionalFieldOf(ChestConfig.CODEC, "chests").forGetter(RoomScheme::chests),
+            // #3. Sits beside the surface slots rather than inside `floor` because it is not a
+            // paving pattern: it changes the room's GEOMETRY, and it is bounded by the floor's
+            // sinkOffset budget rather than by anything a floor pattern knows.
+            Codecs.strictOptionalFieldOf(PitPatternEntry.CODEC, "pit").forGetter(RoomScheme::pit),
             // The depth axis, flattened into minFloorIndex/maxFloorIndex keys. Spelled that way
             // rather than minFloor/minDepth because a scheme object already has a "floor" key
             // meaning the floor SURFACE pattern, and two unrelated senses of "floor" one line apart
@@ -317,6 +336,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                 platforms.or(parentScheme::platforms),
                 spawners.or(parentScheme::spawners),
                 chests.or(parentScheme::chests),
+                pit.or(parentScheme::pit),
                 floors,
                 parent, isAbstract);
     }
@@ -400,6 +420,15 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         return ceiling.filter(entry -> entry.gate().fits(width, depth, height));
     }
 
+    /**
+     * See {@link #floorFor}. Note this answers only whether the ROOM may have a pit; whether the
+     * floor has anywhere to put one is {@code PitPatternEntry#depthWithin}, and it is asked later
+     * because {@code sinkOffset} lives in a different datapack registry.
+     */
+    public Optional<PitPatternEntry> pitFor(int width, int depth, int height) {
+        return pit.filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
     /** See {@link #floorFor}. */
     public Optional<PotConfig> potsFor(int width, int depth, int height) {
         return pots.filter(entry -> entry.gate().fits(width, depth, height));
@@ -436,7 +465,8 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         // this asks is whether the author declared anything, and a spawner slot that gated itself
         // out is exactly as much a fault as a ceiling that did.
         return floor.isPresent() || wall.isPresent() || ceiling.isPresent() || pots.isPresent()
-                || pillars.isPresent() || platforms.isPresent() || spawners.isPresent();
+                || pillars.isPresent() || platforms.isPresent() || spawners.isPresent()
+                || pit.isPresent();
     }
 
     /** Whether this scheme draws anything at all in a room of these dimensions. */
@@ -447,7 +477,8 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                 || potsFor(width, depth, height).isPresent()
                 || pillarsFor(width, depth, height).isPresent()
                 || platformsFor(width, depth, height).isPresent()
-                || spawnersFor(width, depth, height).isPresent();
+                || spawnersFor(width, depth, height).isPresent()
+                || pitFor(width, depth, height).isPresent();
     }
 
     /**

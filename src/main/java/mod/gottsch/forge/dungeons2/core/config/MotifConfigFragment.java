@@ -21,10 +21,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -207,10 +209,72 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             }
         }
 
-        List<RoomScheme> rolled = inherit(schemes, problems);
+        // A motif-level fault -- a typo'd parent in base.json -- is reached by the motif's own
+        // inheritance pass AND by every band's, since a band resolves its parents against the same
+        // map. Reporting it once per band would say nothing new, so the passes share a filter.
+        Set<String> reported = new HashSet<>();
+        List<RoomScheme> rolled = inherit(schemes, problem -> {
+            if (reported.add(problem)) {
+                problems.accept(problem);
+            }
+        });
         return new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
-                Map.copyOf(templateLimits), strata);
+                Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems));
+    }
+
+    /**
+     * Resolves each band's own {@code schemes} the same way the motif's were, writing the result
+     * back onto the band. See {@link Stratum} for why a band's list needs this and why it cannot
+     * happen in {@code Stratum.CODEC}.
+     *
+     * <p>A band's parents resolve against {@code declared} &mdash; the <strong>motif-wide</strong>
+     * map, pre-inheritance, so the abstract templates are still in it &mdash; overlaid with the
+     * band's own entries. Overlaying matters: a band may declare a scheme that shadows a motif one
+     * <em>and</em> another that extends the shadowing version, and the parent it names should be
+     * the one at this depth. Only the band's own entries come back; the merge onto the motif's
+     * rolled list happens later, in {@link MotifConfig#forFloor}, so that it holds for a
+     * {@code MotifConfig} built by hand as well as for one that came through here.
+     *
+     * <p>Problems are reported once, filtered through the {@code reported} set the motif's own
+     * pass populated: a typo'd parent in {@code base.json} is reached by every band as well, and
+     * repeating it per band would say nothing new. Anything genuinely new is prefixed with the band
+     * it came from.
+     */
+    private static List<Stratum> inheritBandSchemes(List<Stratum> strata,
+                                                    Map<String, RoomScheme> declared,
+                                                    Set<String> reported,
+                                                    Consumer<String> problems) {
+        if (strata.isEmpty()) {
+            return strata;
+        }
+        List<Stratum> resolved = new ArrayList<>(strata.size());
+        for (Stratum stratum : strata) {
+            Optional<List<RoomScheme>> band = stratum.schemes();
+            if (band.isEmpty()) {
+                resolved.add(stratum);
+                continue;
+            }
+            Map<String, RoomScheme> parents = new LinkedHashMap<>(declared);
+            Map<String, RoomScheme> own = new LinkedHashMap<>();
+            for (RoomScheme scheme : band.get()) {
+                parents.put(scheme.name(), scheme);
+                own.put(scheme.name(), scheme);
+            }
+            // inherit over the FULL map, then keep only what this band declared: a parent that
+            // lives in the motif must be findable, but must not start rolling at this depth
+            // because a band extended it.
+            List<RoomScheme> inherited = inherit(parents, problem -> {
+                        // Filtered on the RAW message, before the band prefix -- otherwise the
+                        // prefix makes every band's copy of a motif fault a different string.
+                        if (reported.add(problem)) {
+                            problems.accept("stratum at floor " + stratum.minFloorIndex() + ": " + problem);
+                        }
+                    })
+                    .stream().filter(scheme -> own.containsKey(scheme.name())).toList();
+            resolved.add(stratum.withSchemes(inherited));
+        }
+        return List.copyOf(resolved);
     }
 
     /**

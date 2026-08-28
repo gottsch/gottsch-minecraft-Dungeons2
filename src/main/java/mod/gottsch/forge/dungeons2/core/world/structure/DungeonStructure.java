@@ -603,6 +603,7 @@ public class DungeonStructure extends Structure {
         // The floor-to-floor pitch. Set BEFORE the height bands below, which are checked against it.
         planner.withFloorHeight(generationConfig.floorHeight());
         planner.withGapBetweenFloors(generationConfig.gapBetweenFloors());
+        planner.withSinkOffset(generationConfig.sinkOffset());
         warnIfPitchIsNotTheShippedOne(generationConfig);
         // #51: the room-height taper, clamped into whatever vertical budget the pitch above leaves.
         // Clamped rather than rejected -- see clampToBudget.
@@ -700,7 +701,8 @@ public class DungeonStructure extends Structure {
                 // question entirely -- they never get a door piece, because the template already
                 // has a real built door there.)
                 List<StructurePiece> allPieces =
-                        new ArrayList<>(DungeonPieceEmitter.emitTerrain(layout, emitAnchorX, emitAnchorZ));
+                        new ArrayList<>(DungeonPieceEmitter.emitTerrain(layout, emitAnchorX, emitAnchorZ,
+                                generationConfig.sinkOffset()));
                 allPieces.addAll(entrancePieces);
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));

@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -172,28 +173,6 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     }
 
     /**
-     * This motif as it is built on {@code floorIndex}: the element sections swapped for the
-     * covering stratum's, everything else untouched. Backlog #45.
-     *
-     * <p><strong>A motif with no strata returns itself</strong> &mdash; not a copy, the same
-     * instance &mdash; which is what makes this safe to call unconditionally from every piece. That
-     * is also the guarantee that every dungeon in every existing world renders byte-identically:
-     * nothing ships a stratum, so nothing changes until an author writes one.
-     *
-     * <p>Sections the band does not declare fall through to this config's own; see {@link Stratum}.
-     * The projection is a pure function of (motif, floorIndex) and both are in hand where a piece
-     * renders, so it happens at <strong>build</strong> time. Resolving at plan time would buy
-     * nothing and would add a field to serialise.
-     *
-     * <p>The result carries an <strong>empty</strong> strata table, so a projection cannot be
-     * projected again. That is deliberate rather than tidy: re-projecting a floor-0 config onto
-     * floor 3 would resolve floor 3's undeclared sections against floor 0's <em>banded</em>
-     * sections instead of the motif's base, silently. Making the second call a no-op removes the
-     * question.
-     *
-     * @param floorIndex 0 at the entrance, counting downward
-     */
-    /**
      * The name of the stratum covering {@code floorIndex}, when it has one. Backlog #45 step 3.
      *
      * <p>This is the segment that opts a depth into its own template pools:
@@ -210,6 +189,30 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         return Stratum.forFloor(strataByFloorIndex, floorIndex).flatMap(Stratum::name);
     }
 
+    /**
+     * This motif as it is built on {@code floorIndex}: the element sections swapped for the
+     * covering stratum's, everything else untouched. Backlog #45.
+     *
+     * <p><strong>A motif with no strata returns itself</strong> &mdash; not a copy, the same
+     * instance &mdash; which is what makes this safe to call unconditionally from every piece. That
+     * is also the guarantee that every dungeon in every existing world renders byte-identically:
+     * nothing ships a stratum, so nothing changes until an author writes one.
+     *
+     * <p>Sections the band does not declare fall through to this config's own; see {@link Stratum}.
+     * {@code schemes} is the exception and does not replace at all &mdash; it merges by name, via
+     * {@link #mergeSchemes}.
+     * The projection is a pure function of (motif, floorIndex) and both are in hand where a piece
+     * renders, so it happens at <strong>build</strong> time. Resolving at plan time would buy
+     * nothing and would add a field to serialise.
+     *
+     * <p>The result carries an <strong>empty</strong> strata table, so a projection cannot be
+     * projected again. That is deliberate rather than tidy: re-projecting a floor-0 config onto
+     * floor 3 would resolve floor 3's undeclared sections against floor 0's <em>banded</em>
+     * sections instead of the motif's base, silently. Making the second call a no-op removes the
+     * question.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
     public MotifConfig forFloor(int floorIndex) {
         if (strataByFloorIndex.isEmpty()) {
             return this;
@@ -221,9 +224,38 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         stratum.door().orElse(door),
                         stratum.corridor().orElse(corridor),
                         stratum.floor().orElse(floor),
-                        schemes, mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
+                        mergeSchemes(stratum),
+                        mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
                         List.of()))
                 .orElse(this);
+    }
+
+    /**
+     * The scheme list rolled at this band's depth: the motif's, with the band's entries merged in
+     * <strong>by name</strong>.
+     *
+     * <p>The one section that is not whole-replace. {@link Stratum} carries the reasoning; the
+     * mechanics are the ones {@code MotifConfigFragment.resolve} uses to fold a motif's files
+     * together, down to the {@link LinkedHashMap} &mdash; overriding an existing name keeps its
+     * position, so a band cannot quietly reorder the rest, and a new name lands at the end.
+     *
+     * <p>The band's entries are already inherited by the time they get here; {@code resolve} did
+     * that, because {@code extends} is resolvable only across a whole folded motif. A band built by
+     * hand in a test skips that step and merges whatever it was handed, which is the honest
+     * behaviour &mdash; there is nothing to inherit from.
+     */
+    private List<RoomScheme> mergeSchemes(Stratum stratum) {
+        if (stratum.schemes().isEmpty() || stratum.schemes().get().isEmpty()) {
+            return schemes;
+        }
+        Map<String, RoomScheme> merged = new LinkedHashMap<>();
+        for (RoomScheme scheme : schemes) {
+            merged.put(scheme.name(), scheme);
+        }
+        for (RoomScheme scheme : stratum.schemes().get()) {
+            merged.put(scheme.name(), scheme);
+        }
+        return List.copyOf(merged.values());
     }
 
 }

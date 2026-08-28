@@ -30,6 +30,7 @@ import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingPro
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
@@ -179,6 +180,19 @@ public final class TestRegistries {
         chestSelf[0] = chestType;
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.CHEST_PROCESSOR_NAME), chestType);
+
+        // The mud stratum's surface-scoped aging. Registered here for the same reason as the rest:
+        // this class decodes EVERY shipped processor_list, so a type missing from this registry
+        // does not fail one test -- it fails every test that builds a FakeWorldGenLevel, with a
+        // stack that names the JSON rather than the missing type.
+        StructureProcessorType<?>[] surfaceAgingSelf = new StructureProcessorType<?>[1];
+        Codec<SurfaceAgingProcessor> surfaceAgingCodec =
+                SurfaceAgingProcessor.codec(() -> surfaceAgingSelf[0]);
+        StructureProcessorType<SurfaceAgingProcessor> surfaceAgingType = () -> surfaceAgingCodec;
+        surfaceAgingSelf[0] = surfaceAgingType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.SURFACE_AGING_PROCESSOR_NAME),
+                surfaceAgingType);
 
         // The decoration sweep, which every shipped list names right after dungeons2:decoration.
         StructureProcessorType<?>[] sweepSelf = new StructureProcessorType<?>[1];

@@ -20,12 +20,15 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.ceiling.CoffersCeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.PlainFloorPattern;
 import mod.gottsch.forge.dungeons2.core.config.floor.SpeckleFloorPattern;
 import mod.gottsch.forge.dungeons2.core.config.wall.PanelsWallPattern;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.BasicFloorGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.RandomSpeckleFloorPatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.CompositeWallPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.CoursesWallPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.GridSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.PanelsWallPatternProvider;
@@ -38,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -111,14 +115,50 @@ class BandPatternDefaultsTest {
                 "and the floor, which had this first");
     }
 
-    // ---------- tier 1: the scheme wins ----------
+    // ---------- tier 1: the scheme wins the ceiling and floor, and COMPOSES on the wall ----------
 
+    /**
+     * WALLS COMPOSE (Gottsch, 2026-08-27). The band draws first and the scheme draws on top, so a
+     * room that asked for courses gets its courses AND keeps the band's panels underneath -- a wall
+     * is a stack of horizontal bands at different anchors, so the two occupy different rows and
+     * read as one wall.
+     *
+     * <p>Asserted as a composite of both providers, in that order. Before this the scheme replaced
+     * the band outright, which made a band wall pattern dead weight: ten of classic's eleven
+     * schemes name a wall slot, so a shipped band plinth drew in 0% of rooms.
+     */
     @Test
-    void aSchemesOwnSlotBeatsTheBandsPattern() {
-        assertInstanceOf(CoursesWallPatternProvider.class,
-                WallPatternSelector.providerFor(Optional.of(courses()), wallPaving(panels()), 11, 11, 7),
-                "a room that asked for courses asked for them at every depth -- the band is the"
-                        + " default underneath, never an override on top");
+    void aSchemesWallComposesOnTopOfTheBandsPattern() {
+        ISurfacePatternProvider provider = WallPatternSelector.providerFor(
+                Optional.of(courses()), wallPaving(panels()), 11, 11, 7);
+
+        assertInstanceOf(CompositeWallPatternProvider.class, provider,
+                "the band's pattern and the scheme's should both draw");
+        assertEquals(List.of(PanelsWallPatternProvider.class, CoursesWallPatternProvider.class),
+                ((CompositeWallPatternProvider) provider).providers().stream()
+                        .map(Object::getClass).map(c -> (Class<?>) c).toList(),
+                "band first, scheme second -- the overlay is in list order, so the SCHEME wins a"
+                        + " cell they both claim");
+    }
+
+    /**
+     * The ceiling and floor still REPLACE, and the asymmetry is the point: they are single
+     * surfaces, so two treatments fight over the same cells and one simply loses. Composing them
+     * would take a band ceiling to 100% incidence, which is the complaint that started this.
+     */
+    @Test
+    void aSchemesCeilingAndFloorStillBeatTheBandsPattern() {
+        assertInstanceOf(GridSurfacePatternProvider.class,
+                CeilingPatternSelector.providerFor(Optional.of(coffers()),
+                        ceilingPaving(coffers()), 11, 11, 7),
+                "a room that asked for coffers asked for them at every depth");
+        assertInstanceOf(BasicFloorGenerator.class,
+                FloorPatternSelector.generatorFor(
+                        Optional.of(new FloorPatternEntry(new PlainFloorPattern())),
+                        floorPaving(new FloorPatternEntry(new SpeckleFloorPattern(
+                                "minecraft:cobblestone", "minecraft:packed_mud", 0.12)))),
+                "and the floor, whose scheme asked for plain -- the band's speckle must not"
+                        + " reappear underneath it");
     }
 
     // ---------- tier 3: nothing anywhere is still plain ----------
@@ -148,6 +188,42 @@ class BandPatternDefaultsTest {
                 "too small for the gate: the band's dressing drops out, same as a scheme's would");
         assertInstanceOf(PanelsWallPatternProvider.class,
                 WallPatternSelector.providerFor(Optional.empty(), wallPaving(gated), 13, 13, 7));
+    }
+
+    /**
+     * The band's ENTRY-level gate, as opposed to the per-pattern gate above. It was never consulted
+     * before composition -- {@code forRoom} filters the patterns inside an entry, not the entry
+     * itself, and only a scheme's entry passed through {@code RoomScheme#wallFor} on the way in. A
+     * band pattern gated on the entry therefore drew in rooms below its own minimum. Nothing
+     * shipped authored one, which is why it went unseen rather than being reported.
+     */
+    @Test
+    void aBandsEntryLevelGateIsRespectedToo() {
+        WallPatternEntry gated = new WallPatternEntry(
+                List.of(new WallPatternEntry.PatternEntry(new PanelsWallPattern(BLOCK, 3, 3, 0, 0,
+                        WallPatternEntry.CourseOrient.NONE, java.util.Map.of()))),
+                new SizeGate(0, 13, Optional.empty(), Optional.empty()));
+
+        assertNull(WallPatternSelector.providerFor(Optional.empty(), wallPaving(gated), 9, 9, 7),
+                "the entry's own gate says this room is too small for the band's dressing");
+        assertInstanceOf(PanelsWallPatternProvider.class,
+                WallPatternSelector.providerFor(Optional.empty(), wallPaving(gated), 13, 13, 7));
+    }
+
+    /**
+     * Each tier is gated on its own, so a band gated out of a room leaves the scheme's wall drawing
+     * alone rather than taking it down with it -- and unwrapped, exactly as it drew before walls
+     * composed at all.
+     */
+    @Test
+    void aGatedOutBandLeavesTheSchemesWallUntouched() {
+        WallPatternEntry gated = new WallPatternEntry(
+                List.of(new WallPatternEntry.PatternEntry(new PanelsWallPattern(BLOCK, 3, 3, 0, 0,
+                        WallPatternEntry.CourseOrient.NONE, java.util.Map.of()))),
+                new SizeGate(0, 13, Optional.empty(), Optional.empty()));
+
+        assertInstanceOf(CoursesWallPatternProvider.class,
+                WallPatternSelector.providerFor(Optional.of(courses()), wallPaving(gated), 9, 9, 7));
     }
 
     // ---------- the authored shape ----------

@@ -39,9 +39,12 @@ import java.util.Optional;
  * could say "my walls are mud brick" but never "my walls are coursed". That left the mud band a
  * repainted classic room rather than a different depth, since only its floor could be dressed.</p>
  *
- * <p><strong>Precedence: a scheme's own {@code wall} slot wins.</strong> A room that asked for
- * pilasters asked for them at every depth; this is the default underneath, not an override on top.
- * Resolved in one place, {@code WallPatternSelector#providerFor}.</p>
+ * <p><strong>Precedence: this COMPOSES with a scheme's own {@code wall} slot</strong> rather than
+ * losing to it &mdash; the band draws first, the scheme draws on top, and where they claim the same
+ * cell the scheme wins. Unlike {@code FloorConfig}'s and {@code CeilingConfig}'s, which a scheme
+ * replaces outright. A wall is a stack of horizontal bands at different anchors, so both tiers fit;
+ * a floor or ceiling is one surface, so they would fight. Resolved in one place,
+ * {@code WallPatternSelector#providerFor}, which carries the measurement that decided it.</p>
  *
  * <p>Note a stratum replaces this section <em>whole</em> ({@code MotifConfig#forFloor} is
  * {@code orElse} per section), so a band that authors {@code wall} at all must restate the

@@ -95,6 +95,10 @@ class ShippedBlockIdsTest {
             // one lived in a scheme file the sweep does not read. Real block ids, so they are
             // verified rather than exempted.
             "primaryBlock", "secondaryBlock", "edgeLeftBlock", "edgeRightBlock",
+            // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
+            // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
+            // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.
+            "floorBlock", "rimBlock", "spikeBlock",
             // motif material sections
             "wall", "ceiling", "floor", "door", "lintel", "base", "alternateBase",
             "alternateFloor", "archBlock",

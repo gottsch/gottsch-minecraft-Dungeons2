@@ -1,0 +1,59 @@
+{
+  "//": [
+    "The winding_stairs_1 chain's CONTINUATION pool -- every piece the chain attaches after its",
+    "entry piece. The entry piece (winding_stairs_bottom_1) is NOT here: it is placed by the",
+    "planner from transitions/classic/shaft_bottom, not by a jigsaw, and listing it here would only",
+    "make vanilla draw it as a candidate and reject it for having no matching name.",
+    "",
+    "ONE POOL FOR ALL THREE, unlike the stairs_2 chain next door, which splits into segment/ and",
+    "top/. That is not a style choice here -- the pool id is baked into the four .nbt files, all of",
+    "which point at this one path. It works because vanilla shuffles a pool and takes the first",
+    "element carrying a jigsaw whose `name` matches the source's `target`, and the three targets in",
+    "this chain are distinct:",
+    "",
+    "  winding_stairs_bottom_1 -> target dungeons2:winding_staris_mid_bottom -> mid_bottom_1",
+    "  winding_stairs_mid_bottom_1 -> target dungeons2:winding_stairs_mid_top -> mid_top_1",
+    "  winding_stairs_mid_top_1 -> target dungeons2:winding_stairs_top -> top_1",
+    "",
+    "The cost is a couple of wasted draws per link. The benefit of the stairs_2 split is that a",
+    "misspelled target fails LOUDLY (an empty pool) rather than by silently exhausting candidates;",
+    "see backlog #11. Worth revisiting if this chain grows.",
+    "",
+    "NOTE the typo `winding_staris_mid_bottom` above is real and is in the .nbt files -- it is",
+    "spelled the same on both sides so it matches, but fix it on both or neither.",
+    "",
+    "The chain is FIXED-LENGTH, not repeating: bottom -> mid_bottom -> mid_top -> top, each link",
+    "named for exactly one successor. Nothing here can loop."
+  ],
+  "name": "dungeons2:transitions/classic/winding_stairs_1",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:transitions/classic/winding_stairs_mid_bottom_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:transitions/classic/winding_stairs_mid_top_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:transitions/classic/winding_stairs_top_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

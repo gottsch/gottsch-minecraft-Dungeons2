@@ -6,9 +6,59 @@
       // opts the depth into rooms/classic/mud/normal (step 3) -- nothing ships that pool, so the
       // resolver falls back to the motif's rooms, which is the ordinary case and is silent.
       "name": "mud",
+      // MUD BRICK ON A LARGE STONE BRICK PLINTH, in every room at this depth (Gottsch,
+      // 2026-08-27). This is the first band designed as a band rather than demonstrated as one.
+      //
+      // WHY THE PLINTH IS AUTHORED HERE AND NOT ON AN ABSTRACT SCHEME every other extends. The
+      // split is what the two things ARE: a band says what the depth is BUILT OF, a scheme says
+      // what is IN the room. A plinth is construction, not furniture -- every mud room has it for
+      // the same reason every mud room has mud brick walls, and neither varies by room type. An
+      // abstract parent would also spend each scheme's single `extends` hop (inheritance is one
+      // hop, deliberately) on inheriting something that is not optional, leaving nothing to share
+      // a real parent with.
+      //
+      // IT DRAWS IN EVERY ROOM, because WALLS COMPOSE. A band's wall patterns are drawn first and
+      // the rolled scheme's `wall` slot draws on top, so a scheme says what is DIFFERENT about its
+      // room rather than replacing the depth's masonry. A scheme that authors a crown gets plinth
+      // + field + crown; one that authors nothing gets plinth + field.
+      //
+      // That rule was made ON THIS COURSE, and it was made because the first version of this file
+      // did not have it: walls used to be first-match-wins like the floor and ceiling still are,
+      // ten of classic's eleven schemes name a `wall` slot, and the plinth measured 0% in game --
+      // a band that drew nowhere. See WallPatternSelector#providerFor for why walls compose where
+      // the other two surfaces do not.
+      //
+      // WHERE THEY MEET, THE SCHEME WINS: the overlay runs in list order, band first.
+      //
+      // `alternate: strict` is what makes the pair read as ONE WIDE BRICK rather than a mottled
+      // mix -- left and right halves laid down every other cell, where the default `random` rolls
+      // them per cell at 45/55. The two blocks are halves of one texture; rolling them would
+      // produce left-left and right-right neighbours, which is the thing the pair exists to avoid.
+      //
+      // `anchor` defaults to the bottom, so the course sits at floor level with no offset. One
+      // course, not two: the crown is a separate decision and this band does not make it yet.
       "wall": {
-        "wall": "minecraft:mud_bricks"
+        "wall": "minecraft:mud_bricks",
+        "pattern": {
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "dungeonblocks:left_large_stone_brick",
+                    "alternateBlock": "dungeonblocks:right_large_stone_brick",
+                    "alternate": "strict"
+                  }
+                ]
+              }
+            }
+          ]
+        }
       },
+      // PLAIN mud brick -- same story as `wall` above. The authored spruce joists lived here until
+      // 2026-08-27 and drew in 55.9% of rooms at this depth, because seven of classic's ten
+      // rollable schemes name no ceiling of their own.
       "ceiling": {
         "ceiling": "minecraft:mud_bricks"
       },
@@ -38,11 +88,12 @@
         // masonry. A mud BRICK between cobbles reads as someone having bricked a gap deliberately;
         // packed mud reads as the floor losing to the ground, which is the story this band tells.
         //
-        // It also has a weathering consequence worth knowing: the aging chain in
-        // classic_mud_weathering.json is keyed on mud_bricks as its only SOURCE block, so a
-        // packed_mud accent is inert -- it will not decay further on its own. mud_bricks here
-        // would have carried on to dirt and air. That is a reason to want the floor's own rules
-        // (see PieceSurface), not a reason to pick the brick.
+        // It used to have a weathering consequence: while mud_bricks was the file's only decay
+        // SOURCE, a packed_mud accent was inert. That is fixed -- classic_mud_weathering.json now
+        // runs dungeons2:surface_aging and carries a floor-scoped packed_mud -> dirt chain, so the
+        // accent ages on the floor's own schedule rather than not at all. The floor's rules are
+        // deliberately shallower than the walls': they stop at dirt and never reach air, because a
+        // hole underfoot opens onto raw terrain rather than onto the look the wall holes give.
         //
         // FOOTPRINT NOTE: speckle fills the whole width x depth, where the plain floor insets by
         // one and leaves the cells under the wall ring unplaced. So a mud room now gets a course
@@ -64,7 +115,7 @@
         }
       },
       "door": {
-        "door": "dungeonblocks:spruce_dungeon_door",
+        "door": "minecraft:oak_door",
         // STONE, not mud. A lintel is a keystone -- it carries the load over the opening -- so it
         // is where a builder reaches for the strongest material they have, however crude the wall
         // around it. Ornament does not stop at a poor floor either.
@@ -85,17 +136,58 @@
         // Was minecraft:packed_mud until 2026-08-25: tan on tan made the opening vanish into the
         // wall entirely.
         "lintel": "dungeonblocks:square_stone_brick",
-        "floor": "minecraft:packed_mud",
+        // COBBLESTONE, matching the room and corridor either side of it (Gottsch, 2026-08-27). It
+        // was packed_mud, which blended into a packed_mud corridor floor; now that both sides are
+        // paved, the same block would have left a one-cell mud strip in every threshold -- a seam
+        // marking the doorway rather than the doorway simply continuing the floor.
+        "floor": "minecraft:cobblestone",
         "probability": 0.5
       },
+      // THE SAME ROOM ANYWHERE AT THIS DEPTH (Gottsch, 2026-08-27): mud brick walls on a large
+      // stone brick plinth over a cobblestone floor, whether you are standing in a room or walking
+      // between two. It closes the material seam that every room-to-corridor doorway used to be --
+      // the corridor paved in packed mud while the room it opened onto was paved in stone.
+      //
+      // THE WALL BLOCK IS NOT AUTHORED HERE. A corridor wall is drawn from the BAND's `wall`
+      // section (BasicCorridorGenerator reads motifConfig.wall().wallState()), so it is already
+      // mud brick and there is nothing to restate. What it does NOT read is that section's
+      // `pattern` -- a room surface and a corridor wall column are different emitters -- which is
+      // why the plinth has to be authored a second time, below, as `courses`.
+      //
+      // `courses` IS THE CORRIDOR'S PATTERN SLOT, and it is deliberately a narrower one. Three
+      // things that are legal on a room course are LOAD ERRORS here, none of which this course
+      // wants: `projection` (a projecting course would occupy the corridor cell, which is the
+      // passage itself and is where an arch haunch goes), `cornerBlock` (a corridor has no four
+      // runs to own a corner), and a SizeGate (no room dimensions to gate on).
+      //
+      // ANCHOR DEFAULTS TO THE BOTTOM, and bottom means the lowest VISIBLE row -- row 1, not row 0.
+      // Row 0 is level with the corridor's own floor plane and has floor beside it, wall above it
+      // and terrain behind: measured, 0 of 5,279 row-0 cells had a single air neighbour. Corridor
+      // anchors were fixed in Aug to mean what a room's mean, precisely so a plinth authored in
+      // both places lands on the same row of the same wall.
+      //
+      // `alternate: strict` pairs the halves on (x + z) parity here, since a corridor has no run
+      // coordinate to walk. Same wide-brick read as the room's, arrived at differently.
       "corridor": {
-        "floor": "minecraft:packed_mud",
-        "alternateFloor": "minecraft:mud_bricks",
+        // COBBLESTONE, matching the room floor's `base` -- and BOTH slots, not a cobble/mud pair.
+        // floor/alternateFloor is a 45/55 per-cell roll, which reads as a checkerboard rather than
+        // as wear; that is the exact reason the room floor carries a 0.125 `speckle` pattern
+        // instead of a pair. A corridor has no pattern slot to do the same with, so the honest
+        // answer at this width is one block.
+        "floor": "minecraft:cobblestone",
+        "alternateFloor": "minecraft:cobblestone",
         "ceiling": "minecraft:mud_bricks",
         "height": 7,
         "narrowHeight": 6,
         "profile": "arched",
-        "archBlock": "minecraft:mud_brick_stairs"
+        "archBlock": "minecraft:mud_brick_stairs",
+        "courses": [
+          {
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternateBlock": "dungeonblocks:right_large_stone_brick",
+            "alternate": "strict"
+          }
+        ]
       }
     },
     {

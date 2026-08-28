@@ -27,7 +27,9 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.BasicCeil
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.IDungeonCeilingGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatternSelector;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.RoomPitGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.BasicPillarGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.IDungeonPillarGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.PillarPatternSelector;
@@ -73,9 +75,20 @@ import java.util.Set;
 public class BasicRoomGenerator implements IRoomGenerator {
 
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
+    private int sinkOffset = 0;
 
     public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
         this.motifConfig = motifConfig;
+        return this;
+    }
+
+    /**
+     * The floor's budget below its walking plane (#29), which is the hard cap on any pit a scheme
+     * digs. Zero &mdash; the shipped value, and the default here &mdash; means no room gets a pit
+     * however its scheme is authored.
+     */
+    public BasicRoomGenerator withSinkOffset(int sinkOffset) {
+        this.sinkOffset = Math.max(0, sinkOffset);
         return this;
     }
 
@@ -115,6 +128,16 @@ public class BasicRoomGenerator implements IRoomGenerator {
         floorGen.build(room, floorY, motif, random, blocks);
         ceilingGen.build(room, floorY, motif, random, blocks);
 
+        // #3: the pit comes out of the floor immediately after it is paved, and BEFORE anything
+        // stands on it. The order is load-bearing in both directions -- after the floor because it
+        // overwrites the slab it just laid (a later placement in the same cell wins), and before
+        // pillars, platforms and props because those choose cells to stand on and a cell that is
+        // now a hole is not one of them.
+        Set<Coords2D> pit = scheme.pitFor(width, depth, height)
+                .map(entry -> RoomPitGenerator.excavate(room, floorY, entry, sinkOffset,
+                        motifConfig.floor(), random, blocks))
+                .orElseGet(Set::of);
+
         // Pillars and platforms draw in the room's VOLUME rather than on one of its surfaces, which
         // is why both run after the four surface steps -- they stand in the interior air the hollow
         // step cleared, so anything that also reaches into it must already have been emitted.
@@ -148,6 +171,10 @@ public class BasicRoomGenerator implements IRoomGenerator {
         Set<Coords2D> taken = new HashSet<>(wallGen.occupiedFloorCells());
         taken.addAll(pillarGen.occupiedFloorCells());
         taken.addAll(platformGen.occupiedFloorCells());
+        // A pit's cells are not floor at all, so nothing may stand ON them. Without this a chest or
+        // spawner is placed in mid-air over the hole and a pot drops in and shatters as soon as the
+        // chunk ticks -- the same gravity trap the chest/pot ordering above exists for.
+        taken.addAll(pit);
 
         // Spawners before pots, and they claim their cells against them. Not because the two
         // collide -- the spawner block is invisible and has no collision, so a pot would sit in one

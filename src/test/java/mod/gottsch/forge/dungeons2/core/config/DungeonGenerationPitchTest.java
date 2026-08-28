@@ -63,8 +63,8 @@ class DungeonGenerationPitchTest {
     // ---------- the knob ----------
 
     @Test
-    void theShippedPitchIsTwelve() {
-        assertEquals(12, DungeonGenerationConfig.DEFAULT.pitch());
+    void theShippedPitchIsTwentyTwo() {
+        assertEquals(22, DungeonGenerationConfig.DEFAULT.pitch());
         assertTrue(DungeonGenerationConfig.DEFAULT.pitchIsShipped());
     }
 
@@ -206,5 +206,73 @@ class DungeonGenerationPitchTest {
         assertEquals(9, only.minHeight());
         assertEquals(9, only.maxHeight());
         assertEquals(9, only.clamp(5), "an inverted band would have produced nonsense here");
+    }
+
+    // ---------- sinkOffset (#29 stage 1 / #3) ----------
+
+    /**
+     * The default is 0 and 0 means "arithmetically absent" &mdash; the whole mechanism has to be a
+     * no-op out of the box or every existing world relayouts.
+     */
+    @Test
+    void theShippedSinkOffsetIsFiveAndBuysItFromTheCeiling() {
+        DungeonGenerationConfig config = ok("{ }");
+
+        assertEquals(5, config.sinkOffset(), "5 blocks of pit budget below the walking plane");
+        assertEquals(15, config.ceilingBudget(), "floorHeight 20 - sinkOffset 5");
+        assertEquals(22, config.pitch(), "and the sink is not paid for out of the descent");
+    }
+
+    /** Zero is still meaningful and still means the mechanism is arithmetically absent. */
+    @Test
+    void sinkOffsetZeroLeavesTheWholeFloorAsCeilingBudget() {
+        DungeonGenerationConfig config = ok("{ \"sinkOffset\": 0 }");
+        assertEquals(config.floorHeight(), config.ceilingBudget());
+    }
+
+    /** It is bought from the ceiling, never from the descent, so the pitch does not move. */
+    @Test
+    void sinkOffsetComesOutOfTheCeilingBudgetAndNotThePitch() {
+        DungeonGenerationConfig config = ok("{ \"floorHeight\": 20, \"sinkOffset\": 5 }");
+
+        assertEquals(15, config.ceilingBudget(), "rooms get floorHeight - sinkOffset");
+        assertEquals(22, config.pitch(), "and the transition drop is untouched by the sink");
+    }
+
+    /**
+     * The one thing no field range can catch, because it is a relationship between three fields: a
+     * sink deep enough that the shortest room a band can produce no longer fits above it. Worth a
+     * load error rather than a clamp &mdash; the symptom is a ceiling inside the floor above, which
+     * is invisible until somebody walks into it.
+     */
+    @Test
+    void aSinkDeepEnoughToStarveTheRoomBandsIsALoadError() {
+        DataResult<DungeonGenerationConfig> parsed = parse("{ \"sinkOffset\": 15 }");
+
+        assertTrue(parsed.error().isPresent(),
+                "sinkOffset 15 leaves a budget of 5, below the shipped 7x7 band's minHeight of 6");
+        String message = parsed.error().orElseThrow().message();
+        assertTrue(message.contains("sinkOffset") && message.contains("ceiling budget"), message);
+    }
+
+    /**
+     * ...and the boundary is not off by one: a budget that exactly fits the tallest floor of any
+     * band still loads. Note the bound is the LARGEST {@code minHeight} across the bands, not the
+     * smallest &mdash; the shipped 7x7 band asks for at least 6, so 6 is what has to fit even
+     * though three of the four bands would be happy with 5.
+     */
+    @Test
+    void aSinkThatExactlyFitsTheShortestBandStillLoads() {
+        assertEquals(6, ok("{ \"sinkOffset\": 14 }").ceilingBudget());
+    }
+
+    /**
+     * The note beside the field is a documented key like {@code _comment}, not a stray one &mdash;
+     * the closed schema (#31) would otherwise reject the shipped file itself.
+     */
+    @Test
+    void theSinkOffsetNoteIsAnAcceptedCommentKey() {
+        assertEquals(0, ok("{ \"//sinkOffset\": [\"why it ships at zero\"], \"sinkOffset\": 0 }")
+                .sinkOffset());
     }
 }

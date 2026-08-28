@@ -20,48 +20,104 @@
 {
   "processors": [
     {
-      // dungeons2:aging, and it is the right processor even though mud_bricks is a plain full
-      // cube with no properties to carry: minecraft:rule cannot express a MULTI-STAGE chain, and
-      // this is one. Same reason classic's own deep-decay chains live here.
-      "processor_type": "dungeons2:aging",
-      // 3 -- exactly the length of the one chain below. Raise it if a stage is added.
+      // dungeons2:surface_aging -- the SURFACE-SCOPED cousin of dungeons2:aging, and Dungeons2's
+      // own rather than GottschCore's. Same chains, same conditional probabilities, plus one field:
+      // each rule names the `surface` it applies to.
+      //
+      // WHY THIS BAND NEEDS IT. Its floor is cobblestone and its walls are mud brick, so the two
+      // want different decay. Keying on the block alone would work today and break later: a rule on
+      // minecraft:cobblestone applies wherever cobblestone is, and an all-cobble fortified room on
+      // this band would have its WALLS eaten by the floor rule, silently. `surface` is the durable
+      // key; block identity is a coincidence of what has been authored so far.
+      //
+      // THERE IS NO dungeons2:aging ENTRY IN THIS FILE, AND THAT IS LOAD-BEARING. A processor list
+      // is chained -- each processor sees the previous one's output -- so a surface-gated processor
+      // sitting NEXT TO an ungated one is additive, not exclusive: the ungated rules would still
+      // run over the floor and a cell could decay twice on two schedules. The gates only partition
+      // the piece if every rule in the file carries one. StratumWeatheringListTest pins that, because a
+      // doubly-aged floor just looks like a floor with a slightly wrong rate.
+      //
+      // `surface` is optional and defaults to `any`, so an ungated rule here behaves exactly as
+      // dungeons2:aging would. Every rule below states one on purpose.
+      "processor_type": "dungeons2:surface_aging",
+      // 3 -- the longest chain below. Raise it if a stage is added.
       "agings": 3,
       "rules": [
         // ===================================================================================
-        // The mud stratum's ONE decay family:
+        // FLOOR -- relative Y 0, and in a pitted room that is the PIT's floor (see PieceSurface).
+        //
+        // The paving frets rather than dissolves: cobble goes mossy first, then breaks up. Rubble
+        // is dungeonblocks' non-falling gravel look-alike -- real gravel in a ceiling falls and
+        // litters the room below, which is why nothing here uses it (backlog #15).
+        //
+        //     cobblestone -> mossy_cobblestone -> rubble -> dirt
+        //
+        // Composed rates, net of the next stage having fired instead -- the convention
+        // classic_weathering.json quotes:
+        //
+        //     mossy  22.5%      rubble  5.6%      dirt  1.9%
+        //
+        // NO AIR STAGE ON A FLOOR. On the walls a hole is the look (see below); underfoot it is a
+        // hole into whatever terrain the dungeon was carved from, which is a different and much
+        // less interesting thing. Stopping at dirt also feeds the decoration pass -- floor_growth
+        // and hanging_growth both key off dirt.
+        // ===================================================================================
+        {
+          "surface": "floor",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        // The floor's OTHER two materials. `packed_mud` is the speckle accent in a room and the
+        // corridor's own floor; `mud_bricks` is the corridor's alternate. Without these a corridor
+        // floor would be inert -- the mud_bricks chain below is gated to the walls, so it does not
+        // reach a floor any more.
+        {
+          "surface": "floor",
+          "block": "minecraft:packed_mud",
+          "output_blocks": [
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "floor",
+          "block": "minecraft:mud_bricks",
+          "output_blocks": [
+            { "block": "minecraft:packed_mud", "probability": 0.35 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        // ===================================================================================
+        // ABOVE THE FLOOR -- walls, ceiling, and anything standing in the room.
+        //
+        // Unchanged from what this file shipped with, now that it can be said to apply to the
+        // walls only:
         //
         //     mud_bricks -> packed_mud -> dirt -> air
-        //
-        // Composed rates -- what a player actually SEES, i.e. net of the next stage having fired
-        // instead, the same convention classic_weathering.json quotes and AgingChainRatesTest
-        // asserts. Nothing else claims mud_bricks, so no chain-to-chain conditioning applies:
-        //
         //     packed_mud  21%      dirt  7.65%      air  1.35%
         //
-        // Raise the FIRST stage to make the depth more ruinous; raise the LAST to trade
-        // crumbled earth for open holes.
+        // Raise the FIRST stage to make the depth more ruinous; raise the LAST to trade crumbled
+        // earth for open holes.
         //
-        // AIR IS THE TERMINUS, AND IT DOES BREACH THE SHELL SOMETIMES. Wall, ceiling and floor
-        // base on this band are all mud_bricks, and a processor only ever sees the block, never
-        // the surface -- so the air stage that is a welcome hole in a floor is the same rule as
-        // a hole in an OUTER wall, and any water in the terrain behind it then flows in. Placing
-        // the room's air cannot prevent that: the room is filled at generation and the water
-        // arrives afterwards, through the hole.
+        // AIR IS THE TERMINUS, AND IT DOES BREACH THE SHELL SOMETIMES. A processor sees the block,
+        // never the surface -- which used to mean the air stage that is a welcome hole in a wall
+        // was the same rule as a hole in a FLOOR. It is not any more: this rule is gated to the
+        // walls and the ceiling, and the floor chains above stop at dirt. What has not changed is
+        // that a hole in an OUTER wall lets the terrain behind it in, water included.
         //
-        // MARK ACCEPTED THAT ON 2026-08-25, for this file and for classic_weathering alike: if
-        // it leaves a hole, it leaves a hole. A dungeon breached by the ground around it is the
-        // look, and the occasional wet room is its price. This band shipped with the air stage
-        // a day before the ban was lifted generally, so it is no longer the exception it reads
-        // as -- it is just the only chain that has been authored to use the freedom yet.
-        //
-        // 1.35% is a taste decision, not a risk price. Raise it for a wetter, more ruined
-        // depth.
+        // MARK ACCEPTED THAT ON 2026-08-25: if it leaves a hole, it leaves a hole. A dungeon
+        // breached by the ground around it is the look, and the occasional wet room is its price.
+        // 1.35% is a taste decision, not a risk price.
         //
         // What it buys, besides holes: `unsupported` in the decoration pass below can only fire
         // where weathering produced air, and floor_growth/hanging_growth need the dirt stage to
-        // sprout from. A chain that stopped at packed_mud would leave both inert on this floor.
+        // sprout from.
         // ===================================================================================
         {
+          "surface": "above_floor",
           "block": "minecraft:mud_bricks",
           "output_blocks": [
             { "block": "minecraft:packed_mud", "probability": 0.3 },

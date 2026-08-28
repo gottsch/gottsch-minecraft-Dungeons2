@@ -82,13 +82,24 @@ class StratumWeatheringListTest {
     private static final String STRATUM = "mud";
 
     private static final String AGING_TYPE = "dungeons2:aging";
+
+    /**
+     * The mud stratum's own, surface-scoped aging. It is a strict superset of {@link #AGING_TYPE}
+     * -- same chains, plus a `surface` on each rule -- so everything asserted about ordering,
+     * chunk-safety and chain rates applies to either, and the helpers below accept both.
+     */
+    private static final String SURFACE_AGING_TYPE = "dungeons2:surface_aging";
+
+    /** Either aging processor: a list carries one or the other, never both. See {@link #aListNeverMixesGatedAndUngatedAging}. */
+    private static final Set<String> AGING_TYPES = Set.of(AGING_TYPE, SURFACE_AGING_TYPE);
     private static final String DECORATION_TYPE = "dungeons2:decoration";
     private static final String SPAWNER_TYPE = "dungeons2:spawner";
     private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
 
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
-            Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE, SWEEP_TYPE);
+            Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
+                    SWEEP_TYPE);
 
     private static final double EPSILON = 1.0e-6;
 
@@ -189,10 +200,12 @@ class StratumWeatheringListTest {
                                 + " procedural piece -- see PieceProcessors");
             }
             if (types.contains(DECORATION_TYPE)) {
-                assertTrue(types.contains(AGING_TYPE)
-                                && types.indexOf(AGING_TYPE) < types.indexOf(DECORATION_TYPE),
-                        file + ": dungeons2:aging must be authored before dungeons2:decoration or"
-                                + " growth decides from the un-aged piece. Got " + types);
+                int aging = types.stream().filter(AGING_TYPES::contains).findFirst()
+                        .map(types::indexOf).orElse(-1);
+                assertTrue(aging >= 0 && aging < types.indexOf(DECORATION_TYPE),
+                        file + ": an aging processor (" + AGING_TYPES + ") must be authored before"
+                                + " dungeons2:decoration or growth decides from the un-aged piece."
+                                + " Got " + types);
 
                 // And the sweep after it, since it inspects what decoration decided. Every list
                 // that decorates must have one, or growth on that depth keeps stranding itself on
@@ -311,22 +324,87 @@ class StratumWeatheringListTest {
     // ---------------------------------------------------------------------------------------
 
     @Test
-    void mudBricksDecayThroughPackedMudAndDirtToAir() {
-        // The one decay family the mud stratum ships, at the rates a player actually SEES: a stage
-        // only rolls if the one before it hit, and a block only survives as the deepest stage
-        // reached. Same convention as AgingChainRatesTest -- authored 0.3/0.3/0.15 becomes
-        // 21% / 7.65% / 1.35%.
+    void mudBricksDecayThroughPackedMudAndDirtToAir_aboveTheFloor() {
+        // The wall/ceiling chain, at the rates a player actually SEES: a stage only rolls if the
+        // one before it hit, and a block only survives as the deepest stage reached. Same
+        // convention as AgingChainRatesTest -- authored 0.3/0.3/0.15 becomes 21% / 7.65% / 1.35%.
+        //
+        // SCOPED TO `above_floor` SINCE 2026-08-26. It used to apply everywhere, which is what made
+        // the air terminus awkward: the same rule that puts a welcome hole in a wall put one in the
+        // floor. The floor has its own, shallower chains now (see below), so this one can be about
+        // walls alone.
         Map<String, Double> rates = survivingRates(readList(MOTIF + "_" + STRATUM + "_weathering"),
-                "minecraft:mud_bricks");
+                "minecraft:mud_bricks", "above_floor");
 
         assertEquals(0.21, rates.getOrDefault("minecraft:packed_mud", 0.0), EPSILON);
         assertEquals(0.0765, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON);
         assertEquals(0.0135, rates.getOrDefault("minecraft:air", 0.0), EPSILON,
-                "the air terminus is deliberate. It does breach the shell sometimes -- wall,"
-                        + " ceiling and floor base are all mud_bricks and a processor never sees"
-                        + " which surface it is on (#15) -- and Mark accepted that on 2026-08-25:"
+                "the air terminus is deliberate. A hole in an OUTER wall still lets the terrain"
+                        + " behind it in, water included, and Mark accepted that on 2026-08-25:"
                         + " if it leaves a hole, it leaves a hole. This is a taste number, so"
                         + " move it freely; it is pinned only so the move is deliberate");
+    }
+
+    @Test
+    void theFloorWearsOnItsOwnSchedule() {
+        JsonObject list = readList(MOTIF + "_" + STRATUM + "_weathering");
+
+        // Cobble paving frets rather than dissolves: mossy first, then breaks up. Authored
+        // 0.3/0.25/0.25 -> 22.5% / 5.6% / 1.9%.
+        Map<String, Double> cobble = survivingRates(list, "minecraft:cobblestone", "floor");
+        assertEquals(0.225, cobble.getOrDefault("minecraft:mossy_cobblestone", 0.0), EPSILON);
+        assertEquals(0.05625, cobble.getOrDefault("dungeonblocks:rubble", 0.0), EPSILON);
+        assertEquals(0.01875, cobble.getOrDefault("minecraft:dirt", 0.0), EPSILON);
+
+        // NO AIR ANYWHERE ON THE FLOOR, and that is the point of the whole surface gate. On a wall
+        // a hole is the look; underfoot it opens onto whatever terrain the dungeon was carved from.
+        for (String source : new String[] {"minecraft:cobblestone", "minecraft:packed_mud",
+                "minecraft:mud_bricks"}) {
+            assertEquals(0.0, survivingRates(list, source, "floor")
+                            .getOrDefault("minecraft:air", 0.0), EPSILON,
+                    source + " decays to air on the FLOOR. That is a hole into raw terrain, which"
+                            + " is a different and much less interesting thing than the wall holes"
+                            + " -- keep the floor chains stopping at dirt");
+        }
+    }
+
+    /**
+     * <strong>The exclusivity the surface gate depends on.</strong> A processor list is chained, so
+     * a surface-gated processor sitting beside an ungated one is additive, not exclusive: the
+     * ungated rules would still run over the floor and a cell could decay twice on two schedules.
+     * The gates only partition the piece if every rule in a file carries one.
+     *
+     * <p>Invisible if it regresses -- a doubly-aged floor looks like a floor with a slightly wrong
+     * rate -- which is exactly why it is pinned rather than left to the file's own comment.</p>
+     */
+    @Test
+    void aListNeverMixesGatedAndUngatedAging() {
+        for (String file : weatheringFiles()) {
+            List<String> types = processorTypes(readList(file));
+            assertFalse(types.contains(AGING_TYPE) && types.contains(SURFACE_AGING_TYPE),
+                    file + " carries BOTH dungeons2:aging and dungeons2:surface_aging. The"
+                            + " ungated rules would still run over the surfaces the gated ones"
+                            + " claim, so a cell can decay twice. Move every rule into"
+                            + " surface_aging and give each one a surface.");
+        }
+    }
+
+    /** Every rule in a surface_aging processor must state its surface, or the partition has a hole. */
+    @Test
+    void everySurfaceAgingRuleStatesItsSurface() {
+        for (String file : weatheringFiles()) {
+            JsonObject processor = processorOfType(readList(file), SURFACE_AGING_TYPE);
+            if (processor == null) {
+                continue;
+            }
+            for (var ruleElement : processor.getAsJsonArray("rules")) {
+                JsonObject rule = ruleElement.getAsJsonObject();
+                assertTrue(rule.has("surface"),
+                        file + ": rule for " + rule.get("block").getAsString() + " states no"
+                                + " surface, so it defaults to `any` and decays every surface --"
+                                + " which silently un-partitions the ones that DO state one");
+            }
+        }
     }
 
     @Test
@@ -334,8 +412,12 @@ class StratumWeatheringListTest {
         // "agings" caps how many stages of a chain may apply. A cap below the chain's length
         // truncates it silently -- the air stage would simply never appear, and the file would
         // still look exactly right.
-        JsonObject aging = processorOfType(readList(MOTIF + "_" + STRATUM + "_weathering"), AGING_TYPE);
-        assertNotNull(aging, "the mud list has no aging processor");
+        JsonObject list = readList(MOTIF + "_" + STRATUM + "_weathering");
+        JsonObject aging = processorOfType(list, SURFACE_AGING_TYPE);
+        if (aging == null) {
+            aging = processorOfType(list, AGING_TYPE);
+        }
+        assertNotNull(aging, "the mud list has no aging processor of either type");
 
         int longest = 0;
         for (var rule : aging.getAsJsonArray("rules")) {
@@ -357,17 +439,31 @@ class StratumWeatheringListTest {
      * is only reached when every earlier one missed.</p>
      */
     private static Map<String, Double> survivingRates(JsonObject list, String source) {
+        return survivingRates(list, source, null);
+    }
+
+    /**
+     * As above, restricted to the rules whose {@code surface} is {@code surface}. Pass {@code null}
+     * to take every rule for {@code source} regardless -- which is what a {@code dungeons2:aging}
+     * list wants, since none of its rules carry one.
+     */
+    private static Map<String, Double> survivingRates(JsonObject list, String source, String surface) {
         Map<String, Double> rates = new LinkedHashMap<>();
         double reachesThisChain = 1.0;
 
         for (var element : list.getAsJsonArray("processors")) {
             JsonObject processor = element.getAsJsonObject();
-            if (!AGING_TYPE.equals(processor.get("processor_type").getAsString())) {
+            if (!AGING_TYPES.contains(processor.get("processor_type").getAsString())) {
                 continue;
             }
             for (var ruleElement : processor.getAsJsonArray("rules")) {
                 JsonObject rule = ruleElement.getAsJsonObject();
                 if (!source.equals(rule.get("block").getAsString())) {
+                    continue;
+                }
+                // A rule with no `surface` is `any`, which every surface matches.
+                if (surface != null && rule.has("surface")
+                        && !surface.equals(rule.get("surface").getAsString())) {
                     continue;
                 }
                 JsonArray stages = rule.getAsJsonArray("output_blocks");

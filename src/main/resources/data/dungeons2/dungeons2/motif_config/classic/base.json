@@ -234,6 +234,36 @@
       "weight": 12,
       "minSize": 9,
       "minHeight": 7,
+
+      // A SUNKEN FLOOR (backlog #3). PROBE CONTENT, retuned 2026-08-27 after walking the first
+      // version: it was 3 deep and read as a stepped hole rather than a sunken floor. Mark:
+      // "it probably should only sink down 1 and ringed with stair blocks".
+      //
+      // ONE BLOCK DOWN, and the stairs are what make that a step you can see rather than a kerb
+      // you trip off. The ring is drawn on the floor cells just OUTSIDE the court, at the room's
+      // own walking plane, so a player descends floor -> the stair's low half -> the sunken floor.
+      // Those cells stay walkable and are not claimed.
+      //
+      // COBBLESTONE STAIRS because the band's floor is cobblestone: this is the same paving
+      // stepping down, not a different structure set into it. The mud band's own floor is
+      // cobblestone too, so it reads the same at both depths.
+      //
+      // `rimOrient` names where a VANILLA stair's solid half ends up. `outward` puts it away from
+      // the court, so the low edge meets the court. dungeonblocks' trim is modelled
+      // facing-inverted, so a dungeonblocks stair here would want `inward` for the same look.
+      //
+      // ON THIS SCHEME because it is the only shipped one with NEITHER `pillars` NOR `platforms`
+      // -- a column standing in an excavated cell would hang over the hole (backlog #58). Props
+      // are safe: the excavated cells are claimed, so chests, spawners and pots keep off.
+      "pit": {
+        "type": "dungeons2:centre",
+        "config": {
+          "size": 5,
+          "depth": 1,
+          "rimBlock": "minecraft:cobblestone_stairs",
+          "rimOrient": "outward"
+        }
+      },
       "ceiling": {
         "patterns": [
           {

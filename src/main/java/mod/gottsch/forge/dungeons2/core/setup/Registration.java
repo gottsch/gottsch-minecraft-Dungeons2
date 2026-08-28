@@ -22,6 +22,7 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.particles.ParticleType;
@@ -140,6 +141,21 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@link SurfaceAgingProcessor} under this mod's namespace. */
+	public static final String SURFACE_AGING_PROCESSOR_NAME = "surface_aging";
+
+	/**
+	 * Surface-scoped block aging -- the mud stratum's own, so a cobble floor can wear on a
+	 * different schedule from the mud-brick walls above it. See {@link SurfaceAgingProcessor},
+	 * and note it must OWN a list's aging rather than sit beside a dungeons2:aging entry.
+	 */
+	public static final RegistryObject<StructureProcessorType<SurfaceAgingProcessor>> SURFACE_AGING_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(SURFACE_AGING_PROCESSOR_NAME, () -> {
+				Codec<SurfaceAgingProcessor> codec =
+						SurfaceAgingProcessor.codec(() -> Registration.SURFACE_AGING_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Registry name of {@link DecorationSweepProcessor} under this mod's namespace. */
 	public static final String DECORATION_SWEEP_PROCESSOR_NAME = "decoration_sweep";
 
@@ -183,6 +199,7 @@ public class Registration {
 		mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry.registerBuiltIns();
 		mod.gottsch.forge.dungeons2.core.config.wall.WallPatternRegistry.registerBuiltIns();
 		mod.gottsch.forge.dungeons2.core.config.ceiling.CeilingPatternRegistry.registerBuiltIns();
+		mod.gottsch.forge.dungeons2.core.config.pit.PitShapeRegistry.registerBuiltIns();
 
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(eventBus);

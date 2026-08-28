@@ -61,6 +61,58 @@ import java.util.Set;
  * something different per dungeon. Read {@link MobSetBand} for the full reasoning; it is not
  * repeated here.
  *
+ * <h2>{@code schemes} is the one section that MERGES, and why</h2>
+ * <p>Every other section above replaces whole. {@code schemes} instead <strong>merges by
+ * name</strong> onto the motif's list: a band entry whose name the motif already declares replaces
+ * that one in place, and a band entry with a new name is appended. It is the same rule
+ * {@link MotifConfigFragment#resolve} uses to fold one motif's files together, and for the same
+ * reason that class writes down &mdash; <em>coherent whole &rarr; replace, independent entries
+ * &rarr; merge by key</em>. A depth table or an element section is one authored whole; a scheme
+ * list is a bag of independent entries, which is exactly why fragments already merge it.
+ *
+ * <p>What that buys is the reason this field exists at all (Gottsch, 2026-08-27). A band could
+ * always dress its own depth by writing a {@code pattern} on {@code wall}/{@code ceiling}/
+ * {@code floor}, but on the {@code ceiling} and {@code floor} that pattern is <strong>tier 2</strong>:
+ * it draws in every room whose rolled scheme names no slot of its own, and in nothing else. Which
+ * of those two it is depends entirely on what the schemes happen to say, and it lands wrong at both
+ * ends. Measured on the mud band's authored joists &mdash; {@code BandCeilingIncidenceProbe}, 60
+ * MEDIUM dungeons, 2874 rooms &mdash; the band drew <strong>55.9%</strong> against the scheme's own
+ * 11.0%, because seven of classic's ten rollable schemes name no {@code ceiling}: a default became
+ * the depth's default look. The same band's authored wall plinth drew <strong>0%</strong>, because
+ * ten of eleven schemes DO name {@code wall}.
+ *
+ * <p>Those two numbers pulled in opposite directions and were fixed separately. The wall got
+ * <strong>composition</strong> ({@code WallPatternSelector#providerFor}) &mdash; band first, scheme
+ * on top &mdash; so a plinth true of the whole depth is stated once. The ceiling and floor keep
+ * first-match-wins, and per-stratum schemes are their answer: a depth gets its own rooms by naming
+ * them, not by dressing whatever rolls.
+ *
+ * <p><strong>Replace-whole was considered and rejected.</strong> It would have matched the other
+ * five sections and made the tier-2 problem moot outright (every scheme at that depth is the band's
+ * own, so nothing falls through) &mdash; a real advantage this rule gives up. It also costs a band
+ * that wants one new room type a restatement
+ * of all ten of classic's schemes &mdash; the drift an overlay exists to prevent, and the same
+ * argument that made every section optional in the first place.
+ *
+ * <p>A band declaring {@code "schemes": []} is therefore a <strong>no-op</strong>, not "this depth
+ * has no schemes": an empty list merges onto the motif's and changes nothing. There is no way to
+ * subtract a scheme at a depth, deliberately &mdash; the same "a later file can only add to or
+ * replace something nameable" rule {@code resolve} is built on.
+ *
+ * <h2>Band schemes get the full {@code extends} / {@code abstract} treatment</h2>
+ * <p>They are inherited by {@link MotifConfigFragment#inherit} exactly like the motif's, against
+ * the <strong>motif-wide</strong> scheme names &mdash; so a band scheme may extend an abstract
+ * template declared in {@code base.json}, which is the authoring win that makes a band short. It
+ * cannot happen in this codec: a parent is addressed by name across the whole motif and may live in
+ * another file, so it is only resolvable once every fragment has folded. {@code resolve} therefore
+ * writes the inherited list back onto the band via {@link #withSchemes}, and {@link #schemes()}
+ * holds resolved entries by the time anything renders.
+ *
+ * <p>Skipping that pass was the live trap here, and it fails <em>silently</em> in both directions:
+ * an {@code abstract} band scheme would roll as a real room, and an {@code extends} would render
+ * with half its content missing. Nothing about the shape announces it, which is why it is written
+ * down rather than left to the reader.
+ *
  * <h2>A stratum is not a second motif</h2>
  * <p>The shortcut is tempting enough to write down why not. Pools, weathering lists and motif
  * configs are all motif-keyed, so {@code classic_shallow} / {@code classic_deep} would work almost
@@ -95,7 +147,26 @@ import java.util.Set;
  */
 public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
                       Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
-                      Optional<CorridorConfig> corridor, Optional<FloorConfig> floor) {
+                      Optional<CorridorConfig> corridor, Optional<FloorConfig> floor,
+                      Optional<List<RoomScheme>> schemes) {
+
+    /** The shape before {@code schemes}: a band that repaints the shell and leaves dressing alone. */
+    public Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
+                   Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
+                   Optional<CorridorConfig> corridor, Optional<FloorConfig> floor) {
+        this(minFloorIndex, name, wall, ceiling, door, corridor, floor, Optional.empty());
+    }
+
+    /**
+     * This band with its scheme list swapped for {@code resolved}. Used by
+     * {@link MotifConfigFragment#resolve} alone, to write back the band's schemes once
+     * {@code extends} has been resolved and the abstract templates dropped &mdash; see
+     * {@link #schemes()} for why that cannot happen in the codec.
+     */
+    Stratum withSchemes(List<RoomScheme> resolved) {
+        return new Stratum(minFloorIndex, name, wall, ceiling, door, corridor, floor,
+                Optional.of(resolved));
+    }
 
     /**
      * What a band's {@link #name} is allowed to be: a single path segment, because it becomes one
@@ -118,7 +189,11 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
             Codecs.strictOptionalFieldOf(CeilingConfig.CODEC, "ceiling").forGetter(Stratum::ceiling),
             Codecs.strictOptionalFieldOf(DoorConfig.CODEC, "door").forGetter(Stratum::door),
             Codecs.strictOptionalFieldOf(CorridorConfig.CODEC, "corridor").forGetter(Stratum::corridor),
-            Codecs.strictOptionalFieldOf(FloorConfig.CODEC, "floor").forGetter(Stratum::floor)
+            Codecs.strictOptionalFieldOf(FloorConfig.CODEC, "floor").forGetter(Stratum::floor),
+            // The ONE section that is not whole-replace -- see #schemes(). Optional rather than a
+            // defaulted list so that "declares none" stays distinguishable from "declares an empty
+            // list", even though both currently resolve to the motif's own.
+            Codecs.strictOptionalFieldOf(RoomScheme.CODEC.listOf(), "schemes").forGetter(Stratum::schemes)
     ).apply(instance, Stratum::new))).flatXmap(Stratum::validateBand, Stratum::validateBand);
 
     /**

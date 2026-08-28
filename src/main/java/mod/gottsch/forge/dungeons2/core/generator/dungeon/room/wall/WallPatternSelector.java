@@ -55,29 +55,60 @@ public final class WallPatternSelector {
     }
 
     /**
-     * As above, resolved against the motif-or-stratum default underneath it. Three tiers, first
-     * match wins:
+     * As above, resolved against the motif-or-stratum default underneath it. The two tiers
+     * <strong>COMPOSE</strong>: the {@link WallConfig}'s own {@code pattern} draws first and the
+     * scheme's own {@code wall} entry draws on top of it, as though the band's patterns were the
+     * opening entries of the scheme's own list. Neither tier, plain wall ({@code null}).
      *
-     * <ol>
-     *   <li>the <strong>scheme's</strong> own {@code wall} entry, when it has one &mdash; a room
-     *       that asked for pilasters asked for them at every depth, so a band never overrides
-     *       it;</li>
-     *   <li>the {@link WallConfig}'s own {@code pattern}, i.e. what this <strong>motif or
-     *       stratum</strong> dresses its walls with by default;</li>
-     *   <li>plain wall, i.e. {@code null}.</li>
-     * </ol>
+     * <h2>Why walls compose where the floor and ceiling replace</h2>
+     * <p>Both of the others are first-match-wins, and that asymmetry is deliberate rather than an
+     * oversight (Gottsch, 2026-08-27). <strong>A wall is a stack of horizontal bands at different
+     * anchors</strong> &mdash; plinth, field, cornice &mdash; so two tiers naturally occupy
+     * different rows and read as one wall. A floor or a ceiling is a single surface, so two
+     * treatments fight over the same cells and one of them simply loses.</p>
      *
-     * <p>The band's own entry is gated by {@code forRoom} exactly as a scheme's is: a default is
-     * still a treatment, and a course gated on room size means the same thing whichever tier it
-     * was authored in.</p>
+     * <p>The evidence was a shipped band that drew <strong>nowhere</strong>. A band pattern is
+     * only reached when the rolled scheme names no slot of its own, and ten of classic's eleven
+     * schemes name {@code wall} (the eleventh inherits one) &mdash; so a mud band authored with a
+     * stone plinth produced it in 0% of rooms, while the same band's ceiling, whose schemes mostly
+     * say nothing, drew in 55.9%. The wall tier was dead weight in exactly the case a band exists
+     * for: something true of the whole depth.</p>
+     *
+     * <p>The alternative was for every scheme touching a wall to restate the band's plinth as the
+     * first entry of its own list. That is the {@code N+1} authoring duplication a band exists to
+     * remove, and forgetting it fails <em>silently</em> &mdash; the room simply loses its plinth.
+     * Composition means a scheme's {@code wall} slot says what is DIFFERENT about that room, which
+     * is what a scheme slot means everywhere else.</p>
+     *
+     * <h2>Order, and who wins a shared cell</h2>
+     * <p>Band entries first, then the scheme's, and {@code CompositeWallPatternProvider} overlays
+     * in list order &mdash; so where the two do land on the same cell, <strong>the scheme
+     * wins</strong>. A room that asked for a crown at the top row gets its crown even if the band
+     * authored one there too.</p>
+     *
+     * <p><strong>Each tier is gated on its own.</strong> The band's entry is size-gated here the
+     * way {@code RoomScheme#wallFor} gates the scheme's before it ever arrives, and then each
+     * tier's per-pattern gates are applied by {@code forRoom}. Before composition the band's
+     * entry-level gate was never consulted at all &mdash; {@code forRoom} filters the patterns
+     * inside an entry, not the entry &mdash; so a band pattern with a {@code minHeight} on the
+     * entry drew in rooms below it. Nothing shipped authored one, which is why it went unseen.</p>
      */
     public static ISurfacePatternProvider providerFor(Optional<WallPatternEntry> entry,
                                                       WallConfig config,
                                                       int width, int depth, int height) {
-        return entry.or(config::pattern)
-                .map(wall -> wall.forRoom(width, depth, height))
-                .map(WallPatternSelector::toProvider)
-                .orElse(null);
+        List<WallPatternEntry.PatternEntry> composed = new ArrayList<>();
+        config.pattern()
+                .filter(band -> band.gate().fits(width, depth, height))
+                .map(band -> band.forRoom(width, depth, height))
+                .ifPresent(band -> composed.addAll(band.patterns()));
+        entry.map(own -> own.forRoom(width, depth, height))
+                .ifPresent(own -> composed.addAll(own.patterns()));
+        if (composed.isEmpty()) {
+            return null;
+        }
+        // Handed back through the ordinary list path, so one surviving pattern is still returned
+        // unwrapped and draws byte-identically to how it drew before this method composed anything.
+        return toProvider(new WallPatternEntry(composed));
     }
 
     /** Ungated form, for callers with no room in hand (tests, and any fully unconditional entry). */

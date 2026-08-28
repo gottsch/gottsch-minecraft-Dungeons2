@@ -60,6 +60,15 @@ public class CompositeWallPatternProvider implements ISurfacePatternProvider, IP
         this.providers = List.copyOf(Objects.requireNonNull(providers, "providers"));
     }
 
+    /**
+     * The composed providers, in draw order &mdash; earlier ones are overlaid by later ones, so the
+     * last to claim a cell is the one that draws there. Exposed so a test can assert the ORDER,
+     * which is what decides who wins where a band's pattern and a scheme's meet.
+     */
+    public List<ISurfacePatternProvider> providers() {
+        return providers;
+    }
+
     @Override
     public SurfacePlan plan(int uSize, int vSize, Direction facing, RandomSource random) {
         SurfacePlan combined = SurfacePlan.of(uSize, vSize);
