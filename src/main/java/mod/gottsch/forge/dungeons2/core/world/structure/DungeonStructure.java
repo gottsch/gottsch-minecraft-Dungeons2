@@ -444,6 +444,14 @@ public class DungeonStructure extends Structure {
                 ? overrides.motif()
                 : DungeonMotif.CLASSIC.getValue();
         StructureTemplateManager templateManager = context.structureTemplateManager();
+
+        // Resolved HERE rather than beside the planner knobs it mostly feeds, because the room
+        // assemblers below capture it: seating a prefab on the walking plane needs to know how much
+        // room the floor has UNDER that plane, which is sinkOffset. This is the ONLY planner call
+        // site -- /d2-generate delegates to vanilla PlaceCommand.placeStructure, which comes back
+        // through here -- so a knob wired up from it reaches the command for free.
+        DungeonGenerationConfig generationConfig =
+                DungeonGenerationConfigHelper.get(context.registryAccess());
         BlockPos position = new BlockPos(chunkCenterX, surfaceY, chunkCenterZ);
 
         // Phase 4b: assemble the jigsaw entrance FIRST — its dungeons2:door markers
@@ -544,6 +552,10 @@ public class DungeonStructure extends Structure {
             if (rgeo == null) {
                 return Optional.empty();
             }
+            // The template's door row -- not its local Y 0 -- is what sits on the walking plane, so
+            // that a room authored with a sunken half spends the floor's sinkOffset budget instead
+            // of hoisting its doors out of every corridor's reach.
+            seatRoomOnWalkingPlane(assembled, rgeo, worldY, generationConfig.sinkOffset());
             if (commit) {
                 stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
                 Dungeons.LOGGER.debug("[D2-PREFAB] room {} at ({},{},{})",
@@ -577,6 +589,7 @@ public class DungeonStructure extends Structure {
                 // absence #5 warns about because it breaks the dungeon structurally.
                 return Optional.empty();
             }
+            seatRoomOnWalkingPlane(assembled, rgeo, worldY, generationConfig.sinkOffset());
             if (commit) {
                 stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
                 Dungeons.LOGGER.info("[D2-BOSS] boss room {} at ({},{},{}) {}x{}",
@@ -593,11 +606,7 @@ public class DungeonStructure extends Structure {
         // space, and returns the world anchor via DungeonLayout#getAnchor. Falls
         // back to a chunk-centered synthetic layout (no rendered entrance) when
         // nothing assembled with door markers.
-        // One resolve, both knobs. This is the ONLY planner call site: /d2-generate delegates to
-        // vanilla PlaceCommand.placeStructure, which comes back through here, so a knob wired up
-        // here reaches the command for free.
-        DungeonGenerationConfig generationConfig =
-                DungeonGenerationConfigHelper.get(context.registryAccess());
+        // One resolve, every knob -- see where generationConfig is resolved, above.
         planner.withCorridorWidth(generationConfig.corridorWidth());
         planner.withRoomTemplateAttempts(generationConfig.roomTemplateAttemptsPerFloor());
         // The floor-to-floor pitch. Set BEFORE the height bands below, which are checked against it.
@@ -1300,11 +1309,26 @@ public class DungeonStructure extends Structure {
      * {@code null} if no markers are found at all (assembly produced nothing, or
      * the pool is absent), signalling the planner to skip this candidate slot --
      * same convention as {@link #scanTransitionGeometry}.
+     *
+     * <h2>The markers also fix the room's WALKING PLANE</h2>
+     * <p>{@code doorPlaneY} is the lowest marker Y in the assembly, and it is the row the caller
+     * lines up with the floor's walking plane. It is not decoration: a template cannot have a
+     * negative local Y, so a room with anything <em>below</em> its walking plane -- a sunken court,
+     * a cell block, anything spending the floor's {@code sinkOffset} budget -- can only be authored
+     * by lifting the plane off local 0 and filling the rows underneath. Pinning local 0 to the
+     * walking plane instead (which is what happened before) hoists the whole room by exactly the
+     * lift and leaves its doors that far above every corridor that has to reach them.</p>
+     *
+     * <p>Read as a MINIMUM over door and connector markers together. Every room that ships has all
+     * of its markers on one row, so the minimum is that row and this is a no-op for them; taking the
+     * minimum only decides what a template with markers on two different rows means, and the lower
+     * one is the answer that keeps the room's own floor on the floor.</p>
      */
     private static RoomGeometry scanRoomGeometry(List<StructurePiece> pieces,
                                                  StructureTemplateManager templateManager, long seed) {
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        int doorPlaneY = Integer.MAX_VALUE;
         boolean any = false;
         RandomSource random = RandomSource.create(seed);
         List<Coords2D> doorCells = new ArrayList<>();
@@ -1332,8 +1356,10 @@ public class DungeonStructure extends Structure {
                 BlockPos p = info.pos();
                 if (DOOR_JIGSAW_NAME.equals(name)) {
                     doorCells.add(new Coords2D(p.getX(), p.getZ()));
+                    doorPlaneY = Math.min(doorPlaneY, p.getY());
                 } else if (CONNECTOR_JIGSAW_NAME.equals(name)) {
                     premadeCells.add(new Coords2D(p.getX(), p.getZ()));
+                    doorPlaneY = Math.min(doorPlaneY, p.getY());
                 }
             }
         }
@@ -1342,12 +1368,48 @@ public class DungeonStructure extends Structure {
         }
 
         Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
-        return new RoomGeometry(worldFootprint, doorCells, premadeCells);
+        return new RoomGeometry(worldFootprint, doorCells, premadeCells, doorPlaneY);
     }
 
-    /** World geometry read off an assembled room's door/connector jigsaw markers. */
+    /**
+     * Drops an assembled room so its door-marker row lands on {@code walkingPlaneY} -- see
+     * {@link #scanRoomGeometry} for why the markers, not local Y 0, are what has to line up.
+     *
+     * <p>Applied to the pieces rather than by re-assembling at a corrected position, because the
+     * offset is only knowable <em>from</em> the assembly and re-running it would draw a different
+     * prefab. Moving is exact and cheap: {@link StructurePiece#move} shifts the bounding box, and
+     * {@code PoolElementStructurePiece} shifts its own position with it. XZ is untouched, so the
+     * footprint the planner measured and the marker cells it was handed all still hold.</p>
+     */
+    private static void seatRoomOnWalkingPlane(List<StructurePiece> pieces, RoomGeometry geometry,
+                                               int walkingPlaneY, int sinkOffset) {
+        int lift = geometry.doorPlaneY() - walkingPlaneY;
+        if (lift == 0) {
+            return;
+        }
+        for (StructurePiece piece : pieces) {
+            piece.move(0, -lift, 0);
+        }
+        if (lift > sinkOffset) {
+            // Seating it is still the right thing -- the alternative leaves the doors unreachable --
+            // so this reports rather than rejects. What it costs is the stone buffer below: the
+            // floor owns sinkOffset blocks under its walking plane, and rows past that are cut out
+            // of gapBetweenFloors and eventually out of the ceiling of the floor beneath.
+            Dungeons.LOGGER.warn(
+                    "[D2-PREFAB] room template {} carries {} rows below its door markers but the "
+                            + "floor's sinkOffset budget is only {} -- the bottom {} will be dug out "
+                            + "of the buffer under the floor. Either raise sinkOffset or author the "
+                            + "door markers no higher than local Y {}.",
+                    describeElements(pieces), lift, sinkOffset, lift - sinkOffset, sinkOffset);
+        }
+    }
+
+    /**
+     * World geometry read off an assembled room's door/connector jigsaw markers. {@code doorPlaneY}
+     * is the world Y of the lowest marker -- the room's own walking plane.
+     */
     private record RoomGeometry(Rectangle2D worldFootprint, List<Coords2D> doorWorldCells,
-                                List<Coords2D> premadeWorldCells) {
+                                List<Coords2D> premadeWorldCells, int doorPlaneY) {
     }
 
     @Override
