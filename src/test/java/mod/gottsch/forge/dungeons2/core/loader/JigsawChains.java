@@ -107,8 +107,14 @@ final class JigsawChains {
         }
     }
 
-    /** One template's jigsaw geometry. */
-    record Template(List<Integer> doorYs, List<Marker> markers) {
+    /**
+     * One template's jigsaw geometry, plus {@code height} &mdash; the {@code size} tag's Y, i.e. how
+     * many rows the template occupies from its own local Y 0.
+     *
+     * <p>{@code height} is only needed by the gates that ask whether a room FITS its floor's
+     * vertical budget; the span gates care about marker positions and never look at it.</p>
+     */
+    record Template(List<Integer> doorYs, List<Marker> markers, int height) {
 
         boolean isMonolithic() {
             return doorYs.size() >= 2;
@@ -136,8 +142,20 @@ final class JigsawChains {
         }
     }
 
-    /** One complete path through a chain: where it ended and how it got there. */
-    record Walk(String trail, String failure, String endName, Template end, int endOriginY) {
+    /** One piece of a chain, seated at {@code originY} relative to the START piece's local Y 0. */
+    record Seat(String name, Template template, int originY) {
+    }
+
+    /**
+     * One complete path through a chain: where it ended and how it got there.
+     *
+     * <p>{@code seats} is every piece on the path including the start, each with the Y it was seated
+     * at. The span gates only need the end, because what they measure is the distance between the
+     * two ends' door markers; a gate that asks how much VERTICAL ROOM the assembly occupies needs
+     * all of them, because the deepest and tallest pieces of a chain are usually in the middle.</p>
+     */
+    record Walk(String trail, String failure, String endName, Template end, int endOriginY,
+                List<Seat> seats) {
         boolean failed() {
             return failure != null;
         }
@@ -152,20 +170,24 @@ final class JigsawChains {
      */
     static List<Walk> walk(String startName, Map<String, Template> shipped) {
         List<Walk> results = new ArrayList<>();
-        follow(startName, shipped.get(startName), 0, startName, new LinkedHashSet<>(), shipped, results);
+        follow(startName, shipped.get(startName), 0, startName, new LinkedHashSet<>(), shipped,
+                List.of(), results);
         return results;
     }
 
     private static void follow(String name, Template current, int originY, String trail,
-                               Set<String> seen, Map<String, Template> shipped, List<Walk> out) {
+                               Set<String> seen, Map<String, Template> shipped,
+                               List<Seat> sofar, List<Walk> out) {
+        List<Seat> seats = new ArrayList<>(sofar);
+        seats.add(new Seat(name, current, originY));
         if (!seen.add(name)) {
             out.add(new Walk(trail, "the chain loops back to " + name + " and would never terminate",
-                    name, current, originY));
+                    name, current, originY, seats));
             return;
         }
         Marker outgoing = current.outgoing();
         if (outgoing == null) {
-            out.add(new Walk(trail, null, name, current, originY));
+            out.add(new Walk(trail, null, name, current, originY, seats));
             return;
         }
         int attachY = originY + outgoing.y() + outgoing.stepY();
@@ -178,14 +200,15 @@ final class JigsawChains {
         });
         if (candidates.isEmpty()) {
             out.add(new Walk(trail, "targets '" + outgoing.target() + "', which no shipped template"
-                    + " carries as a jigsaw name -- the chain stops there", name, current, originY));
+                    + " carries as a jigsaw name -- the chain stops there", name, current, originY,
+                    seats));
             return;
         }
         for (String candidateName : candidates) {
             Template candidate = shipped.get(candidateName);
             int childOrigin = attachY - candidate.incoming(outgoing.target()).y();
             follow(candidateName, candidate, childOrigin, trail + " -> " + candidateName,
-                    new LinkedHashSet<>(seen), shipped, out);
+                    new LinkedHashSet<>(seen), shipped, seats, out);
         }
     }
 
@@ -217,7 +240,8 @@ final class JigsawChains {
                 }
             }
             planes.sort(Integer::compareTo);
-            out.put(file.getFileName().toString(), new Template(planes, markers));
+            int height = tag.getList("size", Tag.TAG_INT).getInt(1);
+            out.put(file.getFileName().toString(), new Template(planes, markers, height));
         }
         return out;
     }
