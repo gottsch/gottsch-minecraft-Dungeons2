@@ -34,9 +34,36 @@ import java.util.Set;
  */
 public interface IDungeonPillarGenerator {
 
-    /** Append this room's columns to {@code out}. See {@code IDungeonWallGenerator#build}. */
+    /**
+     * Append this room's columns to {@code out}, standing off every cell in {@code excluded}.
+     * See {@code IDungeonWallGenerator#build}.
+     *
+     * <p><strong>{@code excluded} is the room's pit</strong> &mdash; backlog #58. A column is drawn
+     * from the walking plane UPWARD, so one standing in an excavated cell hangs over the hole with
+     * nothing under it. The pit is not derivable from {@link RoomData}: it is rolled per room by
+     * {@code RoomPitGenerator}, which is why it arrives as an argument rather than being worked out
+     * here the way the doorway approaches are.</p>
+     *
+     * <p>Excluding a cell drops <em>that column</em> and leaves the rest of the layout standing,
+     * which is the same granularity the doorway exclusion already has and is right for the same
+     * reason: a colonnade missing one column reads as a colonnade, and the alternative is dropping
+     * a whole layout because one of its cells fell in a hole.</p>
+     */
     void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
-               List<BlockPlacement> out);
+               List<BlockPlacement> out, Set<Coords2D> excluded);
+
+    /**
+     * Convenience for a room with nothing to avoid.
+     *
+     * <p>The exclusion-taking form is the one an implementation has to write, deliberately: making
+     * the no-exclusion form the abstract one would let a new generator be written without ever
+     * seeing the parameter, and #58 is exactly a fault of a generator not consulting something it
+     * should have.</p>
+     */
+    default void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
+                       List<BlockPlacement> out) {
+        build(room, floorY, motif, random, out, Set.of());
+    }
 
     /**
      * The floor-level interior cells this generator's columns took, valid after {@link #build}.

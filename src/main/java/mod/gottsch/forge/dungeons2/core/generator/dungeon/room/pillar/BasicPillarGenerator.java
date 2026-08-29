@@ -77,7 +77,7 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
 
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
-                      List<BlockPlacement> out) {
+                      List<BlockPlacement> out, Set<Coords2D> excluded) {
         if (layouts.isEmpty()) {
             return;
         }
@@ -98,7 +98,10 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
                 // the wall ring exists.
                 Coords2D at = new Coords2D(room.getOriginX() + 1 + cell.getX(),
                         room.getOriginZ() + 1 + cell.getY());
-                if (doorways.contains(at) || !taken.add(at)) {
+                // #58: `excluded` is the pit. A column drawn over an excavated cell would start
+                // at the walking plane with the hole beneath it, so it is dropped and the rest of
+                // the layout stands -- the same treatment, and the same set, as a doorway approach.
+                if (doorways.contains(at) || excluded.contains(at) || !taken.add(at)) {
                     continue;
                 }
                 emitColumn(at.getX(), at.getY(), floorY, interiorRows, layout.entry(), out);

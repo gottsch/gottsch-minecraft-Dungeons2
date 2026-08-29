@@ -8,7 +8,11 @@ import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry.PillarEntry;
 import mod.gottsch.forge.dungeons2.core.config.pillar.ColonnadePillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.pillar.QuartetPillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.PitPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
+import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
+import mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.RoomPitGenerator;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
@@ -490,6 +494,84 @@ class PillarGeneratorTest {
 
     private static void assertArray(int[] expected, int[] actual) {
         assertEquals(java.util.Arrays.toString(expected), java.util.Arrays.toString(actual));
+    }
+
+    // ---------- #58: a column must not stand over a pit ----------
+
+    /**
+     * Backlog #58. A column is drawn from the walking plane <em>upward</em>, so one rolled onto a
+     * cell the pit excavated stands in mid-air over the hole.
+     *
+     * <h2>Ordering did not already prevent this</h2>
+     * <p>{@code BasicRoomGenerator} runs the pit first and its comment claimed that was enough,
+     * because "a cell that is now a hole" is not one a later step would stand on. Running first
+     * only makes the pit's cells <em>available</em>; each later step still has to ask. The props
+     * asked, via {@code taken}. This generator did not, because it builds from a layout, and a
+     * layout knows the room's dimensions and nothing about what has been carved out of it.</p>
+     *
+     * <h2>The unguarded run is the point</h2>
+     * <p>Asserting first that a column DOES land in the pit without the exclusion is what stops
+     * this passing on a room where the layout never overlapped the pit to begin with &mdash; the
+     * trap #46's tautological test fell into.</p>
+     */
+    @Test
+    void aColumnIsNotBuiltStandingOverAPit() {
+        RoomData room = room(15, 15, 8);
+        int floorY = 60;
+        Set<Coords2D> dug = RoomPitGenerator.excavate(room, floorY,
+                new PitPatternEntry(new CentrePitShape(7, 3)), 5,
+                new FloorConfig(PILLAR, PILLAR), RandomSource.create(0xD2_58L), new ArrayList<>());
+        assertFalse(dug.isEmpty(), "the pit did not excavate, so this test proves nothing");
+
+        PillarEntry entry = new PillarEntry(new GridPillarLayout(2, 1), PILLAR);
+
+        Set<Coords2D> unguarded = distinctCoords(build(room, entry, new BasicPillarGenerator()));
+        Set<Coords2D> overlap = new LinkedHashSet<>(unguarded);
+        overlap.retainAll(dug);
+        assertFalse(overlap.isEmpty(),
+                "this room and layout never put a column in the pit, so the guarded run below would"
+                        + " pass whether or not the exclusion works -- widen the pit or tighten the"
+                        + " grid");
+
+        List<BlockPlacement> out = new ArrayList<>();
+        BasicPillarGenerator gen = new BasicPillarGenerator();
+        gen.withPillarLayouts(PillarPatternSelector.toLayouts(new PillarPatternEntry(List.of(entry))))
+                .build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), out, dug);
+
+        for (Coords2D cell : distinctCoords(out)) {
+            assertFalse(dug.contains(cell),
+                    "a column was built at " + key(cell) + ", which the pit excavated -- it stands"
+                            + " on nothing");
+        }
+
+        // Per-cell, not all-or-nothing. A guard that dropped the whole layout would satisfy the
+        // loop above and ruin the room; a colonnade missing the columns that fell in the hole is
+        // still a colonnade. This is the same granularity the doorway exclusion has always had.
+        assertFalse(out.isEmpty(),
+                "the whole colonnade was dropped because part of it fell in the pit -- the exclusion"
+                        + " skips cells, not layouts");
+    }
+
+    /**
+     * The no-exclusion overload must be exactly an empty exclusion set. This is what lets #58 ship
+     * without re-rolling a single existing seed: a room with no pit lays out as it always has.
+     */
+    @Test
+    void theConvenienceOverloadIsTheSameAsExcludingNothing() {
+        RoomData room = room(15, 15, 8);
+        PillarEntry entry = new PillarEntry(new GridPillarLayout(2, 1), PILLAR);
+
+        List<BlockPlacement> viaOverload = build(room, entry, new BasicPillarGenerator());
+
+        List<BlockPlacement> viaEmptySet = new ArrayList<>();
+        new BasicPillarGenerator()
+                .withPillarLayouts(PillarPatternSelector.toLayouts(
+                        new PillarPatternEntry(List.of(entry))))
+                .build(room, 60, DungeonMotif.CLASSIC, RandomSource.create(1L), viaEmptySet, Set.of());
+
+        assertFalse(viaOverload.isEmpty(), "nothing built, so the comparison is vacuous");
+        assertEquals(distinctCoords(viaOverload), distinctCoords(viaEmptySet),
+                "the no-exclusion overload and an empty exclusion set built different rooms");
     }
 
     private static String key(Coords2D c) {

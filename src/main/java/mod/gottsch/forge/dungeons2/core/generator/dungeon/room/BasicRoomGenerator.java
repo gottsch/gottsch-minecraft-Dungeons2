@@ -133,6 +133,13 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // overwrites the slab it just laid (a later placement in the same cell wins), and before
         // pillars, platforms and props because those choose cells to stand on and a cell that is
         // now a hole is not one of them.
+        //
+        // #58: ORDER ALONE WAS NOT ENOUGH, and for a year this comment claimed more than the code
+        // did. Running first only makes the pit's cells AVAILABLE to the steps after it; each of
+        // those steps still has to ask. The props did ask, via `taken` below. The columns and daises
+        // did not -- they build from a layout, and a layout knows the room's dimensions and nothing
+        // about what has been carved out of it -- so a colonnade rolled over a pit put columns in
+        // mid-air above the hole. They are handed the set explicitly now.
         Set<Coords2D> pit = scheme.pitFor(width, depth, height)
                 .map(entry -> RoomPitGenerator.excavate(room, floorY, entry, sinkOffset,
                         motifConfig.floor(), random, blocks))
@@ -146,7 +153,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // right way round: a column is structure and a rib is decoration, so the column should read
         // as carrying the ceiling rather than being interrupted a block short of it.
         IDungeonPillarGenerator pillarGen = selectPillarGenerator(motif, scheme, width, depth, height);
-        pillarGen.build(room, floorY, motif, random, blocks);
+        pillarGen.build(room, floorY, motif, random, blocks, pit);
 
         // Platforms after columns, and for a concrete reason rather than symmetry: both draw in the
         // interior air, and where a dais meets a column the column should be the thing standing on
@@ -154,7 +161,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // and its footprint check skips cells another platform took.
         IDungeonPlatformGenerator platformGen =
                 selectPlatformGenerator(motif, scheme, width, depth, height);
-        platformGen.build(room, floorY, motif, random, blocks);
+        platformGen.build(room, floorY, motif, random, blocks, pit);
 
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.

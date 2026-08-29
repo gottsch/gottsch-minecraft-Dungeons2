@@ -4,6 +4,10 @@ import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry.PlatformEntry;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
+import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
+import mod.gottsch.forge.dungeons2.core.config.PitPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.RoomPitGenerator;
 import mod.gottsch.forge.dungeons2.core.config.platform.CentrePlatformLayout;
 import mod.gottsch.forge.dungeons2.core.config.platform.CornersPlatformLayout;
 import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutPattern;
@@ -228,6 +232,65 @@ class PlatformGeneratorTest {
                                 + " \"block\": \"" + BLOCK + "\"}]}"));
         assertTrue(badType.result().isEmpty(), "an unknown platform type must not decode");
         assertTrue(badType.error().orElseThrow().message().contains("gazebo"));
+    }
+
+    // ---------- #58: a dais must not be built over a pit ----------
+
+    /**
+     * Backlog #58, the platform half. A centre dais and a centre pit want the same cells by
+     * construction, which is the collision an author is most likely to write by accident.
+     *
+     * <h2>All-or-nothing here, per-cell for columns</h2>
+     * <p>A dais with a bite taken out of it over a hole is worse than no dais, where a colonnade
+     * missing one column is still a colonnade. So this generator drops the whole footprint and
+     * {@code BasicPillarGenerator} skips individual cells. The asymmetry is not new &mdash; it is
+     * exactly how each already treats the doorway approaches.</p>
+     */
+    @Test
+    void aDaisOverlappingAPitIsDroppedWhole() {
+        RoomData room = room(15, 15, 8);
+        int floorY = 60;
+        Set<Coords2D> dug = RoomPitGenerator.excavate(room, floorY,
+                new PitPatternEntry(new CentrePitShape(7, 3)), 5,
+                new FloorConfig(BLOCK, BLOCK), RandomSource.create(0xD2_58L), new ArrayList<>());
+        assertFalse(dug.isEmpty(), "the pit did not excavate, so this test proves nothing");
+
+        PlatformEntry entry = dais(new CentrePlatformLayout(), 5, Optional.empty());
+
+        List<BlockPlacement> unguarded = build(room, entry, new BasicPlatformGenerator());
+        assertFalse(unguarded.isEmpty(), "the dais never built, so this test proves nothing");
+
+        List<BlockPlacement> guarded = new ArrayList<>();
+        new BasicPlatformGenerator()
+                .withPlatformLayouts(PlatformPatternSelector.toLayouts(
+                        new PlatformPatternEntry(List.of(entry))))
+                .build(room, floorY, DungeonMotif.CLASSIC, RandomSource.create(1L), guarded, dug);
+
+        assertTrue(guarded.isEmpty(),
+                "the dais sits on the pit and must be dropped entirely, but " + guarded.size()
+                        + " placement(s) were emitted");
+    }
+
+    /**
+     * The no-exclusion overload must be exactly an empty exclusion set, so a room with no pit lays
+     * out as it always has and #58 re-rolls nothing.
+     */
+    @Test
+    void theConvenienceOverloadIsTheSameAsExcludingNothing() {
+        RoomData room = room(15, 15, 8);
+        PlatformEntry entry = dais(new CentrePlatformLayout(), 5, Optional.empty());
+
+        List<BlockPlacement> viaOverload = build(room, entry, new BasicPlatformGenerator());
+
+        List<BlockPlacement> viaEmptySet = new ArrayList<>();
+        new BasicPlatformGenerator()
+                .withPlatformLayouts(PlatformPatternSelector.toLayouts(
+                        new PlatformPatternEntry(List.of(entry))))
+                .build(room, 60, DungeonMotif.CLASSIC, RandomSource.create(1L), viaEmptySet, Set.of());
+
+        assertFalse(viaOverload.isEmpty(), "nothing built, so the comparison is vacuous");
+        assertEquals(viaOverload.size(), viaEmptySet.size(),
+                "the no-exclusion overload and an empty exclusion set built different rooms");
     }
 
     private static BlockPlacement at(List<BlockPlacement> out, int x, int z) {

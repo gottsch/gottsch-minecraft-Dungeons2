@@ -86,6 +86,21 @@ public class DungeonsItems {
             "spawner_marker",
             () -> new BlockItem(DungeonsBlocks.SPAWNER_MARKER.get(), new Item.Properties()));
 
+    /**
+     * Backlog #48: the item form of the chest marker, for the same reason {@link #SPAWNER_MARKER}
+     * has one &mdash; a template author places it by hand.
+     *
+     * <p>It was missing until 2026-08-29. The block shipped visible and textured and its javadoc
+     * said "its author has to be able to see it while building", which was true and not the whole
+     * requirement: with no {@code BlockItem} the only way to place one was {@code /setblock}, so it
+     * could never be held, and its {@code facing} property could never be set by looking &mdash;
+     * {@code /setblock} takes the default. That is easy to miss precisely because #48 was finished
+     * and confirmed in game: the feature worked, the authoring path was the awkward part.</p>
+     */
+    public static final RegistryObject<Item> CHEST_MARKER = Registration.ITEMS.register(
+            "chest_marker",
+            () -> new BlockItem(DungeonsBlocks.CHEST_MARKER.get(), new Item.Properties()));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -96,6 +111,7 @@ public class DungeonsItems {
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(CHEST_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 

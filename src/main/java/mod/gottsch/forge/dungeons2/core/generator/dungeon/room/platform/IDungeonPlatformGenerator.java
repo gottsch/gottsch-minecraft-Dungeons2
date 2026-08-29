@@ -34,8 +34,23 @@ import java.util.Set;
  */
 public interface IDungeonPlatformGenerator {
 
+    /**
+     * Append this room's daises to {@code out}, keeping clear of every cell in {@code excluded}.
+     *
+     * <p><strong>{@code excluded} is the room's pit</strong> &mdash; backlog #58, the same argument
+     * and the same reason as {@code IDungeonPillarGenerator#build}. A dais is all-or-nothing here
+     * where a colonnade is per-cell: its whole footprint must be clear, so one overlapping a pit is
+     * dropped entirely rather than built with a bite out of it. That asymmetry is not new &mdash; it
+     * is how the doorway exclusion has always worked in each &mdash; and it is right in both places.</p>
+     */
     void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
-               List<BlockPlacement> out);
+               List<BlockPlacement> out, Set<Coords2D> excluded);
+
+    /** Convenience for a room with nothing to avoid. See {@code IDungeonPillarGenerator}. */
+    default void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
+                       List<BlockPlacement> out) {
+        build(room, floorY, motif, random, out, Set.of());
+    }
 
     /**
      * The floor-level cells this generator's daises took, valid after {@link #build}. Same space and

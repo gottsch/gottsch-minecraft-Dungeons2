@@ -61,7 +61,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
 
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
-                      List<BlockPlacement> out) {
+                      List<BlockPlacement> out, Set<Coords2D> excluded) {
         if (layouts.isEmpty()) {
             return;
         }
@@ -80,9 +80,12 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
             for (Coords2D at : layout.provider().footprint(interiorWidth, interiorDepth)) {
                 Map<Coords2D, String> dais = plan(at, half, entry, room, interiorWidth, interiorDepth);
                 // The whole footprint has to be clear: inside the interior, off every doorway
-                // approach, and not already taken by an earlier platform.
+                // approach, out of the pit (#58), and not already taken by an earlier platform.
+                // All-or-nothing on purpose -- a dais with a bite out of it over a hole is worse
+                // than no dais, where a colonnade missing one column is still a colonnade.
                 if (dais == null || dais.keySet().stream().anyMatch(
-                        cell -> doorways.contains(cell) || taken.contains(cell))) {
+                        cell -> doorways.contains(cell) || excluded.contains(cell)
+                                || taken.contains(cell))) {
                     continue;
                 }
                 emit(dais, at, entry, room, floorY, out);
