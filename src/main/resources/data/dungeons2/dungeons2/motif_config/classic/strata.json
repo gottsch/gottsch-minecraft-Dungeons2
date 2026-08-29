@@ -41,6 +41,31 @@
         "wall": "minecraft:mud_bricks",
         "pattern": {
           "patterns": [
+            // FIRST in the list, and it has to be. This is the only wall pattern that fills every
+            // cell rather than marking a few -- it is the wall's MATERIAL, not a treatment over
+            // one -- and patterns compose by later-non-null-wins. Listed after the course below,
+            // it would erase it.
+            //
+            // The mud stratum is the dungeon being reclaimed from underneath, so the reclaiming
+            // material has to be heaviest at the floor and thin out with height. `courses` cannot
+            // draw that: its bands have a straight edge identical in every column, which reads as
+            // masonry someone laid. Here the boundary falls somewhere different in every column
+            // and there is no line to point at.
+            //
+            // hold_rows 2 keeps the foot of the wall at the full 0.9 before the ramp starts.
+            // Without it a bare ramp begins falling at row 1 and "mostly mud at the bottom" is only
+            // ever true of a single row. Top row lands on 0.05 rather than 0, so the cobble never
+            // reads as a clean band either.
+            {
+              "type": "dungeons2:gradient",
+              "config": {
+                "bottom_block": "minecraft:mud_bricks",
+                "top_block": "minecraft:cobblestone",
+                "bottom_probability": 0.9,
+                "top_probability": 0.05,
+                "hold_rows": 2
+              }
+            },
             {
               "type": "dungeons2:courses",
               "config": {

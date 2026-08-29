@@ -95,6 +95,11 @@ class ShippedBlockIdsTest {
             // one lived in a scheme file the sweep does not read. Real block ids, so they are
             // verified rather than exempted.
             "primaryBlock", "secondaryBlock", "edgeLeftBlock", "edgeRightBlock",
+            // The gradient wall pattern's two materials. Snake_case where the older slots are
+            // camelCase because this type was authored after the closed-schema migration, and the
+            // sweep classifies by literal key name -- so both spellings have to be listed even
+            // though they mean the same kind of thing.
+            "bottom_block", "top_block",
             // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
             // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
             // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.
