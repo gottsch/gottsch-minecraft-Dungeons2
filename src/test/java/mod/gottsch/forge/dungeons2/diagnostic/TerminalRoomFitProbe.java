@@ -19,17 +19,37 @@ package mod.gottsch.forge.dungeons2.diagnostic;
 
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
+import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.maze.DungeonStackPlanner;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * How big an authored boss room can be before the bottom floor stops fitting it &mdash; backlog
@@ -129,5 +149,126 @@ class TerminalRoomFitProbe {
                 .withSize(size)
                 .withTerminalRoomSize(side, side)
                 .plan();
+    }
+
+    // ---------- the shipped template, measured through the real placement path ----------
+
+    /**
+     * The number the table above cannot give: how often the <strong>shipped</strong> boss room is
+     * actually adopted &mdash; #46's hand-off step, run when {@code end_rooms} stopped being empty.
+     *
+     * <h2>The table above asks a harsher question than the mod now asks</h2>
+     * <p>{@code withTerminalRoomSize} <em>forces</em> the slot to a size, so a size that does not
+     * fit takes the whole plan down with it &mdash; that is the pre-#46 mechanism, and it is why
+     * the table is headed "% of seeds that still PLAN AT ALL". The assembler path added by #46 does
+     * not work that way: {@code placeBossRoom} returns null when no draw fits, and the caller
+     * reserves the ordinary synthetic terminal room instead. So the shipped 19x19 cannot delete a
+     * dungeon, and the real question changed from "does it fit" to "how often do we get one".</p>
+     *
+     * <p>Both numbers are reported here, because the second is the check that the first claim is
+     * true: adoption may be well under 100%, but planning must be exactly 100%.</p>
+     *
+     * <h2>The size is read off the shipped .nbt</h2>
+     * <p>Not a hand-written 19. The whole point of re-measuring at hand-off is that the number now
+     * tracks a real file, and a re-cut template that changes the fallback rate should change this
+     * output without anyone remembering to edit a constant.</p>
+     */
+    @Test
+    void measureTheShippedBossRoom() {
+        List<int[]> shipped = shippedEndRoomFootprints();
+        assertFalse(shipped.isEmpty(),
+                "no end_rooms template ships, so there is nothing to measure -- if the pool was"
+                        + " emptied again, this probe should go back to being a placeholder test");
+
+        System.out.println("=== #46 shipped boss room: adoption vs planning ===");
+        for (int[] wd : shipped) {
+            System.out.printf("template footprint %dx%d%n", wd[0], wd[1]);
+            for (DungeonSize size : DungeonSize.values()) {
+                int planned = 0;
+                int adopted = 0;
+                for (int i = 0; i < DUNGEONS; i++) {
+                    long seed = 0xD2_4600_0002L + i * 7919L;
+                    Optional<DungeonLayout> layout = planWithBoss(seed, size, wd[0], wd[1]);
+                    if (layout.isEmpty()) {
+                        continue;
+                    }
+                    planned++;
+                    if (hasBossRoom(layout.get())) {
+                        adopted++;
+                    }
+                }
+                System.out.printf("  %-8s planned %5.1f%%   boss room adopted %5.1f%%%n",
+                        size, 100.0 * planned / DUNGEONS, 100.0 * adopted / DUNGEONS);
+
+                // The invariant the assembler path exists to provide. Adoption is calibration and
+                // is allowed to be low; losing the DUNGEON is the failure #46 was careful to avoid,
+                // and it is the one thing here that gates.
+                assertEquals(DUNGEONS, planned,
+                        "a boss room that does not fit must degrade to the synthetic terminal room,"
+                                + " not take the dungeon with it -- " + size + " lost "
+                                + (DUNGEONS - planned) + " plan(s) at " + wd[0] + "x" + wd[1]);
+            }
+        }
+    }
+
+    private static Optional<DungeonLayout> planWithBoss(long seed, DungeonSize size,
+                                                        int width, int depth) {
+        return new DungeonStackPlanner(seed, new Coords(0, 0, 0), 72, "classic",
+                new TemplateCatalog())
+                .withSize(size)
+                // Stands in for vanilla jigsaw at the shipped footprint, honouring the protocol:
+                // the same shape BossRoomPlacementTest uses, with one authored door on its edge.
+                .withBossRoomAssembler((worldX, worldY, worldZ, floorIndex, assemblySeed, commit) ->
+                        Optional.of(new DungeonStackPlanner.AssembledRoom(
+                                new Rectangle2D(worldX, worldZ, width, depth),
+                                List.of(new Coords2D(worldX, worldZ + depth / 2)),
+                                List.of())))
+                .plan();
+    }
+
+    private static boolean hasBossRoom(DungeonLayout layout) {
+        FloorLayout bottom = layout.getFloors().get(layout.getFloors().size() - 1);
+        for (RoomData room : bottom.getRooms()) {
+            if (room.getRole() == RoomRole.BOSS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The XZ footprint of every {@code .nbt} under {@code structures/end_rooms}. */
+    private static List<int[]> shippedEndRoomFootprints() {
+        List<int[]> out = new ArrayList<>();
+        for (Path file : walkResource("/data/dungeons2/structures/end_rooms")) {
+            try (InputStream in = Files.newInputStream(file)) {
+                CompoundTag tag = NbtIo.readCompressed(in);
+                var size = tag.getList("size", Tag.TAG_INT);
+                out.add(new int[] {size.getInt(0), size.getInt(2)});
+            } catch (Exception unreadable) {
+                fail("could not read " + file + ": " + unreadable);
+            }
+        }
+        return out;
+    }
+
+    private static List<Path> walkResource(String root) {
+        URL url = TerminalRoomFitProbe.class.getResource(root);
+        if (url == null) {
+            return List.of();
+        }
+        try {
+            URI uri = url.toURI();
+            Path base;
+            if ("jar".equals(uri.getScheme())) {
+                base = FileSystems.newFileSystem(uri, Map.of()).getPath(root);
+            } else {
+                base = Paths.get(uri);
+            }
+            try (Stream<Path> walk = Files.walk(base)) {
+                return walk.filter(path -> path.toString().endsWith(".nbt")).sorted().toList();
+            }
+        } catch (Exception unreadable) {
+            return fail("could not walk " + root + ": " + unreadable);
+        }
     }
 }

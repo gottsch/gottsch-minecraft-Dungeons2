@@ -187,14 +187,10 @@ public class DungeonStructure extends Structure {
     private static final int TRANSITION_MAX_DISTANCE = 32;
 
     /**
-     * Phase 8: jigsaw-assembled interior ("NORMAL") room prefabs. Unlike transitions,
-     * a room is a single self-contained piece at one Y anchor (the floor's own
-     * walking plane) -- no chaining, so {@code maxDepth} is a safety cap only, not a
-     * design constraint the author needs to size a chain against.
+     * Phase 8: jigsaw-assembled interior ("NORMAL") room prefabs.
      *
-     * <p>Motif-parametrized: a room is never chained (no outgoing joint at all,
-     * by design -- see the Phase 8 plan), so there's no cross-pool reference risk
-     * moving it under a motif subfolder.</p>
+     * <p>Motif-parametrized, which is safe across pools because a room chain only ever names its
+     * own sub-pool under the same motif folder.</p>
      */
     private static ResourceLocation roomStartPool(String motifValue) {
         return new ResourceLocation(Dungeons.MOD_ID, "rooms/" + motifValue + "/normal");
@@ -212,8 +208,31 @@ public class DungeonStructure extends Structure {
         return new ResourceLocation(Dungeons.MOD_ID,
                 "rooms/" + motifValue + "/" + stratum + "/normal");
     }
-    private static final int ROOM_MAX_DEPTH = 1;
-    private static final int ROOM_MAX_DISTANCE = 16;
+    /**
+     * How far a room prefab may CHAIN, and how far from its anchor the chain may reach.
+     *
+     * <h2>Rooms chain now; they did not when this was written</h2>
+     * <p>These were 1 and 16, encoding "a room is a single self-contained piece at one Y anchor --
+     * no chaining, so maxDepth is a safety cap only, not a design constraint the author needs to
+     * size a chain against". That stopped being true with {@code 12x29_sunken_hallway_1}, a
+     * three-piece room (an end cap, a sunken middle, another end cap) whose two
+     * {@code dungeons2:door} markers live on the two OUTER pieces.</p>
+     *
+     * <p>Both old values broke it, and both broke it <strong>silently</strong>, which is the part
+     * worth remembering. {@code maxDepth} 1 lets the start piece place one child and stops, so the
+     * third piece never appears and the chain seals itself with its jigsaw's {@code final_state}: a
+     * room that looks deliberate, is the wrong length, and has one door instead of two. Then
+     * {@code maxDistanceFromCenter} 16 is a cube around the anchor that every child's bounding box
+     * must fit inside, so a chain 29 blocks long loses its far pieces to a second, independent
+     * truncation. Neither logs anything -- vanilla drops the child and carries on.</p>
+     *
+     * <p>4 and 48 are sized off that room with room to grow (it needs 2 and 29), not tuned. The
+     * real bound on a room prefab is not either of these: the planner measures the assembled
+     * footprint and then has to find it a slot on a floor grid 25-75 cells wide, so a chain that
+     * runs away is rejected there. Being generous here costs an assembly, not a bad dungeon.</p>
+     */
+    private static final int ROOM_MAX_DEPTH = 4;
+    private static final int ROOM_MAX_DISTANCE = 48;
 
     /**
      * Backlog #46: the authored boss room for the bottom floor's terminal slot.

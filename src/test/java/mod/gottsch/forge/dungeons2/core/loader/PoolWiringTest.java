@@ -136,6 +136,14 @@ class PoolWiringTest {
                     "/data/dungeons2/structures/rooms",
                     "/data/dungeons2/worldgen/template_pool/rooms",
                     "dungeons2:rooms/%s/", "dungeons2:rooms/%s/normal", false),
+            // #46's boss room. Registered here on 2026-08-29, when the first end_rooms template
+            // was authored and the pool stopped being empty -- until then EndRoomPoolPlaceholderTest
+            // held the path and asserted the emptiness that kept the feature inert, and its whole
+            // job was to fail at this moment and hand the category over.
+            new Category("end_rooms",
+                    "/data/dungeons2/structures/end_rooms",
+                    "/data/dungeons2/worldgen/template_pool/end_rooms",
+                    "dungeons2:end_rooms/%s/", "dungeons2:end_rooms/%s/normal", false),
             // Reached only from another piece's joint -- a room's centre jigsaw today. No start
             // pool, hence the null; see Category.
             new Category("decorations",

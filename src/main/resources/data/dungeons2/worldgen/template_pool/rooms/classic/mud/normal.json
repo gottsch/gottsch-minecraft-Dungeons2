@@ -86,6 +86,15 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/12x29_sunken_hallway_1a",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/mud/hallway/5x11_hallway_1",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"
