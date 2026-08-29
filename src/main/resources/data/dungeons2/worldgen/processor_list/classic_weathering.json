@@ -1,4 +1,4 @@
-﻿// Weathering for the CLASSIC motif. Applied to BOTH the procedural rooms/corridors
+// Weathering for the CLASSIC motif. Applied to BOTH the procedural rooms/corridors
 // (via PieceProcessors) and the authored .nbt prefabs (via the pool JSONs'
 // "processors" field), so they age identically.
 //
@@ -860,6 +860,21 @@
       //   "underwater_growth": { "probability": 0.15, "blocks": ["minecraft:seagrass"] },
       //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
       // -----------------------------------------------------------------------------
+    },
+    // =========================================================================================
+    // dungeons2:pot (added 2026-08-29) -- backlog #56. Turns an authored dungeons2:pot_marker into
+    // pot ENTITIES and leaves air where the marker stood.
+    //
+    // BEFORE the sweep, deliberately. This processor's finalizeProcessing rewrites each marker cell
+    // to air; decoration_sweep's job is to remove decoration left unsupported by a cell that is now
+    // empty, so it has to run after the cell empties or it sweeps against stale ground.
+    //
+    // No loot_table or variant here: those are pool-level fallbacks for markers that name none of
+    // their own, and every marker is expected to. A marker that resolves to no variant logs
+    // [D2-POT] and spawns nothing rather than guessing a pot.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:pot"
     },
 
     // =========================================================================================

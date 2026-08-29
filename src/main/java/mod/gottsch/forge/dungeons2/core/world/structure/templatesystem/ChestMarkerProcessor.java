@@ -91,11 +91,11 @@ public class ChestMarkerProcessor extends StructureProcessor {
     static final String LOOT_TABLE_TAG = "LootTable";
     static final String LOOT_TABLE_SEED_TAG = "LootTableSeed";
 
-    private final ResourceLocation lootTable;
+    private final Optional<ResourceLocation> lootTable;
     private final ResourceLocation markerBlock;
     private final ResourceLocation chestBlock;
 
-    public ChestMarkerProcessor(ResourceLocation lootTable, ResourceLocation markerBlock,
+    public ChestMarkerProcessor(Optional<ResourceLocation> lootTable, ResourceLocation markerBlock,
                                 ResourceLocation chestBlock) {
         this.lootTable = lootTable;
         this.markerBlock = markerBlock;
@@ -106,10 +106,19 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * {@code loot_table} is optional here, unlike the spawner processor's {@code mob_set}: a
      * template whose markers all name their own table needs no pool-level default, and requiring one
      * would force an author to invent a table nothing draws from.
+     *
+     * <p><strong>It was not actually optional until 2026-08-29.</strong> This read
+     * {@code optionalFieldOf("loot_table", null)}, which looks like it means "absent is null" and
+     * does not: when the field really is missing, DFU wraps the default in {@code Optional.of} and
+     * throws NPE out of the decode. So a processor list that took this entry's documented option
+     * &mdash; omitting the field &mdash; crashed the whole list, with a stack naming the JSON file
+     * rather than the field. Nothing caught it because the one shipped entry, in
+     * {@code classic_chests.json}, always supplied the field; it surfaced when #56's processor
+     * copied the pattern and shipped an entry with no fields at all.</p>
      */
     public static Codec<ChestMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
-                ResourceLocation.CODEC.optionalFieldOf("loot_table", null).forGetter(p -> p.lootTable),
+                ResourceLocation.CODEC.optionalFieldOf("loot_table").forGetter(p -> p.lootTable),
                 ResourceLocation.CODEC.optionalFieldOf("marker_block", DEFAULT_MARKER_BLOCK)
                         .forGetter(p -> p.markerBlock),
                 ResourceLocation.CODEC.optionalFieldOf("chest_block",
@@ -130,7 +139,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
 
         String table = markerLootTable(current);
         if (table == null) {
-            table = lootTable == null ? null : lootTable.toString();
+            table = lootTable.map(ResourceLocation::toString).orElse(null);
         }
         if (table == null || table.isEmpty()) {
             // Left standing on purpose -- see the class note. Logged at WARN because a template that

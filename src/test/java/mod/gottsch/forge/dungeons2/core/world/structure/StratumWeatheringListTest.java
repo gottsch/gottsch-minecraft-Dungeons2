@@ -95,11 +95,12 @@ class StratumWeatheringListTest {
     private static final String DECORATION_TYPE = "dungeons2:decoration";
     private static final String SPAWNER_TYPE = "dungeons2:spawner";
     private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
+    private static final String POT_TYPE = "dungeons2:pot";
 
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
             Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                    SWEEP_TYPE);
+                    SWEEP_TYPE, POT_TYPE);
 
     private static final double EPSILON = 1.0e-6;
 

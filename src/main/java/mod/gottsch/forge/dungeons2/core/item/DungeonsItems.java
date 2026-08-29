@@ -101,6 +101,15 @@ public class DungeonsItems {
             "chest_marker",
             () -> new BlockItem(DungeonsBlocks.CHEST_MARKER.get(), new Item.Properties()));
 
+    /**
+     * Backlog #56: the item form of the pot marker. Same reason the other two markers have one
+     * &mdash; a template author places it by hand, and a block with no item is reachable only by
+     * {@code /setblock}.
+     */
+    public static final RegistryObject<Item> POT_MARKER = Registration.ITEMS.register(
+            "pot_marker",
+            () -> new BlockItem(DungeonsBlocks.POT_MARKER.get(), new Item.Properties()));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -112,6 +121,7 @@ public class DungeonsItems {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(CHEST_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(POT_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 

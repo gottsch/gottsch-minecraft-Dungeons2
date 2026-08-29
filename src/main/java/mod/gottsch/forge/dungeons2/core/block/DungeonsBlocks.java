@@ -99,6 +99,22 @@ public class DungeonsBlocks {
                     .mapColor(MapColor.WOOD).strength(2.5F).sound(SoundType.WOOD).noLootTable()));
 
     /**
+     * Backlog #56: the pot authoring marker. Carries a block entity for the same reason
+     * {@link #CHEST_MARKER} does &mdash; how likely, how many, which variants, what loot and what
+     * potion effects are all PER-MARKER decisions, and a template holds several markers saying
+     * different things, where a codec field on the processor is per POOL.
+     *
+     * <p>Solid and visible so it survives to the processor and its author can see it while
+     * building. Unlike the chest marker it has no {@code FACING}: a pot's rotation is rolled, so
+     * the property would look meaningful and do nothing.</p>
+     */
+    public static final RegistryObject<Block> POT_MARKER = Registration.BLOCKS.register(
+            "pot_marker",
+            () -> new PotMarkerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_ORANGE).strength(2.5F)
+                    .sound(SoundType.STONE).noLootTable()));
+
+    /**
      * Forces this class to load so the fields above actually register. Called from
      * {@link Registration#init()}; see that method's comment for why a holder nothing references
      * registers nothing at all.

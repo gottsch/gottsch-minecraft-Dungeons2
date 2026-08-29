@@ -133,6 +133,18 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@link mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor}. */
+	public static final String POT_PROCESSOR_NAME = "pot";
+
+	/** Backlog #56: turns an authored {@code dungeons2:pot_marker} into pot entities. */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor>> POT_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(POT_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor
+								.codec(() -> Registration.POT_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
 	public static final RegistryObject<StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {

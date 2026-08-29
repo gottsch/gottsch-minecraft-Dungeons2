@@ -29,6 +29,7 @@ import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
@@ -202,6 +203,17 @@ public final class TestRegistries {
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.DECORATION_SWEEP_PROCESSOR_NAME),
                 sweepType);
+
+        // #56's pot marker, which both shipped weathering lists name just before the sweep. Same
+        // reason as every type above -- and this one proved the comment on its own first try: adding
+        // dungeons2:pot to the JSON without adding it here failed 60-odd tests at once with a stack
+        // naming classic_mud_weathering.json rather than the missing type.
+        StructureProcessorType<?>[] potSelf = new StructureProcessorType<?>[1];
+        Codec<PotMarkerProcessor> potCodec = PotMarkerProcessor.codec(() -> potSelf[0]);
+        StructureProcessorType<PotMarkerProcessor> potType = () -> potCodec;
+        potSelf[0] = potType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.POT_PROCESSOR_NAME), potType);
 
         registry.freeze();
     }

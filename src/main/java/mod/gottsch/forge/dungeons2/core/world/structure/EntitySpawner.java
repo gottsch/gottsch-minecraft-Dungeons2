@@ -19,14 +19,21 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
+import mod.gottsch.forge.dungeons2.core.data.PotionEffectSpec;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.List;
 
 /**
  * Turns an {@link EntityPlacement} into a live entity. One implementation shared by the structure
@@ -107,13 +114,71 @@ public final class EntitySpawner {
         }
 
         String lootTable = placement.getLootTable();
-        if (lootTable != null && !lootTable.isBlank()) {
+        CompoundTag effects = effectsTag(placement);
+        boolean wantsLoot = lootTable != null && !lootTable.isBlank();
+        if (wantsLoot || effects != null) {
+            // ONE round trip for both. Two would be wrong rather than merely wasteful: each starts
+            // from saveWithoutId, so the second would be built from the entity as the first left it
+            // -- correct today, and quietly dependent on load() having written everything back.
             CompoundTag tag = new CompoundTag();
             entity.saveWithoutId(tag);
-            tag.putString("LootTable", new ResourceLocation(lootTable).toString());
-            tag.putLong("LootTableSeed", placement.getLootTableSeed());
+            if (wantsLoot) {
+                tag.putString("LootTable", new ResourceLocation(lootTable).toString());
+                tag.putLong("LootTableSeed", placement.getLootTableSeed());
+            }
+            if (effects != null) {
+                tag.put(EFFECTS_KEY, effects);
+            }
             entity.load(tag);
         }
         return level.addFreshEntity(entity);
+    }
+
+    /**
+     * The key {@code dungeonblocks}' {@code PotionEntity} reads its effects from, and the shape it
+     * expects: a compound that {@code PotionUtils.getAllEffects} understands, which is the same
+     * vocabulary a vanilla potion ITEM uses.
+     */
+    private static final String EFFECTS_KEY = "Effects";
+    private static final String CUSTOM_EFFECTS_KEY = "CustomPotionEffects";
+
+    /**
+     * Builds the {@code Effects} compound, or null when this placement authored none.
+     *
+     * <h2>Serialised by vanilla, not by hand</h2>
+     * <p>Each effect is turned into a real {@link MobEffectInstance} and written with its own
+     * {@code save}. Hand-writing the tag would mean writing the id, and in 1.20.1 that is the
+     * numeric {@code Id} byte, which Forge then extends with a namespaced field for modded effects
+     * &mdash; a detail that has changed between versions and would be wrong here in a way nothing
+     * would report, because an unreadable effect is silently dropped rather than throwing. Asking
+     * vanilla to write it keeps the question vanilla's.</p>
+     *
+     * <p>An effect id that does not resolve is skipped with a warning rather than aborting: losing
+     * one effect off a prop is not worth failing a chunk over, the same degrade-don't-abort rule
+     * the unresolved entity id above follows.</p>
+     */
+    private static CompoundTag effectsTag(EntityPlacement placement) {
+        List<PotionEffectSpec> specs = placement.getEffects();
+        if (specs == null || specs.isEmpty()) {
+            return null;
+        }
+        ListTag list = new ListTag();
+        for (PotionEffectSpec spec : specs) {
+            ResourceLocation id = ResourceLocation.tryParse(spec.effect());
+            MobEffect effect = id == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(id);
+            if (effect == null) {
+                Dungeons.LOGGER.warn("Unknown mob effect '{}' on {} -- skipped", spec.effect(),
+                        placement.getEntityId());
+                continue;
+            }
+            list.add(new MobEffectInstance(effect, spec.duration(), spec.amplifier())
+                    .save(new CompoundTag()));
+        }
+        if (list.isEmpty()) {
+            return null;
+        }
+        CompoundTag effects = new CompoundTag();
+        effects.put(CUSTOM_EFFECTS_KEY, list);
+        return effects;
     }
 }

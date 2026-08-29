@@ -25,6 +25,7 @@ import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
@@ -80,6 +81,7 @@ class WeatheringProcessorListTest {
 
     /** The decoration sweep's dispatch key as authored in the JSON. */
     private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
+    private static final String POT_TYPE = "dungeons2:pot";
 
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
@@ -115,9 +117,9 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(5, processors.size(),
-                "Expected the vanilla rule processor, aging, decoration, the decoration sweep"
-                        + " and the #10 spawner marker");
+        assertEquals(6, processors.size(),
+                "Expected the vanilla rule processor, aging, decoration, the decoration sweep,"
+                        + " the #10 spawner marker and the #56 pot marker");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -128,6 +130,7 @@ class WeatheringProcessorListTest {
                 case DECORATION_TYPE -> DecorationProcessor.codec(NO_TYPE);
                 case SPAWNER_TYPE -> SpawnerMarkerProcessor.codec(NO_TYPE);
                 case SWEEP_TYPE -> DecorationSweepProcessor.codec(NO_TYPE);
+                case POT_TYPE -> PotMarkerProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -176,8 +179,19 @@ class WeatheringProcessorListTest {
         // meaningfully fire on a procedural piece: it only repairs damage done by a piece rendered
         // AFTER the one that decorated, and the standing rule (#18) is that procedural pieces
         // render first.
-        Set<String> chunkSafe =
-                Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE, SWEEP_TYPE);
+        //
+        // dungeons2:pot (#56) is vetted the same way dungeons2:spawner is, and a little more
+        // strongly. It is not marked LevelIndependentProcessor, so it lands in the clipped pass --
+        // which is exactly where it wants to be, because clipping IS its deduplication: spawning an
+        // entity is not idempotent the way writing a block is, so each chunk pass must spawn only
+        // the markers inside its own box. Clipping cannot make it decide differently either, because
+        // it decides nothing from the level: a marker is rolled from its own NBT and a seed derived
+        // from its position, so every pass that sees a given marker rolls the same pot. Its other
+        // effect, rewriting the marker cell to air, is an ordinary idempotent block write. And like
+        // the spawner marker it cannot fire on a procedural piece at all -- it matches a marker
+        // BLOCK, which only an authored template contains.
+        Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
+                SWEEP_TYPE, POT_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),

@@ -15,6 +15,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
+
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -41,7 +47,7 @@ class ChestMarkerProcessorTest {
 
     private static ChestMarkerProcessor processor(String poolTable) {
         return new ChestMarkerProcessor(
-                poolTable == null ? null : new ResourceLocation(poolTable),
+                Optional.ofNullable(poolTable).map(ResourceLocation::new),
                 new ResourceLocation("dungeons2:chest_marker"),
                 new ResourceLocation("minecraft:chest"));
     }
@@ -82,6 +88,43 @@ class ChestMarkerProcessorTest {
         nbt.putString(ChestMarkerBlockEntity.LOOT_TABLE, "dungeons2:chests/classic_hoard");
         assertEquals("dungeons2:chests/classic_hoard", nbt.getString(ChestMarkerBlockEntity.LOOT_TABLE));
         assertTrue(nbt.contains(ChestMarkerBlockEntity.LOOT_TABLE));
+    }
+
+    /**
+     * The codec must decode an entry that omits {@code loot_table} &mdash; which the field is
+     * documented as allowing, and which it did not actually allow until 2026-08-29.
+     *
+     * <h2>Why a null default is not "absent is null"</h2>
+     * <p>{@code optionalFieldOf(name, null)} hands DFU a null default, and DFU wraps a default in
+     * {@code Optional.of} on the absent path. So omitting the field &mdash; the documented option
+     * &mdash; threw NPE out of the decode and took the whole processor list with it, reporting a
+     * stack that named the JSON file rather than the field.</p>
+     *
+     * <p>Nothing caught it for as long as it existed because the single shipped entry, in
+     * {@code classic_chests.json}, always supplies the field. It surfaced only when #56's pot
+     * processor copied the pattern and shipped an entry with no fields at all.</p>
+     */
+    @Test
+    void theProcessorDecodesWithNoLootTable() {
+        DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"processor_type\": \"dungeons2:chest\"}"));
+
+        assertTrue(result.result().isPresent(),
+                "an entry naming no loot_table must decode -- it falls back to each marker's own"
+                        + " table: " + result.error().map(Object::toString).orElse(""));
+    }
+
+    /** The field still works when it IS supplied, which is what every shipped entry does. */
+    @Test
+    void theProcessorStillDecodesWithALootTable() {
+        DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"processor_type\": \"dungeons2:chest\","
+                                + " \"loot_table\": \"dungeons2:chests/classic_shallow\"}"));
+
+        assertTrue(result.result().isPresent(),
+                result.error().map(Object::toString).orElse(""));
     }
 
     /** The opt-in #48 step 4 will read. Present in the shape now so a template can carry it early. */

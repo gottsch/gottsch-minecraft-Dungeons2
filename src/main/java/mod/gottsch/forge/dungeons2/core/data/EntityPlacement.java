@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.data;
 
+import java.util.List;
+
 /**
  * One entity to spawn into the world &mdash; the entity-side counterpart of
  * {@link BlockPlacement}, and the first thing this pipeline emits that is not a block.
@@ -46,6 +48,13 @@ package mod.gottsch.forge.dungeons2.core.data;
  * generalize when there is a second use, the same reasoning {@code FloorPatternEntry} applies to
  * its {@code type} discriminator.</p>
  *
+ * <p>{@link #effects} is that second use, added for #56 &mdash; and it is still a named field
+ * rather than the general NBT map, because it is not general: it is a list of authored
+ * {@link PotionEffectSpec}s that {@code EntitySpawner} serialises through
+ * {@code MobEffectInstance#save}. Handing it over as a raw tag would put the numeric-vs-namespaced
+ * effect id question in the caller's lap, which is exactly what going through vanilla's own
+ * serialiser avoids.</p>
+ *
  * <p>Pure POJO &mdash; no Minecraft imports, matching {@link BlockPlacement}. Construction and
  * equality work without any class from {@code net.minecraft.*} on the classpath, which is what lets
  * the placement planners be unit tested without a running Forge instance.</p>
@@ -68,6 +77,8 @@ public class EntityPlacement {
     private String lootTable;
     /** 0 means "roll fresh at break time"; anything else fixes the loot at generation. */
     private long lootTableSeed;
+    /** Never null; empty for an entity with no authored effects. See {@link PotionEffectSpec}. */
+    private List<PotionEffectSpec> effects = List.of();
 
     public EntityPlacement() {}
 
@@ -113,9 +124,17 @@ public class EntityPlacement {
     public long getLootTableSeed() { return lootTableSeed; }
     public void setLootTableSeed(long lootTableSeed) { this.lootTableSeed = lootTableSeed; }
 
+    public List<PotionEffectSpec> getEffects() { return effects; }
+
+    /** Null is accepted and normalised to empty, so no caller has to think about it. */
+    public void setEffects(List<PotionEffectSpec> effects) {
+        this.effects = effects == null ? List.of() : List.copyOf(effects);
+    }
+
     @Override
     public String toString() {
         return "EntityPlacement{" + entityId + " @ (" + x + "," + y + "," + z + ")"
-                + (lootTable == null ? "" : " loot=" + lootTable) + "}";
+                + (lootTable == null ? "" : " loot=" + lootTable)
+                + (effects.isEmpty() ? "" : " effects=" + effects.size()) + "}";
     }
 }
