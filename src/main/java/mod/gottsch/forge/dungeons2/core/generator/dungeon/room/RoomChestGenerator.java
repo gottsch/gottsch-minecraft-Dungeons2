@@ -152,14 +152,10 @@ public final class RoomChestGenerator {
      */
     static String pickTable(List<ChestConfig.LootTableEntry> tables, int totalWeight,
                             RandomSource random) {
-        int roll = random.nextInt(totalWeight);
-        for (ChestConfig.LootTableEntry entry : tables) {
-            roll -= entry.weight();
-            if (roll < 0) {
-                return entry.lootTable();
-            }
-        }
-        return tables.get(tables.size() - 1).lootTable();
+        // Delegates since 2026-08-30 (#61): the authored route needs the same draw, so the
+        // arithmetic moved to LootTableEntry where both can reach it. The totalWeight parameter is
+        // kept because this call site already computed it to reject an all-zero list above.
+        return ChestConfig.LootTableEntry.pick(tables, random);
     }
 
     /** A non-zero seed; see {@link #chestData}. */

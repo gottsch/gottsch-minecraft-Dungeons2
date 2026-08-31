@@ -24,6 +24,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -176,6 +177,53 @@ public final class PitPlans {
             return Direction.NORTH;
         }
         return south ? Direction.SOUTH : null;
+    }
+
+    /**
+     * A CLOSED ring of one block on every cell touching the footprint, at the room's own walking
+     * plane &mdash; the lip around a shaft rather than the step down into a court.
+     *
+     * <p><strong>Diagonals are included here where {@link #stairRim} leaves them plain</strong>,
+     * and the difference is what the two rings are FOR. A stair rim exists so a player can walk
+     * down, which a corner cell cannot help with because a stair there would have to face two ways
+     * at once. A block rim exists to be SEEN &mdash; it is the tell that says "this floor is not the
+     * floor" before someone steps on it &mdash; and a ring with four gaps in it reads as four
+     * unrelated strips rather than as an edge.</p>
+     *
+     * <p>The cells stay walkable and unexcavated, exactly as {@link PitPlan#rim} says: the lip is
+     * the last solid ground before the drop, not part of it.</p>
+     *
+     * <p>No bounds check is needed. Every shipped provider keeps its footprint one cell inside the
+     * interior (a trap you cannot walk past is a blocked room, not a trap), so the ring is inside
+     * the interior by construction.</p>
+     */
+    public static Map<Coords2D, BlockState> blockRim(Set<Coords2D> footprint, BlockState block) {
+        Map<Coords2D, BlockState> rim = new HashMap<>();
+        if (footprint.isEmpty()) {
+            return rim;
+        }
+        for (Coords2D cell : footprint) {
+            for (Coords2D neighbour : surrounding(cell)) {
+                if (footprint.contains(neighbour)) {
+                    continue;
+                }
+                rim.put(neighbour, block);
+            }
+        }
+        return rim;
+    }
+
+    /** The eight neighbours, for a ring that has to close rather than one you walk down. */
+    private static List<Coords2D> surrounding(Coords2D cell) {
+        List<Coords2D> cells = new ArrayList<>(8);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx != 0 || dz != 0) {
+                    cells.add(new Coords2D(cell.getX() + dx, cell.getY() + dz));
+                }
+            }
+        }
+        return cells;
     }
 
     private static List<Coords2D> neighbours(Coords2D cell) {

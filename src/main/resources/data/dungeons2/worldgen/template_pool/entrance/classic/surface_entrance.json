@@ -6,7 +6,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:entrances/classic/entrance_1",
-        "processors": "dungeons2:classic_weathering",
+        "processors": "dungeons2:classic_entrance_weathering",
         "projection": "rigid"
       },
       "weight": 1

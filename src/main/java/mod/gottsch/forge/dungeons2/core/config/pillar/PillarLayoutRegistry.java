@@ -64,6 +64,11 @@ public final class PillarLayoutRegistry {
         register(GridPillarLayout.NAME, GridPillarLayout.CODEC);
         register(ColonnadePillarLayout.NAME, ColonnadePillarLayout.CODEC);
         register(QuartetPillarLayout.NAME, QuartetPillarLayout.CODEC);
+        register(CentrePillarLayout.NAME, CentrePillarLayout.CODEC);
+        // Both spellings over the ONE codec, as the ceiling registry does for its own centre.
+        // `idOf` finds the first id a codec is registered under, so `centre` is what an encode
+        // writes back.
+        register(CentrePillarLayout.ALIAS, CentrePillarLayout.CODEC);
     }
 
     static {

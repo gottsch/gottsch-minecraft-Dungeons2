@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SupportSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
@@ -182,6 +183,27 @@ public class Registration {
 			STRUCTURE_PROCESSORS.register(DECORATION_SWEEP_PROCESSOR_NAME, () -> {
 				Codec<DecorationSweepProcessor> codec =
 						DecorationSweepProcessor.codec(() -> Registration.DECORATION_SWEEP_PROCESSOR.get());
+				return () -> codec;
+			});
+
+	/** Registry name of {@link SupportSweepProcessor} under this mod's namespace. */
+	public static final String SUPPORT_SWEEP_PROCESSOR_NAME = "support_sweep";
+
+	/**
+	 * Drops any part of a piece severe weathering left with no path to the ground. Dungeons2's own
+	 * for the same reason the other sweeps are: a template system places what it is told, and
+	 * "what is left standing after the decay" is a question only something that sees the FINISHED
+	 * piece can answer.
+	 * <p>
+	 * It must sit LAST in a processor list -- after every aging and decoration entry -- since it
+	 * judges what those passes actually left behind. See {@link SupportSweepProcessor}, and note
+	 * that support there means connectivity to the ground, not a block directly below: the naive
+	 * rule deletes lintels, arches and every overhanging course.
+	 */
+	public static final RegistryObject<StructureProcessorType<SupportSweepProcessor>> SUPPORT_SWEEP_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(SUPPORT_SWEEP_PROCESSOR_NAME, () -> {
+				Codec<SupportSweepProcessor> codec =
+						SupportSweepProcessor.codec(() -> Registration.SUPPORT_SWEEP_PROCESSOR.get());
 				return () -> codec;
 			});
 

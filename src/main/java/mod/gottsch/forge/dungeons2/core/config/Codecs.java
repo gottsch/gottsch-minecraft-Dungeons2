@@ -62,6 +62,15 @@ public final class Codecs {
      * one propagates the error. Same rationale as the fallback overload below &mdash; used where
      * "absent" is a meaningful state in its own right (a {@link RoomScheme} element slot left
      * undecorated) rather than a stand-in for some default value.
+     *
+     * <h2>Both forms PREFIX the error with the field name</h2>
+     * <p>Added 2026-08-30. Without it the propagated error is whatever the inner codec said and
+     * nothing more &mdash; an {@code intRange} rejection reads "Value 0 outside of range
+     * [1..2147483647]" with no hint as to <em>which key</em>, in a record that may have nine of
+     * them and in a motif file that may declare a dozen records. The value is quoted; the field is
+     * the half the author actually needs to go and fix. Vanilla's own {@code fieldOf} has the same
+     * gap, so this is not a regression being restored, and it applies to every strict optional
+     * field in the mod at once.</p>
      */
     public static <A> MapCodec<Optional<A>> strictOptionalFieldOf(Codec<A> codec, String name) {
         return new MapCodec<>() {
@@ -70,7 +79,8 @@ public final class Codecs {
                 T value = input.get(name);
                 return value == null
                         ? DataResult.success(Optional.empty())
-                        : codec.parse(ops, value).map(Optional::of);
+                        : codec.parse(ops, value).map(Optional::of)
+                                .mapError(error -> name + ": " + error);
             }
 
             @Override
@@ -90,7 +100,8 @@ public final class Codecs {
             @Override
             public <T> DataResult<A> decode(DynamicOps<T> ops, MapLike<T> input) {
                 T value = input.get(name);
-                return value == null ? DataResult.success(fallback) : codec.parse(ops, value);
+                return value == null ? DataResult.success(fallback)
+                        : codec.parse(ops, value).mapError(error -> name + ": " + error);
             }
 
             @Override

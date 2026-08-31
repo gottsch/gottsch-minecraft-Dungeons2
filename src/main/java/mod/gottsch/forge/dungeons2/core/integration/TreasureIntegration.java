@@ -58,7 +58,17 @@ public final class TreasureIntegration {
 
     /** Whether Treasure2 is installed. Safe to call unconditionally; names no Treasure2 type. */
     public static boolean isLoaded() {
-        return ModList.get().isLoaded(TREASURE2);
+        // ModList.get() is null until Forge has built the mod list, and NEVER becomes non-null
+        // outside a running game -- a headless test, or anything running before mod construction.
+        // Without this guard the NPE surfaces nowhere near here: it is thrown out of a structure
+        // processor's finalizeProcessing, which reports as "postProcess failed" on a piece.
+        //
+        // Found 2026-08-30 by #61. Wiring dungeons2:chest into the shipped weathering lists made
+        // ChestMarkerProcessor run in every headless harness that renders a piece, and eight tests
+        // that had nothing to do with chests failed at once. Absent Forge, Treasure2 is absent by
+        // definition, so false is the right answer and not merely a safe one.
+        ModList list = ModList.get();
+        return list != null && list.isLoaded(TREASURE2);
     }
 
     /**

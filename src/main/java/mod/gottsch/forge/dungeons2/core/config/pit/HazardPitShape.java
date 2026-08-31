@@ -43,10 +43,19 @@ import java.util.Optional;
  *
  * <p>{@code offsetX}/{@code offsetZ} shift the shaft off centre; it is still kept inside the
  * interior's walkable ring, so a trap never blocks the room it is in.</p>
+ *
+ * <p>{@code rimBlock} lays a CLOSED ring of one block on the walkable cells around the mouth, at
+ * the room's own walking plane. Unlike the court's rim it is not a step &mdash; there is no
+ * stepping into a sheer shaft &mdash; it is the <strong>tell</strong>: a lip in a different
+ * material is the fair warning that turns a trap from a gotcha into something a careful player can
+ * read. Corners are included where {@link mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.PitPlans#stairRim}
+ * leaves them plain, since a ring with four gaps does not read as an edge. Unauthored, the mouth is
+ * flush with the floor and the trap is unmarked.</p>
  */
 public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
                              Optional<String> spikeBlock, Map<String, String> spikeProperties,
-                             double spikeProbability) implements PitShapePattern {
+                             double spikeProbability,
+                             Optional<String> rimBlock) implements PitShapePattern {
 
     public static final String NAME = "hazard";
 
@@ -59,7 +68,15 @@ public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
 
     public HazardPitShape() {
         this(DEFAULT_WIDTH, DEFAULT_DEPTH, 0, 0, Optional.empty(), Map.of(),
-                DEFAULT_SPIKE_PROBABILITY);
+                DEFAULT_SPIKE_PROBABILITY, Optional.empty());
+    }
+
+    /** An unmarked shaft: everything but the rim, which is how this shape shipped. */
+    public HazardPitShape(int width, int depth, int offsetX, int offsetZ,
+                          Optional<String> spikeBlock, Map<String, String> spikeProperties,
+                          double spikeProbability) {
+        this(width, depth, offsetX, offsetZ, spikeBlock, spikeProperties, spikeProbability,
+                Optional.empty());
     }
 
     public static final MapCodec<HazardPitShape> CODEC = Codecs.closedMap(
@@ -78,7 +95,13 @@ public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                             "spikeProperties", Map.of()).forGetter(HazardPitShape::spikeProperties),
                     Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D), "spikeProbability",
-                            DEFAULT_SPIKE_PROBABILITY).forGetter(HazardPitShape::spikeProbability)
+                            DEFAULT_SPIKE_PROBABILITY).forGetter(HazardPitShape::spikeProbability),
+                    // No `rimOrient` companion, unlike the court's: this ring is a full block laid
+                    // flat, so there is no solid half to point anywhere. A stair authored here
+                    // would simply keep its default facing, which is the honest outcome for a shape
+                    // whose rim is not a step.
+                    Codecs.strictOptionalFieldOf(Codec.STRING, "rimBlock")
+                            .forGetter(HazardPitShape::rimBlock)
             ).apply(instance, HazardPitShape::new)));
 
     @Override
@@ -89,6 +112,7 @@ public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
     @Override
     public IPitShapeProvider provider() {
         return new HazardPitShapeProvider(width, depth, offsetX, offsetZ,
-                spikeBlock.orElse(null), spikeProperties, spikeProbability);
+                spikeBlock.orElse(null), spikeProperties, spikeProbability,
+                rimBlock.orElse(null));
     }
 }

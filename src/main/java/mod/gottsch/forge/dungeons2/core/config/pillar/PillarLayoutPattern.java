@@ -38,13 +38,17 @@ import java.util.function.BiFunction;
  * place that defines it &mdash; see {@code PillarLayout}. So {@link PillarPatternEntry.PillarEntry}
  * keeps every <em>material</em> field and this interface owns only the <em>geometry</em>.</p>
  *
- * <h2>The built-in three all take the same two knobs</h2>
+ * <h2>The original three take the same two knobs; {@code centre} was the first that did not</h2>
  * <p>{@code grid}, {@code colonnade} and {@code quartet} are each {@code (spacing, inset)}, which
- * is the honest reason the flat-record complaint that drove the floor registry does not apply here:
- * there were no per-type fields to untangle. What the registry buys pillars is the other half
- * &mdash; a third-party layout can register {@code yourmod:spiral} and declare a radius of its own,
- * which the closed {@code type} switch could never allow. {@link #RHYTHM} is shared by the three so
- * that agreement stays one declaration rather than three copies.</p>
+ * was the honest reason the flat-record complaint that drove the floor registry did not apply here:
+ * there were no per-type fields to untangle. {@link #RHYTHM} is shared by those three so that the
+ * agreement stays one declaration rather than three copies.</p>
+ *
+ * <p>{@code centre} (2026-08-30) is {@code (inset)} alone and declares its own codec, which is the
+ * registry earning its keep on the FIRST built-in rather than only for a third party: under the
+ * closed {@code type} switch a per-layout field shape was the thing that could not be expressed.
+ * The other half still stands too &mdash; a third-party layout can register {@code yourmod:spiral}
+ * with a radius of its own.</p>
  */
 public interface PillarLayoutPattern {
 

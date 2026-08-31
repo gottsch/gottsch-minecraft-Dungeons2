@@ -232,6 +232,20 @@
     {
       "name": "vaulted_hall",
       "weight": 12,
+      // OFF THE MUD FLOOR (Gottsch, 2026-08-29). The stone halls are gated to floor 1 and below so
+      // floor 0 -- the mud stratum -- rolls only `plain` and the mud band's own `mud_pit_trap`,
+      // which is what makes that depth designable and testable without stone rooms leaking into
+      // every sample.
+      //
+      // A PER-SCHEME GATE, NOT A MOVE INTO A BAND. A band's `schemes` MERGES onto the motif's and
+      // sections do not inherit from the band above, so schemes moved onto the floor-1 band would
+      // leave floors 2+ with nothing but `plain` -- covering both means writing them twice. The
+      // gate says the same thing once, and RoomSchemeSelector already reads it (`fitsFloor`).
+      //
+      // IT KEYS ON FLOOR INDEX, NOT ON THE STRATUM. The two coincide only because mud is floor 0
+      // today; move that band and these gates do not follow it. Delete the `minFloorIndex` lines
+      // to put the halls back on every floor.
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 7,
 
@@ -392,6 +406,7 @@
       "name": "joisted_hall_stone",
       "extends": "grand_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 7,
       "ceiling": {
@@ -412,6 +427,7 @@
     {
       "name": "joisted_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 7,
       "ceiling": {
@@ -475,6 +491,7 @@
     {
       "name": "pilastered_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 7,
       "platforms": {
@@ -586,6 +603,7 @@
     {
       "name": "hypostyle_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 7,
       "pillars": {
@@ -646,6 +664,7 @@
     {
       "name": "colonnaded_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 7,
       "pillars": {
@@ -696,6 +715,7 @@
     {
       "name": "quartet_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 7,
       "maxSize": 7,
       "minHeight": 6,
@@ -747,6 +767,7 @@
     {
       "name": "brazier_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 9,
       "minHeight": 5,
       "platforms": {
@@ -794,6 +815,7 @@
     {
       "name": "brazier_corners_hall",
       "weight": 12,
+      "minFloorIndex": 1,
       "minSize": 11,
       "minHeight": 5,
       "platforms": {

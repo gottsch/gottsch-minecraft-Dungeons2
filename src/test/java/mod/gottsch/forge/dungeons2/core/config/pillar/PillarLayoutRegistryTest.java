@@ -69,10 +69,71 @@ class PillarLayoutRegistryTest {
 
     @Test
     void theBuiltInLayoutsAreRegisteredUnderThisModsNamespace() {
-        for (String path : new String[] {"grid", "colonnade", "quartet"}) {
+        for (String path : new String[] {"grid", "colonnade", "quartet", "centre", "center"}) {
             assertTrue(PillarLayoutRegistry.ids().contains(new ResourceLocation("dungeons2", path)),
                     "dungeons2:" + path + " should be registered");
         }
+    }
+
+    /**
+     * {@code centre} takes {@code inset} and NOT {@code spacing}. A lone column has nothing to be
+     * spaced from, so the field would read as meaningful and do nothing -- and the closed schema is
+     * what turns that into a load error naming the key instead of a silent no-op.
+     */
+    @Test
+    void theCentreLayoutTakesInsetButNotSpacing() {
+        PillarEntry entry = decode("{\"type\": \"dungeons2:centre\", \"block\": \"" + BLOCK + "\","
+                + " \"config\": {\"inset\": 3}}");
+        assertEquals(3, ((CentrePillarLayout) entry.layout()).inset());
+
+        assertTrue(errorOf("{\"type\": \"dungeons2:centre\", \"block\": \"" + BLOCK + "\","
+                        + " \"config\": {\"spacing\": 4}}").contains("spacing"),
+                "spacing means nothing to a single pier and must not be silently accepted");
+    }
+
+    /** Both spellings decode, over one codec, to the same layout. */
+    @Test
+    void theAmericanSpellingIsTheSameLayout() {
+        assertEquals(decode("{\"type\": \"dungeons2:centre\", \"block\": \"" + BLOCK + "\"}").layout(),
+                decode("{\"type\": \"dungeons2:center\", \"block\": \"" + BLOCK + "\"}").layout());
+    }
+
+    /**
+     * {@code thickness} is an ENTRY field, not a layout one, so it decodes the same beside any
+     * layout. That is the whole argument for where it lives: one declaration, four layouts.
+     */
+    @Test
+    void thicknessIsAnEntryFieldAvailableToEveryLayout() {
+        for (String type : new String[] {"grid", "colonnade", "quartet", "centre"}) {
+            assertEquals(2, decode("{\"type\": \"dungeons2:" + type + "\","
+                    + " \"block\": \"" + BLOCK + "\", \"thickness\": 2}").thickness(),
+                    type + " should accept thickness");
+        }
+    }
+
+    /** Absent means 1 -- the single-cell column every layout drew before the field existed. */
+    @Test
+    void thicknessDefaultsToOne() {
+        assertEquals(1, decode("{\"type\": \"dungeons2:centre\", \"block\": \"" + BLOCK + "\"}")
+                .thickness());
+    }
+
+    /** A shaft zero cells across is not a column. */
+    @Test
+    void aThicknessBelowOneIsALoadError() {
+        assertTrue(errorOf("{\"type\": \"dungeons2:centre\", \"block\": \"" + BLOCK + "\","
+                + " \"thickness\": 0}").contains("thickness"));
+    }
+
+    /**
+     * It belongs on the entry beside the material fields, NOT inside a layout's {@code config}.
+     * Authored there it would be a per-layout geometry field, which is the duplication this design
+     * avoids -- and the closed schema says so rather than ignoring it.
+     */
+    @Test
+    void thicknessInsideConfigIsALoadError() {
+        assertTrue(errorOf("{\"type\": \"dungeons2:centre\", \"block\": \"" + BLOCK + "\","
+                + " \"config\": {\"thickness\": 2}}").contains("thickness"));
     }
 
     @Test

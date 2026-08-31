@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.PillarPatternEntry.PillarEntry;
+import mod.gottsch.forge.dungeons2.core.config.pillar.CentrePillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.pillar.ColonnadePillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.pillar.QuartetPillarLayout;
@@ -122,6 +123,161 @@ class PillarGeneratorTest {
             assertEquals(keys(cells), keys(transposed),
                     "interior " + interior + ": the lattice is not symmetric under transpose");
         }
+    }
+
+    // ---------- thickness: the 2x2 pier ----------
+
+    /**
+     * The whole feature: a thickness-2 centre draws a 2x2 pier, full height, and a thickness-1 one
+     * draws the single column it always did.
+     */
+    @Test
+    void aThickCentreColumnFillsItsWholeFootprint() {
+        RoomData room = room(15, 15, 9);
+
+        Set<Coords2D> thin = pierCells(room, 1);
+        assertEquals(1, thin.size(), "thickness 1 must still be one cell");
+
+        Set<Coords2D> thick = pierCells(room, 2);
+        assertEquals(4, thick.size(), "thickness 2 is a 2x2 pier");
+
+        assertEquals(9, pierCells(room, 3).size(), "thickness 3 is a 3x3 pier");
+    }
+
+    /** Every row of the shaft is drawn, not just the anchor's -- a pier is solid, not a shell. */
+    @Test
+    void everyCellOfAThickPierIsFullHeight() {
+        RoomData room = room(15, 15, 9);
+        List<BlockPlacement> out = drawPier(room, 2);
+        int interiorRows = room.getHeight() - 2;
+
+        Map<Coords2D, Long> perCell = out.stream().collect(Collectors.groupingBy(
+                bp -> new Coords2D(bp.getX(), bp.getZ()), Collectors.counting()));
+        assertEquals(4, perCell.size());
+        for (var entry : perCell.entrySet()) {
+            assertEquals((long) interiorRows, entry.getValue(),
+                    "cell " + entry.getKey().getX() + "," + entry.getKey().getY()
+                            + " is not full height");
+        }
+    }
+
+    /**
+     * An odd thickness centres exactly on the anchor; an even one leans toward +x/+z. The lean is
+     * arbitrary but it must be CONSISTENT, or an even pier would sit on a different half-cell in
+     * different rooms.
+     */
+    @Test
+    void anOddShaftCentresOnTheAnchorAndAnEvenOneLeans() {
+        RoomData room = room(15, 15, 9);
+        // Interior 13x13 -> anchor (6,6) interior-local -> (originX + 7, originZ + 7).
+        int centreX = room.getOriginX() + 7;
+        int centreZ = room.getOriginZ() + 7;
+
+        assertEquals(Set.of(new Coords2D(centreX, centreZ)), pierCells(room, 1));
+
+        assertEquals(Set.of(
+                new Coords2D(centreX, centreZ), new Coords2D(centreX + 1, centreZ),
+                new Coords2D(centreX, centreZ + 1), new Coords2D(centreX + 1, centreZ + 1)),
+                pierCells(room, 2), "an even shaft must lean toward +x/+z");
+
+        assertTrue(pierCells(room, 3).contains(new Coords2D(centreX - 1, centreZ - 1)),
+                "an odd shaft must straddle the anchor");
+    }
+
+    /**
+     * Whole or not at all. A shaft too thick for the interior draws NOTHING rather than the part of
+     * itself that fits -- the doorway rule, applied to the other way a column can fail to fit.
+     */
+    @Test
+    void aShaftTooThickForTheRoomDrawsNothing() {
+        RoomData room = room(7, 7, 9);
+        assertFalse(pierCells(room, 3).isEmpty(), "a 5x5 interior carries a 3x3 pier");
+        assertTrue(pierCells(room, 9).isEmpty(),
+                "a 5x5 interior cannot carry a 9x9 pier, and must draw no part of one");
+    }
+
+    // ---------- helpers for the two blocks above ----------
+
+    private static List<BlockPlacement> drawPier(RoomData room, int thickness) {
+        // inset 0: these rooms are sized to test the SHAFT, not the layout's clearance veto.
+        return build(room, new PillarEntry(new CentrePillarLayout(0), PILLAR,
+                Optional.empty(), Optional.empty(), Map.of(), Optional.empty(), Optional.empty(),
+                thickness, SizeGate.UNBOUNDED), new BasicPillarGenerator());
+    }
+
+    private static Set<Coords2D> pierCells(RoomData room, int thickness) {
+        return drawPier(room, thickness).stream()
+                .map(bp -> new Coords2D(bp.getX(), bp.getZ()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    // ---------- the centre layout: one column, guaranteed ----------
+
+    /**
+     * The contract, and the reason the layout exists. A grid ALSO draws one column in a small
+     * enough room -- {@link #aSmallWindowDrawsASingleCentredColumn} above is exactly that -- but it
+     * stops as soon as the room grows. This never does.
+     */
+    @Test
+    void theCentreLayoutDrawsExactlyOneColumnAtEverySize() {
+        for (int width = 5; width <= 41; width++) {
+            for (int depth = 5; depth <= 41; depth++) {
+                Set<Coords2D> cells = new CentrePillarPatternProvider(2).footprint(width, depth);
+                assertEquals(1, cells.size(),
+                        "interior " + width + "x" + depth + " drew " + cells.size() + " columns");
+            }
+        }
+    }
+
+    /** And it is actually in the middle, on both axes, at every size. */
+    @Test
+    void theOneColumnIsCentred() {
+        for (int width = 5; width <= 41; width++) {
+            for (int depth = 5; depth <= 41; depth++) {
+                Coords2D cell = new CentrePillarPatternProvider(2).footprint(width, depth)
+                        .iterator().next();
+                assertEquals((width - 1) / 2, cell.getX(), "interior " + width + "x" + depth);
+                assertEquals((depth - 1) / 2, cell.getY(), "interior " + width + "x" + depth);
+            }
+        }
+    }
+
+    /**
+     * Where the grid and the quartet COLLAPSE to one column and this layout does not merely
+     * coincide with them. Pins the distinction the javadoc claims: at a room the grid still fills,
+     * the two disagree.
+     */
+    @Test
+    void theCentreLayoutIsNotAGridThatHappenedToShrink() {
+        assertEquals(1, new CentrePillarPatternProvider(2).footprint(21, 21).size());
+        assertTrue(new GridPillarPatternProvider(4, 2).footprint(21, 21).size() > 1,
+                "a 21x21 grid should carry a lattice, or this comparison proves nothing");
+        assertTrue(new QuartetPillarPatternProvider(4, 2).footprint(21, 21).size() > 1,
+                "a 21x21 quartet should carry its square");
+    }
+
+    /**
+     * {@code inset} is a veto and only a veto: too tight a room draws nothing rather than putting a
+     * pier where a player walks the wall. It cannot move the column, because the centre is the
+     * centre -- so a larger inset either changes nothing or removes the column entirely.
+     */
+    @Test
+    void insetVetoesButNeverMoves() {
+        assertTrue(new CentrePillarPatternProvider(3).footprint(5, 5).isEmpty(),
+                "a 5-wide interior cannot keep 3 clear on both sides");
+        assertFalse(new CentrePillarPatternProvider(3).footprint(7, 7).isEmpty());
+
+        assertEquals(new CentrePillarPatternProvider(0).footprint(15, 15),
+                new CentrePillarPatternProvider(2).footprint(15, 15),
+                "inset must not shift the column in a room large enough for either value");
+    }
+
+    /** An even interior takes the lower of the two middle cells, on both axes. */
+    @Test
+    void anEvenInteriorTakesTheLowerMiddleCell() {
+        Coords2D cell = new CentrePillarPatternProvider(0).footprint(10, 8).iterator().next();
+        assertEquals(4, cell.getX());
+        assertEquals(3, cell.getY());
     }
 
     // ---------- the colonnade's axis ----------

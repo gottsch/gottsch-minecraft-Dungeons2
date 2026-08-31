@@ -96,11 +96,13 @@ class StratumWeatheringListTest {
     private static final String SPAWNER_TYPE = "dungeons2:spawner";
     private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
     private static final String POT_TYPE = "dungeons2:pot";
+    private static final String SUPPORT_TYPE = "dungeons2:support_sweep";
+    private static final String CHEST_TYPE = "dungeons2:chest";
 
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
             Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                    SWEEP_TYPE, POT_TYPE);
+                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE);
 
     private static final double EPSILON = 1.0e-6;
 
@@ -283,10 +285,29 @@ class StratumWeatheringListTest {
         // surface. A falling block overhead rains debris onto the player, and the ONLY control was
         // the rate. dungeonblocks:rubble reads like gravel and does not fall, which is why it is
         // the terminus everywhere as of 2026-08-25.
+        // THE SURFACE ENTRANCE IS EXEMPT as of 2026-08-29 (Mark). It is the one piece that is
+        // meant to read as heavily decayed and CRUMBLING -- a ruin standing in the open, which the
+        // rest of the dungeon is not -- so falling debris and the holes it leaves are the look
+        // there rather than the hazard described above. The reasoning that produced this guard was
+        // never about gravel as such: it was about gravel raining out of a CEILING onto a player in
+        // a corridor, and an entrance building has no rooms under its roof.
+        //
+        // Exempted BY NAME rather than deleted, exactly as theCopiedProcessorsStillMatchClassic
+        // -Verbatim's own note prescribes: every other list stays honest, and the day a second file
+        // wants this it has to be a decision rather than a drift.
+        //
+        // The one thing to keep an eye on in game: the entrance sits over the descent, so gravel
+        // that falls THROUGH the building has somewhere to go. If the first corridor starts
+        // collecting debris, that is this exemption, not a bug in the shaft.
+        String exempt = MOTIF + "_entrance" + WEATHERING;
+
         Set<String> falling = Set.of("minecraft:gravel", "minecraft:sand", "minecraft:red_sand",
                 "minecraft:suspicious_gravel", "minecraft:suspicious_sand");
 
         for (String file : weatheringFiles()) {
+            if (file.equals(exempt)) {
+                continue;
+            }
             for (String output : outputBlocks(readList(file))) {
                 assertFalse(falling.contains(output),
                         file + " places " + output + ", which falls when the block below it is air."
@@ -350,22 +371,53 @@ class StratumWeatheringListTest {
     void theFloorWearsOnItsOwnSchedule() {
         JsonObject list = readList(MOTIF + "_" + STRATUM + "_weathering");
 
-        // Cobble paving frets rather than dissolves: mossy first, then breaks up. Authored
-        // 0.3/0.25/0.25 -> 22.5% / 5.6% / 1.9%.
+        // TWO ROUTES OFF COBBLESTONE as of 2026-08-29, and they are a FALLTHROUGH, not a fork:
+        // SurfaceAgingProcessor tries a block's rules in authored order and a rule takes only if
+        // its FIRST stage hits, so the second route is offered just the 85% the first declined.
+        // That is why the two authored stage-1 numbers differ (0.15 and 0.15/0.85 = 0.1765) for an
+        // EVEN split -- see the note in classic_mud_weathering.json.
+        //
+        // The pair lands at 11.25% each, which is the old single route's 30% entry split in two and
+        // then thinned by each route's own second stage. Mossy is the damp route, plain rubble the
+        // dry one.
         Map<String, Double> cobble = survivingRates(list, "minecraft:cobblestone", "floor");
-        assertEquals(0.225, cobble.getOrDefault("minecraft:mossy_cobblestone", 0.0), EPSILON);
-        assertEquals(0.05625, cobble.getOrDefault("dungeonblocks:rubble", 0.0), EPSILON);
-        assertEquals(0.01875, cobble.getOrDefault("minecraft:dirt", 0.0), EPSILON);
+        assertEquals(0.1125, cobble.getOrDefault("minecraft:mossy_cobblestone", 0.0), EPSILON,
+                "the damp route's stage 1, net of stage 2 having fired instead");
+        assertEquals(0.11251875, cobble.getOrDefault("dungeonblocks:rubble", 0.0), EPSILON,
+                "the dry route's stage 1. It is 0.15/0.85 authored precisely so this lands level"
+                        + " with the damp route above; if the two drift apart, the gross-up is"
+                        + " stale rather than the split being intentional");
+        // Both routes converge on dirt, so this is their sum: 0.0094 from the damp route and
+        // 0.0319 from the dry one.
+        assertEquals(0.04125469, cobble.getOrDefault("minecraft:dirt", 0.0), EPSILON);
+        assertEquals(0.028125, cobble.getOrDefault("dungeonblocks:mossy_rubble", 0.0), EPSILON,
+                "the damp route's own second stage");
 
-        // NO AIR ANYWHERE ON THE FLOOR, and that is the point of the whole surface gate. On a wall
-        // a hole is the look; underfoot it opens onto whatever terrain the dungeon was carved from.
+        // THE FLOOR MAY OPEN, as of 2026-08-29. This asserted 0.0 for every floor source until
+        // then -- "on a wall a hole is the look; underfoot it opens onto whatever terrain the
+        // dungeon was carved from" -- and Mark reversed it the same day he reversed the corridor
+        // arch's bar, for the same reason: what those guards were really protecting against was
+        // gravel FALLING through the hole and littering the floor below, and dungeonblocks:rubble
+        // replacing gravel as the deep terminus on 2026-08-25 removed that cause. Water through an
+        // opened floor is accepted.
+        //
+        // So the assertion inverted from "none" to "this much, on purpose". Pinned rather than
+        // dropped, because an unbounded air stage on a floor is a different thing from a deliberate
+        // one and only the pin can tell them apart later.
+        assertEquals(0.0056259375, survivingRates(list, "minecraft:cobblestone", "floor")
+                        .getOrDefault("minecraft:air", 0.0), EPSILON,
+                "the dry route's terminus. A taste number, so move it freely -- it is pinned only"
+                        + " so that moving it is deliberate");
+
+        // A CEILING, THOUGH. The pin above says what today's number is; this says what the floor
+        // may never quietly become. Nothing is authored anywhere near it, so it costs nothing and
+        // catches a chain that grows an air stage nobody costed.
         for (String source : new String[] {"minecraft:cobblestone", "minecraft:packed_mud",
                 "minecraft:mud_bricks"}) {
-            assertEquals(0.0, survivingRates(list, source, "floor")
-                            .getOrDefault("minecraft:air", 0.0), EPSILON,
-                    source + " decays to air on the FLOOR. That is a hole into raw terrain, which"
-                            + " is a different and much less interesting thing than the wall holes"
-                            + " -- keep the floor chains stopping at dirt");
+            assertTrue(survivingRates(list, source, "floor")
+                            .getOrDefault("minecraft:air", 0.0) < 0.02,
+                    source + " opens more than 2% of the floor it paves. A few holes are the look"
+                            + " (Mark, 2026-08-29); a floor you can fall through is not");
         }
     }
 

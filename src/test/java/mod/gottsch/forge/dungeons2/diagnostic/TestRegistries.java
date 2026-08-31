@@ -31,6 +31,7 @@ import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMark
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SupportSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import net.minecraft.core.MappedRegistry;
@@ -214,6 +215,19 @@ public final class TestRegistries {
         potSelf[0] = potType;
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.POT_PROCESSOR_NAME), potType);
+
+        // The support sweep, which classic_entrance_weathering.json names last. Same reason as every
+        // type above, and it collected the same toll on the way in: adding it to the JSON without
+        // adding it here failed a dozen unrelated tests with "could not read
+        // classic_entrance_weathering.json" and nothing pointing at the missing type.
+        StructureProcessorType<?>[] supportSelf = new StructureProcessorType<?>[1];
+        Codec<SupportSweepProcessor> supportCodec =
+                SupportSweepProcessor.codec(() -> supportSelf[0]);
+        StructureProcessorType<SupportSweepProcessor> supportType = () -> supportCodec;
+        supportSelf[0] = supportType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.SUPPORT_SWEEP_PROCESSOR_NAME),
+                supportType);
 
         registry.freeze();
     }

@@ -40,8 +40,11 @@
       // `surface` is optional and defaults to `any`, so an ungated rule here behaves exactly as
       // dungeons2:aging would. Every rule below states one on purpose.
       "processor_type": "dungeons2:surface_aging",
-      // 3 -- the longest chain below. Raise it if a stage is added.
-      "agings": 3,
+      // 4. A chain applies min(agings, stages), so a cap below the longest chain truncates it
+      // SILENTLY -- the last stage simply never fires and the file still reads as though it does.
+      // Raise this whenever a stage is added; StratumWeatheringListTest#theAgingCapCanReachTheEnd
+      // OfTheChain is what catches forgetting to.
+      "agings": 4,
       "rules": [
         // ===================================================================================
         // FLOOR -- relative Y 0, and in a pitted room that is the PIT's floor (see PieceSurface).
@@ -57,18 +60,55 @@
         //
         //     mossy  22.5%      rubble  5.6%      dirt  1.9%
         //
-        // NO AIR STAGE ON A FLOOR. On the walls a hole is the look (see below); underfoot it is a
-        // hole into whatever terrain the dungeon was carved from, which is a different and much
-        // less interesting thing. Stopping at dirt also feeds the decoration pass -- floor_growth
-        // and hanging_growth both key off dirt.
+        // THE FLOOR MAY OPEN TOO, as of 2026-08-29 (Mark). This said NO AIR STAGE ON A FLOOR until
+        // then, on the grounds that a hole in a wall is the look while one underfoot opens onto
+        // whatever terrain the dungeon was carved from. Mark's call is that a few are fine, the
+        // same call he made for the corridor arch on the same day: the harm those bars were really
+        // guarding against was gravel FALLING through the hole and littering the floor, and that
+        // cause went away when dungeonblocks:rubble replaced gravel as the deep terminus on
+        // 2026-08-25. Water finding its way in is accepted.
+        //
+        // Only the DRY route carries it, and only at its third stage -- 0.56% of floor cobblestone,
+        // pinned by StratumWeatheringListTest#theFloorWearsOnItsOwnSchedule so that moving it is a
+        // decision rather than a drift. It is a taste number, not a risk price.
+        //
+        // The dirt stages are still what feed the decoration pass: floor_growth and hanging_growth
+        // both key off dirt, so thinning dirt in favour of air costs growth.
+        //
+        // ONE PLACE STILL DOES NOT OPEN, deliberately: a PIT's faces. RoomPitGenerator lines every
+        // cut face unconditionally, because a sheer shaft that opens along its side pours a cavern
+        // into the room rather than showing a patch of earth underfoot. A hole in a floor is a hole
+        // in a surface a player stands on; a hole in a pit wall is a hole in the room's shell.
         // ===================================================================================
         {
           "surface": "floor",
           "block": "minecraft:cobblestone",
           "output_blocks": [
-            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 },
-            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.15 },
+            { "block": "dungeonblocks:mossy_rubble", "probability": 0.25 },
             { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        // THE SECOND ROUTE OFF THE SAME BLOCK, AND IT IS A FALLTHROUGH, NOT A FORK (Gottsch,
+        // 2026-08-29). SurfaceAgingProcessor tries a block's rules in AUTHORED ORDER against one
+        // random seeded per position; a rule takes only if its FIRST stage hits, and a miss falls
+        // through to the next. So this rule is only ever offered the 85% the route above declined,
+        // and its authored number is not the share of floor it gets.
+        //
+        // 0.1765 IS 0.15/0.85, which is what actually lands on 15% of the floor -- an even split
+        // with the route above, and the same 30% total the chain decayed at when it was one route.
+        // Authoring 0.15 here looks even and is not: measured, it gives 15% / 12.75%.
+        //
+        // The k-th rule listed on one block wants s / (1 - (k-1)s) for share s, so re-derive this
+        // if the route above changes. The split is of ENTRY: what SURVIVES also depends on each
+        // route's later stages.
+        {
+          "surface": "floor",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "dungeonblocks:rubble", "probability": 0.1765 },
+            { "block": "minecraft:dirt", "probability": 0.25 },
+            { "block": "minecraft:air", "probability": 0.15 }
           ]
         },
         // The floor's OTHER two materials. `packed_mud` is the speckle accent in a room and the
@@ -118,11 +158,118 @@
         // ===================================================================================
         {
           "surface": "above_floor",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.15 },
+            { "block": "dungeonblocks:mossy_rubble", "probability": 0.25 },
+            { "block": "minecraft:air", "probability": 0.125 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "dungeonblocks:rubble", "probability": 0.1765 },
+            { "block": "minecraft:dirt", "probability": 0.25 },
+            { "block": "minecraft:air", "probability": 0.125 }
+          ]
+        },
+        {
+          "surface": "above_floor",
           "block": "minecraft:mud_bricks",
           "output_blocks": [
             { "block": "minecraft:packed_mud", "probability": 0.3 },
             { "block": "minecraft:dirt", "probability": 0.3 },
             { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "minecraft:mud_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:square_mud_brick",
+          "output_blocks": [
+            { "block": "minecraft:packed_mud", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.25 },
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:square_mud_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:square_mud_brick_facade_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:square_mud_brick_quarter_facade_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "minecraft:mud_brick_slab",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_left_large_stone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_right_large_stone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:large_bricks",
+          "output_blocks": [
+            { "block": "minecraft:bricks", "probability": 0.3 },
+            { "block": "dungeonblocks:cobblestone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:gravel_brick", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "minecraft:bricks",
+          "output_blocks": [
+            { "block": "dungeonblocks:cobblestone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:gravel_brick", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
           ]
         }
       ]
@@ -269,6 +416,37 @@
     // =========================================================================================
     {
       "processor_type": "dungeons2:pot"
+    },
+
+    // =========================================================================================
+    // dungeons2:chest (added 2026-08-30) -- backlog #61, wiring the #48 step 3 marker that had
+    // been left reachable from nothing. Turns an authored dungeons2:chest_marker into a chest
+    // holding a loot table, and is the authored twin of the `chests` scheme slot.
+    //
+    // WHY IT IS HERE AND NOT IN ITS OWN LIST. It shipped in dungeons2:classic_chests, which no
+    // pool ever referenced -- that list existed for one throwaway test template (0bc6a45) that was
+    // removed again (93baad8), leaving the processor orphaned. Every room, entrance and transition
+    // pool names a weathering list, so a marker processor that is not IN one is a marker block
+    // left standing in a finished dungeon. Same conclusion #56 reached for pots, same placement.
+    //
+    // BEFORE the sweep, for the same reason the pot entry is: nothing it does should be judged
+    // against ground a later pass is still going to change.
+    //
+    // Unlike the pot entry this one DOES carry a pool-level default, because "an ordinary chest
+    // with ordinary dungeon loot" is a meaningful thing to want and a pot's variant is not -- a
+    // pot with no variant has no appearance to fall back on. A marker's own `lootTable` NBT still
+    // wins over this; the list is what a template full of ordinary chests relies on.
+    //
+    // Shallow-weighted, matching the motif's floor-0 band verbatim: this list is the mud
+    // stratum's, and the mud stratum is where a dungeon starts. The main classic list carries a
+    // deeper blend for the same reason.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:chest",
+      "loot_tables": [
+        { "lootTable": "dungeons2:chests/classic_shallow", "weight": 9 },
+        { "lootTable": "dungeons2:chests/classic_deep", "weight": 1 }
+      ]
     },
 
     // =========================================================================================

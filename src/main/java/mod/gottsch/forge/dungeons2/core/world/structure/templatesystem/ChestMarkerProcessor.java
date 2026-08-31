@@ -22,6 +22,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.block.ChestMarkerBlock;
 import mod.gottsch.forge.dungeons2.core.block.entity.ChestMarkerBlockEntity;
+import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
+import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.integration.TreasureIntegration;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -49,9 +51,25 @@ import java.util.function.Supplier;
  * <ol>
  *   <li>the marker's own {@code lootTable}, read off its block entity NBT &mdash; per cell, so one
  *       special chest in a template of ordinary ones costs one line;</li>
- *   <li>otherwise this processor's {@code loot_table} field &mdash; per pool, and what a template
- *       full of ordinary chests relies on.</li>
+ *   <li>otherwise a weighted draw over this processor's {@code loot_tables} list &mdash; per pool,
+ *       and what a template full of ordinary chests relies on.</li>
  * </ol>
+ *
+ * <h2>Why the pool default is a WEIGHTED LIST and not one table</h2>
+ * <p>Because the procedural route's already is. A motif declares {@code chestLootByFloorIndex} as
+ * bands of weighted {@code {lootTable, weight}} entries &mdash; "mostly the common table,
+ * occasionally something better" &mdash; and a single fixed id here would have made the authored
+ * route the one place in the mod where a chest cannot say that. The entries are literally
+ * {@link ChestConfig.LootTableEntry} and the draw is {@link ChestConfig.LootTableEntry#pick}, so
+ * both routes read the same JSON shape and share the arithmetic.</p>
+ *
+ * <p><strong>What it still cannot do is follow depth.</strong> A {@link StructureProcessor} is
+ * handed no {@code floorIndex} &mdash; it sees a block, a position and a placement, and floorIndex
+ * is a separate axis from world Y &mdash; so a processor entry cannot select the band the way
+ * {@code MotifConfig#chestBandFor} does for a procedural room. The list here is therefore one blend
+ * for the whole motif, and a template that wants depth-correct loot names the table on the marker
+ * itself. Exactly the same limitation, accepted for exactly the same reason, as
+ * {@code dungeons2:spawner}'s single {@code mob_set} against the motif's {@code MobSetBand}s.</p>
  *
  * <p>There is deliberately <strong>no third fallback</strong>. A marker that resolves to no table at
  * all is left in place rather than becoming an empty chest, and logs &mdash; see below.</p>
@@ -91,39 +109,57 @@ public class ChestMarkerProcessor extends StructureProcessor {
     static final String LOOT_TABLE_TAG = "LootTable";
     static final String LOOT_TABLE_SEED_TAG = "LootTableSeed";
 
-    private final Optional<ResourceLocation> lootTable;
+    private final List<ChestConfig.LootTableEntry> lootTables;
     private final ResourceLocation markerBlock;
     private final ResourceLocation chestBlock;
 
-    public ChestMarkerProcessor(Optional<ResourceLocation> lootTable, ResourceLocation markerBlock,
-                                ResourceLocation chestBlock) {
-        this.lootTable = lootTable;
+    public ChestMarkerProcessor(List<ChestConfig.LootTableEntry> lootTables,
+                                ResourceLocation markerBlock, ResourceLocation chestBlock) {
+        this.lootTables = lootTables;
         this.markerBlock = markerBlock;
         this.chestBlock = chestBlock;
     }
 
     /**
-     * {@code loot_table} is optional here, unlike the spawner processor's {@code mob_set}: a
+     * {@code loot_tables} is optional here, unlike the spawner processor's {@code mob_set}: a
      * template whose markers all name their own table needs no pool-level default, and requiring one
-     * would force an author to invent a table nothing draws from.
+     * would force an author to invent a table nothing draws from. Absent means an empty list, which
+     * is the "every marker speaks for itself" configuration -- not a silent fallback to something.
      *
-     * <p><strong>It was not actually optional until 2026-08-29.</strong> This read
+     * <p><strong>The field was {@code loot_table}, a single id, until 2026-08-30</strong> (#61).
+     * Renamed rather than kept alongside the list: nothing shipped set it -- the one file that did,
+     * {@code classic_chests.json}, was referenced by no pool and has been retired -- so there was no
+     * compatibility to preserve, and two ways to say the same thing is what the closed schema exists
+     * to prevent.</p>
+     *
+     * <p><strong>Optionality itself was broken until 2026-08-29.</strong> This read
      * {@code optionalFieldOf("loot_table", null)}, which looks like it means "absent is null" and
      * does not: when the field really is missing, DFU wraps the default in {@code Optional.of} and
      * throws NPE out of the decode. So a processor list that took this entry's documented option
      * &mdash; omitting the field &mdash; crashed the whole list, with a stack naming the JSON file
-     * rather than the field. Nothing caught it because the one shipped entry, in
-     * {@code classic_chests.json}, always supplied the field; it surfaced when #56's processor
-     * copied the pattern and shipped an entry with no fields at all.</p>
+     * rather than the field. Nothing caught it because the one shipped entry always supplied the
+     * field; it surfaced when #56's processor copied the pattern and shipped an entry with no fields
+     * at all. The list form below is immune by construction: its default is a real empty list, not
+     * a null dressed as one.</p>
+     *
+     * <h2>Why all three fields are {@code Codecs.strictOptionalFieldOf}</h2>
+     * <p>DFU's own {@code optionalFieldOf(name, default)} swallows a decode FAILURE and hands back
+     * the default, so it cannot tell "the author said nothing" from "the author said something
+     * malformed". On this processor that lenience produces #61's bug from the other direction: a
+     * {@code loot_tables} whose value is misspelled or the wrong shape would silently become the
+     * empty list, every marker would resolve to no table, and the whole template would generate with
+     * marker blocks standing in it &mdash; reported by nothing louder than a WARN per chest. Strict
+     * makes it a load error naming the field, which is the {@code #31} closed-schema decision
+     * applied to a processor entry.</p>
      */
     public static Codec<ChestMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
-                ResourceLocation.CODEC.optionalFieldOf("loot_table").forGetter(p -> p.lootTable),
-                ResourceLocation.CODEC.optionalFieldOf("marker_block", DEFAULT_MARKER_BLOCK)
-                        .forGetter(p -> p.markerBlock),
-                ResourceLocation.CODEC.optionalFieldOf("chest_block",
-                                new ResourceLocation("minecraft:chest"))
-                        .forGetter(p -> p.chestBlock)
+                Codecs.strictOptionalFieldOf(ChestConfig.LootTableEntry.CODEC.listOf(),
+                        "loot_tables", List.of()).forGetter(p -> p.lootTables),
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "marker_block",
+                        DEFAULT_MARKER_BLOCK).forGetter(p -> p.markerBlock),
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "chest_block",
+                        new ResourceLocation("minecraft:chest")).forGetter(p -> p.chestBlock)
         ).apply(instance, ChestMarkerProcessor::new));
     }
 
@@ -139,7 +175,12 @@ public class ChestMarkerProcessor extends StructureProcessor {
 
         String table = markerLootTable(current);
         if (table == null) {
-            table = lootTable.map(ResourceLocation::toString).orElse(null);
+            // settings.getRandom(pos) is seeded from the block's own position, so the draw is
+            // deterministic per cell: the same marker rolls the same table on every pass over it,
+            // which is what makes this safe in the clipped pass PieceProcessors puts it in (a piece
+            // spanning two chunks is processed once per chunk). Two markers in one template still
+            // draw independently, which is the point of a weighted list.
+            table = ChestConfig.LootTableEntry.pick(lootTables, settings.getRandom(current.pos()));
         }
         if (table == null || table.isEmpty()) {
             // Left standing on purpose -- see the class note. Logged at WARN because a template that

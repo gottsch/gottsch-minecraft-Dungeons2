@@ -27,6 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,28 @@ import java.util.Set;
  * had never read it.</p>
  *
  * <p>{@code sinkOffset} 0 therefore writes nothing at all, which is what ships today.</p>
+ *
+ * <h2>AND THE LINING, which is the same kind of rule</h2>
+ * <p>Every vertical face a pit cuts is <strong>lined</strong> here, in the neighbouring column,
+ * from the pit's own floor up to the underside of whatever that neighbour stands on. A room's floor
+ * plane is the only thing between a room and the terrain it was carved into; dig below it and the
+ * terrain is what you are looking at, and terrain includes caves, ravines and aquifers. Observed in
+ * game (Gottsch, 2026-08-29): a hazard shaft opened into a cavern and poured a waterfall down its
+ * own side.</p>
+ *
+ * <p><strong>It is not a provider's job and not an authored field</strong>, for the reason the clamp
+ * is not either &mdash; a shaft open along one side is never what anyone asked for, so the fix
+ * belongs where it cannot be forgotten, not in a config key every pack and every third-party
+ * provider has to remember. {@code PitPatternEntry} once carried a {@code wallBlock} and it was
+ * removed as dead weight when the courts terraced; the courts were right about themselves and wrong
+ * about the shapes that came later.</p>
+ *
+ * <p>The lining is the pit's own floor block, so a shaft reads as one excavation rather than as a
+ * floor with a differently-built liner. <strong>A terraced court barely notices</strong>: its faces
+ * are one block tall and are already the side of the next terrace's slab, so it takes one cell per
+ * face &mdash; the cell UNDER that slab, which is the sliver of terrain a court could show and
+ * nobody had looked for. The eight neighbours are lined rather than the four: a cavern that eats a
+ * diagonal column leaves a gap at the corner exactly as an orthogonal one does.</p>
  *
  * <h2>It runs AFTER the floor, and it overwrites</h2>
  * <p>The placement list is a layering order &mdash; a later placement in the same cell wins &mdash;
@@ -93,6 +116,18 @@ public final class RoomPitGenerator {
 
         int originX = room.getOriginX();
         int originZ = room.getOriginZ();
+
+        // Interior-local cell -> the depth actually dug, which is the AUTHORED depth after the
+        // clamp. The lining pass reads this rather than plan.depths(), or a neighbour clamped to a
+        // shallower floor than it asked for would be lined to a face that was never cut.
+        Map<Coords2D, Integer> dug = new HashMap<>();
+        for (Map.Entry<Coords2D, Integer> cell : plan.depths().entrySet()) {
+            int depth = Math.min(cell.getValue(), sinkOffset);
+            if (depth >= 1) {
+                dug.put(cell.getKey(), depth);
+            }
+        }
+
         for (Map.Entry<Coords2D, Integer> cell : plan.depths().entrySet()) {
             // Interior-local (0,0) is floor-local (originX + 1, originZ + 1) -- the same convention
             // the pillar providers use, and why a provider cannot dig out the wall ring's cells.
@@ -116,6 +151,8 @@ public final class RoomPitGenerator {
                 out.add(BlockStateCodec.placement(x, y + 1, z, fill));
             }
         }
+        line(dug, room, originX, originZ, floorY, floorState, out);
+
         // The rim sits at the room's OWN walking plane and is not excavated: those cells stay
         // walkable floor, and are deliberately not returned, so props may still stand on them.
         for (Map.Entry<Coords2D, BlockState> step : plan.rim().entrySet()) {
@@ -123,5 +160,49 @@ public final class RoomPitGenerator {
                     originZ + 1 + step.getKey().getY(), step.getValue()));
         }
         return excavated;
+    }
+
+    /**
+     * Backs every cut face with the pit's own floor block, so a pit is a closed box whatever the
+     * terrain around it turned out to be.
+     *
+     * <p>For each dug cell, each of its eight neighbours is filled from the cell's own floor up to
+     * the block below whatever that neighbour stands on &mdash; the room's floor plane for an
+     * undug neighbour, the neighbour's terrace slab for a shallower dug one. A neighbour dug at
+     * least as deep has no face to back and is skipped, which is why a sheer shaft's interior costs
+     * nothing: those columns are already air the pass never touches.</p>
+     *
+     * <p>Lining REACHES INTO THE WALL RING when a provider digs against the interior edge, and
+     * deliberately so: those cells are under the wall rather than in the room, and a wall's footing
+     * standing on nothing is the same hole seen from the other side. It stops at the room's own
+     * footprint, which is the last coordinate this generator has any business writing.</p>
+     */
+    private static void line(Map<Coords2D, Integer> dug, RoomData room, int originX, int originZ,
+                             int floorY, BlockState liningState, List<BlockPlacement> out) {
+        for (Map.Entry<Coords2D, Integer> cell : dug.entrySet()) {
+            int depth = cell.getValue();
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dz == 0) {
+                        continue;
+                    }
+                    Coords2D neighbour = new Coords2D(cell.getKey().getX() + dx,
+                            cell.getKey().getY() + dz);
+                    int neighbourDepth = dug.getOrDefault(neighbour, 0);
+                    if (neighbourDepth >= depth) {
+                        continue; // dug at least as deep: there is no face here to back
+                    }
+                    int x = originX + 1 + neighbour.getX();
+                    int z = originZ + 1 + neighbour.getY();
+                    if (x < originX || x > originX + room.getWidth() - 1
+                            || z < originZ || z > originZ + room.getDepth() - 1) {
+                        continue;
+                    }
+                    for (int y = floorY - depth; y <= floorY - neighbourDepth - 1; y++) {
+                        out.add(BlockStateCodec.placement(x, y, z, liningState));
+                    }
+                }
+            }
+        }
     }
 }

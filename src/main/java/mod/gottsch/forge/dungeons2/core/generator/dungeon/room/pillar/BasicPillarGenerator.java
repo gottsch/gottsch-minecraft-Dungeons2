@@ -25,6 +25,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomInterior;
 import net.minecraft.util.RandomSource;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +35,16 @@ import java.util.Set;
  * Builds a room's free-standing columns.
  *
  * <h2>What a column is</h2>
- * <p>One interior cell, filled from the row above the floor to the row below the ceiling &mdash;
- * {@code floorY + 1} through {@code floorY + height - 2}. That is exactly the span
- * {@code RoomVolumeGenerator} clears as interior air, which is why this runs after it: the column
- * simply wins those cells back.</p>
+ * <p>{@code thickness} x {@code thickness} interior cells &mdash; one by default &mdash; filled
+ * from the row above the floor to the row below the ceiling, {@code floorY + 1} through
+ * {@code floorY + height - 2}. That is exactly the span {@code RoomVolumeGenerator} clears as
+ * interior air, which is why this runs after it: the column simply wins those cells back.</p>
+ *
+ * <p>A layout's footprint is therefore a set of <strong>anchors</strong> rather than of columns.
+ * Thickness is applied here and not in the provider because it is orthogonal to arrangement: doing
+ * it once at draw time gives every layout thick columns, where a provider-side implementation would
+ * be four copies. Odd thicknesses centre on the anchor; even ones lean toward +x/+z, because they
+ * have to lean somewhere.</p>
  *
  * <p>The bottom row takes {@code baseBlock} and the top row {@code capBlock}, both defaulting to the
  * shaft. A column only two rows tall is <strong>all plinth and capital with no shaft</strong>, which
@@ -49,6 +56,11 @@ import java.util.Set;
  * rule a projecting wall strip follows at a doorway, and for the same reason. Clipping out just the
  * two door rows leaves the rest of the column hanging in mid-air above the opening: a missing column
  * in a lattice reads as a room, a floating one reads as a bug.</p>
+ *
+ * <p>The same rule decides a thick column, over the whole of its footprint: if <em>any</em> of its
+ * cells is a doorway approach, is excavated by a pit, or falls outside the interior, the entire
+ * column is skipped. A pier truncated by a wall reads exactly as wrong as one hanging over a door,
+ * so a thickness the room cannot carry costs the column rather than producing half of it.</p>
  *
  * <h2>Several layouts at once</h2>
  * <p>Layouts are applied in list order and a later one wins a shared cell, the same
@@ -92,22 +104,61 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
         Set<Coords2D> taken = new LinkedHashSet<>();
 
         for (PillarLayout layout : layouts) {
-            for (Coords2D cell : layout.provider().footprint(interiorWidth, interiorDepth)) {
-                // Interior-local -> floor-local: the interior starts one cell in from the room's
-                // origin on both axes. Doing the shift here, once, is why a layout never has to know
-                // the wall ring exists.
-                Coords2D at = new Coords2D(room.getOriginX() + 1 + cell.getX(),
-                        room.getOriginZ() + 1 + cell.getY());
+            int thickness = layout.entry().thickness();
+            for (Coords2D anchor : layout.provider().footprint(interiorWidth, interiorDepth)) {
+                List<Coords2D> shaft = shaftCells(room, anchor, thickness, interiorWidth,
+                        interiorDepth);
+                // Whole or not at all -- see the class note. `shaft` is empty when any cell of it
+                // left the interior, and the two set tests below are applied across the WHOLE
+                // footprint for the same reason.
+                //
                 // #58: `excluded` is the pit. A column drawn over an excavated cell would start
                 // at the walking plane with the hole beneath it, so it is dropped and the rest of
                 // the layout stands -- the same treatment, and the same set, as a doorway approach.
-                if (doorways.contains(at) || excluded.contains(at) || !taken.add(at)) {
+                if (shaft.isEmpty() || shaft.stream().anyMatch(
+                        c -> doorways.contains(c) || excluded.contains(c))) {
                     continue;
                 }
-                emitColumn(at.getX(), at.getY(), floorY, interiorRows, layout.entry(), out);
+                for (Coords2D at : shaft) {
+                    // Per CELL, not per column: an earlier layout that already claimed this cell
+                    // has drawn it, and emitting again would be a second real write into open air.
+                    // At thickness 1 this is byte-for-byte the behaviour that came before.
+                    if (!taken.add(at)) {
+                        continue;
+                    }
+                    emitColumn(at.getX(), at.getY(), floorY, interiorRows, layout.entry(), out);
+                }
             }
         }
         this.occupied = taken;
+    }
+
+    /**
+     * The floor-local cells one column occupies, or empty when the shaft will not fit the interior.
+     *
+     * <p>Interior-local -> floor-local: the interior starts one cell in from the room's origin on
+     * both axes. Doing the shift here, once, is why a layout never has to know the wall ring
+     * exists.</p>
+     *
+     * <p>{@code -(thickness - 1) / 2} puts an odd shaft exactly on its anchor and leans an even one
+     * toward +x/+z. An even shaft in an odd room is off-centre by half a cell whatever this does;
+     * leaning consistently at least makes it the SAME half-cell everywhere.</p>
+     */
+    private static List<Coords2D> shaftCells(RoomData room, Coords2D anchor, int thickness,
+                                             int interiorWidth, int interiorDepth) {
+        int start = -(thickness - 1) / 2;
+        List<Coords2D> cells = new ArrayList<>(thickness * thickness);
+        for (int dx = start; dx < start + thickness; dx++) {
+            for (int dz = start; dz < start + thickness; dz++) {
+                int x = anchor.getX() + dx;
+                int z = anchor.getY() + dz;
+                if (x < 0 || z < 0 || x >= interiorWidth || z >= interiorDepth) {
+                    return List.of();
+                }
+                cells.add(new Coords2D(room.getOriginX() + 1 + x, room.getOriginZ() + 1 + z));
+            }
+        }
+        return cells;
     }
 
     private void emitColumn(int x, int z, int floorY, int interiorRows, PillarEntry entry,

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,10 +70,63 @@ class WallPatternRegistryTest {
 
     @Test
     void theBuiltInPatternsAreRegisteredUnderThisModsNamespace() {
-        for (String path : new String[] {"courses", "pilasters", "end_pilasters", "panels"}) {
+        for (String path : new String[] {"courses", "pilasters", "end_pilasters", "panels",
+                "gradient", "diamond"}) {
             assertTrue(WallPatternRegistry.ids().contains(new ResourceLocation("dungeons2", path)),
                     "dungeons2:" + path + " should be registered");
         }
+    }
+
+    /**
+     * {@code diamond} is the first purely GEOMETRIC wall pattern, so its config shares nothing with
+     * the architectural four. These pin that its own keys decode and that the closed schema still
+     * rejects a key belonging to one of the others.
+     */
+    @Test
+    void theDiamondPatternDecodesItsOwnKeys() {
+        PatternEntry entry = decode("{\"type\": \"dungeons2:diamond\", \"config\": {"
+                + " \"block\": \"" + BLOCK + "\", \"size\": 3, \"spacing\": 9,"
+                + " \"filled\": true}}");
+        DiamondWallPattern diamond = (DiamondWallPattern) entry.pattern();
+        assertEquals(3, diamond.size());
+        assertEquals(9, diamond.spacing());
+        assertTrue(diamond.filled());
+    }
+
+    /** Absent size/spacing/filled give a 5x5 outline every six cells. */
+    @Test
+    void theDiamondPatternDefaultsToAnOutline() {
+        DiamondWallPattern diamond = (DiamondWallPattern) decode(
+                "{\"type\": \"dungeons2:diamond\", \"config\": {\"block\": \"" + BLOCK + "\"}}")
+                .pattern();
+        assertEquals(2, diamond.size());
+        assertEquals(6, diamond.spacing());
+        assertFalse(diamond.filled());
+    }
+
+    /** It needs a block like the other single-material patterns, and says so. */
+    @Test
+    void aDiamondMissingItsBlockIsALoadError() {
+        assertTrue(errorOf("{\"type\": \"dungeons2:diamond\"}").contains("block"));
+    }
+
+    /**
+     * A size of 0 is one cell, which is a speck rather than a diamond; a spacing of 0 would stack
+     * every diamond on the same centre. Both are the schema's job, not the provider's.
+     */
+    @Test
+    void aDegenerateDiamondIsALoadError() {
+        assertTrue(errorOf("{\"type\": \"dungeons2:diamond\", \"config\": {"
+                + " \"block\": \"" + BLOCK + "\", \"size\": 0}}").contains("size"));
+        assertTrue(errorOf("{\"type\": \"dungeons2:diamond\", \"config\": {"
+                + " \"block\": \"" + BLOCK + "\", \"spacing\": 0}}").contains("spacing"));
+    }
+
+    /** An architectural key on the geometric pattern is a stray key, not a silent no-op. */
+    @Test
+    void anArchitecturalKeyOnTheDiamondIsALoadError() {
+        assertTrue(errorOf("{\"type\": \"dungeons2:diamond\", \"config\": {"
+                + " \"block\": \"" + BLOCK + "\", \"projection\": 1}}").length() > 0);
     }
 
     @Test

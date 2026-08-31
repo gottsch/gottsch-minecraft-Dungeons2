@@ -58,11 +58,19 @@ import java.util.Optional;
  * as the same floor at a lower level rather than as a different structure dropped into it.
  * Authoring it is how you say otherwise &mdash; a stone-lined cistern in a mud room, say.</p>
  *
- * <p>There is deliberately <strong>no {@code wallBlock}</strong>. The first version cut a sheer
- * hole and had to line the neighbouring columns or terrain showed through at the bottom; a terraced
- * court makes every vertical face one block tall and the side of the next terrace's own slab, so
- * there is nothing left to line. A field that no longer does anything is worse than no field, since
- * the closed schema would keep accepting it.</p>
+ * <p>There is deliberately <strong>no {@code wallBlock}</strong>, but not for the reason this said
+ * until 2026-08-29. The claim was that a terraced court makes every vertical face one block tall
+ * and the side of the next terrace's own slab, so there is nothing left to line. That was true of
+ * the courts and false the moment a SHEER shape shipped: a hazard shaft cuts a face as deep as it
+ * is, and one that lands against a cave or an aquifer pours the terrain into the room &mdash;
+ * observed in game, waterfall and all.</p>
+ *
+ * <p>The lining came back; the field did not. {@code RoomPitGenerator} now backs every cut face
+ * with the pit's own floor block, unconditionally, for the same reason the depth clamp lives on the
+ * output: a pit open along one side is never what an author meant, so it must not be something a
+ * pack or a third-party provider can forget to ask for. Authoring {@code floorBlock} changes what
+ * the lining is made of too, which keeps "one material" true &mdash; a stone-lined cistern is lined
+ * in stone.</p>
  *
  * @author Mark Gottschling on Aug 27, 2026
  */

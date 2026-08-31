@@ -25,6 +25,7 @@ import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
@@ -81,7 +82,11 @@ class WeatheringProcessorListTest {
 
     /** The decoration sweep's dispatch key as authored in the JSON. */
     private static final String SWEEP_TYPE = "dungeons2:decoration_sweep";
+
+    /** The support sweep's dispatch key as authored in the JSON. */
+    private static final String SUPPORT_TYPE = "dungeons2:support_sweep";
     private static final String POT_TYPE = "dungeons2:pot";
+    private static final String CHEST_TYPE = "dungeons2:chest";
 
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
@@ -117,9 +122,9 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(6, processors.size(),
+        assertEquals(7, processors.size(),
                 "Expected the vanilla rule processor, aging, decoration, the decoration sweep,"
-                        + " the #10 spawner marker and the #56 pot marker");
+                        + " the #10 spawner marker, the #56 pot marker and the #61 chest marker");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -131,6 +136,7 @@ class WeatheringProcessorListTest {
                 case SPAWNER_TYPE -> SpawnerMarkerProcessor.codec(NO_TYPE);
                 case SWEEP_TYPE -> DecorationSweepProcessor.codec(NO_TYPE);
                 case POT_TYPE -> PotMarkerProcessor.codec(NO_TYPE);
+                case CHEST_TYPE -> ChestMarkerProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -190,8 +196,29 @@ class WeatheringProcessorListTest {
         // effect, rewriting the marker cell to air, is an ordinary idempotent block write. And like
         // the spawner marker it cannot fire on a procedural piece at all -- it matches a marker
         // BLOCK, which only an authored template contains.
+        //
+        // dungeons2:support_sweep (2026-08-29) is vetted by the same third route as
+        // decoration_sweep, and its argument is the cleaner of the two. It reads the level, so it
+        // lands in the clipped pass -- and clipping PARTITIONS the block list, so every block is
+        // judged by exactly one pass, the one whose box contains it. There is no "decides
+        // differently in each chunk" to worry about, because no block is offered to two passes.
+        // What clipping does cost is reach: a block against the seam is treated as SEEDED, since
+        // the wall holding it up may be in the slice this pass cannot legally read. So the failure
+        // mode is under-removal at chunk edges, never removing something a wider view would keep.
+        //
+        // Unlike the spawner and pot markers it CAN fire on a procedural piece, and that is fine
+        // rather than merely tolerable: a procedural room's blocks are grounded by the terrain and
+        // the pieces around them exactly as a prefab's are.
+        //
+        // dungeons2:chest (#61) is vetted exactly as dungeons2:pot is, minus the entity. It is not
+        // marked LevelIndependentProcessor -- its Treasure2 branch reads the level -- so it lands
+        // in the clipped pass, and clipping cannot make it decide differently: the table comes
+        // either from the marker's own NBT or from a weighted draw seeded off the block's world
+        // position, so every pass that sees a given marker resolves the same chest. Its write is an
+        // ordinary idempotent block write, and like the other two markers it cannot fire on a
+        // procedural piece at all -- it matches a marker BLOCK, which only a template contains.
         Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                SWEEP_TYPE, POT_TYPE);
+                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),

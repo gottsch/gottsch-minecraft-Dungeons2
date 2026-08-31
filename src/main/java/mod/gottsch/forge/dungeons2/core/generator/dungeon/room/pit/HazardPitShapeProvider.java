@@ -48,6 +48,14 @@ import java.util.Set;
  *
  * <p>{@code offsetX}/{@code offsetZ} shift the shaft off centre. A trap in the exact middle of
  * every room announces itself; one to the side of the doorway line does not.</p>
+ *
+ * <h2>The rim is a TELL, not a step</h2>
+ * <p>An authored {@code rimBlock} lays a closed ring of one block on the walkable cells around the
+ * mouth, at the room's own walking plane. The court's rim is a stair because a court is something
+ * you walk down into; nothing walks down into a sheer shaft, so this ring exists only to be read.
+ * A lip in a material the floor is not gives a careful player the one beat they need, which is the
+ * difference between a trap and a gotcha &mdash; and it costs the incautious nothing, since the
+ * cells stay walkable and unexcavated. Unauthored, the mouth is flush and the shaft is unmarked.</p>
  */
 public class HazardPitShapeProvider implements IPitShapeProvider {
 
@@ -58,10 +66,18 @@ public class HazardPitShapeProvider implements IPitShapeProvider {
     private final String spikeBlock;
     private final Map<String, String> spikeProperties;
     private final double spikeProbability;
+    private final String rimBlock;
 
+    /** An unmarked shaft, which is how this provider shipped. */
     public HazardPitShapeProvider(int width, int depth, int offsetX, int offsetZ,
                                   String spikeBlock, Map<String, String> spikeProperties,
                                   double spikeProbability) {
+        this(width, depth, offsetX, offsetZ, spikeBlock, spikeProperties, spikeProbability, null);
+    }
+
+    public HazardPitShapeProvider(int width, int depth, int offsetX, int offsetZ,
+                                  String spikeBlock, Map<String, String> spikeProperties,
+                                  double spikeProbability, String rimBlock) {
         this.width = width;
         this.depth = depth;
         this.offsetX = offsetX;
@@ -69,6 +85,7 @@ public class HazardPitShapeProvider implements IPitShapeProvider {
         this.spikeBlock = spikeBlock;
         this.spikeProperties = spikeProperties;
         this.spikeProbability = spikeProbability;
+        this.rimBlock = rimBlock;
     }
 
     @Override
@@ -106,7 +123,12 @@ public class HazardPitShapeProvider implements IPitShapeProvider {
                         }
                     });
         }
-        return new PitPlan(depths, fills);
+        Map<Coords2D, BlockState> rim = Map.of();
+        if (rimBlock != null && !rimBlock.isEmpty()) {
+            rim = PitPlans.blockRim(footprint,
+                    BlockStateCodec.block(rimBlock, Blocks.PACKED_MUD));
+        }
+        return new PitPlan(depths, fills, rim);
     }
 
     /** Keeps the offset shaft inside the interior's walkable ring rather than under a wall. */

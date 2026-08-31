@@ -1,8 +1,0 @@
-{
-  "processors": [
-    {
-      "processor_type": "dungeons2:chest",
-      "loot_table": "dungeons2:chests/classic_shallow"
-    }
-  ]
-}

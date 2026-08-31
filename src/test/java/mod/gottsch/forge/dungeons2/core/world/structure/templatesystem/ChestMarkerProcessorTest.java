@@ -1,11 +1,13 @@
 package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 
 import mod.gottsch.forge.dungeons2.core.block.entity.ChestMarkerBlockEntity;
+import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -14,11 +16,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,7 +51,7 @@ class ChestMarkerProcessorTest {
 
     private static ChestMarkerProcessor processor(String poolTable) {
         return new ChestMarkerProcessor(
-                Optional.ofNullable(poolTable).map(ResourceLocation::new),
+                poolTable == null ? List.of() : List.of(new ChestConfig.LootTableEntry(poolTable, 1)),
                 new ResourceLocation("dungeons2:chest_marker"),
                 new ResourceLocation("minecraft:chest"));
     }
@@ -111,7 +115,7 @@ class ChestMarkerProcessorTest {
                         "{\"processor_type\": \"dungeons2:chest\"}"));
 
         assertTrue(result.result().isPresent(),
-                "an entry naming no loot_table must decode -- it falls back to each marker's own"
+                "an entry naming no loot_tables must decode -- it falls back to each marker's own"
                         + " table: " + result.error().map(Object::toString).orElse(""));
     }
 
@@ -121,10 +125,65 @@ class ChestMarkerProcessorTest {
         DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(
                         "{\"processor_type\": \"dungeons2:chest\","
-                                + " \"loot_table\": \"dungeons2:chests/classic_shallow\"}"));
+                                + " \"loot_tables\": ["
+                                + "   {\"lootTable\": \"dungeons2:chests/classic_shallow\","
+                                + "    \"weight\": 9},"
+                                + "   {\"lootTable\": \"dungeons2:chests/classic_deep\"}]}"));
 
         assertTrue(result.result().isPresent(),
                 result.error().map(Object::toString).orElse(""));
+    }
+
+    /**
+     * The old single-id form must NOT decode. #61 renamed {@code loot_table} to a weighted
+     * {@code loot_tables} list, and the whole value of the rename is that a pack still on the old
+     * spelling is told so rather than quietly generating markers that resolve to nothing.
+     */
+    @Test
+    void theRetiredSingleIdFormIsRejected() {
+        DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"processor_type\": \"dungeons2:chest\","
+                                + " \"loot_tables\": \"dungeons2:chests/classic_shallow\"}"));
+
+        assertTrue(result.error().isPresent(),
+                "a bare id where the list belongs must fail to decode, not be read as something");
+    }
+
+    /**
+     * The draw the pool-level default performs. A weight of 0 cannot be authored (the codec's range
+     * starts at 1), so this pins the shape that CAN be: an overwhelming weight wins essentially
+     * always, and a single-entry list is unconditional.
+     */
+    @Test
+    void theWeightedDrawHonoursTheWeights() {
+        List<ChestConfig.LootTableEntry> tables = List.of(
+                new ChestConfig.LootTableEntry("dungeons2:chests/classic_shallow", 1),
+                new ChestConfig.LootTableEntry("dungeons2:chests/classic_deep", 999));
+
+        int deep = 0;
+        RandomSource random = RandomSource.create(42L);
+        for (int i = 0; i < 200; i++) {
+            if ("dungeons2:chests/classic_deep".equals(ChestConfig.LootTableEntry.pick(tables, random))) {
+                deep++;
+            }
+        }
+        assertTrue(deep > 190, "a 999:1 weighting drew the rare table " + (200 - deep) + " times in 200");
+
+        assertEquals("dungeons2:chests/classic_hoard",
+                ChestConfig.LootTableEntry.pick(
+                        List.of(new ChestConfig.LootTableEntry("dungeons2:chests/classic_hoard", 1)),
+                        RandomSource.create(1L)));
+    }
+
+    /**
+     * An empty list draws nothing rather than throwing or inventing a table -- the configuration a
+     * pool takes when every marker names its own, and the path that leaves the marker standing with
+     * a WARN.
+     */
+    @Test
+    void anEmptyListDrawsNothing() {
+        assertNull(ChestConfig.LootTableEntry.pick(List.of(), RandomSource.create(1L)));
     }
 
     /** The opt-in #48 step 4 will read. Present in the shape now so a template can carry it early. */

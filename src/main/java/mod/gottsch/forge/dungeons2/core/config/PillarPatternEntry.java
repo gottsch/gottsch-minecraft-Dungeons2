@@ -84,6 +84,12 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
     public static final String QUARTET = "quartet";
 
     /**
+     * Exactly one column, at the room's centre, however large the room is. The only layout whose
+     * COUNT is the guarantee rather than its arrangement. See {@code CentrePillarLayout}.
+     */
+    public static final String CENTRE = "centre";
+
+    /**
      * One layout. {@code type} is a plain string discriminator, the same idiom the floor, wall and
      * ceiling slots use; an unrecognized value draws nothing, the same graceful degradation they
      * give.
@@ -97,13 +103,19 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
      *   <li>{@code "quartet"} &mdash; four columns marking a square of side {@code spacing} at the
      *       room's centre, shrunk to fit if the room cannot carry it at {@code inset}. Unlike the
      *       grid the square does not grow with the room.</li>
+     *   <li>{@code "centre"} (or {@code "center"}) &mdash; exactly one column at the room's centre.
+     *       Takes {@code inset} only, as a veto: too small a room draws nothing. The grid and the
+     *       quartet both COLLAPSE to a single column in a small enough room, which is why this
+     *       exists &mdash; there a lone pier is incidental, here it is the contract.</li>
      * </ul>
      *
-     * <p>{@code spacing} and {@code inset} carry the same meaning on all three, which is why no
-     * layout has needed a new field: {@code inset} is "how far in from the edge" and {@code spacing}
-     * is "how far apart the columns are". The grid applies both to two axes; the colonnade applies
-     * {@code spacing} along its length only, since its width is two rows by definition; the quartet
-     * uses {@code spacing} as the side of its square and never repeats.</p>
+     * <p>{@code spacing} and {@code inset} carry the same meaning on all of them: {@code inset} is
+     * "how far in from the edge" and {@code spacing} is "how far apart the columns are". The grid
+     * applies both to two axes; the colonnade applies {@code spacing} along its length only, since
+     * its width is two rows by definition; the quartet uses {@code spacing} as the side of its
+     * square and never repeats. <strong>{@code centre} is the one that declines {@code spacing}
+     * outright</strong> &mdash; a lone column has nothing to be spaced from, so the field would be
+     * a silent no-op and the closed schema rejects it instead.</p>
      *
      * <p><strong>{@code spacing} is also the knob that keeps the layouts apart.</strong> A quartet
      * authored at the grid's own spacing lands on the grid's own footprint in any room small enough
@@ -115,6 +127,28 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
      * material for a column, the same rule every other pattern type follows. {@code baseBlock} and
      * {@code capBlock} default to {@code block}, and {@code baseProperties}/{@code capProperties}
      * default to {@code properties}.</p>
+     *
+     * <h2>{@code thickness} &mdash; how many cells across the shaft is</h2>
+     * <p>A {@code thickness} of 2 draws a 2x2 pier, 3 a 3x3, and the default 1 is the single-cell
+     * column every layout drew before this existed. It lives HERE rather than on a layout because
+     * it is <strong>orthogonal to arrangement</strong>: a thick column makes as much sense in a
+     * {@code grid} or a {@code colonnade} as it does at the {@code centre}, and putting it on the
+     * layout would mean implementing it four times and watching the four drift. It sits beside
+     * {@code baseBlock} and the property maps for the same reason those do &mdash; per-column
+     * detail that every layout inherits for free.</p>
+     *
+     * <p><strong>An even thickness cannot be centred in an odd room</strong>, and rooms are
+     * odd-sided by convention. A 2-wide pier in a 15-wide interior takes cells 7-8, half a cell off
+     * the room's true centre; the shaft leans toward +x/+z, since odd thicknesses centre exactly on
+     * the layout's cell and even ones have to lean somewhere. Invisible in most rooms, and NOT
+     * invisible against a {@code cross} or {@code spokes} floor pattern, which are centred.</p>
+     *
+     * <p>A thick column is placed <strong>whole or not at all</strong>. If any of its cells falls
+     * outside the interior, on a doorway approach, or in a pit, the entire column is skipped &mdash;
+     * the rule a single-cell column already follows at a doorway, for the reason stated on
+     * {@code BasicPillarGenerator}: a missing column reads as a room, a truncated one reads as a
+     * bug. So a thickness the room cannot carry costs the column, never a half pier against a
+     * wall.</p>
      *
      * <p>The per-row property maps are here for the same reason they are on a wall strip and
      * <em>not</em> on a course: a column's plinth and capital are typically the same block at
@@ -128,12 +162,28 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
                               Map<String, String> properties,
                               Optional<Map<String, String>> baseProperties,
                               Optional<Map<String, String>> capProperties,
+                              int thickness,
                               SizeGate gate) {
+
+        /** A single-cell shaft: what every column was before {@code thickness} existed. */
+        public static final int DEFAULT_THICKNESS = 1;
+
+        /** The shape before {@code thickness}: a single-cell shaft, however it is otherwise built. */
+        public PillarEntry(PillarLayoutPattern layout, String block,
+                           Optional<String> baseBlock, Optional<String> capBlock,
+                           Map<String, String> properties,
+                           Optional<Map<String, String>> baseProperties,
+                           Optional<Map<String, String>> capProperties,
+                           SizeGate gate) {
+            this(layout, block, baseBlock, capBlock, properties, baseProperties, capProperties,
+                    DEFAULT_THICKNESS, gate);
+        }
 
         /** A plain ungated column of one block, at the default rhythm. */
         public PillarEntry(PillarLayoutPattern layout, String block) {
             this(layout, block, Optional.empty(), Optional.empty(),
-                    Map.of(), Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED);
+                    Map.of(), Optional.empty(), Optional.empty(), DEFAULT_THICKNESS,
+                    SizeGate.UNBOUNDED);
         }
 
         /** The base block, falling back to {@link #block} when unauthored. */
@@ -182,6 +232,11 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
                         "baseProperties").forGetter(PillarEntry::baseProperties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "capProperties").forGetter(PillarEntry::capProperties),
+                // Named `thickness` and NOT `size`, deliberately: this entry already carries a
+                // SizeGate whose minSize/maxSize are about the ROOM. A bare `size` beside them
+                // would read as a third opinion on the same quantity.
+                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "thickness",
+                        DEFAULT_THICKNESS).forGetter(PillarEntry::thickness),
                 SizeGate.MAP_CODEC.forGetter(PillarEntry::gate)
         ).apply(instance, PillarEntry::new)));
     }

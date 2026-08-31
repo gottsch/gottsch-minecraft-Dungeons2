@@ -396,6 +396,120 @@ class RoomPitTest {
         }
     }
 
+    /**
+     * The hazard's rim is a CLOSED ring at the room's own walking plane: every cell touching the
+     * mouth, corners included. The court's stair rim leaves corners plain because a stair there
+     * would face two ways at once; this ring exists to be READ, and one with four gaps in it reads
+     * as four strips rather than as an edge.
+     */
+    @Test
+    void aHazardRimClosesAroundTheMouthAtTheWalkingPlane() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13),
+                new PitPatternEntry(new HazardPitShape(3, 4, 0, 0, Optional.empty(), Map.of(), 0,
+                        Optional.of("minecraft:packed_mud"))),
+                5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        assertEquals(9, dug.size(), "a 3x3 shaft");
+        int minX = dug.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+        int minZ = dug.stream().mapToInt(Coords2D::getY).min().orElseThrow();
+        for (int x = minX - 1; x <= minX + 3; x++) {
+            for (int z = minZ - 1; z <= minZ + 3; z++) {
+                Coords2D cell = new Coords2D(x, z);
+                if (dug.contains(cell)) {
+                    continue;
+                }
+                assertEquals(Blocks.PACKED_MUD, world.get(cell).get(FLOOR_Y).getBlock(),
+                        "the rim should close at " + cell);
+                assertFalse(dug.contains(cell), "a rim cell is a tell, not part of the pit");
+            }
+        }
+    }
+
+    /** Unauthored, the mouth is flush: nothing is laid around it and the trap is unmarked. */
+    @Test
+    void aHazardWithoutARimIsUnmarked() {
+        List<BlockPlacement> out = new ArrayList<>();
+        excavate(room(13),
+                new PitPatternEntry(new HazardPitShape(3, 4, 0, 0, Optional.empty(), Map.of(), 0)),
+                5, out);
+
+        assertTrue(out.stream().noneMatch(p -> p.getY() == FLOOR_Y
+                        && !p.getBlockId().contains("air")),
+                "an unauthored rim wrote a block at the walking plane");
+    }
+
+    /**
+     * A sheer shaft is a CLOSED BOX. Every column touching it is backed with the pit's own floor
+     * block from the shaft floor up to the room's walking plane, because below that plane there is
+     * nothing but the terrain the dungeon was carved into &mdash; and terrain includes caves and
+     * aquifers. This is the in-game failure that put the lining back (Gottsch, 2026-08-29): a shaft
+     * opened into a cavern and poured a waterfall down its own side.
+     */
+    @Test
+    void aSheerShaftIsLinedOnEverySideIncludingTheDiagonals() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13),
+                new PitPatternEntry(new HazardPitShape(3, 4, 0, 0, Optional.empty(), Map.of(), 0)),
+                5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        int minX = dug.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+        int minZ = dug.stream().mapToInt(Coords2D::getY).min().orElseThrow();
+        for (int x = minX - 1; x <= minX + 3; x++) {
+            for (int z = minZ - 1; z <= minZ + 3; z++) {
+                Coords2D cell = new Coords2D(x, z);
+                if (dug.contains(cell)) {
+                    continue;
+                }
+                // The face runs from the shaft's own floor to the block under the walking plane:
+                // a player standing in the shaft can see all of it.
+                for (int y = FLOOR_Y - 4; y <= FLOOR_Y - 1; y++) {
+                    assertEquals(Blocks.STONE_BRICKS, world.get(cell).get(y).getBlock(),
+                            "unlined face at " + cell + " y=" + y + " -- terrain would show here");
+                }
+            }
+        }
+    }
+
+    /** The lining is the pit's own floor block, so an authored pit is lined in what it is made of. */
+    @Test
+    void theLiningIsThePitsOwnFloorBlock() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13),
+                new PitPatternEntry(new HazardPitShape(3, 3, 0, 0, Optional.empty(), Map.of(), 0),
+                        Optional.of("minecraft:deepslate_bricks"), SizeGate.UNBOUNDED),
+                5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        int minX = dug.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+        int minZ = dug.stream().mapToInt(Coords2D::getY).min().orElseThrow();
+        assertEquals(Blocks.DEEPSLATE_BRICKS,
+                world.get(new Coords2D(minX - 1, minZ)).get(FLOOR_Y - 1).getBlock(),
+                "the face should be lined in the block the pit is floored with");
+    }
+
+    /**
+     * A terraced court is lined too, and it costs one cell per face &mdash; the sliver UNDER the
+     * next terrace's slab, which is the only terrain a court could ever show. The court's own faces
+     * are still the slabs themselves, so nothing about how it reads changes.
+     */
+    @Test
+    void aTerracedCourtIsLinedUnderItsSlabsAndNowhereElse() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13), new PitPatternEntry(new CentrePitShape(5, 2)), 5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        int minX = dug.stream().mapToInt(Coords2D::getX).min().orElseThrow();
+        int minZ = dug.stream().mapToInt(Coords2D::getY).min().orElseThrow();
+        Coords2D outside = new Coords2D(minX - 1, minZ + 1);
+        assertEquals(Blocks.STONE_BRICKS, world.get(outside).get(FLOOR_Y - 1).getBlock(),
+                "the cell under an undug neighbour's floor is the court's one exposed sliver");
+        assertFalse(world.get(outside).containsKey(FLOOR_Y - 2),
+                "a one-deep face needs one cell of lining, not the whole column");
+    }
+
     /** An offset shaft stays inside the interior's walkable ring, so a trap never blocks its room. */
     @Test
     void anOffsetShaftStaysOffTheWalls() {

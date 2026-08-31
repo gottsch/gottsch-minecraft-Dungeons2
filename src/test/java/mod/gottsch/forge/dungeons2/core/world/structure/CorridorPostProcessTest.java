@@ -264,7 +264,7 @@ class CorridorPostProcessTest {
                 if (!(after.getBlock() instanceof StairBlock)) {
                     // Weathered out of the stairs family entirely -- deliberate, and a shape
                     // question no longer applies. Where it may and may not land is
-                    // anArchHaunchNeverWeathersIntoAHole's business, not this test's.
+                    // anArchHaunchNeverWeathersIntoAFallingBlock's business, not this test's.
                     continue;
                 }
                 authored++;
@@ -332,25 +332,36 @@ class CorridorPostProcessTest {
     }
 
     /**
-     * An arch haunch may weather into another stair, or into <strong>dirt</strong> &mdash; the
-     * latter is deliberate (see {@code AgingChainRatesTest.stairsDecayToDirtAtTheIntendedRate}): it
-     * reads as the stair having fallen out with earth coming through, and it is what gives
-     * {@code hanging_growth} something to sprout from in a ceiling.
+     * An arch haunch may weather into another stair, into <strong>dirt</strong>, or into
+     * <strong>air</strong>. The dirt stage is deliberate (see
+     * {@code AgingChainRatesTest.stairsDecayToDirtAtTheIntendedRate}): it reads as the stair having
+     * fallen out with earth coming through, and it is what gives {@code hanging_growth} something to
+     * sprout from in a ceiling.
      *
-     * <p>What it must never do is leave a <em>hole</em>. Air or a falling block in the haunch row is
-     * an opening in the corridor roof, and the arch row is the one place in a corridor where the
-     * ceiling is only one block thick. The stairs chains reach neither today; this asserts that
-     * against what actually lands in the world rather than against the authored probabilities,
-     * which is the half {@code AgingChainRatesTest} cannot see.</p>
+     * <h2>AIR WAS BARRED HERE UNTIL 2026-08-29, AND THIS TEST NOW PERMITS IT</h2>
+     * <p>The mud band added {@code minecraft:mud_brick_stairs -> air}, which is the block that band
+     * arches its corridors with, so 109 of 3291 haunches opened. Mark's call: <strong>some holes are
+     * fine.</strong> The harm the old bar was really guarding against was never the opening &mdash;
+     * it was <em>gravel</em>, which fell through the hole it made and littered the floor below. That
+     * cause is gone: {@code dungeonblocks:rubble} replaced gravel as the deep-decay terminus on
+     * 2026-08-25 precisely because it does not fall. Water finding its way through an opened arch is
+     * accepted, the same way the wall breach was accepted on 2026-08-25.
+     *
+     * <p>So the guard narrowed rather than went away, and what remains is the part with teeth: a
+     * haunch may open, but <strong>nothing that FALLS</strong> may ever land in the haunch row. The
+     * arch is the one place in a corridor where the roof is a single block thick, so a falling block
+     * there empties onto the floor rather than staying put. Asserted against what lands in the world
+     * rather than against authored probabilities, which is the half {@code AgingChainRatesTest}
+     * cannot see.</p>
      */
     @Test
-    void anArchHaunchNeverWeathersIntoAHole() {
-        // dungeonblocks:rubble is deliberately NOT in this set. It replaced gravel as the
-        // deep-decay terminus on 2026-08-25 precisely because it is a plain full block that does
-        // not fall, so it roofs the haunch row as well as the stone it replaced. Gravel and sand
-        // stay listed: they are not placed anywhere today, and this is where reintroducing one
-        // would be caught.
-        Set<String> holes = Set.of("minecraft:air", "minecraft:gravel", "minecraft:sand");
+    void anArchHaunchNeverWeathersIntoAFallingBlock() {
+        // dungeonblocks:rubble is deliberately NOT in this set -- it is the non-falling look-alike
+        // that replaced gravel, and it roofs the haunch row as well as the stone it replaced.
+        // minecraft:air is NOT in this set either, as of 2026-08-29: an open haunch is accepted, a
+        // littered floor is not. Gravel and sand stay listed even though nothing places them today;
+        // this is where reintroducing one gets caught.
+        Set<String> holes = Set.of("minecraft:gravel", "minecraft:sand");
         List<String> offenders = new ArrayList<>();
         int haunches = 0;
 
@@ -367,8 +378,11 @@ class CorridorPostProcessTest {
 
         assertTrue(haunches > 0, "no arch haunches were generated, so this test proved nothing");
         assertTrue(offenders.isEmpty(),
-                haunches + " haunches checked; " + offenders.size() + " became a hole in the corridor"
-                        + " roof: " + offenders.subList(0, Math.min(8, offenders.size())));
+                haunches + " haunches checked; " + offenders.size() + " weathered into a FALLING"
+                        + " block in the corridor roof. An open haunch is fine (Mark, 2026-08-29);"
+                        + " one that drops its block onto the floor below is the littering this"
+                        + " guard exists for: "
+                        + offenders.subList(0, Math.min(8, offenders.size())));
     }
 
     /**

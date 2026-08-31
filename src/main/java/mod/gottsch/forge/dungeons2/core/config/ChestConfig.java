@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.RandomSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -117,6 +118,35 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(LootTableEntry::weight)
         ).apply(instance, LootTableEntry::new)));
+
+        /**
+         * Weighted draw over a list of these, or {@code null} for an empty list.
+         *
+         * <p>Lives here rather than in either caller because there are now two: the procedural
+         * route ({@code RoomChestGenerator}) draws from the scheme's list resolved against the
+         * motif's depth band, and the authored route ({@code ChestMarkerProcessor}) draws from its
+         * processor entry's. Same vocabulary, same arithmetic; a second copy is how the two would
+         * come to disagree about what a weight means.</p>
+         *
+         * <p><strong>Drawn per chest, not once per placement.</strong> A list that is "mostly the
+         * common table, occasionally something better" must not turn a two-chest room into two rare
+         * chests on one roll &mdash; the caller passes a random seeded per position for exactly
+         * that reason.</p>
+         */
+        public static String pick(List<LootTableEntry> tables, RandomSource random) {
+            if (tables.isEmpty()) {
+                return null;
+            }
+            int totalWeight = tables.stream().mapToInt(LootTableEntry::weight).sum();
+            int roll = random.nextInt(totalWeight);
+            for (LootTableEntry entry : tables) {
+                roll -= entry.weight();
+                if (roll < 0) {
+                    return entry.lootTable();
+                }
+            }
+            return tables.get(tables.size() - 1).lootTable();
+        }
     }
 
     /**
