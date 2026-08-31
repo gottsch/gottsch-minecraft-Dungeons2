@@ -24,6 +24,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.Lifecycle;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigRegistries;
+import mod.gottsch.forge.dungeons2.core.config.MiningConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigRegistries;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
@@ -84,6 +87,8 @@ public final class TestRegistries {
 
     private static final String MOTIF_ROOT = "/data/dungeons2/dungeons2/motif_config";
     private static final String PROCESSOR_ROOT = "/data/dungeons2/worldgen/processor_list";
+    private static final String GENERATION_ROOT = "/data/dungeons2/dungeons2/generation_config";
+    private static final String MINING_ROOT = "/data/dungeons2/dungeons2/mining_config";
 
     private static RegistryAccess cached;
 
@@ -111,6 +116,17 @@ public final class TestRegistries {
         builtin.registries().forEach(entry -> registries.put(entry.key(), entry.value()));
         registries.put(MotifConfigRegistries.MOTIF_CONFIG, motifConfigRegistry(ops));
         registries.put(Registries.PROCESSOR_LIST, processorListRegistry(ops));
+        // Both config registries decode the SHIPPED files rather than leaning on the helpers'
+        // fallback to their Java DEFAULT. The fallbacks are not wrong -- they are how a datapack
+        // that removed a file still generates -- but a test resolving through one is not testing
+        // what ships, and the two agreeing today is a coincidence nobody would notice breaking.
+        // sinkOffset is the live example: the class default and default.json both say 5.
+        registries.put(DungeonGenerationConfigRegistries.GENERATION_CONFIG,
+                simpleRegistry(ops, DungeonGenerationConfigRegistries.GENERATION_CONFIG,
+                        GENERATION_ROOT, DungeonGenerationConfig.CODEC));
+        registries.put(DungeonGenerationConfigRegistries.MINING_CONFIG,
+                simpleRegistry(ops, DungeonGenerationConfigRegistries.MINING_CONFIG,
+                        MINING_ROOT, MiningConfig.CODEC));
         return new RegistryAccess.ImmutableRegistryAccess(registries);
     }
 
@@ -248,6 +264,25 @@ public final class TestRegistries {
                     ResourceKey.create(MotifConfigRegistries.MOTIF_CONFIG,
                             new ResourceLocation(Dungeons.MOD_ID, id)),
                     fragment, Lifecycle.stable());
+        }
+        return registry.freeze();
+    }
+
+    /**
+     * Every {@code .json} under {@code root}, decoded with {@code codec} and registered under the id
+     * the datapack would give it. The shape both plain config registries have and neither of the two
+     * above does -- the motif registry folds fragments by id order, the processor one decodes
+     * through a dispatch codec.
+     */
+    private static <T> Registry<T> simpleRegistry(RegistryOps<JsonElement> ops,
+                                                  ResourceKey<? extends Registry<T>> key,
+                                                  String root, Codec<T> codec) {
+        MappedRegistry<T> registry = new MappedRegistry<>(key, Lifecycle.stable());
+        for (Path file : jsonFilesUnder(root)) {
+            String id = relativeId(root, file);
+            T value = decode(file, json -> codec.parse(ops, json));
+            registry.register(ResourceKey.create(key, new ResourceLocation(Dungeons.MOD_ID, id)),
+                    value, Lifecycle.stable());
         }
         return registry.freeze();
     }

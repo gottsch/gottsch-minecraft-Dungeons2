@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner.MiningChestPlan;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 
 import java.util.ArrayList;
@@ -100,6 +101,21 @@ public final class DungeonPieceEmitter {
      */
     public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
                                                    int sinkOffset) {
+        return emitTerrain(layout, anchorX, anchorZ, sinkOffset, null);
+    }
+
+    /**
+     * As above, additionally handing the dungeon's Mining Chest (#7) to the one room the plan names.
+     *
+     * <p>The plan arrives already made rather than being computed here, which is what keeps this
+     * class the pure function of its inputs it claims to be: {@code MiningChestPlanner} draws from
+     * the layout's seed, and a random inside the emitter would make two calls with the same layout
+     * disagree &mdash; something the floor-plan exporter and half the emitter's own tests rely on
+     * not happening. A null plan means no Mining Chest, which is what every caller that does not
+     * care passes.</p>
+     */
+    public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
+                                                   int sinkOffset, MiningChestPlan miningChest) {
         List<StructurePiece> pieces = new ArrayList<>();
         String motif = layout.getMotifValue();
 
@@ -136,8 +152,16 @@ public final class DungeonPieceEmitter {
                 // A NORMAL room that got a Phase 8 jigsaw-assembled prefab instead of a
                 // procedural build (templateId non-null) is skipped for the same reason.
                 if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
-                    pieces.add(new DungeonRoomPiece(room, motif, floorY, floorIndex, anchorX,
-                            anchorZ, sinkOffset));
+                    DungeonRoomPiece piece = new DungeonRoomPiece(room, motif, floorY, floorIndex,
+                            anchorX, anchorZ, sinkOffset);
+                    // #7: exactly one room in the whole dungeon carries the Mining Chest. Matched on
+                    // floor AND room id -- room ids are unique per floor, not per dungeon, so the
+                    // floor is half the key and dropping it would put a chest on every floor.
+                    if (miningChest != null && miningChest.floorIndex() == floorIndex
+                            && miningChest.roomId() == room.getId()) {
+                        piece.withMiningHaul(miningChest.haul());
+                    }
+                    pieces.add(piece);
                 }
             }
         }

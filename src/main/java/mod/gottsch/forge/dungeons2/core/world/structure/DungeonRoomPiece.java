@@ -27,6 +27,7 @@ import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -54,6 +55,11 @@ import java.util.Optional;
 public class DungeonRoomPiece extends DungeonPiece {
 
     private RoomData room;
+    /**
+     * The Mining Chest this room carries (#7), or null for every room but one in the dungeon. See
+     * {@link #withMiningHaul}.
+     */
+    private MiningHaul miningHaul;
 
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
                             int anchorX, int anchorZ) {
@@ -75,6 +81,28 @@ public class DungeonRoomPiece extends DungeonPiece {
     public DungeonRoomPiece(StructurePieceSerializationContext context, CompoundTag tag) {
         super(StructurePieces.ROOM, tag);
         this.room = PieceNbt.readRoom(tag.getCompound("Room"));
+        if (tag.contains("MiningHaul")) {
+            this.miningHaul = PieceNbt.readMiningHaul(tag.getCompound("MiningHaul"));
+        }
+    }
+
+    /**
+     * Hands this room the dungeon's Mining Chest (#7).
+     *
+     * <p>Set by {@code DungeonPieceEmitter} on exactly one piece per dungeon, from the plan
+     * {@code MiningChestPlanner} made against the whole layout. A setter rather than a constructor
+     * parameter because the emitter builds every room piece the same way and then singles one out;
+     * threading an almost-always-null argument through both constructors and every test that calls
+     * them would put the exception in front of the rule.</p>
+     */
+    public DungeonRoomPiece withMiningHaul(MiningHaul miningHaul) {
+        this.miningHaul = miningHaul;
+        return this;
+    }
+
+    /** The Mining Chest's contents, or null when this is not the room carrying it. */
+    public MiningHaul getMiningHaul() {
+        return miningHaul;
     }
 
     /**
@@ -111,6 +139,12 @@ public class DungeonRoomPiece extends DungeonPiece {
     protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
         super.addAdditionalSaveData(context, tag);
         tag.put("Room", PieceNbt.writeRoom(room));
+        // Absent rather than empty for the overwhelming majority of pieces: the key's presence IS
+        // the "this room has the Mining Chest" flag, and an empty compound on every room piece in
+        // every dungeon is a lot of save file to say nothing.
+        if (miningHaul != null && !miningHaul.isEmpty()) {
+            tag.put("MiningHaul", PieceNbt.writeMiningHaul(miningHaul));
+        }
     }
 
     @Override
@@ -162,6 +196,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset) {
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(motifConfig).withSinkOffset(sinkOffset)
+                .withMiningHaul(miningHaul)
                 .build(room, floorY, floorIndex, motif(), deterministicRandom(room.getId()), out);
         return out;
     }

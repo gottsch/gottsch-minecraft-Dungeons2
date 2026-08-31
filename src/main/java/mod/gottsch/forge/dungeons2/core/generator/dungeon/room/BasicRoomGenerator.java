@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.BasicCeilingGenerator;
@@ -76,6 +77,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
     private int sinkOffset = 0;
+    private MiningHaul miningHaul;
 
     public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
         this.motifConfig = motifConfig;
@@ -89,6 +91,20 @@ public class BasicRoomGenerator implements IRoomGenerator {
      */
     public BasicRoomGenerator withSinkOffset(int sinkOffset) {
         this.sinkOffset = Math.max(0, sinkOffset);
+        return this;
+    }
+
+    /**
+     * The Mining Chest's contents (#7), when this is the one room in the dungeon that carries it.
+     *
+     * <p>Injected rather than rolled, and this is the only slot in the room that works that way:
+     * the haul is a property of the WHOLE dungeon's excavation, which only the emitter can see. A
+     * room asked to compute it would compute the same answer as every other room, and every room
+     * would place a chest. Null -- the default, and the case for every room but one in the whole
+     * dungeon -- means no Mining Chest here.</p>
+     */
+    public BasicRoomGenerator withMiningHaul(MiningHaul miningHaul) {
+        this.miningHaul = miningHaul;
         return this;
     }
 
@@ -208,6 +224,14 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 taken.addAll(RoomChestGenerator.placeChests(room, floorY,
                         chests.resolvedAgainst(motifConfig.chestBandFor(floorIndex)),
                         taken, random, blocks)));
+
+        // The Mining Chest, before the pots and claiming its cell for the same reason an ordinary
+        // chest does: it is a solid block, and a pot entity standing inside one falls and shatters
+        // the moment the chunk ticks. After the scheme's own chests rather than before, so that a
+        // room whose scheme rolled chests still gets them -- this one is guaranteed by the plan and
+        // the scheme's are not, so it is this one that should give way if the floor runs out.
+        taken.addAll(RoomMiningChestGenerator.placeChest(room, floorY, miningHaul, taken, random,
+                blocks));
 
         scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));

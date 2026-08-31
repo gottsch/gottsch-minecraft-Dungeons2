@@ -25,7 +25,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.DataPackRegistryEvent;
 
 /**
- * Registers Dungeons2's datapack-driven generation-tuning registry. Registered onto the mod
+ * Registers Dungeons2's datapack-driven generation-tuning registries. Registered onto the mod
  * event bus from the {@link Dungeons} constructor.
  *
  * @author Mark Gottschling on Jul 25, 2026
@@ -39,8 +39,21 @@ public class DungeonGenerationConfigRegistries {
     public static final ResourceKey<Registry<DungeonGenerationConfig>> GENERATION_CONFIG =
             ResourceKey.createRegistryKey(new ResourceLocation(Dungeons.MOD_ID, "generation_config"));
 
+    /**
+     * The Mining Chest's ore-payout table (#7). Entries live at
+     * {@code data/dungeons2/dungeons2/mining_config/<name>.json}.
+     *
+     * <p>Its own registry rather than more fields on {@link #GENERATION_CONFIG}: that file is the
+     * dungeon's <em>geometry</em>, its every field is read by the planner, and the two are tuned by
+     * different people at different times. A table of thirty ore bands living in it would also bury
+     * the pitch warning it opens with.</p>
+     */
+    public static final ResourceKey<Registry<MiningConfig>> MINING_CONFIG =
+            ResourceKey.createRegistryKey(new ResourceLocation(Dungeons.MOD_ID, "mining_config"));
+
     @SubscribeEvent
     public static void onNewDataPackRegistry(DataPackRegistryEvent.NewRegistry event) {
         event.dataPackRegistry(GENERATION_CONFIG, DungeonGenerationConfig.CODEC, DungeonGenerationConfig.CODEC);
+        event.dataPackRegistry(MINING_CONFIG, MiningConfig.CODEC, MiningConfig.CODEC);
     }
 }

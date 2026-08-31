@@ -23,7 +23,10 @@ import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Direction2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,6 +140,43 @@ public final class PieceNbt {
                 tag.getInt("A"),
                 tag.getInt("B"),
                 readFacing(tag.getString("Facing")));
+    }
+
+    // -------- MiningHaul (#7) --------
+
+    /**
+     * The Mining Chest's contents, on the one room piece that carries them.
+     *
+     * <p>Serialized rather than recomputed on load, unlike everything else a room piece renders
+     * from. The rest of a room is a pure function of its {@code RoomData} plus a piece-stable seed,
+     * so it can be rebuilt from scratch at any time; the haul is a function of the whole
+     * <em>layout</em>, and a loaded piece has never seen one. It has to be carried.</p>
+     *
+     * <p>Written as its own item/count pairs rather than as the SNBT the chest eventually gets. The
+     * SNBT is a rendering of this list -- slot packing and the 27-slot truncation included -- and
+     * storing the rendering would freeze those decisions into every existing save.</p>
+     */
+    public static CompoundTag writeMiningHaul(MiningHaul haul) {
+        CompoundTag tag = new CompoundTag();
+        ListTag stacks = new ListTag();
+        for (MiningHaul.Stack stack : haul.stacks()) {
+            CompoundTag entry = new CompoundTag();
+            entry.putString("Item", stack.item());
+            entry.putInt("Count", stack.count());
+            stacks.add(entry);
+        }
+        tag.put("Stacks", stacks);
+        return tag;
+    }
+
+    public static MiningHaul readMiningHaul(CompoundTag tag) {
+        List<MiningHaul.Stack> stacks = new ArrayList<>();
+        ListTag list = tag.getList("Stacks", Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag entry = list.getCompound(i);
+            stacks.add(new MiningHaul.Stack(entry.getString("Item"), entry.getInt("Count")));
+        }
+        return new MiningHaul(stacks);
     }
 
     // -------- helpers --------

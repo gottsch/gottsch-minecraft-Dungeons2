@@ -24,7 +24,11 @@ import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.MiningConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.ExcavationLedger;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner.MiningChestPlan;
 import mod.gottsch.forge.dungeons2.core.config.RoomHeightBand;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
@@ -728,9 +732,20 @@ public class DungeonStructure extends Structure {
                 // doors would seal them shut again. (dungeons2:connector cells are exempt from the
                 // question entirely -- they never get a door piece, because the template already
                 // has a real built door there.)
+                // #7: the Mining Chest. Planned HERE, once, against the finished layout -- it is
+                // what the whole dungeon's excavation destroyed, so no single piece can work it out
+                // and every piece that tried would work out the same answer and place its own chest.
+                // The plan names one room; the emitter hands it that room's piece.
+                Optional<MiningChestPlan> miningChest =
+                        MiningChestPlanner.plan(layout, MiningConfigHelper.get(context.registryAccess()));
+                miningChest.ifPresent(plan -> Dungeons.LOGGER.info(
+                        "[D2-MINING] floor {} room {} pays back {} from {} blocks excavated",
+                        plan.floorIndex(), plan.roomId(), plan.haul(),
+                        ExcavationLedger.totalVolume(ExcavationLedger.of(layout))));
+
                 List<StructurePiece> allPieces =
                         new ArrayList<>(DungeonPieceEmitter.emitTerrain(layout, emitAnchorX, emitAnchorZ,
-                                generationConfig.sinkOffset()));
+                                generationConfig.sinkOffset(), miningChest.orElse(null)));
                 allPieces.addAll(entrancePieces);
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));

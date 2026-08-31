@@ -144,7 +144,12 @@ class ShippedBlockIdsTest {
             // processor's pool-level default; "lootTable" above is the scheme slot's and the chest
             // loot band's. A sweep of these against the shipped loot_tables folder would be the
             // chest equivalent of ShippedMobSetsTest, and does not exist yet.
-            "loot_table");
+            "loot_table",
+            // #7: the Mining Chest's ore bands name ITEMS, not blocks -- a dungeon that ate a
+            // diamond ore pays back a diamond. Resolved from the item registry, so out of scope
+            // here and verified instead by MiningHaulCalibrationTest.everyOreBandNamesARealItem,
+            // which is the item-registry equivalent of this sweep.
+            "item");
 
     /** Where a modded block proves it exists, absent a running game. See the class notes. */
     private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";
