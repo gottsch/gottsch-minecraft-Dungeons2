@@ -130,8 +130,12 @@ Two things it does *not* model, both deliberate:
 - **No chunk contents.** `getChunk` returns null and nothing models a chunk that already finished
   generating, so this cannot reproduce "piece silently skipped in an already-generated chunk" —
   that is `/place` behaviour on a live server. Chunk *boundaries* are modelled; see above.
-- **No `ServerLevel`.** `getLevel()` throws, so pieces that spawn **entities** — rooms with pots —
-  cannot be driven through it yet. Corridors and doors are pure block placement and work today.
+- **No `ServerLevel`.** `getLevel()` throws, so no entity is ever constructed. That is narrower than
+  it was long assumed to be, and it never blocked rooms: `placeEntities` degrades per placement
+  rather than throwing, and headless it does not reach the throw at all, because `dungeonblocks` is
+  off this classpath and `EntityType.byString` cannot resolve the pot ids. **Rooms, corridors and
+  doors all run their block half here** — see `RoomPostProcessTest`. What stays unreachable is the
+  entity half itself, including the per-chunk spawn clip in `placeEntities`.
 
 Anything else unimplemented throws naming the method it wants, so extending it is a matter of
 running a test and reading the message.

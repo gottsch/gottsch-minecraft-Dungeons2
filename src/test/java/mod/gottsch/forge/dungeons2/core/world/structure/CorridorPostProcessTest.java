@@ -61,8 +61,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * headless check could see. What is asserted here is deliberately about that last mile &mdash; what
  * the world ends up holding, not what the generator asked for.</p>
  *
- * <p>Corridor pieces specifically: they are pure block placement. A room piece also spawns entities,
- * which needs a real {@code ServerLevel} the stub does not have.</p>
+ * <p>Corridor pieces specifically. Rooms are covered by {@code RoomPostProcessTest}, which shares
+ * this class's {@code postProcessPerChunk} shape; the arch assertions below are a corridor's alone.</p>
  *
  * @author Mark Gottschling on Aug 05, 2026
  */

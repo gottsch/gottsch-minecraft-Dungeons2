@@ -55,10 +55,14 @@ import java.util.Map;
  *   <li><strong>No chunks.</strong> {@code getChunk} returns {@code null}, which the piece's own
  *       chunk-touch logging already tolerates. Nothing here models chunk boundaries, so this cannot
  *       reproduce the "piece skipped in an already-generated chunk" class of bug.</li>
- *   <li><strong>No {@code ServerLevel}.</strong> {@code getLevel()} throws, so pieces that spawn
- *       <em>entities</em> (rooms with pots) cannot be driven through this yet &mdash; entity
- *       creation needs a real {@code ServerLevel}. Corridors and doors are pure block placement and
- *       work today.</li>
+ *   <li><strong>No {@code ServerLevel}.</strong> {@code getLevel()} throws, so no entity is ever
+ *       constructed here &mdash; entity creation needs a real {@code ServerLevel}. That costs less
+ *       than it sounds and never blocked rooms: {@code DungeonPiece#placeEntities} degrades per
+ *       placement rather than throwing, and headless it does not reach the throw at all, because
+ *       {@code dungeonblocks} is off this classpath and {@code EntityType.byString} cannot resolve
+ *       the pot ids. Rooms, corridors and doors all run their <em>block</em> half here &mdash; see
+ *       {@code RoomPostProcessTest}. What stays unreachable is the entity half itself: the
+ *       per-chunk spawn clip in {@code placeEntities} cannot be observed from here.</li>
  *   <li><strong>No terrain.</strong> Every unwritten position reads as air, so a processor rule
  *       keyed on the surrounding world sees air rather than stone.</li>
  * </ul>
