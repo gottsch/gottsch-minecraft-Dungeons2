@@ -26,6 +26,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
 import org.junit.jupiter.api.BeforeAll;
+import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -141,6 +142,32 @@ class CeilingPatternRegistryTest {
                 + " \"config\": {\"block\": \"" + BLOCK + "\", \"spacing\": 4}}");
         assertEquals(1, entry.projection());
         assertEquals(4, assertInstanceOf(CoffersCeilingPattern.class, entry.pattern()).spacing());
+    }
+
+    /**
+     * Backlog #28b: the ceiling's projection bound is its OWN, no longer
+     * {@code WallPatternEntry.MAX_PROJECTION}. A wall course caps at 2 because past one cell it
+     * stops reading as trim and starts reading as a ledge at head height; a ceiling ring hangs at
+     * the room's edge where nobody walks, and a deep one reads as a dome, which is the feature.
+     *
+     * <p>Asserted as the two bounds DIFFERING rather than as "the ceiling accepts 4", because the
+     * failure this guards against is someone re-sharing the constant to tidy up the duplication --
+     * which would compile, pass a bare "accepts 4" test if the wall bound were the one raised, and
+     * quietly put ledges back on the walls.</p>
+     */
+    @Test
+    void theCeilingsProjectionBoundIsIndependentOfTheWalls() {
+        assertTrue(CeilingPatternEntry.MAX_PROJECTION > WallPatternEntry.MAX_PROJECTION,
+                "the ceiling bound must be its own; sharing the wall's is what #28b undid");
+
+        assertEquals(4, decode("{\"type\": \"dungeons2:border\", \"projection\": 4,"
+                + " \"config\": {\"block\": \"" + BLOCK + "\"}}").projection(),
+                "a four-step vault must decode");
+
+        assertTrue(errorOf("{\"type\": \"dungeons2:border\", \"projection\": 5,"
+                        + " \"config\": {\"block\": \"" + BLOCK + "\"}}")
+                        .toLowerCase().contains("projection"),
+                "past the bound is still a load error, and it must name the field");
     }
 
     @Test

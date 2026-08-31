@@ -264,11 +264,48 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                         // `type` + `config`, dispatched over the ceiling pattern registry. An
                         // unregistered id is a LOAD ERROR, not a skipped pattern.
                         CeilingPatternRegistry.MAP_CODEC.forGetter(SurfacePatternEntry::pattern),
-                        Codecs.strictOptionalFieldOf(Codec.intRange(0, WallPatternEntry.MAX_PROJECTION),
+                        Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_PROJECTION),
                                 "projection", 0).forGetter(SurfacePatternEntry::projection),
                         SizeGate.MAP_CODEC.forGetter(SurfacePatternEntry::gate)
                 ).apply(instance, SurfacePatternEntry::new)));
     }
+
+    /**
+     * How deep a ceiling treatment may hang below the ceiling plane. Backlog #28b.
+     *
+     * <h2>Why this is not {@code WallPatternEntry.MAX_PROJECTION}</h2>
+     * <p>It was, until 2026-08-31, and the sharing was an accident of one constant rather than a
+     * decision. That constant is 2 and its javadoc justifies the number entirely in wall-trim
+     * terms: "a projection eats room interior, and anything past one cell stops reading as trim and
+     * starts reading as a ledge &mdash; which is a different feature with its own support and
+     * headroom questions."</p>
+     *
+     * <p><strong>Not one clause of that applies to a ceiling.</strong> A ring hanging from the
+     * ceiling eats headroom at the room's EDGE, where nobody walks, and a deep one reads as a
+     * <em>dome</em> &mdash; which is the feature rather than a different one. So the cap was a wall
+     * constraint a ceiling inherited by sharing a field.</p>
+     *
+     * <h2>Where 4 comes from</h2>
+     * <p>Derived from the shipped clearance rather than picked. {@code vaulted_hall} gates itself at
+     * {@code minHeight} 7 &mdash; a 5-row interior &mdash; and its two-step vault leaves 3 rows of
+     * clear perimeter headroom. The tallest room a vault scheme can be gated to is 9 (the
+     * {@code maxLongSide} 11 band; see {@code roomHeightBands}), a 7-row interior, where a
+     * <em>four</em>-step vault leaves those same 3 rows. So 4 is the deepest step count that never
+     * asks for headroom the shipped scheme does not already spend.</p>
+     *
+     * <h2>Nothing checks it against the room, and that is unchanged</h2>
+     * <p>This is a schema bound, not a fit check. A four-step vault authored on a scheme with no
+     * {@code minHeight} will draw in a 5-high room and come down to the floor at the perimeter.
+     * That was equally true of the two-step one, and the author's tool is the same as it was: the
+     * scheme's {@code minHeight} gate. See {@code VaultedHallSchemeTest}, which walks the perimeter
+     * of the shipped scheme rather than trusting the bound.</p>
+     *
+     * <h2>What is still out of scope</h2>
+     * <p>A genuinely curved multi-radius vault. The profile needs distinct rows per radius, and the
+     * eye reads a three-step corbel as curved anyway &mdash; steps are the right primitive here and
+     * raising this number does not change that.</p>
+     */
+    public static final int MAX_PROJECTION = 4;
 
     /** A ring following the surface's edge: the first orientable type. */
     public static final String BORDER = "border";

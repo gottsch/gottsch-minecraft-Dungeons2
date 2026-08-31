@@ -753,16 +753,36 @@
           // their edges cross into a continuous lattice, which is a real and quite different look
           // rather than a degenerate one -- worth trying if this reads as too sparse in game.
           //
-          // THE ACCENT AGES, AND THAT IS WHY IT IS square_stone_brick. The band already dresses
-          // every other piece of ornament in it -- the door lintel, the pilaster bases and caps,
-          // the timber schemes' plinths -- so the inlay is the same rung of the material ladder as
-          // everything else at this depth. It also carries a real chain in
-          // classic_mud_weathering: mossy 0.3 -> rubble 0.3 -> dirt 0.15, under `agings: 4`, which
-          // composes to roughly 70% untouched / 21% mossy / 8% rubble / 1% dirt per cell. So about
-          // one cell in eleven of an eight-cell outline breaks up, which ages the inlay without
-          // dissolving it. minecraft:chiseled_stone_bricks was the alternative and is NOT in that
-          // file at all -- it would have hung factory-fresh in a room of decayed brick, which is
-          // exactly the #37 complaint about the timber.
+          // SPRUCE, AND FILLED. Both changed 2026-08-31 after seeing it in game: the first
+          // version was an eight-cell OUTLINE in dungeonblocks:square_stone_brick and it did not
+          // read as a pattern at all. Recorded properly because the reasoning that produced it was
+          // sound and still wrong, and the same trap catches the next wall pattern authored here.
+          //
+          // THE CONTRAST FAILURE CAME FIRST, BEFORE ANY WEATHERING. The diamond is centred on the
+          // wall, so it spans every row, and the band's gradient hands it a DIFFERENT ground at
+          // each one -- measured on the shipped numbers (bottom 0.9, top 0.05, hold_rows 2) for a
+          // 7-high room, the bottom three rows are 90% mud and the top row is 95% cobblestone.
+          // square_stone_brick is grey and cobblestone is grey, so the top half of every diamond
+          // was invisible before a single decay roll happened and the shape never closed. Picking
+          // the accent to match the band's ornament ladder was the mistake: the ladder is about
+          // what a material MEANS, and a pattern first has to be seen.
+          //
+          // A ONE-CELL OUTLINE CANNOT WIN AGAINST THIS WALL EITHER. The ground already carries mud
+          // brick, cobblestone, two mossy variants, rubble and dirt in a random field; a line one
+          // cell thick is signal underneath that noise. `filled` costs 13 cells against the
+          // outline's 8 and is what gives the shape enough mass to survive the field. The general
+          // rule for this band: thin treatments do not read where a gradient fill is running.
+          //
+          // SPRUCE FIXES BOTH HALVES AT ONCE, and a third thing besides. It is dark warm brown
+          // against tan mud AND against grey cobble, so it reads on every row rather than half of
+          // them; it is already this band's second material, so it borrows the timber schemes'
+          // vocabulary rather than inventing one; and by the shoring decision (see the note at the
+          // head of classic_mud_weathering) NOTHING SPRUCE AGES in this stratum, so the inlay stays
+          // crisp instead of dissolving into the wall it is meant to stand out from.
+          //
+          // PLANKS, NOT spruce_log: a log carries `axis` and a filled lozenge of them would show
+          // the grain running one way through a shape that has no direction. Planks have no such
+          // property to get wrong.
           //
           // COMPOSES ON TOP OF THE BAND'S WALL, and the order matters. The band draws the gradient
           // fill first (mud giving way to cobble as it rises) and then its plinth and crown; a
@@ -778,9 +798,10 @@
               {
                 "type": "dungeons2:diamond",
                 "config": {
-                  "block": "dungeonblocks:square_stone_brick",
+                  "block": "minecraft:spruce_planks",
                   "size": 2,
-                  "spacing": 6
+                  "spacing": 6,
+                  "filled": true
                 }
               }
             ]

@@ -271,6 +271,147 @@
             { "block": "dungeonblocks:gravel_brick", "probability": 0.3 },
             { "block": "minecraft:dirt", "probability": 0.15 }
           ]
+        },
+
+        // =====================================================================================
+        // #45 STEP 4, 2026-08-31. The band's schemes grew a stone-and-timber vocabulary on
+        // 2026-08-30/31 and this file had rules for none of it -- so a floor-0 room showed
+        // cracked, mossy, half-crumbled mud walls with pristine stone trim standing in front of
+        // them. Exactly #37's complaint, one band down. Measured: 11 of the 18 block ids the band
+        // places had no rule here.
+        //
+        // ------------------------------------------------------------------------------------
+        // THE TIMBER IS DELIBERATELY ABSENT, AND THAT IS THE INTERESTING DECISION (Mark,
+        // 2026-08-31). There is NO minecraft:spruce_log rule in this file and there should not
+        // be one.
+        //
+        // The mechanical problem came first. Classic ages spruce_log 15% straight to air, and its
+        // own note says why that is safe THERE: spruce is only ever a beam or a bracket, a beam
+        // hangs below the ceiling slab, so a decayed one leaves a gap in a run with the shell
+        // intact. That note also warns: "Move spruce_log into a wall or ceiling and that
+        // distinction is lost." The mud band moved it into PILLARS -- five authored uses across
+        // mud_timber_pillars, both pilastered schemes and the centre pier -- and the same rule
+        // would punch holes through the middle of a post, which hangs rather than reads as aged.
+        //
+        // NOTHING CAN SEPARATE THE TWO. PieceSurface offers `any`, `floor` and `above_floor`, and
+        // a post and a ceiling beam are both above_floor. That is #15 exactly, and it is why this
+        // could not be solved with a rate.
+        //
+        // So the absence became the story instead: the mud stratum is the dungeon being reclaimed
+        // from underneath, and the timber is SHORING someone put in recently to hold it up. Fresh
+        // wood against rotten brick reads as repair, not as an oversight -- which is the one
+        // reading that makes untouched timber correct rather than merely tolerable. Anything
+        // spruce is new; anything stone is old.
+        //
+        // BOTH CORBELS AGE, THE LOGS DO NOT -- the split is by ELEMENT, not by material (Mark,
+        // 2026-08-31). Written down because the material split is the obvious reading and it is
+        // the wrong one: "anything spruce is new" would have spared the spruce bracket too.
+        //
+        // The line that actually matters is the one classic already draws between a bracket and a
+        // run: a corbel is a SINGLE CELL and reads as missing, where a post is a run and a hole in
+        // the middle of it hangs. So a bracket may rot away at 10% wherever it is made of, and no
+        // log may, however decorative its position -- because nothing downstream can tell which
+        // logs are posts. The shoring reads as shoring whose brackets have gone here and there,
+        // which is a better picture than shoring nothing has touched at all.
+        //
+        // stripped_spruce_log stays unaged for a second, unrelated reason it already had in
+        // classic: eight templates choose it deliberately, so a rule would age an author's choice.
+        // ------------------------------------------------------------------------------------
+        {
+          // The end pilasters' shaft. Classic's chain adapted to this band's palette: it goes to
+          // cobblestone rather than to cracked brick, because cobblestone is what this depth is
+          // already losing its masonry to everywhere else in this file.
+          "surface": "above_floor",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:mossy_stone_bricks", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
+          ]
+        },
+        {
+          // The joist bracket in `joisted_hall`. A missing bracket under an intact beam is the
+          // right picture for this band: the timber was laid into corbels that were already there.
+          //
+          // Straight to air at 10%, copying classic's spruce corbel rather than inventing a rate,
+          // and for the reason classic gives: a bracket is a single cell and reads as MISSING,
+          // where a run reads as broken.
+          "surface": "above_floor",
+          "block": "dungeonblocks:stone_corbel_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          // The bracket under `mud_timber_pillars`' joists. Same 10% as the stone one above and as
+          // classic's own -- one rate for the element, whatever it is made of. It is the only
+          // SPRUCE block this file ages, and the note above is why that is not a contradiction.
+          "surface": "above_floor",
+          "block": "dungeonblocks:spruce_corbel_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+
+        // ------------------------------------------------------------------------------------
+        // THE STONE PAVING, floor-scoped. `mud_diamond_inlay`'s cross, the pilastered scheme's
+        // border footing and `joisted_hall`'s checkerboard all lay dressed stone underfoot, and
+        // dungeonblocks:square_stone_brick above is scoped `above_floor` -- so the same block
+        // aged on a wall and stayed pristine on the floor beside it.
+        //
+        // These stop at dirt and never reach air, matching the packed_mud and mud_bricks floor
+        // chains above. A hole underfoot opens onto raw terrain rather than onto the look the
+        // wall holes give.
+        // ------------------------------------------------------------------------------------
+        {
+          "surface": "floor",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "floor",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:mossy_stone_bricks", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        {
+          // The checkerboard's second material. Plain stone has no dressed form to decay INTO, so
+          // it goes straight to the rubble stage the dressed blocks reach second.
+          "surface": "floor",
+          "block": "minecraft:stone",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        {
+          // The border's corner and edge blocks. Neither has an aged variant of its own -- there
+          // is no mossy chiseled brick and no worn polished andesite -- so both drop to
+          // cobblestone first, which is this band's universal "was dressed, now is not".
+          "surface": "floor",
+          "block": "minecraft:chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.25 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "floor",
+          "block": "minecraft:polished_andesite",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.25 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 },
+            { "block": "minecraft:dirt", "probability": 0.25 }
+          ]
         }
       ]
     },

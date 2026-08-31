@@ -346,6 +346,137 @@
       }
     },
     {
+      // DEEP VAULT -- three corbelled steps rather than vaulted_hall's two. Backlog #28b, which
+      // raised the ceiling's projection cap from 2 to 4 by giving it its own constant instead of
+      // borrowing the wall's. This is the first scheme that spends the new depth.
+      //
+      // WHY minSize 11 AND minHeight 8, AND WHY BOTH ARE LOAD-BEARING.
+      // Two constraints pull in opposite directions and this gate is where they meet.
+      //
+      //   FOOTPRINT. Each ring steps one cell inward, so N rings eat 2N cells of interior. A vault
+      //   has to FRAME a field, not consume it -- vaulted_hall's own note records that at minSize 7
+      //   its two rings left a 1x1 apex and read as a stepped pyramid rather than as a vault. Three
+      //   rings eat 6, so the interior must be at least 9 to leave a 3x3 field, and interior 9 means
+      //   a room of 11. That is the floor on size, and it is why this cannot simply be vaulted_hall
+      //   with one more ring.
+      //
+      //   HEIGHT, AND THE TAPER RUNS THE WRONG WAY. The #51 taper makes the ceiling FALL as the
+      //   footprint grows -- long side <=7 gives maxHeight 10, <=11 gives 9, <=15 gives 8, larger
+      //   gives 7. So the big rooms a dome wants are exactly the short ones, and a bigger footprint
+      //   buys field at the cost of the headroom the extra step needs.
+      //
+      // minHeight 8 is what resolves it, and it does more work than it looks. SizeGate matches on
+      // the SHORT side (Math.min) while the height taper matches on the LONG side (Math.max), so a
+      // size gate cannot name a taper band directly. It does not have to: any room whose long side
+      // is 17+ sits in the open-ended band capped at maxHeight 7 and therefore CANNOT roll 8, so
+      // minHeight 8 excludes every room too flat to carry three steps without naming a single
+      // dimension. What survives is 11x11 at height 8-9 and 11x13 / 11x15 at height 8.
+      //
+      // CLEARANCE, CHECKED RATHER THAN ASSUMED. Interior rows are height - 2, and the vault eats
+      // three of them at the perimeter: at height 8 that leaves 3 rows of clear wall, which is
+      // exactly what vaulted_hall's two-step leaves at its own minHeight 7, and at height 9 it
+      // leaves 4. So this is never tighter overhead than the scheme already shipped.
+      //
+      // SIX PATTERNS FOR THREE STEPS, AND THE THREE EXTRA ARE NOT DECORATION. A sparse plan writes
+      // only what it marks and the space between two layers belongs to nobody, so every row between
+      // a step and the ceiling has to be filled or the step hangs below a void. Ring at inset k
+      // carries its stair at projection 3-k and needs solid fill at every projection above it:
+      // inset 0 needs fill at 1 and 2, inset 1 needs fill at 1, inset 2 needs none because the
+      // ceiling plane is already solid. Deleting any fill layer is invisible in the JSON and
+      // obvious in game. VaultedHallSchemeTest is the shape of test that catches it.
+      //
+      // stone_brick_stairs, NOT polished_andesite_stairs, copying vaulted_hall for its reason and
+      // not its look: polished andesite ages to andesite and then to GRAVEL, and gravel overhead is
+      // falling debris. stone_brick_stairs composes to dirt with no gravel and no air, and the dirt
+      // is wanted -- it is the only anchor floor_growth and hanging_growth have.
+      //
+      // minFloorIndex 1 matches every other stone hall: floor 0 is the mud stratum.
+      "name": "deep_vaulted_hall",
+      "weight": 10,
+      "minFloorIndex": 1,
+      "minSize": 11,
+      "minHeight": 8,
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "dungeons2:border",
+            "projection": 3,
+            "config": {
+              "block": "minecraft:stone_brick_stairs",
+              "inset": 0,
+              "orient": "outward",
+              "properties": { "half": "top" }
+            }
+          },
+          {
+            "type": "dungeons2:border",
+            "projection": 2,
+            "config": { "block": "minecraft:stone_bricks", "inset": 0 }
+          },
+          {
+            "type": "dungeons2:border",
+            "projection": 1,
+            "config": { "block": "minecraft:stone_bricks", "inset": 0 }
+          },
+          {
+            "type": "dungeons2:border",
+            "projection": 2,
+            "config": {
+              "block": "minecraft:stone_brick_stairs",
+              "inset": 1,
+              "orient": "outward",
+              "properties": { "half": "top" }
+            }
+          },
+          {
+            "type": "dungeons2:border",
+            "projection": 1,
+            "config": { "block": "minecraft:stone_bricks", "inset": 1 }
+          },
+          {
+            "type": "dungeons2:border",
+            "projection": 1,
+            "config": {
+              "block": "minecraft:stone_brick_stairs",
+              "inset": 2,
+              "orient": "outward",
+              "properties": { "half": "top" }
+            }
+          }
+        ]
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "minecraft:polished_andesite",
+                  "cornerBlock": "minecraft:andesite",
+                  "anchor": "top"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "spawners": {
+        "minCount": 0,
+        "maxCount": 1
+      },
+      "chests": {
+        "minCount": 0,
+        "maxCount": 1,
+        "variants": [
+          {
+            "block": "minecraft:chest",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
       "name": "grand_hall",
       "abstract": true,
       "wall": {
