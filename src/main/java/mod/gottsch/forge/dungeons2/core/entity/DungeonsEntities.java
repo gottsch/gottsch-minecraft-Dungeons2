@@ -18,6 +18,35 @@
 package mod.gottsch.forge.dungeons2.core.entity;
 
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
+import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
+import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
+import mod.gottsch.forge.gmm.core.entity.monster.GelatinousCube;
+import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
+import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
+import mod.gottsch.forge.gmm.core.entity.monster.Orc;
+import mod.gottsch.forge.gmm.core.entity.monster.OrcShaman;
+import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedArmor;
+import mod.gottsch.forge.gmm.core.entity.monster.gargoyle.Margoyle;
+import mod.gottsch.forge.gmm.core.entity.monster.ghoul.Ghoul;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.AcidSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.BloodyBones;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.BurningSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.ElectricSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.IronSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.MagmaSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.SkeletonChampion;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.SkeletonWarrior;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.TaintedSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.skeleton.WingedSkeleton;
+import mod.gottsch.forge.gmm.core.entity.monster.zombie.Bloater;
+import mod.gottsch.forge.gmm.core.entity.monster.zombie.Bodak;
+import mod.gottsch.forge.gmm.core.entity.monster.zombie.GraveZombie;
+import mod.gottsch.forge.gmm.core.entity.monster.zombie.Wight;
+import mod.gottsch.forge.gmm.core.entity.projectile.BloaterArm;
+import mod.gottsch.forge.gmm.core.entity.projectile.BoneShard;
+import mod.gottsch.forge.gmm.core.entity.projectile.Rock;
+import mod.gottsch.forge.gmm.core.entity.projectile.SpikeGrowthSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.WitheringGazeSpell;
 import mod.gottsch.forge.gmm.core.entity.monster.Rat;
 import mod.gottsch.forge.gmm.core.entity.monster.plant.Shrieker;
 import mod.gottsch.forge.gmm.core.entity.monster.plant.VioletFungus;
@@ -126,6 +155,354 @@ public class DungeonsEntities {
                             .clientTrackingRange(10)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(VIOLET_FUNGUS));
+
+    /**
+     * GMM's skeleton family &mdash; eleven of them, not twelve.
+     *
+     * <p>{@code BowSkeleton} looks like one of them in the package listing and is
+     * <strong>abstract</strong>: it is the ranged base class the Iron and Magma skeletons extend,
+     * not a mob. Registering it would not compile, which is the only reason that mistake cannot be
+     * made silently here.</p>
+     *
+     * <p>GMM's {@code FrostSkeleton} is deliberately absent (Mark, 2026-08-31): it is cold-themed
+     * and the classic motif is not, so it waits for an ice motif to belong to. A different kind of
+     * exclusion from the mini-bosses below &mdash; those are held back until their placement is
+     * designed, this one until there is somewhere for it to fit.</p>
+     *
+     * <p>Sizes, tracking ranges and {@code fireImmune} are Dungeon Denizens' numbers verbatim. They
+     * are not arbitrary &mdash; each was fitted to its rebuilt Blockbench rig &mdash; and the same
+     * mob should read the same in any pack carrying both mods.</p>
+     */
+    public static final String SKELETON_WARRIOR = "skeleton_warrior";
+    public static final String WINGED_SKELETON = "winged_skeleton";
+    public static final String IRON_SKELETON = "iron_skeleton";
+    public static final String MAGMA_SKELETON = "magma_skeleton";
+    public static final String TAINTED_SKELETON = "tainted_skeleton";
+    public static final String ACID_SKELETON = "acid_skeleton";
+    public static final String ELECTRIC_SKELETON = "electric_skeleton";
+    public static final String BURNING_SKELETON = "burning_skeleton";
+    public static final String BLOODY_BONES = "bloody_bones";
+    public static final String SKELETON_CHAMPION = "skeleton_champion";
+
+    public static final RegistryObject<EntityType<SkeletonWarrior>> SKELETON_WARRIOR_ENTITY =
+            Registration.ENTITIES.register(SKELETON_WARRIOR,
+                    () -> EntityType.Builder.of(SkeletonWarrior::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SKELETON_WARRIOR));
+
+    public static final RegistryObject<EntityType<WingedSkeleton>> WINGED_SKELETON_ENTITY =
+            Registration.ENTITIES.register(WINGED_SKELETON,
+                    () -> EntityType.Builder.of(WingedSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.75F, 1.95F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(WINGED_SKELETON));
+
+    public static final RegistryObject<EntityType<IronSkeleton>> IRON_SKELETON_ENTITY =
+            Registration.ENTITIES.register(IRON_SKELETON,
+                    () -> EntityType.Builder.of(IronSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.63F, 2.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(IRON_SKELETON));
+
+    public static final RegistryObject<EntityType<MagmaSkeleton>> MAGMA_SKELETON_ENTITY =
+            Registration.ENTITIES.register(MAGMA_SKELETON,
+                    () -> EntityType.Builder.of(MagmaSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.63F, 2.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(MAGMA_SKELETON));
+
+
+    public static final RegistryObject<EntityType<TaintedSkeleton>> TAINTED_SKELETON_ENTITY =
+            Registration.ENTITIES.register(TAINTED_SKELETON,
+                    () -> EntityType.Builder.of(TaintedSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.7F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(TAINTED_SKELETON));
+
+    public static final RegistryObject<EntityType<AcidSkeleton>> ACID_SKELETON_ENTITY =
+            Registration.ENTITIES.register(ACID_SKELETON,
+                    () -> EntityType.Builder.of(AcidSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ACID_SKELETON));
+
+    public static final RegistryObject<EntityType<ElectricSkeleton>> ELECTRIC_SKELETON_ENTITY =
+            Registration.ENTITIES.register(ELECTRIC_SKELETON,
+                    () -> EntityType.Builder.of(ElectricSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ELECTRIC_SKELETON));
+
+    public static final RegistryObject<EntityType<BurningSkeleton>> BURNING_SKELETON_ENTITY =
+            Registration.ENTITIES.register(BURNING_SKELETON,
+                    () -> EntityType.Builder.of(BurningSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(BURNING_SKELETON));
+
+    public static final RegistryObject<EntityType<BloodyBones>> BLOODY_BONES_ENTITY =
+            Registration.ENTITIES.register(BLOODY_BONES,
+                    () -> EntityType.Builder.of(BloodyBones::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BLOODY_BONES));
+
+    public static final RegistryObject<EntityType<SkeletonChampion>> SKELETON_CHAMPION_ENTITY =
+            Registration.ENTITIES.register(SKELETON_CHAMPION,
+                    () -> EntityType.Builder.of(SkeletonChampion::new, MobCategory.MONSTER)
+                            .sized(0.72F, 2.39F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SKELETON_CHAMPION));
+
+    /**
+     * The zombie family. Three of the four are registered but never spawned &mdash; see
+     * {@link #MINI_BOSSES}.
+     */
+    public static final String BLOATER = "bloater";
+    public static final String GRAVE_ZOMBIE = "grave_zombie";
+    public static final String WIGHT = "wight";
+    public static final String BODAK = "bodak";
+
+    public static final RegistryObject<EntityType<Bloater>> BLOATER_ENTITY =
+            Registration.ENTITIES.register(BLOATER,
+                    () -> EntityType.Builder.of(Bloater::new, MobCategory.MONSTER)
+                            .sized(0.7F, 2.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BLOATER));
+
+    public static final RegistryObject<EntityType<GraveZombie>> GRAVE_ZOMBIE_ENTITY =
+            Registration.ENTITIES.register(GRAVE_ZOMBIE,
+                    () -> EntityType.Builder.of(GraveZombie::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GRAVE_ZOMBIE));
+
+    public static final RegistryObject<EntityType<Wight>> WIGHT_ENTITY =
+            Registration.ENTITIES.register(WIGHT,
+                    () -> EntityType.Builder.of(Wight::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(WIGHT));
+
+    public static final RegistryObject<EntityType<Bodak>> BODAK_ENTITY =
+            Registration.ENTITIES.register(BODAK,
+                    () -> EntityType.Builder.of(Bodak::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BODAK));
+
+    /**
+     * The ghoul. GMM's {@code SewerGhoul} is deliberately absent: Mark is reserving it for a Sewer
+     * dungeon mod, and a mob that appears in two of his mods under two ids is a mob players will
+     * report as a duplicate.
+     */
+    public static final String GHOUL = "ghoul";
+
+    public static final RegistryObject<EntityType<Ghoul>> GHOUL_ENTITY =
+            Registration.ENTITIES.register(GHOUL,
+                    () -> EntityType.Builder.of(Ghoul::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.68F)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .setTrackingRange(20)
+                            .build(GHOUL));
+
+    /**
+     * The oozes. Cubic hitboxes, and all four are slow &mdash; they are a corridor problem rather
+     * than a chase, which is what makes them read as a dungeon hazard.
+     */
+    public static final String GELATINOUS_CUBE = "gelatinous_cube";
+    public static final String OCHRE_JELLY = "ochre_jelly";
+    public static final String GRAY_OOZE = "gray_ooze";
+    public static final String BLACK_PUDDING = "black_pudding";
+
+    public static final RegistryObject<EntityType<GelatinousCube>> GELATINOUS_CUBE_ENTITY =
+            Registration.ENTITIES.register(GELATINOUS_CUBE,
+                    () -> EntityType.Builder.of(GelatinousCube::new, MobCategory.MONSTER)
+                            .sized(1.1F, 1.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GELATINOUS_CUBE));
+
+    public static final RegistryObject<EntityType<OchreJelly>> OCHRE_JELLY_ENTITY =
+            Registration.ENTITIES.register(OCHRE_JELLY,
+                    () -> EntityType.Builder.of(OchreJelly::new, MobCategory.MONSTER)
+                            .sized(0.85F, 0.85F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(OCHRE_JELLY));
+
+    public static final RegistryObject<EntityType<GrayOoze>> GRAY_OOZE_ENTITY =
+            Registration.ENTITIES.register(GRAY_OOZE,
+                    () -> EntityType.Builder.of(GrayOoze::new, MobCategory.MONSTER)
+                            .sized(0.9F, 0.9F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GRAY_OOZE));
+
+    public static final RegistryObject<EntityType<BlackPudding>> BLACK_PUDDING_ENTITY =
+            Registration.ENTITIES.register(BLACK_PUDDING,
+                    () -> EntityType.Builder.of(BlackPudding::new, MobCategory.MONSTER)
+                            .sized(0.9F, 0.9F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BLACK_PUDDING));
+
+    /** Constructs, the margoyle, and the orcs. */
+    public static final String ANIMATED_ARMOR = "animated_armor";
+    public static final String MARGOYLE = "margoyle";
+    public static final String ORC = "orc";
+    public static final String ORC_SHAMAN = "orc_shaman";
+
+    public static final RegistryObject<EntityType<AnimatedArmor>> ANIMATED_ARMOR_ENTITY =
+            Registration.ENTITIES.register(ANIMATED_ARMOR,
+                    () -> EntityType.Builder.of(AnimatedArmor::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ANIMATED_ARMOR));
+
+    public static final RegistryObject<EntityType<Margoyle>> MARGOYLE_ENTITY =
+            Registration.ENTITIES.register(MARGOYLE,
+                    () -> EntityType.Builder.of(Margoyle::new, MobCategory.MONSTER)
+                            .sized(0.9F, 2.1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(MARGOYLE));
+
+    public static final RegistryObject<EntityType<Orc>> ORC_ENTITY =
+            Registration.ENTITIES.register(ORC,
+                    () -> EntityType.Builder.of(Orc::new, MobCategory.MONSTER)
+                            .sized(1F, 1.99F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ORC));
+
+    public static final RegistryObject<EntityType<OrcShaman>> ORC_SHAMAN_ENTITY =
+            Registration.ENTITIES.register(ORC_SHAMAN,
+                    () -> EntityType.Builder.of(OrcShaman::new, MobCategory.MONSTER)
+                            .sized(1F, 1.99F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ORC_SHAMAN));
+
+    public static final String ALLIGATOR_GAR = "alligator_gar";
+
+    /**
+     * A water ambush predator, for the water rooms Mark is authoring (2026-08-31).
+     *
+     * <p>The only mob in this roster that is not registered {@code ON_GROUND} &mdash; see
+     * {@code CommonSetup}. Flat and wide rather than tall: {@code 0.6 x 0.4} is a fish lying in
+     * water, and like the rat's box it is wider than the art so that a player can hit something
+     * that low. {@code setTrackingRange(20)} is GMM's own value and is what lets it notice a player
+     * across a flooded room rather than only at the water's edge.</p>
+     */
+    public static final RegistryObject<EntityType<AlligatorGar>> ALLIGATOR_GAR_ENTITY =
+            Registration.ENTITIES.register(ALLIGATOR_GAR,
+                    () -> EntityType.Builder.of(AlligatorGar::new, MobCategory.MONSTER)
+                            .sized(0.6F, 0.4F)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .setTrackingRange(20)
+                            .build(ALLIGATOR_GAR));
+
+    /**
+     * The projectiles and spells the roster's mobs throw &mdash; and the reason they have to be here.
+     *
+     * <h2>A GMM mob's ranged attack is opt-in, and silently absent if you skip it</h2>
+     * <p>Six of the mobs above carry a {@code public static} hook GMM leaves null: {@code Orc
+     * .projectileLauncher}, {@code OrcShaman.spellCaster}, {@code Bodak.spellCaster},
+     * {@code BloodyBones}/{@code TaintedSkeleton.shardFactory}, {@code Bloater.armFactory}. Each is
+     * guarded by a null check, so a consumer that registers the mob and stops there gets a mob that
+     * <strong>compiles, spawns, renders and never uses its signature attack</strong> &mdash; no
+     * warning, no crash. The same library-registers-nothing design as the mobs themselves, one level
+     * down, and far easier to miss.</p>
+     *
+     * <p>So these five entity types exist to give those hooks something to throw; {@code CommonSetup}
+     * wires them. {@code MobCategory.MISC}: they are projectiles, and putting them in MONSTER would
+     * enter them into the mob cap.</p>
+     */
+    public static final String BONE_SHARD = "bone_shard";
+    public static final String BLOATER_ARM = "bloater_arm";
+    public static final String ROCK = "rock";
+    public static final String SPIKE_GROWTH_SPELL = "spike_growth_spell";
+    public static final String WITHERING_GAZE_SPELL = "withering_gaze_spell";
+
+    /** The shrapnel Bloody Bones and the Tainted Skeleton throw. */
+    public static final RegistryObject<EntityType<BoneShard>> BONE_SHARD_ENTITY =
+            Registration.ENTITIES.register(BONE_SHARD,
+                    () -> EntityType.Builder.<BoneShard>of(BoneShard::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(4)
+                            .updateInterval(20)
+                            .build(BONE_SHARD));
+
+    /** The limbs a Bloater ruptures into on death. */
+    public static final RegistryObject<EntityType<BloaterArm>> BLOATER_ARM_ENTITY =
+            Registration.ENTITIES.register(BLOATER_ARM,
+                    () -> EntityType.Builder.<BloaterArm>of(BloaterArm::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(4)
+                            .updateInterval(20)
+                            .build(BLOATER_ARM));
+
+    /** The Orc's thrown rock. */
+    public static final RegistryObject<EntityType<Rock>> ROCK_ENTITY =
+            Registration.ENTITIES.register(ROCK,
+                    () -> EntityType.Builder.<Rock>of(Rock::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ROCK));
+
+    /** The Orc Shaman's spell. */
+    public static final RegistryObject<EntityType<SpikeGrowthSpell>> SPIKE_GROWTH_SPELL_ENTITY =
+            Registration.ENTITIES.register(SPIKE_GROWTH_SPELL,
+                    () -> EntityType.Builder.<SpikeGrowthSpell>of(SpikeGrowthSpell::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SPIKE_GROWTH_SPELL));
+
+    /** The Bodak's withering gaze. */
+    public static final RegistryObject<EntityType<WitheringGazeSpell>> WITHERING_GAZE_SPELL_ENTITY =
+            Registration.ENTITIES.register(WITHERING_GAZE_SPELL,
+                    () -> EntityType.Builder.<WitheringGazeSpell>of(WitheringGazeSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(WITHERING_GAZE_SPELL));
+
+    /**
+     * The three mobs that are registered but must never be <em>spawned</em> by the dungeon (Mark,
+     * 2026-08-31: "none of the small nor big bosses are in either spawners").
+     *
+     * <p>They are intended as mini-bosses / small dungeon bosses, which is a placement decision that
+     * has not been designed yet &mdash; so until it is, they are reachable by spawn egg and by
+     * {@code /summon} and by nothing else. Declared here rather than left as an absence in two JSON
+     * files, because "this mob is missing from the mob sets" and "this mob is deliberately excluded"
+     * look identical in a datapack. {@code MobSpawnExclusionTest} reads this list and fails the build
+     * if any of them turns up in a mob set or in the structure's spawn overrides.</p>
+     */
+    public static final java.util.List<String> MINI_BOSSES =
+            java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK);
 
     /** Twice the rat's health and damage; same speed, so it is a threat rather than a chase. */
     public static AttributeSupplier.Builder createGiantRatAttributes() {

@@ -130,7 +130,44 @@
       "mobSets": [
         {
           "mobSet": "dungeons2:classic_vermin",
+          "weight": 6
+        },
+        {
+          "mobSet": "dungeons2:classic_bones",
+          "weight": 4
+        },
+        {
+          "mobSet": "dungeons2:classic_undead",
           "weight": 3
+        },
+        {
+          "mobSet": "dungeons2:classic_vanilla",
+          "weight": 3
+        },
+        {
+          "mobSet": "dungeons2:classic_lesser_ooze",
+          "weight": 2
+        }
+      ]
+    },
+    {
+      "minFloorIndex": 1,
+      "mobSets": [
+        {
+          "mobSet": "dungeons2:classic_bones",
+          "weight": 5
+        },
+        {
+          "mobSet": "dungeons2:classic_undead",
+          "weight": 4
+        },
+        {
+          "mobSet": "dungeons2:classic_warband",
+          "weight": 3
+        },
+        {
+          "mobSet": "dungeons2:classic_vermin",
+          "weight": 2
         },
         {
           "mobSet": "dungeons2:classic_vanilla",
@@ -142,16 +179,59 @@
       "minFloorIndex": 2,
       "mobSets": [
         {
-          "mobSet": "dungeons2:classic_vanilla",
+          "mobSet": "dungeons2:classic_undead",
+          "weight": 4
+        },
+        {
+          "mobSet": "dungeons2:classic_elemental_bones",
+          "weight": 4
+        },
+        {
+          "mobSet": "dungeons2:classic_warband",
           "weight": 3
         },
         {
-          "mobSet": "dungeons2:classic_vermin",
-          "weight": 1
+          "mobSet": "dungeons2:classic_ooze",
+          "weight": 3
+        },
+        {
+          "mobSet": "dungeons2:classic_guardians",
+          "weight": 2
+        },
+        {
+          "mobSet": "dungeons2:classic_bones",
+          "weight": 2
         }
       ],
       "minMobs": 2,
       "maxMobs": 4
+    },
+    {
+      "minFloorIndex": 3,
+      "mobSets": [
+        {
+          "mobSet": "dungeons2:classic_elemental_bones",
+          "weight": 6
+        },
+        {
+          "mobSet": "dungeons2:classic_guardians",
+          "weight": 4
+        },
+        {
+          "mobSet": "dungeons2:classic_ooze",
+          "weight": 4
+        },
+        {
+          "mobSet": "dungeons2:classic_undead",
+          "weight": 3
+        },
+        {
+          "mobSet": "dungeons2:classic_warband",
+          "weight": 2
+        }
+      ],
+      "minMobs": 3,
+      "maxMobs": 5
     }
   ],
   "schemes": [

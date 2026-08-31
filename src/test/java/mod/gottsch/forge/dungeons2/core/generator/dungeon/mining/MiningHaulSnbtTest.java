@@ -25,12 +25,16 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,6 +76,9 @@ class MiningHaulSnbtTest {
      * <p>Going through the real loader rather than reading the tag by hand is the point: it is what
      * would catch {@code Count} as an int, since a tag that parses can still load as an empty
      * container.</p>
+     *
+     * <p>Asserted on the container's CONTENTS rather than on particular slots, because the slots are
+     * shuffled. What matters is that every item put in comes back out, wherever it landed.</p>
      */
     @Test
     void vanillaLoadsTheHaulBackAsRealItemStacks() throws Exception {
@@ -79,16 +86,77 @@ class MiningHaulSnbtTest {
                 new MiningHaul.Stack("minecraft:diamond", 3),
                 new MiningHaul.Stack("minecraft:coal", 12)));
 
-        CompoundTag tag = TagParser.parseTag("{Items:" + haul.itemsSnbt() + "}");
-        NonNullList<ItemStack> contents = NonNullList.withSize(MiningHaul.CHEST_SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, contents);
+        NonNullList<ItemStack> contents = load(haul);
+        assertEquals(3, countOf(contents, Items.DIAMOND), "the diamonds did not come back");
+        assertEquals(12, countOf(contents, Items.COAL), "the coal did not come back");
+        assertEquals(2, occupiedSlots(contents), "two stacks should occupy exactly two slots");
+    }
 
-        assertEquals(Items.DIAMOND, contents.get(0).getItem(),
-                "slot 0 did not come back as the diamonds; the haul must sort rarest-first so a"
-                        + " truncated chest keeps them");
-        assertEquals(3, contents.get(0).getCount());
-        assertEquals(Items.COAL, contents.get(1).getItem());
-        assertEquals(12, contents.get(1).getCount());
+    /**
+     * <strong>The stacks are scattered, not stacked up from slot 0.</strong>
+     *
+     * <p>Mark, 2026-08-31: "shuffle the chest slots though so it looks a little randomly placed." A
+     * chest filled from slot 0 in sorted order reads as generated the moment it is opened.</p>
+     *
+     * <p>Asserted as "not the sorted arrangement" over several distinct hauls rather than on one,
+     * because any single shuffle can legitimately come back looking tidy. The seed is derived from
+     * the haul's contents, so different hauls are independent draws.</p>
+     */
+    @Test
+    void theStacksAreScatteredAcrossTheChest() throws Exception {
+        int tidy = 0;
+        for (int extra = 0; extra < 8; extra++) {
+            MiningHaul haul = new MiningHaul(List.of(
+                    new MiningHaul.Stack("minecraft:diamond", 2),
+                    new MiningHaul.Stack("minecraft:raw_gold", 9 + extra),
+                    new MiningHaul.Stack("minecraft:coal", 40 + extra)));
+            ListTag items = parse(haul);
+            boolean fromZeroInOrder = items.getCompound(0).getByte("Slot") == 0
+                    && items.getCompound(1).getByte("Slot") == 1
+                    && items.getCompound(2).getByte("Slot") == 2;
+            if (fromZeroInOrder) {
+                tidy++;
+            }
+        }
+        assertTrue(tidy <= 1, tidy + " of 8 hauls filled slots 0,1,2 in order -- the shuffle is not"
+                + " happening, or is not varying with the haul");
+    }
+
+    /** Whatever the arrangement, no two fills ever share a slot. */
+    @Test
+    void everyFillGetsItsOwnSlot() throws Exception {
+        MiningHaul haul = new MiningHaul(List.of(
+                new MiningHaul.Stack("minecraft:diamond", 2),
+                new MiningHaul.Stack("minecraft:coal", 64 * 5)));
+        ListTag items = parse(haul);
+
+        Set<Byte> seen = new HashSet<>();
+        for (int i = 0; i < items.size(); i++) {
+            byte slot = items.getCompound(i).getByte("Slot");
+            assertTrue(slot >= 0 && slot < MiningHaul.CHEST_SLOTS, "slot " + slot + " is off the chest");
+            assertTrue(seen.add(slot), "slot " + slot + " was written twice, so one stack is lost");
+        }
+        assertEquals(6, items.size(), "2 diamonds and 5 stacks of coal is six fills");
+    }
+
+    /**
+     * The same haul always lands in the same arrangement.
+     *
+     * <p>Not cosmetic. {@code postProcess} re-runs per chunk and the haul is re-rendered after the
+     * piece is loaded from the save, so a shuffle that varied between calls would rewrite the chest
+     * with a different arrangement each time &mdash; and, at a chunk seam, would make the two runs
+     * disagree about what the chest holds.</p>
+     */
+    @Test
+    void theSameHaulAlwaysLandsInTheSameArrangement() {
+        MiningHaul haul = new MiningHaul(List.of(
+                new MiningHaul.Stack("minecraft:diamond", 2),
+                new MiningHaul.Stack("minecraft:coal", 70)));
+        String first = haul.itemsSnbt();
+        assertEquals(first, haul.itemsSnbt(), "two calls on one haul disagreed");
+        assertEquals(first, new MiningHaul(List.copyOf(haul.stacks())).itemsSnbt(),
+                "an equal haul rebuilt from the same stacks arranged itself differently, so the"
+                        + " arrangement would not survive the NBT round trip");
     }
 
     /** A count over one stack is split across slots, because vanilla's Count is a byte. */
@@ -98,11 +166,14 @@ class MiningHaulSnbtTest {
         ListTag items = parse(haul);
 
         assertEquals(3, items.size(), "150 coal should occupy three slots");
-        assertEquals(64, items.getCompound(0).getByte("Count"));
-        assertEquals(64, items.getCompound(1).getByte("Count"));
-        assertEquals(22, items.getCompound(2).getByte("Count"));
-        assertEquals(0, items.getCompound(0).getByte("Slot"));
-        assertEquals(2, items.getCompound(2).getByte("Slot"));
+        // Which slot holds which fill is shuffled, so the counts are asserted as a multiset.
+        List<Integer> counts = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            counts.add((int) items.getCompound(i).getByte("Count"));
+        }
+        counts.sort(null);
+        assertEquals(List.of(22, 64, 64), counts, "150 coal should split 64 + 64 + 22");
+        assertEquals(150, countOf(load(haul), Items.COAL), "coal was lost in the split");
     }
 
     /**
@@ -136,10 +207,44 @@ class MiningHaulSnbtTest {
         ListTag items = parse(haul);
 
         assertEquals(MiningHaul.CHEST_SLOTS, items.size(), "should have filled the chest exactly");
-        assertEquals("minecraft:diamond", items.getCompound(0).getString("id"),
+        // Somewhere in the chest, not slot 0: the shuffle decides where, the rarest-first fill order
+        // decides that it survived at all. Those are the two halves itemsSnbt keeps separate.
+        assertEquals(2, countOf(load(haul), Items.DIAMOND),
                 "the diamonds were dropped instead of the coal");
         assertTrue(haul.slotsNeeded() > MiningHaul.CHEST_SLOTS,
                 "this test needs a haul that genuinely overflows");
+    }
+
+    // -------- helpers --------
+
+    /** The haul loaded into a chest-sized container, through vanilla's own loader. */
+    private static NonNullList<ItemStack> load(MiningHaul haul) throws Exception {
+        CompoundTag tag = TagParser.parseTag("{Items:" + haul.itemsSnbt() + "}");
+        NonNullList<ItemStack> contents =
+                NonNullList.withSize(MiningHaul.CHEST_SLOTS, ItemStack.EMPTY);
+        ContainerHelper.loadAllItems(tag, contents);
+        return contents;
+    }
+
+    /** How many of {@code item} the container holds, across however many slots. */
+    private static int countOf(NonNullList<ItemStack> contents, Item item) {
+        int total = 0;
+        for (ItemStack stack : contents) {
+            if (stack.getItem() == item) {
+                total += stack.getCount();
+            }
+        }
+        return total;
+    }
+
+    private static int occupiedSlots(NonNullList<ItemStack> contents) {
+        int occupied = 0;
+        for (ItemStack stack : contents) {
+            if (!stack.isEmpty()) {
+                occupied++;
+            }
+        }
+        return occupied;
     }
 
     /** An empty haul emits an empty list rather than malformed text. */

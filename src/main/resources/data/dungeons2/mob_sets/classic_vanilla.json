@@ -21,6 +21,10 @@
     {
       "id": "minecraft:silverfish",
       "weight": 2
+    },
+    {
+      "id": "minecraft:slime",
+      "weight": 3
     }
   ]
 }

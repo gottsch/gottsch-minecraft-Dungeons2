@@ -18,7 +18,9 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.mining;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 /**
  * What a Mining Chest holds: a list of items and counts, and the SNBT that puts them in a chest.
@@ -68,32 +70,112 @@ public record MiningHaul(List<Stack> stacks) {
     /**
      * The chest's {@code Items} list as SNBT.
      *
-     * <p>Slots are filled in list order, 64 to a slot, and anything past {@link #CHEST_SLOTS} is
-     * <strong>dropped</strong> rather than spilling into a second chest. So the order this haul was
-     * built in decides what survives a chest that will not hold everything, which is why
-     * {@link MiningChestPlanner} builds it rarest-first: a dungeon that excavated enough coal to
-     * fill a chest on its own must not push the diamonds out.</p>
+     * <h2>Which stacks get in, and where they sit, are two separate questions</h2>
+     * <p><strong>What gets in</strong> is decided in list order, 64 to a slot, and anything past
+     * {@link #CHEST_SLOTS} is <strong>dropped</strong> rather than spilling into a second chest. So
+     * the order this haul was built in decides what survives a chest that will not hold everything,
+     * which is why {@link MiningChestPlanner} builds it rarest-first: a dungeon that excavated
+     * enough coal to fill a chest on its own must not push the diamonds out.</p>
+     *
+     * <p><strong>Where each one sits</strong> is then <em>shuffled</em> across the chest (Mark,
+     * 2026-08-31: "shuffle the chest slots though so it looks a little randomly placed"). Filling
+     * from slot 0 in sorted order produced a chest that reads as generated the moment it is opened
+     * &mdash; diamonds top-left, then a neat descending block of ore. A spoil pile is a heap
+     * somebody tipped out, so it is laid out like one. Nothing downstream depends on slot order:
+     * vanilla reads each entry's own {@code Slot} field.</p>
+     *
+     * <p>The two are kept separate deliberately. Shuffling the stacks themselves and then filling
+     * from slot 0 would be one line shorter and would silently undo the truncation guarantee above,
+     * because the coal could then sort ahead of the diamonds.</p>
      */
     public String itemsSnbt() {
+        List<Stack> fills = slotFills();
+        int[] slots = shuffledSlots(fills.size());
+
+        // Emitted in SLOT order rather than fill order -- the tag is read by a person debugging a
+        // chest, and one whose Slot values ascend is far easier to check against what the container
+        // actually shows. Vanilla does not care either way.
+        String[] bySlot = new String[CHEST_SLOTS];
+        for (int i = 0; i < fills.size(); i++) {
+            Stack fill = fills.get(i);
+            // Slot and Count are BYTES in a vanilla container tag, not ints. A plain integer decodes
+            // to the wrong tag type and the item silently does not appear -- the stringified-value
+            // trap BlockEntityData's own doc warns about, one layer down.
+            bySlot[slots[i]] = "{Slot:" + slots[i] + "b,id:\"" + fill.item()
+                    + "\",Count:" + fill.count() + "b}";
+        }
+
         StringBuilder snbt = new StringBuilder("[");
-        int slot = 0;
-        for (Stack stack : stacks) {
-            int remaining = stack.count();
-            while (remaining > 0 && slot < CHEST_SLOTS) {
-                int inSlot = Math.min(remaining, MAX_PER_SLOT);
-                if (slot > 0) {
-                    snbt.append(',');
-                }
-                // Slot and Count are BYTES in a vanilla container tag, not ints. A plain integer
-                // decodes to the wrong tag type and the item silently does not appear -- the
-                // stringified-value trap BlockEntityData's own doc warns about, one layer down.
-                snbt.append("{Slot:").append(slot).append("b,id:\"").append(stack.item())
-                        .append("\",Count:").append(inSlot).append("b}");
-                remaining -= inSlot;
-                slot++;
+        boolean first = true;
+        for (String entry : bySlot) {
+            if (entry == null) {
+                continue;
             }
+            if (!first) {
+                snbt.append(',');
+            }
+            snbt.append(entry);
+            first = false;
         }
         return snbt.append(']').toString();
+    }
+
+    /**
+     * The haul split into slot-sized fills, in list order, truncated at {@link #CHEST_SLOTS}.
+     * Rarest-first is preserved here, which is what makes the truncation drop the common ore.
+     */
+    private List<Stack> slotFills() {
+        List<Stack> fills = new ArrayList<>();
+        for (Stack stack : stacks) {
+            int remaining = stack.count();
+            while (remaining > 0 && fills.size() < CHEST_SLOTS) {
+                int inSlot = Math.min(remaining, MAX_PER_SLOT);
+                fills.add(new Stack(stack.item(), inSlot));
+                remaining -= inSlot;
+            }
+        }
+        return fills;
+    }
+
+    /**
+     * {@code count} distinct slot numbers drawn from the whole chest, shuffled.
+     *
+     * <h2>Seeded from the haul's own contents</h2>
+     * <p>The layout has to be identical every time this is called: the chest is written during
+     * {@code postProcess}, which re-runs per chunk, and the same haul is re-rendered after the piece
+     * is loaded back from the save. A {@code RandomSource} threaded in from the room would satisfy
+     * that today and quietly stop doing so the moment anything upstream of it draws one more number.
+     * Deriving the seed from the contents makes the layout a pure function of the haul, so it cannot
+     * drift &mdash; and two dungeons that excavated identically getting the same arrangement is not
+     * something anybody can observe.</p>
+     *
+     * <p>The mix is written out with {@code String#hashCode} rather than taken from the record's
+     * generated {@code hashCode}: {@code String}'s is specified by the JDK and will be the same in
+     * ten years, a record's is produced by an unspecified bootstrap method and is not promised to be
+     * stable at all. Getting that wrong would re-arrange every existing chest on a JDK upgrade.</p>
+     */
+    private int[] shuffledSlots(int count) {
+        long seed = 1125899906842597L; // an odd prime; any fixed non-zero start does
+        for (Stack stack : stacks) {
+            seed = seed * 31L + stack.item().hashCode();
+            seed = seed * 31L + stack.count();
+        }
+        Random random = new Random(seed);
+
+        int[] slots = new int[CHEST_SLOTS];
+        for (int i = 0; i < CHEST_SLOTS; i++) {
+            slots[i] = i;
+        }
+        // Fisher-Yates over the whole chest, then take the first `count`. Shuffling all 27 rather
+        // than picking `count` of them is what spreads a small haul across the chest instead of
+        // clustering it in the low slots.
+        for (int i = CHEST_SLOTS - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            int swap = slots[i];
+            slots[i] = slots[j];
+            slots[j] = swap;
+        }
+        return Arrays.copyOf(slots, count);
     }
 
     /** How many slots {@link #itemsSnbt} would fill, uncapped &mdash; for the overflow log. */

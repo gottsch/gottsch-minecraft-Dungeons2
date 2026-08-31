@@ -33,7 +33,13 @@ package mod.gottsch.forge.dungeons2.core.data;
  * @author Mark Gottschling on May 25, 2026
  */
 public enum DungeonSize {
-    SMALL(1, 2, 25, 35),
+    // SMALL's footprint was raised from 25-35 on 2026-08-31 (Mark: "a little larger"). It was the
+    // outlier of the three, and by a long way: MEASURED excavation was ~8,500 blocks against
+    // MEDIUM's ~48,000, so the step from SMALL to MEDIUM was 5.6x while MEDIUM to LARGE was only
+    // 2.7x. The floor range is deliberately NOT touched -- floors multiply where footprint scales
+    // as an area, so 1-2 is what keeps a SMALL dungeon a quick shallow one rather than a MEDIUM
+    // with fewer rooms.
+    SMALL(1, 2, 31, 43),
     MEDIUM(2, 4, 35, 55),
     LARGE(3, 5, 55, 75);
 

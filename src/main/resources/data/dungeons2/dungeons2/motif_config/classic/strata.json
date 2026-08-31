@@ -403,12 +403,30 @@
           },
           "spawners": {
             "minCount": 0,
-            "maxCount": 1
+            "maxCount": 1,
+            "minSize": 9
           }
         },
         {
           "name": "mud_timber_pillars",
           "weight": 2,
+          // A SPAWNER SLOT ON THE MUD STRATUM (2026-08-31). 0-1, deferring both the mob set and
+          // the mob count to the motif's depth band, which on floor 0 is vermin-heavy -- so what
+          // this actually buys is rats, and occasionally bones, in the rooms a player meets first.
+          //
+          // Which schemes get one follows base.json's own rule rather than a new one: every *_hall
+          // and feature room carries a spawner slot, and the plain filler rooms (plain / vaulted /
+          // grand / cramped there, `plain` here) do not. That keeps the most common room in the
+          // stratum quiet, which is what stops a spawner slot on eight schemes reading as a spawner
+          // in every room -- `plain` is weight 12 of 57.
+          //
+          // minCount 0 is doing real work: the count is rolled per room, so 0-1 is "about half the
+          // rooms that qualify", not "one each".
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 11,
           "minHeight": 7,
           "pillars": {
@@ -459,6 +477,12 @@
         {
           "name": "mud_timber_pilastered",
           "weight": 4,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 9,
           "minHeight": 7,
           "wall": {
@@ -517,6 +541,12 @@
         {
           "name": "mud_timber_pilastered_2",
           "weight": 4,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 9,
           "minHeight": 7,
           "wall": {
@@ -574,6 +604,12 @@
           // scheme's minSize 9 already satisfies. The centre cannot be moved by it.
           "name": "mud_timber_centre_pillar",
           "weight": 6,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 9,
           "minHeight": 7,
           "pillars": {
@@ -614,6 +650,12 @@
         {
           "name": "joisted_hall",
           "weight": 10,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 7,
           "minHeight": 7,
           "ceiling": {
@@ -635,6 +677,12 @@
           "name": "joisted_hall_2",
           "extends": "joisted_hall",
           "weight": 10,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           // A SCHEME's `floor` IS A PATTERN, NOT A FloorConfig. The band below authors
           // base/alternateBase/pattern because a BAND owns the whole floor; a scheme owns only the
           // treatment over it, so `type`/`config` sit directly here with no `pattern` wrapper and
@@ -708,6 +756,12 @@
           // scheme wants anyway -- something to see from the doorway, at the level you enter on.
           "name": "mud_sunken_court",
           "weight": 3,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 9,
           "pit": {
             "type": "dungeons2:inset",
@@ -791,6 +845,12 @@
           // set into the wall, not laid with it.
           "name": "mud_diamond_inlay",
           "weight": 4,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "minCount": 0,
+            "maxCount": 1,
+            "minSize": 9
+          },
           "minSize": 9,
           "minHeight": 7,
           "wall": {

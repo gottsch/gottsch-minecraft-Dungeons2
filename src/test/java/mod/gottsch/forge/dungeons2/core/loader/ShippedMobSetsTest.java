@@ -75,8 +75,37 @@ class ShippedMobSetsTest {
      * run), so they are listed; {@code StructureSpawnOverridesTest} already pins the same pair from
      * the spawn-overrides side, and a third place naming them would be one too many.
      */
-    private static final Set<String> OWN_ENTITIES =
-            Set.of("dungeons2:rat", "dungeons2:giant_rat");
+    /**
+     * This mod's own entity ids, read from the LANG FILE rather than listed here.
+     *
+     * <p>{@code BuiltInRegistries} carries no modded entity headlessly, so a {@code dungeons2:} id
+     * has to be checked against something else. A hand-maintained literal was fine at two mobs and
+     * is a liability at twenty-five: every mob added would have to be remembered here, and
+     * forgetting one fails the build with "this entity does not exist" pointing at a mob that does.
+     * The lang file is the same indirect proof {@code StructureSpawnOverridesTest} uses, and it is
+     * strictly better than a literal &mdash; a mob with no display name is a real defect, so the
+     * check keeps its teeth rather than merely getting out of the way.</p>
+     */
+    private static boolean isOwnEntity(String id) {
+        return id.startsWith("dungeons2:")
+                && lang().has("entity.dungeons2." + id.substring("dungeons2:".length()));
+    }
+
+    private static JsonObject lang() {
+        if (LANG_CACHE == null) {
+            try (java.io.InputStream in = ShippedMobSetsTest.class.getResourceAsStream(LANG)) {
+                LANG_CACHE = com.google.gson.JsonParser.parseReader(
+                        new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8))
+                        .getAsJsonObject();
+            } catch (Exception e) {
+                throw new IllegalStateException("could not read " + LANG, e);
+            }
+        }
+        return LANG_CACHE;
+    }
+
+    private static final String LANG = "/assets/dungeons2/lang/en_us.json";
+    private static JsonObject LANG_CACHE;
 
     /** {@code minecraft:empty} is a real authoring idiom: a weighted "spawn nothing" slot. */
     private static final String EMPTY = "minecraft:empty";
@@ -94,7 +123,7 @@ class ShippedMobSetsTest {
             JsonObject set = parse(file).getAsJsonObject();
             for (JsonElement wrapped : set.getAsJsonArray("mobs")) {
                 String id = wrapped.getAsJsonObject().get("id").getAsString();
-                if (EMPTY.equals(id) || OWN_ENTITIES.contains(id)) {
+                if (EMPTY.equals(id) || isOwnEntity(id)) {
                     continue;
                 }
                 if (!BuiltInRegistries.ENTITY_TYPE.containsKey(new ResourceLocation(id))) {

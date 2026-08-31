@@ -130,37 +130,87 @@ class StructureSpawnOverridesTest {
     }
 
     /**
-     * The dungeon spawns its own mobs and nothing else.
+     * The vanilla monsters allowed alongside this mod's own.
      *
-     * <p>Pinned deliberately, because it is the surprising half of how {@code spawn_overrides} works:
-     * an override <strong>replaces</strong> the biome's list for that category inside the box rather
-     * than adding to it. Listing rats under {@code monster} therefore means no zombies, skeletons or
-     * creepers spawn naturally in a dungeon. That is the intent &mdash; the dungeon has its own
-     * denizens &mdash; but it is a decision, not a detail, so a future edit that quietly reintroduces
-     * vanilla monsters should have to change this assertion first.</p>
+     * <p>An <strong>allowlist</strong> rather than "anything from {@code minecraft:}", because the
+     * override replaces the biome's list wholesale: whatever is named here is the complete vanilla
+     * bestiary of a dungeon, so the interesting failure is not a typo but a plausible-looking
+     * addition nobody decided on. A creeper in a corridor is a different game.</p>
+     */
+    private static final Set<String> ALLOWED_VANILLA = Set.of(
+            "minecraft:zombie", "minecraft:skeleton", "minecraft:spider",
+            "minecraft:cave_spider");
+
+    /**
+     * The dungeon's monsters are its own <em>plus a named handful of vanilla ones</em>.
+     *
+     * <p>Pinned because of the surprising half of how {@code spawn_overrides} works: an override
+     * <strong>replaces</strong> the biome's list for that category inside the box rather than adding
+     * to it. So this file is not "extra mobs" &mdash; it is the entire natural population of a
+     * dungeon, and anything absent from it does not spawn there at all.</p>
+     *
+     * <h2>This assertion was inverted on 2026-08-31, deliberately</h2>
+     * <p>It used to require that <em>every</em> spawn be a {@code dungeons2:} mob, and said in as
+     * many words that reintroducing vanilla monsters was a design change which should have to edit
+     * this test first. Mark made that change, having noticed the dungeon had no vanilla mobs in it
+     * at all. The old test did its job &mdash; the decision could not be made by accident &mdash; so
+     * it is rewritten to guard the new shape rather than deleted.</p>
+     *
+     * <p>What it guards now is the balance the old rule protected absolutely: vanilla monsters are
+     * present but must not take the dungeon over, and the ones present must be on
+     * {@link #ALLOWED_VANILLA}.</p>
      */
     @Test
-    void theDungeonsMonstersAreItsOwn() {
+    void theDungeonsMonstersAreMostlyItsOwn() {
         List<Spawn> monsters = spawns().stream()
                 .filter(spawn -> spawn.category().equals("monster")).toList();
         assertTrue(!monsters.isEmpty(), "expected the monster category to be overridden");
+
+        int own = 0;
+        int vanilla = 0;
         for (Spawn spawn : monsters) {
-            assertEquals("dungeons2", ResourceLocation.tryParse(spawn.type()).getNamespace(),
-                    spawn.type() + " is not one of this mod's mobs. Adding a vanilla monster here is"
-                            + " a design change: see this test's note.");
+            String namespace = ResourceLocation.tryParse(spawn.type()).getNamespace();
+            if ("dungeons2".equals(namespace)) {
+                own += spawn.weight();
+                continue;
+            }
+            assertTrue(ALLOWED_VANILLA.contains(spawn.type()), spawn.type()
+                    + " is not one of this mod's mobs and is not on the vanilla allowlist. The"
+                    + " override REPLACES the biome's list, so adding a monster here is a design"
+                    + " change: see this test's note.");
+            vanilla += spawn.weight();
         }
+
+        assertTrue(own > 0, "no dungeons2 monster is left in the override");
+        assertTrue(vanilla > 0, "the vanilla allowlist exists but nothing uses it -- either the"
+                + " vanilla monsters were removed again, in which case delete the allowlist, or"
+                + " this test has stopped reading the file");
+        assertTrue(own > vanilla, "vanilla monsters hold " + vanilla + " of " + (own + vanilla)
+                + " weight against this mod's " + own + ". The dungeon should read as having its"
+                + " own denizens; raise the dungeons2 weights or lower the vanilla ones");
     }
 
-    /** Non-vacuity -- every check above passes trivially on an empty override. */
-    @Test
-    void theOverridesAreActuallyRead() {
-        List<Spawn> spawns = spawns();
-        assertTrue(spawns.size() >= 2,
-                "expected at least the two rats, found " + spawns.size()
-                        + " -- spawn_overrides was empty until #42");
-        assertTrue(spawns.stream().anyMatch(spawn -> spawn.type().equals("dungeons2:rat")),
-                "expected dungeons2:rat among the spawns");
-    }
+    /**
+     * <strong>The slime is deliberately NOT here</strong>, and the reason is a real difference
+     * between the two ways a mob reaches a dungeon.
+     *
+     * <p>It was added to this file on 2026-08-31 and taken out again the same day, because a natural
+     * spawn cannot escape the entity's own {@code SpawnPlacements} predicate: vanilla's slime rule
+     * wants a slime chunk below Y 40, so no weight in this file could have made slimes appear
+     * reliably. Mark moved it to the mob sets instead.</p>
+     *
+     * <p><strong>That route genuinely does escape it</strong>, which is what makes the move work
+     * rather than merely relocate the problem. GottschCore's {@code SpawnUtil.spawnMob} checks
+     * {@code NaturalSpawner.isSpawnPositionOk} &mdash; is this block a legal place to stand for the
+     * entity's placement TYPE &mdash; and never calls {@code SpawnPlacements.checkSpawnRules}, which
+     * is where the slime-chunk test lives. A spawner-placed slime therefore appears wherever the
+     * spawner is, exactly as a vanilla mob spawner ignores the rules its mob would face in the
+     * wild.</p>
+     *
+     * <p>Left as a note rather than an assertion: "this id is absent" is what the allowlist above
+     * already enforces, and a test asserting the absence of one specific mob would fail the day
+     * somebody legitimately reconsiders.</p>
+     */
 
     // ---------- reading ----------
 

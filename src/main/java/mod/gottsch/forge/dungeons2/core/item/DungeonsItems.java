@@ -75,6 +75,169 @@ public class DungeonsItems {
                     new Item.Properties()));
 
     /**
+     * A spawn egg for every mob in the GMM roster, <strong>including the three that nothing
+     * spawns</strong>.
+     *
+     * <p>The mini-bosses need one more than the rest do, not less: they are excluded from the mob
+     * sets and the structure's spawn overrides, so an egg is the only way to look at one at all.
+     * That is the same argument the fungi's eggs are here on.</p>
+     *
+     * <p>Colours are Dungeon Denizens' verbatim, so the same mob reads the same in any pack carrying
+     * both mods.</p>
+     */
+    public static final RegistryObject<Item> SKELETON_WARRIOR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SKELETON_WARRIOR + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.SKELETON_WARRIOR_ENTITY, 0xf5f6d2, 0xcdc3bb,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> WINGED_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.WINGED_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.WINGED_SKELETON_ENTITY, 0xe2ded0, 0x8a8478,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> IRON_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.IRON_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.IRON_SKELETON_ENTITY, 0xc8c8d0, 0x6e6e78,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> MAGMA_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.MAGMA_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.MAGMA_SKELETON_ENTITY, 0x4b0000, 0xff7900,
+                    new Item.Properties()));
+
+
+    public static final RegistryObject<Item> TAINTED_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.TAINTED_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.TAINTED_SKELETON_ENTITY, 0xa8a596, 0x8a1420,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> ACID_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ACID_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ACID_SKELETON_ENTITY, 0xb2e278, 0x2c4e1c,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> ELECTRIC_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ELECTRIC_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ELECTRIC_SKELETON_ENTITY, 0x2d3a6e, 0xf5e642,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> BURNING_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BURNING_SKELETON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BURNING_SKELETON_ENTITY, 0x1c1512, 0xffb02e,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> BLOODY_BONES_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BLOODY_BONES + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BLOODY_BONES_ENTITY, 0xe8e0d0, 0x8a1420,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> SKELETON_CHAMPION_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SKELETON_CHAMPION + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.SKELETON_CHAMPION_ENTITY, 0xc9c9c9, 0x17171a,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> BLOATER_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BLOATER + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BLOATER_ENTITY, 0x6c8a2c, 0x3a4a1e,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> GRAVE_ZOMBIE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GRAVE_ZOMBIE + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.GRAVE_ZOMBIE_ENTITY, 0x8b5a2b, 0x3e2711,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> WIGHT_EGG = Registration.ITEMS.register(
+            DungeonsEntities.WIGHT + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.WIGHT_ENTITY, 0xced1d6, 0x2a2c33,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> BODAK_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BODAK + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BODAK_ENTITY, 0x6b6a63, 0x2b2a26,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> GHOUL_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GHOUL + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.GHOUL_ENTITY, 0x9fc2b8, 0x4f5b56,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> GELATINOUS_CUBE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GELATINOUS_CUBE + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.GELATINOUS_CUBE_ENTITY, 0x9adfc7, 0x5fae95,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> OCHRE_JELLY_EGG = Registration.ITEMS.register(
+            DungeonsEntities.OCHRE_JELLY + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.OCHRE_JELLY_ENTITY, 0xadb83d, 0x5f6b1f,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> GRAY_OOZE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GRAY_OOZE + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.GRAY_OOZE_ENTITY, 0x7d8a8f, 0x4a5459,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> BLACK_PUDDING_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BLACK_PUDDING + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BLACK_PUDDING_ENTITY, 0x2b1d33, 0x5e456b,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> ANIMATED_ARMOR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ANIMATED_ARMOR + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ANIMATED_ARMOR_ENTITY, 0xc0c0c8, 0x4a4a52,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> MARGOYLE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.MARGOYLE + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.MARGOYLE_ENTITY, 0x7f7f7f, 0x5a6d41,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> ORC_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ORC + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ORC_ENTITY, 0x6b8e4e, 0x3f5c2c,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> ORC_SHAMAN_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ORC_SHAMAN + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ORC_SHAMAN_ENTITY, 0x6b8e4e, 0x4b2e83,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> ALLIGATOR_GAR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ALLIGATOR_GAR + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ALLIGATOR_GAR_ENTITY, 0x4a5c3a, 0x8f9f6b,
+                    new Item.Properties()));
+
+    /**
+     * The two projectiles that render as a spinning <em>item</em> rather than a model, and the
+     * items they render as.
+     *
+     * <p>GMM's {@code Rock} and {@code WitheringGazeSpell} each expose an {@code itemSupplier} hook
+     * and fall back to a FIRE CHARGE when it is unset &mdash; a working projectile that looks like a
+     * fireball. These give them their real look; {@code CommonSetup.wireRangedAttacks} hands them
+     * over.</p>
+     *
+     * <p><strong>They are not craftable, obtainable or in any creative tab</strong> &mdash; nothing
+     * registers a recipe and nothing adds them to a tab. They exist only to be the texture on a
+     * thrown entity, which is the same job Dungeon Denizens' rock item does.</p>
+     *
+     * <p><strong>Both textures live in GMM and are referenced across the namespace</strong>
+     * ({@code gmm:item/rock}, {@code gmm:item/withering_gaze_spell}) rather than copied here. gmm is
+     * a hard dependency, so they are always present.</p>
+     *
+     * <p>The rock's texture was moved INTO gmm on 2026-08-31 (Mark's call) for exactly this reason.
+     * It had only ever existed in Dungeon Denizens, so the first version of this file copied it &mdash;
+     * which would have meant every consumer of GMM's Rock carrying its own duplicate of the same art,
+     * with nothing keeping them in step. The art belongs with the projectile that throws it; the
+     * gaze's texture was already there and is the precedent.</p>
+     */
+    public static final RegistryObject<Item> ROCK_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.ROCK, () -> new Item(new Item.Properties()));
+
+    /** See {@link #ROCK_ITEM}. */
+    public static final RegistryObject<Item> WITHERING_GAZE_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.WITHERING_GAZE_SPELL, () -> new Item(new Item.Properties()));
+
+
+    /**
      * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
      * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
      * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
