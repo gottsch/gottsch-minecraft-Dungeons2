@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape;
 import mod.gottsch.forge.dungeons2.core.config.pit.PitShapePattern;
@@ -92,11 +93,19 @@ public record PitPatternEntry(PitShapePattern shape, Optional<String> floorBlock
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<PitPatternEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<PitPatternEntry> MAP_CODEC =
+            RecordCodecBuilder.mapCodec(instance -> instance.group(
             // `type` + `config`, dispatched over the pit shape registry. An unregistered id is a
             // LOAD ERROR naming what is registered, not a room that quietly has no pit.
             PitShapeRegistry.MAP_CODEC.forGetter(PitPatternEntry::shape),
             Codecs.strictOptionalFieldOf(Codec.STRING, "floorBlock").forGetter(PitPatternEntry::floorBlock),
             SizeGate.MAP_CODEC.forGetter(PitPatternEntry::gate)
-    ).apply(instance, PitPatternEntry::new)));
+    ).apply(instance, PitPatternEntry::new));
+
+    public static final Codec<PitPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 }

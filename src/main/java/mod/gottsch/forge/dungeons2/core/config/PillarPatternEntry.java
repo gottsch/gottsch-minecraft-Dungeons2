@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
@@ -242,13 +243,19 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<PillarPatternEntry> CODEC = Codecs.closed(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<PillarPatternEntry> MAP_CODEC =
             RecordCodecBuilder.<PillarPatternEntry>mapCodec(instance -> instance.group(
                     PillarEntry.CODEC.listOf().fieldOf("patterns")
                             .forGetter(PillarPatternEntry::patterns),
                     SizeGate.MAP_CODEC.forGetter(PillarPatternEntry::gate)
-            ).apply(instance, PillarPatternEntry::new)))
-            .flatXmap(PillarPatternEntry::validate, PillarPatternEntry::validate);
+            ).apply(instance, PillarPatternEntry::new)).flatXmap(PillarPatternEntry::validate, PillarPatternEntry::validate);
+
+    public static final Codec<PillarPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
      * Rejects an inverted per-entry gate, the same check the wall and ceiling slots make. A gate that

@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.floor.FloorPattern;
 import mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry;
@@ -66,9 +67,16 @@ public record FloorPatternEntry(FloorPattern pattern, SizeGate gate) {
      * the closed check for free because {@code RecordCodecBuilder} composes them into this record's
      * own {@code keys()}.
      */
-    public static final Codec<FloorPatternEntry> CODEC = Codecs.closed(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<FloorPatternEntry> MAP_CODEC =
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     FloorPatternRegistry.MAP_CODEC.forGetter(FloorPatternEntry::pattern),
                     SizeGate.MAP_CODEC.forGetter(FloorPatternEntry::gate)
-            ).apply(instance, FloorPatternEntry::new)));
+            ).apply(instance, FloorPatternEntry::new));
+
+    public static final Codec<FloorPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 }

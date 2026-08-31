@@ -475,8 +475,27 @@
           }
         },
         {
+          // ONE SCHEME WHERE THERE WERE TWO -- the first #65 slot-options conversion, 2026-08-31.
+          //
+          // `mud_timber_pilastered` and `mud_timber_pilastered_2` were the same room at the same
+          // weight, minSize and minHeight, differing in exactly two independent decorations: one
+          // added end pilasters at the short walls and a stone footing under them, the other left
+          // the short walls plain and put pots in the middle. Written as two whole-room schemes
+          // that is two of the four combinations, chosen once by whoever typed them. Written as
+          // options it is all eight, rolled per room.
+          //
+          // EVERY ELEMENT KEEPS ITS OLD INCIDENCE EXACTLY. End pilasters were on one scheme of the
+          // two at equal weight, so 1:1 here; the border floor and the pots likewise. The scheme's
+          // own weight is 4 + 4. What changes is only the CORRELATION between them: the border no
+          // longer implies the end pilasters, and the pots no longer imply their absence. Neither
+          // pairing was load-bearing -- see mud_timber_centre_pillar below for one that is, and
+          // which is therefore NOT merged in here.
+          //
+          // The none-weights are the trap #65 warns about and they are not optional. Without the
+          // `none` entry on `floor` the border would draw in 100% of these rooms instead of half,
+          // which is exactly how band-level joists reached 55.9% and became the band's look.
           "name": "mud_timber_pilastered",
-          "weight": 4,
+          "weight": 8,
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
           "spawners": {
             "minCount": 0,
@@ -485,29 +504,51 @@
           },
           "minSize": 9,
           "minHeight": 7,
-          "wall": {
-            "patterns": [
-              {
-                "type": "dungeons2:pilasters",
-                "config": {
-                  "block": "minecraft:spruce_log",
-                  "baseBlock": "dungeonblocks:square_stone_brick",
-                  "capBlock": "dungeonblocks:square_stone_brick",
-                  "spacing": 4,
-                  "projection": 1
+          // The long-wall pilasters are on BOTH options, because they are what the room is; only
+          // the short-wall treatment is in question. So this is not "pilasters or nothing" -- there
+          // is no `none` here on purpose, and its absence is the authored statement that this room
+          // always has pilasters.
+          "wall": [
+            {
+              "weight": 1,
+              "patterns": [
+                {
+                  "type": "dungeons2:pilasters",
+                  "config": {
+                    "block": "minecraft:spruce_log",
+                    "baseBlock": "dungeonblocks:square_stone_brick",
+                    "capBlock": "dungeonblocks:square_stone_brick",
+                    "spacing": 4,
+                    "projection": 1
+                  }
+                },
+                {
+                  "type": "dungeons2:end_pilasters",
+                  "config": {
+                    "block": "minecraft:stone_bricks",
+                    "baseBlock": "dungeonblocks:square_stone_brick",
+                    "capBlock": "dungeonblocks:square_stone_brick",
+                    "projection": 1
+                  }
                 }
-              },
-              {
-                "type": "dungeons2:end_pilasters",
-                "config": {
-                  "block": "minecraft:stone_bricks",
-                  "baseBlock": "dungeonblocks:square_stone_brick",
-                  "capBlock": "dungeonblocks:square_stone_brick",
-                  "projection": 1
+              ]
+            },
+            {
+              "weight": 1,
+              "patterns": [
+                {
+                  "type": "dungeons2:pilasters",
+                  "config": {
+                    "block": "minecraft:spruce_log",
+                    "baseBlock": "dungeonblocks:square_stone_brick",
+                    "capBlock": "dungeonblocks:square_stone_brick",
+                    "spacing": 4,
+                    "projection": 1
+                  }
                 }
-              }
-            ]
-          },
+              ]
+            }
+          ],
           // A STONE FOOTING RUNNING UNDER THE PILASTERS. The pilasters already stand on
           // square_stone_brick bases; this continues that stone all the way round at floor level,
           // so the room reads as dressed at the edge and paved in the middle rather than as
@@ -518,7 +559,8 @@
           // applies underneath, because a scheme's `floor` slot is a PATTERN entry and not a whole
           // FloorConfig; only the pattern is overridden. So the middle of the room stays plain
           // cobble and loses the packed_mud speckle, which is the trade: this room is the
-          // maintained one at this depth.
+          // maintained one at this depth. The `none` option is what keeps the other half of these
+          // rooms speckled.
           //
           // inset 1, NOT 0. The border's inset is measured from the room's OUTER edge, and row 0
           // is the wall ring -- so inset 0 lays the whole footing underneath the wall, where it is
@@ -528,45 +570,25 @@
           //
           // The left/right pair is the same one the band's plinth uses and for the same reason --
           // they are halves of one wide brick, so they have to alternate rather than be rolled.
-          "floor": {
-            "type": "dungeons2:border",
-            "config": {
-              "inset": 1,
-              "cornerBlock": "dungeonblocks:square_stone_brick",
-              "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
-              "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
-            }
-          }
-        },
-        {
-          "name": "mud_timber_pilastered_2",
-          "weight": 4,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "minCount": 0,
-            "maxCount": 1,
-            "minSize": 9
-          },
-          "minSize": 9,
-          "minHeight": 7,
-          "wall": {
-            "patterns": [
-              {
-                "type": "dungeons2:pilasters",
-                "config": {
-                  "block": "minecraft:spruce_log",
-                  "baseBlock": "dungeonblocks:square_stone_brick",
-                  "capBlock": "dungeonblocks:square_stone_brick",
-                  "spacing": 4,
-                  "projection": 1
-                }
+          "floor": [
+            {
+              "weight": 1,
+              "type": "dungeons2:border",
+              "config": {
+                "inset": 1,
+                "cornerBlock": "dungeonblocks:square_stone_brick",
+                "edgeLeftBlock": "dungeonblocks:left_large_stone_brick",
+                "edgeRightBlock": "dungeonblocks:right_large_stone_brick"
               }
-            ]
-          },
-          // SOMETHING IN THE ROOM. This scheme is its sibling minus the end pilasters, so without
-          // content the two differ only at the short walls and the pair reads as one room type
-          // authored twice. Pots are what #34 measured as actually moving the emptiness number --
-          // small content, not platforms -- and they give this one a reason to be entered.
+            },
+            {
+              "weight": 1,
+              "none": true
+            }
+          ],
+          // SOMETHING IN THE ROOM. Pots are what #34 measured as actually moving the emptiness
+          // number -- small content, not platforms -- and they give this room a reason to be
+          // entered.
           //
           // The grey stone pots, matching `mud_pit_trap` above: the red and blue palettes are
           // reserved for authored template rooms, and nothing in the code enforces that.
@@ -574,21 +596,28 @@
           // Pots keep off cells the pilasters project into and off the doorway approaches, because
           // the wall generator claims them first -- so a count of 3 is 3 in the open floor rather
           // than 3 fighting the trim.
-          "pots": {
-            "minCount": 1,
-            "maxCount": 3,
-            "lootTable": "dungeons2:pots/classic",
-            "variants": [
-              {
-                "entity": "dungeonblocks:stone_pot",
-                "weight": 2
-              },
-              {
-                "entity": "dungeonblocks:squat_stone_pot",
-                "weight": 1
-              }
-            ]
-          }
+          "pots": [
+            {
+              "weight": 1,
+              "minCount": 1,
+              "maxCount": 3,
+              "lootTable": "dungeons2:pots/classic",
+              "variants": [
+                {
+                  "entity": "dungeonblocks:stone_pot",
+                  "weight": 2
+                },
+                {
+                  "entity": "dungeonblocks:squat_stone_pot",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "weight": 1,
+              "none": true
+            }
+          ]
         },
         {
           // A single timber pier in the middle of the room. `dungeons2:centre` is the one layout

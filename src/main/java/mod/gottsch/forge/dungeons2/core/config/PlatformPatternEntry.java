@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
@@ -153,13 +154,19 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<PlatformPatternEntry> CODEC = Codecs.closed(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<PlatformPatternEntry> MAP_CODEC =
             RecordCodecBuilder.<PlatformPatternEntry>mapCodec(instance -> instance.group(
                     PlatformEntry.CODEC.listOf().fieldOf("patterns")
                             .forGetter(PlatformPatternEntry::patterns),
                     SizeGate.MAP_CODEC.forGetter(PlatformPatternEntry::gate)
-            ).apply(instance, PlatformPatternEntry::new)))
-            .flatXmap(PlatformPatternEntry::validate, PlatformPatternEntry::validate);
+            ).apply(instance, PlatformPatternEntry::new)).flatXmap(PlatformPatternEntry::validate, PlatformPatternEntry::validate);
+
+    public static final Codec<PlatformPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 
     private static DataResult<PlatformPatternEntry> validate(PlatformPatternEntry entry) {
         for (PlatformEntry pattern : entry.patterns()) {

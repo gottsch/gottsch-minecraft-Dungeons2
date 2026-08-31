@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.PanelsWallPatternProvider;
@@ -487,13 +488,19 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * failure naming {@code patterns}, which is the whole point of the strict codecs in this
      * package. An empty slot was never worth authoring anyway.</p>
      */
-    public static final Codec<WallPatternEntry> CODEC = Codecs.closed(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<WallPatternEntry> MAP_CODEC =
             RecordCodecBuilder.<WallPatternEntry>mapCodec(instance -> instance.group(
                     PatternEntry.CODEC.listOf().fieldOf("patterns")
                             .forGetter(WallPatternEntry::patterns),
                     SizeGate.MAP_CODEC.forGetter(WallPatternEntry::gate)
-            ).apply(instance, WallPatternEntry::new)))
-            .flatXmap(WallPatternEntry::validate, WallPatternEntry::validate);
+            ).apply(instance, WallPatternEntry::new)).flatXmap(WallPatternEntry::validate, WallPatternEntry::validate);
+
+    public static final Codec<WallPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
      * Rejects a field the pattern's own type cannot act on.

@@ -173,7 +173,8 @@ class RoomSchemeSelectorTest {
         FloorPatternEntry border = FloorPatternEntry.PLAIN;
         RoomScheme only = new RoomScheme("bordered", 1, 0, 0, Optional.of(border),
                 Optional.empty(), Optional.empty(), Optional.empty());
-        assertEquals(Optional.of(border), select(List.of(only), RandomSource.create(1)).floor());
+        assertEquals(Optional.of(border),
+                select(List.of(only), RandomSource.create(1)).floor().value());
     }
 
     /**

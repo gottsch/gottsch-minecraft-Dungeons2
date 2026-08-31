@@ -86,7 +86,13 @@ public final class RoomSchemeSelector {
         for (RoomScheme scheme : eligible) {
             cumulative += scheme.weight();
             if (roll < cumulative) {
-                return scheme;
+                // #65. A scheme may hold weighted ALTERNATIVES per slot rather than one treatment
+                // each, so choosing the scheme is only the first half of the roll; the second half
+                // is here rather than at each generator so that a room's decoration is still
+                // decided in one place, from one RandomSource, once. A scheme with no option lists
+                // -- which is every scheme authored before this existed -- draws nothing further,
+                // so its dungeons are byte-identical. See SlotOptions#resolve.
+                return scheme.resolve(width, depth, height, random);
             }
         }
         return RoomScheme.PLAIN; // unreachable: roll < totalWeight == cumulative sum

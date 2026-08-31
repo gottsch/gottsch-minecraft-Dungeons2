@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.RandomSource;
 
@@ -169,7 +170,13 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<ChestConfig> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<ChestConfig> MAP_CODEC =
+            RecordCodecBuilder.mapCodec(instance -> instance.group(
             // Defaults of 0/1, not the pots' 1/3: a chest is a reward, and a room that always has
             // one is a room where finding one means nothing. An author who wants a guaranteed chest
             // says so.
@@ -184,7 +191,9 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
                     .forGetter(ChestConfig::lootTables),
             ChestVariant.CODEC.listOf().fieldOf("variants").forGetter(ChestConfig::variants),
             SizeGate.MAP_CODEC.forGetter(ChestConfig::gate)
-    ).apply(instance, ChestConfig::new)));
+    ).apply(instance, ChestConfig::new));
+
+    public static final Codec<ChestConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
      * The inclusive count range, normalised. A {@code maxCount} below {@code minCount} is authoring

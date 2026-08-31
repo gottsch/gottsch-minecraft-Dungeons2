@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BorderSurfacePatternProvider;
@@ -60,13 +61,19 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<CeilingPatternEntry> CODEC = Codecs.closed(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<CeilingPatternEntry> MAP_CODEC =
             RecordCodecBuilder.<CeilingPatternEntry>mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(SurfacePatternEntry.CODEC.listOf(), "patterns", List.of())
                             .forGetter(CeilingPatternEntry::patterns),
                     SizeGate.MAP_CODEC.forGetter(CeilingPatternEntry::gate)
-            ).apply(instance, CeilingPatternEntry::new)))
-            .flatXmap(CeilingPatternEntry::validate, CeilingPatternEntry::validate);
+            ).apply(instance, CeilingPatternEntry::new)).flatXmap(CeilingPatternEntry::validate, CeilingPatternEntry::validate);
+
+    public static final Codec<CeilingPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
      * This treatment with only the patterns a room of these dimensions actually draws.

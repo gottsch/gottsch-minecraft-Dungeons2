@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.StringRepresentable;
@@ -182,7 +183,13 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<SpawnerConfig> CODEC = Codecs.closed(RecordCodecBuilder.<SpawnerConfig>mapCodec(instance -> instance.group(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<SpawnerConfig> MAP_CODEC =
+            RecordCodecBuilder.<SpawnerConfig>mapCodec(instance -> instance.group(
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minCount", 1)
                     .forGetter(SpawnerConfig::minCount),
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 1)
@@ -209,7 +216,9 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             // every shipped hall does.
             Codecs.strictOptionalFieldOf(Kind.CODEC, "type", Kind.PROXIMITY)
                     .forGetter(SpawnerConfig::kind)
-    ).apply(instance, SpawnerConfig::new))).flatXmap(SpawnerConfig::validate, SpawnerConfig::validate);
+    ).apply(instance, SpawnerConfig::new)).flatXmap(SpawnerConfig::validate, SpawnerConfig::validate);
+
+    public static final Codec<SpawnerConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
      * Rejects a slot that can only ever produce a spawner spawning nothing.

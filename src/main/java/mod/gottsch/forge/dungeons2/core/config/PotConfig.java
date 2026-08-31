@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.List;
@@ -77,7 +78,13 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
-    public static final Codec<PotConfig> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+        /**
+     * The same record with its schema left OPEN, for {@link SlotOptions}: an option writes a
+     * {@code weight} key alongside this record's own keys, so the closed check has to be re-imposed
+     * one level up, over the union of both key sets, rather than here.
+     */
+    public static final MapCodec<PotConfig> MAP_CODEC =
+            RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minCount", 1)
                     .forGetter(PotConfig::minCount),
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 3)
@@ -85,7 +92,9 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
             Codec.STRING.fieldOf("lootTable").forGetter(PotConfig::lootTable),
             PotVariant.CODEC.listOf().fieldOf("variants").forGetter(PotConfig::variants),
             SizeGate.MAP_CODEC.forGetter(PotConfig::gate)
-    ).apply(instance, PotConfig::new)));
+    ).apply(instance, PotConfig::new));
+
+    public static final Codec<PotConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
      * The inclusive count range, normalised. A {@code maxCount} below {@code minCount} is authoring
