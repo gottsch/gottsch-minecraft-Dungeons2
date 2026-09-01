@@ -235,11 +235,13 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         }
         return Stratum.forFloor(strataByFloorIndex, floorIndex)
                 .map(stratum -> new MotifConfig(
-                        stratum.wall().orElse(wall),
+                        stratum.wall().orElse(wall)
+                                .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.ceiling().orElse(ceiling)
                                 .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.door().orElse(door),
-                        stratum.corridor().orElse(corridor),
+                        stratum.corridor().orElse(corridor)
+                                .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.floor().orElse(floor)
                                 .withRoles(lookup(overlay(palette, stratum.palette()))),
                         withRoles(mergeSchemes(stratum), overlay(palette, stratum.palette())),
@@ -266,11 +268,14 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         List<RoomScheme> resolved = withRoles(motif.schemes(), palette);
         FloorConfig resolvedFloor = motif.floor().withRoles(lookup(palette));
         CeilingConfig resolvedCeiling = motif.ceiling().withRoles(lookup(palette));
+        WallConfig resolvedWall = motif.wall().withRoles(lookup(palette));
+        CorridorConfig resolvedCorridor = motif.corridor().withRoles(lookup(palette));
         if (resolved == motif.schemes() && resolvedFloor == motif.floor()
-                && resolvedCeiling == motif.ceiling()) {
+                && resolvedCeiling == motif.ceiling() && resolvedWall == motif.wall()
+                && resolvedCorridor == motif.corridor()) {
             return motif;
         }
-        return new MotifConfig(motif.wall(), resolvedCeiling, motif.door(), motif.corridor(),
+        return new MotifConfig(resolvedWall, resolvedCeiling, motif.door(), resolvedCorridor,
                 resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
                 motif.chestLootByFloorIndex(), motif.templateLimits(),
                 motif.strataByFloorIndex(), palette);

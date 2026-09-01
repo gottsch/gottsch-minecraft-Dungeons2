@@ -57,6 +57,25 @@ public record PilasterShape(String block, Optional<String> baseBlock, Optional<S
                             Optional<Map<String, String>> baseProperties,
                             Optional<Map<String, String>> capProperties) {
 
+    /**
+     * This strip with its three block fields resolved. #65 phase 5.
+     *
+     * <p><strong>Shared by {@code pilasters} and {@code end_pilasters}</strong>, which is the whole
+     * reason this record exists: the two types differ only in which columns they stand in, so a
+     * strip's material must not be able to drift between them. One method here converts both.</p>
+     */
+    public PilasterShape withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        Optional<String> resolvedBase = Codecs.resolveRole(baseBlock, resolver);
+        Optional<String> resolvedCap = Codecs.resolveRole(capBlock, resolver);
+        if (resolvedBlock.equals(block) && resolvedBase.equals(baseBlock)
+                && resolvedCap.equals(capBlock)) {
+            return this;
+        }
+        return new PilasterShape(resolvedBlock, resolvedBase, resolvedCap, spacing, inset,
+                projection, orient, properties, baseProperties, capProperties);
+    }
+
     /** A plain strip of one block at the default rhythm, flush with the wall. */
     public PilasterShape(String block) {
         this(block, Optional.empty(), Optional.empty(),
@@ -70,10 +89,10 @@ public record PilasterShape(String block, Optional<String> baseBlock, Optional<S
                     // REQUIRED, and that is what retires WallPatternEntry.validate's
                     // "block is required -- there is no default material" rule: the flat record had
                     // to make it Optional because `courses` has no block of its own.
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(PilasterShape::block),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "base_block")
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(PilasterShape::block),
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "base_block")
                             .forGetter(PilasterShape::baseBlock),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "cap_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "cap_block")
                             .forGetter(PilasterShape::capBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
                                     PilastersWallPatternProvider.DEFAULT_SPACING)

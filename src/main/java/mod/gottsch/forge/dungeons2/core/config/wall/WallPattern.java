@@ -55,6 +55,20 @@ public interface WallPattern {
     MapCodec<? extends WallPattern> codec();
 
     /**
+     * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
+     * scope names. #65 phase 5, and a {@code default} for the same reason the floor and ceiling
+     * hooks are: {@code WallPatternRegistry} is open to other mods, so an abstract method would
+     * break every third-party pattern on upgrade, and a field only carries a role when its codec is
+     * {@code Codecs.BLOCK_ID_OR_ROLE}.
+     *
+     * <p>Implementations must return {@code this} when nothing changed; this is on the per-piece
+     * path.</p>
+     */
+    default WallPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        return this;
+    }
+
+    /**
      * The provider that draws this pattern, or {@code null} when a block it needs will not resolve.
      *
      * <p>{@code null} degrades the <em>whole</em> pattern to plain wall rather than drawing the

@@ -54,6 +54,15 @@ public record CoursesWallPattern(List<CourseEntry> courses) implements WallPatte
                             .forGetter(CoursesWallPattern::courses)
             ).apply(instance, CoursesWallPattern::new)));
 
+    /** See {@code WallPatternEntry.CourseEntry#withRoles}. */
+    @Override
+    public WallPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<mod.gottsch.forge.dungeons2.core.config.WallPatternEntry.CourseEntry> resolved =
+                mod.gottsch.forge.dungeons2.core.config.WallPatternEntry.CourseEntry
+                        .withRoles(courses, resolver);
+        return resolved == courses ? this : new CoursesWallPattern(resolved);
+    }
+
     @Override
     public MapCodec<? extends WallPattern> codec() {
         return CODEC;

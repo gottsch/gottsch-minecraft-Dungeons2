@@ -54,6 +54,18 @@ import java.util.Optional;
  */
 public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
 
+    /**
+     * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 5, and the
+     * third and last section to need one &mdash; the floor's and ceiling's came in phases 3 and 4.
+     *
+     * <p>{@code wall} itself is untouched: a shell field, still on {@code Codecs.BLOCK_ID}, and
+     * phase 7's business if it is ever worth converting at all.</p>
+     */
+    public WallConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
+        Optional<WallPatternEntry> resolved = pattern.map(entry -> entry.withRoles(resolver));
+        return resolved.equals(pattern) ? this : new WallConfig(wall, resolved);
+    }
+
     /** An undressed wall &mdash; the shape every motif had before {@code pattern} existed. */
     public WallConfig(String wall) {
         this(wall, Optional.empty());

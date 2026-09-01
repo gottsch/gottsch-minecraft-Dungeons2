@@ -43,7 +43,7 @@ public record PanelsWallPattern(String block, int width, int spacing, int inset,
 
     public static final MapCodec<PanelsWallPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(PanelsWallPattern::block),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(PanelsWallPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "width",
                                     PanelsWallPatternProvider.DEFAULT_WIDTH)
                             .forGetter(PanelsWallPattern::width),
@@ -59,6 +59,16 @@ public record PanelsWallPattern(String block, int width, int spacing, int inset,
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                             "properties", Map.of()).forGetter(PanelsWallPattern::properties)
             ).apply(instance, PanelsWallPattern::new)));
+
+    /** See {@link WallPattern#withRoles}. */
+    @Override
+    public WallPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        if (resolvedBlock.equals(block)) {
+            return this;
+        }
+        return new PanelsWallPattern(resolvedBlock, width, spacing, inset, projection, orient, properties);
+    }
 
     @Override
     public MapCodec<? extends WallPattern> codec() {

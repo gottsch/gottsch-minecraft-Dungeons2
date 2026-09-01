@@ -547,7 +547,7 @@
                 {
                   "type": "dungeons2:end_pilasters",
                   "config": {
-                    "block": "minecraft:spruce_log",
+                    "block": "minecraft:mud_bricks",
                     "base_block": "dungeonblocks:square_stone_brick",
                     "cap_block": "dungeonblocks:square_stone_brick",
                     "spacing": 4,

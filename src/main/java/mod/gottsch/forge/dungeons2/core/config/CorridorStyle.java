@@ -86,6 +86,25 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
         return profile == Profile.ARCHED;
     }
 
+    /**
+     * This style's {@code courses} with their roles resolved. #65 phase 5.
+     *
+     * <p>A corridor holds a bare {@code List<CourseEntry>} rather than a whole
+     * {@link WallPatternEntry}, which is the shape none of the earlier phases had to deal with: the
+     * record being converted is nested one level shallower here than anywhere else. Missing it would
+     * have left a role in a corridor course decoding cleanly and drawing nothing.</p>
+     *
+     * <p>{@code archBlock} is untouched &mdash; a shell field on {@code Codecs.BLOCK_ID}, phase
+     * 7.</p>
+     */
+    public CorridorStyle withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<WallPatternEntry.CourseEntry> resolved =
+                WallPatternEntry.CourseEntry.withRoles(courses, resolver);
+        return resolved == courses ? this
+                : new CorridorStyle(name, weight, height, profile, archBlock, narrowHeight,
+                        resolved);
+    }
+
     public static final Codec<CorridorStyle> CODEC = RecordCodecBuilder.<CorridorStyle>create(instance ->
             instance.group(
                     Codec.STRING.fieldOf("name").forGetter(CorridorStyle::name),

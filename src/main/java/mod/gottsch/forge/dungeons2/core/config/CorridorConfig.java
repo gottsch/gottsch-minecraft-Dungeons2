@@ -201,6 +201,39 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
         return styles.isEmpty() ? List.of(baseline()) : styles;
     }
 
+    /**
+     * This section's own {@code courses} and every style's, with their roles resolved. #65 phase 5.
+     *
+     * <p>Two lists, because a corridor's courses may be authored on the section or on one of its
+     * named styles, and a style is rolled per floor. See {@code CorridorStyle#withRoles} for why a
+     * bare {@code CourseEntry} list is the awkward shape here.</p>
+     */
+    public CorridorConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<WallPatternEntry.CourseEntry> resolvedCourses =
+                WallPatternEntry.CourseEntry.withRoles(courses, resolver);
+        List<CorridorStyle> resolvedStyles = null;
+        for (int i = 0; i < styles.size(); i++) {
+            CorridorStyle style = styles.get(i);
+            CorridorStyle mapped = style.withRoles(resolver);
+            if (mapped == style) {
+                if (resolvedStyles != null) {
+                    resolvedStyles.add(style);
+                }
+                continue;
+            }
+            if (resolvedStyles == null) {
+                resolvedStyles = new java.util.ArrayList<>(styles.subList(0, i));
+            }
+            resolvedStyles.add(mapped);
+        }
+        if (resolvedCourses == courses && resolvedStyles == null) {
+            return this;
+        }
+        return new CorridorConfig(floor, alternateFloor, ceiling, height, profile, archBlock,
+                narrowHeight, resolvedStyles == null ? styles : List.copyOf(resolvedStyles),
+                resolvedCourses);
+    }
+
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
             instance.group(
                     Codecs.BLOCK_ID.fieldOf("floor").forGetter(CorridorConfig::floor),

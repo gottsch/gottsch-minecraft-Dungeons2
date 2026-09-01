@@ -32,8 +32,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><strong>The two lists are the phase boundary.</strong> Converting a record moves its fields
  * from {@link #everyBlockFieldRejectsARole} to
- * one of the {@code MaterialRoles*Test} classes &mdash; <strong>27 still reject, 22 accept</strong>
- * (3 pillar in phase 2, 9 floor in phase 3, 6 ceiling + 4 platform in phase 4).
+ * one of the {@code MaterialRoles*Test} classes &mdash; <strong>17 still reject, 32 accept</strong>
+ * (3 pillar in phase 2, 9 floor in phase 3, 6 ceiling + 4 platform in phase 4, 10 wall in
+ * phase 5). What is left is the pit and chest slots (phase 6) and the shell and corridor
+ * fields (phase 7, which may never be worth doing).
  * Nothing else tracks which records have been converted, and nothing else needs to.</p>
  */
 class MaterialRolePaletteTest {
@@ -168,17 +170,8 @@ class MaterialRolePaletteTest {
         // floor patterns (5 records, 9 fields) are CONVERTED -- phase 3. See
         // MaterialRolesFloorTest; the move of those nine lines out of this list is the phase.
 
-        // wall patterns (4 records, 8 fields) -- pilasters and end_pilasters share PilasterShape
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:panels\",\"config\":{\"block\":\"$r\"}}");
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:diamond\",\"config\":{\"block\":\"$r\"}}");
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:gradient\",\"config\":{\"bottom_block\":\"$r\",\"top_block\":\"minecraft:stone\"}}");
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:gradient\",\"config\":{\"bottom_block\":\"minecraft:stone\",\"top_block\":\"$r\"}}");
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"$r\"}}");
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone\",\"base_block\":\"$r\"}}");
-        rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone\",\"cap_block\":\"$r\"}}");
-        rejects(WallPatternEntry.CourseEntry.CODEC, "{\"block\":\"$r\"}");
-        rejects(WallPatternEntry.CourseEntry.CODEC, "{\"block\":\"minecraft:stone\",\"alternate_block\":\"$r\"}");
-        rejects(WallPatternEntry.CourseEntry.CODEC, "{\"block\":\"minecraft:stone\",\"corner_block\":\"$r\"}");
+        // wall patterns (10 fields across PilasterShape, CourseEntry, Panels, Diamond and
+        // Gradient) are CONVERTED -- phase 5. See MaterialRolesWallTest.
 
         // ceiling patterns (4 records, 6 fields) and platforms (1 record, 4 fields) are
         // CONVERTED -- phase 4. See MaterialRolesCeilingAndPlatformsTest.

@@ -78,8 +78,8 @@ public record GradientWallPattern(String bottomBlock, String topBlock, double bo
 
     public static final MapCodec<GradientWallPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("bottom_block").forGetter(GradientWallPattern::bottomBlock),
-                    Codecs.BLOCK_ID.fieldOf("top_block").forGetter(GradientWallPattern::topBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("bottom_block").forGetter(GradientWallPattern::bottomBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("top_block").forGetter(GradientWallPattern::topBlock),
                     Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D),
                                     "bottom_probability", 1.0D)
                             .forGetter(GradientWallPattern::bottomProbability),
@@ -96,6 +96,18 @@ public record GradientWallPattern(String bottomBlock, String topBlock, double bo
                             "top_properties", Map.of())
                             .forGetter(GradientWallPattern::topProperties)
             ).apply(instance, GradientWallPattern::new)));
+
+    /** See {@link WallPattern#withRoles}. */
+    @Override
+    public WallPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBottomBlock = Codecs.resolveRole(bottomBlock, resolver);
+        String resolvedTopBlock = Codecs.resolveRole(topBlock, resolver);
+        if (resolvedBottomBlock.equals(bottomBlock)
+                && resolvedTopBlock.equals(topBlock)) {
+            return this;
+        }
+        return new GradientWallPattern(resolvedBottomBlock, resolvedTopBlock, bottomProbability, topProbability, holdRows, bottomProperties, topProperties);
+    }
 
     @Override
     public MapCodec<? extends WallPattern> codec() {

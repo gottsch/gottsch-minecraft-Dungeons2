@@ -29,6 +29,13 @@ public record EndPilastersWallPattern(PilasterShape shape) implements WallPatter
     public static final MapCodec<EndPilastersWallPattern> CODEC =
             PilasterShape.MAP_CODEC.xmap(EndPilastersWallPattern::new, EndPilastersWallPattern::shape);
 
+    /** See {@link PilasterShape#withRoles}. */
+    @Override
+    public WallPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        PilasterShape resolved = shape.withRoles(resolver);
+        return resolved == shape ? this : new EndPilastersWallPattern(resolved);
+    }
+
     @Override
     public MapCodec<? extends WallPattern> codec() {
         return CODEC;

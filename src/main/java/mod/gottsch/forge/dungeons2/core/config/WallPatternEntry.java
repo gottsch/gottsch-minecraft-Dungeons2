@@ -101,6 +101,26 @@ import mod.gottsch.forge.dungeons2.core.config.wall.WallPatternRegistry;
  */
 public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
 
+    /** See {@code WallPattern#withRoles}. Returns {@code this} when no pattern named a role. */
+    public WallPatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<PatternEntry> resolved = null;
+        for (int i = 0; i < patterns.size(); i++) {
+            PatternEntry entry = patterns.get(i);
+            PatternEntry mapped = entry.withRoles(resolver);
+            if (mapped == entry) {
+                if (resolved != null) {
+                    resolved.add(entry);
+                }
+                continue;
+            }
+            if (resolved == null) {
+                resolved = new java.util.ArrayList<>(patterns.subList(0, i));
+            }
+            resolved.add(mapped);
+        }
+        return resolved == null ? this : new WallPatternEntry(List.copyOf(resolved), gate);
+    }
+
     /** An ungated treatment -- drawn whenever its scheme is rolled. */
     public WallPatternEntry(List<PatternEntry> patterns) {
         this(patterns, SizeGate.UNBOUNDED);
@@ -161,6 +181,12 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * disappeared when each type took ownership of its own fields.</p>
      */
     public record PatternEntry(WallPattern pattern, SizeGate gate) {
+
+        /** See {@code WallPattern#withRoles}. */
+        public PatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+            WallPattern resolved = pattern.withRoles(resolver);
+            return resolved == pattern ? this : new PatternEntry(resolved, gate);
+        }
 
         /** An ungated treatment -- drawn whenever its scheme is rolled. */
         public PatternEntry(WallPattern pattern) {
@@ -367,6 +393,47 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                               int projection, CourseOrient orient, Map<String, String> properties,
                               CourseAlternate alternate, SizeGate gate) {
 
+        /**
+         * This course with its three block fields resolved. #65 phase 5.
+         *
+         * <p><strong>A {@code CourseEntry} has three homes</strong>, more than any other record in
+         * the schema: inside a {@code courses} wall pattern, and directly on
+         * {@code CorridorConfig} and {@code CorridorStyle}, which hold a bare list of them rather
+         * than a whole {@link WallPatternEntry}. All three had to be walked, which is why phase 5
+         * touches the corridor sections at all.</p>
+         */
+        public CourseEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+            String resolvedBlock = Codecs.resolveRole(block, resolver);
+            Optional<String> resolvedAlternate = Codecs.resolveRole(alternateBlock, resolver);
+            Optional<String> resolvedCorner = Codecs.resolveRole(cornerBlock, resolver);
+            if (resolvedBlock.equals(block) && resolvedAlternate.equals(alternateBlock)
+                    && resolvedCorner.equals(cornerBlock)) {
+                return this;
+            }
+            return new CourseEntry(resolvedBlock, resolvedAlternate, resolvedCorner, anchor, offset,
+                    projection, orient, properties, alternate, gate);
+        }
+
+        /** Every course in a list resolved, returning the SAME list when none named a role. */
+        public static List<CourseEntry> withRoles(List<CourseEntry> courses, java.util.function.UnaryOperator<String> resolver) {
+            List<CourseEntry> resolved = null;
+            for (int i = 0; i < courses.size(); i++) {
+                CourseEntry entry = courses.get(i);
+                CourseEntry mapped = entry.withRoles(resolver);
+                if (mapped == entry) {
+                    if (resolved != null) {
+                        resolved.add(entry);
+                    }
+                    continue;
+                }
+                if (resolved == null) {
+                    resolved = new java.util.ArrayList<>(courses.subList(0, i));
+                }
+                resolved.add(mapped);
+            }
+            return resolved == null ? courses : List.copyOf(resolved);
+        }
+
         /** Convenience for a flat, uniform, ungated course on the wall plane. */
         public CourseEntry(String block, CourseAnchor anchor, int offset) {
             this(block, Optional.empty(), Optional.empty(), anchor, offset, 0, CourseOrient.NONE,
@@ -393,11 +460,11 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
 
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<CourseEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codecs.BLOCK_ID.fieldOf("block").forGetter(CourseEntry::block),
+                Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(CourseEntry::block),
                 // Absent means "same as block", which is why these are bare Optionals rather than
                 // strictOptionalFieldOf with a fallback: there is no default block to name here.
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "alternate_block").forGetter(CourseEntry::alternateBlock),
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "corner_block").forGetter(CourseEntry::cornerBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "alternate_block").forGetter(CourseEntry::alternateBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "corner_block").forGetter(CourseEntry::cornerBlock),
                 // strictOptionalFieldOf, not DFU's own: optionalFieldOf cannot tell "absent" from
                 // "present but malformed" and returns the default for both, so `"anchor": "topp"`
                 // would silently read as BOTTOM and put the crown molding on the floor. That is the

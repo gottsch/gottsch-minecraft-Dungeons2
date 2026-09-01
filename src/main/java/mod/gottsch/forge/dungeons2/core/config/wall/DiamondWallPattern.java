@@ -83,7 +83,7 @@ public record DiamondWallPattern(String block, int size, int spacing, boolean fi
 
     public static final MapCodec<DiamondWallPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(DiamondWallPattern::block),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(DiamondWallPattern::block),
                     // From 1: a size of 0 is a single cell, which is a speck and not a diamond.
                     Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "size",
                                     DiamondWallPatternProvider.DEFAULT_SIZE)
@@ -100,6 +100,16 @@ public record DiamondWallPattern(String block, int size, int spacing, boolean fi
                                     "properties", Map.of())
                             .forGetter(DiamondWallPattern::properties)
             ).apply(instance, DiamondWallPattern::new)));
+
+    /** See {@link WallPattern#withRoles}. */
+    @Override
+    public WallPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        if (resolvedBlock.equals(block)) {
+            return this;
+        }
+        return new DiamondWallPattern(resolvedBlock, size, spacing, filled, properties);
+    }
 
     @Override
     public MapCodec<? extends WallPattern> codec() {
