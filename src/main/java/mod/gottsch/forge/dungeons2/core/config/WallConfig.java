@@ -58,12 +58,19 @@ public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
      * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 5, and the
      * third and last section to need one &mdash; the floor's and ceiling's came in phases 3 and 4.
      *
-     * <p>{@code wall} itself is untouched: a shell field, still on {@code Codecs.BLOCK_ID}, and
-     * phase 7's business if it is ever worth converting at all.</p>
+<p>#65 phase 7: the SHELL materials read a role too. Decided in by Mark on 2026-09-01, against
+     * an earlier note that it might never be worth doing. Two reasons, and the second corrects the
+     * reasoning behind that note: it would be odd for every other block field in the schema to take
+     * a role and these not to, whether or not anyone uses it -- an author should not have to
+     * remember which fields are special; and "a band already repaints the shell wholesale" is only
+     * true of a motif that USES bands, so for a motif that declares none, a role is the only way to
+     * parameterise its shell at all.</p>
      */
     public WallConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
         Optional<WallPatternEntry> resolved = pattern.map(entry -> entry.withRoles(resolver));
-        return resolved.equals(pattern) ? this : new WallConfig(wall, resolved);
+        String resolvedWall = Codecs.resolveRole(wall, resolver);
+        return resolved.equals(pattern) && resolvedWall.equals(wall) ? this
+                : new WallConfig(resolvedWall, resolved);
     }
 
     /** An undressed wall &mdash; the shape every motif had before {@code pattern} existed. */
@@ -74,7 +81,7 @@ public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
     public static final WallConfig DEFAULT = new WallConfig("minecraft:stone_bricks");
 
     public static final Codec<WallConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codecs.BLOCK_ID.fieldOf("wall").forGetter(WallConfig::wall),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("wall").forGetter(WallConfig::wall),
             // strictOptionalFieldOf: a malformed pattern is a load error, not silently the same as
             // an absent one. See Codecs and #31.
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "pattern")

@@ -57,10 +57,34 @@ public record DoorConfig(String door, String lintel, String floor, double probab
         this(door, lintel, floor, 1.0);
     }
 
+    /**
+     * This section's three materials with any {@code $role} resolved. #65 phase 7, and the only
+     * section that had no {@code withRoles} at all before it -- it holds no pattern, just the door,
+     * its lintel and the sill under it.
+     *
+     * <p>#65 phase 7: the SHELL materials read a role too. Decided in by Mark on 2026-09-01, against
+     * an earlier note that it might never be worth doing. Two reasons, and the second corrects the
+     * reasoning behind that note: it would be odd for every other block field in the schema to take
+     * a role and these not to, whether or not anyone uses it -- an author should not have to
+     * remember which fields are special; and "a band already repaints the shell wholesale" is only
+     * true of a motif that USES bands, so for a motif that declares none, a role is the only way to
+     * parameterise its shell at all.</p>
+     */
+    public DoorConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedDoor = Codecs.resolveRole(door, resolver);
+        String resolvedLintel = Codecs.resolveRole(lintel, resolver);
+        String resolvedFloor = Codecs.resolveRole(floor, resolver);
+        if (resolvedDoor.equals(door) && resolvedLintel.equals(lintel)
+                && resolvedFloor.equals(floor)) {
+            return this;
+        }
+        return new DoorConfig(resolvedDoor, resolvedLintel, resolvedFloor, probability);
+    }
+
     public static final Codec<DoorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codecs.BLOCK_ID.fieldOf("door").forGetter(DoorConfig::door),
-            Codecs.BLOCK_ID.fieldOf("lintel").forGetter(DoorConfig::lintel),
-            Codecs.BLOCK_ID.fieldOf("floor").forGetter(DoorConfig::floor),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("door").forGetter(DoorConfig::door),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("lintel").forGetter(DoorConfig::lintel),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("floor").forGetter(DoorConfig::floor),
             // Optional, unlike its siblings: it is a shape knob rather than a material, so there is
             // a meaningful default to fall back on. The blocks have none on purpose.
             Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0, 1.0), "probability", 1.0)

@@ -239,7 +239,8 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                                 .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.ceiling().orElse(ceiling)
                                 .withRoles(lookup(overlay(palette, stratum.palette()))),
-                        stratum.door().orElse(door),
+                        stratum.door().orElse(door)
+                                .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.corridor().orElse(corridor)
                                 .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.floor().orElse(floor)
@@ -270,12 +271,13 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         CeilingConfig resolvedCeiling = motif.ceiling().withRoles(lookup(palette));
         WallConfig resolvedWall = motif.wall().withRoles(lookup(palette));
         CorridorConfig resolvedCorridor = motif.corridor().withRoles(lookup(palette));
+        DoorConfig resolvedDoor = motif.door().withRoles(lookup(palette));
         if (resolved == motif.schemes() && resolvedFloor == motif.floor()
                 && resolvedCeiling == motif.ceiling() && resolvedWall == motif.wall()
-                && resolvedCorridor == motif.corridor()) {
+                && resolvedCorridor == motif.corridor() && resolvedDoor == motif.door()) {
             return motif;
         }
-        return new MotifConfig(resolvedWall, resolvedCeiling, motif.door(), resolvedCorridor,
+        return new MotifConfig(resolvedWall, resolvedCeiling, resolvedDoor, resolvedCorridor,
                 resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
                 motif.chestLootByFloorIndex(), motif.templateLimits(),
                 motif.strataByFloorIndex(), palette);

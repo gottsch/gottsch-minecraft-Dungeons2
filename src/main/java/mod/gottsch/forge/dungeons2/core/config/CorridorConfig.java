@@ -226,24 +226,30 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
             }
             resolvedStyles.add(mapped);
         }
-        if (resolvedCourses == courses && resolvedStyles == null) {
+        String resolvedFloor = Codecs.resolveRole(floor, resolver);
+        String resolvedAlternate = Codecs.resolveRole(alternateFloor, resolver);
+        String resolvedCeiling = Codecs.resolveRole(ceiling, resolver);
+        Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
+        if (resolvedCourses == courses && resolvedStyles == null && resolvedFloor.equals(floor)
+                && resolvedAlternate.equals(alternateFloor) && resolvedCeiling.equals(ceiling)
+                && resolvedArch.equals(archBlock)) {
             return this;
         }
-        return new CorridorConfig(floor, alternateFloor, ceiling, height, profile, archBlock,
-                narrowHeight, resolvedStyles == null ? styles : List.copyOf(resolvedStyles),
-                resolvedCourses);
+        return new CorridorConfig(resolvedFloor, resolvedAlternate, resolvedCeiling, height,
+                profile, resolvedArch, narrowHeight,
+                resolvedStyles == null ? styles : List.copyOf(resolvedStyles), resolvedCourses);
     }
 
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
             instance.group(
-                    Codecs.BLOCK_ID.fieldOf("floor").forGetter(CorridorConfig::floor),
-                    Codecs.BLOCK_ID.fieldOf("alternate_floor").forGetter(CorridorConfig::alternateFloor),
-                    Codecs.BLOCK_ID.fieldOf("ceiling").forGetter(CorridorConfig::ceiling),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("floor").forGetter(CorridorConfig::floor),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("alternate_floor").forGetter(CorridorConfig::alternateFloor),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("ceiling").forGetter(CorridorConfig::ceiling),
                     Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "height", DEFAULT_HEIGHT)
                             .forGetter(CorridorConfig::height),
                     Codecs.strictOptionalFieldOf(Profile.CODEC, "profile", Profile.FLAT)
                             .forGetter(CorridorConfig::profile),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "arch_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "arch_block")
                             .forGetter(CorridorConfig::archBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "narrow_height")
                             .forGetter(CorridorConfig::narrowHeight),

@@ -90,7 +90,7 @@ public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
                             .forGetter(HazardPitShape::offsetX),
                     Codecs.strictOptionalFieldOf(Codec.intRange(-16, 16), "offset_z", 0)
                             .forGetter(HazardPitShape::offsetZ),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "spike_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "spike_block")
                             .forGetter(HazardPitShape::spikeBlock),
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                             "spike_properties", Map.of()).forGetter(HazardPitShape::spikeProperties),
@@ -100,9 +100,21 @@ public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
                     // flat, so there is no solid half to point anywhere. A stair authored here
                     // would simply keep its default facing, which is the honest outcome for a shape
                     // whose rim is not a step.
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "rim_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "rim_block")
                             .forGetter(HazardPitShape::rimBlock)
             ).apply(instance, HazardPitShape::new)));
+
+    /** See {@link PitShapePattern#withRoles}. */
+    @Override
+    public PitShapePattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        Optional<String> resolvedSpikeBlock = Codecs.resolveRole(spikeBlock, resolver);
+        Optional<String> resolvedRimBlock = Codecs.resolveRole(rimBlock, resolver);
+        if (resolvedSpikeBlock.equals(spikeBlock)
+                && resolvedRimBlock.equals(rimBlock)) {
+            return this;
+        }
+        return new HazardPitShape(width, depth, offsetX, offsetZ, resolvedSpikeBlock, spikeProperties, spikeProbability, resolvedRimBlock);
+    }
 
     @Override
     public MapCodec<? extends PitShapePattern> codec() {

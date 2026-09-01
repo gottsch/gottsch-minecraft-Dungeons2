@@ -82,7 +82,11 @@ public record FloorConfig(String base, String alternateBase, Optional<FloorPatte
      */
     public FloorConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
         Optional<FloorPatternEntry> resolved = pattern.map(entry -> entry.withRoles(resolver));
-        return resolved.equals(pattern) ? this : new FloorConfig(base, alternateBase, resolved);
+        String resolvedBase = Codecs.resolveRole(base, resolver);
+        String resolvedAlternate = Codecs.resolveRole(alternateBase, resolver);
+        return resolved.equals(pattern) && resolvedBase.equals(base)
+                && resolvedAlternate.equals(alternateBase) ? this
+                : new FloorConfig(resolvedBase, resolvedAlternate, resolved);
     }
 
     /** An undressed floor &mdash; the shape every motif had before {@code pattern} existed. */
@@ -95,8 +99,8 @@ public record FloorConfig(String base, String alternateBase, Optional<FloorPatte
             "minecraft:stone_bricks", "minecraft:stone_bricks");
 
     public static final Codec<FloorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codecs.BLOCK_ID.fieldOf("base").forGetter(FloorConfig::base),
-            Codecs.BLOCK_ID.fieldOf("alternate_base").forGetter(FloorConfig::alternateBase),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("base").forGetter(FloorConfig::base),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("alternate_base").forGetter(FloorConfig::alternateBase),
             // strictOptionalFieldOf, not DFU's own: a malformed pattern must be a load error, not
             // silently the same as an absent one. See Codecs and #31 -- a band that quietly lost
             // its paving would look exactly like a band that never asked for any.

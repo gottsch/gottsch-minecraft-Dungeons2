@@ -44,6 +44,19 @@ public interface PitShapePattern {
      */
     MapCodec<? extends PitShapePattern> codec();
 
+    /**
+     * This shape with any {@code $role} in its block fields replaced by the literal the palette in
+     * scope names. #65 phase 6, and a {@code default} for the same reason the floor, ceiling and
+     * wall hooks are: the registry is open to other mods, and a field only carries a role when its
+     * codec is {@code Codecs.BLOCK_ID_OR_ROLE}.
+     *
+     * <p>{@code inset} takes this default and needs nothing: it is the one shape with no block of
+     * its own, because a walkable sunken court is paved by the floor around it.</p>
+     */
+    default PitShapePattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        return this;
+    }
+
     /** The provider deciding which interior cells are excavated. */
     IPitShapeProvider provider();
 }

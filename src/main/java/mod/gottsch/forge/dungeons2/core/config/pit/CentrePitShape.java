@@ -66,11 +66,21 @@ public record CentrePitShape(int size, int depth, Optional<String> rimBlock,
                             .forGetter(CentrePitShape::depth),
                     // A ring of stairs on the floor cells just OUTSIDE the court. Omit for a plain
                     // kerb; see PitPlans#stairRim for what it buys and which way it faces.
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "rim_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "rim_block")
                             .forGetter(CentrePitShape::rimBlock),
                     Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "rim_orient",
                             DEFAULT_RIM_ORIENT).forGetter(CentrePitShape::rimOrient)
             ).apply(instance, CentrePitShape::new)));
+
+    /** See {@link PitShapePattern#withRoles}. */
+    @Override
+    public PitShapePattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        Optional<String> resolvedRimBlock = Codecs.resolveRole(rimBlock, resolver);
+        if (resolvedRimBlock.equals(rimBlock)) {
+            return this;
+        }
+        return new CentrePitShape(size, depth, resolvedRimBlock, rimOrient);
+    }
 
     @Override
     public MapCodec<? extends PitShapePattern> codec() {

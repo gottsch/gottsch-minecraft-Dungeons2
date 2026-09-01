@@ -163,7 +163,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     public record ChestVariant(String block, int weight) {
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<ChestVariant> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codecs.BLOCK_ID.fieldOf("block").forGetter(ChestVariant::block),
+                Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(ChestVariant::block),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(ChestVariant::weight)
         ).apply(instance, ChestVariant::new)));
@@ -194,6 +194,35 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     ).apply(instance, ChestConfig::new));
 
     public static final Codec<ChestConfig> CODEC = Codecs.closed(MAP_CODEC);
+
+    /**
+     * This slot with each variant's chest block resolved. #65 phase 6, and the last of the element
+     * slots.
+     *
+     * <p>Only {@code variants[].block} is a block. {@code loot_table} names a loot table, and
+     * {@code LootTableEntry} is shared with {@link ChestLootBand} and the chest marker processor
+     * &mdash; a role there would be a different feature against a different registry, and is not
+     * this one.</p>
+     */
+    public ChestConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<ChestVariant> resolved = null;
+        for (int i = 0; i < variants.size(); i++) {
+            ChestVariant variant = variants.get(i);
+            String block = Codecs.resolveRole(variant.block(), resolver);
+            if (block.equals(variant.block())) {
+                if (resolved != null) {
+                    resolved.add(variant);
+                }
+                continue;
+            }
+            if (resolved == null) {
+                resolved = new java.util.ArrayList<>(variants.subList(0, i));
+            }
+            resolved.add(new ChestVariant(block, variant.weight()));
+        }
+        return resolved == null ? this
+                : new ChestConfig(minCount, maxCount, lootTables, List.copyOf(resolved), gate);
+    }
 
     /**
      * The inclusive count range, normalised. A {@code max_count} below {@code min_count} is authoring

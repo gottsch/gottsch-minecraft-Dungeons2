@@ -526,7 +526,10 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      *
      * <h2>Which slots read a role</h2>
      * <p><strong>{@code pillars} (phase 2), {@code floor} (phase 3), {@code ceiling} and
-     * {@code platforms} (phase 4), {@code wall} (phase 5).</strong> The rest still carry literals and are
+     * {@code platforms} (phase 4), {@code wall} (phase 5), {@code pit} and {@code chests}
+     * (phase 6) &mdash; every element slot that names a block. {@code pots} and
+     * {@code spawners} name entities and loot tables, not blocks, so there is nothing here for
+     * them. What is left is the SHELL, whose fields still carry literals and are
      * untouched here &mdash; and a role written on one of them is a <em>load error</em>, not a
      * silent nothing, because {@code Codecs#BLOCK_ID} rejects it at decode. That is what makes the
      * half-converted state safe to ship, and it is why the list below grows one line at a time
@@ -543,12 +546,15 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         SlotOptions<PlatformPatternEntry> newPlatforms =
                 platforms.map(entry -> entry.withRoles(lookup));
         SlotOptions<WallPatternEntry> newWall = wall.map(entry -> entry.withRoles(lookup));
+        SlotOptions<PitPatternEntry> newPit = pit.map(entry -> entry.withRoles(lookup));
+        SlotOptions<ChestConfig> newChests = chests.map(entry -> entry.withRoles(lookup));
         if (newPillars == pillars && newFloor == floor && newCeiling == ceiling
-                && newPlatforms == platforms && newWall == wall) {
+                && newPlatforms == platforms && newWall == wall && newPit == pit
+                && newChests == chests) {
             return this;
         }
         return new RoomScheme(name, weight, gate, newFloor, newWall, newCeiling, pots, newPillars,
-                newPlatforms, spawners, chests, pit, floors, parent, isAbstract);
+                newPlatforms, spawners, newChests, newPit, floors, parent, isAbstract);
     }
 
     /**

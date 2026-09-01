@@ -275,21 +275,22 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
      * piece per chunk, so {@code MotifConfigHelper} is what says it once, naming the motif.</p>
      */
     private static void checkRoles(MotifConfig motif, Consumer<String> problems) {
-        checkRoles(motif.schemes(), motif.floor(), motif.ceiling(), motif.wall(), motif.corridor(),
-                motif.palette(), "", problems);
+        checkRoles(motif.schemes(), motif.floor(), motif.ceiling(), motif.wall(),
+                motif.corridor(), motif.door(), motif.palette(), "", problems);
         for (Stratum band : motif.strataByFloorIndex()) {
             Map<String, String> palette = new LinkedHashMap<>(motif.palette());
             palette.putAll(band.palette());
             checkRoles(band.schemes().orElse(List.of()), band.floor().orElse(motif.floor()),
                     band.ceiling().orElse(motif.ceiling()), band.wall().orElse(motif.wall()),
-                    band.corridor().orElse(motif.corridor()), palette,
-                    " on the band at floor " + band.minFloorIndex() + " and below", problems);
+                    band.corridor().orElse(motif.corridor()), band.door().orElse(motif.door()),
+                    palette, " on the band at floor " + band.minFloorIndex() + " and below",
+                    problems);
         }
     }
 
     private static void checkRoles(List<RoomScheme> schemes, FloorConfig floor,
                                    CeilingConfig ceiling, WallConfig wall, CorridorConfig corridor,
-                                   Map<String, String> palette, String where,
+                                   DoorConfig door, Map<String, String> palette, String where,
                                    Consumer<String> problems) {
         for (RoomScheme scheme : schemes) {
             scheme.withRoles(reporter("scheme '" + scheme.name() + "'", palette, where, problems));
@@ -304,6 +305,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         // The corridor is the one section that is not a room's at all, and it holds courses in TWO
         // places -- its own list and each named style's.
         corridor.withRoles(reporter("the corridor section", palette, where, problems));
+        door.withRoles(reporter("the door section", palette, where, problems));
     }
 
     private static UnaryOperator<String> reporter(String what, Map<String, String> palette,

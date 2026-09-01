@@ -487,7 +487,7 @@
           // The none-weights are the trap #65 warns about and they are not optional. Without the
           // `none` entry on `floor` the border would draw in 100% of these rooms instead of half,
           // which is exactly how band-level joists reached 55.9% and became the band's look.
-          "name": "mud_timber_pilastered",
+          "name": "mud_pilastered",
           "weight": 8,
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
           "spawners": {

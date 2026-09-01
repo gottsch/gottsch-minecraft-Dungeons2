@@ -77,6 +77,22 @@ import java.util.Optional;
  */
 public record PitPatternEntry(PitShapePattern shape, Optional<String> floorBlock, SizeGate gate) {
 
+    /**
+     * This pit with its own {@code floor_block} and its shape's blocks resolved. #65 phase 6.
+     *
+     * <p>Two levels, because the paving is the entry's and the rim and the spikes are the shape's
+     * &mdash; {@code floor_block} sits beside {@code type} rather than inside {@code config} for the
+     * same reason it always did: it paves the sunken floor whatever shape cut it.</p>
+     */
+    public PitPatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+        PitShapePattern resolvedShape = shape.withRoles(resolver);
+        Optional<String> resolvedFloor = Codecs.resolveRole(floorBlock, resolver);
+        if (resolvedShape == shape && resolvedFloor.equals(floorBlock)) {
+            return this;
+        }
+        return new PitPatternEntry(resolvedShape, resolvedFloor, gate);
+    }
+
     /** An ungated pit of the default shape, paved like the floor around it. */
     public PitPatternEntry() {
         this(new CentrePitShape(), Optional.empty(), SizeGate.UNBOUNDED);
@@ -103,7 +119,7 @@ public record PitPatternEntry(PitShapePattern shape, Optional<String> floorBlock
             // `type` + `config`, dispatched over the pit shape registry. An unregistered id is a
             // LOAD ERROR naming what is registered, not a room that quietly has no pit.
             PitShapeRegistry.MAP_CODEC.forGetter(PitPatternEntry::shape),
-            Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "floor_block").forGetter(PitPatternEntry::floorBlock),
+            Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "floor_block").forGetter(PitPatternEntry::floorBlock),
             SizeGate.MAP_CODEC.forGetter(PitPatternEntry::gate)
     ).apply(instance, PitPatternEntry::new));
 

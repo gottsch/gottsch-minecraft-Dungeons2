@@ -94,14 +94,14 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
      * record being converted is nested one level shallower here than anywhere else. Missing it would
      * have left a role in a corridor course decoding cleanly and drawing nothing.</p>
      *
-     * <p>{@code archBlock} is untouched &mdash; a shell field on {@code Codecs.BLOCK_ID}, phase
-     * 7.</p>
+     * <p>{@code arch_block} came in phase 7 with the rest of the shell materials.</p>
      */
     public CorridorStyle withRoles(java.util.function.UnaryOperator<String> resolver) {
         List<WallPatternEntry.CourseEntry> resolved =
                 WallPatternEntry.CourseEntry.withRoles(courses, resolver);
-        return resolved == courses ? this
-                : new CorridorStyle(name, weight, height, profile, archBlock, narrowHeight,
+        Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
+        return resolved == courses && resolvedArch.equals(archBlock) ? this
+                : new CorridorStyle(name, weight, height, profile, resolvedArch, narrowHeight,
                         resolved);
     }
 
@@ -116,7 +116,7 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                             .forGetter(CorridorStyle::height),
                     Codecs.strictOptionalFieldOf(Profile.CODEC, "profile", Profile.FLAT)
                             .forGetter(CorridorStyle::profile),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "arch_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "arch_block")
                             .forGetter(CorridorStyle::archBlock),
                     Codecs.strictOptionalFieldOf(
                                     Codec.intRange(CorridorConfig.MIN_HEIGHT, CorridorConfig.MAX_HEIGHT),

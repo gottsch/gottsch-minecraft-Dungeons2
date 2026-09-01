@@ -50,7 +50,9 @@ public record CeilingConfig(String ceiling, Optional<CeilingPatternEntry> patter
      */
     public CeilingConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
         Optional<CeilingPatternEntry> resolved = pattern.map(entry -> entry.withRoles(resolver));
-        return resolved.equals(pattern) ? this : new CeilingConfig(ceiling, resolved);
+        String resolvedCeiling = Codecs.resolveRole(ceiling, resolver);
+        return resolved.equals(pattern) && resolvedCeiling.equals(ceiling) ? this
+                : new CeilingConfig(resolvedCeiling, resolved);
     }
 
     /** An undressed ceiling &mdash; the shape every motif had before {@code pattern} existed. */
@@ -61,7 +63,7 @@ public record CeilingConfig(String ceiling, Optional<CeilingPatternEntry> patter
     public static final CeilingConfig DEFAULT = new CeilingConfig("minecraft:stone_bricks");
 
     public static final Codec<CeilingConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codecs.BLOCK_ID.fieldOf("ceiling").forGetter(CeilingConfig::ceiling),
+            Codecs.BLOCK_ID_OR_ROLE.fieldOf("ceiling").forGetter(CeilingConfig::ceiling),
             Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "pattern")
                     .forGetter(CeilingConfig::pattern)
     ).apply(instance, CeilingConfig::new));

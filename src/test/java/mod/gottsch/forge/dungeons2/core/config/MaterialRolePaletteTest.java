@@ -14,29 +14,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 phase 1 &mdash; the material-role palette exists and is validated, and <strong>no block field
- * reads a role yet</strong>.
+ * #65 &mdash; the material-role palette: how it is declared, merged, overlaid and validated.
  *
- * <p>Two halves, and the second is the one that earns the phase. The palette itself is inert: a
- * motif may declare roles, a band may overlay them, and nothing resolves against either. What makes
- * shipping that alone safe is {@link Codecs#BLOCK_ID}, installed on <em>every</em> block-valued
- * field up front &mdash; because roles arrive one record at a time, and a record that does not read
- * one yet would otherwise hand {@code "$shaft"} to {@code BlockStateCodec#blockOrNull}, get
- * {@code null} back, and draw <strong>nothing</strong>. No error, no log line, a dressed wall coming
- * out plain, and only in the half-converted state where nobody is looking. Rejecting a role
- * everywhere first means that state cannot exist.</p>
+ * <p>Phase 1 shipped the palette with <strong>no consumers</strong>, and put
+ * {@link Codecs#BLOCK_ID} on every block field in reject mode to make that safe: roles arrived one
+ * record at a time, and an unconverted field would otherwise have handed {@code "$shaft"} to
+ * {@code BlockStateCodec#blockOrNull}, got {@code null} back, and drawn <strong>nothing</strong> --
+ * no error, no log line, a dressed wall coming out plain, and only in the half-converted state where
+ * nobody is looking. That state is over; the reasoning is kept because it is why the phases could be
+ * shipped one at a time at all.</p>
  *
- * <p>{@link #everyBlockFieldRejectsARole} is therefore exhaustive rather than representative: every
- * field that has NOT yet been converted, named one at a time. A field added later that forgets
- * {@code BLOCK_ID} is a hole this test is the only thing watching for.</p>
- *
- * <p><strong>The two lists are the phase boundary.</strong> Converting a record moves its fields
- * from {@link #everyBlockFieldRejectsARole} to
- * one of the {@code MaterialRoles*Test} classes &mdash; <strong>17 still reject, 32 accept</strong>
- * (3 pillar in phase 2, 9 floor in phase 3, 6 ceiling + 4 platform in phase 4, 10 wall in
- * phase 5). What is left is the pit and chest slots (phase 6) and the shell and corridor
- * fields (phase 7, which may never be worth doing).
- * Nothing else tracks which records have been converted, and nothing else needs to.</p>
+ * <p><strong>As of phase 7 this class is history plus one live rule.</strong> All forty-nine block
+ * fields accept a role; the exhaustive rejection list this test used to hold is gone, replaced by
+ * {@link #everyBlockFieldNowAcceptsARoleAndOnlyThePaletteRejectsOne}, which pins the inverse. The
+ * palette's own validation is the part that still matters day to day, and it is all above.</p>
  */
 class MaterialRolePaletteTest {
 
@@ -158,56 +149,73 @@ class MaterialRolePaletteTest {
                 "{\"palette\": {\"shaft\": \"$footing\"}}").contains("$footing"));
     }
 
-    // ---- reject mode: no block field reads a role yet --------------------------------------------
+    // ---- reject mode, now down to one user ------------------------------------------------------
 
     /**
-     * All forty-nine block-valued fields across twenty-six records, one at a time. Exhaustive on
-     * purpose &mdash; see the class doc: a field that misses {@code BLOCK_ID} fails silently and
-     * only while the conversion is half done, so there is no later moment at which this gets caught.
+     * <strong>Reject mode has exactly one user left, and it is not a record field.</strong>
+     *
+     * <p>Phases 2-7 converted all forty-nine block fields, so this test replaces the exhaustive
+     * rejection list it used to hold. What that list guarded was the half-converted state: a field
+     * still on {@link Codecs#BLOCK_ID} would hand {@code "$shaft"} to
+     * {@code BlockStateCodec#blockOrNull} and draw nothing. There is no half-converted state now,
+     * so the guard inverts &mdash; a NEW field added on {@code BLOCK_ID} would be the inconsistency,
+     * and an author would have to remember that one field of forty-nine is special.</p>
+     *
+     * <p>The one place reject mode still belongs is a palette VALUE: a role resolving to another
+     * role is indirection nobody asked for and a cycle nothing checks. {@link #aPaletteValueThatIsItselfARoleIsALoadError}
+     * covers that, and this test states the rule the codebase now holds to.</p>
      */
     @Test
-    void everyBlockFieldRejectsARole() {
-        // floor patterns (5 records, 9 fields) are CONVERTED -- phase 3. See
-        // MaterialRolesFloorTest; the move of those nine lines out of this list is the phase.
+    void everyBlockFieldNowAcceptsARoleAndOnlyThePaletteRejectsOne() {
+        // One representative per converted family. The exhaustive per-field coverage lives in the
+        // MaterialRoles*Test classes, which assert the substitution as well as the decode.
+        decodes(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:cross\",\"config\":{\"block\":\"$r\"}}");
+        decodes(WallPatternEntry.CourseEntry.CODEC, "{\"block\":\"$r\"}");
+        decodes(CeilingPatternEntry.SurfacePatternEntry.CODEC,
+                "{\"type\":\"dungeons2:coffers\",\"config\":{\"block\":\"$r\"}}");
+        decodes(PillarPatternEntry.PillarEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"block\":\"$r\"}");
+        decodes(PlatformPatternEntry.PlatformEntry.CODEC,
+                "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"$r\"}");
+        decodes(PitPatternEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"floor_block\":\"$r\"}");
+        decodes(ChestConfig.CODEC, "{\"variants\":[{\"block\":\"$r\"}]}");
+        // ...and the shell, phase 7.
+        decodes(WallConfig.CODEC, "{\"wall\":\"$r\"}");
+        decodes(CeilingConfig.CODEC, "{\"ceiling\":\"$r\"}");
+        decodes(FloorConfig.CODEC, "{\"base\":\"$r\",\"alternate_base\":\"$r\"}");
+        decodes(DoorConfig.CODEC,
+                "{\"door\":\"$r\",\"lintel\":\"$r\",\"floor\":\"$r\"}");
+        decodes(CorridorConfig.CODEC,
+                "{\"floor\":\"$r\",\"alternate_floor\":\"$r\",\"ceiling\":\"$r\"}");
+        decodes(CorridorStyle.CODEC, "{\"name\":\"s\",\"profile\":\"arched\",\"height\":7,\"arch_block\":\"$r\"}");
 
-        // wall patterns (10 fields across PilasterShape, CourseEntry, Panels, Diamond and
-        // Gradient) are CONVERTED -- phase 5. See MaterialRolesWallTest.
-
-        // ceiling patterns (4 records, 6 fields) and platforms (1 record, 4 fields) are
-        // CONVERTED -- phase 4. See MaterialRolesCeilingAndPlatformsTest.
-
-        // pillars (3) are CONVERTED -- phase 2. See acceptsARoleOnEveryConvertedField below; the
-        // move of these three lines from this list to that one is what a phase IS.
-
-        // pit (3 records, 4 fields)
-        rejects(PitPatternEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"floor_block\":\"$r\"}");
-        rejects(PitPatternEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"config\":{\"rim_block\":\"$r\"}}");
-        rejects(PitPatternEntry.CODEC, "{\"type\":\"dungeons2:hazard\",\"config\":{\"spike_block\":\"$r\"}}");
-        rejects(PitPatternEntry.CODEC, "{\"type\":\"dungeons2:hazard\",\"config\":{\"rim_block\":\"$r\"}}");
-
-        // chest variant (1)
-        rejects(ChestConfig.CODEC, "{\"variants\":[{\"block\":\"$r\"}]}");
-
-        // the shell and the corridor (12) -- phase 7, but guarded from now
-        rejects(WallConfig.CODEC, "{\"wall\":\"$r\"}");
-        rejects(CeilingConfig.CODEC, "{\"ceiling\":\"$r\"}");
-        rejects(FloorConfig.CODEC, "{\"base\":\"$r\",\"alternate_base\":\"minecraft:stone\"}");
-        rejects(FloorConfig.CODEC, "{\"base\":\"minecraft:stone\",\"alternate_base\":\"$r\"}");
-        rejects(DoorConfig.CODEC, "{\"door\":\"$r\",\"lintel\":\"minecraft:stone\",\"floor\":\"minecraft:stone\"}");
-        rejects(DoorConfig.CODEC, "{\"door\":\"minecraft:oak_door\",\"lintel\":\"$r\",\"floor\":\"minecraft:stone\"}");
-        rejects(DoorConfig.CODEC, "{\"door\":\"minecraft:oak_door\",\"lintel\":\"minecraft:stone\",\"floor\":\"$r\"}");
-        rejects(CorridorConfig.CODEC, "{\"floor\":\"$r\",\"alternate_floor\":\"minecraft:stone\",\"ceiling\":\"minecraft:stone\"}");
-        rejects(CorridorConfig.CODEC, "{\"floor\":\"minecraft:stone\",\"alternate_floor\":\"$r\",\"ceiling\":\"minecraft:stone\"}");
-        rejects(CorridorConfig.CODEC, "{\"floor\":\"minecraft:stone\",\"alternate_floor\":\"minecraft:stone\",\"ceiling\":\"$r\"}");
-        rejects(CorridorConfig.CODEC, "{\"floor\":\"minecraft:stone\",\"alternate_floor\":\"minecraft:stone\",\"ceiling\":\"minecraft:stone\",\"profile\":\"arched\",\"arch_block\":\"$r\"}");
-        rejects(CorridorStyle.CODEC, "{\"name\":\"s\",\"profile\":\"arched\",\"arch_block\":\"$r\"}");
+        // The one remaining rejection, and the reason it stays.
+        assertTrue(parse(MotifConfigFragment.CODEC,
+                "{\"palette\": {\"shaft\": \"$footing\"}}").error().isPresent(),
+                "a palette value must be a literal; a role pointing at a role is a cycle "
+                        + "nothing checks");
     }
 
-    /** The error has to name the role, or the author is hunting a string across a large file. */
+    private static <A> void decodes(Codec<A> codec, String json) {
+        DataResult<A> result = parse(codec, json);
+        assertTrue(result.result().isPresent(),
+                () -> "every block field accepts a role since phase 7, but this did not: "
+                        + result.error().map(DataResult.PartialResult::message).orElse("")
+                        + " -- " + json);
+    }
+
+    /**
+     * The error has to name the role, or the author is hunting a string across a large file.
+     *
+     * <p>Pointed at a palette VALUE since phase 7. It used to test a shell field
+     * ({@code "wall": "$shaft"}), which was the last kind of field still in reject mode; that field
+     * now accepts a role like every other, so the assertion moved to the one place rejection
+     * remains rather than being deleted.</p>
+     */
     @Test
     void theRejectionNamesTheRoleAndSaysWhy() {
-        String message = errorOf(WallConfig.CODEC, "{\"wall\":\"$shaft\"}");
-        assertTrue(message.contains("$shaft"), () -> message);
+        String message = errorOf(MotifConfigFragment.CODEC,
+                "{\"palette\": {\"shaft\": \"$footing\"}}");
+        assertTrue(message.contains("$footing"), () -> message);
         assertTrue(message.contains("material role"), () -> message);
         assertTrue(message.contains("literal block id"), () -> "and say what to write instead: " + message);
     }
@@ -215,7 +223,8 @@ class MaterialRolePaletteTest {
     /** Whitespace does not smuggle one past: {@code blockOrNull} trims, so this check must too. */
     @Test
     void aRoleWithLeadingWhitespaceIsStillRejected() {
-        assertTrue(parse(WallConfig.CODEC, "{\"wall\":\"  $shaft\"}").error().isPresent());
+        assertTrue(parse(MotifConfigFragment.CODEC,
+                "{\"palette\": {\"shaft\": \"  $footing\"}}").error().isPresent());
     }
 
     /** And the whole point of reject mode is that literals are untouched. */
