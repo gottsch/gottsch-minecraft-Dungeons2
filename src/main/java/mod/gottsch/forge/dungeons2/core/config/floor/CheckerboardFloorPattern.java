@@ -32,10 +32,23 @@ public record CheckerboardFloorPattern(String primaryBlock, String secondaryBloc
 
     public static final String NAME = "checkerboard";
 
+    /** See {@link FloorPattern#withRoles}. */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedPrimaryBlock = Codecs.resolveRole(primaryBlock, resolver);
+        String resolvedSecondaryBlock = Codecs.resolveRole(secondaryBlock, resolver);
+        if (resolvedPrimaryBlock.equals(primaryBlock)
+                && resolvedSecondaryBlock.equals(secondaryBlock)) {
+            return this;
+        }
+        return new CheckerboardFloorPattern(resolvedPrimaryBlock, resolvedSecondaryBlock);
+    }
+
+
     public static final MapCodec<CheckerboardFloorPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("primary_block").forGetter(CheckerboardFloorPattern::primaryBlock),
-                    Codecs.BLOCK_ID.fieldOf("secondary_block").forGetter(CheckerboardFloorPattern::secondaryBlock)
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("primary_block").forGetter(CheckerboardFloorPattern::primaryBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("secondary_block").forGetter(CheckerboardFloorPattern::secondaryBlock)
             ).apply(instance, CheckerboardFloorPattern::new)));
 
     @Override

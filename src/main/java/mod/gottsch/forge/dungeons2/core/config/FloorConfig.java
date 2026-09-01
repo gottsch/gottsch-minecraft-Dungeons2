@@ -67,6 +67,24 @@ import java.util.Optional;
  */
 public record FloorConfig(String base, String alternateBase, Optional<FloorPatternEntry> pattern) {
 
+    /**
+     * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 3.
+     *
+     * <p>A {@link FloorPatternEntry} lives in <strong>two</strong> places &mdash; a scheme's
+     * {@code floor} slot and this section's {@code pattern} &mdash; and converting the record made
+     * a role authorable in both at once. Walking only the schemes would have left a role written
+     * here decoding cleanly and then drawing nothing, which is exactly the silent hole the whole
+     * phased approach exists to avoid. The mud band ships a {@code speckle} here, so this is not a
+     * hypothetical path.</p>
+     *
+     * <p>{@code base} and {@code alternateBase} are untouched: they are shell fields, still on
+     * {@code Codecs.BLOCK_ID}, and belong to phase 7 if they are ever worth converting at all.</p>
+     */
+    public FloorConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
+        Optional<FloorPatternEntry> resolved = pattern.map(entry -> entry.withRoles(resolver));
+        return resolved.equals(pattern) ? this : new FloorConfig(base, alternateBase, resolved);
+    }
+
     /** An undressed floor &mdash; the shape every motif had before {@code pattern} existed. */
     public FloorConfig(String base, String alternateBase) {
         this(base, alternateBase, Optional.empty());

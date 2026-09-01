@@ -34,6 +34,17 @@ public record CrossFloorPattern(int thickness, String block) implements FloorPat
 
     public static final String NAME = "cross";
 
+    /** See {@link FloorPattern#withRoles}. */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        if (resolvedBlock.equals(block)) {
+            return this;
+        }
+        return new CrossFloorPattern(thickness, resolvedBlock);
+    }
+
+
     public static final MapCodec<CrossFloorPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "thickness",
@@ -42,7 +53,7 @@ public record CrossFloorPattern(int thickness, String block) implements FloorPat
                     // `block`, not `primaryBlock`. The flat record reused primaryBlock across four
                     // unrelated patterns because it had only one set of slots to spend; each type
                     // now names its own field, so it can name it after what it actually is.
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(CrossFloorPattern::block)
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(CrossFloorPattern::block)
             ).apply(instance, CrossFloorPattern::new)));
 
     @Override

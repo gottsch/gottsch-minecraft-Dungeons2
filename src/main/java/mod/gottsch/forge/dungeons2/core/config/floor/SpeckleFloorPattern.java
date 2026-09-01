@@ -40,13 +40,26 @@ public record SpeckleFloorPattern(String primaryBlock, String secondaryBlock, do
 
     public static final String NAME = "speckle";
 
+    /** See {@link FloorPattern#withRoles}. */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedPrimaryBlock = Codecs.resolveRole(primaryBlock, resolver);
+        String resolvedSecondaryBlock = Codecs.resolveRole(secondaryBlock, resolver);
+        if (resolvedPrimaryBlock.equals(primaryBlock)
+                && resolvedSecondaryBlock.equals(secondaryBlock)) {
+            return this;
+        }
+        return new SpeckleFloorPattern(resolvedPrimaryBlock, resolvedSecondaryBlock, probability);
+    }
+
+
     public static final MapCodec<SpeckleFloorPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     // Required, and that is new. Under the old flat record every block slot had to
                     // be optional because every other pattern's slots were absent by design, so a
                     // speckle entry missing its base degraded silently to plain floor.
-                    Codecs.BLOCK_ID.fieldOf("primary_block").forGetter(SpeckleFloorPattern::primaryBlock),
-                    Codecs.BLOCK_ID.fieldOf("secondary_block").forGetter(SpeckleFloorPattern::secondaryBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("primary_block").forGetter(SpeckleFloorPattern::primaryBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("secondary_block").forGetter(SpeckleFloorPattern::secondaryBlock),
                     // Keeps its own default: it is a pattern-shape knob, not a material, and 0
                     // legitimately means "the accent never appears".
                     Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0, 1.0), "probability",

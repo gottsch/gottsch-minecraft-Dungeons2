@@ -34,12 +34,23 @@ public record SpokesFloorPattern(int spokes, String block) implements FloorPatte
 
     public static final String NAME = "spokes";
 
+    /** See {@link FloorPattern#withRoles}. */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        if (resolvedBlock.equals(block)) {
+            return this;
+        }
+        return new SpokesFloorPattern(spokes, resolvedBlock);
+    }
+
+
     public static final MapCodec<SpokesFloorPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spokes",
                                     RadialSpokesFloorPatternProvider.DEFAULT_SPOKES)
                             .forGetter(SpokesFloorPattern::spokes),
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(SpokesFloorPattern::block)
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(SpokesFloorPattern::block)
             ).apply(instance, SpokesFloorPattern::new)));
 
     @Override

@@ -50,6 +50,39 @@ public record CompositeFloorPattern(List<FloorPattern> generators) implements Fl
     public static final String NAME = "composite";
 
     /**
+     * <strong>The one recursion in the role walk.</strong> A composite holds other patterns, so it
+     * resolves by asking each of them &mdash; including, legally, another composite.
+     *
+     * <p>There is no depth guard and none is needed: the nesting is finite because the JSON is, and
+     * a cycle is unrepresentable because these records are immutable and built bottom-up by the
+     * codec. Worth stating rather than leaving the reader to work out, since "recursive walk over
+     * datapack input" normally is the place a guard belongs.</p>
+     *
+     * <p>Returns {@code this} when no generator changed, so a composite of literals is not rebuilt
+     * and neither is the list inside it.</p>
+     */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<FloorPattern> resolved = null;
+        for (int i = 0; i < generators.size(); i++) {
+            FloorPattern generator = generators.get(i);
+            FloorPattern mapped = generator.withRoles(resolver);
+            if (mapped == generator) {
+                if (resolved != null) {
+                    resolved.add(generator);
+                }
+                continue;
+            }
+            if (resolved == null) {
+                resolved = new java.util.ArrayList<>(generators.subList(0, i));
+            }
+            resolved.add(mapped);
+        }
+        return resolved == null ? this : new CompositeFloorPattern(List.copyOf(resolved));
+    }
+
+
+    /**
      * Self-referential, so the element codec has to be deferred: a plain {@code () ->
      * FloorPatternRegistry.CODEC} would be fine at runtime but javac rejects the forward
      * self-reference, and this project's {@code datafixerupper} predates

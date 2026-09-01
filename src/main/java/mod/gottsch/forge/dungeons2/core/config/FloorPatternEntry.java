@@ -57,6 +57,12 @@ public record FloorPatternEntry(FloorPattern pattern, SizeGate gate) {
         this(pattern, SizeGate.UNBOUNDED);
     }
 
+    /** See {@code FloorPattern#withRoles}. Returns {@code this} when the pattern named no role. */
+    public FloorPatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+        FloorPattern resolved = pattern.withRoles(resolver);
+        return resolved == pattern ? this : new FloorPatternEntry(resolved, gate);
+    }
+
     /** The undecorated floor, ungated. */
     public static final FloorPatternEntry PLAIN = new FloorPatternEntry(PlainFloorPattern.INSTANCE);
 

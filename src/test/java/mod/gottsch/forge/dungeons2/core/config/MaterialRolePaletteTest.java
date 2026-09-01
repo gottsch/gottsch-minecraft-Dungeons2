@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><strong>The two lists are the phase boundary.</strong> Converting a record moves its fields
  * from {@link #everyBlockFieldRejectsARole} to
- * {@link MaterialRolesPillarsTest} &mdash; 46 still reject, 3 (the pillar slot, phase 2) accept.
+ * {@link MaterialRolesPillarsTest} or {@link MaterialRolesFloorTest} &mdash; 37 still reject,
+ * 12 accept (3 for the pillar slot in phase 2, 9 for the floor slot in phase 3).
  * Nothing else tracks which records have been converted, and nothing else needs to.</p>
  */
 class MaterialRolePaletteTest {
@@ -164,16 +165,8 @@ class MaterialRolePaletteTest {
      */
     @Test
     void everyBlockFieldRejectsARole() {
-        // floor patterns (5 records, 9 fields)
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:border\",\"config\":{\"corner_block\":\"$r\",\"edge_left_block\":\"minecraft:stone\",\"edge_right_block\":\"minecraft:stone\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:border\",\"config\":{\"corner_block\":\"minecraft:stone\",\"edge_left_block\":\"$r\",\"edge_right_block\":\"minecraft:stone\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:border\",\"config\":{\"corner_block\":\"minecraft:stone\",\"edge_left_block\":\"minecraft:stone\",\"edge_right_block\":\"$r\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:checkerboard\",\"config\":{\"primary_block\":\"$r\",\"secondary_block\":\"minecraft:stone\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:checkerboard\",\"config\":{\"primary_block\":\"minecraft:stone\",\"secondary_block\":\"$r\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:speckle\",\"config\":{\"primary_block\":\"$r\",\"secondary_block\":\"minecraft:stone\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:speckle\",\"config\":{\"primary_block\":\"minecraft:stone\",\"secondary_block\":\"$r\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:cross\",\"config\":{\"block\":\"$r\"}}");
-        rejects(FloorPatternEntry.CODEC, "{\"type\":\"dungeons2:spokes\",\"config\":{\"block\":\"$r\"}}");
+        // floor patterns (5 records, 9 fields) are CONVERTED -- phase 3. See
+        // MaterialRolesFloorTest; the move of those nine lines out of this list is the phase.
 
         // wall patterns (4 records, 8 fields) -- pilasters and end_pilasters share PilasterShape
         rejects(WallPatternEntry.PatternEntry.CODEC, "{\"type\":\"dungeons2:panels\",\"config\":{\"block\":\"$r\"}}");

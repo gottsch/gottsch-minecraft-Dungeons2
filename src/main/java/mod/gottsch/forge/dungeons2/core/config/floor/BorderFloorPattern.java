@@ -39,14 +39,29 @@ public record BorderFloorPattern(int inset, String cornerBlock, String edgeLeftB
 
     public static final String NAME = "border";
 
+    /** See {@link FloorPattern#withRoles}. */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedCornerBlock = Codecs.resolveRole(cornerBlock, resolver);
+        String resolvedEdgeLeftBlock = Codecs.resolveRole(edgeLeftBlock, resolver);
+        String resolvedEdgeRightBlock = Codecs.resolveRole(edgeRightBlock, resolver);
+        if (resolvedCornerBlock.equals(cornerBlock)
+                && resolvedEdgeLeftBlock.equals(edgeLeftBlock)
+                && resolvedEdgeRightBlock.equals(edgeRightBlock)) {
+            return this;
+        }
+        return new BorderFloorPattern(inset, resolvedCornerBlock, resolvedEdgeLeftBlock, resolvedEdgeRightBlock);
+    }
+
+
     public static final MapCodec<BorderFloorPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                                     FloorBorderPatternProvider.DEFAULT_INSET)
                             .forGetter(BorderFloorPattern::inset),
-                    Codecs.BLOCK_ID.fieldOf("corner_block").forGetter(BorderFloorPattern::cornerBlock),
-                    Codecs.BLOCK_ID.fieldOf("edge_left_block").forGetter(BorderFloorPattern::edgeLeftBlock),
-                    Codecs.BLOCK_ID.fieldOf("edge_right_block").forGetter(BorderFloorPattern::edgeRightBlock)
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("corner_block").forGetter(BorderFloorPattern::cornerBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("edge_left_block").forGetter(BorderFloorPattern::edgeLeftBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("edge_right_block").forGetter(BorderFloorPattern::edgeRightBlock)
             ).apply(instance, BorderFloorPattern::new)));
 
     @Override

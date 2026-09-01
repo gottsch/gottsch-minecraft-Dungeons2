@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * One <em>file</em> of a motif. Several of these fold into the single {@link MotifConfig} a motif
@@ -274,29 +275,39 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
      * piece per chunk, so {@code MotifConfigHelper} is what says it once, naming the motif.</p>
      */
     private static void checkRoles(MotifConfig motif, Consumer<String> problems) {
-        checkRoles(motif.schemes(), motif.palette(), "", problems);
+        checkRoles(motif.schemes(), motif.floor(), motif.palette(), "", problems);
         for (Stratum band : motif.strataByFloorIndex()) {
             Map<String, String> palette = new LinkedHashMap<>(motif.palette());
             palette.putAll(band.palette());
-            checkRoles(band.schemes().orElse(List.of()), palette,
-                    " on the band at floor " + band.minFloorIndex() + " and below", problems);
+            checkRoles(band.schemes().orElse(List.of()), band.floor().orElse(motif.floor()),
+                    palette, " on the band at floor " + band.minFloorIndex() + " and below",
+                    problems);
         }
     }
 
-    private static void checkRoles(List<RoomScheme> schemes, Map<String, String> palette,
-                                   String where, Consumer<String> problems) {
+    private static void checkRoles(List<RoomScheme> schemes, FloorConfig floor,
+                                   Map<String, String> palette, String where,
+                                   Consumer<String> problems) {
         for (RoomScheme scheme : schemes) {
-            scheme.withRoles(role -> {
-                if (!palette.containsKey(role)) {
-                    problems.accept("scheme '" + scheme.name() + "'" + where + " names the material"
-                            + " role '$" + role + "', which no palette in scope declares."
-                            + (palette.isEmpty()
-                                    ? " No palette is declared at all."
-                                    : " Declared roles: " + String.join(", ", palette.keySet())));
-                }
-                return palette.getOrDefault(role, role);
-            });
+            scheme.withRoles(reporter("scheme '" + scheme.name() + "'", palette, where, problems));
         }
+        // The section's own pattern, which is NOT a scheme's -- a FloorPatternEntry lives in both
+        // places, so a role written here has to be checked even by a motif with no schemes at all.
+        floor.withRoles(reporter("the floor section", palette, where, problems));
+    }
+
+    private static UnaryOperator<String> reporter(String what, Map<String, String> palette,
+                                                  String where, Consumer<String> problems) {
+        return role -> {
+            if (!palette.containsKey(role)) {
+                problems.accept(what + where + " names the material role '$" + role
+                        + "', which no palette in scope declares."
+                        + (palette.isEmpty()
+                                ? " No palette is declared at all."
+                                : " Declared roles: " + String.join(", ", palette.keySet())));
+            }
+            return palette.getOrDefault(role, role);
+        };
     }
 
     /**

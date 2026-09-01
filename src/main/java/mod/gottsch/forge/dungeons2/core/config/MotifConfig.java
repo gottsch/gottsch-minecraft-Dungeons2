@@ -239,7 +239,8 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         stratum.ceiling().orElse(ceiling),
                         stratum.door().orElse(door),
                         stratum.corridor().orElse(corridor),
-                        stratum.floor().orElse(floor),
+                        stratum.floor().orElse(floor)
+                                .withRoles(lookup(overlay(palette, stratum.palette()))),
                         withRoles(mergeSchemes(stratum), overlay(palette, stratum.palette())),
                         mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
                         List.of(),
@@ -262,11 +263,14 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     /** {@link #forFloor}'s no-band paths: the motif's own palette, applied to its own schemes. */
     private static MotifConfig withPalette(MotifConfig motif, Map<String, String> palette) {
         List<RoomScheme> resolved = withRoles(motif.schemes(), palette);
-        return resolved == motif.schemes() ? motif
-                : new MotifConfig(motif.wall(), motif.ceiling(), motif.door(), motif.corridor(),
-                        motif.floor(), resolved, motif.mobSetsByFloorIndex(),
-                        motif.chestLootByFloorIndex(), motif.templateLimits(),
-                        motif.strataByFloorIndex(), palette);
+        FloorConfig resolvedFloor = motif.floor().withRoles(lookup(palette));
+        if (resolved == motif.schemes() && resolvedFloor == motif.floor()) {
+            return motif;
+        }
+        return new MotifConfig(motif.wall(), motif.ceiling(), motif.door(), motif.corridor(),
+                resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
+                motif.chestLootByFloorIndex(), motif.templateLimits(),
+                motif.strataByFloorIndex(), palette);
     }
 
     /**
@@ -292,9 +296,16 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         if (palette.isEmpty()) {
             return schemes;
         }
-        return schemes.stream()
-                .map(scheme -> scheme.withRoles(role -> palette.getOrDefault(role, "$" + role)))
-                .toList();
+        return schemes.stream().map(scheme -> scheme.withRoles(lookup(palette))).toList();
+    }
+
+    /**
+     * The palette as a resolver. An undeclared role comes back as the {@code $name} it went in as,
+     * which draws nothing &mdash; a state {@code MotifConfigFragment} has already reported the pack
+     * for, since it validates every role in every band at load over this same walk.
+     */
+    private static java.util.function.UnaryOperator<String> lookup(Map<String, String> palette) {
+        return role -> palette.getOrDefault(role, "$" + role);
     }
 
     /**

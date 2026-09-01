@@ -525,7 +525,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * reach, the check can see.</p>
      *
      * <h2>Which slots read a role</h2>
-     * <p><strong>{@code pillars} only, so far.</strong> The rest still carry literals and are
+     * <p><strong>{@code pillars} (phase 2) and {@code floor} (phase 3).</strong> The rest still carry literals and are
      * untouched here &mdash; and a role written on one of them is a <em>load error</em>, not a
      * silent nothing, because {@code Codecs#BLOCK_ID} rejects it at decode. That is what makes the
      * half-converted state safe to ship, and it is why the list below grows one line at a time
@@ -536,13 +536,13 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      */
     public RoomScheme withRoles(Function<String, String> resolver) {
         java.util.function.UnaryOperator<String> lookup = resolver::apply;
-        SlotOptions<PillarPatternEntry> resolved =
-                pillars.map(entry -> entry.withRoles(lookup));
-        if (resolved == pillars) {
+        SlotOptions<PillarPatternEntry> newPillars = pillars.map(entry -> entry.withRoles(lookup));
+        SlotOptions<FloorPatternEntry> newFloor = floor.map(entry -> entry.withRoles(lookup));
+        if (newPillars == pillars && newFloor == floor) {
             return this;
         }
-        return new RoomScheme(name, weight, gate, floor, wall, ceiling, pots, resolved, platforms,
-                spawners, chests, pit, floors, parent, isAbstract);
+        return new RoomScheme(name, weight, gate, newFloor, wall, ceiling, pots, newPillars,
+                platforms, spawners, chests, pit, floors, parent, isAbstract);
     }
 
     /**

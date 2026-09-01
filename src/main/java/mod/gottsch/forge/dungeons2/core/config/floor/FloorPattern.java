@@ -58,6 +58,26 @@ public interface FloorPattern {
     MapCodec<? extends FloorPattern> codec();
 
     /**
+     * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
+     * scope names. #65 phase 3.
+     *
+     * <p><strong>A default rather than an abstract method, and that is an API decision.</strong>
+     * {@link mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry} is open to other
+     * mods on purpose, so adding an abstract method here would break every third-party pattern on
+     * upgrade. The default is safe for them for the same reason it would be safe for a new
+     * first-party type that forgot to override: a block field only ever carries a role if its codec
+     * is {@code Codecs.BLOCK_ID_OR_ROLE}, and the default is {@code Codecs.BLOCK_ID}, which rejects
+     * one at load. Forgetting to override therefore costs an author a load error, not a floor that
+     * silently comes out blank.</p>
+     *
+     * <p>Implementations must return {@code this} when nothing changed. This runs on the per-piece
+     * path (see {@code MotifConfig#forFloor}), so the common case has to allocate nothing.</p>
+     */
+    default FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        return this;
+    }
+
+    /**
      * The generator that draws this pattern.
      *
      * @param config the motif or stratum's floor materials, for the patterns that fill their
