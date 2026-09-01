@@ -1,4 +1,32 @@
 {
+  // ===============================================================================================
+  // THE MATERIAL PALETTE (#65). A pattern may write "$shaft" where a block id goes, and it resolves
+  // against this map -- overlaid by the band's own -- so one authored scheme paints itself in
+  // whatever the depth is built from. See the Room Schemes Manual.
+  //
+  // Every role here is DERIVED from what this file already said rather than invented: these are the
+  // ids that recur across the schemes below. The mud band overrides FOUR of them, which is the whole
+  // argument for the feature: four lines repaint a floor.
+  //
+  // A role resolves at BUILD time against the palette in scope, and a role no palette declares is a
+  // load error naming the scheme. Values here are always literal ids -- a role pointing at a role is
+  // a cycle nothing checks, and is rejected.
+  //
+  // NOT every literal below has been converted to a role yet. A scheme that can roll on FLOOR 0
+  // meets the mud band's palette there, so converting it would repaint it -- which is a look to
+  // choose, not a migration to run. Those schemes still name their blocks outright.
+  // ===============================================================================================
+  "palette": {
+    "shaft": "dungeonblocks:stone_bricks_pillar_block",
+    "footing": "dungeonblocks:stone_bricks_pillar_base_block",
+    "stair": "minecraft:stone_brick_stairs",
+    "corbel": "dungeonblocks:polished_andesite_corbel_block",
+    "inlay": "minecraft:polished_andesite",
+    "inlay_alt": "minecraft:andesite",
+    "ornament": "minecraft:chiseled_stone_bricks",
+    "plinth_left": "dungeonblocks:left_large_stone_brick",
+    "plinth_right": "dungeonblocks:right_large_stone_brick"
+  },
   "wall": {
     "wall": "minecraft:stone_bricks"
   },
@@ -364,7 +392,7 @@
             "type": "dungeons2:border",
             "projection": 2,
             "config": {
-              "block": "minecraft:stone_brick_stairs",
+              "block": "$stair",
               "inset": 0,
               "orient": "outward",
               "properties": {
@@ -384,7 +412,7 @@
             "type": "dungeons2:border",
             "projection": 1,
             "config": {
-              "block": "minecraft:stone_brick_stairs",
+              "block": "$stair",
               "inset": 1,
               "orient": "outward",
               "properties": {
@@ -401,8 +429,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -482,7 +510,7 @@
             "type": "dungeons2:border",
             "projection": 3,
             "config": {
-              "block": "minecraft:stone_brick_stairs",
+              "block": "$stair",
               "inset": 0,
               "orient": "outward",
               "properties": { "half": "top" }
@@ -502,7 +530,7 @@
             "type": "dungeons2:border",
             "projection": 2,
             "config": {
-              "block": "minecraft:stone_brick_stairs",
+              "block": "$stair",
               "inset": 1,
               "orient": "outward",
               "properties": { "half": "top" }
@@ -517,7 +545,7 @@
             "type": "dungeons2:border",
             "projection": 1,
             "config": {
-              "block": "minecraft:stone_brick_stairs",
+              "block": "$stair",
               "inset": 2,
               "orient": "outward",
               "properties": { "half": "top" }
@@ -532,8 +560,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -626,8 +654,8 @@
             "type": "dungeons2:joists",
             "projection": 1,
             "config": {
-              "block": "minecraft:polished_andesite",
-              "bracket_block": "dungeonblocks:polished_andesite_corbel_block",
+              "block": "$inlay",
+              "bracket_block": "$corbel",
               "orient": "inward",
               "spacing": 3
             }
@@ -662,8 +690,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -711,8 +739,8 @@
             "type": "dais",
             "layout": "dungeons2:centre",
             "block": "minecraft:stone_bricks",
-            "stair_block": "minecraft:stone_brick_stairs",
-            "centre_block": "minecraft:chiseled_stone_bricks",
+            "stair_block": "$stair",
+            "centre_block": "$ornament",
             // `size` is the DAIS's own side and stays on the entry; `inset` is pure
             // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
@@ -734,8 +762,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -753,9 +781,9 @@
           {
             "type": "dungeons2:pilasters",
             "config": {
-              "block": "dungeonblocks:stone_bricks_pillar_block",
-              "base_block": "dungeonblocks:stone_bricks_pillar_base_block",
-              "cap_block": "dungeonblocks:stone_bricks_pillar_base_block",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
               "base_properties": {
                 "base": "up"
               },
@@ -769,9 +797,9 @@
           {
             "type": "dungeons2:end_pilasters",
             "config": {
-              "block": "dungeonblocks:stone_bricks_pillar_block",
-              "base_block": "dungeonblocks:stone_bricks_pillar_base_block",
-              "cap_block": "dungeonblocks:stone_bricks_pillar_base_block",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
               "base_properties": {
                 "base": "up"
               },
@@ -821,9 +849,9 @@
         "patterns": [
           {
             "type": "dungeons2:grid",
-            "block": "dungeonblocks:stone_bricks_pillar_block",
-            "base_block": "dungeonblocks:stone_bricks_pillar_base_block",
-            "cap_block": "dungeonblocks:stone_bricks_pillar_base_block",
+            "block": "$shaft",
+            "base_block": "$footing",
+            "cap_block": "$footing",
             "base_properties": {
               "base": "up"
             },
@@ -848,8 +876,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -882,9 +910,9 @@
         "patterns": [
           {
             "type": "dungeons2:colonnade",
-            "block": "dungeonblocks:stone_bricks_pillar_block",
-            "base_block": "dungeonblocks:stone_bricks_pillar_base_block",
-            "cap_block": "dungeonblocks:stone_bricks_pillar_base_block",
+            "block": "$shaft",
+            "base_block": "$footing",
+            "cap_block": "$footing",
             "base_properties": {
               "base": "up"
             },
@@ -909,8 +937,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -934,9 +962,9 @@
         "patterns": [
           {
             "type": "dungeons2:quartet",
-            "block": "dungeonblocks:stone_bricks_pillar_block",
-            "base_block": "dungeonblocks:stone_bricks_pillar_base_block",
-            "cap_block": "dungeonblocks:stone_bricks_pillar_base_block",
+            "block": "$shaft",
+            "base_block": "$footing",
+            "cap_block": "$footing",
             "base_properties": {
               "base": "up"
             },
@@ -961,8 +989,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]
@@ -987,8 +1015,8 @@
             "type": "dais",
             "layout": "dungeons2:centre",
             "block": "minecraft:stone_bricks",
-            "stair_block": "minecraft:stone_brick_stairs",
-            "centre_block": "minecraft:chiseled_stone_bricks",
+            "stair_block": "$stair",
+            "centre_block": "$ornament",
             // `size` is the DAIS's own side and stays on the entry; `inset` is pure
             // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
@@ -1010,8 +1038,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite"
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt"
                 }
               ]
             }
@@ -1035,8 +1063,8 @@
             "type": "dais",
             "layout": "dungeons2:corners",
             "block": "minecraft:stone_bricks",
-            "stair_block": "minecraft:stone_brick_stairs",
-            "centre_block": "minecraft:chiseled_stone_bricks",
+            "stair_block": "$stair",
+            "centre_block": "$ornament",
             // `size` is the DAIS's own side and stays on the entry; `inset` is pure
             // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 1,
@@ -1058,8 +1086,8 @@
             "config": {
               "courses": [
                 {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
+                  "block": "$inlay",
+                  "corner_block": "$inlay_alt",
                   "anchor": "top"
                 }
               ]

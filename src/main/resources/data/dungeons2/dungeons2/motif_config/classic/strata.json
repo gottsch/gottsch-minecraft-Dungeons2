@@ -6,6 +6,15 @@
       // opts the depth into rooms/classic/mud/normal (step 3) -- nothing ships that pool, so the
       // resolver falls back to the motif's rooms, which is the ordinary case and is silent.
       "name": "mud",
+      // The band's four-line repaint (#65). Everything else -- the inlays, the plinth pair, the
+      // ornament -- is inherited from the motif's palette unchanged, because a palette OVERLAYS
+      // rather than replacing. See base.json.
+      "palette": {
+        "shaft": "minecraft:spruce_log",
+        "footing": "dungeonblocks:square_stone_brick",
+        "stair": "minecraft:mud_brick_stairs",
+        "corbel": "dungeonblocks:stone_corbel_block"
+      },
       // MUD BRICK ON A LARGE STONE BRICK PLINTH, in every room at this depth (Gottsch,
       // 2026-08-27). This is the first band designed as a band rather than demonstrated as one.
       //
@@ -426,9 +435,9 @@
             "patterns": [
               {
                 "type": "dungeons2:grid",
-                "block": "minecraft:spruce_log",
-                "base_block": "dungeonblocks:square_stone_brick",
-                "cap_block": "dungeonblocks:square_stone_brick",
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
                 "config": {
                   "spacing": 3,
                   "inset": 1
@@ -458,7 +467,7 @@
                 "type": "dungeons2:joists",
                 "projection": 1,
                 "config": {
-                  "block": "minecraft:spruce_log",
+                  "block": "$shaft",
                   "bracket_block": "dungeonblocks:spruce_corbel_block",
                   "orient": "inward",
                   "spacing": 3
@@ -506,11 +515,23 @@
               "weight": 1,
               "patterns": [
                 {
+                  "type": "dungeons2:courses",
+                  "config": {
+                    "courses": [
+                      {
+                        "block": "$inlay",
+                        "corner_block": "$inlay_alt",
+                        "anchor": "top"
+                      }
+                    ]
+                  }
+                },
+                {
                   "type": "dungeons2:pilasters",
                   "config": {
-                    "block": "minecraft:spruce_log",
-                    "base_block": "dungeonblocks:square_stone_brick",
-                    "cap_block": "dungeonblocks:square_stone_brick",
+                    "block": "$shaft",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
                     "spacing": 4,
                     "projection": 1
                   }
@@ -519,8 +540,8 @@
                   "type": "dungeons2:end_pilasters",
                   "config": {
                     "block": "minecraft:stone_bricks",
-                    "base_block": "dungeonblocks:square_stone_brick",
-                    "cap_block": "dungeonblocks:square_stone_brick",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
                     "projection": 1
                   }
                 }
@@ -532,9 +553,9 @@
                 {
                   "type": "dungeons2:pilasters",
                   "config": {
-                    "block": "minecraft:spruce_log",
-                    "base_block": "dungeonblocks:square_stone_brick",
-                    "cap_block": "dungeonblocks:square_stone_brick",
+                    "block": "$shaft",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
                     "spacing": 4,
                     "projection": 1
                   }
@@ -548,8 +569,8 @@
                   "type": "dungeons2:end_pilasters",
                   "config": {
                     "block": "minecraft:mud_bricks",
-                    "base_block": "dungeonblocks:square_stone_brick",
-                    "cap_block": "dungeonblocks:square_stone_brick",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
                     "spacing": 4,
                     "projection": 2
                   }
@@ -584,9 +605,9 @@
               "type": "dungeons2:border",
               "config": {
                 "inset": 1,
-                "corner_block": "dungeonblocks:square_stone_brick",
-                "edge_left_block": "dungeonblocks:left_large_stone_brick",
-                "edge_right_block": "dungeonblocks:right_large_stone_brick"
+                "corner_block": "$footing",
+                "edge_left_block": "$plinth_left",
+                "edge_right_block": "$plinth_right"
               }
             },
             {
@@ -653,9 +674,9 @@
             "patterns": [
               {
                 "type": "dungeons2:centre",
-                "block": "minecraft:spruce_log",
-                "base_block": "dungeonblocks:square_stone_brick",
-                "cap_block": "dungeonblocks:square_stone_brick"
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing"
               }
             ]
           },
@@ -680,7 +701,7 @@
             "type": "dungeons2:cross",
             "config": {
               "thickness": 1,
-              "block": "dungeonblocks:square_stone_brick"
+              "block": "$footing"
             }
           }
         },
@@ -702,7 +723,7 @@
                 "projection": 1,
                 "config": {
                   "block": "minecraft:stripped_spruce_log",
-                  "bracket_block": "dungeonblocks:stone_corbel_block",
+                  "bracket_block": "$corbel",
                   "orient": "inward",
                   "spacing": 3
                 }
@@ -714,6 +735,19 @@
           "name": "joisted_hall_2",
           "extends": "joisted_hall",
           "weight": 10,
+          // BOUNDS RESTATED, because `extends` does not copy them. It brings the parent's element
+          // SLOTS -- this scheme's whole ceiling is joisted_hall's joists -- and deliberately not
+          // its min_height/min_size, on the reasoning that a variant usually exists BECAUSE its
+          // eligibility differs, and a primitive with a default cannot tell "omitted" from
+          // "wrote the default". See RoomScheme#inheritFrom.
+          //
+          // Declaring neither left this at 0/0, so the inherited joists drew in rooms with no
+          // headroom for them -- found in game in a 5-high room, 2026-09-01. The spawners slot
+          // below carries its OWN min_size, which is a different gate on a different thing and is
+          // why the omission read as deliberate.
+          "min_height": 7,
+          "min_size": 9,
+
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
           "spawners": {
             "min_count": 0,
@@ -738,7 +772,7 @@
                 {
                   "type": "dungeons2:checkerboard",
                   "config": {
-                    "primary_block": "dungeonblocks:square_stone_brick",
+                    "primary_block": "$footing",
                     "secondary_block": "minecraft:stone"
                   }
                 },
@@ -746,9 +780,9 @@
                   "type": "dungeons2:border",
                   "config": {
                     "inset": 1,
-                    "corner_block": "minecraft:chiseled_stone_bricks",
-                    "edge_left_block": "minecraft:polished_andesite",
-                    "edge_right_block": "minecraft:polished_andesite"
+                    "corner_block": "$ornament",
+                    "edge_left_block": "$inlay",
+                    "edge_right_block": "$inlay"
                   }
                 }
               ]
@@ -882,7 +916,7 @@
           // set into the wall, not laid with it.
           "name": "mud_diamond_inlay",
           "weight": 4,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          // See mud_timber_rs for why this slot is here and why `plain` has none.
           "spawners": {
             "min_count": 0,
             "max_count": 1,

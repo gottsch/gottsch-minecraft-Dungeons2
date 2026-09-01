@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -164,12 +166,31 @@ class ShippedBlockIdsTest {
         Bootstrap.bootStrap();
     }
 
-    /** One namespaced string found in one place, kept with enough context to be actionable. */
-    private record Found(String file, String key, String value) {
+    /**
+     * One namespaced string found in one place, kept with enough context to be actionable.
+     *
+     * <p>{@code palette} marks a value found inside a motif's {@code palette} object (#65). Those
+     * are classified by <strong>position</strong> rather than by key name, because a palette's keys
+     * are role names an author invents &mdash; {@code shaft}, {@code joist.beam} &mdash; and can
+     * never be enumerated in {@link #BLOCK_KEYS}.</p>
+     */
+    private record Found(String file, String key, String value, boolean palette) {
         @Override
         public String toString() {
-            return file + " -> \"" + key + "\": \"" + value + "\"";
+            return file + " -> \"" + key + "\": \"" + value + "\""
+                    + (palette ? "  (palette role)" : "");
         }
+    }
+
+    /**
+     * Whether this value has to name a real block.
+     *
+     * <p>A palette entry does, and it matters more than most: <strong>every {@code $role} in the
+     * pack resolves to one of these</strong>, so a typo here is not one dead pattern but every
+     * pattern that names that role, in every motif that inherits it.</p>
+     */
+    private static boolean isBlockId(Found found) {
+        return found.palette() || BLOCK_KEYS.contains(found.key());
     }
 
     // ---------- the sweep ----------
@@ -178,7 +199,7 @@ class ShippedBlockIdsTest {
     void everyShippedBlockIdNamesABlockThatExists() {
         List<String> bad = new ArrayList<>();
         for (Found found : sweep()) {
-            if (!BLOCK_KEYS.contains(found.key())) {
+            if (!isBlockId(found)) {
                 continue;
             }
             ResourceLocation id = ResourceLocation.tryParse(found.value());
@@ -203,7 +224,9 @@ class ShippedBlockIdsTest {
     void everyNamespacedValueSitsUnderAClassifiedKey() {
         Set<String> unclassified = new LinkedHashSet<>();
         for (Found found : sweep()) {
-            if (!BLOCK_KEYS.contains(found.key()) && !NON_BLOCK_KEYS.contains(found.key())) {
+            // A palette entry is classified by position, so its role name never needs listing.
+            if (!found.palette() && !BLOCK_KEYS.contains(found.key())
+                    && !NON_BLOCK_KEYS.contains(found.key())) {
                 unclassified.add(found.toString());
             }
         }
@@ -222,7 +245,7 @@ class ShippedBlockIdsTest {
     void everyBlockNamespaceIsOneThisSweepCanVerify() {
         Set<String> unverifiable = new LinkedHashSet<>();
         for (Found found : sweep()) {
-            if (!BLOCK_KEYS.contains(found.key())) {
+            if (!isBlockId(found)) {
                 continue;
             }
             ResourceLocation id = ResourceLocation.tryParse(found.value());
@@ -238,12 +261,58 @@ class ShippedBlockIdsTest {
                         + " -- add the mod as a test dependency, or this test is not checking its ids");
     }
 
+    /**
+     * <strong>#65: a palette's values are swept, and the roles that name them are not.</strong>
+     *
+     * <p>Driven from a literal rather than from shipped data, because nothing in {@code classic}
+     * declares a palette yet &mdash; authoring that is phase 8. Without this the new behaviour would
+     * be untested until the day it is first relied on, which is the same day it would be discovered
+     * to be wrong.</p>
+     *
+     * <p>Both halves matter. A role like {@code $shaft} is not an id and must not be reported as a
+     * block that does not exist; the literal it resolves to must be verified exactly once, at the
+     * palette. Getting only the first half right would make the sweep quietly stop covering the
+     * most load-bearing ids in the pack.</p>
+     */
+    @Test
+    void aPalettesValuesAreSweptAndTheRolesNamingThemAreNot() {
+        List<Found> found = new ArrayList<>();
+        collect(JsonParser.parseString("""
+                {"palette": {"shaft": "minecraft:spruce_log",
+                             "joist.beam": "dungeonblocks:square_stone_brick"},
+                 "schemes": [{"name": "pier", "pillars": {"patterns": [
+                     {"type": "dungeons2:centre", "block": "$shaft"}]}}]}"""),
+                null, "test.json", false, found);
+
+        assertTrue(found.stream().noneMatch(f -> f.value().startsWith("$")),
+                () -> "a role is not an id and must not be swept: " + found);
+        assertEquals(List.of("minecraft:spruce_log", "dungeonblocks:square_stone_brick"),
+                found.stream().filter(Found::palette).map(Found::value).toList(),
+                () -> "a palette's values are the ids every role resolves to: " + found);
+        assertTrue(found.stream().filter(Found::palette).allMatch(ShippedBlockIdsTest::isBlockId),
+                "and they are classified as block ids by POSITION, since a role name is invented"
+                        + " by the author and can never be listed in BLOCK_KEYS");
+    }
+
+    /** A role name is never mistaken for an unclassified key, however it is spelled. */
+    @Test
+    void aDottedRoleNameDoesNotTripTheUnclassifiedKeyGuard() {
+        List<Found> found = new ArrayList<>();
+        collect(JsonParser.parseString(
+                "{\"palette\": {\"joist.bracket\": \"dungeonblocks:spruce_corbel_block\"}}"),
+                null, "test.json", false, found);
+        assertEquals(1, found.size());
+        assertTrue(found.get(0).palette());
+        assertFalse(BLOCK_KEYS.contains(found.get(0).key()),
+                "the point being that its key is NOT listed anywhere and does not need to be");
+    }
+
     /** The sweep has to actually be finding things, or all three tests above pass vacuously. */
     @Test
     void theSweepFindsTheShippedContent() {
         List<Found> all = sweep();
         assertTrue(all.size() > 200, "expected the whole datapack, found " + all.size() + " ids");
-        assertTrue(all.stream().anyMatch(f -> BLOCK_KEYS.contains(f.key())
+        assertTrue(all.stream().anyMatch(f -> isBlockId(f)
                         && f.value().startsWith("dungeonblocks:")),
                 "expected at least one dungeonblocks block id to be swept");
         assertTrue(all.stream().anyMatch(f -> f.file().contains("classic_weathering")),
@@ -333,25 +402,41 @@ class ShippedBlockIdsTest {
             if (parent != null && SWEPT_ELSEWHERE.contains(parent.getFileName().toString())) {
                 continue;
             }
-            collect(parse(file), null, file.getFileName().toString(), found);
+            collect(parse(file), null, file.getFileName().toString(), false, found);
         }
         return found;
     }
 
-    private static void collect(JsonElement element, String key, String file, List<Found> out) {
+    /** The key a motif declares its material roles under. #65. */
+    private static final String PALETTE = "palette";
+
+    /**
+     * @param palette whether this element sits inside a {@code palette} object -- see {@link Found}
+     */
+    static void collect(JsonElement element, String key, String file, boolean palette,
+                        List<Found> out) {
         if (element.isJsonObject()) {
             for (var entry : element.getAsJsonObject().entrySet()) {
-                collect(entry.getValue(), entry.getKey(), file, out);
+                collect(entry.getValue(), entry.getKey(), file,
+                        palette || PALETTE.equals(key), out);
             }
         } else if (element.isJsonArray()) {
             for (JsonElement item : element.getAsJsonArray()) {
                 // An array's items belong to the array's own key -- "blocks": [ ... ].
-                collect(item, key, file, out);
+                collect(item, key, file, palette, out);
             }
         } else if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
             String value = element.getAsString();
+            // A MATERIAL ROLE is not an id and is not swept (#65). The regex below already excludes
+            // it -- `$` is illegal in a ResourceLocation, which is the whole reason that sigil was
+            // chosen -- but skipping it by name says so on purpose, so that loosening the regex
+            // later cannot quietly start reporting every role as a block that does not exist.
+            // What a role resolves TO is checked instead, at its declaration in the palette.
+            if (value.startsWith("$")) {
+                return;
+            }
             if (key != null && value.matches("[a-z0-9_.-]+:[a-z0-9_./-]+")) {
-                out.add(new Found(file, key, value));
+                out.add(new Found(file, key, value, palette));
             }
         }
     }

@@ -90,7 +90,12 @@ class JoistedHallSchemeTest {
     private static final int CEILING_Y = FLOOR_Y + HEIGHT - 1;
 
     private static MotifConfig classic() {
-        return MotifConfigs.load("classic");
+        // forFloor(1), NOT the raw file. Every generator reads a PROJECTED config -- all three
+        // piece types call motif.forFloor(floorIndex) -- and projection is where a $role becomes a
+        // block id (#65). Reading the unprojected config here would test a shape nothing renders.
+        // Floor 1 because these schemes are gated to it, and because bands 1 and 2 declare no
+        // palette of their own, so the motif's own vocabulary applies.
+        return MotifConfigs.load("classic").forFloor(1);
     }
 
     private static RoomScheme joistedHall() {

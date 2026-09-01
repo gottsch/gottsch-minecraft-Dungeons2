@@ -40,6 +40,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Guards the <em>shipped</em> datapack JSON (under {@code data/dungeons2/}) against
@@ -391,6 +394,74 @@ class DatapackResourcesParseTest {
                         + "' fills element slots but every one of them gates out of every room it "
                         + "is eligible for -- it can never render anything");
             }
+        }
+    }
+
+    /**
+     * <strong>A child that inherits a slot must restate the parent's size bounds.</strong>
+     *
+     * <p>{@code extends} copies the parent's element SLOTS and deliberately not its
+     * {@code min_height}/{@code min_size}/{@code max_*} &mdash; see {@code RoomScheme#inheritFrom},
+     * where the reasoning is that a variant usually exists <em>because</em> its eligibility differs,
+     * and a primitive with a default cannot tell "the author omitted it" from "the author wrote the
+     * default". That is the right rule and this test does not challenge it.</p>
+     *
+     * <p>What it catches is the trap the rule creates. A child inherits content that needs headroom
+     * &mdash; joists need two rows &mdash; and silently drops the bound that made it safe. The
+     * result draws, so nothing fails; it just draws somewhere it does not fit.</p>
+     *
+     * <p>Found in game on 2026-09-01: {@code joisted_hall_2} extends {@code joisted_hall}, inherits
+     * its joists, restated {@code min_size} and forgot {@code min_height} &mdash; so the mud band
+     * put beams in 5-high rooms. Restating one bound and not the other is exactly the shape of this
+     * mistake, and is why the check is per-bound rather than "declares any bound".</p>
+     */
+    @Test
+    void aChildThatInheritsASlotAlsoRestatesTheParentsBounds() {
+        List<String> problems = new ArrayList<>();
+        for (String name : MOTIFS) {
+            Map<String, RoomScheme> byName = new LinkedHashMap<>();
+            for (RoomScheme scheme : allSchemesOf(name)) {
+                byName.put(scheme.name(), scheme);
+            }
+            for (RoomScheme child : byName.values()) {
+                RoomScheme parent = child.parent().map(byName::get).orElse(null);
+                if (parent == null || !child.declaresAnySlot()) {
+                    continue;
+                }
+                check(problems, name, child, parent, "min_height",
+                        parent.minHeight(), child.minHeight());
+                check(problems, name, child, parent, "min_size",
+                        parent.minSize(), child.minSize());
+            }
+        }
+        if (!problems.isEmpty()) {
+            fail("a scheme inherits content but not the bound that keeps it in a room it fits."
+                    + " `extends` does not copy size bounds -- restate them:\n  "
+                    + String.join("\n  ", problems));
+        }
+    }
+
+    /**
+     * Every scheme a motif rolls at any depth: the motif's own plus each band's.
+     *
+     * <p>An {@code abstract} parent is NOT here -- {@code inherit} drops the templates -- so a child
+     * extending one cannot be checked by the caller. That is a real gap and a narrow one: an
+     * abstract parent exists to be inherited from, so its bounds are far likelier to be restated
+     * deliberately than forgotten.</p>
+     */
+    private static List<RoomScheme> allSchemesOf(String name) {
+        MotifConfig motif = motif(name);
+        List<RoomScheme> all = new ArrayList<>(motif.schemes());
+        motif.strataByFloorIndex().forEach(band -> band.schemes().ifPresent(all::addAll));
+        return all;
+    }
+
+    private static void check(List<String> problems, String motif, RoomScheme child,
+                              RoomScheme parent, String bound, int parentValue, int childValue) {
+        if (parentValue > childValue) {
+            problems.add(motif + ": '" + child.name() + "' extends '" + parent.name()
+                    + "' but declares " + bound + " " + childValue + " where the parent has "
+                    + parentValue + " -- the inherited content is drawn in rooms it does not fit");
         }
     }
 
