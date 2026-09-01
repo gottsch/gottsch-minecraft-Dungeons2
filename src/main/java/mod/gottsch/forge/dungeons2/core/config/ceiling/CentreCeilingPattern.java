@@ -42,6 +42,17 @@ public record CentreCeilingPattern(String block, int size, Map<String, String> p
 
     public static final String NAME = "centre";
 
+    /** See {@link CeilingPattern#withRoles}. */
+    @Override
+    public CeilingPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        if (resolvedBlock.equals(block)) {
+            return this;
+        }
+        return new CentreCeilingPattern(resolvedBlock, size, properties);
+    }
+
+
     /** A plain boss of one block at the default size. */
     public CentreCeilingPattern(String block) {
         this(block, CentreSurfacePatternProvider.DEFAULT_SIZE, Map.of());
@@ -52,7 +63,7 @@ public record CentreCeilingPattern(String block, int size, Map<String, String> p
 
     public static final MapCodec<CentreCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(CentreCeilingPattern::block),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(CentreCeilingPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "size",
                                     CentreSurfacePatternProvider.DEFAULT_SIZE)
                             .forGetter(CentreCeilingPattern::size),

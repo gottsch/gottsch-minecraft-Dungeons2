@@ -39,6 +39,20 @@ import java.util.Optional;
  */
 public record CeilingConfig(String ceiling, Optional<CeilingPatternEntry> pattern) {
 
+    /**
+     * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 4.
+     *
+     * <p>The SECOND place a {@link CeilingPatternEntry} lives, the other being a scheme's
+     * {@code ceiling} slot. Phase 3 learned this the hard way on {@code FloorConfig}: converting a
+     * record makes a role authorable everywhere that record appears, and a walk that visits only
+     * schemes leaves the section decoding cleanly and drawing nothing. Checked deliberately this
+     * time rather than discovered.</p>
+     */
+    public CeilingConfig withRoles(java.util.function.UnaryOperator<String> resolver) {
+        Optional<CeilingPatternEntry> resolved = pattern.map(entry -> entry.withRoles(resolver));
+        return resolved.equals(pattern) ? this : new CeilingConfig(ceiling, resolved);
+    }
+
     /** An undressed ceiling &mdash; the shape every motif had before {@code pattern} existed. */
     public CeilingConfig(String ceiling) {
         this(ceiling, Optional.empty());

@@ -71,6 +71,26 @@ import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry;
  */
 public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) {
 
+    /** See {@link PlatformEntry#withRoles}. Returns {@code this} when no dais named a role. */
+    public PlatformPatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<PlatformEntry> resolved = null;
+        for (int i = 0; i < patterns.size(); i++) {
+            PlatformEntry entry = patterns.get(i);
+            PlatformEntry mapped = entry.withRoles(resolver);
+            if (mapped == entry) {
+                if (resolved != null) {
+                    resolved.add(entry);
+                }
+                continue;
+            }
+            if (resolved == null) {
+                resolved = new java.util.ArrayList<>(patterns.subList(0, i));
+            }
+            resolved.add(mapped);
+        }
+        return resolved == null ? this : new PlatformPatternEntry(List.copyOf(resolved), gate);
+    }
+
     /** An ungated treatment -- drawn whenever its scheme is rolled. */
     public PlatformPatternEntry(List<PlatformEntry> patterns) {
         this(patterns, SizeGate.UNBOUNDED);
@@ -101,6 +121,24 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                                 SurfaceOrient orient, Map<String, String> properties,
                                 Optional<Map<String, String>> topProperties,
                                 SizeGate gate) {
+
+        /**
+         * See {@code FloorPattern#withRoles}. All four of the dais's block fields, so a role on
+         * {@code top_block} -- the brazier the shipped {@code brazier_corners_hall} stands there --
+         * resolves like the dais under it.
+         */
+        public PlatformEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+            String resolvedBlock = Codecs.resolveRole(block, resolver);
+            Optional<String> resolvedStair = Codecs.resolveRole(stairBlock, resolver);
+            Optional<String> resolvedCentre = Codecs.resolveRole(centreBlock, resolver);
+            Optional<String> resolvedTop = Codecs.resolveRole(topBlock, resolver);
+            if (resolvedBlock.equals(block) && resolvedStair.equals(stairBlock)
+                    && resolvedCentre.equals(centreBlock) && resolvedTop.equals(topBlock)) {
+                return this;
+            }
+            return new PlatformEntry(type, layout, resolvedBlock, resolvedStair, resolvedCentre,
+                    resolvedTop, size, orient, properties, topProperties, gate);
+        }
 
         /** A plain ungated dais of one block at the room's centre. */
         public PlatformEntry(String block) {
@@ -135,10 +173,10 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                 // `layout` + `config`, dispatched over the platform layout registry. An
                 // unregistered id is a LOAD ERROR, not a skipped platform.
                 PlatformLayoutRegistry.MAP_CODEC.forGetter(PlatformEntry::layout),
-                Codecs.BLOCK_ID.fieldOf("block").forGetter(PlatformEntry::block),
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "stair_block").forGetter(PlatformEntry::stairBlock),
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "centre_block").forGetter(PlatformEntry::centreBlock),
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "top_block").forGetter(PlatformEntry::topBlock),
+                Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(PlatformEntry::block),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "stair_block").forGetter(PlatformEntry::stairBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "centre_block").forGetter(PlatformEntry::centreBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "top_block").forGetter(PlatformEntry::topBlock),
                 // Odd only, and enforced in validate(): an even dais has no centre cell, so
                 // topBlock would have nowhere defensible to stand.
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, 15), "size", DEFAULT_SIZE)

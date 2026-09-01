@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><strong>The two lists are the phase boundary.</strong> Converting a record moves its fields
  * from {@link #everyBlockFieldRejectsARole} to
- * {@link MaterialRolesPillarsTest} or {@link MaterialRolesFloorTest} &mdash; 37 still reject,
- * 12 accept (3 for the pillar slot in phase 2, 9 for the floor slot in phase 3).
+ * one of the {@code MaterialRoles*Test} classes &mdash; <strong>27 still reject, 22 accept</strong>
+ * (3 pillar in phase 2, 9 floor in phase 3, 6 ceiling + 4 platform in phase 4).
  * Nothing else tracks which records have been converted, and nothing else needs to.</p>
  */
 class MaterialRolePaletteTest {
@@ -180,21 +180,11 @@ class MaterialRolePaletteTest {
         rejects(WallPatternEntry.CourseEntry.CODEC, "{\"block\":\"minecraft:stone\",\"alternate_block\":\"$r\"}");
         rejects(WallPatternEntry.CourseEntry.CODEC, "{\"block\":\"minecraft:stone\",\"corner_block\":\"$r\"}");
 
-        // ceiling patterns (4 records, 6 fields)
-        rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:border\",\"config\":{\"block\":\"$r\"}}");
-        rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:border\",\"config\":{\"block\":\"minecraft:stone\",\"corner_block\":\"$r\"}}");
-        rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"config\":{\"block\":\"$r\"}}");
-        rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:coffers\",\"config\":{\"block\":\"$r\"}}");
-        rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:joists\",\"config\":{\"block\":\"$r\"}}");
-        rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:joists\",\"config\":{\"block\":\"minecraft:stone\",\"bracket_block\":\"$r\"}}");
+        // ceiling patterns (4 records, 6 fields) and platforms (1 record, 4 fields) are
+        // CONVERTED -- phase 4. See MaterialRolesCeilingAndPlatformsTest.
 
-        // platforms (4)
         // pillars (3) are CONVERTED -- phase 2. See acceptsARoleOnEveryConvertedField below; the
         // move of these three lines from this list to that one is what a phase IS.
-        rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"$r\"}");
-        rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"stair_block\":\"$r\"}");
-        rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"centre_block\":\"$r\"}");
-        rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"top_block\":\"$r\"}");
 
         // pit (3 records, 4 fields)
         rejects(PitPatternEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"floor_block\":\"$r\"}");

@@ -236,7 +236,8 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         return Stratum.forFloor(strataByFloorIndex, floorIndex)
                 .map(stratum -> new MotifConfig(
                         stratum.wall().orElse(wall),
-                        stratum.ceiling().orElse(ceiling),
+                        stratum.ceiling().orElse(ceiling)
+                                .withRoles(lookup(overlay(palette, stratum.palette()))),
                         stratum.door().orElse(door),
                         stratum.corridor().orElse(corridor),
                         stratum.floor().orElse(floor)
@@ -264,10 +265,12 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     private static MotifConfig withPalette(MotifConfig motif, Map<String, String> palette) {
         List<RoomScheme> resolved = withRoles(motif.schemes(), palette);
         FloorConfig resolvedFloor = motif.floor().withRoles(lookup(palette));
-        if (resolved == motif.schemes() && resolvedFloor == motif.floor()) {
+        CeilingConfig resolvedCeiling = motif.ceiling().withRoles(lookup(palette));
+        if (resolved == motif.schemes() && resolvedFloor == motif.floor()
+                && resolvedCeiling == motif.ceiling()) {
             return motif;
         }
-        return new MotifConfig(motif.wall(), motif.ceiling(), motif.door(), motif.corridor(),
+        return new MotifConfig(motif.wall(), resolvedCeiling, motif.door(), motif.corridor(),
                 resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
                 motif.chestLootByFloorIndex(), motif.templateLimits(),
                 motif.strataByFloorIndex(), palette);

@@ -44,6 +44,19 @@ public record BorderCeilingPattern(String block, Optional<String> cornerBlock, i
 
     public static final String NAME = "border";
 
+    /** See {@link CeilingPattern#withRoles}. */
+    @Override
+    public CeilingPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        Optional<String> resolvedCornerBlock = Codecs.resolveRole(cornerBlock, resolver);
+        if (resolvedBlock.equals(block)
+                && resolvedCornerBlock.equals(cornerBlock)) {
+            return this;
+        }
+        return new BorderCeilingPattern(resolvedBlock, resolvedCornerBlock, inset, orient, properties);
+    }
+
+
     /** A plain ring of one block, flush and unoriented. */
     public BorderCeilingPattern(String block) {
         this(block, Optional.empty(), BorderSurfacePatternProvider.DEFAULT_INSET,
@@ -52,8 +65,8 @@ public record BorderCeilingPattern(String block, Optional<String> cornerBlock, i
 
     public static final MapCodec<BorderCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(BorderCeilingPattern::block),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "corner_block")
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(BorderCeilingPattern::block),
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "corner_block")
                             .forGetter(BorderCeilingPattern::cornerBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                                     BorderSurfacePatternProvider.DEFAULT_INSET)

@@ -40,6 +40,17 @@ public record CoffersCeilingPattern(String block, int spacing, Map<String, Strin
 
     public static final String NAME = "coffers";
 
+    /** See {@link CeilingPattern#withRoles}. */
+    @Override
+    public CeilingPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        if (resolvedBlock.equals(block)) {
+            return this;
+        }
+        return new CoffersCeilingPattern(resolvedBlock, spacing, properties);
+    }
+
+
     /** A plain lattice of one block at the default rhythm. */
     public CoffersCeilingPattern(String block) {
         this(block, GridSurfacePatternProvider.DEFAULT_SPACING, Map.of());
@@ -47,7 +58,7 @@ public record CoffersCeilingPattern(String block, int spacing, Map<String, Strin
 
     public static final MapCodec<CoffersCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(CoffersCeilingPattern::block),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(CoffersCeilingPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
                                     GridSurfacePatternProvider.DEFAULT_SPACING)
                             .forGetter(CoffersCeilingPattern::spacing),

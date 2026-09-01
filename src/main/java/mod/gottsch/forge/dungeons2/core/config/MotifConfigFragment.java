@@ -275,25 +275,28 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
      * piece per chunk, so {@code MotifConfigHelper} is what says it once, naming the motif.</p>
      */
     private static void checkRoles(MotifConfig motif, Consumer<String> problems) {
-        checkRoles(motif.schemes(), motif.floor(), motif.palette(), "", problems);
+        checkRoles(motif.schemes(), motif.floor(), motif.ceiling(), motif.palette(), "", problems);
         for (Stratum band : motif.strataByFloorIndex()) {
             Map<String, String> palette = new LinkedHashMap<>(motif.palette());
             palette.putAll(band.palette());
             checkRoles(band.schemes().orElse(List.of()), band.floor().orElse(motif.floor()),
-                    palette, " on the band at floor " + band.minFloorIndex() + " and below",
-                    problems);
+                    band.ceiling().orElse(motif.ceiling()), palette,
+                    " on the band at floor " + band.minFloorIndex() + " and below", problems);
         }
     }
 
     private static void checkRoles(List<RoomScheme> schemes, FloorConfig floor,
-                                   Map<String, String> palette, String where,
+                                   CeilingConfig ceiling, Map<String, String> palette, String where,
                                    Consumer<String> problems) {
         for (RoomScheme scheme : schemes) {
             scheme.withRoles(reporter("scheme '" + scheme.name() + "'", palette, where, problems));
         }
-        // The section's own pattern, which is NOT a scheme's -- a FloorPatternEntry lives in both
-        // places, so a role written here has to be checked even by a motif with no schemes at all.
+        // The SECTIONS' own patterns, which are not any scheme's -- a FloorPatternEntry and a
+        // CeilingPatternEntry each live in two places, so a role written in a section has to be
+        // checked even by a motif that declares no schemes at all. Phase 3 found the first of
+        // these the hard way; the second is here because that made it a rule.
         floor.withRoles(reporter("the floor section", palette, where, problems));
+        ceiling.withRoles(reporter("the ceiling section", palette, where, problems));
     }
 
     private static UnaryOperator<String> reporter(String what, Map<String, String> palette,

@@ -48,6 +48,19 @@ public record JoistsCeilingPattern(String block, int spacing, Optional<String> b
 
     public static final String NAME = "joists";
 
+    /** See {@link CeilingPattern#withRoles}. */
+    @Override
+    public CeilingPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedBlock = Codecs.resolveRole(block, resolver);
+        Optional<String> resolvedBracketBlock = Codecs.resolveRole(bracketBlock, resolver);
+        if (resolvedBlock.equals(block)
+                && resolvedBracketBlock.equals(bracketBlock)) {
+            return this;
+        }
+        return new JoistsCeilingPattern(resolvedBlock, spacing, resolvedBracketBlock, orient, properties);
+    }
+
+
     /** Bare beams of one block at the default rhythm -- no bracket, unoriented. */
     public JoistsCeilingPattern(String block) {
         this(block, JoistSurfacePatternProvider.DEFAULT_SPACING, Optional.empty(),
@@ -56,11 +69,11 @@ public record JoistsCeilingPattern(String block, int spacing, Optional<String> b
 
     public static final MapCodec<JoistsCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codecs.BLOCK_ID.fieldOf("block").forGetter(JoistsCeilingPattern::block),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(JoistsCeilingPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
                                     JoistSurfacePatternProvider.DEFAULT_SPACING)
                             .forGetter(JoistsCeilingPattern::spacing),
-                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "bracket_block")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "bracket_block")
                             .forGetter(JoistsCeilingPattern::bracketBlock),
                     Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.NONE)
                             .forGetter(JoistsCeilingPattern::orient),

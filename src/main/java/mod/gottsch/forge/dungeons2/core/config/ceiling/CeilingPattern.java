@@ -62,6 +62,22 @@ public interface CeilingPattern {
     MapCodec<? extends CeilingPattern> codec();
 
     /**
+     * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
+     * scope names. #65 phase 4, and the exact counterpart of {@code FloorPattern#withRoles} --
+     * including the reason it is a {@code default} rather than abstract: the registry is open to
+     * other mods, so an abstract method would break every third-party pattern on upgrade, and the
+     * default is safe because a field only carries a role when its codec is
+     * {@code Codecs.BLOCK_ID_OR_ROLE}. Forgetting to override costs a load error, not a ceiling that
+     * silently comes out blank.
+     *
+     * <p>Implementations must return {@code this} when nothing changed; this is on the per-piece
+     * path.</p>
+     */
+    default CeilingPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        return this;
+    }
+
+    /**
      * Appends the layers this pattern draws &mdash; usually one, and <strong>two for a bracketed
      * {@code joists}</strong>.
      *

@@ -55,6 +55,26 @@ import mod.gottsch.forge.dungeons2.core.config.ceiling.JoistsCeilingPattern;
  */
 public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate gate) {
 
+    /** See {@code CeilingPattern#withRoles}. Returns {@code this} when no pattern named a role. */
+    public CeilingPatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<SurfacePatternEntry> resolved = null;
+        for (int i = 0; i < patterns.size(); i++) {
+            SurfacePatternEntry entry = patterns.get(i);
+            SurfacePatternEntry mapped = entry.withRoles(resolver);
+            if (mapped == entry) {
+                if (resolved != null) {
+                    resolved.add(entry);
+                }
+                continue;
+            }
+            if (resolved == null) {
+                resolved = new java.util.ArrayList<>(patterns.subList(0, i));
+            }
+            resolved.add(mapped);
+        }
+        return resolved == null ? this : new CeilingPatternEntry(List.copyOf(resolved), gate);
+    }
+
     /** An ungated treatment -- drawn whenever its scheme is rolled. */
     public CeilingPatternEntry(List<SurfacePatternEntry> patterns) {
         this(patterns, SizeGate.UNBOUNDED);
@@ -259,6 +279,13 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * {@code projection + 1}, which is a fact about the stack rather than about joists.</p>
      */
     public record SurfacePatternEntry(CeilingPattern pattern, int projection, SizeGate gate) {
+
+        /** See {@code CeilingPattern#withRoles}. */
+        public SurfacePatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+            CeilingPattern resolved = pattern.withRoles(resolver);
+            return resolved == pattern ? this
+                    : new SurfacePatternEntry(resolved, projection, gate);
+        }
 
         /** An ungated treatment drawn flush in the ceiling plane. */
         public SurfacePatternEntry(CeilingPattern pattern) {
