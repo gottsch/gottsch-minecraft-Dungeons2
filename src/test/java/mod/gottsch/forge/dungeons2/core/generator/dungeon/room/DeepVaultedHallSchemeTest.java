@@ -182,7 +182,7 @@ class DeepVaultedHallSchemeTest {
                 "the outermost ring's step must sit three rows below the ceiling");
         assertTrue(at(world, midX, ceilingY - 4, ORIGIN + 1) == null
                         || at(world, midX, ceilingY - 4, ORIGIN + 1).isAir(),
-                "and nothing below it -- a fourth step would eat the headroom minHeight 8 budgets");
+                "and nothing below it -- a fourth step would eat the headroom min_height 8 budgets");
     }
 
     /** Each ring's step leans outward, on all four runs, exactly as the two-step vault's does. */
@@ -234,7 +234,7 @@ class DeepVaultedHallSchemeTest {
     void theGateLeavesTheSameClearanceTheShippedVaultDoes() {
         int clear = HEIGHT - 2 - STEPS;
         assertEquals(3, clear,
-                "minHeight " + HEIGHT + " with " + STEPS + " steps must leave 3 clear rows");
+                "min_height " + HEIGHT + " with " + STEPS + " steps must leave 3 clear rows");
 
         Map<String, BlockState> world = build();
         int ceilingY = FLOOR_Y + HEIGHT - 1;

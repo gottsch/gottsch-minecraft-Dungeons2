@@ -33,9 +33,9 @@ import java.util.Optional;
 
 /**
  * A ring following the ceiling's edge, {@code inset} cells in, with an optional distinct
- * {@code cornerBlock}.
+ * {@code corner_block}.
  *
- * <p>{@code cornerBlock} falls back to {@code block} rather than dropping the ring: a typo in the
+ * <p>{@code corner_block} falls back to {@code block} rather than dropping the ring: a typo in the
  * trim should not delete the border it was decorating.</p>
  */
 public record BorderCeilingPattern(String block, Optional<String> cornerBlock, int inset,
@@ -52,8 +52,8 @@ public record BorderCeilingPattern(String block, Optional<String> cornerBlock, i
 
     public static final MapCodec<BorderCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("block").forGetter(BorderCeilingPattern::block),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock")
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(BorderCeilingPattern::block),
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "corner_block")
                             .forGetter(BorderCeilingPattern::cornerBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                                     BorderSurfacePatternProvider.DEFAULT_INSET)

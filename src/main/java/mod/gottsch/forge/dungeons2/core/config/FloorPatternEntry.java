@@ -30,8 +30,8 @@ import mod.gottsch.forge.dungeons2.core.config.floor.PlainFloorPattern;
  *
  * <h2>What this used to be</h2>
  * <p>One flat record carrying <em>every</em> pattern's fields at once &mdash; {@code inset},
- * {@code cornerBlock}, {@code edgeLeftBlock}, {@code edgeRightBlock}, {@code primaryBlock},
- * {@code secondaryBlock}, {@code probability}, {@code thickness}, {@code spokes},
+ * {@code corner_block}, {@code edge_left_block}, {@code edge_right_block}, {@code primary_block},
+ * {@code secondary_block}, {@code probability}, {@code thickness}, {@code spokes},
  * {@code generators} &mdash; with a {@code type} string that {@code FloorPatternSelector} switched
  * over, privately knowing which fields each type read. Every block slot had to be
  * {@code Optional}, because every other type's slots were absent by design, so a {@code speckle}

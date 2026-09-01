@@ -62,9 +62,22 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                                   Optional<List<MobSetBand>> mobSetsByFloorIndex,
                                   Optional<List<ChestLootBand>> chestLootByFloorIndex,
                                   Map<String, TemplateLimit> templateLimits,
-                                  Optional<List<Stratum>> strataByFloorIndex) {
+                                  Optional<List<Stratum>> strataByFloorIndex,
+                                  Map<String, String> palette) {
 
-    /** The shape before {@code strataByFloorIndex}. */
+    /** The shape before {@code palette}. */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                               Optional<List<ChestLootBand>> chestLootByFloorIndex,
+                               Map<String, TemplateLimit> templateLimits,
+                               Optional<List<Stratum>> strataByFloorIndex) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, Map.of());
+    }
+
+    /** The shape before {@code strata_by_floor_index}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,
@@ -75,7 +88,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                 chestLootByFloorIndex, templateLimits, Optional.empty());
     }
 
-    /** The shape before {@code chestLootByFloorIndex}. */
+    /** The shape before {@code chest_loot_by_floor_index}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,
@@ -85,7 +98,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                 templateLimits);
     }
 
-    /** The shape before {@code templateLimits}. */
+    /** The shape before {@code template_limits}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,
@@ -93,7 +106,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex, Optional.empty(), Map.of());
     }
 
-    /** The shape before {@code mobSetsByFloorIndex}. */
+    /** The shape before {@code mob_sets_by_floor_index}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes) {
@@ -115,11 +128,11 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             // authored. Absent therefore has to be distinguishable from "declared, empty".
             Codecs.strictOptionalFieldOf(
                             MobSetBand.CODEC.listOf().flatXmap(MobSetBand::validate, MobSetBand::validate),
-                            "mobSetsByFloorIndex")
+                            "mob_sets_by_floor_index")
                     .forGetter(MotifConfigFragment::mobSetsByFloorIndex),
             // Replaced wholesale, exactly like the mob table above and for the same reason: a loot
             // progression is one coherent curve, not a set of independent entries.
-            Codecs.strictOptionalFieldOf(ChestLootBand.CODEC.listOf(), "chestLootByFloorIndex")
+            Codecs.strictOptionalFieldOf(ChestLootBand.CODEC.listOf(), "chest_loot_by_floor_index")
                     .forGetter(MotifConfigFragment::chestLootByFloorIndex),
             // MERGED BY KEY by a later fragment, not replaced -- the opposite of the depth table
             // one line above, and the difference is what each thing IS. A depth table is one
@@ -129,15 +142,21 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             // Rule of thumb: coherent whole -> replace, independent entries -> merge by key.
             Codecs.strictOptionalFieldOf(
                             Codec.unboundedMap(Codec.STRING, TemplateLimit.CODEC),
-                            "templateLimits", Map.of())
+                            "template_limits", Map.of())
                     .forGetter(MotifConfigFragment::templateLimits),
             // #45. Replaced wholesale, like the two depth tables above and for the same reason: a
             // progression from cobble to chiseled brick is one coherent whole, and two halves
             // spliced together is a curve nobody authored.
             Codecs.strictOptionalFieldOf(
                             Stratum.CODEC.listOf().flatXmap(Stratum::validate, Stratum::validate),
-                            "strataByFloorIndex")
-                    .forGetter(MotifConfigFragment::strataByFloorIndex)
+                            "strata_by_floor_index")
+                    .forGetter(MotifConfigFragment::strataByFloorIndex),
+            // #65. MERGED BY KEY, like templateLimits and unlike the depth tables -- a palette is a
+            // set of independent roles, so a fragment that names `ornament` must not wipe the base
+            // pack's `shaft`. This is what lets an addon retune one material for a whole motif in a
+            // file of its own.
+            Codecs.strictOptionalFieldOf(Codecs.PALETTE, "palette", Map.of())
+                    .forGetter(MotifConfigFragment::palette)
     ).apply(instance, MotifConfigFragment::new));
 
     /**
@@ -189,6 +208,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         List<Stratum> strata = List.of();
         Map<String, TemplateLimit> templateLimits = new LinkedHashMap<>();
         Map<String, RoomScheme> schemes = new LinkedHashMap<>();
+        Map<String, String> palette = new LinkedHashMap<>();
 
         for (MotifConfigFragment fragment : fragments) {
             wall = fragment.wall().orElse(wall);
@@ -202,6 +222,8 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             // put, not putAll-into-a-fresh-map: a later fragment replaces an entry for the same
             // template and leaves every other pack's entries alone.
             templateLimits.putAll(fragment.templateLimits());
+            // Same rule, same reason: per-role, so a fragment adds or retunes without subtracting.
+            palette.putAll(fragment.palette());
             for (RoomScheme scheme : fragment.schemes()) {
                 // LinkedHashMap#put keeps an existing key's position, which is the "replaces in
                 // place" half of the rule above.
@@ -220,7 +242,8 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         });
         return new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
-                Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems));
+                Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems),
+                Map.copyOf(palette));
     }
 
     /**

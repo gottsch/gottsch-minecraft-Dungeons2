@@ -45,7 +45,7 @@ import java.util.Optional;
  * inside the band would have relayouted every dungeon in every existing world.</p>
  *
  * <p>A consequence worth knowing when reading the height histogram: heights <em>pile up</em> at a
- * band's edges, because every roll above {@code maxHeight} lands on {@code maxHeight}. That is not
+ * band's edges, because every roll above {@code max_height} lands on {@code max_height}. That is not
  * a bug and it is not new &mdash; the old {@code min(..., max(width, depth))} piled at the long
  * side in exactly the same way.</p>
  *
@@ -63,7 +63,7 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
     /**
      * Bounds on the authored numbers. A room's height counts the floor block and the ceiling block,
      * so 3 is the shortest thing with an interior at all; the upper bound is the planner's
-     * {@code floorHeight}, which no room may exceed without eating into the floor above &mdash; see
+     * {@code floor_height}, which no room may exceed without eating into the floor above &mdash; see
      * {@link #validateAgainstBudget}.
      */
     private static final int MIN_AUTHORABLE_HEIGHT = 3;
@@ -74,11 +74,11 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
                     // Absent = open-ended. Deliberately not defaulted to Integer.MAX_VALUE: the
                     // list validation needs to tell "the author wrote a huge number" from "the
                     // author meant everything else", because only the second may repeat-terminate.
-                    Codecs.strictOptionalFieldOf(Codec.intRange(1, 256), "maxLongSide")
+                    Codecs.strictOptionalFieldOf(Codec.intRange(1, 256), "max_long_side")
                             .forGetter(RoomHeightBand::maxLongSide),
-                    Codec.intRange(MIN_AUTHORABLE_HEIGHT, MAX_AUTHORABLE_HEIGHT).fieldOf("minHeight")
+                    Codec.intRange(MIN_AUTHORABLE_HEIGHT, MAX_AUTHORABLE_HEIGHT).fieldOf("min_height")
                             .forGetter(RoomHeightBand::minHeight),
-                    Codec.intRange(MIN_AUTHORABLE_HEIGHT, MAX_AUTHORABLE_HEIGHT).fieldOf("maxHeight")
+                    Codec.intRange(MIN_AUTHORABLE_HEIGHT, MAX_AUTHORABLE_HEIGHT).fieldOf("max_height")
                             .forGetter(RoomHeightBand::maxHeight)
             ).apply(instance, RoomHeightBand::new)))
             // flatXmap rather than a throwing constructor: a DFU error result still carries a
@@ -92,14 +92,14 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
 
     private static DataResult<RoomHeightBand> checkRange(RoomHeightBand band) {
         if (band.minHeight > band.maxHeight) {
-            return DataResult.error(() -> "roomHeightBands: minHeight " + band.minHeight
-                    + " is greater than maxHeight " + band.maxHeight);
+            return DataResult.error(() -> "room_height_bands: min_height " + band.minHeight
+                    + " is greater than max_height " + band.maxHeight);
         }
         return DataResult.success(band);
     }
 
     /**
-     * A table is well-formed when it is non-empty, its {@code maxLongSide} values strictly
+     * A table is well-formed when it is non-empty, its {@code max_long_side} values strictly
      * increase, and <strong>exactly one</strong> band &mdash; the last &mdash; is open-ended.
      *
      * <p>The totality rule is the one that earns its keep. An open-ended band in the middle makes
@@ -109,7 +109,7 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
      */
     public static DataResult<List<RoomHeightBand>> validate(List<RoomHeightBand> bands) {
         if (bands.isEmpty()) {
-            return DataResult.error(() -> "roomHeightBands: must declare at least one band");
+            return DataResult.error(() -> "room_height_bands: must declare at least one band");
         }
         int previous = 0;
         for (int i = 0; i < bands.size(); i++) {
@@ -118,22 +118,22 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
             if (band.maxLongSide.isEmpty()) {
                 if (!last) {
                     final int at = i;
-                    return DataResult.error(() -> "roomHeightBands: band " + at
-                            + " omits maxLongSide, which matches every room and makes the "
+                    return DataResult.error(() -> "room_height_bands: band " + at
+                            + " omits max_long_side, which matches every room and makes the "
                             + (bands.size() - at - 1) + " band(s) after it unreachable; only the "
                             + "last band may be open-ended");
                 }
             } else {
                 if (last) {
-                    return DataResult.error(() -> "roomHeightBands: the last band must omit "
-                            + "maxLongSide so every footprint matches something; it declares "
+                    return DataResult.error(() -> "room_height_bands: the last band must omit "
+                            + "max_long_side so every footprint matches something; it declares "
                             + band.maxLongSide.get());
                 }
                 int value = band.maxLongSide.get();
                 if (value <= previous) {
                     final int at = i;
                     final int prior = previous;
-                    return DataResult.error(() -> "roomHeightBands: band " + at + "'s maxLongSide "
+                    return DataResult.error(() -> "room_height_bands: band " + at + "'s max_long_side "
                             + value + " does not exceed the previous band's " + prior
                             + "; bands are matched in order and must strictly increase");
                 }
@@ -144,19 +144,19 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
     }
 
     /**
-     * Trims a table to fit a floor of {@code floorHeight} blocks, returning it unchanged when it
+     * Trims a table to fit a floor of {@code floor_height} blocks, returning it unchanged when it
      * already does.
      *
      * <h2>Clamp rather than reject</h2>
      * <p>The floor height is not visible from a datapack load &mdash; it is a different field, and
      * the codec has no way to reach it &mdash; so this is checked at the call site instead. The
      * first version of it <em>rejected</em> an oversized table and fell back to the shipped one,
-     * which is wrong in the case that matters: lower {@code floorHeight} below 10 and the shipped
+     * which is wrong in the case that matters: lower {@code floor_height} below 10 and the shipped
      * table does not fit either, so falling back to it hands the planner the very table just
      * refused. Clamping has no such hole &mdash; every band ends up inside the budget whatever the
      * budget is.</p>
      *
-     * <p>{@code minHeight} is clamped too, so a band whose whole range sits above the budget
+     * <p>{@code min_height} is clamped too, so a band whose whole range sits above the budget
      * collapses to the budget rather than inverting.</p>
      */
     public static List<RoomHeightBand> clampToBudget(List<RoomHeightBand> bands, int floorHeight) {
@@ -171,7 +171,7 @@ public record RoomHeightBand(Optional<Integer> maxLongSide, int minHeight, int m
     }
 
     /**
-     * True if every band in the table fits inside a floor of {@code floorHeight} blocks. Not part
+     * True if every band in the table fits inside a floor of {@code floor_height} blocks. Not part
      * of the codec: the planner's floor height is not visible from a datapack load, and a band
      * taller than the budget would push a room's ceiling through the floor above it.
      *

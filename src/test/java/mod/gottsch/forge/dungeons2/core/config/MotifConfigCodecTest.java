@@ -98,7 +98,7 @@ class MotifConfigCodecTest {
     // -------- corridor height --------
 
     private static final String CORRIDOR = "{\"corridor\": {\"floor\": \"minecraft:stone_bricks\","
-            + "\"alternateFloor\": \"minecraft:stone_bricks\",\"ceiling\": \"minecraft:stone_bricks\"%s}}";
+            + "\"alternate_floor\": \"minecraft:stone_bricks\",\"ceiling\": \"minecraft:stone_bricks\"%s}}";
 
     /** A corridor section that authors no height generates exactly what it did before. */
     @Test
@@ -139,7 +139,7 @@ class MotifConfigCodecTest {
     @Test
     void anArchedCorridorIsRead() {
         CorridorConfig corridor = fragment(String.format(CORRIDOR,
-                ",\"height\": 7,\"profile\": \"arched\",\"archBlock\": \"minecraft:stone_brick_stairs\""))
+                ",\"height\": 7,\"profile\": \"arched\",\"arch_block\": \"minecraft:stone_brick_stairs\""))
                 .corridor().orElseThrow();
 
         assertTrue(corridor.isArched());
@@ -154,7 +154,7 @@ class MotifConfigCodecTest {
     @Test
     void anArchedCorridorTooShortForItsHaunchIsALoadError() {
         assertTrue(fails(String.format(CORRIDOR,
-                        ",\"height\": 5,\"profile\": \"arched\",\"archBlock\": \"minecraft:stone_brick_stairs\"")),
+                        ",\"height\": 5,\"profile\": \"arched\",\"arch_block\": \"minecraft:stone_brick_stairs\"")),
                 "arched at height 5 must fail to load");
     }
 
@@ -162,7 +162,7 @@ class MotifConfigCodecTest {
     @Test
     void anArchedCorridorWithNoArchBlockIsALoadError() {
         assertTrue(fails(String.format(CORRIDOR, ",\"height\": 7,\"profile\": \"arched\"")),
-                "arched with no archBlock must fail rather than defaulting to stone brick stairs");
+                "arched with no arch_block must fail rather than defaulting to stone brick stairs");
     }
 
     @Test
@@ -175,8 +175,8 @@ class MotifConfigCodecTest {
 
     private static final String STYLES = ",\"styles\": [%s]";
     private static final String VAULTED =
-            "{\"name\": \"vaulted\",\"weight\": 3,\"height\": 7,\"narrowHeight\": 6,"
-                    + "\"profile\": \"arched\",\"archBlock\": \"minecraft:stone_brick_stairs\"}";
+            "{\"name\": \"vaulted\",\"weight\": 3,\"height\": 7,\"narrow_height\": 6,"
+                    + "\"profile\": \"arched\",\"arch_block\": \"minecraft:stone_brick_stairs\"}";
     private static final String CRAMPED = "{\"name\": \"cramped\",\"weight\": 2,\"height\": 5}";
 
     private static CorridorConfig corridorWithStyles(String styleJson) {
@@ -254,17 +254,17 @@ class MotifConfigCodecTest {
     void aStyleIsHeldToTheSameGeometryRulesAsTheCorridorItself() {
         assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
                         "{\"name\": \"squat\",\"height\": 5,\"profile\": \"arched\","
-                                + "\"archBlock\": \"minecraft:stone_brick_stairs\"}"))),
+                                + "\"arch_block\": \"minecraft:stone_brick_stairs\"}"))),
                 "an arched style at height 5 must fail, same as an arched corridor at height 5");
         assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
                         "{\"name\": \"bare\",\"height\": 7,\"profile\": \"arched\"}"))),
-                "an arched style with no archBlock must fail rather than inventing stairs");
+                "an arched style with no arch_block must fail rather than inventing stairs");
         assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
                         "{\"name\": \"tall\",\"height\": 12}"))),
                 "an over-tall style must fail, not clamp");
         assertTrue(fails(String.format(CORRIDOR, String.format(STYLES,
-                        "{\"name\": \"odd\",\"height\": 6,\"narrowHeight\": 8}"))),
-                "a narrowHeight above the style's own height must fail");
+                        "{\"name\": \"odd\",\"height\": 6,\"narrow_height\": 8}"))),
+                "a narrow_height above the style's own height must fail");
     }
 
     @Test
@@ -294,7 +294,7 @@ class MotifConfigCodecTest {
     @Test
     void corridorCoursesReuseTheRoomCourseEntryVerbatim() {
         CorridorConfig corridor = corridorWithCourses(PLINTH + ",{\"block\": \"minecraft:andesite\","
-                + "\"alternateBlock\": \"minecraft:stone\",\"alternate\": \"strict\","
+                + "\"alternate_block\": \"minecraft:stone\",\"alternate\": \"strict\","
                 + "\"anchor\": \"top\",\"offset\": 2,\"orient\": \"toward_wall\"}");
 
         assertEquals(2, corridor.courses().size());
@@ -336,13 +336,13 @@ class MotifConfigCodecTest {
     @Test
     void theThreeRoomOnlyCourseKnobsAreLoadErrorsOnACorridor() {
         assertTrue(fails(String.format(CORRIDOR, String.format(COURSES,
-                        "{\"block\": \"minecraft:andesite\",\"cornerBlock\": \"minecraft:stone\"}"))),
-                "cornerBlock must fail -- a corridor wall has no four runs to own corners");
+                        "{\"block\": \"minecraft:andesite\",\"corner_block\": \"minecraft:stone\"}"))),
+                "corner_block must fail -- a corridor wall has no four runs to own corners");
         assertTrue(fails(String.format(CORRIDOR, String.format(COURSES,
                         "{\"block\": \"minecraft:andesite\",\"projection\": 1}"))),
                 "a projecting corridor course must fail -- it would project into the passage itself");
         assertTrue(fails(String.format(CORRIDOR, String.format(COURSES,
-                        "{\"block\": \"minecraft:andesite\",\"minHeight\": 6}"))),
+                        "{\"block\": \"minecraft:andesite\",\"min_height\": 6}"))),
                 "a size gate must fail -- it gates on room dimensions a corridor does not have");
     }
 
@@ -411,10 +411,10 @@ class MotifConfigCodecTest {
     @Test
     void floorBaseBlocksAreRequiredWhenTheSectionIsPresent() {
         fragment("{\"floor\": {\"base\": \"minecraft:stone_bricks\", "
-                + "\"alternateBase\": \"minecraft:stone_bricks\"}}");
+                + "\"alternate_base\": \"minecraft:stone_bricks\"}}");
 
         assertTrue(fails("{\"floor\": {}}"),
-                "base/alternateBase are required when a floor section is present");
+                "base/alternate_base are required when a floor section is present");
     }
 
     /**
@@ -455,7 +455,7 @@ class MotifConfigCodecTest {
 
     @Test
     void courseAlternateAndCornerAreReadWhenAuthored() {
-        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\",\"alternateBlock\":\"minecraft:andesite\",\"cornerBlock\":\"minecraft:chiseled_stone_bricks\"}]}}]}}]}");
+        MotifConfigFragment config = fragment("{\"schemes\": [{\"name\": \"trim\", \"wall\": {\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\",\"alternate_block\":\"minecraft:andesite\",\"corner_block\":\"minecraft:chiseled_stone_bricks\"}]}}]}}]}");
 
         WallPatternEntry.CourseEntry course =
                 config.schemes().get(0).wall().orElseThrow().patterns().get(0).coursesOrEmpty().get(0);

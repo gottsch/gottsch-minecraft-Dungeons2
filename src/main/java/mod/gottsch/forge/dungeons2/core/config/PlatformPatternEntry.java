@@ -46,7 +46,7 @@ import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry;
  *
  * <h2>Why a brazier is not a slot of its own</h2>
  * <p>A lone brazier standing on a bare floor reads as an object someone dropped, not as
- * architecture. It wants a platform under it, which is why the two are one entry: {@code topBlock}
+ * architecture. It wants a platform under it, which is why the two are one entry: {@code top_block}
  * is placed on the dais's centre, one row up. Authoring them separately would make the wrong thing
  * the easy thing.</p>
  *
@@ -58,7 +58,7 @@ import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry;
  * </pre>
  *
  * <p>{@code size} is the dais's side and must be <strong>odd</strong>, so it has a true centre cell
- * for {@code topBlock} to stand on. The outer ring's straight runs are stairs and its corners are
+ * for {@code top_block} to stand on. The outer ring's straight runs are stairs and its corners are
  * full blocks, which generalises: at size 5 the ring is stairs with block corners and the 3&times;3
  * inside it is solid.</p>
  *
@@ -135,10 +135,10 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                 // `layout` + `config`, dispatched over the platform layout registry. An
                 // unregistered id is a LOAD ERROR, not a skipped platform.
                 PlatformLayoutRegistry.MAP_CODEC.forGetter(PlatformEntry::layout),
-                Codec.STRING.fieldOf("block").forGetter(PlatformEntry::block),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "stairBlock").forGetter(PlatformEntry::stairBlock),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "centreBlock").forGetter(PlatformEntry::centreBlock),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "topBlock").forGetter(PlatformEntry::topBlock),
+                Codecs.BLOCK_ID.fieldOf("block").forGetter(PlatformEntry::block),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "stair_block").forGetter(PlatformEntry::stairBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "centre_block").forGetter(PlatformEntry::centreBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "top_block").forGetter(PlatformEntry::topBlock),
                 // Odd only, and enforced in validate(): an even dais has no centre cell, so
                 // topBlock would have nowhere defensible to stand.
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, 15), "size", DEFAULT_SIZE)
@@ -148,7 +148,7 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "properties", Map.of()).forGetter(PlatformEntry::properties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "topProperties").forGetter(PlatformEntry::topProperties),
+                        "top_properties").forGetter(PlatformEntry::topProperties),
                 SizeGate.MAP_CODEC.forGetter(PlatformEntry::gate)
         ).apply(instance, PlatformEntry::new)));
     }
@@ -190,7 +190,7 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
             }
             if (pattern.topBlock().isPresent() && pattern.size() < 1) {
                 return DataResult.error(() -> "platform '" + pattern.type()
-                        + "': a topBlock needs a dais to stand on");
+                        + "': a top_block needs a dais to stand on");
             }
             DataResult<SizeGate> gate = pattern.gate()
                     .validate("platform '" + pattern.type() + "'");

@@ -66,13 +66,13 @@ public final class SpacingSweep {
     public static void main(String[] args) {
         int seeds = intArg(args, "seeds", 120);
         DungeonSize size = DungeonSize.valueOf(strArg(args, "size", "MEDIUM").toUpperCase(Locale.ROOT));
-        int corridorWidth = intArg(args, "corridorWidth", 3);
+        int corridorWidth = intArg(args, "corridor_width", 3);
         List<Integer> gaps = new ArrayList<>();
         for (String g : strArg(args, "gaps", "0,1,2,3,4").split(",")) {
             gaps.add(Integer.parseInt(g.trim()));
         }
 
-        System.out.printf("%nminRoomGap sweep -- %d seeds per setting, %s, corridorWidth=%d%n",
+        System.out.printf("%nminRoomGap sweep -- %d seeds per setting, %s, corridor_width=%d%n",
                 seeds, size, corridorWidth);
         System.out.println("(a room's box overlapping another by one cell is a shared wall; "
                 + "the maze runs on a 2-cell lattice so gaps are always even)");

@@ -70,10 +70,10 @@ public record PilasterShape(String block, Optional<String> baseBlock, Optional<S
                     // REQUIRED, and that is what retires WallPatternEntry.validate's
                     // "block is required -- there is no default material" rule: the flat record had
                     // to make it Optional because `courses` has no block of its own.
-                    Codec.STRING.fieldOf("block").forGetter(PilasterShape::block),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "baseBlock")
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(PilasterShape::block),
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "base_block")
                             .forGetter(PilasterShape::baseBlock),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "capBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "cap_block")
                             .forGetter(PilasterShape::capBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
                                     PilastersWallPatternProvider.DEFAULT_SPACING)
@@ -89,9 +89,9 @@ public record PilasterShape(String block, Optional<String> baseBlock, Optional<S
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                             "properties", Map.of()).forGetter(PilasterShape::properties),
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                            "baseProperties").forGetter(PilasterShape::baseProperties),
+                            "base_properties").forGetter(PilasterShape::baseProperties),
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                            "capProperties").forGetter(PilasterShape::capProperties)
+                            "cap_properties").forGetter(PilasterShape::capProperties)
             ).apply(instance, PilasterShape::new)));
 
     /** The base block, falling back to {@link #block} when unauthored. */

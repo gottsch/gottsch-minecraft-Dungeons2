@@ -40,6 +40,12 @@ import java.util.Map;
  * courses list.</p>
  *
  * <h2>The fields</h2>
+ * <p>camelCase, like every other record in this package. They were snake_case until 2026-08-31 --
+ * this type was authored after the closed-schema migration and picked up the surrounding
+ * <em>processor</em> files' convention rather than its own package's. Renamed rather than kept
+ * because nothing had shipped: two conventions inside one schema means an author has to remember
+ * which record they are in, and the closed schema turns that memory lapse into a load error rather
+ * than something they can shrug off.</p>
  * <ul>
  *   <li>{@code bottom_block} / {@code top_block} &mdash; both required. Neither has a default,
  *       because a gradient with one material is a plain wall and should be authored as one.</li>
@@ -72,8 +78,8 @@ public record GradientWallPattern(String bottomBlock, String topBlock, double bo
 
     public static final MapCodec<GradientWallPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("bottom_block").forGetter(GradientWallPattern::bottomBlock),
-                    Codec.STRING.fieldOf("top_block").forGetter(GradientWallPattern::topBlock),
+                    Codecs.BLOCK_ID.fieldOf("bottom_block").forGetter(GradientWallPattern::bottomBlock),
+                    Codecs.BLOCK_ID.fieldOf("top_block").forGetter(GradientWallPattern::topBlock),
                     Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D),
                                     "bottom_probability", 1.0D)
                             .forGetter(GradientWallPattern::bottomProbability),

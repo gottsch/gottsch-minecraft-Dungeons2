@@ -33,17 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #29, stage 1: {@code sinkOffset}, the derived {@code ceilingBudget}, and the invariant
+ * Backlog #29, stage 1: {@code sink_offset}, the derived {@code ceilingBudget}, and the invariant
  * that was holding by coincidence.
  *
  * <h2>What sinkOffset is, in one line</h2>
- * <p>The walking plane sits {@code sinkOffset} blocks UP into its own floor's slab, so the floor
- * owns {@code sinkOffset} blocks below it &mdash; the room a pit has to sink into (#3). The budget
+ * <p>The walking plane sits {@code sink_offset} blocks UP into its own floor's slab, so the floor
+ * owns {@code sink_offset} blocks below it &mdash; the room a pit has to sink into (#3). The budget
  * is bought from the ceiling, not from the descent: {@code ceilingBudget = floorHeight -
  * sinkOffset}, while {@code pitch = floorHeight + gapBetweenFloors} does not move.</p>
  *
  * <h2>Why the pitch not moving is the whole point</h2>
- * <p>#3's original sketch bounded pit depth by {@code gapBetweenFloors}. Raising THAT to make room
+ * <p>#3's original sketch bounded pit depth by {@code gap_between_floors}. Raising THAT to make room
  * lengthens every transition, and every shipped transition template is cut for a span of exactly 12
  * (#52). Buying the depth from the ceiling instead costs nothing in descent, so pits need no
  * template re-cut &mdash; which is what makes them separable from the floor-height raise rather
@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>{@code DEFAULT_FLOOR_HEIGHT} is 10 and {@code pickRoomHeight}'s roll maxes at 10. Those two
  * numbers were equal <em>by accident</em>, and nothing anywhere asserted the invariant they encode:
  * <strong>a room is never taller than the floor holding it.</strong> A room over budget puts its
- * ceiling through {@code gapBetweenFloors} and into the floor above, which nothing logs and nobody
+ * ceiling through {@code gap_between_floors} and into the floor above, which nothing logs and nobody
  * sees until they walk into it.</p>
  *
  * <p>Runs the real planner headlessly &mdash; {@code surfaceY} is a plain int, so no world is
@@ -95,7 +95,7 @@ class SinkOffsetAndCeilingBudgetTest {
             for (int i = 1; i < floors.size(); i++) {
                 assertEquals(FLOOR_HEIGHT + GAP,
                         floors.get(i - 1).getFloorY() - floors.get(i).getFloorY(),
-                        "sinkOffset " + sinkOffset + " changed the drop from floor " + (i - 1)
+                        "sink_offset " + sinkOffset + " changed the drop from floor " + (i - 1)
                                 + " to floor " + i + "; it is bought from the ceiling, not from"
                                 + " the descent");
             }
@@ -141,8 +141,8 @@ class SinkOffsetAndCeilingBudgetTest {
             for (FloorLayout floor : floors) {
                 assertEquals(FLOOR_HEIGHT - sinkOffset,
                         floor.getCeilingY() - floor.getFloorY() + 1,
-                        "floor " + floor.getFloorIndex() + " at sinkOffset " + sinkOffset
-                                + ": ceiling budget should be floorHeight - sinkOffset");
+                        "floor " + floor.getFloorIndex() + " at sink_offset " + sinkOffset
+                                + ": ceiling budget should be floor_height - sink_offset");
             }
         }
     }
@@ -150,7 +150,7 @@ class SinkOffsetAndCeilingBudgetTest {
     /**
      * The stone buffer is PRESERVED, not eaten. The stack measures the gap from the pit bottom
      * rather than from the walking plane, so floor {@code i-1}'s deepest possible pit still lands
-     * {@code gapBetweenFloors} clear of floor {@code i}'s ceiling. Measuring from the walking plane
+     * {@code gap_between_floors} clear of floor {@code i}'s ceiling. Measuring from the walking plane
      * instead would open a pit straight into the room below at any {@code sinkOffset > gap}.
      */
     @Test
@@ -161,21 +161,21 @@ class SinkOffsetAndCeilingBudgetTest {
                 int pitBottom = floors.get(i - 1).getFloorY() - sinkOffset;
                 int ceilingBelow = floors.get(i).getCeilingY();
                 assertEquals(GAP, pitBottom - ceilingBelow - 1,
-                        "sinkOffset " + sinkOffset + ", floors " + (i - 1) + "/" + i
+                        "sink_offset " + sinkOffset + ", floors " + (i - 1) + "/" + i
                                 + ": the buffer between the pit bottom and the ceiling below"
-                                + " must stay gapBetweenFloors");
+                                + " must stay gap_between_floors");
             }
         }
     }
 
-    /** A floor owns exactly {@code floorHeight} blocks however the boundary inside it moves. */
+    /** A floor owns exactly {@code floor_height} blocks however the boundary inside it moves. */
     @Test
     void aFloorAlwaysOwnsExactlyFloorHeightBlocks() {
         for (int sinkOffset = 0; sinkOffset <= 5; sinkOffset++) {
             for (FloorLayout floor : floors(0xD2_29_0004L, DungeonSize.MEDIUM, sinkOffset)) {
                 int owned = floor.getCeilingY() - (floor.getFloorY() - sinkOffset) + 1;
                 assertEquals(FLOOR_HEIGHT, owned,
-                        "floor " + floor.getFloorIndex() + " at sinkOffset " + sinkOffset);
+                        "floor " + floor.getFloorIndex() + " at sink_offset " + sinkOffset);
             }
         }
     }
@@ -242,9 +242,9 @@ class SinkOffsetAndCeilingBudgetTest {
     }
 
     /**
-     * A planner built without a config measures the dungeon that SHIPS. Its {@code sinkOffset}
-     * field defaults to {@code DEFAULT_SINK_OFFSET} for the same reason {@code floorHeight} and
-     * {@code gapBetweenFloors} default to theirs &mdash; the probes, the floor-plan exporter and
+     * A planner built without a config measures the dungeon that SHIPS. Its {@code sink_offset}
+     * field defaults to {@code DEFAULT_SINK_OFFSET} for the same reason {@code floor_height} and
+     * {@code gap_between_floors} default to theirs &mdash; the probes, the floor-plan exporter and
      * most tests construct a planner that way, and a default of 0 would have quietly measured a
      * differently-shaped dungeon than the one a player gets.
      */

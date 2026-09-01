@@ -107,7 +107,7 @@ class MiningChestPlannerTest {
      * them. Asserted as a distribution rather than a rule &mdash; a guaranteed floor is a solved
      * dungeon, so shallow placements are permitted and merely rare.</p>
      *
-     * <p>The bar is the bottom half of the floors. At the shipped {@code depthBias} of 3 the
+     * <p>The bar is the bottom half of the floors. At the shipped {@code depth_bias} of 3 the
      * arithmetic says a four-floor dungeon puts 91% of its weight there; 75% leaves room for the
      * two-floor dungeons, where the bottom half is one floor of two and the best achievable is 89%.</p>
      */
@@ -137,7 +137,7 @@ class MiningChestPlannerTest {
         double share = deep / (double) total;
         assertTrue(share >= 0.75D, String.format(
                 "only %.0f%% of Mining Chests (%d of %d) landed in the bottom half of the dungeon;"
-                        + " raise depthBias in mining_config", share * 100, deep, total));
+                        + " raise depth_bias in mining_config", share * 100, deep, total));
         assertTrue(onFloorZeroOfATallDungeon <= 1, onFloorZeroOfATallDungeon
                 + " chests landed on floor 0 of a dungeon four or more floors deep, which is the"
                 + " exact case Mark called out");
@@ -182,7 +182,7 @@ class MiningChestPlannerTest {
         MiningConfig off = new MiningConfig(0.0D, MiningConfig.DEFAULT_DEPTH_BIAS,
                 config().ores());
         assertTrue(MiningChestPlanner.plan(layout, off).isEmpty(),
-                "payoutFraction 0 still planned a chest");
+                "payout_fraction 0 still planned a chest");
     }
 
     /**

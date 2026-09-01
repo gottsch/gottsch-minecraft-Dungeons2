@@ -176,7 +176,7 @@ class RoomHeightTaperTest {
                 new TemplateCatalog()).floorHeight();
         assertTrue(RoomHeightBand.validateAgainstBudget(
                         DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS, floorHeight),
-                "the shipped roomHeightBands exceed the planner's floorHeight of " + floorHeight);
+                "the shipped room_height_bands exceed the planner's floor_height of " + floorHeight);
     }
 
     private static String footprint(RoomData room) {

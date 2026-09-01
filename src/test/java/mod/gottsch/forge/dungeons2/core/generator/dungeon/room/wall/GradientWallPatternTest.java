@@ -114,7 +114,7 @@ class GradientWallPatternTest {
     void aHoldTallerThanTheWallKeepsEveryRowAtFullBias() {
         GradientWallPatternProvider gradient = provider(0.9D, 0.0D, 5);
 
-        // A 3-row room with hold_rows 5 was authored as "all bottom material". Inverting it -- or
+        // A 3-row room with holdRows 5 was authored as "all bottom material". Inverting it -- or
         // dividing by a negative span -- would put the TOP material at the foot of the wall, which
         // is the one outcome the author certainly did not ask for.
         for (int v = 0; v < 3; v++) {

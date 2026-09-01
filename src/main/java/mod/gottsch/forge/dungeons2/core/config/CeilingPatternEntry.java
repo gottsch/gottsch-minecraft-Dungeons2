@@ -101,7 +101,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * line with open room on both sides, and a {@code centre} boss is a solid block with no edge at
      * all. Neither has a defensible answer, so neither invents one. Note a joist's own beam cells are
      * a rib by that same argument: {@code orient} there turns the <strong>bracket</strong>, which is
-     * why an oriented {@code joists} with no {@code bracketBlock} is rejected too rather than
+     * why an oriented {@code joists} with no {@code bracket_block} is rejected too rather than
      * silently doing nothing.</p>
      *
      * <p>Failing the load rather than ignoring the field is the same rule the strict codecs in this
@@ -113,7 +113,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
         for (SurfacePatternEntry entryPattern : entry.patterns()) {
             // TWO OF THE THREE RULES THAT USED TO BE HERE ARE GONE, and neither was deleted --
             // both became impossible to author. "orient on a type with no direction to face" and
-            // "bracketBlock on something that is not a joists" were only expressible because every
+            // "bracket_block on something that is not a joists" were only expressible because every
             // ceiling type shared one flat record; now `orient` is declared by border and joists
             // alone and `bracketBlock` by joists alone, so either is a stray key and the closed
             // schema rejects it with a better message than these checks gave.
@@ -124,7 +124,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
             if (entryPattern.pattern() instanceof JoistsCeilingPattern joists
                     && joists.orientsNothing()) {
                 return DataResult.error(() -> "ceiling pattern 'joists': orient turns the end"
-                        + " bracket, and this entry has no bracketBlock to turn; the beams"
+                        + " bracket, and this entry has no bracket_block to turn; the beams"
                         + " themselves take their axis from the run");
             }
             // An inverted per-entry gate fits no room, so the pattern silently never draws --
@@ -182,7 +182,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *
      * <ul>
      *   <li>{@code "border"} &mdash; a ring inset from the edge, reading as a soffit. Uses
-     *       {@code block} for the edges and {@code cornerBlock} for the four corners, plus
+     *       {@code block} for the edges and {@code corner_block} for the four corners, plus
      *       {@code inset} (default {@value BorderSurfacePatternProvider#DEFAULT_INSET}).</li>
      *   <li>{@code "coffers"} &mdash; a lattice of ribs dividing the ceiling into panels. Uses
      *       {@code block} and {@code spacing} (default
@@ -192,7 +192,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *   <li>{@code "joists"} &mdash; parallel beams (rafters) crossing the room's <em>shorter</em>
      *       axis, reading as the floor above rather than as masonry. Uses {@code block},
      *       {@code spacing} (default {@value JoistSurfacePatternProvider#DEFAULT_SPACING}), and an
-     *       optional {@code bracketBlock} carrying each run's two ends <strong>from the row
+     *       optional {@code bracket_block} carrying each run's two ends <strong>from the row
      *       below</strong> &mdash; so a bracketed entry occupies two rows, not one. The block is
      *       <strong>not assumed to be timber</strong> &mdash; stone beams are equally legitimate,
      *       and are the ones that weather today.</li>
@@ -201,7 +201,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * <p>{@code block} is required by every type: there is deliberately no Java-side default for a
      * pattern's material, so an absent, malformed or unregistered id skips that pattern rather than
      * substituting a guess &mdash; the same rule the floor and wall patterns follow.
-     * {@code cornerBlock} is the one exception, and not really one: when absent it falls back to
+     * {@code corner_block} is the one exception, and not really one: when absent it falls back to
      * {@code block}, which is another <em>authored</em> value rather than a guessed block, and gives
      * a uniform ring without repeating the id.</p>
      *
@@ -218,11 +218,11 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * is left to the walls' own trim &mdash; see {@code CeilingSurface#emitProjected}.</p>
      *
      * <p>Headroom is the scheme's problem, not this record's: a rib hanging into a 5-high room
-     * leaves two interior rows, so a projecting ceiling wants a {@code minHeight}.</p>
+     * leaves two interior rows, so a projecting ceiling wants a {@code min_height}.</p>
      *
      * <h2>orient and properties &mdash; what makes a stepped vault a vault</h2>
      * <p>{@code properties} applies author-named block properties to both {@code block} and
-     * {@code cornerBlock}, exactly as a wall course's does and for the same reason: they are one
+     * {@code corner_block}, exactly as a wall course's does and for the same reason: they are one
      * block family, and a corner stair that missed its {@code half=top} is a very quiet defect. It
      * applies to every pattern type, since it says nothing about geometry.</p>
      *
@@ -250,8 +250,8 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *
      * <h2>What this used to be</h2>
      * <p>Eleven fields for four types with near-disjoint needs, plus a {@code type} string the
-     * selector switched over: {@code cornerBlock} meant nothing to {@code coffers},
-     * {@code bracketBlock} nothing to {@code centre}, {@code size} nothing outside {@code centre}.
+     * selector switched over: {@code corner_block} meant nothing to {@code coffers},
+     * {@code bracket_block} nothing to {@code centre}, {@code size} nothing outside {@code centre}.
      * Each was a silent no-op. Every one of those fields now lives on the type that reads it.</p>
      *
      * <p><strong>{@code projection} stayed.</strong> It positions the pattern within the ceiling's
@@ -294,17 +294,17 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *
      * <h2>Where 4 comes from</h2>
      * <p>Derived from the shipped clearance rather than picked. {@code vaulted_hall} gates itself at
-     * {@code minHeight} 7 &mdash; a 5-row interior &mdash; and its two-step vault leaves 3 rows of
+     * {@code min_height} 7 &mdash; a 5-row interior &mdash; and its two-step vault leaves 3 rows of
      * clear perimeter headroom. The tallest room a vault scheme can be gated to is 9 (the
-     * {@code maxLongSide} 11 band; see {@code roomHeightBands}), a 7-row interior, where a
+     * {@code max_long_side} 11 band; see {@code room_height_bands}), a 7-row interior, where a
      * <em>four</em>-step vault leaves those same 3 rows. So 4 is the deepest step count that never
      * asks for headroom the shipped scheme does not already spend.</p>
      *
      * <h2>Nothing checks it against the room, and that is unchanged</h2>
      * <p>This is a schema bound, not a fit check. A four-step vault authored on a scheme with no
-     * {@code minHeight} will draw in a 5-high room and come down to the floor at the perimeter.
+     * {@code min_height} will draw in a 5-high room and come down to the floor at the perimeter.
      * That was equally true of the two-step one, and the author's tool is the same as it was: the
-     * scheme's {@code minHeight} gate. See {@code VaultedHallSchemeTest}, which walks the perimeter
+     * scheme's {@code min_height} gate. See {@code VaultedHallSchemeTest}, which walks the perimeter
      * of the shipped scheme rather than trusting the bound.</p>
      *
      * <h2>What is still out of scope</h2>

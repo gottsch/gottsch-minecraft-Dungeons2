@@ -58,9 +58,9 @@ public record DoorConfig(String door, String lintel, String floor, double probab
     }
 
     public static final Codec<DoorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("door").forGetter(DoorConfig::door),
-            Codec.STRING.fieldOf("lintel").forGetter(DoorConfig::lintel),
-            Codec.STRING.fieldOf("floor").forGetter(DoorConfig::floor),
+            Codecs.BLOCK_ID.fieldOf("door").forGetter(DoorConfig::door),
+            Codecs.BLOCK_ID.fieldOf("lintel").forGetter(DoorConfig::lintel),
+            Codecs.BLOCK_ID.fieldOf("floor").forGetter(DoorConfig::floor),
             // Optional, unlike its siblings: it is a shape knob rather than a material, so there is
             // a meaningful default to fall back on. The blocks have none on purpose.
             Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0, 1.0), "probability", 1.0)

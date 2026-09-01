@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The depth axis for spawner content: {@code mobSetsByFloorIndex} bands, and a scheme's ability to
+ * The depth axis for spawner content: {@code mob_sets_by_floor_index} bands, and a scheme's ability to
  * override them.
  *
  * <p>Two properties carry most of the weight here, and both are about making a silent failure
  * impossible rather than merely unlikely. <strong>Bands are open-ended downward</strong>, so a floor
  * that no band answers for cannot be expressed &mdash; the alternative leaves a dungeon that looks
  * finished with every spawner on one floor quietly drawing from nothing. And <strong>absent is not
- * empty</strong> on a scheme's {@code mobSets}: absent means "whatever this depth calls for", empty
+ * empty</strong> on a scheme's {@code mob_sets}: absent means "whatever this depth calls for", empty
  * is an authoring mistake and a load error, and only an {@link Optional} can tell them apart.</p>
  */
 class MobSetsByFloorTest {
@@ -122,7 +122,7 @@ class MobSetsByFloorTest {
 
     @Test
     void aBandWithNoMobSetsIsALoadError() {
-        JsonElement json = JsonParser.parseString("{\"minFloorIndex\":0,\"mobSets\":[]}");
+        JsonElement json = JsonParser.parseString("{\"min_floor_index\":0,\"mob_sets\":[]}");
         assertTrue(MobSetBand.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
@@ -131,7 +131,7 @@ class MobSetsByFloorTest {
     @Test
     void aSchemeWithNoMobSetsInheritsTheFloorsBand() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minCount\":1,\"maxCount\":1}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1}"))
                 .result().orElseThrow();
         assertTrue(deferring.mobSets().isEmpty(), "the slot should be deferring, not defaulted");
 
@@ -152,12 +152,12 @@ class MobSetsByFloorTest {
     }
 
     /**
-     * The distinction the whole override rests on. {@code "mobSets": []} is not a quieter way of
+     * The distinction the whole override rests on. {@code "mob_sets": []} is not a quieter way of
      * omitting the key -- it is a slot that can only place invisible blocks that spawn nothing.
      */
     @Test
     void anExplicitlyEmptyMobSetsListIsALoadError() {
-        JsonElement json = JsonParser.parseString("{\"mobSets\":[]}");
+        JsonElement json = JsonParser.parseString("{\"mob_sets\":[]}");
         DataResult<SpawnerConfig> result = SpawnerConfig.CODEC.parse(JsonOps.INSTANCE, json);
         assertTrue(result.error().isPresent());
         assertTrue(result.error().get().message().contains("Omit the key"),
@@ -220,7 +220,7 @@ class MobSetsByFloorTest {
     @Test
     void aBandSuppliesTheMobCountWhenTheSchemeStatesNone() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minCount\":1,\"maxCount\":1}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1}"))
                 .result().orElseThrow();
         assertTrue(deferring.minMobs().isEmpty(), "the slot should state no count, not a defaulted one");
 
@@ -233,7 +233,7 @@ class MobSetsByFloorTest {
     @Test
     void aSchemeThatStatesItsOwnCountOverridesTheBand() {
         SpawnerConfig owning = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minMobs\":1,\"maxMobs\":2}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":1,\"max_mobs\":2}"))
                 .result().orElseThrow();
 
         SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
@@ -279,7 +279,7 @@ class MobSetsByFloorTest {
     @Test
     void aBandStatingNoCountLeavesTheSchemesOwnAlone() {
         SpawnerConfig owning = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"minMobs\":4,\"maxMobs\":6}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":4,\"max_mobs\":6}"))
                 .result().orElseThrow();
 
         SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(band(0, DEEP)));
@@ -303,14 +303,14 @@ class MobSetsByFloorTest {
     @Test
     void aBandRoundTripsItsCountsAndRejectsAnUnknownKey() {
         JsonElement json = JsonParser.parseString(
-                "{\"minFloorIndex\":2,\"mobSets\":[{\"mobSet\":\"" + DEEP + "\"}],"
-                        + "\"minMobs\":3,\"maxMobs\":5}");
+                "{\"min_floor_index\":2,\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}],"
+                        + "\"min_mobs\":3,\"max_mobs\":5}");
         MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
         assertEquals(Optional.of(3), decoded.minMobs());
         assertEquals(Optional.of(5), decoded.maxMobs());
 
         DataResult<MobSetBand> typo = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
-                "{\"mobSets\":[{\"mobSet\":\"" + DEEP + "\"}],\"minMob\":3}"));
+                "{\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}],\"minMob\":3}"));
         assertTrue(typo.error().isPresent(), "a misspelled count key must not be silently ignored");
     }
 
@@ -318,7 +318,7 @@ class MobSetsByFloorTest {
     @Test
     void aBandWithNoCountsDecodesToAbsent() {
         MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
-                "{\"mobSets\":[{\"mobSet\":\"" + DEEP + "\"}]}")).result().orElseThrow();
+                "{\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}]}")).result().orElseThrow();
         assertTrue(decoded.minMobs().isEmpty());
         assertTrue(decoded.maxMobs().isEmpty());
     }

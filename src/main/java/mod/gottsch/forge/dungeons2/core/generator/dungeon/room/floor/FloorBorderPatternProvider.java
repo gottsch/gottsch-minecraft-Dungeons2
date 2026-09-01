@@ -108,9 +108,9 @@ public class FloorBorderPatternProvider implements IDungeonFloorGenerator, IFloo
                                       BlockState baseState) {
         this.baseState = Objects.requireNonNull(baseState, "baseState");
         this.inset = inset;
-        this.cornerBlock = Objects.requireNonNull(cornerBlock, "cornerBlock");
-        this.edgeLeftBlock = Objects.requireNonNull(edgeLeftBlock, "edgeLeftBlock");
-        this.edgeRightBlock = Objects.requireNonNull(edgeRightBlock, "edgeRightBlock");
+        this.cornerBlock = Objects.requireNonNull(cornerBlock, "corner_block");
+        this.edgeLeftBlock = Objects.requireNonNull(edgeLeftBlock, "edge_left_block");
+        this.edgeRightBlock = Objects.requireNonNull(edgeRightBlock, "edge_right_block");
     }
 
     /** One ring cell's role/orientation, independent of any Minecraft registry. */

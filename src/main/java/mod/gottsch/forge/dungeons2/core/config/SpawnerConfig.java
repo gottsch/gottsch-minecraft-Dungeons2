@@ -64,7 +64,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * Which kind of spawner the slot places.
      *
      * <p>{@link #PROXIMITY} is this mod's own invisible block: it fires once when a player comes
-     * within {@code proximity}, releases {@code minMobs}..{@code maxMobs} at once, and then dies.
+     * within {@code proximity}, releases {@code min_mobs}..{@code max_mobs} at once, and then dies.
      * An ambush. {@link #VANILLA} is {@code minecraft:spawner} &mdash; the visible cage that keeps
      * producing mobs until it is broken or lit, which is a completely different thing to walk into
      * and is the one players already know how to deal with.</p>
@@ -121,12 +121,12 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
 
     /**
      * This config with its mob sets resolved: its own if it names any, otherwise the motif's
-     * {@code mobSetsByFloorIndex} band for the floor being built.
+     * {@code mob_sets_by_floor_index} band for the floor being built.
      *
      * <p><strong>Absent and empty are different things here, deliberately.</strong> A scheme that
-     * omits {@code mobSets} is saying "whatever this depth calls for", which is the case that lets
+     * omits {@code mob_sets} is saying "whatever this depth calls for", which is the case that lets
      * one scheme be reused at every depth and get harder as it goes. A scheme that writes
-     * {@code "mobSets": []} is saying nothing at all, and is rejected at load &mdash; which is only
+     * {@code "mob_sets": []} is saying nothing at all, and is rejected at load &mdash; which is only
      * expressible because the field is an {@link Optional} rather than a list defaulting to empty.
      * That distinction is the whole reason the override works.</p>
      *
@@ -176,7 +176,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     public record MobSetEntry(String mobSet, int weight) {
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<MobSetEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("mobSet").forGetter(MobSetEntry::mobSet),
+                Codec.STRING.fieldOf("mob_set").forGetter(MobSetEntry::mobSet),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(MobSetEntry::weight)
         ).apply(instance, MobSetEntry::new)));
@@ -190,25 +190,25 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      */
     public static final MapCodec<SpawnerConfig> MAP_CODEC =
             RecordCodecBuilder.<SpawnerConfig>mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minCount", 1)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_count", 1)
                     .forGetter(SpawnerConfig::minCount),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 1)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_count", 1)
                     .forGetter(SpawnerConfig::maxCount),
             // Absent, not defaulted: a scheme that states no count defers to the motif's depth
             // band, and only falls back to DEFAULT_MIN_MOBS/DEFAULT_MAX_MOBS if no band speaks
             // either. A defaulted int could not tell those two cases apart. See MobSetBand.
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "minMobs")
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "min_mobs")
                     .forGetter(SpawnerConfig::minMobs),
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxMobs")
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_mobs")
                     .forGetter(SpawnerConfig::maxMobs),
             // A proximity of 0 is not "trigger on contact": the block entity clamps the squared
             // distance up to 1.0, so it would fire only when the player stands in the cell -- an
             // invisible block in an open room, which reads as a spawner that never works.
             Codecs.strictOptionalFieldOf(Codec.doubleRange(1.0D, 64.0D), "proximity", DEFAULT_PROXIMITY)
                     .forGetter(SpawnerConfig::proximity),
-            // Optional, and absent means "use the motif's mobSetsByFloorIndex band for this floor".
+            // Optional, and absent means "use the motif's mob_sets_by_floor_index band for this floor".
             // See resolvedAgainst for why absent and empty must stay distinguishable.
-            Codecs.strictOptionalFieldOf(MobSetEntry.CODEC.listOf(), "mobSets")
+            Codecs.strictOptionalFieldOf(MobSetEntry.CODEC.listOf(), "mob_sets")
                     .forGetter(SpawnerConfig::mobSets),
             SizeGate.MAP_CODEC.forGetter(SpawnerConfig::gate),
             // Defaults to proximity: every scheme authored before vanilla spawners existed means
@@ -223,7 +223,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     /**
      * Rejects a slot that can only ever produce a spawner spawning nothing.
      *
-     * <p>An empty {@code mobSets} is the whole of it, and it is worth a load error rather than a
+     * <p>An empty {@code mob_sets} is the whole of it, and it is worth a load error rather than a
      * silent skip for the reason every check around this feature exists: a spawner is invisible, so
      * one that was configured to draw from nothing is indistinguishable in game from one that was
      * never placed. The count range is <em>clamped</em> instead (see {@link #clampedMaxCount}),
@@ -231,8 +231,8 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      */
     private static DataResult<SpawnerConfig> validate(SpawnerConfig config) {
         if (config.mobSets.isPresent() && config.mobSets.get().isEmpty()) {
-            return DataResult.error(() -> "spawners slot: 'mobSets' is present but empty. Omit the"
-                    + " key entirely to draw from the motif's mobSetsByFloorIndex table for the"
+            return DataResult.error(() -> "spawners slot: 'mob_sets' is present but empty. Omit the"
+                    + " key entirely to draw from the motif's mob_sets_by_floor_index table for the"
                     + " floor; an empty list places invisible blocks that spawn nothing");
         }
         return DataResult.success(config);

@@ -30,7 +30,7 @@ import java.util.Optional;
 /**
  * A square sunken court of {@code size} cells a side, centred, terraced one block per ring inward.
  *
- * <p>{@code depth} is a MAXIMUM in two directions. It is clamped to the floor's {@code sinkOffset}
+ * <p>{@code depth} is a MAXIMUM in two directions. It is clamped to the floor's {@code sink_offset}
  * as the generator writes, and it is bounded by the footprint too &mdash; the court steps down one
  * block per ring, so a 3x3 reaches two and stops however deep it is authored. 5x5 is the smallest
  * that descends three.</p>
@@ -66,9 +66,9 @@ public record CentrePitShape(int size, int depth, Optional<String> rimBlock,
                             .forGetter(CentrePitShape::depth),
                     // A ring of stairs on the floor cells just OUTSIDE the court. Omit for a plain
                     // kerb; see PitPlans#stairRim for what it buys and which way it faces.
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "rimBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "rim_block")
                             .forGetter(CentrePitShape::rimBlock),
-                    Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "rimOrient",
+                    Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "rim_orient",
                             DEFAULT_RIM_ORIENT).forGetter(CentrePitShape::rimOrient)
             ).apply(instance, CentrePitShape::new)));
 

@@ -30,9 +30,9 @@ import java.util.Optional;
  * The {@code pit} scheme slot: a sunken area in a room's floor. Backlog #3.
  *
  * <h2>A pit is dug out of the FLOOR'S OWN BUDGET, never out of the gap</h2>
- * <p>This is the rule the whole feature hangs on. A floor owns {@code floorHeight} blocks;
- * {@code sinkOffset} (#29) decides how many of them sit <em>below</em> the walking plane, and a pit
- * lives entirely in those. The stone buffer between floors, {@code gapBetweenFloors}, is not
+ * <p>This is the rule the whole feature hangs on. A floor owns {@code floor_height} blocks;
+ * {@code sink_offset} (#29) decides how many of them sit <em>below</em> the walking plane, and a pit
+ * lives entirely in those. The stone buffer between floors, {@code gap_between_floors}, is not
  * available to it at any depth &mdash; the planner measures that buffer from the deepest possible
  * pit bottom rather than from the walking plane, so the separation between floors is preserved
  * whatever a scheme asks for.</p>
@@ -40,22 +40,22 @@ import java.util.Optional;
  * <p><strong>Depth is the PROVIDER's to ask for and the GENERATOR's to grant.</strong> Each shape
  authors its own {@code depth} (they do not all mean the same thing by it &mdash; a court's is a
  maximum terrace, a hazard's is a sheer drop), and {@code RoomPitGenerator} clamps every cell to
- {@code sinkOffset} as it writes. The clamp is on the OUTPUT rather than on a field precisely
+ {@code sink_offset} as it writes. The clamp is on the OUTPUT rather than on a field precisely
  because providers are extensible: a rule every third-party provider has to remember is one that
  gets forgotten, and the failure it allows is a hole into the room below. A pack asking for 5 on a
  floor that sank 3 gets 3, which is the honest degrade.</p>
 
  * <p>It cannot be a load error either: a pit is authored on a {@code motif_config} scheme and
- * {@code sinkOffset} on the {@code generation_config}, so no codec can see both &mdash; the same
+ * {@code sink_offset} on the {@code generation_config}, so no codec can see both &mdash; the same
  * wall {@code ChestConfig#clampedMaxCount} runs into.</p>
  *
- * <p><strong>{@code sinkOffset} 0 means no pit at all</strong>, which is what ships today. The slot
+ * <p><strong>{@code sink_offset} 0 means no pit at all</strong>, which is what ships today. The slot
  * is authorable and simply draws nothing, the same degrade-don't-abort convention the
  * {@code spawners} slot follows for an unresolvable mob set. It is not an error: a pack tuned for a
  * taller pitch should still load on one that is not.</p>
  *
  * <h2>One material, because a terrace has no risers to line</h2>
- * <p>An unauthored {@code floorBlock} continues whatever the room is paved with, so a court reads
+ * <p>An unauthored {@code floor_block} continues whatever the room is paved with, so a court reads
  * as the same floor at a lower level rather than as a different structure dropped into it.
  * Authoring it is how you say otherwise &mdash; a stone-lined cistern in a mud room, say.</p>
  *
@@ -69,7 +69,7 @@ import java.util.Optional;
  * <p>The lining came back; the field did not. {@code RoomPitGenerator} now backs every cut face
  * with the pit's own floor block, unconditionally, for the same reason the depth clamp lives on the
  * output: a pit open along one side is never what an author meant, so it must not be something a
- * pack or a third-party provider can forget to ask for. Authoring {@code floorBlock} changes what
+ * pack or a third-party provider can forget to ask for. Authoring {@code floor_block} changes what
  * the lining is made of too, which keeps "one material" true &mdash; a stone-lined cistern is lined
  * in stone.</p>
  *
@@ -103,7 +103,7 @@ public record PitPatternEntry(PitShapePattern shape, Optional<String> floorBlock
             // `type` + `config`, dispatched over the pit shape registry. An unregistered id is a
             // LOAD ERROR naming what is registered, not a room that quietly has no pit.
             PitShapeRegistry.MAP_CODEC.forGetter(PitPatternEntry::shape),
-            Codecs.strictOptionalFieldOf(Codec.STRING, "floorBlock").forGetter(PitPatternEntry::floorBlock),
+            Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "floor_block").forGetter(PitPatternEntry::floorBlock),
             SizeGate.MAP_CODEC.forGetter(PitPatternEntry::gate)
     ).apply(instance, PitPatternEntry::new));
 

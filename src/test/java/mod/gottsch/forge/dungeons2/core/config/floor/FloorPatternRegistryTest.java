@@ -108,8 +108,8 @@ class FloorPatternRegistryTest {
     @Test
     void aStrayKeyInsideConfigIsALoadError() {
         assertTrue(errorOf("{\"type\": \"dungeons2:speckle\", \"config\": {"
-                + "\"primaryBlock\": \"minecraft:cobblestone\","
-                + "\"secondaryBlock\": \"minecraft:packed_mud\","
+                + "\"primary_block\": \"minecraft:cobblestone\","
+                + "\"secondary_block\": \"minecraft:packed_mud\","
                 + "\"spokes\": 4}}").toLowerCase().contains("spokes"),
                 "a field belonging to a DIFFERENT pattern must be rejected, which the flat record"
                         + " could never do");
@@ -119,7 +119,7 @@ class FloorPatternRegistryTest {
     @Test
     void aMissingRequiredBlockIsALoadError() {
         assertTrue(errorOf("{\"type\": \"dungeons2:speckle\", \"config\": {"
-                + "\"primaryBlock\": \"minecraft:cobblestone\"}}").contains("secondaryBlock"));
+                + "\"primary_block\": \"minecraft:cobblestone\"}}").contains("secondary_block"));
     }
 
     // ---------- decoding, and the shape the shipped strata.json uses ----------
@@ -127,8 +127,8 @@ class FloorPatternRegistryTest {
     @Test
     void theMudBandsAuthoredPatternDecodes() {
         FloorPatternEntry entry = decode("{\"type\": \"dungeons2:speckle\", \"config\": {"
-                + "\"primaryBlock\": \"minecraft:cobblestone\","
-                + "\"secondaryBlock\": \"minecraft:packed_mud\","
+                + "\"primary_block\": \"minecraft:cobblestone\","
+                + "\"secondary_block\": \"minecraft:packed_mud\","
                 + "\"probability\": 0.12}}");
         SpeckleFloorPattern speckle = assertInstanceOf(SpeckleFloorPattern.class, entry.pattern());
         assertEquals("minecraft:cobblestone", speckle.primaryBlock());
@@ -147,8 +147,8 @@ class FloorPatternRegistryTest {
         FloorPatternEntry entry = decode("{\"type\": \"dungeons2:composite\", \"config\": {"
                 + "\"generators\": ["
                 + "{\"type\": \"dungeons2:checkerboard\", \"config\": {"
-                + "\"primaryBlock\": \"minecraft:stone_bricks\","
-                + "\"secondaryBlock\": \"minecraft:polished_andesite\"}},"
+                + "\"primary_block\": \"minecraft:stone_bricks\","
+                + "\"secondary_block\": \"minecraft:polished_andesite\"}},"
                 + "{\"type\": \"dungeons2:cross\", \"config\": {"
                 + "\"block\": \"minecraft:polished_andesite\"}}]}}");
         CompositeFloorPattern composite =
@@ -167,7 +167,7 @@ class FloorPatternRegistryTest {
     /** The gate keys stay flat beside {@code type}, as they are everywhere else. */
     @Test
     void theSizeGateIsStillAuthoredFlat() {
-        assertEquals(7, decode("{\"type\": \"dungeons2:plain\", \"minSize\": 7}").gate().minSize());
+        assertEquals(7, decode("{\"type\": \"dungeons2:plain\", \"min_size\": 7}").gate().minSize());
     }
 
     // ---------- round trip ----------

@@ -56,7 +56,7 @@ class SchemeInheritanceTest {
     private static final String ABSTRACT_PARENT = """
             {"name":"grand","abstract":true,
              "wall":{"patterns":[{"type":"dungeons2:courses","config":{"courses":[{"block":"minecraft:polished_andesite","anchor":"top"}]}}]},
-             "pots":{"minCount":1,"maxCount":2,"lootTable":"dungeons2:pots/classic",
+             "pots":{"min_count":1,"max_count":2,"loot_table":"dungeons2:pots/classic",
                      "variants":[{"entity":"dungeonblocks:pot","weight":1}]}}""";
 
     private static List<RoomScheme> resolved(String... fragments) {
@@ -81,7 +81,7 @@ class SchemeInheritanceTest {
     @Test
     void aChildTakesTheSlotsItDoesNotFillFromItsParent() {
         List<RoomScheme> schemes = resolved(schemes(ABSTRACT_PARENT,
-                "{\"name\":\"child\",\"extends\":\"grand\",\"minSize\":9}"));
+                "{\"name\":\"child\",\"extends\":\"grand\",\"min_size\":9}"));
 
         RoomScheme child = byName(schemes, "child");
         assertTrue(child.wall().isPresent(), "the wall course should come from the parent");
@@ -109,15 +109,15 @@ class SchemeInheritanceTest {
     /**
      * <strong>Weight and the size bounds never inherit.</strong> Two reasons, and the second is the
      * real one: a primitive cannot distinguish "omitted" from "wrote the default", and a variant
-     * exists <em>because</em> its eligibility differs -- quietly copying a parent's {@code minSize}
+     * exists <em>because</em> its eligibility differs -- quietly copying a parent's {@code min_size}
      * is how a whole size band ends up with no scheme at all.
      */
     @Test
     void weightAndSizeBoundsStayTheChildsOwn() {
         List<RoomScheme> schemes = resolved(schemes("""
-                {"name":"grand","abstract":true,"weight":50,"minSize":15,"minHeight":9,
-                 "maxSize":40,
-                 "pots":{"minCount":1,"maxCount":1,"lootTable":"dungeons2:pots/classic",
+                {"name":"grand","abstract":true,"weight":50,"min_size":15,"min_height":9,
+                 "max_size":40,
+                 "pots":{"min_count":1,"max_count":1,"loot_table":"dungeons2:pots/classic",
                          "variants":[{"entity":"dungeonblocks:pot","weight":1}]}}""",
                 "{\"name\":\"child\",\"extends\":\"grand\"}"));
 
@@ -161,8 +161,8 @@ class SchemeInheritanceTest {
     @Test
     void aConcreteParentIsInheritableAndStillRolls() {
         List<RoomScheme> schemes = resolved(schemes(
-                "{\"name\":\"plain\",\"pots\":{\"minCount\":1,\"maxCount\":1,"
-                        + "\"lootTable\":\"dungeons2:pots/classic\","
+                "{\"name\":\"plain\",\"pots\":{\"min_count\":1,\"max_count\":1,"
+                        + "\"loot_table\":\"dungeons2:pots/classic\","
                         + "\"variants\":[{\"entity\":\"dungeonblocks:pot\",\"weight\":1}]}}",
                 "{\"name\":\"variant\",\"extends\":\"plain\"}"));
 
@@ -265,7 +265,7 @@ class SchemeInheritanceTest {
     /** A scheme with no {@code extends} is passed through untouched, not copied. */
     @Test
     void aSchemeWithoutExtendsIsTheSameInstance() {
-        MotifConfigFragment only = fragment(schemes("{\"name\":\"solid\",\"minSize\":9}"));
+        MotifConfigFragment only = fragment(schemes("{\"name\":\"solid\",\"min_size\":9}"));
         assertSame(only.schemes().get(0),
                 MotifConfigFragment.resolve(List.of(only)).schemes().get(0));
     }
@@ -293,8 +293,8 @@ class SchemeInheritanceTest {
     @Test
     void floorBoundsStayTheChildsOwn() {
         List<RoomScheme> schemes = resolved(schemes("""
-                {"name":"grand","abstract":true,"minFloorIndex":3,"maxFloorIndex":5,
-                 "pots":{"minCount":1,"maxCount":1,"lootTable":"dungeons2:pots/classic",
+                {"name":"grand","abstract":true,"min_floor_index":3,"max_floor_index":5,
+                 "pots":{"min_count":1,"max_count":1,"loot_table":"dungeons2:pots/classic",
                          "variants":[{"entity":"dungeonblocks:pot","weight":1}]}}""",
                 "{\"name\":\"child\",\"extends\":\"grand\"}"));
 
@@ -307,7 +307,7 @@ class SchemeInheritanceTest {
     @Test
     void theFloorBoundsRoundTripThroughTheClosedCodec() {
         RoomScheme scheme = fragment(schemes(
-                "{\"name\":\"deep\",\"minFloorIndex\":2,\"maxFloorIndex\":4}")).schemes().get(0);
+                "{\"name\":\"deep\",\"min_floor_index\":2,\"max_floor_index\":4}")).schemes().get(0);
         assertEquals(2, scheme.minFloorIndex());
         assertEquals(Optional.of(4), scheme.maxFloorIndex());
 
@@ -324,7 +324,7 @@ class SchemeInheritanceTest {
     @Test
     void aMaxFloorIndexBelowTheMinIsALoadError() {
         assertTrue(RoomScheme.CODEC.parse(JsonOps.INSTANCE, GSON.fromJson(
-                        "{\"name\":\"impossible\",\"minFloorIndex\":5,\"maxFloorIndex\":2}",
+                        "{\"name\":\"impossible\",\"min_floor_index\":5,\"max_floor_index\":2}",
                         JsonElement.class))
                 .error().isPresent());
     }

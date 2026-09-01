@@ -212,7 +212,7 @@ class WallPatternRegistryTest {
     /** The gate stays flat beside {@code type}, as it does in every other slot. */
     @Test
     void theSizeGateIsStillAuthoredFlat() {
-        assertEquals(7, decode("{\"type\": \"dungeons2:panels\", \"minSize\": 7,"
+        assertEquals(7, decode("{\"type\": \"dungeons2:panels\", \"min_size\": 7,"
                 + " \"config\": {\"block\": \"" + BLOCK + "\"}}").gate().minSize());
     }
 

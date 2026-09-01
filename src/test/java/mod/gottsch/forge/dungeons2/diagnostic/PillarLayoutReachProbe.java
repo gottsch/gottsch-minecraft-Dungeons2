@@ -102,7 +102,7 @@ class PillarLayoutReachProbe {
 
         System.out.printf("%nPillar layout reach over %d MEDIUM dungeons, %d NORMAL rooms%n",
                 DUNGEONS, rooms);
-        System.out.printf("  eligible (minSize 9, minHeight 7)  %d  (%.1f%% of rooms)%n",
+        System.out.printf("  eligible (min_size 9, min_height 7)  %d  (%.1f%% of rooms)%n",
                 eligible, pct(eligible, rooms));
         System.out.printf("  grid draws in                      %d  (%.1f%% of eligible)%n",
                 gridDraws, pct(gridDraws, eligible));

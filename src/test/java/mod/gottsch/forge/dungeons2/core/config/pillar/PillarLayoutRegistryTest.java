@@ -160,7 +160,7 @@ class PillarLayoutRegistryTest {
     @Test
     void materialsStayOnTheEntryAndGeometryMovesIntoConfig() {
         PillarEntry entry = decode("{\"type\": \"dungeons2:grid\", \"block\": \"" + BLOCK + "\","
-                + " \"baseProperties\": {\"base\": \"up\"},"
+                + " \"base_properties\": {\"base\": \"up\"},"
                 + " \"config\": {\"spacing\": 4, \"inset\": 2}}");
 
         assertEquals(BLOCK, entry.block());

@@ -96,11 +96,11 @@ class RoomPostProcessTest {
     }
 
     /**
-     * The room pieces production would emit, built with the shipped {@code sinkOffset}.
+     * The room pieces production would emit, built with the shipped {@code sink_offset}.
      *
      * <p>Mirrors {@code DungeonPieceEmitter}: START / END slots belong to the template pieces and a
      * room that drew a Phase 8 prefab is assembled rather than built, so neither is wrapped by this
-     * piece. Reading {@code sinkOffset} from the datapack rather than passing 0 is what puts pits in
+     * piece. Reading {@code sink_offset} from the datapack rather than passing 0 is what puts pits in
      * front of this test at all &mdash; it ships at 5.</p>
      */
     private static List<DungeonRoomPiece> pieces(DungeonLayout layout) {
@@ -247,7 +247,7 @@ class RoomPostProcessTest {
      *
      * <p>Cheap here and unreachable anywhere else: only {@code postProcess} knows what the box is,
      * and only the world knows where the writes landed. It matters most downward. A pit is dug below
-     * the walking plane and the box extends down by {@code sinkOffset} to cover it, so a pit that
+     * the walking plane and the box extends down by {@code sink_offset} to cover it, so a pit that
      * ever out-ran its budget would open a hole into the floor below &mdash; a hole the piece does
      * not own and the room below would not know about. It matters upward and sideways too:
      * {@code spawn_overrides bounding_box: piece} tests against this box, so a block outside it is a

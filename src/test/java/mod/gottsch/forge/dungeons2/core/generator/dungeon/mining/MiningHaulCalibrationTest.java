@@ -95,7 +95,7 @@ class MiningHaulCalibrationTest {
         assertTrue(!config.ores().isEmpty(),
                 "the mining_config registry resolved to the empty DEFAULT table, so nothing below"
                         + " is testing the shipped file");
-        assertTrue(config.payoutFraction() > 0.0D, "payoutFraction is 0, so no chest ever pays out");
+        assertTrue(config.payoutFraction() > 0.0D, "payout_fraction is 0, so no chest ever pays out");
     }
 
     /**

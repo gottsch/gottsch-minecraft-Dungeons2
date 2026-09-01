@@ -58,7 +58,7 @@ class RoomSchemeSelectorTest {
         RandomSource random = RandomSource.create(7);
         for (int i = 0; i < 200; i++) {
             assertEquals("grand", RoomSchemeSelector.select(schemes, 15, 15, 10, ENTRANCE_FLOOR, random).name(),
-                    "a maxSize 7 scheme must never fire in a 15-wide room");
+                    "a max_size 7 scheme must never fire in a 15-wide room");
         }
     }
 
@@ -75,15 +75,15 @@ class RoomSchemeSelectorTest {
         RoomScheme capped = capped("cosy", 1, 7, 9);
         assertTrue(capped.fits(9, 9, 7), "exactly on both bounds should still fit");
         // Both sides have to grow: maxSize measures the smaller one, so 11x9 is still a 9.
-        assertFalse(capped.fits(11, 11, 7), "one over maxSize");
-        assertFalse(capped.fits(9, 9, 8), "one over maxHeight");
+        assertFalse(capped.fits(11, 11, 7), "one over max_size");
+        assertFalse(capped.fits(9, 9, 8), "one over max_height");
     }
 
     /** maxSize measures the SMALLER side, same as minSize -- a long thin room is judged by its narrow axis. */
     @Test
     void maxSizeMeasuresTheSmallerSide() {
         RoomScheme capped = capped("cosy", 1, null, 7);
-        assertTrue(capped.fits(17, 5, 5), "a 17x5 room is narrow, so it is inside a maxSize of 7");
+        assertTrue(capped.fits(17, 5, 5), "a 17x5 room is narrow, so it is inside a max_size of 7");
         assertFalse(capped.fits(9, 9, 5));
     }
 
@@ -280,7 +280,7 @@ class RoomSchemeSelectorTest {
         SizeGate shortRooms = new SizeGate(0, 0, Optional.of(6), Optional.empty());
         SizeGate tallRooms = from(7);
 
-        assertFalse(shortRooms.overlaps(tallRooms), "maxHeight 6 and minHeight 7 share no room");
+        assertFalse(shortRooms.overlaps(tallRooms), "max_height 6 and min_height 7 share no room");
         assertFalse(tallRooms.overlaps(shortRooms), "and it is symmetric");
         assertTrue(shortRooms.overlaps(from(5)), "height 5-6 is in both");
         assertTrue(SizeGate.UNBOUNDED.overlaps(tallRooms), "unbounded meets everything");
@@ -294,10 +294,10 @@ class RoomSchemeSelectorTest {
     /** An inverted range is rejected at load rather than silently fitting nothing. */
     @Test
     void anInvertedElementGateIsALoadError() {
-        String json = "{\"name\": \"broken\", \"wall\": {\"minHeight\": 7, \"maxHeight\": 5, \"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\"}]}}]}}";
+        String json = "{\"name\": \"broken\", \"wall\": {\"min_height\": 7, \"max_height\": 5, \"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:polished_andesite\"}]}}]}}";
         var result = RoomScheme.CODEC.parse(JsonOps.INSTANCE,
                 new com.google.gson.Gson().fromJson(json, com.google.gson.JsonElement.class));
-        assertTrue(result.error().isPresent(), "maxHeight below minHeight should fail to decode");
+        assertTrue(result.error().isPresent(), "max_height below min_height should fail to decode");
         assertTrue(result.error().get().message().contains("wall"),
                 "the error should name the slot it came from, got: " + result.error().get().message());
     }

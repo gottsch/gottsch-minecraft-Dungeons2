@@ -55,10 +55,10 @@ class RoomHeightBandTest {
     void theShippedTableRoundTrips() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
                 [
-                  { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10 },
-                  { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 },
-                  { "maxLongSide": 15, "minHeight": 5, "maxHeight": 8 },
-                  { "minHeight": 5, "maxHeight": 7 }
+                  { "max_long_side": 7, "min_height": 6, "max_height": 10 },
+                  { "max_long_side": 11, "min_height": 5, "max_height": 9 },
+                  { "max_long_side": 15, "min_height": 5, "max_height": 8 },
+                  { "min_height": 5, "max_height": 7 }
                 ]""");
         assertEquals(DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS,
                 parsed.result().orElseThrow(() -> new AssertionError(error(parsed))),
@@ -92,7 +92,7 @@ class RoomHeightBandTest {
     @Test
     void omittingTheKeyKeepsTheShippedTaper() {
         DataResult<DungeonGenerationConfig> parsed = DungeonGenerationConfig.CODEC.parse(
-                JsonOps.INSTANCE, JsonParser.parseString("{ \"corridorWidth\": 3 }"));
+                JsonOps.INSTANCE, JsonParser.parseString("{ \"corridor_width\": 3 }"));
         assertEquals(DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS,
                 parsed.result().orElseThrow(() -> new AssertionError(error(parsed))).roomHeightBands());
     }
@@ -101,8 +101,8 @@ class RoomHeightBandTest {
     void anOpenEndedBandInTheMiddleIsALoadError() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
                 [
-                  { "minHeight": 6, "maxHeight": 10 },
-                  { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 }
+                  { "min_height": 6, "max_height": 10 },
+                  { "max_long_side": 11, "min_height": 5, "max_height": 9 }
                 ]""");
         assertTrue(error(parsed).contains("unreachable"), error(parsed));
     }
@@ -111,8 +111,8 @@ class RoomHeightBandTest {
     void aTableWithNoOpenEndedBandIsALoadError() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
                 [
-                  { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10 },
-                  { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 }
+                  { "max_long_side": 7, "min_height": 6, "max_height": 10 },
+                  { "max_long_side": 11, "min_height": 5, "max_height": 9 }
                 ]""");
         assertTrue(error(parsed).contains("must omit"), error(parsed));
     }
@@ -121,9 +121,9 @@ class RoomHeightBandTest {
     void outOfOrderBandsAreALoadError() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
                 [
-                  { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 },
-                  { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10 },
-                  { "minHeight": 5, "maxHeight": 7 }
+                  { "max_long_side": 11, "min_height": 5, "max_height": 9 },
+                  { "max_long_side": 7, "min_height": 6, "max_height": 10 },
+                  { "min_height": 5, "max_height": 7 }
                 ]""");
         assertTrue(error(parsed).contains("strictly increase"), error(parsed));
     }
@@ -131,8 +131,8 @@ class RoomHeightBandTest {
     @Test
     void anInvertedHeightRangeIsALoadError() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
-                [ { "minHeight": 9, "maxHeight": 5 } ]""");
-        assertTrue(error(parsed).contains("greater than maxHeight"), error(parsed));
+                [ { "min_height": 9, "max_height": 5 } ]""");
+        assertTrue(error(parsed).contains("greater than max_height"), error(parsed));
     }
 
     @Test
@@ -144,8 +144,8 @@ class RoomHeightBandTest {
     @Test
     void anUndeclaredKeyIsALoadError() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
-                [ { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10, "maxShortSide": 7 },
-                  { "minHeight": 5, "maxHeight": 7 } ]""");
+                [ { "max_long_side": 7, "min_height": 6, "max_height": 10, "maxShortSide": 7 },
+                  { "min_height": 5, "max_height": 7 } ]""");
         assertTrue(error(parsed).contains("maxShortSide"), error(parsed));
     }
 
@@ -153,9 +153,9 @@ class RoomHeightBandTest {
     @Test
     void aMalformedOptionalValueIsALoadError() {
         DataResult<List<RoomHeightBand>> parsed = parse("""
-                [ { "maxLongSide": -3, "minHeight": 6, "maxHeight": 10 },
-                  { "minHeight": 5, "maxHeight": 7 } ]""");
-        assertTrue(parsed.error().isPresent(), "maxLongSide -3 decoded without complaint");
+                [ { "max_long_side": -3, "min_height": 6, "max_height": 10 },
+                  { "min_height": 5, "max_height": 7 } ]""");
+        assertTrue(parsed.error().isPresent(), "max_long_side -3 decoded without complaint");
     }
 
     @Test

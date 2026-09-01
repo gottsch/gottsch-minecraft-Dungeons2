@@ -123,7 +123,7 @@ class ShippedMotifConfigTest {
                 .getOrThrow(false, message -> fail("strata.json does not decode: " + message));
 
         assertTrue(fragment.strataByFloorIndex().isPresent(),
-                "strata.json should carry strataByFloorIndex");
+                "strata.json should carry strata_by_floor_index");
 
         List<String> patterns = fragment.strataByFloorIndex().orElseThrow().stream()
                 .map(band -> band.floor().flatMap(floor -> floor.pattern()))

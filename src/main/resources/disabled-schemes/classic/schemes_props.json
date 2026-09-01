@@ -3,8 +3,8 @@
     {
       "name": "crowned_pots",
       "weight": 6,
-      "minSize": 5,
-      "minHeight": 6,
+      "min_size": 5,
+      "min_height": 6,
       "wall": {
         "patterns": [
           {
@@ -12,7 +12,7 @@
             "courses": [
               {
                 "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
+                "corner_block": "minecraft:andesite",
                 "anchor": "top"
               }
             ]
@@ -20,9 +20,9 @@
         ]
       },
       "pots": {
-        "minCount": 1,
-        "maxCount": 3,
-        "lootTable": "dungeons2:pots/classic",
+        "min_count": 1,
+        "max_count": 3,
+        "loot_table": "dungeons2:pots/classic",
         "variants": [
           {
             "entity": "dungeonblocks:pot",
@@ -54,11 +54,11 @@
     {
       "name": "plain_pots",
       "weight": 4,
-      "minSize": 5,
+      "min_size": 5,
       "pots": {
-        "minCount": 1,
-        "maxCount": 3,
-        "lootTable": "dungeons2:pots/classic",
+        "min_count": 1,
+        "max_count": 3,
+        "loot_table": "dungeons2:pots/classic",
         "variants": [
           {
             "entity": "dungeonblocks:pot",
@@ -90,18 +90,18 @@
     {
       "name": "andesite_border_pots",
       "weight": 2,
-      "minSize": 7,
+      "min_size": 7,
       "floor": {
         "type": "border",
         "inset": 2,
-        "cornerBlock": "minecraft:andesite",
-        "edgeLeftBlock": "minecraft:polished_andesite",
-        "edgeRightBlock": "minecraft:polished_andesite"
+        "corner_block": "minecraft:andesite",
+        "edge_left_block": "minecraft:polished_andesite",
+        "edge_right_block": "minecraft:polished_andesite"
       },
       "pots": {
-        "minCount": 1,
-        "maxCount": 3,
-        "lootTable": "dungeons2:pots/classic",
+        "min_count": 1,
+        "max_count": 3,
+        "loot_table": "dungeons2:pots/classic",
         "variants": [
           {
             "entity": "dungeonblocks:pot",

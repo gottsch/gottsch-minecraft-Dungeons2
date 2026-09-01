@@ -42,7 +42,7 @@ public record CrossFloorPattern(int thickness, String block) implements FloorPat
                     // `block`, not `primaryBlock`. The flat record reused primaryBlock across four
                     // unrelated patterns because it had only one set of slots to spend; each type
                     // now names its own field, so it can name it after what it actually is.
-                    Codec.STRING.fieldOf("block").forGetter(CrossFloorPattern::block)
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(CrossFloorPattern::block)
             ).apply(instance, CrossFloorPattern::new)));
 
     @Override

@@ -35,7 +35,7 @@ import java.util.Optional;
  * &mdash; so a treasury room can be a treasury on every floor.</p>
  *
  * <h2>Bands are open-ended downward</h2>
- * <p>A band starts at {@code minFloorIndex} and runs until the next one starts, so the deepest band
+ * <p>A band starts at {@code min_floor_index} and runs until the next one starts, so the deepest band
  * covers every floor below it however deep a dungeon goes. That is what makes an uncovered floor
  * unrepresentable, which is the property that matters: the alternative &mdash; ranges with an upper
  * bound &mdash; lets an author leave floor 5 with no entry at all and get chests full of nothing
@@ -47,21 +47,21 @@ public record ChestLootBand(int minFloorIndex, List<ChestConfig.LootTableEntry> 
 
     // Codecs.closed -- see RoomScheme.CODEC.
     public static final Codec<ChestLootBand> CODEC = Codecs.closed(RecordCodecBuilder.<ChestLootBand>mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minFloorIndex", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_floor_index", 0)
                     .forGetter(ChestLootBand::minFloorIndex),
-            ChestConfig.LootTableEntry.CODEC.listOf().fieldOf("lootTables")
+            ChestConfig.LootTableEntry.CODEC.listOf().fieldOf("loot_tables")
                     .forGetter(ChestLootBand::lootTables)
     ).apply(instance, ChestLootBand::new))).flatXmap(ChestLootBand::validateBand, ChestLootBand::validateBand);
 
     /**
-     * An empty band is a load error for the same reason an empty {@code mobSets} is: it reads as
+     * An empty band is a load error for the same reason an empty {@code mob_sets} is: it reads as
      * "this depth has no loot", and what it actually produces is a chest that holds nothing, which
      * a player finds by walking to it and opening it.
      */
     private static DataResult<ChestLootBand> validateBand(ChestLootBand band) {
         if (band.lootTables.isEmpty()) {
             return DataResult.error(() -> "chest loot band at floor " + band.minFloorIndex
-                    + ": 'lootTables' is empty, so every chest on those floors would be an empty chest");
+                    + ": 'loot_tables' is empty, so every chest on those floors would be an empty chest");
         }
         return DataResult.success(band);
     }

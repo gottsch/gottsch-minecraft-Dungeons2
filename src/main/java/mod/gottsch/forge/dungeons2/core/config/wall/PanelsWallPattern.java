@@ -43,7 +43,7 @@ public record PanelsWallPattern(String block, int width, int spacing, int inset,
 
     public static final MapCodec<PanelsWallPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("block").forGetter(PanelsWallPattern::block),
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(PanelsWallPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "width",
                                     PanelsWallPatternProvider.DEFAULT_WIDTH)
                             .forGetter(PanelsWallPattern::width),

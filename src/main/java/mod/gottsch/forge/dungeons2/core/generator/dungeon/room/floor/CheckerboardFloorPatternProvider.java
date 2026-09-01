@@ -51,8 +51,8 @@ public class CheckerboardFloorPatternProvider implements IDungeonFloorGenerator 
     private final Block secondaryBlock;
 
     public CheckerboardFloorPatternProvider(Block primaryBlock, Block secondaryBlock) {
-        this.primaryBlock = Objects.requireNonNull(primaryBlock, "primaryBlock");
-        this.secondaryBlock = Objects.requireNonNull(secondaryBlock, "secondaryBlock");
+        this.primaryBlock = Objects.requireNonNull(primaryBlock, "primary_block");
+        this.secondaryBlock = Objects.requireNonNull(secondaryBlock, "secondary_block");
     }
 
     @Override

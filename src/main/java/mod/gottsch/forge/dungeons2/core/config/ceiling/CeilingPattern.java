@@ -40,7 +40,7 @@ import java.util.Map;
  *
  * <h2>What the split fixes here</h2>
  * <p>The flat record carried eleven fields for four types with near-disjoint needs: {@code
- * cornerBlock} means nothing to {@code coffers}, {@code bracketBlock} nothing to {@code centre},
+ * cornerBlock} means nothing to {@code coffers}, {@code bracket_block} nothing to {@code centre},
  * {@code size} nothing to anything but {@code centre}. Every one of those was a silent no-op.</p>
  *
  * <p>It also <strong>deletes a validation rule by construction</strong>. {@code

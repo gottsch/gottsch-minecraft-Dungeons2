@@ -265,7 +265,7 @@ class DatapackResourcesParseTest {
     /**
      * Every room the planner can build must match at least one scheme.
      *
-     * <p>This became possible to get wrong the moment {@code maxHeight}/{@code maxSize} existed.
+     * <p>This became possible to get wrong the moment {@code max_height}/{@code max_size} existed.
      * With lower bounds only, a single unconstrained scheme guarantees coverage and no arrangement
      * of the others can break it. With upper bounds, a band of room sizes can fall through every
      * scheme at once — and the failure is silent: {@code RoomSchemeSelector} degrades to an
@@ -386,7 +386,7 @@ class DatapackResourcesParseTest {
                 // identical in game, which is to say invisible.
                 assertTrue(everEligible, "motif '" + name + "', scheme '" + scheme.name()
                         + "' is eligible for no room the planner can build on any floor it allows"
-                        + " -- check its minFloorIndex/maxFloorIndex against its size bounds");
+                        + " -- check its min_floor_index/max_floor_index against its size bounds");
                 assertTrue(everDraws, "motif '" + name + "', scheme '" + scheme.name()
                         + "' fills element slots but every one of them gates out of every room it "
                         + "is eligible for -- it can never render anything");

@@ -37,8 +37,8 @@ import java.util.Optional;
  * being authored against a height the floor might not have.</p>
  *
  * <h2>Relationship to the baseline</h2>
- * <p>{@link CorridorConfig}'s own {@code height}/{@code profile}/{@code archBlock}/
- * {@code narrowHeight} remain the motif's <em>baseline</em> style, used when a motif authors no
+ * <p>{@link CorridorConfig}'s own {@code height}/{@code profile}/{@code arch_block}/
+ * {@code narrow_height} remain the motif's <em>baseline</em> style, used when a motif authors no
  * {@code styles} list at all (every existing motif) and as the fallback for a
  * {@code CorridorData.getStyleName()} that no longer resolves. A motif that does author
  * styles is choosing among them exclusively &mdash; the baseline does not join the roll, because a
@@ -97,11 +97,11 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                             .forGetter(CorridorStyle::height),
                     Codecs.strictOptionalFieldOf(Profile.CODEC, "profile", Profile.FLAT)
                             .forGetter(CorridorStyle::profile),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "archBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "arch_block")
                             .forGetter(CorridorStyle::archBlock),
                     Codecs.strictOptionalFieldOf(
                                     Codec.intRange(CorridorConfig.MIN_HEIGHT, CorridorConfig.MAX_HEIGHT),
-                                    "narrowHeight")
+                                    "narrow_height")
                             .forGetter(CorridorStyle::narrowHeight),
                     Codecs.strictOptionalFieldOf(WallPatternEntry.CourseEntry.CODEC.listOf(), "courses",
                                     List.of())
@@ -139,7 +139,7 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
             // (CoursesWallPatternProvider.ownsCorners). A corridor's wall is an arbitrary polyline
             // -- it has no four corners to own, so there is nothing for this to mean.
             if (course.cornerBlock().isPresent()) {
-                return label + ": a corridor course cannot take 'cornerBlock' -- corner ownership is a "
+                return label + ": a corridor course cannot take 'corner_block' -- corner ownership is a "
                         + "rule about a rectangle's four runs, and a corridor wall winds";
             }
             // Deferred rather than rejected on principle: a projecting course would occupy the
@@ -179,10 +179,10 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                     + "land on the doorway's lintel and block it";
         }
         if (profile == Profile.ARCHED && archBlock.isEmpty()) {
-            return label + ": profile 'arched' requires an 'archBlock' (the stairs the haunch is built from)";
+            return label + ": profile 'arched' requires an 'arch_block' (the stairs the haunch is built from)";
         }
         if (narrowHeight.isPresent() && narrowHeight.get() > height) {
-            return label + ": narrowHeight " + narrowHeight.get() + " is above height " + height
+            return label + ": narrow_height " + narrowHeight.get() + " is above height " + height
                     + " -- a 1-wide stretch cannot be taller than the corridor it is part of";
         }
         return null;

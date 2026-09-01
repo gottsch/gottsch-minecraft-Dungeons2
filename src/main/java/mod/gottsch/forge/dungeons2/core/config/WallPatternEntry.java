@@ -94,7 +94,7 @@ import mod.gottsch.forge.dungeons2.core.config.wall.WallPatternRegistry;
  * a {@code 5 + rand(6)} roll clamped into the footprint's {@code RoomHeightBand} (#51), so a course
  * measured from the floor drifts away from the ceiling as rooms vary. A wall is only {@code height - 2} rows tall, i.e. <strong>3 to
  * 8</strong>; a course that resolves outside that range is simply not drawn, so a scheme carrying
- * both a plinth and a crown wants a {@code minHeight} that leaves plain wall between them rather
+ * both a plinth and a crown wants a {@code min_height} that leaves plain wall between them rather
  * than relying on this clipping.</p>
  *
  * @author Mark Gottschling on Aug 1, 2026
@@ -132,8 +132,8 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      *   <li>{@code "courses"} &mdash; horizontal bands. Uses {@code courses}, an ordered list of
      *       {@link CourseEntry}.</li>
      *   <li>{@code "pilasters"} &mdash; evenly spaced vertical strips. Uses {@code block}, optional
-     *       {@code baseBlock}/{@code capBlock} for the bottom and top rows with their own optional
-     *       {@code baseProperties}/{@code capProperties}, and {@code spacing}
+     *       {@code base_block}/{@code cap_block} for the bottom and top rows with their own optional
+     *       {@code base_properties}/{@code cap_properties}, and {@code spacing}
      *       (default {@value PilastersWallPatternProvider#DEFAULT_SPACING}).
      *       <p>The per-row property maps are the one place this schema differs from
      *       {@link CourseEntry}, which shares one map across its three block slots. A course's three
@@ -274,9 +274,9 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
     }
 
     /**
-     * How a course's {@code alternateBlock} is mixed in against its {@code block}.
+     * How a course's {@code alternate_block} is mixed in against its {@code block}.
      *
-     * <p>{@link #RANDOM} is the default and matches the floor's {@code base}/{@code alternateBase}
+     * <p>{@link #RANDOM} is the default and matches the floor's {@code base}/{@code alternate_base}
      * behaviour: an independent per-cell roll, which is what you want for breaking up a run of one
      * texture. {@link #STRICT} lays them down every other cell instead.</p>
      *
@@ -348,10 +348,10 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
      * {@code "strict"}, every other cell. A mirrored pair of block halves needs {@code strict}; see
      * {@link CourseAlternate}.</p>
      *
-     * <p>{@code alternateBlock} is mixed in per cell at 45/55, the same roll
-     * {@code FloorConfig}'s {@code base}/{@code alternateBase} pair gets &mdash; a band of a single
+     * <p>{@code alternate_block} is mixed in per cell at 45/55, the same roll
+     * {@code FloorConfig}'s {@code base}/{@code alternate_base} pair gets &mdash; a band of a single
      * block reads as a machined stripe, which is right for polished trim and wrong for a rough
-     * stone course. {@code cornerBlock} goes on the room's four corner columns, which is the quoin
+     * stone course. {@code corner_block} goes on the room's four corner columns, which is the quoin
      * every real masonry course has and the one place a band's rhythm is visibly interrupted.
      * Whether a given wall run owns those columns depends on the run and on whether the course
      * projects; {@code CoursesWallPatternProvider#ownsCorners} carries that rule so authors do not
@@ -393,11 +393,11 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
 
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<CourseEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("block").forGetter(CourseEntry::block),
+                Codecs.BLOCK_ID.fieldOf("block").forGetter(CourseEntry::block),
                 // Absent means "same as block", which is why these are bare Optionals rather than
                 // strictOptionalFieldOf with a fallback: there is no default block to name here.
-                Codecs.strictOptionalFieldOf(Codec.STRING, "alternateBlock").forGetter(CourseEntry::alternateBlock),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "cornerBlock").forGetter(CourseEntry::cornerBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "alternate_block").forGetter(CourseEntry::alternateBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "corner_block").forGetter(CourseEntry::cornerBlock),
                 // strictOptionalFieldOf, not DFU's own: optionalFieldOf cannot tell "absent" from
                 // "present but malformed" and returns the default for both, so `"anchor": "topp"`
                 // would silently read as BOTTOM and put the crown molding on the floor. That is the

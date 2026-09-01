@@ -30,8 +30,8 @@
     "room sizes, floor counts or corridor width do."
   ],
 
-  "payoutFraction": 0.5,
-  "depthBias": 3.0,
+  "payout_fraction": 0.5,
+  "depth_bias": 3.0,
 
   "//ores": [
     "perThousand is ORE BLOCKS PER 1000 BLOCKS OF STONE EXCAVATED within [minY, maxY]. Ranges are",
@@ -55,14 +55,14 @@
     "never displaced, and it is boss-chest currency; ancient debris is not in this dimension."
   ],
   "ores": [
-    { "item": "minecraft:diamond",      "perThousand": 0.35, "minY": -64, "maxY": -17, "max": 2 },
-    { "item": "minecraft:diamond",      "perThousand": 0.15, "minY": -16, "maxY": 16,  "max": 1 },
-    { "item": "minecraft:lapis_lazuli", "perThousand": 0.6,  "minY": -32, "maxY": 30,  "max": 16 },
-    { "item": "minecraft:raw_gold",     "perThousand": 0.8,  "minY": -64, "maxY": 32,  "max": 12 },
-    { "item": "minecraft:redstone",     "perThousand": 2.5,  "minY": -64, "maxY": 15,  "max": 32 },
-    { "item": "minecraft:raw_iron",     "perThousand": 4.0,  "minY": -64, "maxY": -25, "max": 16 },
-    { "item": "minecraft:raw_iron",     "perThousand": 3.0,  "minY": -24, "maxY": 64,  "max": 64 },
-    { "item": "minecraft:raw_copper",   "perThousand": 3.0,  "minY": -16, "maxY": 112, "max": 64 },
-    { "item": "minecraft:coal",         "perThousand": 3.5,  "minY": 0,   "maxY": 190, "max": 64 }
+    { "item": "minecraft:diamond",      "per_thousand": 0.35, "min_y": -64, "max_y": -17, "max": 2 },
+    { "item": "minecraft:diamond",      "per_thousand": 0.15, "min_y": -16, "max_y": 16,  "max": 1 },
+    { "item": "minecraft:lapis_lazuli", "per_thousand": 0.6,  "min_y": -32, "max_y": 30,  "max": 16 },
+    { "item": "minecraft:raw_gold",     "per_thousand": 0.8,  "min_y": -64, "max_y": 32,  "max": 12 },
+    { "item": "minecraft:redstone",     "per_thousand": 2.5,  "min_y": -64, "max_y": 15,  "max": 32 },
+    { "item": "minecraft:raw_iron",     "per_thousand": 4.0,  "min_y": -64, "max_y": -25, "max": 16 },
+    { "item": "minecraft:raw_iron",     "per_thousand": 3.0,  "min_y": -24, "max_y": 64,  "max": 64 },
+    { "item": "minecraft:raw_copper",   "per_thousand": 3.0,  "min_y": -16, "max_y": 112, "max": 64 },
+    { "item": "minecraft:coal",         "per_thousand": 3.5,  "min_y": 0,   "max_y": 190, "max": 64 }
   ]
 }

@@ -34,9 +34,9 @@ class SlotOptionsTest {
     private static final Gson GSON = new Gson();
 
     private static final String POT_A =
-            "\"lootTable\": \"dungeons2:pots/a\", \"variants\": [{\"entity\": \"dungeonblocks:pot\"}]";
+            "\"loot_table\": \"dungeons2:pots/a\", \"variants\": [{\"entity\": \"dungeonblocks:pot\"}]";
     private static final String POT_B =
-            "\"lootTable\": \"dungeons2:pots/b\", \"variants\": [{\"entity\": \"dungeonblocks:pot\"}]";
+            "\"loot_table\": \"dungeons2:pots/b\", \"variants\": [{\"entity\": \"dungeonblocks:pot\"}]";
 
     private static RoomScheme scheme(String slots) {
         DataResult<RoomScheme> result = parse(RoomScheme.CODEC,
@@ -140,7 +140,7 @@ class SlotOptionsTest {
     @Test
     void anOptionTheRoomGatesOutNeverEntersTheDenominator() {
         RoomScheme scheme = scheme("\"pots\": ["
-                + "{\"weight\": 9, \"minSize\": 21, " + POT_A + "},"
+                + "{\"weight\": 9, \"min_size\": 21, " + POT_A + "},"
                 + "{\"weight\": 1, " + POT_B + "}]");
         Map<String, Integer> counts = resolveMany(scheme, 500, RandomSource.create(17));
         assertEquals(500, counts.getOrDefault("dungeons2:pots/b", 0),
@@ -180,8 +180,8 @@ class SlotOptionsTest {
     @Test
     void theNumberOfValuesDrawnDoesNotDependOnTheRoom() {
         RoomScheme scheme = scheme("\"pots\": ["
-                + "{\"weight\": 1, \"minSize\": 21, " + POT_A + "},"
-                + "{\"weight\": 1, \"minSize\": 21, " + POT_B + "}]");
+                + "{\"weight\": 1, \"min_size\": 21, " + POT_A + "},"
+                + "{\"weight\": 1, \"min_size\": 21, " + POT_B + "}]");
         RandomSource small = RandomSource.create(5);
         RandomSource large = RandomSource.create(5);
         scheme.resolve(9, 9, 7, small);
@@ -207,11 +207,11 @@ class SlotOptionsTest {
     /** {@code drawsAnything} is asked of UNRESOLVED schemes, so it reads every alternative. */
     @Test
     void drawsAnythingReadsEveryAlternativeRatherThanARolledOne() {
-        RoomScheme both = scheme("\"pots\": [{\"weight\": 1, \"minSize\": 21, " + POT_A + "},"
+        RoomScheme both = scheme("\"pots\": [{\"weight\": 1, \"min_size\": 21, " + POT_A + "},"
                 + "{\"weight\": 1, " + POT_B + "}]");
         assertTrue(both.drawsAnything(9, 9, 7), "the ungated option still draws in a small room");
-        RoomScheme neither = scheme("\"pots\": [{\"weight\": 1, \"minSize\": 21, " + POT_A + "},"
-                + "{\"weight\": 1, \"minSize\": 21, " + POT_B + "}]");
+        RoomScheme neither = scheme("\"pots\": [{\"weight\": 1, \"min_size\": 21, " + POT_A + "},"
+                + "{\"weight\": 1, \"min_size\": 21, " + POT_B + "}]");
         assertFalse(neither.drawsAnything(9, 9, 7));
         assertTrue(neither.declaresAnySlot(), "gated out is not the same as never authored");
     }
@@ -226,7 +226,7 @@ class SlotOptionsTest {
     @Test
     void aNoneOptionThatAlsoDeclaresATreatmentIsALoadError() {
         String message = errorOf("\"pots\": [{\"weight\": 1, \"none\": true, " + POT_A + "}]");
-        assertTrue(message.contains("lootTable"), () -> "the error should name what was found: " + message);
+        assertTrue(message.contains("loot_table"), () -> "the error should name what was found: " + message);
         assertTrue(message.contains("never both"), () -> message);
     }
 
@@ -239,7 +239,7 @@ class SlotOptionsTest {
     void aStrayKeyInsideAnOptionIsStillALoadError() {
         String message = errorOf("\"pots\": [{\"weight\": 1, \"lootTabel\": \"x\", " + POT_A + "}]");
         assertTrue(message.contains("lootTabel"), () -> message);
-        assertTrue(message.contains("lootTable"), () -> "did-you-mean should fire here: " + message);
+        assertTrue(message.contains("loot_table"), () -> "did-you-mean should fire here: " + message);
     }
 
     @Test
@@ -251,7 +251,7 @@ class SlotOptionsTest {
     @Test
     void anInvertedGateOnAnyOptionIsALoadError() {
         String message = errorOf("\"pots\": [{\"weight\": 1, " + POT_A + "},"
-                + "{\"weight\": 1, \"minSize\": 9, \"maxSize\": 5, " + POT_B + "}]");
+                + "{\"weight\": 1, \"min_size\": 9, \"max_size\": 5, " + POT_B + "}]");
         assertTrue(message.contains("pots"), () -> message);
     }
 
@@ -271,7 +271,7 @@ class SlotOptionsTest {
         assertSlotTakesOptions("pots", "{" + POT_A + "}");
         assertSlotTakesOptions("pillars", "{\"patterns\": []}");
         assertSlotTakesOptions("platforms", "{\"patterns\": []}");
-        assertSlotTakesOptions("spawners", "{\"minCount\": 0, \"maxCount\": 1}");
+        assertSlotTakesOptions("spawners", "{\"min_count\": 0, \"max_count\": 1}");
         assertSlotTakesOptions("chests",
                 "{\"variants\": [{\"block\": \"minecraft:chest\", \"weight\": 1}]}");
         assertSlotTakesOptions("pit",

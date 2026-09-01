@@ -214,7 +214,7 @@ class CeilingPatternSelectorTest {
 
     /**
      * A bracket id that will not resolve degrades to no bracket rather than dropping the pattern --
-     * the same call the ring's {@code cornerBlock} makes. A typo in the trim should not delete the
+     * the same call the ring's {@code corner_block} makes. A typo in the trim should not delete the
      * beams it was decorating.
      */
     @Test
@@ -240,7 +240,7 @@ class CeilingPatternSelectorTest {
         DataResult<JsonElement> encoded = CeilingPatternEntry.CODEC.encodeStart(JsonOps.INSTANCE,
                 new CeilingPatternEntry(List.of(joists(Optional.empty(), SurfaceOrient.INWARD))));
         assertTrue(encoded.error().isPresent(), "expected a load error, got " + encoded.result());
-        assertTrue(encoded.error().get().message().contains("bracketBlock"),
+        assertTrue(encoded.error().get().message().contains("bracket_block"),
                 "the message should name what is missing: " + encoded.error().get().message());
     }
 
@@ -260,9 +260,9 @@ class CeilingPatternSelectorTest {
         DataResult<CeilingPatternEntry> parsed = CeilingPatternEntry.CODEC.parse(JsonOps.INSTANCE,
                 JsonParser.parseString("{\"patterns\": [{\"type\": \"dungeons2:border\","
                         + " \"config\": {\"block\": \"minecraft:stone_brick_stairs\","
-                        + " \"bracketBlock\": \"dungeonblocks:spruce_corbel_block\"}}]}"));
+                        + " \"bracket_block\": \"dungeonblocks:spruce_corbel_block\"}}]}"));
         assertTrue(parsed.result().isEmpty(), "expected a load error, got " + parsed.result());
-        assertTrue(parsed.error().orElseThrow().message().contains("bracketBlock"),
+        assertTrue(parsed.error().orElseThrow().message().contains("bracket_block"),
                 "the message should name the offending field: " + parsed.error().orElseThrow().message());
     }
 

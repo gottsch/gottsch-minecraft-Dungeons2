@@ -39,7 +39,7 @@ import java.util.Optional;
  * footprint range &mdash; currently hard-coded per tier in {@link mod.gottsch.forge.dungeons2.core.data.DungeonSize})
  * are a natural follow-up, but are a separate migration: {@code DungeonStackPlanner} is
  * deliberately Minecraft-import-free and rolls its own size tier internally from the seed, so
- * per-size config can't be resolved by the caller up front the way {@code corridorWidth} is
+ * per-size config can't be resolved by the caller up front the way {@code corridor_width} is
  * here (the caller already knows what it wants before planning starts). Threading per-size
  * config in would need the same builder-injection approach used for {@code withCorridorWidth}/
  * {@code withTransitionAssembler}, just resolved per-tier once the planner has picked one
@@ -51,7 +51,7 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
                                       List<RoomHeightBand> roomHeightBands,
                                       int floorHeight, int gapBetweenFloors, int sinkOffset) {
 
-    /** The shape before {@code sinkOffset}: a floor whose walking plane is its own slab. */
+    /** The shape before {@code sink_offset}: a floor whose walking plane is its own slab. */
     public DungeonGenerationConfig(int corridorWidth, int roomTemplateAttemptsPerFloor,
                                    List<RoomHeightBand> roomHeightBands,
                                    int floorHeight, int gapBetweenFloors) {
@@ -64,7 +64,7 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
      *
      * <h2>Changing this is an AUTHORING decision, not a tuning one</h2>
      * <p><strong>Raised to 20 on 2026-08-27</strong> (backlog #29 stage 2, Gottsch), for a pitch of
-     * 22: a 15-block ceiling budget with a {@code sinkOffset} of 5 underneath it for pits. The 15
+     * 22: a 15-block ceiling budget with a {@code sink_offset} of 5 underneath it for pits. The 15
      * is headroom for <strong>authored</strong> rooms &mdash; a template may be cut that tall and
      * now fits. {@code DungeonStackPlanner#pickRoomHeight} still caps a PROCEDURAL room at 10, and
      * the slack above one costs nothing, since unused floor height is unexcavated stone rather
@@ -98,20 +98,20 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
      * is arithmetically absent and every existing world lays out identically.
      *
      * <h2>It is bought from the ceiling, not from the descent</h2>
-     * <p>A floor owns exactly {@code floorHeight} blocks however this is set. {@code sinkOffset}
+     * <p>A floor owns exactly {@code floor_height} blocks however this is set. {@code sink_offset}
      * moves the boundary inside that budget: {@code ceilingBudget = floorHeight - sinkOffset} above
-     * the walking plane, {@code sinkOffset} below it. So the drop between two walking planes stays
+     * the walking plane, {@code sink_offset} below it. So the drop between two walking planes stays
      * {@code floorHeight + gapBetweenFloors} &mdash; <strong>pit depth costs nothing in
      * descent</strong>, and no transition template has to change to allow pits. Raising
-     * {@code gapBetweenFloors} to make room instead would lengthen every transition, which is the
+     * {@code gap_between_floors} to make room instead would lengthen every transition, which is the
      * trap #3's original sketch fell into.</p>
      *
      * <p>The stone buffer is preserved rather than eaten: floor {@code i-1}'s pit bottom lands
-     * exactly {@code gapBetweenFloors} blocks above floor {@code i}'s ceiling, because the stacking
+     * exactly {@code gap_between_floors} blocks above floor {@code i}'s ceiling, because the stacking
      * measures the buffer from the pit bottom rather than from the walking plane.</p>
      *
-     * <p><strong>At the shipped {@code floorHeight} of 10 this trades one-for-one against room
-     * height</strong> &mdash; {@code sinkOffset} 5 leaves rooms 5 high, which is the shortest a
+     * <p><strong>At the shipped {@code floor_height} of 10 this trades one-for-one against room
+     * height</strong> &mdash; {@code sink_offset} 5 leaves rooms 5 high, which is the shortest a
      * room can be. Pits become worth having once the pitch rises (#29 stage 2); until then the
      * machinery is here and switched off. Mark's worked numbers: {@code 20/5/2} gives rooms to 15,
      * pits to 5, and a transition drop of 22.</p>
@@ -139,11 +139,11 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
      * The vertical budget ABOVE the walking plane &mdash; what a room's height is actually bounded
      * by, and what {@code DungeonStackPlanner} caps its height roll to.
      *
-     * <p>Equal to {@code floorHeight} until something sets {@link #sinkOffset}. Deriving it is the
+     * <p>Equal to {@code floor_height} until something sets {@link #sinkOffset}. Deriving it is the
      * point of #29's stage 1: {@code DEFAULT_FLOOR_HEIGHT} and the height roll's own maximum are
      * both 10 <em>by coincidence</em>, and nothing anywhere asserted the invariant they encode
      * &mdash; that a room must never be taller than the floor holding it, or its ceiling punches
-     * through {@code gapBetweenFloors} into the floor above.</p>
+     * through {@code gap_between_floors} into the floor above.</p>
      */
     public int ceilingBudget() {
         return floorHeight - sinkOffset;
@@ -160,52 +160,52 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
     }
 
     // Codecs.closed + strictOptionalFieldOf -- see RoomScheme.CODEC and Codecs#closed. With DFU's
-    // own optionalFieldOf, "corridorWidth": 5 decoded cleanly to 3 and every corridor in the
+    // own optionalFieldOf, "corridor_width": 5 decoded cleanly to 3 and every corridor in the
     // dungeon came out a width the author never asked for, with nothing anywhere saying so.
     public static final Codec<DungeonGenerationConfig> CODEC = Codecs.closed(
             Codecs.documented(RecordCodecBuilder.<DungeonGenerationConfig>mapCodec(instance -> instance.group(
-                    Codecs.strictOptionalFieldOf(Codec.intRange(1, 3), "corridorWidth",
+                    Codecs.strictOptionalFieldOf(Codec.intRange(1, 3), "corridor_width",
                             DEFAULT.corridorWidth()).forGetter(DungeonGenerationConfig::corridorWidth),
                     // 0 is meaningful and deliberately in range: it turns prefab rooms off entirely
                     // without deleting the pool, which is the only way to A/B them. The upper bound
                     // is a cost guard -- each attempt is TWO jigsaw assemblies (probe + place).
-                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "roomTemplateAttemptsPerFloor",
+                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "room_template_attempts_per_floor",
                             DEFAULT.roomTemplateAttemptsPerFloor())
                             .forGetter(DungeonGenerationConfig::roomTemplateAttemptsPerFloor),
                     // #51. Omitting the key keeps the shipped taper rather than removing the cap:
                     // an uncapped roll puts a height-10 ceiling on a 19x19 room, which is the box
                     // this exists to prevent, so "absent" must not mean "off".
-                    Codecs.strictOptionalFieldOf(RoomHeightBand.LIST_CODEC, "roomHeightBands",
+                    Codecs.strictOptionalFieldOf(RoomHeightBand.LIST_CODEC, "room_height_bands",
                             DEFAULT_ROOM_HEIGHT_BANDS)
                             .forGetter(DungeonGenerationConfig::roomHeightBands),
                     // Bounded, not free. Below 6 a room has no interior worth decorating; above 24
                     // a transition would need more segments than any authored chain has. Neither
                     // bound is the real constraint -- see DEFAULT_FLOOR_HEIGHT, the real constraint
                     // is that the shipped templates are cut for 12.
-                    Codecs.strictOptionalFieldOf(Codec.intRange(6, 24), "floorHeight",
+                    Codecs.strictOptionalFieldOf(Codec.intRange(6, 24), "floor_height",
                             DEFAULT_FLOOR_HEIGHT).forGetter(DungeonGenerationConfig::floorHeight),
-                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "gapBetweenFloors",
+                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "gap_between_floors",
                             DEFAULT_GAP_BETWEEN_FLOORS)
                             .forGetter(DungeonGenerationConfig::gapBetweenFloors),
                     // #3/#29. Upper bound is floorHeight's own, since a range cannot name another
                     // field; what actually constrains it is validateBudget below.
-                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 24), "sinkOffset",
+                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 24), "sink_offset",
                             DEFAULT_SINK_OFFSET).forGetter(DungeonGenerationConfig::sinkOffset)
             ).apply(instance, DungeonGenerationConfig::new)).flatXmap(
                     DungeonGenerationConfig::validateBudget, DungeonGenerationConfig::validateBudget),
             // The file's own warning labels. Declared so the closed schema accepts them, decoded to
             // nothing -- see Codecs#documented for why a config like this needs one at all.
-            // "//sinkOffset" sits beside the field it explains rather than in the header block: the
+            // "//sink_offset" sits beside the field it explains rather than in the header block: the
             // header is the pitch warning, and burying a second unrelated essay in it is how both
             // stop being read.
-            "_comment", "//sinkOffset", "//roomHeightBands"));
+            "_comment", "//sink_offset", "//room_height_bands"));
 
     /**
-     * The one thing this file can say that no field range can catch: a {@code sinkOffset} that
+     * The one thing this file can say that no field range can catch: a {@code sink_offset} that
      * leaves no room to stand in.
      *
-     * <p>It is a relationship between three fields &mdash; {@code floorHeight}, {@code sinkOffset}
-     * and the shortest room {@code roomHeightBands} can produce &mdash; so no {@code intRange} can
+     * <p>It is a relationship between three fields &mdash; {@code floor_height}, {@code sink_offset}
+     * and the shortest room {@code room_height_bands} can produce &mdash; so no {@code intRange} can
      * express it, the same shape as {@code Stratum}'s name check and {@code RoomScheme}'s inverted
      * range. Worth failing rather than clamping: a budget too small for its own bands would produce
      * rooms whose ceilings sit inside the floor above, and that is invisible until someone walks
@@ -215,12 +215,12 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
         int budget = config.ceilingBudget();
         for (RoomHeightBand band : config.roomHeightBands()) {
             if (band.minHeight() > budget) {
-                return DataResult.error(() -> "sinkOffset " + config.sinkOffset() + " leaves a"
-                        + " ceiling budget of " + budget + " (floorHeight " + config.floorHeight()
-                        + " - sinkOffset), but a roomHeightBand asks for rooms at least "
-                        + band.minHeight() + " high. sinkOffset is bought from the room's headroom,"
-                        + " not from the descent -- raise floorHeight by as much as you sink, or"
-                        + " lower the band's minHeight");
+                return DataResult.error(() -> "sink_offset " + config.sinkOffset() + " leaves a"
+                        + " ceiling budget of " + budget + " (floor_height " + config.floorHeight()
+                        + " - sink_offset), but a roomHeightBand asks for rooms at least "
+                        + band.minHeight() + " high. sink_offset is bought from the room's headroom,"
+                        + " not from the descent -- raise floor_height by as much as you sink, or"
+                        + " lower the band's min_height");
             }
         }
         return DataResult.success(config);

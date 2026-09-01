@@ -126,9 +126,9 @@ class ChestMarkerProcessorTest {
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(
                         "{\"processor_type\": \"dungeons2:chest\","
                                 + " \"loot_tables\": ["
-                                + "   {\"lootTable\": \"dungeons2:chests/classic_shallow\","
+                                + "   {\"loot_table\": \"dungeons2:chests/classic_shallow\","
                                 + "    \"weight\": 9},"
-                                + "   {\"lootTable\": \"dungeons2:chests/classic_deep\"}]}"));
+                                + "   {\"loot_table\": \"dungeons2:chests/classic_deep\"}]}"));
 
         assertTrue(result.result().isPresent(),
                 result.error().map(Object::toString).orElse(""));

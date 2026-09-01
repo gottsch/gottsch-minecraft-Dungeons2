@@ -926,9 +926,9 @@
     {
       "processor_type": "dungeons2:chest",
       "loot_tables": [
-        { "lootTable": "dungeons2:chests/classic_shallow", "weight": 6 },
-        { "lootTable": "dungeons2:chests/classic_deep", "weight": 3 },
-        { "lootTable": "dungeons2:chests/classic_hoard", "weight": 1 }
+        { "loot_table": "dungeons2:chests/classic_shallow", "weight": 6 },
+        { "loot_table": "dungeons2:chests/classic_deep", "weight": 3 },
+        { "loot_table": "dungeons2:chests/classic_hoard", "weight": 1 }
       ]
     },
 

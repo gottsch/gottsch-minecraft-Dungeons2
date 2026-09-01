@@ -31,7 +31,7 @@ import java.util.Map;
  * <h2>The worst of the five flat records, and what it cost</h2>
  * <p>{@code WallPatternEntry.PatternEntry} carried <strong>fourteen</strong> fields for four types
  * with near-disjoint needs. {@code courses} meant nothing to {@code panels}, {@code width} nothing
- * outside {@code panels}, {@code baseBlock}/{@code capBlock} nothing outside the pilasters. Each was
+ * outside {@code panels}, {@code base_block}/{@code cap_block} nothing outside the pilasters. Each was
  * a silent no-op, and the schema could not say so because every type shared the record.</p>
  *
  * <p><strong>Three validation rules disappear as a result</strong>, none of them deleted &mdash;

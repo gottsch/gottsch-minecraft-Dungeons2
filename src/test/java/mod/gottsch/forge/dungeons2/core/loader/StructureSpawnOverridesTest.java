@@ -122,9 +122,9 @@ class StructureSpawnOverridesTest {
                     spawn.type() + " has weight " + spawn.weight() + " -- a non-positive weight is"
                             + " rejected by Weight's codec and would fail the whole structure");
             assertTrue(spawn.minCount() >= 1,
-                    spawn.type() + " has minCount " + spawn.minCount() + "; must be positive");
+                    spawn.type() + " has min_count " + spawn.minCount() + "; must be positive");
             assertTrue(spawn.minCount() <= spawn.maxCount(),
-                    spawn.type() + " has minCount " + spawn.minCount() + " > maxCount "
+                    spawn.type() + " has min_count " + spawn.minCount() + " > max_count "
                             + spawn.maxCount());
         }
     }
@@ -236,8 +236,8 @@ class StructureSpawnOverridesTest {
                 spawns.add(new Spawn(category,
                         spawn.get("type").getAsString(),
                         spawn.get("weight").getAsInt(),
-                        spawn.get("minCount").getAsInt(),
-                        spawn.get("maxCount").getAsInt()));
+                        spawn.get("min_count").getAsInt(),
+                        spawn.get("max_count").getAsInt()));
             }
         }
         return spawns;

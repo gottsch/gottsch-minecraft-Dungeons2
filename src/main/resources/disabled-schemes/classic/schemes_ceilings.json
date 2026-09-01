@@ -3,8 +3,8 @@
     {
       "name": "coffered_ceiling",
       "weight": 9,
-      "minSize": 7,
-      "minHeight": 7,
+      "min_size": 7,
+      "min_height": 7,
       "ceiling": {
         "patterns": [
           {
@@ -22,7 +22,7 @@
             "courses": [
               {
                 "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
+                "corner_block": "minecraft:andesite",
                 "anchor": "top"
               }
             ]
@@ -33,7 +33,7 @@
     {
       "name": "coffered_ceiling_flat",
       "weight": 4,
-      "minSize": 7,
+      "min_size": 7,
       "ceiling": {
         "patterns": [
           {
@@ -47,14 +47,14 @@
     {
       "name": "coffered_hall_ceiling",
       "weight": 5,
-      "minSize": 9,
-      "minHeight": 7,
+      "min_size": 9,
+      "min_height": 7,
       "ceiling": {
         "patterns": [
           {
             "type": "border",
             "block": "minecraft:andesite",
-            "cornerBlock": "minecraft:chiseled_stone_bricks",
+            "corner_block": "minecraft:chiseled_stone_bricks",
             "inset": 0
           },
           {
@@ -78,7 +78,7 @@
             "courses": [
               {
                 "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
+                "corner_block": "minecraft:andesite",
                 "anchor": "top"
               }
             ]
@@ -89,7 +89,7 @@
     {
       "name": "ceiling_boss",
       "weight": 4,
-      "minSize": 5,
+      "min_size": 5,
       "ceiling": {
         "patterns": [
           {
@@ -103,8 +103,8 @@
     {
       "name": "crowned_ceiling_boss",
       "weight": 9,
-      "minSize": 5,
-      "minHeight": 6,
+      "min_size": 5,
+      "min_height": 6,
       "ceiling": {
         "patterns": [
           {
@@ -121,7 +121,7 @@
             "courses": [
               {
                 "block": "minecraft:polished_andesite",
-                "cornerBlock": "minecraft:andesite",
+                "corner_block": "minecraft:andesite",
                 "anchor": "top"
               }
             ]

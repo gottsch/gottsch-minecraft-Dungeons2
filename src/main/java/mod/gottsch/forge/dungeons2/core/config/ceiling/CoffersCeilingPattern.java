@@ -47,7 +47,7 @@ public record CoffersCeilingPattern(String block, int spacing, Map<String, Strin
 
     public static final MapCodec<CoffersCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("block").forGetter(CoffersCeilingPattern::block),
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(CoffersCeilingPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
                                     GridSurfacePatternProvider.DEFAULT_SPACING)
                             .forGetter(CoffersCeilingPattern::spacing),

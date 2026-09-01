@@ -170,7 +170,7 @@ class CorridorRoomSealTest {
         }
 
         assertEquals(0, totalBreaches,
-                "corridorWidth=" + corridorWidth + ": with doors sealed, corridors must not reach any "
+                "corridor_width=" + corridorWidth + ": with doors sealed, corridors must not reach any "
                         + "room interior; found " + totalBreaches + " breach voxel(s), first: " + firstExample);
     }
 

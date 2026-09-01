@@ -47,7 +47,7 @@ public record CeilingConfig(String ceiling, Optional<CeilingPatternEntry> patter
     public static final CeilingConfig DEFAULT = new CeilingConfig("minecraft:stone_bricks");
 
     public static final Codec<CeilingConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("ceiling").forGetter(CeilingConfig::ceiling),
+            Codecs.BLOCK_ID.fieldOf("ceiling").forGetter(CeilingConfig::ceiling),
             Codecs.strictOptionalFieldOf(CeilingPatternEntry.CODEC, "pattern")
                     .forGetter(CeilingConfig::pattern)
     ).apply(instance, CeilingConfig::new));

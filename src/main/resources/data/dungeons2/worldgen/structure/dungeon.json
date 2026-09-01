@@ -9,152 +9,152 @@
         {
           "type": "dungeons2:rat",
           "weight": 10,
-          "minCount": 1,
-          "maxCount": 3
+          "min_count": 1,
+          "max_count": 3
         },
         {
           "type": "dungeons2:giant_rat",
           "weight": 3,
-          "minCount": 1,
-          "maxCount": 2
+          "min_count": 1,
+          "max_count": 2
         },
         {
           "type": "dungeons2:skeleton_warrior",
           "weight": 6,
-          "minCount": 1,
-          "maxCount": 2
+          "min_count": 1,
+          "max_count": 2
         },
         {
           "type": "dungeons2:grave_zombie",
           "weight": 6,
-          "minCount": 1,
-          "maxCount": 2
+          "min_count": 1,
+          "max_count": 2
         },
         {
           "type": "dungeons2:ghoul",
           "weight": 4,
-          "minCount": 1,
-          "maxCount": 2
+          "min_count": 1,
+          "max_count": 2
         },
         {
           "type": "dungeons2:orc",
           "weight": 4,
-          "minCount": 1,
-          "maxCount": 2
+          "min_count": 1,
+          "max_count": 2
         },
         {
           "type": "dungeons2:bloody_bones",
           "weight": 3,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:gray_ooze",
           "weight": 3,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:winged_skeleton",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:animated_armor",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:ochre_jelly",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:bloater",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:burning_skeleton",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:electric_skeleton",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:acid_skeleton",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:tainted_skeleton",
           "weight": 2,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:orc_shaman",
           "weight": 1,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:margoyle",
           "weight": 1,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:iron_skeleton",
           "weight": 1,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:black_pudding",
           "weight": 1,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "dungeons2:gelatinous_cube",
           "weight": 1,
-          "minCount": 1,
-          "maxCount": 1
+          "min_count": 1,
+          "max_count": 1
         },
         {
           "type": "minecraft:zombie",
           "weight": 8,
-          "minCount": 1,
-          "maxCount": 3
+          "min_count": 1,
+          "max_count": 3
         },
         {
           "type": "minecraft:skeleton",
           "weight": 8,
-          "minCount": 1,
-          "maxCount": 3
+          "min_count": 1,
+          "max_count": 3
         },
         {
           "type": "minecraft:spider",
           "weight": 5,
-          "minCount": 1,
-          "maxCount": 2
+          "min_count": 1,
+          "max_count": 2
         },
         {
           "type": "minecraft:cave_spider",
           "weight": 4,
-          "minCount": 1,
-          "maxCount": 3
+          "min_count": 1,
+          "max_count": 3
         }
       ]
     }

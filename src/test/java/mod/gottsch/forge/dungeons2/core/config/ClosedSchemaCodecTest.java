@@ -93,15 +93,15 @@ class ClosedSchemaCodecTest {
     @Test
     void theFlatSizeGateKeysAreNotMistakenForStrays() {
         decodes(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\":\"dungeons2:pilasters\",\"minHeight\":7,\"minSize\":5,\"maxHeight\":9,\"maxSize\":11,\"config\":{\"block\":\"minecraft:stone_bricks\"}}");
+                "{\"type\":\"dungeons2:pilasters\",\"min_height\":7,\"min_size\":5,\"max_height\":9,\"max_size\":11,\"config\":{\"block\":\"minecraft:stone_bricks\"}}");
         decodes(WallPatternEntry.CourseEntry.CODEC,
-                "{\"block\": \"minecraft:stone_bricks\", \"minHeight\": 7, \"maxSize\": 11}");
-        decodes(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:plain\", \"minHeight\": 7, \"maxSize\": 11}");
-        decodes(CeilingPatternEntry.CODEC, "{\"patterns\": [], \"minHeight\": 7, \"maxSize\": 11}");
+                "{\"block\": \"minecraft:stone_bricks\", \"min_height\": 7, \"max_size\": 11}");
+        decodes(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:plain\", \"min_height\": 7, \"max_size\": 11}");
+        decodes(CeilingPatternEntry.CODEC, "{\"patterns\": [], \"min_height\": 7, \"max_size\": 11}");
         decodes(CeilingPatternEntry.SurfacePatternEntry.CODEC,
-                "{\"type\":\"dungeons2:centre\",\"minSize\":11,\"maxHeight\":9,\"config\":{\"block\":\"minecraft:stone_bricks\"}}");
-        decodes(PotConfig.CODEC, "{\"lootTable\": \"dungeons2:pots/classic\","
-                + " \"variants\": [{\"entity\": \"dungeonblocks:pot\"}], \"minHeight\": 7, \"maxSize\": 11}");
+                "{\"type\":\"dungeons2:centre\",\"min_size\":11,\"max_height\":9,\"config\":{\"block\":\"minecraft:stone_bricks\"}}");
+        decodes(PotConfig.CODEC, "{\"loot_table\": \"dungeons2:pots/classic\","
+                + " \"variants\": [{\"entity\": \"dungeonblocks:pot\"}], \"min_height\": 7, \"max_size\": 11}");
     }
 
     // ---- coverage: every record in the package -------------------------------------------------
@@ -120,7 +120,7 @@ class ClosedSchemaCodecTest {
                 "{\"patterns\": [], \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(CeilingPatternEntry.SurfacePatternEntry.CODEC,
                 "{\"type\":\"dungeons2:border\",\"config\":{\"nonsense\":1}}").error().isPresent());
-        assertTrue(parse(PotConfig.CODEC, "{\"lootTable\": \"dungeons2:pots/classic\","
+        assertTrue(parse(PotConfig.CODEC, "{\"loot_table\": \"dungeons2:pots/classic\","
                 + " \"variants\": [], \"nonsense\": 1}").error().isPresent());
         assertTrue(parse(PotConfig.PotVariant.CODEC,
                 "{\"entity\": \"dungeonblocks:pot\", \"nonsense\": 1}").error().isPresent());
@@ -135,12 +135,12 @@ class ClosedSchemaCodecTest {
     @Test
     void thePillarsSlotDecodes() {
         RoomScheme scheme = parse(RoomScheme.CODEC,
-                "{\"name\": \"hypostyle\", \"pillars\": {\"minSize\": 13, \"patterns\": ["
+                "{\"name\": \"hypostyle\", \"pillars\": {\"min_size\": 13, \"patterns\": ["
                         + "{\"type\": \"dungeons2:grid\", \"block\": \"dungeonblocks:stone_bricks_pillar_block\","
-                        + " \"baseBlock\": \"dungeonblocks:stone_bricks_pillar_base_block\","
-                        + " \"capBlock\": \"dungeonblocks:stone_bricks_pillar_base_block\","
-                        + " \"baseProperties\": {\"base\": \"up\"},"
-                        + " \"capProperties\": {\"base\": \"down\"},"
+                        + " \"base_block\": \"dungeonblocks:stone_bricks_pillar_base_block\","
+                        + " \"cap_block\": \"dungeonblocks:stone_bricks_pillar_base_block\","
+                        + " \"base_properties\": {\"base\": \"up\"},"
+                        + " \"cap_properties\": {\"base\": \"down\"},"
                         + " \"config\": {\"spacing\": 4, \"inset\": 2}}]}}")
                 .result().orElseThrow();
 
@@ -160,7 +160,7 @@ class ClosedSchemaCodecTest {
     /** {@code patterns} is required on the pillars slot too -- the WallPatternEntry lesson. */
     @Test
     void aPillarsSlotWithNoPatternsKeyIsALoadError() {
-        assertTrue(parse(PillarPatternEntry.CODEC, "{\"minSize\": 13}").error().isPresent());
+        assertTrue(parse(PillarPatternEntry.CODEC, "{\"min_size\": 13}").error().isPresent());
     }
 
     /** A nested {@code generators} entry is the same codec, so it is closed too. */
@@ -192,7 +192,7 @@ class ClosedSchemaCodecTest {
                 "{\"type\":\"dungeons2:border\",\"config\":{\"blokc\":\"minecraft:stone_bricks\",\"zzzzzzzzzz\":1}}");
         assertTrue(message.contains("blokc") && message.contains("zzzzzzzzzz"),
                 () -> "both strays should be reported in one pass: " + message);
-        assertTrue(message.contains("known fields:") && message.contains("cornerBlock"),
+        assertTrue(message.contains("known fields:") && message.contains("corner_block"),
                 () -> "the known set is the fastest way for an author to find the right spelling: " + message);
     }
 

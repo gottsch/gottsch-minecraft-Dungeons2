@@ -55,7 +55,7 @@ public class RandomSpeckleFloorPatternProvider implements IDungeonFloorGenerator
 
     public RandomSpeckleFloorPatternProvider(double probability, Block baseBlock, Block accentBlock) {
         this.probability = probability;
-        this.baseBlock = Objects.requireNonNull(baseBlock, "baseBlock");
+        this.baseBlock = Objects.requireNonNull(baseBlock, "base_block");
         this.accentBlock = Objects.requireNonNull(accentBlock, "accentBlock");
     }
 

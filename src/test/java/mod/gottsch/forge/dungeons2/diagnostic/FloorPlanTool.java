@@ -112,7 +112,7 @@ public final class FloorPlanTool {
                     base.floor(), base.schemes());
         }
         if (!opts.containsKey("corridorHeight") && !opts.containsKey("profile")
-                && !opts.containsKey("archBlock") && !opts.containsKey("narrowHeight")) {
+                && !opts.containsKey("arch_block") && !opts.containsKey("narrow_height")) {
             return base;
         }
         // Any explicit geometry override drops the styles list: the caller is asking for one shape,
@@ -122,8 +122,8 @@ public final class FloorPlanTool {
         CorridorConfig.Profile profile = opts.containsKey("profile")
                 ? CorridorConfig.Profile.valueOf(opts.get("profile").toUpperCase())
                 : corridor.profile();
-        Optional<String> archBlock = opts.containsKey("archBlock")
-                ? Optional.of(opts.get("archBlock"))
+        Optional<String> archBlock = opts.containsKey("arch_block")
+                ? Optional.of(opts.get("arch_block"))
                 : corridor.archBlock();
         // An arched profile with no block named anywhere: use the vanilla pairing for the shipped
         // stone_bricks motifs so `-Pprofile=arched` alone does something useful.
@@ -132,8 +132,8 @@ public final class FloorPlanTool {
         }
         // Carried through explicitly: rebuilding the record would otherwise drop an authored
         // narrowHeight the moment any other corridor option is overridden.
-        Optional<Integer> narrowHeight = opts.containsKey("narrowHeight")
-                ? Optional.of(Integer.valueOf(opts.get("narrowHeight")))
+        Optional<Integer> narrowHeight = opts.containsKey("narrow_height")
+                ? Optional.of(Integer.valueOf(opts.get("narrow_height")))
                 : corridor.narrowHeight();
         CorridorConfig overridden = new CorridorConfig(corridor.floor(), corridor.alternateFloor(),
                 corridor.ceiling(), height, profile, archBlock, narrowHeight);
@@ -155,7 +155,7 @@ public final class FloorPlanTool {
         int worldX = Integer.parseInt(opts.getOrDefault("x", "0"));
         int worldZ = Integer.parseInt(opts.getOrDefault("z", "0"));
         int surfaceY = Integer.parseInt(opts.getOrDefault("surfaceY", "72"));
-        int corridorWidth = Integer.parseInt(opts.getOrDefault("corridorWidth", "3"));
+        int corridorWidth = Integer.parseInt(opts.getOrDefault("corridor_width", "3"));
         int minRoomGap = Integer.parseInt(opts.getOrDefault("minRoomGap", "0"));
 
         // The generators resolve block states through the registry, so Minecraft has to be

@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #45's depth axis for the dungeon's <strong>shell</strong>: {@code strataByFloorIndex}
+ * Backlog #45's depth axis for the dungeon's <strong>shell</strong>: {@code strata_by_floor_index}
  * bands, and {@link MotifConfig#forFloor}'s overlay of them.
  *
  * <p>Three properties carry the weight, and each exists to make a specific silent failure
@@ -210,14 +210,14 @@ class StrataByFloorTest {
     /**
      * A band with no sections is legal, and it is how you end the band above it.
      *
-     * <p>Bands overlay the MOTIF, not each other, so {@code {"minFloorIndex": 1}} resolves to the
+     * <p>Bands overlay the MOTIF, not each other, so {@code {"min_floor_index": 1}} resolves to the
      * motif exactly as authored. Rejecting it used to force the author to restate a section they
      * did not want to change &mdash; the drift an overlay exists to prevent.</p>
      */
     @Test
     void aBandDeclaringNoSectionsIsTheMotifAsAuthored() {
         DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
-                { "minFloorIndex": 1 }"""));
+                { "min_floor_index": 1 }"""));
         assertTrue(result.result().isPresent(), String.valueOf(result.error().orElse(null)));
 
         MotifConfig source = motif(List.of(stratum(0, COBBLE), result.result().get()));
@@ -244,7 +244,7 @@ class StrataByFloorTest {
     @Test
     void anUndeclaredKeyFailsToLoad() {
         DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
-                { "minFloorIndex": 0, "walls": { "wall": "minecraft:cobblestone" } }"""));
+                { "min_floor_index": 0, "walls": { "wall": "minecraft:cobblestone" } }"""));
         assertTrue(result.error().isPresent());
     }
 
@@ -409,7 +409,7 @@ class StrataByFloorTest {
     void aNameThatIsNotAPathSegmentFailsToLoad() {
         for (String bad : List.of("Ancient", "deep rooms", "deep/rooms", "dépôt")) {
             DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
-                    { "minFloorIndex": 0, "name": "%s", "wall": { "wall": "minecraft:cobblestone" } }"""
+                    { "min_floor_index": 0, "name": "%s", "wall": { "wall": "minecraft:cobblestone" } }"""
                     .formatted(bad)));
             assertTrue(result.error().isPresent(), "'" + bad + "' should not be a usable name");
         }
@@ -419,7 +419,7 @@ class StrataByFloorTest {
     void anOrdinaryNameLoads() {
         for (String good : List.of("ancient", "recently_patched", "tier-2", "v1.2")) {
             DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
-                    { "minFloorIndex": 0, "name": "%s", "wall": { "wall": "minecraft:cobblestone" } }"""
+                    { "min_floor_index": 0, "name": "%s", "wall": { "wall": "minecraft:cobblestone" } }"""
                     .formatted(good)));
             assertTrue(result.result().isPresent(),
                     "'" + good + "' should load: " + result.error().orElse(null));
@@ -434,7 +434,7 @@ class StrataByFloorTest {
     @Test
     void aBandMayCarryOnlyAName() {
         DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""
-                { "minFloorIndex": 0, "name": "ancient" }"""));
+                { "min_floor_index": 0, "name": "ancient" }"""));
         assertTrue(result.result().isPresent(), String.valueOf(result.error().orElse(null)));
 
         MotifConfig source = motif(List.of(result.result().get()));

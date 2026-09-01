@@ -44,14 +44,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <h2>Two budgets, one plane, and both are silent when broken</h2>
  * <ul>
- *   <li><strong>Below</strong>, a floor owns {@code sinkOffset} rows and no more. Past that come the
- *       stone buffer of {@code gapBetweenFloors} and then the ceiling of the floor beneath. The
+ *   <li><strong>Below</strong>, a floor owns {@code sink_offset} rows and no more. Past that come the
+ *       stone buffer of {@code gap_between_floors} and then the ceiling of the floor beneath. The
  *       runtime seats an over-deep room anyway and warns, because refusing would leave its doors
  *       unreachable, which is worse.</li>
  *   <li><strong>Above</strong>, a floor owns {@code ceilingBudget()} rows counting the walking plane
  *       itself. {@code DungeonStackPlanner#pickRoomHeight} clamps a PROCEDURAL room to it; nothing
  *       clamps an authored one, so a template cut too tall pushes its ceiling through
- *       {@code gapBetweenFloors} into the floor above and nothing anywhere says so.</li>
+ *       {@code gap_between_floors} into the floor above and nothing anywhere says so.</li>
  * </ul>
  *
  * <h2>Why this walks the chain instead of measuring one file</h2>
@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>Both come off {@code DungeonGenerationConfig.DEFAULT}. Comparing against a hand-written 5 and
  * 15 would pass every room the day it was written and say nothing the day the pitch moves &mdash;
  * the fault {@code TransitionSpanTest} describes for its own hand-copied pitch, and the one that
- * left #29's backlog row claiming {@code sinkOffset} was still 0 two days after it was 5.</p>
+ * left #29's backlog row claiming {@code sink_offset} was still 0 two days after it was 5.</p>
  */
 class RoomSinkBudgetTest {
 
@@ -134,19 +134,19 @@ class RoomSinkBudgetTest {
         List<String> problems = new ArrayList<>();
         if (!tooDeep.isEmpty()) {
             problems.add(tooDeep.size() + " room assembly/assemblies sink past the floor's"
-                    + " sinkOffset. Every row under the lowest door marker is spent from that"
+                    + " sink_offset. Every row under the lowest door marker is spent from that"
                     + " budget; past it the room eats the stone buffer between floors:\n    "
                     + String.join("\n    ", tooDeep));
         }
         if (!tooTall.isEmpty()) {
             problems.add(tooTall.size() + " room assembly/assemblies are taller than the floor's"
-                    + " ceiling budget. The ceiling pushes through gapBetweenFloors into the floor"
+                    + " ceiling budget. The ceiling pushes through gap_between_floors into the floor"
                     + " above, and nothing at runtime reports it:\n    "
                     + String.join("\n    ", tooTall));
         }
         if (!problems.isEmpty()) {
             fail(String.join("\n\n  ", problems)
-                    + "\n\n  Fix by re-cutting the template(s), or change floorHeight / sinkOffset"
+                    + "\n\n  Fix by re-cutting the template(s), or change floor_height / sink_offset"
                     + " in generation_config -- but read that file's _comment first: the pitch is"
                     + " what every transition and entrance chain was cut to span.");
         }

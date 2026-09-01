@@ -95,7 +95,7 @@ class RoomCorridorAdjacencyTest {
             }
         }
         assertEquals(0, offending,
-                "corridorWidth=" + corridorWidth + ": ROOM cells must never touch CORRIDOR cells "
+                "corridor_width=" + corridorWidth + ": ROOM cells must never touch CORRIDOR cells "
                         + "(no wall between). " + offending + " offending cells; first at seed " + firstBadSeed);
     }
 }

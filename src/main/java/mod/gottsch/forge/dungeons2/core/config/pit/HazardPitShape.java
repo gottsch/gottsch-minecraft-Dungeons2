@@ -35,16 +35,16 @@ import java.util.Optional;
  * nuisance into a threat. That is why this is its own provider rather than a flag on the court
  * shapes &mdash; an author placing a trap should have had to name it.</p>
  *
- * <p>{@code spikeBlock} defaults to nothing, which gives a plain oubliette. Authoring it wants
- * {@code vertical_direction: up} in {@code spikeProperties}: Minecraft has one dripstone block for
+ * <p>{@code spike_block} defaults to nothing, which gives a plain oubliette. Authoring it wants
+ * {@code vertical_direction: up} in {@code spike_properties}: Minecraft has one dripstone block for
  * both ends, and <strong>only the upward tip multiplies fall damage</strong>, so a shaft floored
  * with downward ones is decoration. The codec cannot check that, because a pack may use a different
  * block whose states mean something else entirely.</p>
  *
- * <p>{@code offsetX}/{@code offsetZ} shift the shaft off centre; it is still kept inside the
+ * <p>{@code offset_x}/{@code offset_z} shift the shaft off centre; it is still kept inside the
  * interior's walkable ring, so a trap never blocks the room it is in.</p>
  *
- * <p>{@code rimBlock} lays a CLOSED ring of one block on the walkable cells around the mouth, at
+ * <p>{@code rim_block} lays a CLOSED ring of one block on the walkable cells around the mouth, at
  * the room's own walking plane. Unlike the court's rim it is not a step &mdash; there is no
  * stepping into a sheer shaft &mdash; it is the <strong>tell</strong>: a lip in a different
  * material is the fair warning that turns a trap from a gotcha into something a careful player can
@@ -86,21 +86,21 @@ public record HazardPitShape(int width, int depth, int offsetX, int offsetZ,
                     Codecs.strictOptionalFieldOf(Codec.intRange(1, 24), "depth", DEFAULT_DEPTH)
                             .forGetter(HazardPitShape::depth),
                     // Signed: a trap in the exact middle of every room announces itself.
-                    Codecs.strictOptionalFieldOf(Codec.intRange(-16, 16), "offsetX", 0)
+                    Codecs.strictOptionalFieldOf(Codec.intRange(-16, 16), "offset_x", 0)
                             .forGetter(HazardPitShape::offsetX),
-                    Codecs.strictOptionalFieldOf(Codec.intRange(-16, 16), "offsetZ", 0)
+                    Codecs.strictOptionalFieldOf(Codec.intRange(-16, 16), "offset_z", 0)
                             .forGetter(HazardPitShape::offsetZ),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "spikeBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "spike_block")
                             .forGetter(HazardPitShape::spikeBlock),
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                            "spikeProperties", Map.of()).forGetter(HazardPitShape::spikeProperties),
-                    Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D), "spikeProbability",
+                            "spike_properties", Map.of()).forGetter(HazardPitShape::spikeProperties),
+                    Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D), "spike_probability",
                             DEFAULT_SPIKE_PROBABILITY).forGetter(HazardPitShape::spikeProbability),
                     // No `rimOrient` companion, unlike the court's: this ring is a full block laid
                     // flat, so there is no solid half to point anywhere. A stair authored here
                     // would simply keep its default facing, which is the honest outcome for a shape
                     // whose rim is not a step.
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "rimBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "rim_block")
                             .forGetter(HazardPitShape::rimBlock)
             ).apply(instance, HazardPitShape::new)));
 

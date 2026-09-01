@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>a slot that survives its count roll still has to find a wall-adjacent cell that the trim,
  *       the columns, the platforms and the spawner have not already claimed;</li>
  *   <li><strong>and, unlike the spawner, a chest can be suppressed by the depth table.</strong> A
- *       scheme that names no tables of its own resolves against {@code chestLootByFloorIndex}, and
+ *       scheme that names no tables of its own resolves against {@code chest_loot_by_floor_index}, and
  *       a floor with no band places <em>nothing</em> &mdash; deliberately, because an empty chest
  *       is indistinguishable from a looted one. That is a silent zero, and it is exactly the shape
  *       of thing a probe exists to catch.</li>
@@ -208,7 +208,7 @@ class ChestIncidenceProbe {
         System.out.printf("  stage 2 -- slot resolved to >=1 table     : %d (%.1f%% of stage 1)%n",
                 slotResolved, pct(slotResolved, carriesSlot));
         System.out.printf("  stage 3 -- of those, actually placed      : %d (%.1f%%, expected %.1f%%"
-                        + " from minCount 0 / maxCount 1)%n",
+                        + " from min_count 0 / max_count 1)%n",
                 roomsWithChest, placedOfResolved, expected);
         System.out.printf("  => cell exhaustion is at most             : %.1f pp (~%d rooms)%n",
                 Math.max(0.0D, expected - placedOfResolved),
@@ -232,7 +232,7 @@ class ChestIncidenceProbe {
         byTable.forEach((table, n) -> System.out.printf(
                 "    %-40s %-5d (%.1f%%)%n", table, n, pct(n, allTables)));
 
-        System.out.printf("%n  by room min side (all three carriers are gated at minSize 9)%n");
+        System.out.printf("%n  by room min side (all three carriers are gated at min_size 9)%n");
         byMinSide.forEach((side, t) -> System.out.printf(
                 "    %-3d  rooms %-5d with chest %-5d (%.1f%%)%n",
                 side, t[0], t[1], pct(t[1], t[0])));
@@ -254,7 +254,7 @@ class ChestIncidenceProbe {
             assertTrue(byTable.containsKey(table),
                     "the shipped loot table " + table + " was never drawn across " + chests
                             + " chests. Its band is authored but unreachable -- either no dungeon"
-                            + " goes deep enough to reach the band's minFloorIndex, or its weight"
+                            + " goes deep enough to reach the band's min_floor_index, or its weight"
                             + " is small enough to be effectively zero");
         }
     }

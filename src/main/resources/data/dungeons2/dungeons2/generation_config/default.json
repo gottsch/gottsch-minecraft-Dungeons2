@@ -14,13 +14,13 @@
     "Watch the log for [D2-PITCH] and [D2-SPAN]. Every other field in this file is safe to tune."
   ],
 
-  "corridorWidth": 3,
-  "roomTemplateAttemptsPerFloor": 4,
+  "corridor_width": 3,
+  "room_template_attempts_per_floor": 4,
 
-  "floorHeight": 20,
-  "gapBetweenFloors": 2,
+  "floor_height": 20,
+  "gap_between_floors": 2,
 
-  "//sinkOffset": [
+  "//sink_offset": [
     "How far the walking plane sits UP into its own floor's slab -- the depth a sunken pit has to",
     "sink into (backlog #3). SHIPPED AT 0, which makes the whole mechanism arithmetically absent.",
     "",
@@ -36,9 +36,9 @@
     "raising floorHeight takes the height straight back out of the rooms; the file fails to load if",
     "it leaves less headroom than a roomHeightBand asks for."
   ],
-  "sinkOffset": 5,
+  "sink_offset": 5,
 
-  "//roomHeightBands": [
+  "//room_height_bands": [
     "UNCHANGED by the floorHeight raise, deliberately (Gottsch, 2026-08-27). The 15-block ceiling",
     "budget is headroom for AUTHORED rooms -- a template may be cut 15 high and now fits. A",
     "PROCEDURAL room stays capped at 10: a tall empty box is a worse room than a short one, and",
@@ -50,10 +50,10 @@
     "and a 19x19 may not be a box. No band may ask for more than floorHeight - sinkOffset, or the",
     "file fails to load."
   ],
-  "roomHeightBands": [
-    { "maxLongSide": 7, "minHeight": 6, "maxHeight": 10 },
-    { "maxLongSide": 11, "minHeight": 5, "maxHeight": 9 },
-    { "maxLongSide": 15, "minHeight": 5, "maxHeight": 8 },
-    { "minHeight": 5, "maxHeight": 7 }
+  "room_height_bands": [
+    { "max_long_side": 7, "min_height": 6, "max_height": 10 },
+    { "max_long_side": 11, "min_height": 5, "max_height": 9 },
+    { "max_long_side": 15, "min_height": 5, "max_height": 8 },
+    { "min_height": 5, "max_height": 7 }
   ]
 }

@@ -62,7 +62,7 @@ public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
     public static final WallConfig DEFAULT = new WallConfig("minecraft:stone_bricks");
 
     public static final Codec<WallConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("wall").forGetter(WallConfig::wall),
+            Codecs.BLOCK_ID.fieldOf("wall").forGetter(WallConfig::wall),
             // strictOptionalFieldOf: a malformed pattern is a load error, not silently the same as
             // an absent one. See Codecs and #31.
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "pattern")

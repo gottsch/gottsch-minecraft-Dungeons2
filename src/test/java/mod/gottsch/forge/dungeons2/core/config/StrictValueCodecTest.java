@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>These were the last of the silent-default family. DFU's own
  * {@link Codec#optionalFieldOf(String, Object)} cannot tell "absent" from "present but failed to
  * parse" and returns the default for both, so {@code "weight": "eight"} decoded to weight 1 and
- * {@code "corridorWidth": 5} to 3 &mdash; the dungeon generated, at a number nobody authored, with
+ * {@code "corridor_width": 5} to 3 &mdash; the dungeon generated, at a number nobody authored, with
  * no error and no log line. {@link Codecs#strictOptionalFieldOf} keeps the absent case defaulting
  * and lets the malformed case propagate.
  *
@@ -56,11 +56,11 @@ class StrictValueCodecTest {
         // Absent means "fall back to another authored value" for all of these, so swallowing a
         // malformed one produced a wall built from the wrong -- but real -- block.
         fails(WallPatternEntry.CourseEntry.CODEC,
-                "{\"block\": \"minecraft:stone_bricks\", \"cornerBlock\": 42}");
+                "{\"block\": \"minecraft:stone_bricks\", \"corner_block\": 42}");
         fails(CeilingPatternEntry.SurfacePatternEntry.CODEC,
-                "{\"type\":\"dungeons2:border\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"cornerBlock\":42}}");
+                "{\"type\":\"dungeons2:border\",\"config\":{\"block\":\"minecraft:stone_bricks\",\"corner_block\":42}}");
         fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:checkerboard\", \"config\": {"
-                + "\"primaryBlock\": 42, \"secondaryBlock\": \"minecraft:stone_bricks\"}}");
+                + "\"primary_block\": 42, \"secondary_block\": \"minecraft:stone_bricks\"}}");
     }
 
     /**
@@ -70,9 +70,9 @@ class StrictValueCodecTest {
     @Test
     void anUnquotedPropertyValueIsALoadErrorNotAnEmptyMap() {
         fails(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_brick_stairs\",\"capProperties\":{\"half\":\"top\",\"waterlogged\":false}}}");
+                "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_brick_stairs\",\"cap_properties\":{\"half\":\"top\",\"waterlogged\":false}}}");
         fails(WallPatternEntry.PatternEntry.CODEC,
-                "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_brick_stairs\",\"baseProperties\":{\"layers\":4}}}");
+                "{\"type\":\"dungeons2:pilasters\",\"config\":{\"block\":\"minecraft:stone_brick_stairs\",\"base_properties\":{\"layers\":4}}}");
     }
 
     // ---- out of range -------------------------------------------------------------------------
@@ -80,14 +80,14 @@ class StrictValueCodecTest {
     @Test
     void anOutOfRangeValueIsALoadErrorNotASilentDefault() {
         fails(RoomScheme.CODEC, "{\"name\": \"n\", \"weight\": 0}");
-        fails(RoomScheme.CODEC, "{\"name\": \"n\", \"minHeight\": -1}");
+        fails(RoomScheme.CODEC, "{\"name\": \"n\", \"min_height\": -1}");
         fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:speckle\", \"config\": {"
-                + "\"primaryBlock\": \"minecraft:cobblestone\","
-                + "\"secondaryBlock\": \"minecraft:packed_mud\", \"probability\": 1.5}}");
+                + "\"primary_block\": \"minecraft:cobblestone\","
+                + "\"secondary_block\": \"minecraft:packed_mud\", \"probability\": 1.5}}");
         fails(FloorPatternEntry.CODEC, "{\"type\": \"dungeons2:cross\", \"config\": {"
                 + "\"block\": \"minecraft:stone_bricks\", \"thickness\": -1}}");
-        fails(PotConfig.CODEC, "{\"lootTable\": \"dungeons2:pots/classic\", \"variants\": [],"
-                + " \"minCount\": -1}");
+        fails(PotConfig.CODEC, "{\"loot_table\": \"dungeons2:pots/classic\", \"variants\": [],"
+                + " \"min_count\": -1}");
     }
 
     /**
@@ -101,9 +101,9 @@ class StrictValueCodecTest {
 
     @Test
     void anOutOfRangeCorridorWidthIsALoadErrorNotThreeBlocksWide() {
-        fails(DungeonGenerationConfig.CODEC, "{\"corridorWidth\": 5}");
-        fails(DungeonGenerationConfig.CODEC, "{\"corridorWidth\": 0}");
-        fails(DungeonGenerationConfig.CODEC, "{\"corridorWidth\": \"wide\"}");
+        fails(DungeonGenerationConfig.CODEC, "{\"corridor_width\": 5}");
+        fails(DungeonGenerationConfig.CODEC, "{\"corridor_width\": 0}");
+        fails(DungeonGenerationConfig.CODEC, "{\"corridor_width\": \"wide\"}");
         fails(DungeonGenerationConfig.CODEC, "{\"corridorWith\": 2}");
     }
 
@@ -118,22 +118,22 @@ class StrictValueCodecTest {
     @Test
     void anInvertedGateOnAPatternIsALoadError() {
         fails(CeilingPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\":\"dungeons2:centre\",\"minSize\":11,\"maxSize\":5,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:centre\",\"min_size\":11,\"max_size\":5,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}");
         fails(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"minHeight\":9,\"maxHeight\":6,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"min_height\":9,\"max_height\":6,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}");
     }
 
     @Test
     void anInvertedGateOnASingleCourseIsALoadError() {
         fails(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:stone_bricks\",\"minHeight\":9,\"maxHeight\":6}]}}]}");
+                "{\"patterns\": [{\"type\":\"dungeons2:courses\",\"config\":{\"courses\":[{\"block\":\"minecraft:stone_bricks\",\"min_height\":9,\"max_height\":6}]}}]}");
     }
 
     /** A gate that is merely narrow is fine -- only an empty range is the error. */
     @Test
     void aNarrowButSatisfiableGateStillDecodes() {
         assertEquals(1, decode(WallPatternEntry.CODEC,
-                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"minHeight\":7,\"maxHeight\":7,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}").patterns().size());
+                "{\"patterns\": [{\"type\":\"dungeons2:pilasters\",\"min_height\":7,\"max_height\":7,\"config\":{\"block\":\"minecraft:stone_bricks\"}}]}").patterns().size());
     }
 
     // ---- absent still defaults ------------------------------------------------------------------
@@ -159,12 +159,12 @@ class StrictValueCodecTest {
     @Test
     void wellFormedValuesStillDecode() {
         assertEquals(9, decode(RoomScheme.CODEC,
-                "{\"name\": \"n\", \"weight\": 9, \"minHeight\": 7, \"minSize\": 5}").weight());
-        assertEquals(2, decode(DungeonGenerationConfig.CODEC, "{\"corridorWidth\": 2}").corridorWidth());
+                "{\"name\": \"n\", \"weight\": 9, \"min_height\": 7, \"min_size\": 5}").weight());
+        assertEquals(2, decode(DungeonGenerationConfig.CODEC, "{\"corridor_width\": 2}").corridorWidth());
         assertEquals("minecraft:polished_andesite", decode(WallPatternEntry.PatternEntry.CODEC,
                 "{\"type\": \"dungeons2:pilasters\", \"config\": {"
                         + "\"block\": \"minecraft:polished_andesite\", \"spacing\": 4,"
-                        + " \"capProperties\": {\"half\": \"top\"}}}")
+                        + " \"cap_properties\": {\"half\": \"top\"}}}")
                 .pilasterShape().orElseThrow().block());
     }
 }

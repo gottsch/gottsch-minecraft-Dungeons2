@@ -28,8 +28,8 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFlo
  * <h2>What this replaces, and why</h2>
  * <p>Until now a floor treatment was a {@code type} string switched over in
  * {@code FloorPatternSelector}, reading its arguments out of one flat record that carried
- * <em>every</em> pattern's slots at once &mdash; {@code cornerBlock}, {@code edgeLeftBlock},
- * {@code edgeRightBlock}, {@code primaryBlock}, {@code secondaryBlock}, {@code probability},
+ * <em>every</em> pattern's slots at once &mdash; {@code corner_block}, {@code edge_left_block},
+ * {@code edge_right_block}, {@code primary_block}, {@code secondary_block}, {@code probability},
  * {@code thickness}, {@code spokes}, {@code inset}. That shape only works because the selector
  * privately knows which fields each type reads, which has two costs: the set of types is closed
  * to this mod, and nothing stops an author writing {@code spokes} on a {@code border} entry.</p>

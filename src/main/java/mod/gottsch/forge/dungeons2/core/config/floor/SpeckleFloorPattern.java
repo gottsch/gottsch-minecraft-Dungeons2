@@ -27,11 +27,11 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.RandomSpeck
 import net.minecraft.world.level.block.Block;
 
 /**
- * {@code primaryBlock} everywhere, with {@code secondaryBlock} sprinkled in at {@code probability}
+ * {@code primary_block} everywhere, with {@code secondary_block} sprinkled in at {@code probability}
  * per cell &mdash; the rarer, randomized cousin of {@link CheckerboardFloorPattern}.
  *
  * <p>This is what the mud stratum paves with: cobblestone showing packed mud through at 0.12. Its
- * value over the {@code base}/{@code alternateBase} pair is precisely {@code probability} &mdash;
+ * value over the {@code base}/{@code alternate_base} pair is precisely {@code probability} &mdash;
  * that pair is a fixed 45/55 roll, which reads as a checkerboard rather than as wear and cannot
  * express "mostly cobblestone" at all.</p>
  */
@@ -45,8 +45,8 @@ public record SpeckleFloorPattern(String primaryBlock, String secondaryBlock, do
                     // Required, and that is new. Under the old flat record every block slot had to
                     // be optional because every other pattern's slots were absent by design, so a
                     // speckle entry missing its base degraded silently to plain floor.
-                    Codec.STRING.fieldOf("primaryBlock").forGetter(SpeckleFloorPattern::primaryBlock),
-                    Codec.STRING.fieldOf("secondaryBlock").forGetter(SpeckleFloorPattern::secondaryBlock),
+                    Codecs.BLOCK_ID.fieldOf("primary_block").forGetter(SpeckleFloorPattern::primaryBlock),
+                    Codecs.BLOCK_ID.fieldOf("secondary_block").forGetter(SpeckleFloorPattern::secondaryBlock),
                     // Keeps its own default: it is a pattern-shape knob, not a material, and 0
                     // legitimately means "the accent never appears".
                     Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0, 1.0), "probability",

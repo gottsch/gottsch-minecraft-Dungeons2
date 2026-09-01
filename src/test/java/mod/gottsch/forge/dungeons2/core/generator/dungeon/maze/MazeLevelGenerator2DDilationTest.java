@@ -105,7 +105,7 @@ class MazeLevelGenerator2DDilationTest {
         // Same RNG path (no dilation, no extra RNG calls); same CORRIDOR count.
         assertEquals(countCellsOfType(withDefault.get(), CellType.CORRIDOR),
                 countCellsOfType(withWidth1.get(), CellType.CORRIDOR),
-                "corridorWidth(1) should match the un-configured default");
+                "corridor_width(1) should match the un-configured default");
     }
 
     @Test

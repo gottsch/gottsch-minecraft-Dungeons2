@@ -52,7 +52,7 @@ public record CentreCeilingPattern(String block, int size, Map<String, String> p
 
     public static final MapCodec<CentreCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("block").forGetter(CentreCeilingPattern::block),
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(CentreCeilingPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "size",
                                     CentreSurfacePatternProvider.DEFAULT_SIZE)
                             .forGetter(CentreCeilingPattern::size),

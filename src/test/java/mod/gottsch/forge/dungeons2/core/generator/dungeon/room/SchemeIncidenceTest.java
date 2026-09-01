@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * output rather than against the weights on paper.
  *
  * <p>The two are not the same number, and the gap is the point. A scheme's weight is its share of
- * the roll <em>among schemes eligible for that room</em>, so a {@code minSize} or {@code minHeight}
+ * the roll <em>among schemes eligible for that room</em>, so a {@code min_size} or {@code min_height}
  * that most rooms fail silently converts an authored 15% into something far smaller. Room height is
  * a {@code 5 + rand(6)} roll clamped into the footprint's {@code RoomHeightBand} (#51), and the
  * maze's smallest procedural room is 7x7, so gates in the 7-9 range bite much harder than they

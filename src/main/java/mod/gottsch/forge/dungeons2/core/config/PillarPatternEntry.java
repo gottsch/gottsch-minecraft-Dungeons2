@@ -125,8 +125,8 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
      *
      * <h2>The blocks</h2>
      * <p>{@code block} is the shaft and is <strong>required</strong> &mdash; there is no default
-     * material for a column, the same rule every other pattern type follows. {@code baseBlock} and
-     * {@code capBlock} default to {@code block}, and {@code baseProperties}/{@code capProperties}
+     * material for a column, the same rule every other pattern type follows. {@code base_block} and
+     * {@code cap_block} default to {@code block}, and {@code base_properties}/{@code cap_properties}
      * default to {@code properties}.</p>
      *
      * <h2>{@code thickness} &mdash; how many cells across the shaft is</h2>
@@ -135,7 +135,7 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
      * it is <strong>orthogonal to arrangement</strong>: a thick column makes as much sense in a
      * {@code grid} or a {@code colonnade} as it does at the {@code centre}, and putting it on the
      * layout would mean implementing it four times and watching the four drift. It sits beside
-     * {@code baseBlock} and the property maps for the same reason those do &mdash; per-column
+     * {@code base_block} and the property maps for the same reason those do &mdash; per-column
      * detail that every layout inherits for free.</p>
      *
      * <p><strong>An even thickness cannot be centred in an odd room</strong>, and rooms are
@@ -224,15 +224,15 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
                 // Required, not an Optional that validate() rejects later: unlike a wall pattern
                 // there is no type here that draws from anything other than a single block, so the
                 // codec can say so directly.
-                Codec.STRING.fieldOf("block").forGetter(PillarEntry::block),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "baseBlock").forGetter(PillarEntry::baseBlock),
-                Codecs.strictOptionalFieldOf(Codec.STRING, "capBlock").forGetter(PillarEntry::capBlock),
+                Codecs.BLOCK_ID.fieldOf("block").forGetter(PillarEntry::block),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "base_block").forGetter(PillarEntry::baseBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "cap_block").forGetter(PillarEntry::capBlock),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "properties", Map.of()).forGetter(PillarEntry::properties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "baseProperties").forGetter(PillarEntry::baseProperties),
+                        "base_properties").forGetter(PillarEntry::baseProperties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                        "capProperties").forGetter(PillarEntry::capProperties),
+                        "cap_properties").forGetter(PillarEntry::capProperties),
                 // Named `thickness` and NOT `size`, deliberately: this entry already carries a
                 // SizeGate whose minSize/maxSize are about the ROOM. A bare `size` beside them
                 // would read as a third opinion on the same quantity.

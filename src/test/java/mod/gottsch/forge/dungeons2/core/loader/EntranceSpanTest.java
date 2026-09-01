@@ -181,8 +181,8 @@ class EntranceSpanTest {
                 int drop = surfaceY - planeY;
                 if (drop < budget) {
                     offenders.add(walk.trail() + ": drops " + drop + " to floor 0's plane, but a"
-                            + " room there may be " + budget + " high (floorHeight "
-                            + DungeonGenerationConfig.DEFAULT.floorHeight() + " - sinkOffset "
+                            + " room there may be " + budget + " high (floor_height "
+                            + DungeonGenerationConfig.DEFAULT.floorHeight() + " - sink_offset "
                             + DungeonGenerationConfig.DEFAULT.sinkOffset() + ") -- its ceiling"
                             + " would break the surface by " + (budget - drop) + " block(s)");
                 }
@@ -191,7 +191,7 @@ class EntranceSpanTest {
         assertTrue(checked > 0, "no entrance path reached a floor plane, so this asserted nothing");
         if (!offenders.isEmpty()) {
             fail(offenders.size() + " entrance path(s) do not drop far enough for the current floor"
-                    + " budget of " + budget + ". Re-cut the descent, or lower floorHeight:\n  "
+                    + " budget of " + budget + ". Re-cut the descent, or lower floor_height:\n  "
                     + String.join("\n  ", offenders));
         }
     }

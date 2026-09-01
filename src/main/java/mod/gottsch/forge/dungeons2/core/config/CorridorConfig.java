@@ -38,7 +38,7 @@ import java.util.Set;
  *
  * <p>Corridors deliberately have no <em>floor or ceiling</em> pattern list &mdash; a border ring or
  * checkerboard needs a room-sized rectangle, and a corridor is a 1-3 cell wide run. The
- * {@code floor}/{@code alternateFloor} pair is rolled per cell at the same 45/55 split
+ * {@code floor}/{@code alternate_floor} pair is rolled per cell at the same 45/55 split
  * {@code BasicFloorGenerator} uses for rooms. Corridor <em>walls</em> come from
  * {@link WallConfig}, shared with rooms, and can carry {@code courses} &mdash; horizontal bands are
  * the one wall treatment that needs no rectangle, since a band sits at a constant row and simply
@@ -51,7 +51,7 @@ import java.util.Set;
  * fallback. See {@link CorridorStyle}.</p>
  *
  * <p>{@code profile} shapes the top of that column. {@code flat} is a single ceiling row;
- * {@code arched} adds a haunch row of {@code archBlock} stairs immediately below it, angled into
+ * {@code arched} adds a haunch row of {@code arch_block} stairs immediately below it, angled into
  * the walls, so the ceiling springs from the wall rather than meeting it square. See
  * {@link Profile}.</p>
  *
@@ -127,7 +127,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
      *
      * <p>8 is the cap because a floor's slab is {@code DungeonStackPlanner.DEFAULT_FLOOR_HEIGHT} = 10
      * and the arched profile still has to fit its crown above the wall. An over-tall value is a
-     * <em>load error</em> rather than a silent clamp &mdash; same rule as {@code maxHeight} on
+     * <em>load error</em> rather than a silent clamp &mdash; same rule as {@code max_height} on
      * schemes &mdash; which is why this uses {@link Codecs#strictOptionalFieldOf} and not DFU's
      * {@code optionalFieldOf}, which would swallow the range failure and hand back the default.</p>
      */
@@ -143,7 +143,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
 
     /**
      * The ceiling height for a cell that is only one cell wide, which is 15% of corridor cells at
-     * the shipped settings (measured across 40 MEDIUM dungeons at {@code corridorWidth} 3).
+     * the shipped settings (measured across 40 MEDIUM dungeons at {@code corridor_width} 3).
      *
      * <p><strong>Defaults to no drop</strong>, i.e. {@code height}. Dropping it is opt-in, and that
      * default was chosen the hard way: a narrow cell reads as a slot canyon at full height, so this
@@ -203,16 +203,16 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
 
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
             instance.group(
-                    Codec.STRING.fieldOf("floor").forGetter(CorridorConfig::floor),
-                    Codec.STRING.fieldOf("alternateFloor").forGetter(CorridorConfig::alternateFloor),
-                    Codec.STRING.fieldOf("ceiling").forGetter(CorridorConfig::ceiling),
+                    Codecs.BLOCK_ID.fieldOf("floor").forGetter(CorridorConfig::floor),
+                    Codecs.BLOCK_ID.fieldOf("alternate_floor").forGetter(CorridorConfig::alternateFloor),
+                    Codecs.BLOCK_ID.fieldOf("ceiling").forGetter(CorridorConfig::ceiling),
                     Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "height", DEFAULT_HEIGHT)
                             .forGetter(CorridorConfig::height),
                     Codecs.strictOptionalFieldOf(Profile.CODEC, "profile", Profile.FLAT)
                             .forGetter(CorridorConfig::profile),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "archBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "arch_block")
                             .forGetter(CorridorConfig::archBlock),
-                    Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "narrowHeight")
+                    Codecs.strictOptionalFieldOf(Codec.intRange(MIN_HEIGHT, MAX_HEIGHT), "narrow_height")
                             .forGetter(CorridorConfig::narrowHeight),
                     Codecs.strictOptionalFieldOf(CorridorStyle.CODEC.listOf(), "styles", List.of())
                             .forGetter(CorridorConfig::styles),
@@ -227,7 +227,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
      * <p>All of them fail rather than degrade. An arch that quietly falls back to flat because the
      * motif was one block too short is a dungeon that generates fine and simply isn't what was
      * authored &mdash; indistinguishable, in game, from the feature not working. And an
-     * {@code arched} profile with no {@code archBlock} must not invent stone brick stairs for a
+     * {@code arched} profile with no {@code arch_block} must not invent stone brick stairs for a
      * deepslate motif: that is the silent-fallthrough the whole config was rebuilt to make
      * impossible, and it is the same rule that makes a {@code door} section missing its
      * {@code lintel} a load error.</p>

@@ -59,7 +59,7 @@ import java.util.Map;
  * <p>A wall's usable height is {@code roomHeight - 2}, so 3 to 8 rows. {@code size} 2 needs 5 of
  * them and {@code size} 3 needs 7. Rather than clip &mdash; a clipped diamond is a triangle, and a
  * wall of triangles is a pattern nobody authored &mdash; the provider draws nothing at all. So a
- * scheme that wants this to be reliable states {@code minHeight}, exactly as
+ * scheme that wants this to be reliable states {@code min_height}, exactly as
  * {@code mud_timber_pillars} does for its posts.</p>
  *
  * <h2>Compose it AFTER a fill</h2>
@@ -83,7 +83,7 @@ public record DiamondWallPattern(String block, int size, int spacing, boolean fi
 
     public static final MapCodec<DiamondWallPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("block").forGetter(DiamondWallPattern::block),
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(DiamondWallPattern::block),
                     // From 1: a size of 0 is a single cell, which is a speck and not a diamond.
                     Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "size",
                                     DiamondWallPatternProvider.DEFAULT_SIZE)

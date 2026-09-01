@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
  * <p>A floor pattern owns its own blocks, so {@code FloorPattern} absorbed everything and
  * {@code FloorPatternEntry} became {@code (pattern, gate)}. A pillar cannot: a layout is a bare
  * footprint, and the blocks travel alongside it to draw time on the authored entry, so that the
- * per-row defaulting ({@code baseBlock} falling back to {@code block}, and so on) stays in the one
+ * per-row defaulting ({@code base_block} falling back to {@code block}, and so on) stays in the one
  * place that defines it &mdash; see {@code PillarLayout}. So {@link PillarPatternEntry.PillarEntry}
  * keeps every <em>material</em> field and this interface owns only the <em>geometry</em>.</p>
  *

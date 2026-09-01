@@ -35,7 +35,7 @@ import java.util.List;
  * cells only.</p>
  *
  * <h2>Loot</h2>
- * <p>{@code lootTable} is <strong>required</strong>, and required for a reason:
+ * <p>{@code loot_table} is <strong>required</strong>, and required for a reason:
  * {@code PotEntity#dropLoot} returns early when its table id is null or {@code minecraft:empty},
  * with <em>no</em> fallback to the entity type's own table &mdash; and the tables
  * {@code dungeonblocks} ships for its pot types are empty stubs with no pools. A pot without
@@ -85,11 +85,11 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
      */
     public static final MapCodec<PotConfig> MAP_CODEC =
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minCount", 1)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_count", 1)
                     .forGetter(PotConfig::minCount),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 3)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_count", 3)
                     .forGetter(PotConfig::maxCount),
-            Codec.STRING.fieldOf("lootTable").forGetter(PotConfig::lootTable),
+            Codec.STRING.fieldOf("loot_table").forGetter(PotConfig::lootTable),
             PotVariant.CODEC.listOf().fieldOf("variants").forGetter(PotConfig::variants),
             SizeGate.MAP_CODEC.forGetter(PotConfig::gate)
     ).apply(instance, PotConfig::new));
@@ -97,7 +97,7 @@ public record PotConfig(int minCount, int maxCount, String lootTable, List<PotVa
     public static final Codec<PotConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
-     * The inclusive count range, normalised. A {@code maxCount} below {@code minCount} is authoring
+     * The inclusive count range, normalised. A {@code max_count} below {@code min_count} is authoring
      * nonsense that a codec range cannot express (the bound is another field), so it is clamped
      * here rather than silently producing an empty or negative range at generation time.
      */

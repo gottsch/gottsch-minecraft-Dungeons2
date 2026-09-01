@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.Block;
  * the interior is filled from the {@link FloorConfig}'s own base. Also usable as a composite
  * overlay.
  *
- * <p>All three blocks are required. Set {@code edgeLeftBlock} and {@code edgeRightBlock} to the
+ * <p>All three blocks are required. Set {@code edge_left_block} and {@code edge_right_block} to the
  * same id for an edge with no left/right texture variant.</p>
  */
 public record BorderFloorPattern(int inset, String cornerBlock, String edgeLeftBlock,
@@ -44,9 +44,9 @@ public record BorderFloorPattern(int inset, String cornerBlock, String edgeLeftB
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
                                     FloorBorderPatternProvider.DEFAULT_INSET)
                             .forGetter(BorderFloorPattern::inset),
-                    Codec.STRING.fieldOf("cornerBlock").forGetter(BorderFloorPattern::cornerBlock),
-                    Codec.STRING.fieldOf("edgeLeftBlock").forGetter(BorderFloorPattern::edgeLeftBlock),
-                    Codec.STRING.fieldOf("edgeRightBlock").forGetter(BorderFloorPattern::edgeRightBlock)
+                    Codecs.BLOCK_ID.fieldOf("corner_block").forGetter(BorderFloorPattern::cornerBlock),
+                    Codecs.BLOCK_ID.fieldOf("edge_left_block").forGetter(BorderFloorPattern::edgeLeftBlock),
+                    Codecs.BLOCK_ID.fieldOf("edge_right_block").forGetter(BorderFloorPattern::edgeRightBlock)
             ).apply(instance, BorderFloorPattern::new)));
 
     @Override

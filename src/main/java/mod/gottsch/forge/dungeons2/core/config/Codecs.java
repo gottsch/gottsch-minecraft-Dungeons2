@@ -42,6 +42,92 @@ public final class Codecs {
     private Codecs() {}
 
     /**
+     * The sigil that marks a <strong>material role</strong> rather than a literal block id &mdash;
+     * {@code "block": "$shaft"}. #65's second half.
+     *
+     * <p>It goes on the <em>existing</em> key rather than a parallel {@code blockRole} one because
+     * there are forty-nine block-valued fields across twenty-six records in this package; a parallel
+     * key doubles that to ninety-eight, and the pair can disagree. That is only safe because
+     * {@code $} is <strong>illegal in a {@link net.minecraft.resources.ResourceLocation}</strong>
+     * (namespace and path are {@code [a-z0-9_.-]}), so a leading {@code $} cannot collide with any
+     * id a pack could legally write and needs no escape. {@code #} was rejected for the opposite
+     * reason: it is legal-looking and reads as a block tag.</p>
+     */
+    public static final String ROLE_PREFIX = "$";
+
+    /**
+     * A block-valued datapack field, <strong>in reject mode</strong>: a literal id only, and a
+     * {@code $role} is a load error naming the field.
+     *
+     * <h2>Why the rejection has to land before any consumer does</h2>
+     * <p>Material roles arrive one record at a time (#65's phases), so there is an interval in which
+     * some fields resolve a role and some do not. A field that does not, left alone, hands
+     * {@code "$shaft"} straight to {@code BlockStateCodec#blockOrNull}, which returns {@code null}
+     * for anything that is not a resolvable id &mdash; and every caller reads {@code null} as
+     * "draw nothing" or substitutes a structural fallback. So the room generates, nothing is
+     * logged, and a wall the author dressed comes out plain. That is the exact silent-nothing class
+     * {@link #closed} and {@link #strictOptionalFieldOf} exist to close, and it is worse here
+     * because it appears only in the half-converted state, where nobody is looking for it.</p>
+     *
+     * <p>Installing this on <strong>every</strong> block field first means the half-converted state
+     * cannot happen: until a record's fields are flipped to accept roles, writing one there fails
+     * the pack. The allowlist maintains itself &mdash; there is no separate list of converted
+     * records to keep in step, which is the kind of list that goes stale.</p>
+     *
+     * <p>Deliberately <em>not</em> validating that the id is well-formed or that the block exists.
+     * Well-formedness is a real hole and closing it is a one-line change here, but it would reject
+     * data that loads today, which is a separate decision from this one. Existence cannot be checked
+     * at all: Forge locks the block registry, so a headless load has no registry to ask.</p>
+     */
+    public static final Codec<String> BLOCK_ID =
+            Codec.STRING.flatXmap(Codecs::rejectRole, Codecs::rejectRole);
+
+    private static DataResult<String> rejectRole(String id) {
+        if (!id.strip().startsWith(ROLE_PREFIX)) {
+            return DataResult.success(id);
+        }
+        return DataResult.error(() -> "'" + id.strip() + "' is a material role, and this field does"
+                + " not read one yet -- the palette exists but nothing resolves against it. Write a"
+                + " literal block id here. (Left as-is it would silently draw nothing.)");
+    }
+
+    /**
+     * A motif's or band's palette: role name to literal block id.
+     *
+     * <p>Flat on purpose, even though a role name may contain a dot ({@code joist.beam}). The dot is
+     * a <strong>naming convention for a coordinated set</strong> &mdash; a beam and the bracket that
+     * carries it move together, so they are named together &mdash; and nothing here inspects it. A
+     * nested JSON object would read a little better and would cost a deep merge, which is precisely
+     * what a band must not need: a stratum overlays <em>one</em> role without restating its
+     * siblings.</p>
+     *
+     * <p>Values are literal ids, never roles: a role pointing at a role is indirection nobody asked
+     * for and a cycle nothing checks. {@link #BLOCK_ID} enforces that here as much as anywhere.</p>
+     */
+    public static final Codec<java.util.Map<String, String>> PALETTE =
+            Codec.unboundedMap(Codec.STRING.flatXmap(Codecs::roleName, Codecs::roleName), BLOCK_ID);
+
+    private static final java.util.regex.Pattern ROLE_NAME =
+            java.util.regex.Pattern.compile("[a-zA-Z0-9_][a-zA-Z0-9_.]*");
+
+    private static DataResult<String> roleName(String name) {
+        // The sigil belongs at the USE site and not the declaration, so that a palette reads as a
+        // list of names and a pattern reads as naming one. Writing it on both is the likelier slip,
+        // and it would otherwise define a role called "$shaft" that "$shaft" never matches.
+        if (name.startsWith(ROLE_PREFIX)) {
+            return DataResult.error(() -> "palette role '" + name + "': declare it without the '"
+                    + ROLE_PREFIX + "' (write \"" + name.substring(1) + "\"); the sigil is how a"
+                    + " pattern REFERS to a role, not part of its name");
+        }
+        if (!ROLE_NAME.matcher(name).matches()) {
+            return DataResult.error(() -> "palette role '" + name + "' is not a usable name;"
+                    + " use letters, digits, underscore, and '.' to group a coordinated set"
+                    + " (joist.beam, joist.bracket)");
+        }
+        return DataResult.success(name);
+    }
+
+    /**
      * A {@code fieldOf} that is optional but <strong>not</strong> forgiving: an absent field
      * yields {@code fallback}, while a field that is <em>present but fails to decode</em>
      * propagates the error.

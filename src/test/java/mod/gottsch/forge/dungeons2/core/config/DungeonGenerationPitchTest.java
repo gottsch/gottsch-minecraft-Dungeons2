@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The floor-to-floor pitch as a datapack knob, and the {@code _comment} that warns about it.
  *
  * <h2>Why this knob is different from the others in the file</h2>
- * <p>{@code corridorWidth} and {@code roomTemplateAttemptsPerFloor} are tuning: turn them and the
+ * <p>{@code corridor_width} and {@code room_template_attempts_per_floor} are tuning: turn them and the
  * generator does something else, correctly. The pitch is not &mdash; it is the exact distance every
  * shipped entrance and transition {@code .nbt} was cut for, so changing it makes those templates
  * wrong, and no amount of code can fix that from inside the file. Hence three separate warnings for
@@ -106,29 +106,29 @@ class DungeonGenerationPitchTest {
                     .withGapBetweenFloors(2)
                     .plan();
             List<FloorLayout> floors = planned.orElseThrow(
-                    () -> new AssertionError("no plan at floorHeight " + floorHeight)).getFloors();
+                    () -> new AssertionError("no plan at floor_height " + floorHeight)).getFloors();
             assertTrue(floors.size() >= 2, "need at least two floors to measure a pitch");
             for (int i = 1; i < floors.size(); i++) {
                 assertEquals(expected,
                         floors.get(i - 1).getFloorY() - floors.get(i).getFloorY(),
                         "floors " + (i - 1) + "->" + i + " are not " + expected + " apart at "
-                                + "floorHeight " + floorHeight);
+                                + "floor_height " + floorHeight);
             }
         }
     }
 
     @Test
     void aNonDefaultPitchReportsItself() {
-        assertFalse(ok("{ \"floorHeight\": 16 }").pitchIsShipped(),
+        assertFalse(ok("{ \"floor_height\": 16 }").pitchIsShipped(),
                 "a changed pitch must be detectable, or nothing can warn about it");
     }
 
     @Test
     void anOutOfRangePitchIsALoadError() {
-        assertTrue(parse("{ \"floorHeight\": 2 }").error().isPresent(),
-                "floorHeight 2 leaves no room for a floor block, a body and a ceiling");
-        assertTrue(parse("{ \"floorHeight\": 99 }").error().isPresent());
-        assertTrue(parse("{ \"gapBetweenFloors\": -1 }").error().isPresent());
+        assertTrue(parse("{ \"floor_height\": 2 }").error().isPresent(),
+                "floor_height 2 leaves no room for a floor block, a body and a ceiling");
+        assertTrue(parse("{ \"floor_height\": 99 }").error().isPresent());
+        assertTrue(parse("{ \"gap_between_floors\": -1 }").error().isPresent());
     }
 
     // ---------- the note in the file ----------
@@ -144,7 +144,7 @@ class DungeonGenerationPitchTest {
         }
         assertTrue(json.contains("_comment"),
                 "the shipped config carries no _comment -- the pitch warning has been dropped");
-        assertTrue(json.contains("floorHeight") && json.contains("gapBetweenFloors"),
+        assertTrue(json.contains("floor_height") && json.contains("gap_between_floors"),
                 "the shipped config no longer states the pitch explicitly, so the _comment has "
                         + "nothing to point at");
         // And it still loads, which is the half that a plain text assertion cannot cover.
@@ -175,7 +175,7 @@ class DungeonGenerationPitchTest {
 
     /**
      * #51's bands are clamped into whatever the pitch leaves, not rejected in favour of the shipped
-     * table. The fallback was wrong in exactly this case: lower {@code floorHeight} below 10 and
+     * table. The fallback was wrong in exactly this case: lower {@code floor_height} below 10 and
      * the shipped table does not fit either, so falling back to it hands the planner the table just
      * refused.
      */
@@ -219,23 +219,23 @@ class DungeonGenerationPitchTest {
         DungeonGenerationConfig config = ok("{ }");
 
         assertEquals(5, config.sinkOffset(), "5 blocks of pit budget below the walking plane");
-        assertEquals(15, config.ceilingBudget(), "floorHeight 20 - sinkOffset 5");
+        assertEquals(15, config.ceilingBudget(), "floor_height 20 - sink_offset 5");
         assertEquals(22, config.pitch(), "and the sink is not paid for out of the descent");
     }
 
     /** Zero is still meaningful and still means the mechanism is arithmetically absent. */
     @Test
     void sinkOffsetZeroLeavesTheWholeFloorAsCeilingBudget() {
-        DungeonGenerationConfig config = ok("{ \"sinkOffset\": 0 }");
+        DungeonGenerationConfig config = ok("{ \"sink_offset\": 0 }");
         assertEquals(config.floorHeight(), config.ceilingBudget());
     }
 
     /** It is bought from the ceiling, never from the descent, so the pitch does not move. */
     @Test
     void sinkOffsetComesOutOfTheCeilingBudgetAndNotThePitch() {
-        DungeonGenerationConfig config = ok("{ \"floorHeight\": 20, \"sinkOffset\": 5 }");
+        DungeonGenerationConfig config = ok("{ \"floor_height\": 20, \"sink_offset\": 5 }");
 
-        assertEquals(15, config.ceilingBudget(), "rooms get floorHeight - sinkOffset");
+        assertEquals(15, config.ceilingBudget(), "rooms get floor_height - sink_offset");
         assertEquals(22, config.pitch(), "and the transition drop is untouched by the sink");
     }
 
@@ -247,23 +247,23 @@ class DungeonGenerationPitchTest {
      */
     @Test
     void aSinkDeepEnoughToStarveTheRoomBandsIsALoadError() {
-        DataResult<DungeonGenerationConfig> parsed = parse("{ \"sinkOffset\": 15 }");
+        DataResult<DungeonGenerationConfig> parsed = parse("{ \"sink_offset\": 15 }");
 
         assertTrue(parsed.error().isPresent(),
-                "sinkOffset 15 leaves a budget of 5, below the shipped 7x7 band's minHeight of 6");
+                "sink_offset 15 leaves a budget of 5, below the shipped 7x7 band's min_height of 6");
         String message = parsed.error().orElseThrow().message();
-        assertTrue(message.contains("sinkOffset") && message.contains("ceiling budget"), message);
+        assertTrue(message.contains("sink_offset") && message.contains("ceiling budget"), message);
     }
 
     /**
      * ...and the boundary is not off by one: a budget that exactly fits the tallest floor of any
-     * band still loads. Note the bound is the LARGEST {@code minHeight} across the bands, not the
+     * band still loads. Note the bound is the LARGEST {@code min_height} across the bands, not the
      * smallest &mdash; the shipped 7x7 band asks for at least 6, so 6 is what has to fit even
      * though three of the four bands would be happy with 5.
      */
     @Test
     void aSinkThatExactlyFitsTheShortestBandStillLoads() {
-        assertEquals(6, ok("{ \"sinkOffset\": 14 }").ceilingBudget());
+        assertEquals(6, ok("{ \"sink_offset\": 14 }").ceilingBudget());
     }
 
     /**
@@ -272,7 +272,7 @@ class DungeonGenerationPitchTest {
      */
     @Test
     void theSinkOffsetNoteIsAnAcceptedCommentKey() {
-        assertEquals(0, ok("{ \"//sinkOffset\": [\"why it ships at zero\"], \"sinkOffset\": 0 }")
+        assertEquals(0, ok("{ \"//sink_offset\": [\"why it ships at zero\"], \"sink_offset\": 0 }")
                 .sinkOffset());
     }
 }

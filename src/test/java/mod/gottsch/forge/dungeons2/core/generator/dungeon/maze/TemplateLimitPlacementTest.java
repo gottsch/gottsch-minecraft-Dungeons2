@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #44's counting half: {@code templateLimits} actually constrains how often a prefab is
+ * Backlog #44's counting half: {@code template_limits} actually constrains how often a prefab is
  * adopted, driven through the real {@link DungeonStackPlanner}.
  *
  * <h2>Why a counting assembler rather than assertions on the layout</h2>

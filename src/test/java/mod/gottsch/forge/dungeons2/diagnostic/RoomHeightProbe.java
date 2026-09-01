@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <h2>It reports, it does not gate</h2>
  * <p>The only assertion is that the sample is real and every room obeys its band. The distribution
  * itself is deliberately unasserted: it is calibration input for the scheme gates (whose
- * {@code minHeight} thresholds were tuned against it) rather than a contract, and a probe that
+ * {@code min_height} thresholds were tuned against it) rather than a contract, and a probe that
  * fails when a tuning number moves is a probe people delete.</p>
  */
 class RoomHeightProbe {

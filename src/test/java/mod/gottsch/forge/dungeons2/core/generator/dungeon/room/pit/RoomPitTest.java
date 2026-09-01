@@ -54,14 +54,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <h2>The rule</h2>
  * <p><strong>A pit is dug out of the floor's own budget and never out of the gap between
- * floors.</strong> {@code sinkOffset} (#29) is how much of {@code floorHeight} sits below the
- * walking plane, and a pit lives entirely in that; {@code gapBetweenFloors} is not available to it
+ * floors.</strong> {@code sink_offset} (#29) is how much of {@code floor_height} sits below the
+ * walking plane, and a pit lives entirely in that; {@code gap_between_floors} is not available to it
  * at any authored depth. The clamp lives on {@link PitPatternEntry#depthWithin} rather than in a
  * codec because the two numbers are in different datapack registries &mdash; a pit is authored on a
- * {@code motif_config} scheme and {@code sinkOffset} on the {@code generation_config} &mdash; so no
+ * {@code motif_config} scheme and {@code sink_offset} on the {@code generation_config} &mdash; so no
  * codec can see both.</p>
  *
- * <p>The consequence worth stating: <strong>at the shipped {@code sinkOffset} of 0 there are no
+ * <p>The consequence worth stating: <strong>at the shipped {@code sink_offset} of 0 there are no
  * pits</strong>, whatever a scheme says. That is a degrade, not an error, so a pack tuned for a
  * taller pitch still loads on one that is not.</p>
  */
@@ -106,14 +106,14 @@ class RoomPitTest {
         List<BlockPlacement> out = new ArrayList<>();
         Set<Coords2D> dug = excavate(room(11), new PitPatternEntry(new CentrePitShape(3, 5)), 0, out);
 
-        assertTrue(dug.isEmpty(), "sinkOffset 0 leaves nowhere to dig");
+        assertTrue(dug.isEmpty(), "sink_offset 0 leaves nowhere to dig");
         assertTrue(out.isEmpty(), "and nothing should have been written");
     }
 
     /**
      * A pit deeper than the floor was sunk is CLAMPED, not refused. The pit is still the feature
      * the author asked for, just as deep as the floor can hold &mdash; and crucially it stops at
-     * the budget rather than reaching into {@code gapBetweenFloors}, which belongs to no floor.
+     * the budget rather than reaching into {@code gap_between_floors}, which belongs to no floor.
      */
     @Test
     void aPitDeeperThanTheFloorWasSunkIsClampedToTheBudget() {
@@ -145,7 +145,7 @@ class RoomPitTest {
 
                 int lowest = out.stream().mapToInt(BlockPlacement::getY).min().orElse(FLOOR_Y);
                 assertTrue(lowest >= FLOOR_Y - sinkOffset,
-                        "sinkOffset " + sinkOffset + ", authored depth " + authored
+                        "sink_offset " + sinkOffset + ", authored depth " + authored
                                 + ": wrote at Y=" + lowest + ", below the floor's budget of "
                                 + (FLOOR_Y - sinkOffset) + " -- that is the gap between floors");
             }

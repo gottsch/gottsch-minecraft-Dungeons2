@@ -23,7 +23,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.BasicFloorG
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
 
 /**
- * The undecorated floor: the motif or stratum's own {@code base}/{@code alternateBase} roll.
+ * The undecorated floor: the motif or stratum's own {@code base}/{@code alternate_base} roll.
  *
  * <p>This is what the old {@code "empty"} type meant, and also what every unrecognized type
  * silently became. Only the first of those survives &mdash; an unregistered type is now a load

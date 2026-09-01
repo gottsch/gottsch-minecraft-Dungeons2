@@ -234,7 +234,7 @@ class JoistedHallSchemeTest {
         assertEquals(SurfaceOrient.INWARD, beams.orient(),
                 "the corbel faces off its wall, not at it -- see the model, not the name");
         assertEquals(1, entry.projection(),
-                "beams at floorY+5 and therefore corbels at floorY+4; see the minHeight assertion");
+                "beams at floorY+5 and therefore corbels at floorY+4; see the min_height assertion");
     }
 
     /**

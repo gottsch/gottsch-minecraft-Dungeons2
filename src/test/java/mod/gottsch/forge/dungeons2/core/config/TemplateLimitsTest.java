@@ -30,11 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@code templateLimits} &mdash; backlog #44's declaration half: how many times one authored
+ * {@code template_limits} &mdash; backlog #44's declaration half: how many times one authored
  * template may be placed, and how two packs' limits compose.
  *
  * <p>The merge rule is the part worth pinning. It is deliberately the <strong>opposite</strong> of
- * the {@code mobSetsByFloorIndex} table sitting beside it: a depth curve is one coherent
+ * the {@code mob_sets_by_floor_index} table sitting beside it: a depth curve is one coherent
  * progression and is replaced wholesale, while a limits map is a set of independent per-template
  * entries and merges by key. Get that backwards and an addon capping its own room silently wipes
  * every cap the base pack declared.</p>
@@ -67,7 +67,7 @@ class TemplateLimitsTest {
     @Test
     void bothBoundsDecodeAndAreReadable() {
         MotifConfig motif = resolve("""
-                {"templateLimits":{"%s":{"maxPerFloor":1,"maxPerDungeon":2}}}""".formatted(MIGHTY));
+                {"template_limits":{"%s":{"max_per_floor":1,"max_per_dungeon":2}}}""".formatted(MIGHTY));
         TemplateLimit limit = motif.limitFor(MIGHTY).orElseThrow();
         assertEquals(Optional.of(1), limit.maxPerFloor());
         assertEquals(Optional.of(2), limit.maxPerDungeon());
@@ -76,10 +76,10 @@ class TemplateLimitsTest {
     @Test
     void eitherBoundAloneIsEnough() {
         assertTrue(resolve("""
-                {"templateLimits":{"%s":{"maxPerDungeon":1}}}""".formatted(MIGHTY))
+                {"template_limits":{"%s":{"max_per_dungeon":1}}}""".formatted(MIGHTY))
                 .limitFor(MIGHTY).isPresent());
         assertTrue(resolve("""
-                {"templateLimits":{"%s":{"maxPerFloor":1}}}""".formatted(MIGHTY))
+                {"template_limits":{"%s":{"max_per_floor":1}}}""".formatted(MIGHTY))
                 .limitFor(MIGHTY).isPresent());
     }
 
@@ -87,7 +87,7 @@ class TemplateLimitsTest {
     @Test
     void anEntryWithNeitherBoundIsALoadError() {
         assertTrue(MotifConfigFragment.CODEC.parse(JsonOps.INSTANCE, GSON.fromJson("""
-                        {"templateLimits":{"%s":{}}}""".formatted(MIGHTY), JsonElement.class))
+                        {"template_limits":{"%s":{}}}""".formatted(MIGHTY), JsonElement.class))
                 .error().isPresent());
     }
 
@@ -95,7 +95,7 @@ class TemplateLimitsTest {
     @Test
     void aMisspelledBoundIsALoadError() {
         assertTrue(MotifConfigFragment.CODEC.parse(JsonOps.INSTANCE, GSON.fromJson("""
-                        {"templateLimits":{"%s":{"maxPerLevel":1}}}""".formatted(MIGHTY),
+                        {"template_limits":{"%s":{"maxPerLevel":1}}}""".formatted(MIGHTY),
                         JsonElement.class))
                 .error().isPresent());
     }
@@ -126,7 +126,7 @@ class TemplateLimitsTest {
     @Test
     void aZeroBoundMeansNeverPlaceIt() {
         MotifConfig motif = resolve("""
-                {"templateLimits":{"%s":{"maxPerDungeon":0}}}""".formatted(MIGHTY));
+                {"template_limits":{"%s":{"max_per_dungeon":0}}}""".formatted(MIGHTY));
         assertFalse(motif.limitFor(MIGHTY).orElseThrow().allows(0, 0));
     }
 
@@ -140,9 +140,9 @@ class TemplateLimitsTest {
     void aLaterFragmentAddsToTheMapRatherThanReplacingIt() {
         MotifConfig motif = resolve(
                 """
-                {"templateLimits":{"%s":{"maxPerDungeon":1}}}""".formatted(MIGHTY),
+                {"template_limits":{"%s":{"max_per_dungeon":1}}}""".formatted(MIGHTY),
                 """
-                {"templateLimits":{"%s":{"maxPerFloor":1}}}""".formatted(SHRINE));
+                {"template_limits":{"%s":{"max_per_floor":1}}}""".formatted(SHRINE));
 
         assertTrue(motif.limitFor(MIGHTY).isPresent(), "the first fragment's cap survived");
         assertTrue(motif.limitFor(SHRINE).isPresent(), "and the second fragment's was added");
@@ -153,9 +153,9 @@ class TemplateLimitsTest {
     void aLaterFragmentReplacesAnEntryForTheSameTemplate() {
         MotifConfig motif = resolve(
                 """
-                {"templateLimits":{"%s":{"maxPerDungeon":1}}}""".formatted(MIGHTY),
+                {"template_limits":{"%s":{"max_per_dungeon":1}}}""".formatted(MIGHTY),
                 """
-                {"templateLimits":{"%s":{"maxPerDungeon":4}}}""".formatted(MIGHTY));
+                {"template_limits":{"%s":{"max_per_dungeon":4}}}""".formatted(MIGHTY));
 
         assertEquals(Optional.of(4), motif.limitFor(MIGHTY).orElseThrow().maxPerDungeon());
     }
@@ -165,7 +165,7 @@ class TemplateLimitsTest {
     void aFragmentWithNoLimitsDoesNotClearAnEarlierOne() {
         MotifConfig motif = resolve(
                 """
-                {"templateLimits":{"%s":{"maxPerDungeon":1}}}""".formatted(MIGHTY),
+                {"template_limits":{"%s":{"max_per_dungeon":1}}}""".formatted(MIGHTY),
                 "{\"schemes\":[{\"name\":\"plain\"}]}");
 
         assertTrue(motif.limitFor(MIGHTY).isPresent(),

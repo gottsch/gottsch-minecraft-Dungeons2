@@ -181,7 +181,7 @@ class ShippedMobSetsTest {
 
     /**
      * The same sweep from the other two sources of spawner content: a motif's
-     * {@code mobSetsByFloorIndex} depth table, and any scheme's {@code spawners} slot that names
+     * {@code mob_sets_by_floor_index} depth table, and any scheme's {@code spawners} slot that names
      * its own sets instead of deferring to the table.
      *
      * <p>Worth its own check rather than folding into the processor one, because the failure is
@@ -203,12 +203,12 @@ class ShippedMobSetsTest {
             JsonObject fragment = parse(file).getAsJsonObject();
             String where = file.getFileName().toString();
 
-            if (fragment.has("mobSetsByFloorIndex")) {
-                for (JsonElement wrapped : fragment.getAsJsonArray("mobSetsByFloorIndex")) {
+            if (fragment.has("mob_sets_by_floor_index")) {
+                for (JsonElement wrapped : fragment.getAsJsonArray("mob_sets_by_floor_index")) {
                     JsonObject band = wrapped.getAsJsonObject();
                     sources++;
                     checkSets(band, shipped, where + " / floor "
-                            + band.get("minFloorIndex").getAsString() + " band", dangling);
+                            + band.get("min_floor_index").getAsString() + " band", dangling);
                 }
             }
             if (!fragment.has("schemes")) {
@@ -222,7 +222,7 @@ class ShippedMobSetsTest {
                 JsonObject spawners = scheme.getAsJsonObject("spawners");
                 // A slot with no mobSets defers to the depth table above -- nothing to check, and
                 // that is the common case by design, not an omission.
-                if (spawners.has("mobSets")) {
+                if (spawners.has("mob_sets")) {
                     sources++;
                     checkSets(spawners, shipped,
                             where + " / " + scheme.get("name").getAsString(), dangling);
@@ -236,7 +236,7 @@ class ShippedMobSetsTest {
                     + String.join("\n  ", dangling) + "\nShipped: " + shipped);
         }
         org.junit.jupiter.api.Assertions.assertTrue(sources > 0,
-                "no shipped motif declares a depth band or a scheme-level mobSets list, so this"
+                "no shipped motif declares a depth band or a scheme-level mob_sets list, so this"
                         + " check passed vacuously -- either procedural spawners were removed or a"
                         + " key was renamed");
     }
@@ -244,7 +244,7 @@ class ShippedMobSetsTest {
     /**
      * A shipped depth curve must not get <em>easier</em> as it descends.
      *
-     * <p>Bands may set their own {@code minMobs}/{@code maxMobs}; a band that omits them falls back
+     * <p>Bands may set their own {@code min_mobs}/{@code max_mobs}; a band that omits them falls back
      * to {@link SpawnerConfig#DEFAULT_MIN_MOBS}/{@link SpawnerConfig#DEFAULT_MAX_MOBS}, so the
      * comparison has to be made on the <em>resolved</em> numbers rather than the declared ones. That
      * is the whole trap here: declaring counts on the deep band alone reads as an escalation, but
@@ -262,32 +262,32 @@ class ShippedMobSetsTest {
 
         for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
             JsonObject fragment = parse(file).getAsJsonObject();
-            if (!fragment.has("mobSetsByFloorIndex")) {
+            if (!fragment.has("mob_sets_by_floor_index")) {
                 continue;
             }
             String where = file.getFileName().toString();
 
             List<JsonObject> bands = new ArrayList<>();
-            for (JsonElement wrapped : fragment.getAsJsonArray("mobSetsByFloorIndex")) {
+            for (JsonElement wrapped : fragment.getAsJsonArray("mob_sets_by_floor_index")) {
                 bands.add(wrapped.getAsJsonObject());
             }
             // File order is not authored order -- MobSetBand.forFloor reads the table by
             // minFloorIndex, so a curve has to be judged in that order too.
             bands.sort(java.util.Comparator.comparingInt(
-                    band -> band.has("minFloorIndex") ? band.get("minFloorIndex").getAsInt() : 0));
+                    band -> band.has("min_floor_index") ? band.get("min_floor_index").getAsInt() : 0));
 
             int previousMin = Integer.MIN_VALUE;
             int previousMax = Integer.MIN_VALUE;
             String previousWhere = null;
             for (JsonObject band : bands) {
-                int start = band.has("minFloorIndex") ? band.get("minFloorIndex").getAsInt() : 0;
-                if (band.has("minMobs") || band.has("maxMobs")) {
+                int start = band.has("min_floor_index") ? band.get("min_floor_index").getAsInt() : 0;
+                if (band.has("min_mobs") || band.has("max_mobs")) {
                     declaredCounts++;
                 }
-                int min = band.has("minMobs")
-                        ? band.get("minMobs").getAsInt() : SpawnerConfig.DEFAULT_MIN_MOBS;
-                int max = band.has("maxMobs")
-                        ? band.get("maxMobs").getAsInt() : SpawnerConfig.DEFAULT_MAX_MOBS;
+                int min = band.has("min_mobs")
+                        ? band.get("min_mobs").getAsInt() : SpawnerConfig.DEFAULT_MIN_MOBS;
+                int max = band.has("max_mobs")
+                        ? band.get("max_mobs").getAsInt() : SpawnerConfig.DEFAULT_MAX_MOBS;
                 String here = where + " / floor " + start + " band (" + min + ".." + max + ")";
 
                 if (previousWhere != null && (min < previousMin || max < previousMax)) {
@@ -308,14 +308,14 @@ class ShippedMobSetsTest {
                         + " band changing at all:\n  " + String.join("\n  ", regressions));
 
         org.junit.jupiter.api.Assertions.assertTrue(declaredCounts > 0,
-                "no shipped band declares minMobs/maxMobs, so this check passed vacuously -- either"
+                "no shipped band declares min_mobs/max_mobs, so this check passed vacuously -- either"
                         + " the per-band counts were removed or the keys were renamed");
     }
 
     /**
      * Every shipped scheme that places spawners must be answerable by its motif's depth table.
      *
-     * <p>The two halves of the override are easy to get half-done: strip {@code mobSets} off a
+     * <p>The two halves of the override are easy to get half-done: strip {@code mob_sets} off a
      * scheme to let it inherit, and forget to add the table. Nothing complains &mdash;
      * {@code SpawnerConfig} resolves to an empty list and the room places no spawners at all, which
      * looks exactly like a scheme that never had the slot.</p>
@@ -334,7 +334,7 @@ class ShippedMobSetsTest {
             boolean tableInMotif = false;
             for (Path sibling : jsonFilesUnder(MOTIF_CONFIGS)) {
                 if (sibling.getParent().equals(file.getParent())
-                        && parse(sibling).getAsJsonObject().has("mobSetsByFloorIndex")) {
+                        && parse(sibling).getAsJsonObject().has("mob_sets_by_floor_index")) {
                     tableInMotif = true;
                     break;
                 }
@@ -344,7 +344,7 @@ class ShippedMobSetsTest {
                 if (!scheme.has("spawners")) {
                     continue;
                 }
-                if (!scheme.getAsJsonObject("spawners").has("mobSets") && !tableInMotif) {
+                if (!scheme.getAsJsonObject("spawners").has("mob_sets") && !tableInMotif) {
                     orphans.add(file.getParent().getFileName() + " / "
                             + scheme.get("name").getAsString());
                 }
@@ -352,7 +352,7 @@ class ShippedMobSetsTest {
         }
         if (!orphans.isEmpty()) {
             org.junit.jupiter.api.Assertions.fail(orphans.size() + " scheme(s) declare spawners with"
-                    + " no mobSets and belong to a motif with no mobSetsByFloorIndex table, so they"
+                    + " no mob_sets and belong to a motif with no mob_sets_by_floor_index table, so they"
                     + " resolve to nothing and place no spawners:\n  "
                     + String.join("\n  ", orphans));
         }
@@ -360,8 +360,8 @@ class ShippedMobSetsTest {
 
     private static void checkSets(JsonObject holder, Set<String> shipped, String where,
                                   List<String> dangling) {
-        for (JsonElement entry : holder.getAsJsonArray("mobSets")) {
-            String referenced = entry.getAsJsonObject().get("mobSet").getAsString();
+        for (JsonElement entry : holder.getAsJsonArray("mob_sets")) {
+            String referenced = entry.getAsJsonObject().get("mob_set").getAsString();
             if (!shipped.contains(referenced)) {
                 dangling.add(where + " -> " + referenced);
             }

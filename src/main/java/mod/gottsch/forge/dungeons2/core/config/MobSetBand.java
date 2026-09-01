@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * One depth band of the motif's {@code mobSetsByFloorIndex} table: the mob sets a dungeon's spawners
+ * One depth band of the motif's {@code mob_sets_by_floor_index} table: the mob sets a dungeon's spawners
  * draw from from this floor down, until the next band takes over.
  *
  * <h2>Bands are open-ended downward, and that is the design</h2>
@@ -38,7 +38,7 @@ import java.util.Optional;
  * load-time check ({@link #validate}).</p>
  *
  * <h2>floorIndex, not floorY</h2>
- * <p>{@code minFloorIndex} counts floors from the entrance: <strong>0 is the entrance floor</strong>,
+ * <p>{@code min_floor_index} counts floors from the entrance: <strong>0 is the entrance floor</strong>,
  * 1 the one below it, and so on. It is deliberately not a world Y. A dungeon under a mountain has its
  * third floor higher than a ravine dungeon's first, so a Y threshold would make "deep" mean something
  * different per dungeon &mdash; whereas an author writing {@code minFloorIndex: 3} means the fourth
@@ -46,13 +46,13 @@ import java.util.Optional;
  * the two axes coexist deliberately and answer different questions.)</p>
  *
  * <h2>The band may also change how MANY mobs a spawner releases</h2>
- * <p>{@code minMobs}/{@code maxMobs} are optional here and, when present, supply the value for any
+ * <p>{@code min_mobs}/{@code max_mobs} are optional here and, when present, supply the value for any
  * scheme on those floors that does not state its own. Without them the depth axis could only change
  * <em>what</em> spawns, never <em>how much</em> &mdash; and the only way to make a deeper floor
  * release 3&ndash;5 instead of 1&ndash;3 would have been a near-duplicate scheme per band, which is
  * the exact duplication this table exists to remove.</p>
  *
- * <p><strong>Independent of {@code mobSets}, deliberately.</strong> A scheme that names its own sets
+ * <p><strong>Independent of {@code mob_sets}, deliberately.</strong> A scheme that names its own sets
  * still picks up the band's counts, because "which mobs" and "how many" are separate authoring
  * decisions: a scheme pinned to one set at every depth can still get more crowded as it descends.
  * Precedence is the same for both, and is the ordinary one &mdash; the scheme's own value wins,
@@ -70,22 +70,22 @@ public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobS
 
     // Codecs.closed -- see RoomScheme.CODEC.
     public static final Codec<MobSetBand> CODEC = Codecs.closed(RecordCodecBuilder.<MobSetBand>mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minFloorIndex", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_floor_index", 0)
                     .forGetter(MobSetBand::minFloorIndex),
-            SpawnerConfig.MobSetEntry.CODEC.listOf().fieldOf("mobSets").forGetter(MobSetBand::mobSets),
+            SpawnerConfig.MobSetEntry.CODEC.listOf().fieldOf("mob_sets").forGetter(MobSetBand::mobSets),
             // Absent means "this band has nothing to say about counts", which is not the same as a
             // band restating the default -- the first defers to the scheme, the second overrides a
             // scheme that stated nothing. Same Optional-not-sentinel argument as SpawnerConfig#mobSets.
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "minMobs")
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "min_mobs")
                     .forGetter(MobSetBand::minMobs),
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxMobs")
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_mobs")
                     .forGetter(MobSetBand::maxMobs)
     ).apply(instance, MobSetBand::new))).flatXmap(MobSetBand::validateBand, MobSetBand::validateBand);
 
     private static DataResult<MobSetBand> validateBand(MobSetBand band) {
         if (band.mobSets.isEmpty()) {
             return DataResult.error(() -> "mob set band at floor " + band.minFloorIndex
-                    + ": 'mobSets' is empty, so every spawner on those floors would be an invisible"
+                    + ": 'mob_sets' is empty, so every spawner on those floors would be an invisible"
                     + " block that spawns nothing");
         }
         return DataResult.success(band);
@@ -135,14 +135,14 @@ public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobS
         java.util.Set<Integer> starts = new java.util.HashSet<>();
         for (MobSetBand band : table) {
             if (!starts.add(band.minFloorIndex)) {
-                return DataResult.error(() -> "mobSetsByFloorIndex: two bands both start at floor "
+                return DataResult.error(() -> "mob_sets_by_floor_index: two bands both start at floor "
                         + band.minFloorIndex + ", so one of them can never be reached");
             }
         }
         if (!starts.contains(0)) {
-            return DataResult.error(() -> "mobSetsByFloorIndex: no band covers floor 0 (the entrance"
+            return DataResult.error(() -> "mob_sets_by_floor_index: no band covers floor 0 (the entrance"
                     + " floor), so its spawners would draw from nothing. Bands run from their"
-                    + " minFloorIndex downward, so the shallowest must start at 0. Found: " + starts);
+                    + " min_floor_index downward, so the shallowest must start at 0. Found: " + starts);
         }
         return DataResult.success(table);
     }

@@ -978,8 +978,8 @@ public class DungeonStructure extends Structure {
             return;
         }
         Dungeons.LOGGER.warn(
-                "[D2-PITCH] generation_config sets a floor pitch of {} (floorHeight {} + "
-                        + "gapBetweenFloors {}); every entrance and transition Dungeons2 ships is cut "
+                "[D2-PITCH] generation_config sets a floor pitch of {} (floor_height {} + "
+                        + "gap_between_floors {}); every entrance and transition Dungeons2 ships is cut "
                         + "for {}. You will need to author your own -- the shipped stairs and ladder "
                         + "carry their door markers {} apart and cannot stretch, and the stairs_2 "
                         + "chain only lands on multiples of 6. Watch for [D2-SPAN] errors.",
@@ -1431,8 +1431,8 @@ public class DungeonStructure extends Structure {
             // of gapBetweenFloors and eventually out of the ceiling of the floor beneath.
             Dungeons.LOGGER.warn(
                     "[D2-PREFAB] room template {} carries {} rows below its door markers but the "
-                            + "floor's sinkOffset budget is only {} -- the bottom {} will be dug out "
-                            + "of the buffer under the floor. Either raise sinkOffset or author the "
+                            + "floor's sink_offset budget is only {} -- the bottom {} will be dug out "
+                            + "of the buffer under the floor. Either raise sink_offset or author the "
                             + "door markers no higher than local Y {}.",
                     describeElements(pieces), lift, sinkOffset, lift - sinkOffset, sinkOffset);
         }

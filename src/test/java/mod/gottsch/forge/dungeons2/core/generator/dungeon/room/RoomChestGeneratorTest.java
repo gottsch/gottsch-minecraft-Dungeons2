@@ -123,7 +123,7 @@ class RoomChestGeneratorTest {
     }
 
     /**
-     * {@code minCount} defaults to 0, so the commonest authored shape is "sometimes". A slot that
+     * {@code min_count} defaults to 0, so the commonest authored shape is "sometimes". A slot that
      * always fired would make finding a chest mean nothing.
      */
     @Test
@@ -163,6 +163,6 @@ class RoomChestGeneratorTest {
                 List.of(new ChestConfig.ChestVariant("minecraft:chest", 1)),
                 new SizeGate(0, 9, Optional.empty(), Optional.empty()));
         assertTrue(gated.gate().fits(9, 9, 7));
-        assertFalse(gated.gate().fits(7, 7, 7), "a 7-wide room is below the slot's minSize");
+        assertFalse(gated.gate().fits(7, 7, 7), "a 7-wide room is below the slot's min_size");
     }
 }

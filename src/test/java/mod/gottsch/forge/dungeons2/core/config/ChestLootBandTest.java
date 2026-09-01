@@ -85,15 +85,15 @@ class ChestLootBandTest {
     @Test
     void anEmptyBandIsALoadError() {
         var result = ChestLootBand.CODEC.parse(JsonOps.INSTANCE,
-                JsonParser.parseString("{\"minFloorIndex\": 0, \"lootTables\": []}"));
-        assertTrue(result.error().isPresent(), "an empty lootTables list must not load");
+                JsonParser.parseString("{\"min_floor_index\": 0, \"loot_tables\": []}"));
+        assertTrue(result.error().isPresent(), "an empty loot_tables list must not load");
     }
 
     @Test
     void aBandRoundTripsThroughItsCodec() {
-        String json = "{\"minFloorIndex\": 2, \"lootTables\": ["
-                + "{\"lootTable\": \"d2:deep\", \"weight\": 8},"
-                + "{\"lootTable\": \"d2:shallow\"}]}";
+        String json = "{\"min_floor_index\": 2, \"loot_tables\": ["
+                + "{\"loot_table\": \"d2:deep\", \"weight\": 8},"
+                + "{\"loot_table\": \"d2:shallow\"}]}";
         ChestLootBand band = ChestLootBand.CODEC
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
                 .getOrThrow(false, err -> { throw new AssertionError(err); });

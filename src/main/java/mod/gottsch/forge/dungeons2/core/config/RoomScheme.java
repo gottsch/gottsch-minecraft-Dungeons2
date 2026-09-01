@@ -91,9 +91,9 @@ import java.util.stream.Stream;
  * a crown molding course. A vaulted ceiling or a two-course wall is not a pattern that degrades
  * gracefully in a 5-high room; it is a pattern that must not be rolled there.</p>
  *
- * <p>{@code minHeight} is measured against the room's <strong>full</strong> height (floor block
+ * <p>{@code min_height} is measured against the room's <strong>full</strong> height (floor block
  * through ceiling block inclusive, what {@code RoomData#getHeight} returns), not the interior row
- * count, because that is the number the planner actually rolls. {@code minSize} is measured against
+ * count, because that is the number the planner actually rolls. {@code min_size} is measured against
  * the <em>smaller</em> of width and depth, so a long thin room is gated by its narrow axis &mdash;
  * which is the one that makes a centred pattern degenerate.</p>
  *
@@ -125,9 +125,9 @@ import java.util.stream.Stream;
  * mountain has its third floor higher up than a ravine dungeon's first.</p>
  *
  * <p>{@code minFloorIndex: 0} and no maximum is the default and means "anywhere", so an existing
- * pack is unaffected. Unlike {@code maxHeight}/{@code maxSize}, {@code maxFloorIndex} accepts
+ * pack is unaffected. Unlike {@code max_height}/{@code max_size}, {@code max_floor_index} accepts
  * <strong>0</strong>: "this scheme only on the entrance floor" is a real thing to author, where a
- * {@code maxHeight} of 0 could only ever be a mistake.</p>
+ * {@code max_height} of 0 could only ever be a mistake.</p>
  *
  * <p><strong>Maxima make it possible to leave a gap.</strong> With minimums only, one unconstrained
  * scheme guarantees every room matches something; with bounds, a whole band of room sizes can fall
@@ -170,10 +170,14 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * at {@code Products.P16}). The four fields were already exactly a {@code SizeGate}; they are
      * simply named as one now.
      *
-     * <p><strong>No JSON changed.</strong> {@code SizeGate.MAP_CODEC} is a {@code MapCodec}, so
-     * {@code minHeight}/{@code minSize}/{@code maxHeight}/{@code maxSize} stay flat keys on the
-     * scheme object exactly as before, and the four accessors below keep the old names working. A
-     * pack sees nothing.</p>
+     * <p><strong>The fold changed no JSON.</strong> {@code SizeGate.MAP_CODEC} is a
+     * {@code MapCodec}, so {@code min_height}/{@code min_size}/{@code max_height}/{@code max_size}
+     * stayed flat keys on the scheme object rather than moving under a nested {@code gate}, and the
+     * four accessors below keep them reachable. A pack saw nothing.</p>
+     *
+     * <p>(Those four keys <em>were</em> respelled later, on 2026-08-31, when the whole config schema
+     * went from camelCase to snake_case to match vanilla's datapack convention. Unrelated change,
+     * and the Java accessors kept their camelCase names through it.)</p>
      */
     public int minHeight() {
         return gate.minHeight();
@@ -314,13 +318,13 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * <p><strong>Weight, all four size bounds and both floor bounds stay the child's own.</strong> Two reasons, and the
      * second is the real one:</p>
      * <ul>
-     *   <li>{@code weight}, {@code minHeight} and {@code minSize} are primitives with defaults, so
+     *   <li>{@code weight}, {@code min_height} and {@code min_size} are primitives with defaults, so
      *       nothing here can tell "the author omitted it" from "the author wrote the default" &mdash;
      *       the same limitation {@code SizeGate} and {@code PatternEntry} keep running into. An
      *       inheriting primitive would silently ignore a deliberate {@code minSize: 0}.</li>
      *   <li>More importantly, <strong>a variant exists because its eligibility differs.</strong>
      *       Inheritance is for schemes that differ in <em>content</em> (the same hall in andesite and
-     *       in deepslate); {@code minSize}/{@code maxSize} are how an author says which rooms a
+     *       in deepslate); {@code min_size}/{@code max_size} are how an author says which rooms a
      *       scheme is <em>for</em>, and quietly copying that from a parent is how a whole size band
      *       ends up with no scheme at all.</li>
      * </ul>
@@ -353,7 +357,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * so this is the one cross-field check that has to live outside the record's own field codecs.
      *
      * <p>Worth failing rather than clamping (which is what {@code PotConfig} does to its count
-     * range): a scheme with {@code minHeight} 7 and {@code maxHeight} 5 is eligible for nothing, and
+     * range): a scheme with {@code min_height} 7 and {@code max_height} 5 is eligible for nothing, and
      * at generation time that is indistinguishable from a scheme that simply never won its roll --
      * exactly the silent-nothing class of failure the strict codecs here exist to prevent. Clamping
      * would instead invent a range the author never asked for.</p>
@@ -365,18 +369,18 @@ public record RoomScheme(String name, int weight, SizeGate gate,
             return DataResult.error(() -> "scheme '" + scheme.name + "': extends itself");
         }
         if (scheme.maxHeight().isPresent() && scheme.maxHeight().get() < scheme.minHeight()) {
-            return DataResult.error(() -> "scheme '" + scheme.name + "': maxHeight "
-                    + scheme.maxHeight().get() + " is below minHeight " + scheme.minHeight()
+            return DataResult.error(() -> "scheme '" + scheme.name + "': max_height "
+                    + scheme.maxHeight().get() + " is below min_height " + scheme.minHeight()
                     + ", so it fits no room at all");
         }
         if (scheme.maxSize().isPresent() && scheme.maxSize().get() < scheme.minSize()) {
-            return DataResult.error(() -> "scheme '" + scheme.name + "': maxSize "
-                    + scheme.maxSize().get() + " is below minSize " + scheme.minSize()
+            return DataResult.error(() -> "scheme '" + scheme.name + "': max_size "
+                    + scheme.maxSize().get() + " is below min_size " + scheme.minSize()
                     + ", so it fits no room at all");
         }
         // The element gates are validated from here rather than from inside SizeGate's own map
         // codec, because this is the level that knows the scheme's name and which slot it was --
-        // "maxHeight 5 is below minHeight 7" is not an actionable error message on its own.
+        // "max_height 5 is below min_height 7" is not an actionable error message on its own.
         DataResult<FloorRange> floorRange = scheme.floors.validate("scheme '" + scheme.name + "'");
         if (floorRange.error().isPresent()) {
             return DataResult.error(() -> floorRange.error().get().message());
@@ -437,7 +441,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
     /**
      * See {@link #floorFor}. Note this answers only whether the ROOM may have a pit; whether the
      * floor has anywhere to put one is {@code PitPatternEntry#depthWithin}, and it is asked later
-     * because {@code sinkOffset} lives in a different datapack registry.
+     * because {@code sink_offset} lives in a different datapack registry.
      */
     public Optional<PitPatternEntry> pitFor(int width, int depth, int height) {
         return pit.value().filter(entry -> entry.gate().fits(width, depth, height));
@@ -553,7 +557,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * a floor, and it is the one an author is more likely to have meant.</p>
      *
      * <p>Combined with a cap on a template ({@code #44}) this is what a mini-boss is made of:
-     * {@code minFloorIndex} puts it deep, the cap makes it rare.</p>
+     * {@code min_floor_index} puts it deep, the cap makes it rare.</p>
      */
     public boolean fitsFloor(int floorIndex) {
         return floors.contains(floorIndex);

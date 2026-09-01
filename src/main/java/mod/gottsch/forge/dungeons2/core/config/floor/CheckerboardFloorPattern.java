@@ -34,8 +34,8 @@ public record CheckerboardFloorPattern(String primaryBlock, String secondaryBloc
 
     public static final MapCodec<CheckerboardFloorPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("primaryBlock").forGetter(CheckerboardFloorPattern::primaryBlock),
-                    Codec.STRING.fieldOf("secondaryBlock").forGetter(CheckerboardFloorPattern::secondaryBlock)
+                    Codecs.BLOCK_ID.fieldOf("primary_block").forGetter(CheckerboardFloorPattern::primaryBlock),
+                    Codecs.BLOCK_ID.fieldOf("secondary_block").forGetter(CheckerboardFloorPattern::secondaryBlock)
             ).apply(instance, CheckerboardFloorPattern::new)));
 
     @Override

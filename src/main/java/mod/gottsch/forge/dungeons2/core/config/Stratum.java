@@ -23,11 +23,12 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * One depth band of a motif's {@code strataByFloorIndex} table: the element sections the dungeon's
+ * One depth band of a motif's {@code strata_by_floor_index} table: the element sections the dungeon's
  * <strong>shell</strong> is built from, from this floor down, until the next band takes over.
  *
  * <p>Backlog #45. The dungeon should read as older architecture the deeper you go &mdash; the upper
@@ -49,7 +50,7 @@ import java.util.Set;
  * <p>Two things follow, and both are the reason this is an overlay rather than a config per band.
  * A band is a handful of lines rather than a second copy of a 670-line {@code base.json}, so it
  * cannot drift from the base on sections it never meant to touch. And <strong>a band that declares
- * nothing at all is legal and useful</strong>: {@code {"minFloorIndex": 1}} says "from floor 1 down,
+ * nothing at all is legal and useful</strong>: {@code {"min_floor_index": 1}} says "from floor 1 down,
  * the motif as authored", which is how you end the band above it.
  *
  * <h2>Everything true of {@link MobSetBand} is true here</h2>
@@ -125,7 +126,7 @@ import java.util.Set;
  * guard. Everything {@code BasicCorridorGenerator} emits is bounded by
  * {@code floorY .. floorY + CorridorData.getWallHeight() - 1} &mdash; the height the PIECE carries,
  * set by the planner &mdash; and the arch sits at {@code ceilingHeight - 2}, strictly inside it. So
- * {@code profile}, {@code archBlock}, {@code narrowHeight} and {@code courses} cannot put a block
+ * {@code profile}, {@code arch_block}, {@code narrow_height} and {@code courses} cannot put a block
  * outside the box no matter what a band says.
  *
  * <p>{@code styles} needs no special case either. A band that declares none renders through
@@ -140,7 +141,7 @@ import java.util.Set;
  * The corridor's real height is rolled once for the whole dungeon at plan time, from the unbanded
  * motif, and travels on the piece &mdash; so a band's {@code height} never sets it. It is not
  * inert, though: {@link CorridorStyle#narrowCellHeight()} falls back to it when
- * {@code narrowHeight} is absent, so it still sets the dropped ceiling of 1-cell-wide runs. Author
+ * {@code narrow_height} is absent, so it still sets the dropped ceiling of 1-cell-wide runs. Author
  * a band's {@code height} to match the motif's unless that is what you want to move.
  *
  * @author Mark Gottschling on Aug 23, 2026
@@ -148,7 +149,16 @@ import java.util.Set;
 public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
                       Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
                       Optional<CorridorConfig> corridor, Optional<FloorConfig> floor,
-                      Optional<List<RoomScheme>> schemes) {
+                      Optional<List<RoomScheme>> schemes,
+                      Map<String, String> palette) {
+
+    /** The shape before {@code palette}: a band that repaints materials but names no roles. */
+    public Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
+                   Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
+                   Optional<CorridorConfig> corridor, Optional<FloorConfig> floor,
+                   Optional<List<RoomScheme>> schemes) {
+        this(minFloorIndex, name, wall, ceiling, door, corridor, floor, schemes, Map.of());
+    }
 
     /** The shape before {@code schemes}: a band that repaints the shell and leaves dressing alone. */
     public Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
@@ -180,7 +190,7 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
     // band says "the motif's answer is still right at this depth"; that is the overlay, and it is
     // why this is not simply a MotifConfig per band.
     public static final Codec<Stratum> CODEC = Codecs.closed(RecordCodecBuilder.<Stratum>mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minFloorIndex", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_floor_index", 0)
                     .forGetter(Stratum::minFloorIndex),
             // Optional because a band that only repaints needs no pools of its own. Naming one is
             // what opts this depth into rooms/<motif>/<name>/ -- see MotifConfig#stratumNameFor.
@@ -193,14 +203,20 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
             // The ONE section that is not whole-replace -- see #schemes(). Optional rather than a
             // defaulted list so that "declares none" stays distinguishable from "declares an empty
             // list", even though both currently resolve to the motif's own.
-            Codecs.strictOptionalFieldOf(RoomScheme.CODEC.listOf(), "schemes").forGetter(Stratum::schemes)
+            Codecs.strictOptionalFieldOf(RoomScheme.CODEC.listOf(), "schemes").forGetter(Stratum::schemes),
+            // A DEFAULTED map and not an Optional one, unlike every section above: those need
+            // "absent" to stay distinguishable from "declared empty" because absent means INHERIT
+            // the motif's. A palette does not -- it overlays key by key, so declaring nothing and
+            // declaring an empty map are the same statement, and an empty default says it.
+            Codecs.strictOptionalFieldOf(Codecs.PALETTE, "palette", Map.of())
+                    .forGetter(Stratum::palette)
     ).apply(instance, Stratum::new))).flatXmap(Stratum::validateBand, Stratum::validateBand);
 
     /**
      * The only thing a band can get wrong on its own: a {@link #name} that is not a path segment.
      *
      * <p>Notably absent is any objection to a band that declares <strong>no sections at all</strong>.
-     * {@code {"minFloorIndex": 1}} is not an authoring slip &mdash; it reads "from floor 1 down, the
+     * {@code {"min_floor_index": 1}} is not an authoring slip &mdash; it reads "from floor 1 down, the
      * motif as authored", which is exactly how you end the band above it. Rejecting it forced the
      * author to restate a section they did not want to change, which is the drift an overlay exists
      * to prevent. A band carrying only a {@code name} is legal for the same reason: it moves the
@@ -260,13 +276,13 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
         Set<Integer> starts = new HashSet<>();
         for (Stratum stratum : table) {
             if (!starts.add(stratum.minFloorIndex)) {
-                return DataResult.error(() -> "strataByFloorIndex: two bands both start at floor "
+                return DataResult.error(() -> "strata_by_floor_index: two bands both start at floor "
                         + stratum.minFloorIndex + ", so one of them can never be reached");
             }
         }
         if (!starts.contains(0)) {
-            return DataResult.error(() -> "strataByFloorIndex: no band covers floor 0 (the entrance"
-                    + " floor). Bands run from their minFloorIndex downward, so the shallowest must"
+            return DataResult.error(() -> "strata_by_floor_index: no band covers floor 0 (the entrance"
+                    + " floor). Bands run from their min_floor_index downward, so the shallowest must"
                     + " start at 0. Found: " + starts);
         }
         return DataResult.success(table);

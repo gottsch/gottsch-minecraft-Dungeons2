@@ -25,7 +25,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 
 /**
- * A room-size range: {@code minHeight}/{@code minSize}/{@code maxHeight}/{@code maxSize}, the four
+ * A room-size range: {@code min_height}/{@code min_size}/{@code max_height}/{@code max_size}, the four
  * fields {@link RoomScheme} has always had, factored out so an <em>element slot</em> can carry them
  * too.
  *
@@ -42,7 +42,7 @@ import java.util.Optional;
  * <p>That second level is what collapses a pair of near-identical schemes into one. A bordered floor
  * that wants a crown moulding only where there is headroom for it used to need two schemes &mdash;
  * {@code andesite_border} and {@code crowned_andesite_border} &mdash; identical but for the wall slot
- * and a {@code minHeight}. With a gate on the wall slot it is one scheme whose crown drops out in
+ * and a {@code min_height}. With a gate on the wall slot it is one scheme whose crown drops out in
  * short rooms.</p>
  *
  * <p>It also removes an inconsistency that arrangement had. With two competing schemes, a tall room
@@ -68,20 +68,20 @@ public record SizeGate(int minHeight, int minSize,
      * A {@link MapCodec} rather than a {@code Codec} so the four fields stay <strong>flat</strong>
      * in the JSON object that embeds it:
      *
-     * <pre>"wall": { "minHeight": 6, "type": "courses", "courses": [ ... ] }</pre>
+     * <pre>"wall": { "min_height": 6, "type": "courses", "courses": [ ... ] }</pre>
      *
      * <p>Nesting them under a {@code "requires": { ... }} key would separate a constraint from the
      * thing it constrains for no gain. Flat also means the element-level fields are spelled exactly
      * like the scheme-level ones, so there is one concept to learn rather than two.</p>
      */
     public static final MapCodec<SizeGate> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minHeight", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_height", 0)
                     .forGetter(SizeGate::minHeight),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minSize", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_size", 0)
                     .forGetter(SizeGate::minSize),
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxHeight")
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_height")
                     .forGetter(SizeGate::maxHeight),
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "maxSize")
+            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_size")
                     .forGetter(SizeGate::maxSize)
     ).apply(instance, SizeGate::new));
 
@@ -125,12 +125,12 @@ public record SizeGate(int minHeight, int minSize,
      */
     public DataResult<SizeGate> validate(String where) {
         if (maxHeight.isPresent() && maxHeight.get() < minHeight) {
-            return DataResult.error(() -> where + ": maxHeight " + maxHeight.get()
-                    + " is below minHeight " + minHeight + ", so it fits no room at all");
+            return DataResult.error(() -> where + ": max_height " + maxHeight.get()
+                    + " is below min_height " + minHeight + ", so it fits no room at all");
         }
         if (maxSize.isPresent() && maxSize.get() < minSize) {
-            return DataResult.error(() -> where + ": maxSize " + maxSize.get()
-                    + " is below minSize " + minSize + ", so it fits no room at all");
+            return DataResult.error(() -> where + ": max_size " + maxSize.get()
+                    + " is below min_size " + minSize + ", so it fits no room at all");
         }
         return DataResult.success(this);
     }

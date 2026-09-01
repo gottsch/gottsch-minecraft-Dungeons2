@@ -37,7 +37,7 @@ import java.util.Optional;
  * say what the motif is <em>made of</em>, and the scheme list says how a room is <em>dressed</em>.
  * </p>
  *
- * <p>Setting {@code base} and {@code alternateBase} to the <em>same</em> block makes the floor
+ * <p>Setting {@code base} and {@code alternate_base} to the <em>same</em> block makes the floor
  * uniform before weathering, which is how {@code classic} ships: the weathering processor list
  * already produces graduated stone_bricks &rarr; cracked/mossy &rarr; cobblestone &rarr; dirt
  * &rarr; gravel variation, and pre-baking a second block here both duplicated that and skipped the
@@ -45,7 +45,7 @@ import java.util.Optional;
  *
  * <h2>{@code pattern} &mdash; the one piece of dressing that does live here</h2>
  * <p>The split above says decoration belongs to the scheme, and it still does. {@code pattern} is
- * the exception, and it earns it: a <strong>stratum</strong> ({@code strataByFloorIndex}) is a
+ * the exception, and it earns it: a <strong>stratum</strong> ({@code strata_by_floor_index}) is a
  * {@link FloorConfig}, not a scheme, so without this field a depth band can say "my floors are
  * these two blocks" but never "my floors are speckled cobble". That is the whole of what the mud
  * band needs &mdash; cobblestone paving with mud showing through &mdash; and it is a property of
@@ -77,8 +77,8 @@ public record FloorConfig(String base, String alternateBase, Optional<FloorPatte
             "minecraft:stone_bricks", "minecraft:stone_bricks");
 
     public static final Codec<FloorConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("base").forGetter(FloorConfig::base),
-            Codec.STRING.fieldOf("alternateBase").forGetter(FloorConfig::alternateBase),
+            Codecs.BLOCK_ID.fieldOf("base").forGetter(FloorConfig::base),
+            Codecs.BLOCK_ID.fieldOf("alternate_base").forGetter(FloorConfig::alternateBase),
             // strictOptionalFieldOf, not DFU's own: a malformed pattern must be a load error, not
             // silently the same as an absent one. See Codecs and #31 -- a band that quietly lost
             // its paving would look exactly like a band that never asked for any.

@@ -39,7 +39,7 @@ public record SpokesFloorPattern(int spokes, String block) implements FloorPatte
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spokes",
                                     RadialSpokesFloorPatternProvider.DEFAULT_SPOKES)
                             .forGetter(SpokesFloorPattern::spokes),
-                    Codec.STRING.fieldOf("block").forGetter(SpokesFloorPattern::block)
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(SpokesFloorPattern::block)
             ).apply(instance, SpokesFloorPattern::new)));
 
     @Override

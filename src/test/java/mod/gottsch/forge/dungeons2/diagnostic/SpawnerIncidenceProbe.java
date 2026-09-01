@@ -228,7 +228,7 @@ class SpawnerIncidenceProbe {
         System.out.printf("%n  stage 1 -- scheme carries a spawners slot : %d (%.1f%% of rooms)%n",
                 carriesSlot, pct(carriesSlot, rooms));
         System.out.printf("  stage 2 -- of those, actually placed      : %d (%.1f%%, expected %.1f%%"
-                        + " from minCount 0 / maxCount 1)%n",
+                        + " from min_count 0 / max_count 1)%n",
                 roomsWithSpawner, placedOfCarrying, expected);
         System.out.printf("  => cell exhaustion is at most             : %.1f pp (~%d rooms)%n",
                 Math.max(0.0D, expected - placedOfCarrying),

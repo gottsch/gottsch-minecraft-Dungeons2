@@ -78,9 +78,21 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                           List<MobSetBand> mobSetsByFloorIndex,
                           List<ChestLootBand> chestLootByFloorIndex,
                           Map<String, TemplateLimit> templateLimits,
-                          List<Stratum> strataByFloorIndex) {
+                          List<Stratum> strataByFloorIndex,
+                          Map<String, String> palette) {
 
-    /** The shape before {@code strataByFloorIndex}: a motif that looks the same all the way down. */
+    /** The shape before {@code palette}: a motif whose patterns all name literal block ids. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       List<ChestLootBand> chestLootByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits,
+                       List<Stratum> strataByFloorIndex) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, Map.of());
+    }
+
+    /** The shape before {@code strata_by_floor_index}: a motif that looks the same all the way down. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex,
@@ -90,7 +102,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                 chestLootByFloorIndex, templateLimits, List.of());
     }
 
-    /** The shape before {@code chestLootByFloorIndex}: a motif whose chests must name their own tables. */
+    /** The shape before {@code chest_loot_by_floor_index}: a motif whose chests must name their own tables. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex,
@@ -109,13 +121,13 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         return ChestLootBand.forFloor(chestLootByFloorIndex, floorIndex);
     }
 
-    /** The shape before {@code mobSetsByFloorIndex}: a motif whose schemes must name their own sets. */
+    /** The shape before {@code mob_sets_by_floor_index}: a motif whose schemes must name their own sets. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes) {
         this(wall, ceiling, door, corridor, floor, schemes, List.of(), List.of(), Map.of());
     }
 
-    /** The shape before {@code templateLimits}: a motif that caps no authored template. */
+    /** The shape before {@code template_limits}: a motif that caps no authored template. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex) {
@@ -226,8 +238,43 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         stratum.floor().orElse(floor),
                         mergeSchemes(stratum),
                         mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
-                        List.of()))
+                        List.of(),
+                        // OVERLAY, not replace -- the one section that behaves like this, and the
+                        // reason is the same one that makes `schemes` merge. Every other section is
+                        // a coherent whole a band either restates or inherits; a palette is a set
+                        // of INDEPENDENT roles, and a band typically repaints two or three of them
+                        // (classic to mud is four lines). Whole-replace would make a band restate
+                        // the entire vocabulary to change one entry, which is exactly the drift an
+                        // overlay exists to prevent.
+                        overlay(palette, stratum.palette())))
                 .orElse(this);
+    }
+
+    /**
+     * The band's roles written over the motif's, key by key. Returns the motif's own map unchanged
+     * when the band declares none, so the common case allocates nothing.
+     */
+    private static Map<String, String> overlay(Map<String, String> motif, Map<String, String> band) {
+        if (band.isEmpty()) {
+            return motif;
+        }
+        Map<String, String> merged = new LinkedHashMap<>(motif);
+        merged.putAll(band);
+        return Map.copyOf(merged);
+    }
+
+    /**
+     * The literal block id a role names, at this depth. Empty for a role the palette in scope does
+     * not declare, which callers must treat as a load error rather than as a block that draws
+     * nothing -- see {@code Codecs#BLOCK_ID}.
+     *
+     * <p>Ask this of a config that has already been through {@link #forFloor}: the answer is
+     * depth-dependent, and that is the whole point.</p>
+     *
+     * @param role the name WITHOUT the {@code $} sigil
+     */
+    public Optional<String> role(String role) {
+        return Optional.ofNullable(palette.get(role));
     }
 
     /**

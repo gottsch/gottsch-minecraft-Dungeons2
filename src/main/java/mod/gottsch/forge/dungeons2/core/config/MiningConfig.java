@@ -113,9 +113,9 @@ public record MiningConfig(double payoutFraction, double depthBias, List<OreBand
 
         public static final Codec<OreBand> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("item").forGetter(OreBand::item),
-                Codec.doubleRange(0.0D, 1000.0D).fieldOf("perThousand").forGetter(OreBand::perThousand),
-                Codec.intRange(-2032, 2031).fieldOf("minY").forGetter(OreBand::minY),
-                Codec.intRange(-2032, 2031).fieldOf("maxY").forGetter(OreBand::maxY),
+                Codec.doubleRange(0.0D, 1000.0D).fieldOf("per_thousand").forGetter(OreBand::perThousand),
+                Codec.intRange(-2032, 2031).fieldOf("min_y").forGetter(OreBand::minY),
+                Codec.intRange(-2032, 2031).fieldOf("max_y").forGetter(OreBand::maxY),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max", Integer.MAX_VALUE)
                         .forGetter(OreBand::max)
         ).apply(instance, OreBand::new)));
@@ -154,9 +154,9 @@ public record MiningConfig(double payoutFraction, double depthBias, List<OreBand
                     // way roomTemplateAttemptsPerFloor 0 turns prefab rooms off. Above 1 is allowed:
                     // "pay back more than was destroyed" is a defensible dial for a reward chest,
                     // and 4 is far enough out to catch a typo'd 10.
-                    Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 4.0D), "payoutFraction",
+                    Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 4.0D), "payout_fraction",
                             DEFAULT_PAYOUT_FRACTION).forGetter(MiningConfig::payoutFraction),
-                    Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 8.0D), "depthBias",
+                    Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 8.0D), "depth_bias",
                             DEFAULT_DEPTH_BIAS).forGetter(MiningConfig::depthBias),
                     // REQUIRED. An absent table is not "the default table" -- it is a chest with
                     // nothing in it, and this feature exists to not do that.
@@ -167,7 +167,7 @@ public record MiningConfig(double payoutFraction, double depthBias, List<OreBand
     /**
      * The one thing no field range can catch: a band whose range is empty.
      *
-     * <p>{@code minY} above {@code maxY} contributes nothing at any depth, so the ore it names
+     * <p>{@code min_y} above {@code max_y} contributes nothing at any depth, so the ore it names
      * silently never appears. Left to a range check it would look exactly like a correctly authored
      * band that happens to sit outside the dungeon's depths, which is a legitimate thing to author.
      */
@@ -175,7 +175,7 @@ public record MiningConfig(double payoutFraction, double depthBias, List<OreBand
         for (OreBand band : config.ores()) {
             if (band.minY() > band.maxY()) {
                 return DataResult.error(() -> "mining_config band for '" + band.item()
-                        + "' has minY " + band.minY() + " above maxY " + band.maxY()
+                        + "' has min_y " + band.minY() + " above max_y " + band.maxY()
                         + ", so it can never contribute; swap them or delete the band");
             }
         }

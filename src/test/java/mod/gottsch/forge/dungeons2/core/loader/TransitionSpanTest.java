@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <h2>Why this test rather than only the runtime check</h2>
  * <p>The runtime check fires during worldgen, once, into a log, on whatever seed happened to
  * generate. This one fails the build the moment the planner's pitch and the shipped templates
- * disagree &mdash; which is exactly what happens the moment {@code floorHeight} is raised for
+ * disagree &mdash; which is exactly what happens the moment {@code floor_height} is raised for
  * backlog #29. Without it the symptom in game is a stairwell that ends in stone: the upper door
  * marker is handed to the maze as if it sat on the upper walking plane, and nothing downstream
  * re-checks it. No error, no log, no test.</p>

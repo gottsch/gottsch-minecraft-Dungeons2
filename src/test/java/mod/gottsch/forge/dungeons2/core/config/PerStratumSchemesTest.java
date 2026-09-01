@@ -199,7 +199,7 @@ class PerStratumSchemesTest {
     void aBandSchemeMayExtendAnAbstractMotifTemplate() {
         MotifConfig resolved = resolve("""
                 {"schemes":[%s,{"name":"plain","weight":1}],
-                 "strataByFloorIndex":[{"minFloorIndex":0,
+                 "strata_by_floor_index":[{"min_floor_index":0,
                     "schemes":[{"name":"mud_hall","weight":5,"extends":"grand"}]}]}"""
                 .formatted(GRAND_TEMPLATE));
 
@@ -218,7 +218,7 @@ class PerStratumSchemesTest {
     void extendingAMotifTemplateDoesNotDragTheRestOfTheMotifIntoTheBand() {
         MotifConfig resolved = resolve("""
                 {"schemes":[%s,{"name":"plain","weight":1},{"name":"cellar","weight":2}],
-                 "strataByFloorIndex":[{"minFloorIndex":0,
+                 "strata_by_floor_index":[{"min_floor_index":0,
                     "schemes":[{"name":"mud_hall","weight":5,"extends":"grand"}]}]}"""
                 .formatted(GRAND_TEMPLATE));
 
@@ -230,9 +230,9 @@ class PerStratumSchemesTest {
     void anAbstractBandSchemeIsNeverRolled() {
         MotifConfig resolved = resolve("""
                 {"schemes":[{"name":"plain","weight":1}],
-                 "strataByFloorIndex":[{"minFloorIndex":0,"schemes":[
+                 "strata_by_floor_index":[{"min_floor_index":0,"schemes":[
                     {"name":"mud_base","abstract":true,"weight":1,
-                     "pots":{"minCount":1,"maxCount":2,"lootTable":"dungeons2:pots/classic",
+                     "pots":{"min_count":1,"max_count":2,"loot_table":"dungeons2:pots/classic",
                              "variants":[{"entity":"dungeonblocks:pot","weight":1}]}},
                     {"name":"mud_hall","weight":5,"extends":"mud_base"}]}]}""");
 
@@ -251,10 +251,10 @@ class PerStratumSchemesTest {
     void aBandSchemeExtendsTheBandsOwnShadowOfAMotifName() {
         MotifConfig resolved = resolve("""
                 {"schemes":[{"name":"base","abstract":true,"weight":1,
-                             "pots":{"minCount":1,"maxCount":2,"lootTable":"dungeons2:pots/classic",
+                             "pots":{"min_count":1,"max_count":2,"loot_table":"dungeons2:pots/classic",
                                      "variants":[{"entity":"dungeonblocks:pot","weight":1}]}},
                             {"name":"plain","weight":1}],
-                 "strataByFloorIndex":[{"minFloorIndex":0,"schemes":[
+                 "strata_by_floor_index":[{"min_floor_index":0,"schemes":[
                     {"name":"base","abstract":true,"weight":1,%s},
                     {"name":"mud_hall","weight":5,"extends":"base"}]}]}""".formatted(WALL_SLOT));
 
@@ -268,7 +268,7 @@ class PerStratumSchemesTest {
         List<String> problems = new ArrayList<>();
         MotifConfig resolved = resolve(problems, """
                 {"schemes":[{"name":"plain","weight":1}],
-                 "strataByFloorIndex":[{"minFloorIndex":0,"schemes":[
+                 "strata_by_floor_index":[{"min_floor_index":0,"schemes":[
                     {"name":"mud_hall","weight":5,"extends":"nope"}]}]}""");
 
         assertEquals(List.of("plain"), names(resolved.forFloor(0).schemes()));
@@ -286,9 +286,9 @@ class PerStratumSchemesTest {
         List<String> problems = new ArrayList<>();
         resolve(problems, """
                 {"schemes":[{"name":"plain","weight":1},{"name":"broken","weight":1,"extends":"nope"}],
-                 "strataByFloorIndex":[
-                    {"minFloorIndex":0,"schemes":[{"name":"a","weight":1}]},
-                    {"minFloorIndex":2,"schemes":[{"name":"b","weight":1}]}]}""");
+                 "strata_by_floor_index":[
+                    {"min_floor_index":0,"schemes":[{"name":"a","weight":1}]},
+                    {"min_floor_index":2,"schemes":[{"name":"b","weight":1}]}]}""");
 
         assertEquals(1, problems.size(), problems.toString());
         assertFalse(problems.get(0).startsWith("stratum"),
@@ -302,7 +302,7 @@ class PerStratumSchemesTest {
     void aStratumMayCarrySchemesBesideItsElementSections() {
         MotifConfig resolved = resolve("""
                 {"schemes":[{"name":"plain","weight":1}],
-                 "strataByFloorIndex":[{"minFloorIndex":0,"name":"mud",
+                 "strata_by_floor_index":[{"min_floor_index":0,"name":"mud",
                     "wall":{"wall":"minecraft:mud_bricks"},
                     "schemes":[{"name":"mud_hall","weight":5}]}]}""");
 

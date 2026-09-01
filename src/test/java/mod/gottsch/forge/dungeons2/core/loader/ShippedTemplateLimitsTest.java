@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Every id in a motif's {@code templateLimits} must name a template some pool actually references.
+ * Every id in a motif's {@code template_limits} must name a template some pool actually references.
  *
  * <h2>Why this cannot be a load error</h2>
  * <p>Template pools are datapack content resolved through a registry at a different point in the
@@ -71,11 +71,11 @@ class ShippedTemplateLimitsTest {
 
         for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
             JsonObject fragment = parse(file).getAsJsonObject();
-            if (!fragment.has("templateLimits")) {
+            if (!fragment.has("template_limits")) {
                 continue;
             }
             for (Map.Entry<String, JsonElement> limit
-                    : fragment.getAsJsonObject("templateLimits").entrySet()) {
+                    : fragment.getAsJsonObject("template_limits").entrySet()) {
                 if (!pooled.contains(limit.getKey())) {
                     dangling.add(file.getParent().getFileName() + "/" + file.getFileName()
                             + " -> " + limit.getKey());
@@ -84,7 +84,7 @@ class ShippedTemplateLimitsTest {
         }
 
         if (!dangling.isEmpty()) {
-            org.junit.jupiter.api.Assertions.fail(dangling.size() + " templateLimits entry/entries"
+            org.junit.jupiter.api.Assertions.fail(dangling.size() + " template_limits entry/entries"
                     + " name a template no pool references, so they cap nothing and say nothing:\n  "
                     + String.join("\n  ", dangling)
                     + "\nPooled templates:\n  " + String.join("\n  ", pooled));

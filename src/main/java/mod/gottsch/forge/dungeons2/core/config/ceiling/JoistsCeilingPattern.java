@@ -39,7 +39,7 @@ import java.util.Optional;
  * its beam from underneath rather than standing in its row. Splitting them here rather than inside
  * the provider is what lets {@code LayeredSurfacePatternProvider}'s depth grouping do the work.</p>
  *
- * <p>An absent {@code bracketBlock} means the beams run bare, and a bracket that will not resolve
+ * <p>An absent {@code bracket_block} means the beams run bare, and a bracket that will not resolve
  * is the same answer &mdash; a typo in the trim should not delete the beams it was decorating.</p>
  */
 public record JoistsCeilingPattern(String block, int spacing, Optional<String> bracketBlock,
@@ -56,11 +56,11 @@ public record JoistsCeilingPattern(String block, int spacing, Optional<String> b
 
     public static final MapCodec<JoistsCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
-                    Codec.STRING.fieldOf("block").forGetter(JoistsCeilingPattern::block),
+                    Codecs.BLOCK_ID.fieldOf("block").forGetter(JoistsCeilingPattern::block),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "spacing",
                                     JoistSurfacePatternProvider.DEFAULT_SPACING)
                             .forGetter(JoistsCeilingPattern::spacing),
-                    Codecs.strictOptionalFieldOf(Codec.STRING, "bracketBlock")
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "bracket_block")
                             .forGetter(JoistsCeilingPattern::bracketBlock),
                     Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.NONE)
                             .forGetter(JoistsCeilingPattern::orient),

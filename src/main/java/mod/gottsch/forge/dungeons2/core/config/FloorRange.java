@@ -31,7 +31,7 @@ import java.util.Optional;
  * <h2>Why a record for two fields</h2>
  * <p>Partly the same reason {@link SizeGate} is one &mdash; a bounds pair with its own validation
  * rule belongs together, and a {@link MapCodec} keeps the fields <strong>flat</strong> in the JSON
- * so an author writes {@code "minFloorIndex": 3} directly on the scheme rather than nested under
+ * so an author writes {@code "min_floor_index": 3} directly on the scheme rather than nested under
  * some {@code "floors": {...}} wrapper.</p>
  *
  * <p>Partly a hard constraint: DFU's {@code RecordCodecBuilder.group} tops out at <strong>16</strong>
@@ -57,14 +57,14 @@ public record FloorRange(int min, Optional<Integer> max) {
     /**
      * Flat in the enclosing object, like {@link SizeGate#MAP_CODEC}.
      *
-     * <p>{@code maxFloorIndex} accepts <strong>0</strong>, unlike {@code maxHeight}/{@code maxSize}
+     * <p>{@code max_floor_index} accepts <strong>0</strong>, unlike {@code max_height}/{@code max_size}
      * which start at 1: floor 0 is the entrance floor, so "only on the entrance floor" is a real
      * thing to author. For a height or a size, 0 could only ever be a mistake.</p>
      */
     public static final MapCodec<FloorRange> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minFloorIndex", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_floor_index", 0)
                     .forGetter(FloorRange::min),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxFloorIndex")
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_floor_index")
                     .forGetter(FloorRange::max)
     ).apply(instance, FloorRange::new));
 
@@ -87,8 +87,8 @@ public record FloorRange(int min, Optional<Integer> max) {
      */
     public DataResult<FloorRange> validate(String where) {
         if (max.isPresent() && max.get() < min) {
-            return DataResult.error(() -> where + ": maxFloorIndex " + max.get()
-                    + " is below minFloorIndex " + min + ", so it fits no floor at all");
+            return DataResult.error(() -> where + ": max_floor_index " + max.get()
+                    + " is below min_floor_index " + min + ", so it fits no floor at all");
         }
         return DataResult.success(this);
     }

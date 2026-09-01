@@ -37,7 +37,7 @@ import java.util.Optional;
  * never had a caller; this is the caller.</p>
  *
  * <h2>Loot</h2>
- * <p>{@code lootTables} is optional <em>here</em> because the motif's {@link ChestLootBand} table
+ * <p>{@code loot_tables} is optional <em>here</em> because the motif's {@link ChestLootBand} table
  * supplies it by depth; a scheme naming its own wins. What is not optional is that <strong>something</strong>
  * supplies one: a chest with no table resolves to no chest at all, because an empty chest in a
  * dungeon reads as a bug that has already eaten the player's time by the time they notice.</p>
@@ -115,7 +115,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     public record LootTableEntry(String lootTable, int weight) {
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<LootTableEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("lootTable").forGetter(LootTableEntry::lootTable),
+                Codec.STRING.fieldOf("loot_table").forGetter(LootTableEntry::lootTable),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(LootTableEntry::weight)
         ).apply(instance, LootTableEntry::new)));
@@ -163,7 +163,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     public record ChestVariant(String block, int weight) {
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<ChestVariant> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.fieldOf("block").forGetter(ChestVariant::block),
+                Codecs.BLOCK_ID.fieldOf("block").forGetter(ChestVariant::block),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(ChestVariant::weight)
         ).apply(instance, ChestVariant::new)));
@@ -180,14 +180,14 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
             // Defaults of 0/1, not the pots' 1/3: a chest is a reward, and a room that always has
             // one is a room where finding one means nothing. An author who wants a guaranteed chest
             // says so.
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "minCount", 0)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_count", 0)
                     .forGetter(ChestConfig::minCount),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxCount", 1)
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_count", 1)
                     .forGetter(ChestConfig::maxCount),
             // Optional, and absent means "take the motif's depth table" -- see resolvedAgainst.
             // A required field here would force every scheme to restate loot it has no opinion on,
             // which is exactly what the depth axis exists to avoid.
-            Codecs.strictOptionalFieldOf(LootTableEntry.CODEC.listOf(), "lootTables")
+            Codecs.strictOptionalFieldOf(LootTableEntry.CODEC.listOf(), "loot_tables")
                     .forGetter(ChestConfig::lootTables),
             ChestVariant.CODEC.listOf().fieldOf("variants").forGetter(ChestConfig::variants),
             SizeGate.MAP_CODEC.forGetter(ChestConfig::gate)
@@ -196,7 +196,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     public static final Codec<ChestConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
-     * The inclusive count range, normalised. A {@code maxCount} below {@code minCount} is authoring
+     * The inclusive count range, normalised. A {@code max_count} below {@code min_count} is authoring
      * nonsense a codec range cannot express (the bound is another field), so it is clamped here
      * rather than producing an empty or negative range at generation time. Same treatment, and same
      * reasoning, as {@code PotConfig#clampedMaxCount}.

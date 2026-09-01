@@ -107,12 +107,12 @@ class CeilingPatternRegistryTest {
                 .toLowerCase().contains("orient"));
     }
 
-    /** Was "bracketBlock is a joists field". Now a stray key on the others. */
+    /** Was "bracket_block is a joists field". Now a stray key on the others. */
     @Test
     void aBracketOnATypeWithNoEndsIsALoadError() {
         assertTrue(errorOf("{\"type\": \"dungeons2:border\", \"config\": {"
-                + "\"block\": \"" + BLOCK + "\", \"bracketBlock\": \"dungeonblocks:spruce_corbel_block\"}}")
-                .toLowerCase().contains("bracketblock"));
+                + "\"block\": \"" + BLOCK + "\", \"bracket_block\": \"dungeonblocks:spruce_corbel_block\"}}")
+                .contains("bracket_block"));
     }
 
     /**
@@ -127,7 +127,7 @@ class CeilingPatternRegistryTest {
                 JsonParser.parseString("{\"patterns\": [{\"type\": \"dungeons2:joists\", \"config\": {"
                         + "\"block\": \"minecraft:spruce_log\", \"orient\": \"inward\"}}]}"));
         assertTrue(result.result().isEmpty());
-        assertTrue(result.error().orElseThrow().message().contains("bracketBlock"));
+        assertTrue(result.error().orElseThrow().message().contains("bracket_block"));
     }
 
     // ---------- the entry/pattern split ----------

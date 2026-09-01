@@ -33,7 +33,7 @@ import java.util.Optional;
  * A designed space is a template, so that is what carries a limit.</p>
  *
  * <h2>Both bounds are optional, and 0 is meaningful</h2>
- * <p>{@code maxPerFloor} and {@code maxPerDungeon} compose: whichever binds first stops the
+ * <p>{@code max_per_floor} and {@code max_per_dungeon} compose: whichever binds first stops the
  * placement. A template with neither is a load error rather than a no-op &mdash; an entry that caps
  * nothing is an authoring mistake, and the whole point of declaring one is to constrain something.
  * </p>
@@ -48,16 +48,16 @@ public record TemplateLimit(Optional<Integer> maxPerFloor, Optional<Integer> max
 
     // Codecs.closed -- see RoomScheme.CODEC.
     public static final Codec<TemplateLimit> CODEC = Codecs.closed(RecordCodecBuilder.<TemplateLimit>mapCodec(instance -> instance.group(
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxPerFloor")
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_per_floor")
                     .forGetter(TemplateLimit::maxPerFloor),
-            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "maxPerDungeon")
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_per_dungeon")
                     .forGetter(TemplateLimit::maxPerDungeon)
     ).apply(instance, TemplateLimit::new))).flatXmap(TemplateLimit::validate, TemplateLimit::validate);
 
     private static DataResult<TemplateLimit> validate(TemplateLimit limit) {
         if (limit.maxPerFloor.isEmpty() && limit.maxPerDungeon.isEmpty()) {
-            return DataResult.error(() -> "templateLimits entry declares neither maxPerFloor nor"
-                    + " maxPerDungeon, so it limits nothing. Remove the entry, or give it a bound");
+            return DataResult.error(() -> "template_limits entry declares neither max_per_floor nor"
+                    + " max_per_dungeon, so it limits nothing. Remove the entry, or give it a bound");
         }
         return DataResult.success(limit);
     }

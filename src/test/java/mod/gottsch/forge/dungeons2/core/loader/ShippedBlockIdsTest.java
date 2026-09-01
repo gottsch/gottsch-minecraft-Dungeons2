@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>That is deliberate and is the whole design. The obvious alternative &mdash; sweep the keys we
  * know about &mdash; silently stops covering the next field somebody adds, which is precisely how
- * #13 sat half-done for two weeks. Adding {@code bracketBlock} to the ceiling schema must not
+ * #13 sat half-done for two weeks. Adding {@code bracket_block} to the ceiling schema must not
  * quietly fall out of the sweep; here it fails until it is classified, which takes one line and one
  * decision.</p>
  *
@@ -88,25 +88,26 @@ class ShippedBlockIdsTest {
     /** Keys whose string values are block ids. */
     private static final Set<String> BLOCK_KEYS = Set.of(
             // scheme element slots
-            "block", "alternateBlock", "cornerBlock", "baseBlock", "capBlock",
-            "stairBlock", "centreBlock", "topBlock", "bracketBlock",
+            "block", "alternate_block", "corner_block", "base_block", "cap_block",
+            "stair_block", "centre_block", "top_block", "bracket_block",
             // floor-pattern material slots. Long-standing keys on FloorPatternEntry, but they only
             // reached this sweep once a FloorConfig gained its own `pattern` -- until then every
             // one lived in a scheme file the sweep does not read. Real block ids, so they are
             // verified rather than exempted.
-            "primaryBlock", "secondaryBlock", "edgeLeftBlock", "edgeRightBlock",
-            // The gradient wall pattern's two materials. Snake_case where the older slots are
-            // camelCase because this type was authored after the closed-schema migration, and the
-            // sweep classifies by literal key name -- so both spellings have to be listed even
-            // though they mean the same kind of thing.
-            "bottom_block", "top_block",
+            "primary_block", "secondary_block", "edge_left_block", "edge_right_block",
+            // The gradient wall pattern's lower material. Its upper one is `top_block`, already
+            // listed above for the platform slot -- the two records mean the same kind of thing by
+            // it. The sweep classifies by LITERAL key name, so the 2026-08-31 rename of the whole
+            // config schema to snake_case had to reach this list; an unclassified key fails this
+            // test by design, which is what stopped that rename passing by omission.
+            "bottom_block",
             // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
             // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
             // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.
-            "floorBlock", "rimBlock", "spikeBlock",
+            "floor_block", "rim_block", "spike_block",
             // motif material sections
-            "wall", "ceiling", "floor", "door", "lintel", "base", "alternateBase",
-            "alternateFloor", "archBlock",
+            "wall", "ceiling", "floor", "door", "lintel", "base", "alternate_base",
+            "alternate_floor", "arch_block",
             // processor palettes, and vanilla's own block-state object
             "blocks", "Name",
             // #48: the chest processor's target block, and a chests slot variant's block. Both are
@@ -132,19 +133,20 @@ class ShippedBlockIdsTest {
             // all once the layouts became registry ids; as a bare word it was invisible here.
             "layout",
             // content references
-            "entity", "lootTable", "function", "condition", "random_sequence",
+            "entity", "loot_table", "function", "condition", "random_sequence",
             // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
-            // rather than from the block registry. ShippedMobSetsTest is what verifies it --
-            // "mob_set" from the marker processor, "mobSet" from a scheme's spawners slot.
-            "mob_set", "mobSet",
+            // rather than from the block registry. ShippedMobSetsTest is what verifies it. ONE
+            // entry since 2026-08-31: the marker processor and a scheme's spawners slot used to
+            // spell it `mob_set` and `mobSet` respectively, and this list carried both.
+            "mob_set",
             // block TAGS -- the same class of typo, but resolved from datapacks rather than the
             // block registry, so out of scope here. Worth its own sweep if one ever bites.
             "tags",
-            // #48: loot table ids, resolved from the loot table registry. "loot_table" is the chest
-            // processor's pool-level default; "lootTable" above is the scheme slot's and the chest
-            // loot band's. A sweep of these against the shipped loot_tables folder would be the
-            // chest equivalent of ShippedMobSetsTest, and does not exist yet.
-            "loot_table",
+            // #48: loot table ids, resolved from the loot table registry -- the chest processor's
+            // pool-level default, the scheme slot's, and the chest loot band's, all one key since
+            // the 2026-08-31 rename (they were `loot_table` and `lootTable`, listed twice here).
+            // A sweep of these against the shipped loot_tables folder would be the chest
+            // equivalent of ShippedMobSetsTest, and does not exist yet.
             // #7: the Mining Chest's ore bands name ITEMS, not blocks -- a dungeon that ate a
             // diamond ore pays back a diamond. Resolved from the item registry, so out of scope
             // here and verified instead by MiningHaulCalibrationTest.everyOreBandNamesARealItem,
