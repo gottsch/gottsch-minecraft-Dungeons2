@@ -26,9 +26,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * out plain, and only in the half-converted state where nobody is looking. Rejecting a role
  * everywhere first means that state cannot exist.</p>
  *
- * <p>{@link #everyBlockFieldRejectsARole} is therefore exhaustive rather than representative: all
- * forty-nine fields, named one at a time. A field that gets added later and forgets
+ * <p>{@link #everyBlockFieldRejectsARole} is therefore exhaustive rather than representative: every
+ * field that has NOT yet been converted, named one at a time. A field added later that forgets
  * {@code BLOCK_ID} is a hole this test is the only thing watching for.</p>
+ *
+ * <p><strong>The two lists are the phase boundary.</strong> Converting a record moves its fields
+ * from {@link #everyBlockFieldRejectsARole} to
+ * {@link MaterialRolesPillarsTest} &mdash; 46 still reject, 3 (the pillar slot, phase 2) accept.
+ * Nothing else tracks which records have been converted, and nothing else needs to.</p>
  */
 class MaterialRolePaletteTest {
 
@@ -190,10 +195,9 @@ class MaterialRolePaletteTest {
         rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:joists\",\"config\":{\"block\":\"$r\"}}");
         rejects(CeilingPatternEntry.SurfacePatternEntry.CODEC, "{\"type\":\"dungeons2:joists\",\"config\":{\"block\":\"minecraft:stone\",\"bracket_block\":\"$r\"}}");
 
-        // pillars (3) and platforms (4)
-        rejects(PillarPatternEntry.PillarEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"block\":\"$r\"}");
-        rejects(PillarPatternEntry.PillarEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"base_block\":\"$r\"}");
-        rejects(PillarPatternEntry.PillarEntry.CODEC, "{\"type\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"cap_block\":\"$r\"}");
+        // platforms (4)
+        // pillars (3) are CONVERTED -- phase 2. See acceptsARoleOnEveryConvertedField below; the
+        // move of these three lines from this list to that one is what a phase IS.
         rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"$r\"}");
         rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"stair_block\":\"$r\"}");
         rejects(PlatformPatternEntry.PlatformEntry.CODEC, "{\"type\":\"dais\",\"layout\":\"dungeons2:centre\",\"block\":\"minecraft:stone\",\"centre_block\":\"$r\"}");

@@ -69,7 +69,7 @@
             {
               "type": "dungeons2:courses",
               "config": {
-"courses": [
+                "courses": [
                   {
                     "block": "dungeonblocks:left_large_stone_brick",
                     "alternate_block": "dungeonblocks:right_large_stone_brick",
@@ -102,7 +102,9 @@
                     "offset": 0,
                     "projection": 1,
                     "orient": "toward_wall",
-                    "properties": { "half": "top" }
+                    "properties": {
+                      "half": "top"
+                    }
                   }
                 ]
               }
@@ -128,7 +130,6 @@
         // pre-baking a second block here would both duplicate it and skip the deeper decay stages.
         "base": "minecraft:cobblestone",
         "alternate_base": "minecraft:cobblestone",
-
         // WHY A PATTERN AND NOT A base/alternateBase PAIR. That pair is rolled per cell at 45/55
         // by BasicFloorGenerator -- a fixed near-even split, which reads as a checkerboard rather
         // than as wear and cannot express "mostly cobblestone" at all. `speckle` takes its own
@@ -316,14 +317,12 @@
           // type. A trap that is in every second room stops being a trap and becomes the floor
           // plan, and the player learns to walk the walls.
           "name": "mud_pit_trap",
-
           // 9 leaves the 3-wide shaft a walkable ring with a cell to spare either side. The pit
           // generator would fit the shaft to a smaller room on its own (it never touches the ring),
           // but a 7-wide room ends up nearly all mouth, which reads as a floor that is missing
           // rather than as a trap set in one.
           "min_size": 7,
           "weight": 2,
-
           "pit": {
             // HAZARD, not the court `dungeons2:centre` that vaulted_hall uses. The two shapes are
             // opposites on purpose: a court terraces one block per ring so a player can walk out,
@@ -331,19 +330,16 @@
             "type": "dungeons2:hazard",
             "config": {
               "width": 3,
-
               // FOUR, under the 5 `sinkOffset` allows, and RoomPitGenerator clamps the output to
               // that anyway -- a pit is dug from the floor's own budget and never from the gap
               // between floors. Deep enough that the landing hurts and the walls are out of reach;
               // one short of the budget so a future band that sinks less still gets a real shaft
               // rather than a hole floored at the ceiling of the room below.
               "depth": 4,
-
               // OFF THE CENTRE LINE. A shaft in the exact middle of every room is an announcement
               // -- the doorway sightlines cross there and a player reads it from the threshold.
               // Two cells over, they read it from where they are already standing.
               "offset_x": 2,
-
               // POINTING UP, which is the only orientation that does anything: Minecraft has one
               // dripstone block for both ends and only the upward tip multiplies fall damage, so a
               // shaft floored with `down` is decoration. Nothing enforces it -- a pack may floor
@@ -353,7 +349,6 @@
                 "vertical_direction": "up"
               },
               "spike_probability": 0.4,
-
               // PACKED MUD, and the rim is the whole reason this scheme is authored at THIS depth.
               // It is the tell: a closed lip of unworked earth around the mouth, against the
               // cobblestone paving the band lays everywhere else. That contrast is what a careful
@@ -368,7 +363,6 @@
               "rim_block": "minecraft:cobblestone"
             }
           },
-
           // NEITHER `pillars` NOR `platforms`, for the reason vaulted_hall carries the same note: a
           // column or a dais standing in an excavated cell would hang over the hole (backlog #58).
           // Props are safe -- the excavated cells are claimed, so chests, spawners and pots keep
@@ -388,7 +382,6 @@
               }
             ]
           },
-
           // ONE CHEST, AT MOST, and it is bait. A trap room with something worth crossing it for is
           // a decision; one with nothing in it is a corridor with a hole.
           "chests": {
@@ -544,6 +537,21 @@
                     "cap_block": "dungeonblocks:square_stone_brick",
                     "spacing": 4,
                     "projection": 1
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 1,
+              "patterns": [
+                {
+                  "type": "dungeons2:end_pilasters",
+                  "config": {
+                    "block": "minecraft:spruce_log",
+                    "base_block": "dungeonblocks:square_stone_brick",
+                    "cap_block": "dungeonblocks:square_stone_brick",
+                    "spacing": 4,
+                    "projection": 2
                   }
                 }
               ]

@@ -182,6 +182,37 @@ public record SlotOptions<T>(List<Option<T>> options) {
         value().ifPresent(action);
     }
 
+    /**
+     * Every authored alternative with {@code mapper} applied to its value &mdash; the hook the
+     * material-roles walk uses.
+     *
+     * <p>Applied to <strong>all</strong> the options, not just a chosen one, because the walk runs
+     * in {@code MotifConfig#forFloor} and the slot is not resolved until
+     * {@code RoomSchemeSelector} picks the scheme, which is later. A none-option has no value and
+     * passes through untouched.</p>
+     *
+     * <p>Returns {@code this} when nothing changed, so a slot holding only literals allocates
+     * nothing &mdash; which is every slot in an unconverted motif, on every piece.</p>
+     */
+    public SlotOptions<T> map(java.util.function.UnaryOperator<T> mapper) {
+        List<Option<T>> mapped = null;
+        for (int i = 0; i < options.size(); i++) {
+            Option<T> option = options.get(i);
+            Optional<T> value = option.value().map(mapper);
+            if (value.equals(option.value())) {
+                if (mapped != null) {
+                    mapped.add(option);
+                }
+                continue;
+            }
+            if (mapped == null) {
+                mapped = new ArrayList<>(options.subList(0, i));
+            }
+            mapped.add(new Option<>(option.weight(), value));
+        }
+        return mapped == null ? this : new SlotOptions<>(List.copyOf(mapped));
+    }
+
     /** This slot if the author filled it, else the inherited one. See {@code RoomScheme#inheritFrom}. */
     public SlotOptions<T> orElse(SlotOptions<T> inherited) {
         return isEmpty() ? inherited : this;

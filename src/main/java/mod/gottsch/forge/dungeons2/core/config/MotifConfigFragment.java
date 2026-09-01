@@ -240,10 +240,63 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                 problems.accept(problem);
             }
         });
-        return new MotifConfig(wall, ceiling, door, corridor, floor,
+        MotifConfig resolved = new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
                 Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems),
                 Map.copyOf(palette));
+        checkRoles(resolved, problem -> {
+            if (reported.add(problem)) {
+                problems.accept(problem);
+            }
+        });
+        return resolved;
+    }
+
+    /**
+     * Every {@code $role} a scheme names is declared by the palette that scheme will be painted
+     * with. #65 phase 2, and the check that lets the substitution itself stay silent.
+     *
+     * <h2>Per band, because the palette is</h2>
+     * <p>A role is resolved against the motif's palette overlaid with the band's, so the same scheme
+     * can be answerable on one floor and not on another &mdash; a band that repaints
+     * {@code $shaft} and a motif that never declared it is a pack that works down to floor 1 and
+     * draws nothing below. Checking only the motif's palette would miss exactly that, so this walks
+     * the motif's own list and then each band's, against each one's effective palette.</p>
+     *
+     * <h2>It reuses {@code withRoles} rather than asking what roles a scheme uses</h2>
+     * <p>The resolver handed in here records what it cannot answer and returns anything; the
+     * substituted scheme is thrown away. A dedicated "collect the roles" traversal would be a second
+     * walk over the same records, and the two would drift the first time a slot was converted and
+     * only one of them was updated. This way the check sees precisely what the substitution can
+     * reach &mdash; no more, and no less.</p>
+     *
+     * <p>Reported rather than thrown, like every other fault in this class: {@code resolve} runs per
+     * piece per chunk, so {@code MotifConfigHelper} is what says it once, naming the motif.</p>
+     */
+    private static void checkRoles(MotifConfig motif, Consumer<String> problems) {
+        checkRoles(motif.schemes(), motif.palette(), "", problems);
+        for (Stratum band : motif.strataByFloorIndex()) {
+            Map<String, String> palette = new LinkedHashMap<>(motif.palette());
+            palette.putAll(band.palette());
+            checkRoles(band.schemes().orElse(List.of()), palette,
+                    " on the band at floor " + band.minFloorIndex() + " and below", problems);
+        }
+    }
+
+    private static void checkRoles(List<RoomScheme> schemes, Map<String, String> palette,
+                                   String where, Consumer<String> problems) {
+        for (RoomScheme scheme : schemes) {
+            scheme.withRoles(role -> {
+                if (!palette.containsKey(role)) {
+                    problems.accept("scheme '" + scheme.name() + "'" + where + " names the material"
+                            + " role '$" + role + "', which no palette in scope declares."
+                            + (palette.isEmpty()
+                                    ? " No palette is declared at all."
+                                    : " Declared roles: " + String.join(", ", palette.keySet())));
+                }
+                return palette.getOrDefault(role, role);
+            });
+        }
     }
 
     /**

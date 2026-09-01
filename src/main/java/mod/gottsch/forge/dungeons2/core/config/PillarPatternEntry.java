@@ -68,6 +68,26 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
         this(patterns, SizeGate.UNBOUNDED);
     }
 
+    /** See {@link PillarEntry#withRoles}. Returns {@code this} when no column named a role. */
+    public PillarPatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+        List<PillarEntry> resolved = null;
+        for (int i = 0; i < patterns.size(); i++) {
+            PillarEntry entry = patterns.get(i);
+            PillarEntry mapped = entry.withRoles(resolver);
+            if (mapped == entry) {
+                if (resolved != null) {
+                    resolved.add(entry);
+                }
+                continue;
+            }
+            if (resolved == null) {
+                resolved = new java.util.ArrayList<>(patterns.subList(0, i));
+            }
+            resolved.add(mapped);
+        }
+        return resolved == null ? this : new PillarPatternEntry(List.copyOf(resolved), gate);
+    }
+
     /** The even-grid layout: columns on a regular lattice across the interior. */
     public static final String GRID = "grid";
 
@@ -187,6 +207,30 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
                     SizeGate.UNBOUNDED);
         }
 
+        /**
+         * This column with any {@code $role} in its three block fields replaced by the literal the
+         * palette in scope names. #65 phase 2 &mdash; the first slot to read a role.
+         *
+         * <p>{@code resolver} takes a role name without the sigil. A literal passes through
+         * untouched, so the walk is applied blindly to all three fields rather than asking which of
+         * them the author wrote as a role.</p>
+         *
+         * <p>Returns {@code this} when nothing changed. That matters more than it looks: this runs
+         * from {@code MotifConfig#forFloor}, which is <strong>per piece</strong>, so an unconverted
+         * motif has to come out of the walk allocating nothing at all.</p>
+         */
+        public PillarEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
+            String resolvedBlock = Codecs.resolveRole(block, resolver);
+            Optional<String> resolvedBase = Codecs.resolveRole(baseBlock, resolver);
+            Optional<String> resolvedCap = Codecs.resolveRole(capBlock, resolver);
+            if (resolvedBlock.equals(block) && resolvedBase.equals(baseBlock)
+                    && resolvedCap.equals(capBlock)) {
+                return this;
+            }
+            return new PillarEntry(layout, resolvedBlock, resolvedBase, resolvedCap, properties,
+                    baseProperties, capProperties, thickness, gate);
+        }
+
         /** The base block, falling back to {@link #block} when unauthored. */
         public String baseBlockOrBase() {
             return baseBlock.orElse(block);
@@ -224,9 +268,9 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
                 // Required, not an Optional that validate() rejects later: unlike a wall pattern
                 // there is no type here that draws from anything other than a single block, so the
                 // codec can say so directly.
-                Codecs.BLOCK_ID.fieldOf("block").forGetter(PillarEntry::block),
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "base_block").forGetter(PillarEntry::baseBlock),
-                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID, "cap_block").forGetter(PillarEntry::capBlock),
+                Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(PillarEntry::block),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "base_block").forGetter(PillarEntry::baseBlock),
+                Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "cap_block").forGetter(PillarEntry::capBlock),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "properties", Map.of()).forGetter(PillarEntry::properties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),

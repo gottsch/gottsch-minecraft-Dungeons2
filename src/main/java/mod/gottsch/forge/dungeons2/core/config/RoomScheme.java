@@ -513,6 +513,39 @@ public record RoomScheme(String name, int weight, SizeGate gate,
     }
 
     /**
+     * This scheme with every {@code $role} in its block fields replaced by the literal the palette
+     * in scope names. #65's second half, phase by phase.
+     *
+     * <h2>One walk, two jobs</h2>
+     * <p>{@code MotifConfig#forFloor} calls this to <em>substitute</em>; {@code MotifConfigFragment}
+     * calls it at load with a resolver that <em>records</em> the roles it cannot answer, and throws
+     * the result away. Deliberately the same method: a separate "which roles does this scheme use"
+     * walk would be a second traversal of the same twenty-odd records, and the two would drift the
+     * first time a slot was converted and only one of them updated. Whatever the substitution can
+     * reach, the check can see.</p>
+     *
+     * <h2>Which slots read a role</h2>
+     * <p><strong>{@code pillars} only, so far.</strong> The rest still carry literals and are
+     * untouched here &mdash; and a role written on one of them is a <em>load error</em>, not a
+     * silent nothing, because {@code Codecs#BLOCK_ID} rejects it at decode. That is what makes the
+     * half-converted state safe to ship, and it is why the list below grows one line at a time
+     * rather than the whole thing landing at once.</p>
+     *
+     * <p>Returns {@code this} when nothing named a role, which is every scheme in an unconverted
+     * motif. This runs per piece, so that path has to allocate nothing.</p>
+     */
+    public RoomScheme withRoles(Function<String, String> resolver) {
+        java.util.function.UnaryOperator<String> lookup = resolver::apply;
+        SlotOptions<PillarPatternEntry> resolved =
+                pillars.map(entry -> entry.withRoles(lookup));
+        if (resolved == pillars) {
+            return this;
+        }
+        return new RoomScheme(name, weight, gate, floor, wall, ceiling, pots, resolved, platforms,
+                spawners, chests, pit, floors, parent, isAbstract);
+    }
+
+    /**
      * This scheme with each slot's alternatives collapsed to the one this room gets -- the second
      * half of the single per-room roll, and the only shape that may be handed to a generator.
      *

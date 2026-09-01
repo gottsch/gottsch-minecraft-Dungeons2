@@ -227,7 +227,11 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
      */
     public MotifConfig forFloor(int floorIndex) {
         if (strataByFloorIndex.isEmpty()) {
-            return this;
+            // Still resolve roles. A motif may declare a palette and no bands at all -- the roles
+            // then do nothing depth-dependent, but they are still how its schemes name materials,
+            // and returning `this` here would hand `$shaft` to the generator, which draws NOTHING.
+            // The early return predates the palette and quietly excluded exactly that motif.
+            return palette.isEmpty() ? this : withPalette(this, palette);
         }
         return Stratum.forFloor(strataByFloorIndex, floorIndex)
                 .map(stratum -> new MotifConfig(
@@ -236,7 +240,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         stratum.door().orElse(door),
                         stratum.corridor().orElse(corridor),
                         stratum.floor().orElse(floor),
-                        mergeSchemes(stratum),
+                        withRoles(mergeSchemes(stratum), overlay(palette, stratum.palette())),
                         mobSetsByFloorIndex, chestLootByFloorIndex, templateLimits,
                         List.of(),
                         // OVERLAY, not replace -- the one section that behaves like this, and the
@@ -247,7 +251,50 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         // the entire vocabulary to change one entry, which is exactly the drift an
                         // overlay exists to prevent.
                         overlay(palette, stratum.palette())))
-                .orElse(this);
+                // No band covers this floor -- UNREACHABLE for any pack that loads, since
+                // Stratum.validate already rejects a band table that does not cover floor 0 and
+                // bands run downward from their own floor. Kept resolving roles anyway rather than
+                // returning `this`, because the alternative if it ever were reached is a scheme
+                // handing `$shaft` to the generator, which draws nothing.
+                .orElseGet(() -> palette.isEmpty() ? this : withPalette(this, palette));
+    }
+
+    /** {@link #forFloor}'s no-band paths: the motif's own palette, applied to its own schemes. */
+    private static MotifConfig withPalette(MotifConfig motif, Map<String, String> palette) {
+        List<RoomScheme> resolved = withRoles(motif.schemes(), palette);
+        return resolved == motif.schemes() ? motif
+                : new MotifConfig(motif.wall(), motif.ceiling(), motif.door(), motif.corridor(),
+                        motif.floor(), resolved, motif.mobSetsByFloorIndex(),
+                        motif.chestLootByFloorIndex(), motif.templateLimits(),
+                        motif.strataByFloorIndex(), palette);
+    }
+
+    /**
+     * The band's schemes with their material roles resolved against the palette in scope.
+     *
+     * <p><strong>Here, and not at load, because the answer is depth-dependent</strong> &mdash; that
+     * is the entire point of roles. One authored scheme paints itself in spruce on the mud band and
+     * in dressed stone below it, so the substitution cannot happen until the floor is known, and
+     * the floor is known here.</p>
+     *
+     * <p>This method is on the per-piece path, which rules out the cheap implementation: a scheme
+     * cannot be re-encoded to JSON, substituted and re-decoded, because that would run once per
+     * room piece per chunk. It is an explicit walk over the records instead, and every step of it
+     * returns the instance it was given when nothing changed, so an unconverted motif pays one
+     * reference comparison per slot and allocates nothing.</p>
+     *
+     * <p>A role the palette does not declare is left as-is, which draws nothing. That is not a
+     * design choice so much as a place the design must not be reached: {@code MotifConfigFragment}
+     * validates every role in every band at load, over this same walk, so a pack that gets here
+     * with an unresolvable role has already been reported as broken.</p>
+     */
+    private static List<RoomScheme> withRoles(List<RoomScheme> schemes, Map<String, String> palette) {
+        if (palette.isEmpty()) {
+            return schemes;
+        }
+        return schemes.stream()
+                .map(scheme -> scheme.withRoles(role -> palette.getOrDefault(role, "$" + role)))
+                .toList();
     }
 
     /**

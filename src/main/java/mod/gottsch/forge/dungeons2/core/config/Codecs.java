@@ -92,6 +92,55 @@ public final class Codecs {
     }
 
     /**
+     * A block-valued field that <strong>reads a role</strong>: either a literal id, or
+     * {@code $name} resolved against the palette in scope. The accept-mode counterpart of
+     * {@link #BLOCK_ID}, and the one-word difference between a record that has been through a
+     * material-roles phase and one that has not.
+     *
+     * <p>The role NAME is validated here, by the same rule the palette validates its keys, so
+     * {@code "$joist beam"} fails at load rather than becoming a lookup that can never hit. What is
+     * <em>not</em> checked here is whether the palette declares it: a field codec cannot see the
+     * palette, which is a different section of a different file. That check is
+     * {@code MotifConfigFragment#resolve}'s, per band, over the same walk that does the
+     * substitution &mdash; see {@code RoomScheme#withRoles}.</p>
+     */
+    public static final Codec<String> BLOCK_ID_OR_ROLE =
+            Codec.STRING.flatXmap(Codecs::checkRole, Codecs::checkRole);
+
+    private static DataResult<String> checkRole(String id) {
+        String trimmed = id.strip();
+        if (!trimmed.startsWith(ROLE_PREFIX)) {
+            return DataResult.success(id);
+        }
+        return roleName(trimmed.substring(ROLE_PREFIX.length()))
+                .map(ignored -> id)
+                .mapError(error -> "'" + trimmed + "': " + error);
+    }
+
+    /** Whether a block field's value names a role rather than a block. */
+    public static boolean isRole(String id) {
+        return id != null && id.strip().startsWith(ROLE_PREFIX);
+    }
+
+    /**
+     * The literal this value stands for: the palette's answer when it is a role, the value itself
+     * when it is not.
+     *
+     * <p>{@code resolver} takes the role name <strong>without</strong> the sigil. Returning the
+     * value unchanged for a non-role is what lets a walk be applied blindly to every block field of
+     * a record, roles and literals alike, with no per-field bookkeeping.</p>
+     */
+    public static String resolveRole(String id, java.util.function.UnaryOperator<String> resolver) {
+        return isRole(id) ? resolver.apply(id.strip().substring(ROLE_PREFIX.length())) : id;
+    }
+
+    /** {@link #resolveRole} through an {@link Optional} field. */
+    public static Optional<String> resolveRole(Optional<String> id,
+                                               java.util.function.UnaryOperator<String> resolver) {
+        return id.map(value -> resolveRole(value, resolver));
+    }
+
+    /**
      * A motif's or band's palette: role name to literal block id.
      *
      * <p>Flat on purpose, even though a role name may contain a dot ({@code joist.beam}). The dot is

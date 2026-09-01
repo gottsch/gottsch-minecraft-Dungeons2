@@ -174,8 +174,14 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
      * {@link #schemes()} for why that cannot happen in the codec.
      */
     Stratum withSchemes(List<RoomScheme> resolved) {
+        // EVERY component, spelled out. This reached the canonical constructor through the
+        // pre-`palette` convenience overload for one day in Aug 2026, which silently dropped a
+        // band's palette -- but only for a band that declared BOTH a palette and schemes, since a
+        // band with no schemes of its own is returned untouched a few lines up. A convenience
+        // constructor is a fine thing to CALL and a bad thing to rebuild a record through: it
+        // defaults away exactly the fields a future component will be added to.
         return new Stratum(minFloorIndex, name, wall, ceiling, door, corridor, floor,
-                Optional.of(resolved));
+                Optional.of(resolved), palette);
     }
 
     /**

@@ -21,11 +21,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -122,9 +125,9 @@ class StructureSpawnOverridesTest {
                     spawn.type() + " has weight " + spawn.weight() + " -- a non-positive weight is"
                             + " rejected by Weight's codec and would fail the whole structure");
             assertTrue(spawn.minCount() >= 1,
-                    spawn.type() + " has min_count " + spawn.minCount() + "; must be positive");
+                    spawn.type() + " has minCount " + spawn.minCount() + "; must be positive");
             assertTrue(spawn.minCount() <= spawn.maxCount(),
-                    spawn.type() + " has min_count " + spawn.minCount() + " > max_count "
+                    spawn.type() + " has minCount " + spawn.minCount() + " > maxCount "
                             + spawn.maxCount());
         }
     }
@@ -226,6 +229,48 @@ class StructureSpawnOverridesTest {
         return false;
     }
 
+    /**
+     * <strong>Every spawn entry decodes through VANILLA's own codec.</strong>
+     *
+     * <p>This file is not our schema. {@code spawn_overrides} is read by
+     * {@link net.minecraft.world.level.levelgen.structure.Structure}, and each entry by
+     * {@link MobSpawnSettings.SpawnerData#CODEC}, whose keys are {@code type}, {@code weight},
+     * {@code minCount} and {@code maxCount} &mdash; <strong>camelCase</strong>, one of the handful
+     * of holdovers in an otherwise snake_case vanilla datapack surface.
+     *
+     * <h2>Why this test exists, dated 2026-08-31</h2>
+     * <p>The mod's own config schema was migrated from camelCase to snake_case that day, and the
+     * sweep renamed this file too &mdash; because it is JSON in {@code data/dungeons2} and looks
+     * like everything else. The game then refused to load the structure with
+     * {@code No key maxCount in MapLike[...]}. Every test stayed green, including this one, because
+     * they all read the file <em>by key name</em> and the sweep had renamed the tests in step. A
+     * test that names the key it expects cannot tell our spelling from vanilla's.
+     *
+     * <p>So this one names none. It hands each entry to vanilla and lets vanilla object.</p>
+     *
+     * <p>The entity id is swapped for {@code minecraft:zombie} first: {@code SpawnerData.CODEC}
+     * resolves {@code type} through {@code BuiltInRegistries.ENTITY_TYPE}, which holds no modded
+     * types in a headless test. The ids are checked separately, against the lang file, by
+     * {@link #everySpawnNamesAnEntityThatExists}. What is under test here is the SHAPE.</p>
+     */
+    @Test
+    void everySpawnEntryDecodesThroughVanillasOwnCodec() {
+        JsonObject overrides = overrides();
+        for (String category : overrides.keySet()) {
+            for (JsonElement entry : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
+                JsonObject spawn = entry.getAsJsonObject().deepCopy();
+                spawn.addProperty("type", "minecraft:zombie");
+                DataResult<?> decoded = MobSpawnSettings.SpawnerData.CODEC
+                        .parse(JsonOps.INSTANCE, spawn);
+                assertTrue(decoded.result().isPresent(),
+                        () -> "vanilla rejects this spawn entry: "
+                                + decoded.error().map(DataResult.PartialResult::message).orElse("")
+                                + " -- " + entry
+                                + ". These keys belong to Minecraft, not to this mod's schema.");
+            }
+        }
+    }
+
     private static List<Spawn> spawns() {
         List<Spawn> spawns = new ArrayList<>();
         JsonObject overrides = overrides();
@@ -236,8 +281,8 @@ class StructureSpawnOverridesTest {
                 spawns.add(new Spawn(category,
                         spawn.get("type").getAsString(),
                         spawn.get("weight").getAsInt(),
-                        spawn.get("min_count").getAsInt(),
-                        spawn.get("max_count").getAsInt()));
+                        spawn.get("minCount").getAsInt(),
+                        spawn.get("maxCount").getAsInt()));
             }
         }
         return spawns;
