@@ -255,7 +255,8 @@ public abstract class DungeonPiece extends StructurePiece {
             int localZ = pieceBox.maxZ() - worldPos.getZ();
             placeBlock(level, info.state(), localX, localY, localZ, box);
 
-            if (settlesJoinShapes() && hasJoinShape(info.state()) && box.isInside(worldPos)) {
+            if (settlesJoinShapes() && hasJoinShape(info.state()) && box.isInside(worldPos)
+                    && settlesWithoutASeam(worldPos)) {
                 jointed.add(worldPos.immutable());
             }
         }
@@ -318,6 +319,44 @@ public abstract class DungeonPiece extends StructurePiece {
      */
     protected boolean settlesJoinShapes() {
         return true;
+    }
+
+    /**
+     * True when this cell can be settled <strong>identically however the piece is split across
+     * chunks</strong>: it and all four of its horizontal neighbours lie in the same chunk column.
+     *
+     * <h2>Why the test is on WORLD coordinates and not on the box being processed</h2>
+     * <p>The obvious formulation -- "settle a cell at least one block inside the current
+     * {@code box}" -- is wrong, and wrong in the way that matters. It makes the answer depend on
+     * which box the piece happened to be handed: a cell on the piece's own outer edge would settle
+     * during a per-chunk run (where it is comfortably inside the chunk) and not during a whole-piece
+     * run (where it is on the edge). That is exactly the "looks different depending on how it was
+     * split" fault this is meant to remove, moved one step along.</p>
+     *
+     * <p>Chunk columns are a property of the WORLD, so this is the same question in both cases and
+     * the same answer. A cell whose {@code x & 15} is 0 has its west neighbour in the previous
+     * chunk: during that chunk's own {@code postProcess} the neighbour is clipped out by
+     * {@code placeBlock}, has not been written, and vanilla would derive a corner from air. So it
+     * is skipped, and skipped identically on every run.</p>
+     *
+     * <h2>What it costs</h2>
+     * <p>14 of every 16 coordinates on each axis qualify, so roughly 77% of cells still settle.
+     * The stairs that lose their mitre are the ones that happen to land against a chunk seam, and
+     * they read {@code straight} &mdash; which is what the whole piece read before
+     * {@code settleJoinShapes} existed at all.</p>
+     *
+     * <p>This replaces the blanket per-piece opt-out for rooms (#80). {@code DungeonCorridorPiece}
+     * still opts out entirely, and for a second reason that this does not address: corner rules
+     * assume a rectangle with four runs, and a corridor wall winds.</p>
+     */
+    private static boolean settlesWithoutASeam(BlockPos pos) {
+        return insideAChunkColumn(pos.getX()) && insideAChunkColumn(pos.getZ());
+    }
+
+    /** True when this coordinate and both of its neighbours fall in the same chunk column. */
+    private static boolean insideAChunkColumn(int coordinate) {
+        int within = coordinate & 15;
+        return within != 0 && within != 15;
     }
 
     /** True for blocks whose model corners depend on their neighbours (stairs, cornices, mouldings). */

@@ -19,9 +19,23 @@ package mod.gottsch.forge.dungeons2.diagnostic;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
+import com.mojang.serialization.Lifecycle;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ProtoChunk;
+import net.minecraft.world.level.chunk.UpgradeData;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
+import net.minecraft.world.level.biome.BiomeSpecialEffects;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -52,9 +66,11 @@ import java.util.Map;
  *
  * <h2>What it deliberately is not</h2>
  * <ul>
- *   <li><strong>No chunks.</strong> {@code getChunk} returns {@code null}, which the piece's own
- *       chunk-touch logging already tolerates. Nothing here models chunk boundaries, so this cannot
- *       reproduce the "piece skipped in an already-generated chunk" class of bug.</li>
+ *   <li><strong>No chunks.</strong> {@code getChunk} returns one empty {@code ProtoChunk} for
+ *       every position &mdash; a sink for vanilla's {@code markPosForPostprocessing} and nothing
+ *       more (see {@code chunk()} on why null stopped working). Nothing here models chunk
+ *       boundaries, so this cannot reproduce the "piece skipped in an already-generated chunk"
+ *       class of bug.</li>
  *   <li><strong>No {@code ServerLevel}.</strong> {@code getLevel()} throws, so no entity is ever
  *       constructed here &mdash; entity creation needs a real {@code ServerLevel}. That costs less
  *       than it sounds and never blocked rooms: {@code DungeonPiece#placeEntities} degrades per
@@ -116,10 +132,9 @@ public final class FakeWorldGenLevel implements InvocationHandler {
                 return registryAccess;
             case "getBlockEntity":
                 return null;
-            // The piece's own chunk-touch logging asks for a chunk and already handles null. No
-            // chunk model here at all -- see the class comment.
+            // A SINK for markPosForPostprocessing, and nothing more -- see chunk() below.
             case "getChunk":
-                return null;
+                return chunk(self);
             case "scheduleTick":
             case "neighborChanged":
             case "blockUpdated":
@@ -155,6 +170,65 @@ public final class FakeWorldGenLevel implements InvocationHandler {
                 "FakeWorldGenLevel does not implement " + method.getDeclaringClass().getSimpleName()
                         + "." + method.getName() + "() -- add it to the switch in "
                         + FakeWorldGenLevel.class.getSimpleName() + ".invoke if postProcess now needs it");
+    }
+
+    /**
+     * One empty {@link ProtoChunk}, built on first use and returned for every position.
+     *
+     * <h2>It is a sink, not a chunk model</h2>
+     * <p>This returned {@code null} until Sep 2026, and the class comment said the piece's own
+     * chunk-touch logging tolerated that. It did. What does <strong>not</strong> tolerate it is
+     * vanilla's own {@code StructurePiece#placeBlock}, which calls
+     * {@code level.getChunk(pos).markPosForPostprocessing(pos)} for every block in
+     * {@code SHAPE_CHECK_BLOCKS} &mdash; fences, walls, panes, doors and <em>iron bars</em>. The gap
+     * went unnoticed for as long as it did only because no procedural room shipped such a block;
+     * the {@code partition} slot (#74) shipped iron bars and four tests went red at once with an
+     * NPE inside vanilla.</p>
+     *
+     * <p>One instance for every {@link ChunkPos}, deliberately. Nothing reads what is marked, so a
+     * per-position chunk would buy nothing but the illusion that chunk boundaries are modelled here
+     * &mdash; and they are not. What it MUST do is accept the call without throwing, and be sized
+     * by this level's own height range so {@code getSectionIndex} lands inside its array.</p>
+     */
+    private ChunkAccess chunk(Object self) {
+        if (chunk == null) {
+            chunk = new ProtoChunk(new ChunkPos(0, 0), UpgradeData.EMPTY,
+                    (LevelHeightAccessor) self, BIOMES, null);
+        }
+        return chunk;
+    }
+
+    private ChunkAccess chunk;
+
+    /**
+     * A biome registry holding exactly one placeholder, under {@code minecraft:plains}.
+     *
+     * <p>Built here rather than taken from {@link #registryAccess}, which was the first attempt and
+     * was worse: not every test builds this level with a registry set that carries
+     * {@code minecraft:worldgen/biome}, so it threw {@code Missing registry} in tests that had
+     * nothing to do with chunks.</p>
+     *
+     * <p>Nor can it be EMPTY, which was the second attempt. {@code ChunkAccess}'s constructor fills
+     * its section array eagerly, and {@code LevelChunkSection} asks the registry for
+     * {@code Biomes.PLAINS} by name &mdash; so the one key vanilla reaches for has to be there.
+     * Nothing ever reads the biome back; a fully default one is enough, and building a real one
+     * would mean pulling in a worldgen fixture to satisfy a field that is never inspected.</p>
+     */
+    private static final Registry<Biome> BIOMES = plainsOnly();
+
+    private static Registry<Biome> plainsOnly() {
+        MappedRegistry<Biome> registry = new MappedRegistry<>(Registries.BIOME, Lifecycle.stable());
+        Biome placeholder = new Biome.BiomeBuilder()
+                .hasPrecipitation(false)
+                .temperature(0.5F)
+                .downfall(0.5F)
+                .specialEffects(new BiomeSpecialEffects.Builder()
+                        .fogColor(0).waterColor(0).waterFogColor(0).skyColor(0).build())
+                .mobSpawnSettings(MobSpawnSettings.EMPTY)
+                .generationSettings(BiomeGenerationSettings.EMPTY)
+                .build();
+        registry.register(Biomes.PLAINS, placeholder, Lifecycle.stable());
+        return registry;
     }
 
     /** Overworld's range, so a piece placed at a plausible Y is inside it. */

@@ -985,6 +985,25 @@
       },
       "wall": {
         "patterns": [
+          // #78. A blind arcade: arch outlines flat against the masonry, which is what makes a hall
+          // read as BUILT rather than merely aged. Listed FIRST so a course drawn after it runs
+          // across the arches rather than being interrupted by them -- patterns compose by
+          // later-non-null-wins, so order here is a statement about which detail owns a shared cell.
+          //
+          // height 5 needs a wall of 5 usable rows, i.e. a room of 7, which this scheme's
+          // min_height already guarantees. Without that gate the arcade would simply draw nothing
+          // in the shorter rooms -- correct, but silently absent rather than deliberately so.
+          {
+            "type": "dungeons2:arcade",
+            "config": {
+              "block": "$inlay",
+              "stair_block": "$stair",
+              "impost_block": "$inlay_alt",
+              "width": 5,
+              "height": 5,
+              "spacing": 2
+            }
+          },
           {
             "type": "dungeons2:courses",
             "config": {
@@ -1034,6 +1053,47 @@
       "min_floor_index": 1,
       "min_size": 9,
       "min_height": 7,
+      // #75. A panelled floor: a border ring, and a `field` one inset FURTHER IN filling exactly
+      // what the ring encloses.
+      //
+      // The insets are 2 and 3 and that is not an off-by-one. Both types measure `inset` from the
+      // ROOM EDGE, the same way, so a field at the border's own inset would cover the ring as well
+      // as its interior and the frame would vanish under the panel. One further in is the whole
+      // relationship; see the manual's floor `field` section.
+      //
+      // Gated to 11 rather than riding the scheme's 9: at 9 the ring at inset 2 encloses a 3x3, and
+      // a three-cell panel inside a frame reads as a mistake rather than as a floor.
+      "floor": [
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:composite",
+          "config": {
+            "generators": [
+              {
+                "type": "dungeons2:border",
+                "config": {
+                  "inset": 2,
+                  "corner_block": "$inlay_alt",
+                  "edge_left_block": "$inlay",
+                  "edge_right_block": "$inlay"
+                }
+              },
+              {
+                "type": "dungeons2:field",
+                "config": {
+                  "block": "$inlay",
+                  "inset": 3
+                }
+              }
+            ]
+          }
+        },
+        {
+          "weight": 3,
+          "none": true
+        }
+      ],
       "pillars": {
         "patterns": [
           {
@@ -1152,11 +1212,124 @@
       }
     },
     {
+      // #74. The room type the pack could not express at all before the `partition` slot: a GAOL.
+      // Bars across a corner make a cell; a run across the middle makes a guard room you pass
+      // through. Both, as slot options (#65), because they are alternatives -- a room with a cage
+      // AND a screen across it is a maze, not a gaol.
+      //
+      // `min_size` 11 on the scheme and again inside the corner option, and they are not the same
+      // check: the scheme's keeps the room type out of small rooms, and the option's is what makes
+      // the two alternatives fall back to each other. A 3x3 cell needs its own cells, the L around
+      // it and something on the far side, so it wants a bigger room than a strip does.
+      //
+      // The gap block is the motif's own DOOR rather than an iron one. An iron door needs redstone,
+      // so a cell behind one is a cell nobody opens -- the whole enclosure is only content because
+      // a player can get into it.
+      "name": "gaol",
+      "weight": 8,
+      "min_floor_index": 1,
+      "min_size": 9,
+      "min_height": 6,
+      "partition": [
+        {
+          "weight": 3,
+          "min_size": 11,
+          "type": "dungeons2:corner",
+          "block": "minecraft:iron_bars",
+          "gap_block": "dungeonblocks:spruce_dungeon_door",
+          "config": {
+            "width": 3,
+            "depth": 3
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:strip",
+          "block": "minecraft:iron_bars",
+          "gap_block": "dungeonblocks:spruce_dungeon_door"
+        }
+      ],
+      "wall": {
+        "patterns": [
+          {
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                {
+                  "block": "$plinth_left",
+                  "alternate_block": "$plinth_right",
+                  "alternate": "strict"
+                }
+              ]
+            }
+          },
+          {
+            "type": "dungeons2:door_jambs",
+            "config": {
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "lintel_block": "$ornament"
+            }
+          }
+        ]
+      },
+      // Furniture, not treasure. A gaol that reliably paid out would be a chest room with bars in
+      // it; what it should read as is somewhere people were kept.
+      "props": {
+        "min_count": 1,
+        "max_count": 2,
+        "placement": "against_wall",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 2, "oriented": false },
+          { "block": "minecraft:cauldron", "weight": 1 }
+        ]
+      },
+      "pots": {
+        "min_count": 0,
+        "max_count": 2,
+        "loot_table": "dungeons2:pots/classic",
+        "variants": [
+          { "entity": "dungeonblocks:pot", "weight": 2 },
+          { "entity": "dungeonblocks:stone_pot", "weight": 1 }
+        ]
+      },
+      "spawners": {
+        "min_count": 1,
+        "max_count": 1
+      }
+    },
+    {
       "name": "brazier_hall",
       "weight": 12,
       "min_floor_index": 1,
       "min_size": 9,
       "min_height": 5,
+      // #77. A smoke hole over the brazier -- which is what an oculus over a hearth has always
+      // been, and the one place in a room a shaft of light means something. The dais below it is
+      // this scheme's own, so the two line up for free: both are centred.
+      //
+      // NOT a skylight (Mark). The lamp sits at the top of the shaft with a grate under it, so
+      // what a player sees looking up is a lit grille with the source hidden, not a hole to the
+      // sky. `dark_iron_grate` is the grate because light has to pass through it -- a solid block
+      // here would seal the lamp above a dark shaft, and nothing in the code can tell.
+      //
+      // The scheme's min_height is 5, which is SHORT, so many of these rooms will have little or
+      // no spare budget above them. That degrades to a grate set in (or just above) the ceiling
+      // rather than to a hole, which is why it can ride a scheme this permissive at all.
+      "ceiling": {
+        "patterns": [
+          {
+            "type": "dungeons2:oculus",
+            "config": {
+              "cap_block": "minecraft:glowstone",
+              "grate_block": "dungeonblocks:dark_iron_grate",
+              "size": 3,
+              "depth": 3
+            }
+          }
+        ]
+      },
       "platforms": {
         "patterns": [
           {

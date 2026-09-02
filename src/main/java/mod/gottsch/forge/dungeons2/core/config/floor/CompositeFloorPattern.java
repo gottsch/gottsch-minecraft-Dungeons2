@@ -36,8 +36,9 @@ import java.util.function.Supplier;
  * An ordered (not weighted) list of patterns, applied in sequence: the first is the base full fill,
  * every one after it is layered on top.
  *
- * <p>Only an overlay-capable pattern can be a layer &mdash; {@code border}, {@code cross} and
- * {@code spokes}, i.e. the ones whose provider implements {@link IFloorOverlayGenerator}. Anything
+ * <p>Only an overlay-capable pattern can be a layer &mdash; {@code border}, {@code cross},
+ * {@code spokes}, {@code path} and {@code field}, i.e. the ones whose provider implements
+ * {@link IFloorOverlayGenerator}. Anything
  * else in an overlay slot is silently skipped. That is unchanged behaviour, and it is the one place
  * this package still degrades silently rather than erroring: whether a pattern can overlay is a
  * property of its <em>provider</em>, which the codec cannot see at decode time. A registered

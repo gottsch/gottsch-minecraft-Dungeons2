@@ -234,6 +234,7 @@ public class Registration {
 		mod.gottsch.forge.dungeons2.core.config.wall.WallPatternRegistry.registerBuiltIns();
 		mod.gottsch.forge.dungeons2.core.config.ceiling.CeilingPatternRegistry.registerBuiltIns();
 		mod.gottsch.forge.dungeons2.core.config.pit.PitShapeRegistry.registerBuiltIns();
+		mod.gottsch.forge.dungeons2.core.config.partition.PartitionShapeRegistry.registerBuiltIns();
 
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(eventBus);

@@ -109,6 +109,11 @@ class ShippedBlockIdsTest {
             // through BlockStateCodec, so a typo in one becomes AIR -- which for the vault means a
             // hole in the dome and for the path means a trench through the floor.
             "crown_block", "springing_block", "path_block", "edge_block",
+            // #74: the partition slot. Its "block" key -- the run itself -- is already listed
+            // above; this is what hangs in the way through.
+            "gap_block",
+            // #77: the oculus. `cap_block` is already listed above (the pillars use it).
+            "grate_block",
             // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
             // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
             // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.

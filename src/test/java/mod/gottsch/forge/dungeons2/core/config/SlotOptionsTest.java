@@ -258,7 +258,7 @@ class SlotOptionsTest {
     // ---- every slot, and the round trip --------------------------------------------------------
 
     /**
-     * All ten element slots take the new shape. Worth enumerating rather than trusting the shared
+     * All eleven element slots take the new shape. Worth enumerating rather than trusting the shared
      * helper: each slot is wired by hand at its own line in {@code RoomScheme.CODEC}, and a slot
      * that was left on the old field codec would decode its single form perfectly and reject a list
      * only once someone got round to converting it.
@@ -278,6 +278,8 @@ class SlotOptionsTest {
                 "{\"type\": \"dungeons2:centre\", \"config\": {\"size\": 5, \"depth\": 1}}");
         assertSlotTakesOptions("props",
                 "{\"variants\": [{\"block\": \"minecraft:barrel\", \"weight\": 1}]}");
+        assertSlotTakesOptions("partition",
+                "{\"type\": \"dungeons2:corner\", \"block\": \"minecraft:iron_bars\"}");
     }
 
     private static void assertSlotTakesOptions(String slot, String treatment) {

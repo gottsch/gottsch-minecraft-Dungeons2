@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package mod.gottsch.forge.dungeons2.core.config.wall;
+package mod.gottsch.forge.dungeons2.core.config.partition;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -26,23 +26,28 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Set;
 
 /**
- * The open set of {@link WallPattern} types, keyed by {@link ResourceLocation}.
+ * The {@code partition} slot's shape types, dispatched on {@code type}. Backlog #74.
  *
- * <p>Machinery, and the reasoning behind it, live in {@link PatternTypeRegistry}.</p>
+ * <p>The seventh of these registries. See
+ * {@code mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry} for why these are plain
+ * static maps rather than Forge registries, and why an unregistered id is a load error naming what
+ * IS registered rather than a room that quietly has no partition.</p>
+ *
+ * @author Mark Gottschling on Sep 2, 2026
  */
-public final class WallPatternRegistry {
+public final class PartitionShapeRegistry {
 
-    private static final PatternTypeRegistry<WallPattern> TYPES =
-            new PatternTypeRegistry<>("wall pattern", WallPattern::codec);
+    private static final PatternTypeRegistry<PartitionShapePattern> TYPES =
+            new PatternTypeRegistry<>("partition shape", PartitionShapePattern::codec);
 
-    private WallPatternRegistry() {}
+    private PartitionShapeRegistry() {}
 
-    /** Registers a pattern type. Call from your mod's common setup, before any datapack load. */
-    public static void register(ResourceLocation id, MapCodec<? extends WallPattern> codec) {
+    /** Registers a shape type. Call from your mod's common setup, before any datapack load. */
+    public static void register(ResourceLocation id, MapCodec<? extends PartitionShapePattern> codec) {
         TYPES.register(id, codec);
     }
 
-    static void register(String path, MapCodec<? extends WallPattern> codec) {
+    static void register(String path, MapCodec<? extends PartitionShapePattern> codec) {
         register(new ResourceLocation(Dungeons.MOD_ID, path), codec);
     }
 
@@ -50,24 +55,18 @@ public final class WallPatternRegistry {
         return TYPES.ids();
     }
 
-    /** {@code type} + {@code config}, embedded flat beside the entry's gate. */
-    public static final MapCodec<WallPattern> MAP_CODEC = TYPES.mapCodec();
+    /** {@code type} + {@code config}, embedded flat beside the entry's own fields. */
+    public static final MapCodec<PartitionShapePattern> MAP_CODEC = TYPES.mapCodec();
 
-    public static final Codec<WallPattern> CODEC = MAP_CODEC.codec();
+    public static final Codec<PartitionShapePattern> CODEC = MAP_CODEC.codec();
 
     /** Idempotent; called from {@code Registration.init} and from the initializer below. */
     public static synchronized void registerBuiltIns() {
         if (!TYPES.isEmpty()) {
             return;
         }
-        register(CoursesWallPattern.NAME, CoursesWallPattern.CODEC);
-        register(PilastersWallPattern.NAME, PilastersWallPattern.CODEC);
-        register(EndPilastersWallPattern.NAME, EndPilastersWallPattern.CODEC);
-        register(PanelsWallPattern.NAME, PanelsWallPattern.CODEC);
-        register(GradientWallPattern.NAME, GradientWallPattern.CODEC);
-        register(DiamondWallPattern.NAME, DiamondWallPattern.CODEC);
-        register(DoorJambsWallPattern.NAME, DoorJambsWallPattern.CODEC);
-        register(ArcadeWallPattern.NAME, ArcadeWallPattern.CODEC);
+        register(CornerPartitionShape.NAME, CornerPartitionShape.CODEC);
+        register(StripPartitionShape.NAME, StripPartitionShape.CODEC);
     }
 
     static {

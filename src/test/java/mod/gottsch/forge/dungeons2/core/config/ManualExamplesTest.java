@@ -80,7 +80,8 @@ class ManualExamplesTest {
             "pillars", PillarPatternEntry.CODEC,
             "platforms", PlatformPatternEntry.CODEC,
             "pots", PotConfig.CODEC,
-            "props", PropConfig.CODEC);
+            "props", PropConfig.CODEC,
+            "partition", PartitionPatternEntry.CODEC);
 
     /** The motif-level material sections, which carry a block and an optional {@code pattern}. */
     private static final Map<String, com.mojang.serialization.Codec<?>> SECTIONS = Map.of(

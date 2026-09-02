@@ -178,6 +178,26 @@ public class BasicRoomGenerator implements IRoomGenerator {
                         motifConfig.floor(), random, blocks))
                 .orElseGet(Set::of);
 
+        // #74: the partition next, because it is the other thing that changes the SHAPE of the
+        // room rather than its surfaces, and everything from here on picks cells to stand in.
+        // Before the columns and daises so neither grows through the bars; before the chests, the
+        // spawners and the props so none of them is placed in a cell the bars occupy.
+        //
+        // Content ending up INSIDE the enclosure is fine and is rather the point -- the shape always
+        // cuts a gap, so a chest behind bars is a chest behind a door. The one case that is a fault
+        // is a doorway opening straight into the cage, and RoomPartitionGenerator refuses the whole
+        // partition in that room rather than building a cage round the entrance.
+        Set<Coords2D> partition = scheme.partitionFor(width, depth, height)
+                .map(entry -> RoomPartitionGenerator.build(room, floorY, entry, pit, random, blocks))
+                .orElseGet(Set::of);
+
+        // What the volume slots must not build into: the pit's excavated cells and the partition's
+        // run. One set rather than two parameters, because to a layout they are the same fact --
+        // this cell is not available -- and a second parameter is one more thing a new generator can
+        // forget to ask for. (#58 is the entry for why asking has to be explicit at all.)
+        Set<Coords2D> blockedFloorCells = new HashSet<>(pit);
+        blockedFloorCells.addAll(partition);
+
         // Pillars and platforms draw in the room's VOLUME rather than on one of its surfaces, which
         // is why both run after the four surface steps -- they stand in the interior air the hollow
         // step cleared, so anything that also reaches into it must already have been emitted.
@@ -186,7 +206,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // right way round: a column is structure and a rib is decoration, so the column should read
         // as carrying the ceiling rather than being interrupted a block short of it.
         IDungeonPillarGenerator pillarGen = selectPillarGenerator(motif, scheme, width, depth, height);
-        pillarGen.build(room, floorY, motif, random, blocks, pit);
+        pillarGen.build(room, floorY, motif, random, blocks, blockedFloorCells);
 
         // Platforms after columns, and for a concrete reason rather than symmetry: both draw in the
         // interior air, and where a dais meets a column the column should be the thing standing on
@@ -194,7 +214,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // and its footprint check skips cells another platform took.
         IDungeonPlatformGenerator platformGen =
                 selectPlatformGenerator(motif, scheme, width, depth, height);
-        platformGen.build(room, floorY, motif, random, blocks, pit);
+        platformGen.build(room, floorY, motif, random, blocks, blockedFloorCells);
 
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.
@@ -215,6 +235,9 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // spawner is placed in mid-air over the hole and a pot drops in and shatters as soon as the
         // chunk ticks -- the same gravity trap the chest/pot ordering above exists for.
         taken.addAll(pit);
+        // And the partition's own cells: a pot inside the bars is invisible, and a chest inside them
+        // is a chest whose lid cannot open.
+        taken.addAll(partition);
 
         // Spawners before pots, and they claim their cells against them. Not because the two
         // collide -- the spawner block is invisible and has no collision, so a pot would sit in one

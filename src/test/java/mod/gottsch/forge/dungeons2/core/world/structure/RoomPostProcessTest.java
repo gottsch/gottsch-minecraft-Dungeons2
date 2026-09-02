@@ -41,8 +41,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
+
+import net.minecraft.world.level.block.state.properties.Property;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -306,5 +309,43 @@ class RoomPostProcessTest {
         }
         assertTrue(sawWeathering,
                 "no room block was weathered in any seed -- the processor list is not being applied");
+    }
+
+    /**
+     * Stairs in a room still get their corners mitred (#80).
+     *
+     * <p>This is the guard on the fix, not on the feature. {@code settleJoinShapes} is what turns a
+     * {@code straight} stair at the corner of a cornice into an {@code inner_*}/{@code outer_*} one,
+     * and the room generators emit every stair {@code straight} -- only the corridor authors a shape
+     * itself. So if settling stopped happening, nothing else would notice: the rooms would simply
+     * grow a small notch at every corner where two stair runs meet, and every existing assertion
+     * here would stay green.</p>
+     *
+     * <p>It nearly did stop happening. The first fix for the chunk seam was a blanket
+     * {@code settlesJoinShapes() == false} on the room piece, which bought a consistent room by
+     * giving up every mitre in the mod. The chunk-column rule that replaced it keeps roughly 77% of
+     * them -- everything not sitting against a multiple of 16 -- and this is what says so.</p>
+     */
+    @Test
+    void stairsInsideAChunkStillGetTheirCornersMitred() {
+        boolean sawMitre = false;
+        for (long seed = 0; seed < SEEDS && !sawMitre; seed++) {
+            for (Map.Entry<BlockPos, BlockState> entry : run(seed).blocks().entrySet()) {
+                BlockState state = entry.getValue();
+                Property<?> shape = state.getBlock().getStateDefinition().getProperty("shape");
+                if (shape == null || "straight".equals(String.valueOf(state.getValue(shape)))) {
+                    continue;
+                }
+                // And it has to be a cell the rule allows, or the rule is not being applied at all.
+                BlockPos pos = entry.getKey();
+                assertTrue((pos.getX() & 15) != 0 && (pos.getX() & 15) != 15
+                                && (pos.getZ() & 15) != 0 && (pos.getZ() & 15) != 15,
+                        "a cell against a chunk seam was settled anyway, at " + pos.toShortString()
+                                + " -- it cannot see its neighbours there");
+                sawMitre = true;
+            }
+        }
+        assertTrue(sawMitre, "no stair in any room settled into a corner shape -- rooms have "
+                + "stopped mitring entirely, which is what #80's first fix did by accident");
     }
 }

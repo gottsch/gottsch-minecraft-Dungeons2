@@ -66,6 +66,7 @@ public final class CeilingPatternRegistry {
         register(CentreCeilingPattern.NAME, CentreCeilingPattern.CODEC);
         register(FieldCeilingPattern.NAME, FieldCeilingPattern.CODEC);
         register(VaultedCeilingPattern.NAME, VaultedCeilingPattern.CODEC);
+        register(OculusCeilingPattern.NAME, OculusCeilingPattern.CODEC);
         // Both spellings over the ONE codec -- see CentreCeilingPattern. `idOf` finds the first id
         // a codec is registered under, so `centre` is what an encode writes back.
         register(CentreCeilingPattern.ALIAS, CentreCeilingPattern.CODEC);

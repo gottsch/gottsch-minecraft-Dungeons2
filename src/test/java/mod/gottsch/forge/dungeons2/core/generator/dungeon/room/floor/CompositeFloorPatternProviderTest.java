@@ -65,4 +65,41 @@ class CompositeFloorPatternProviderTest {
         BlockPlacement corner = byCoord.get("0,0");
         assertEquals("minecraft:granite", corner.getBlockId());
     }
+
+    /**
+     * The pairing #75 exists for: a border ring, and a field one inset further in filling exactly
+     * what the ring encloses.
+     *
+     * <p>Both measure {@code inset} from the room edge, so the field goes at {@code border inset +
+     * 1}. Ordered field-after-border here, which is the order that reads as "a panel inside a
+     * frame"; the reverse is legal and lets the ring draw over the field's outermost row.</p>
+     */
+    @Test
+    void aFieldOneInsetFurtherInFillsExactlyWhatTheBorderEncloses() {
+        RoomData room = new RoomData(1, 0, 0, 11, 11, 4, RoomRole.NORMAL);
+        IDungeonFloorGenerator base =
+                new CheckerboardFloorPatternProvider(Blocks.GRANITE, Blocks.DIORITE);
+        FloorBorderPatternProvider border = new FloorBorderPatternProvider(
+                2, Blocks.ANDESITE, Blocks.POLISHED_ANDESITE, Blocks.POLISHED_ANDESITE);
+        FieldFloorPatternProvider field = new FieldFloorPatternProvider(3, Blocks.GOLD_BLOCK);
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new CompositeFloorPatternProvider(base, List.of(border, field))
+                .build(room, 0, DungeonMotif.CLASSIC, RandomSource.create(1), out);
+
+        Map<String, BlockPlacement> byCoord = new HashMap<>();
+        for (BlockPlacement p : out) {
+            byCoord.put(p.getX() + "," + p.getZ(), p);
+        }
+
+        long gold = byCoord.values().stream()
+                .filter(p -> "minecraft:gold_block".equals(p.getBlockId())).count();
+        assertEquals(25, gold, "the 5x5 panel the ring at inset 2 encloses");
+
+        // The ring itself survives: the field starts one cell inside it and never reaches it.
+        assertEquals("minecraft:polished_andesite", byCoord.get("2,5").getBlockId());
+        assertEquals("minecraft:gold_block", byCoord.get("3,5").getBlockId());
+        // And the checkerboard outside the ring is untouched by either overlay.
+        assertEquals("minecraft:granite", byCoord.get("0,0").getBlockId());
+    }
 }

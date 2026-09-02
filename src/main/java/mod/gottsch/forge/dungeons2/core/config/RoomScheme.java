@@ -82,6 +82,12 @@ import java.util.stream.Stream;
  * wall, in a corner, out in the floor, or flanking a door. Loot deliberately stays with
  * {@code chests}; see that record.</p>
  *
+ * <p>{@code partition} holds a {@link PartitionPatternEntry} &mdash; a wall INSIDE the room:
+ * bars across a corner (a cell), or a run across a strip (an antechamber). The first slot that
+ * changes the shape of the space a player moves through rather than the surfaces around it, and the
+ * first to make a room non-convex. It runs before the volume slots so nothing grows through it, and
+ * after the chests so nothing a player needs is sealed behind it.</p>
+ *
  * <p>{@code spawners} holds a {@link SpawnerConfig} &mdash; invisible proximity mob-set spawners
  * standing in the room's interior. The only slot whose output is neither seen nor collided with, and
  * the only one that reaches the world through {@code BlockEntityData}; it is what lets a
@@ -143,17 +149,31 @@ import java.util.stream.Stream;
  *
  * @author Mark Gottschling on Jul 31, 2026
  */
-public record RoomScheme(String name, int weight, SizeGate gate,
-                         SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
-                         SlotOptions<CeilingPatternEntry> ceiling, SlotOptions<PotConfig> pots,
-                         SlotOptions<PillarPatternEntry> pillars,
-                         SlotOptions<PlatformPatternEntry> platforms,
-                         SlotOptions<SpawnerConfig> spawners,
-                         SlotOptions<ChestConfig> chests,
-                         SlotOptions<PitPatternEntry> pit,
-                         SlotOptions<PropConfig> props,
+public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots,
                          FloorRange floors,
                          Optional<String> parent, boolean isAbstract) {
+
+    /**
+     * The flat shape: every element slot as its own argument. Kept as a constructor -- and there
+     * are dozens of callers -- because {@link RoomSlots} is a CODEC fold, not a new concept for
+     * anyone writing a scheme by hand. See that record for why the fold happened.
+     */
+    public RoomScheme(String name, int weight, SizeGate gate,
+                      SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
+                      SlotOptions<CeilingPatternEntry> ceiling, SlotOptions<PotConfig> pots,
+                      SlotOptions<PillarPatternEntry> pillars,
+                      SlotOptions<PlatformPatternEntry> platforms,
+                      SlotOptions<SpawnerConfig> spawners,
+                      SlotOptions<ChestConfig> chests,
+                      SlotOptions<PitPatternEntry> pit,
+                      SlotOptions<PropConfig> props,
+                      FloorRange floors,
+                      Optional<String> parent, boolean isAbstract) {
+        this(name, weight, gate,
+                new RoomSlots(floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
+                        pit, props, SlotOptions.empty()),
+                floors, parent, isAbstract);
+    }
 
     /** The shape before the {@code props} slot (#73): a room whose furniture is only its pots. */
     public RoomScheme(String name, int weight, SizeGate gate,
@@ -168,6 +188,61 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                       Optional<String> parent, boolean isAbstract) {
         this(name, weight, gate, floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
                 pit, SlotOptions.empty(), floors, parent, isAbstract);
+    }
+
+    /** See {@link RoomSlots}. The fold moved no JSON and no caller had to learn about it. */
+    public SlotOptions<FloorPatternEntry> floor() {
+        return slots.floor();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<WallPatternEntry> wall() {
+        return slots.wall();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<CeilingPatternEntry> ceiling() {
+        return slots.ceiling();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<PotConfig> pots() {
+        return slots.pots();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<PillarPatternEntry> pillars() {
+        return slots.pillars();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<PlatformPatternEntry> platforms() {
+        return slots.platforms();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<SpawnerConfig> spawners() {
+        return slots.spawners();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<ChestConfig> chests() {
+        return slots.chests();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<PitPatternEntry> pit() {
+        return slots.pit();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<PropConfig> props() {
+        return slots.props();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<PartitionPatternEntry> partition() {
+        return slots.partition();
     }
 
     /** The shape before the {@code pit} slot (#3): a scheme whose floor is flat everywhere. */
@@ -309,34 +384,15 @@ public record RoomScheme(String name, int weight, SizeGate gate,
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                     .forGetter(RoomScheme::weight),
             SizeGate.MAP_CODEC.forGetter(RoomScheme::gate),
-            SlotOptions.field(FloorPatternEntry.MAP_CODEC, "floor").forGetter(RoomScheme::floor),
-            SlotOptions.field(WallPatternEntry.MAP_CODEC, "wall").forGetter(RoomScheme::wall),
-            SlotOptions.field(CeilingPatternEntry.MAP_CODEC, "ceiling").forGetter(RoomScheme::ceiling),
-            SlotOptions.field(PotConfig.MAP_CODEC, "pots").forGetter(RoomScheme::pots),
-            SlotOptions.field(PillarPatternEntry.MAP_CODEC, "pillars").forGetter(RoomScheme::pillars),
-            SlotOptions.field(PlatformPatternEntry.MAP_CODEC, "platforms").forGetter(RoomScheme::platforms),
-            SlotOptions.field(SpawnerConfig.MAP_CODEC, "spawners").forGetter(RoomScheme::spawners),
-            SlotOptions.field(ChestConfig.MAP_CODEC, "chests").forGetter(RoomScheme::chests),
-            // #3. Sits beside the surface slots rather than inside `floor` because it is not a
-            // paving pattern: it changes the room's GEOMETRY, and it is bounded by the floor's
-            // sinkOffset budget rather than by anything a floor pattern knows.
-            SlotOptions.field(PitPatternEntry.MAP_CODEC, "pit").forGetter(RoomScheme::pit),
-            // #73. Last in the slot order, which is deliberate and not merely chronological:
-            // SlotOptions#resolve draws in DECLARATION order, so appending keeps every existing
-            // scheme's draw byte-identical where inserting beside `pots` would have shifted the
-            // stream for every room that rolls an option list.
-            //
-            // This is also the SIXTEENTH argument to this group, which is DFU's ceiling
-            // (Products.P16). The next slot has to fold two of these into a nested MapCodec first
-            // -- SizeGate and FloorRange are the two that already did it, and SlotOptions is the
-            // natural next fold. See the class javadoc on RoomScheme's arity history.
-            SlotOptions.field(PropConfig.MAP_CODEC, "props").forGetter(RoomScheme::props),
-            // The depth axis, flattened into minFloorIndex/maxFloorIndex keys. Spelled that way
-            // rather than minFloor/minDepth because a scheme object already has a "floor" key
+            // All ten element slots, as ONE group argument. Their keys are still flat on this
+            // object -- RoomSlots.MAP_CODEC is a MapCodec -- so the fold moved no JSON. It happened
+            // because `props` (#73) took this group to sixteen arguments, which is DFU's ceiling,
+            // and `partition` (#74) would not have compiled. See RoomSlots.
+            RoomSlots.MAP_CODEC.forGetter(RoomScheme::slots),
+            // The depth axis, flattened into min_floor_index/max_floor_index keys. Spelled that way
+            // rather than min_floor/min_depth because a scheme object already has a "floor" key
             // meaning the floor SURFACE pattern, and two unrelated senses of "floor" one line apart
-            // is how an author misreads a file. One group argument rather than two because this
-            // record kept hitting DFU's 16-argument ceiling -- see FloorRange, and see SizeGate
-            // above, which is the fold the chests slot forced.
+            // is how an author misreads a file. See FloorRange.
             FloorRange.MAP_CODEC.forGetter(RoomScheme::floors),
             Codecs.strictOptionalFieldOf(Codec.STRING, "extends").forGetter(RoomScheme::parent),
             Codecs.strictOptionalFieldOf(Codec.BOOL, "abstract", false).forGetter(RoomScheme::isAbstract)
@@ -371,19 +427,8 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * the only thing a dumped scheme carries to say where half of it came from.</p>
      */
     public RoomScheme inheritFrom(RoomScheme parentScheme) {
-        return new RoomScheme(name, weight, gate,
-                floor.orElse(parentScheme.floor()),
-                wall.orElse(parentScheme.wall()),
-                ceiling.orElse(parentScheme.ceiling()),
-                pots.orElse(parentScheme.pots()),
-                pillars.orElse(parentScheme.pillars()),
-                platforms.orElse(parentScheme.platforms()),
-                spawners.orElse(parentScheme.spawners()),
-                chests.orElse(parentScheme.chests()),
-                pit.orElse(parentScheme.pit()),
-                props.orElse(parentScheme.props()),
-                floors,
-                parent, isAbstract);
+        return new RoomScheme(name, weight, gate, slots.inheritFrom(parentScheme.slots()),
+                floors, parent, isAbstract);
     }
 
     /**
@@ -419,30 +464,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         if (floorRange.error().isPresent()) {
             return DataResult.error(() -> floorRange.error().get().message());
         }
-        DataResult<SizeGate> slots = DataResult.success(SizeGate.UNBOUNDED);
-        slots = chain(slots, scheme.floor.all().map(FloorPatternEntry::gate), scheme.name, "floor");
-        slots = chain(slots, scheme.wall.all().map(WallPatternEntry::gate), scheme.name, "wall");
-        slots = chain(slots, scheme.ceiling.all().map(CeilingPatternEntry::gate), scheme.name, "ceiling");
-        slots = chain(slots, scheme.pots.all().map(PotConfig::gate), scheme.name, "pots");
-        slots = chain(slots, scheme.pillars.all().map(PillarPatternEntry::gate), scheme.name, "pillars");
-        slots = chain(slots, scheme.platforms.all().map(PlatformPatternEntry::gate), scheme.name, "platforms");
-        slots = chain(slots, scheme.spawners.all().map(SpawnerConfig::gate), scheme.name, "spawners");
-        slots = chain(slots, scheme.props.all().map(PropConfig::gate), scheme.name, "props");
-        return slots.map(ignored -> scheme);
-    }
-
-    /**
-     * Validates EVERY authored alternative's gate, not merely the one a room would roll. An
-     * inverted gate on the third of four wall options is a load error the moment it is written,
-     * rather than a wall that draws nothing in whichever rooms happen to pick that option --
-     * which is indistinguishable from an option that was merely unlucky.
-     */
-    private static DataResult<SizeGate> chain(DataResult<SizeGate> soFar, Stream<SizeGate> gates,
-                                              String scheme, String slot) {
-        return gates.reduce(soFar,
-                (result, gate) -> result.flatMap(ignored ->
-                        gate.validate("scheme '" + scheme + "', " + slot + " slot")),
-                (left, right) -> left.flatMap(ignored -> right));
+        return scheme.slots.validate(scheme.name).map(ignored -> scheme);
     }
 
     /**
@@ -460,17 +482,17 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * looks like an authoring mistake rather than a missing check.</p>
      */
     public Optional<FloorPatternEntry> floorFor(int width, int depth, int height) {
-        return floor.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return floor().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #floorFor}. */
     public Optional<WallPatternEntry> wallFor(int width, int depth, int height) {
-        return wall.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return wall().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #floorFor}. */
     public Optional<CeilingPatternEntry> ceilingFor(int width, int depth, int height) {
-        return ceiling.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return ceiling().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /**
@@ -479,12 +501,12 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * because {@code sink_offset} lives in a different datapack registry.
      */
     public Optional<PitPatternEntry> pitFor(int width, int depth, int height) {
-        return pit.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return pit().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #floorFor}. */
     public Optional<PotConfig> potsFor(int width, int depth, int height) {
-        return pots.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return pots().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /**
@@ -493,27 +515,36 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * well in a small chamber is a rounding error in a hall.
      */
     public Optional<PropConfig> propsFor(int width, int depth, int height) {
-        return props.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return props().value().filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /**
+     * See {@link #floorFor}. Note this answers only whether the ROOM may have a partition; whether
+     * the partition FITS is the shape's own question, asked later, because it depends on the
+     * interior extents rather than on the gate's smaller-of-the-two measure.
+     */
+    public Optional<PartitionPatternEntry> partitionFor(int width, int depth, int height) {
+        return partition().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #floorFor}. */
     public Optional<PillarPatternEntry> pillarsFor(int width, int depth, int height) {
-        return pillars.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return pillars().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #floorFor}. */
     public Optional<PlatformPatternEntry> platformsFor(int width, int depth, int height) {
-        return platforms.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return platforms().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #floorFor}. */
     public Optional<ChestConfig> chestsFor(int width, int depth, int height) {
-        return chests.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return chests().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /** See {@link #chestsFor}. */
     public Optional<SpawnerConfig> spawnersFor(int width, int depth, int height) {
-        return spawners.value().filter(entry -> entry.gate().fits(width, depth, height));
+        return spawners().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /**
@@ -526,9 +557,10 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         // spawners counts, even though it is the one slot that draws nothing a player can see: what
         // this asks is whether the author declared anything, and a spawner slot that gated itself
         // out is exactly as much a fault as a ceiling that did.
-        return !floor.isEmpty() || !wall.isEmpty() || !ceiling.isEmpty() || !pots.isEmpty()
-                || !pillars.isEmpty() || !platforms.isEmpty() || !spawners.isEmpty()
-                || !pit.isEmpty() || !props.isEmpty();
+        // chests counts too, now that the check lives on RoomSlots -- it did not before the
+        // fold, which was an omission rather than a decision: a chests slot that gated itself out
+        // is exactly as much a fault as a ceiling that did.
+        return slots.declaresAny();
     }
 
     /**
@@ -541,20 +573,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * because drawing nothing is then what the author asked for.</p>
      */
     public boolean drawsAnything(int width, int depth, int height) {
-        return anyOptionFits(floor, FloorPatternEntry::gate, width, depth, height)
-                || anyOptionFits(wall, WallPatternEntry::gate, width, depth, height)
-                || anyOptionFits(ceiling, CeilingPatternEntry::gate, width, depth, height)
-                || anyOptionFits(pots, PotConfig::gate, width, depth, height)
-                || anyOptionFits(pillars, PillarPatternEntry::gate, width, depth, height)
-                || anyOptionFits(platforms, PlatformPatternEntry::gate, width, depth, height)
-                || anyOptionFits(spawners, SpawnerConfig::gate, width, depth, height)
-                || anyOptionFits(pit, PitPatternEntry::gate, width, depth, height)
-                || anyOptionFits(props, PropConfig::gate, width, depth, height);
-    }
-
-    private static <T> boolean anyOptionFits(SlotOptions<T> slot, Function<T, SizeGate> gate,
-                                             int width, int depth, int height) {
-        return slot.all().anyMatch(entry -> gate.apply(entry).fits(width, depth, height));
+        return slots.drawsAnything(width, depth, height);
     }
 
     /**
@@ -584,23 +603,9 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * motif. This runs per piece, so that path has to allocate nothing.</p>
      */
     public RoomScheme withRoles(Function<String, String> resolver) {
-        java.util.function.UnaryOperator<String> lookup = resolver::apply;
-        SlotOptions<PillarPatternEntry> newPillars = pillars.map(entry -> entry.withRoles(lookup));
-        SlotOptions<FloorPatternEntry> newFloor = floor.map(entry -> entry.withRoles(lookup));
-        SlotOptions<CeilingPatternEntry> newCeiling = ceiling.map(entry -> entry.withRoles(lookup));
-        SlotOptions<PlatformPatternEntry> newPlatforms =
-                platforms.map(entry -> entry.withRoles(lookup));
-        SlotOptions<WallPatternEntry> newWall = wall.map(entry -> entry.withRoles(lookup));
-        SlotOptions<PitPatternEntry> newPit = pit.map(entry -> entry.withRoles(lookup));
-        SlotOptions<ChestConfig> newChests = chests.map(entry -> entry.withRoles(lookup));
-        SlotOptions<PropConfig> newProps = props.map(entry -> entry.withRoles(lookup));
-        if (newPillars == pillars && newFloor == floor && newCeiling == ceiling
-                && newPlatforms == platforms && newWall == wall && newPit == pit
-                && newChests == chests && newProps == props) {
-            return this;
-        }
-        return new RoomScheme(name, weight, gate, newFloor, newWall, newCeiling, pots, newPillars,
-                newPlatforms, spawners, newChests, newPit, newProps, floors, parent, isAbstract);
+        RoomSlots resolved = slots.withRoles(resolver::apply);
+        return resolved == slots ? this
+                : new RoomScheme(name, weight, gate, resolved, floors, parent, isAbstract);
     }
 
     /**
@@ -615,17 +620,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
      * dungeons it always did. See {@link SlotOptions#resolve}.</p>
      */
     public RoomScheme resolve(int width, int depth, int height, RandomSource random) {
-        return new RoomScheme(name, weight, gate,
-                floor.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                wall.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                ceiling.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                pots.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                pillars.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                platforms.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                spawners.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                chests.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                pit.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                props.resolve(random, entry -> entry.gate().fits(width, depth, height)),
+        return new RoomScheme(name, weight, gate, slots.resolve(width, depth, height, random),
                 floors, parent, isAbstract);
     }
 
