@@ -103,6 +103,12 @@ class ShippedBlockIdsTest {
             // config schema to snake_case had to reach this list; an unclassified key fails this
             // test by design, which is what stopped that rename passing by omission.
             "bottom_block",
+            // #68/#70/#71, 2026-09-01. The rising vault's crown and springing course, the floor
+            // gradient's two ends (its inner one is `centre_block`, already listed above for the
+            // ceiling boss) and the worn path's material. All five are real block ids resolved
+            // through BlockStateCodec, so a typo in one becomes AIR -- which for the vault means a
+            // hole in the dome and for the path means a trench through the floor.
+            "crown_block", "springing_block", "path_block", "edge_block",
             // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
             // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
             // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.

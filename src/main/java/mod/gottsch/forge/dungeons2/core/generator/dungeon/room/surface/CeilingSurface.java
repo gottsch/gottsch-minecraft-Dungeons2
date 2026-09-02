@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
@@ -138,6 +139,51 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
                 if (planned != null) {
                     out.add(BlockStateCodec.placement(xAt(u), ceilingY - depth, zAt(v), planned));
                 }
+            }
+        }
+    }
+
+    /**
+     * Writes a layer {@code rise} cells ABOVE the ceiling plane, opening the column beneath it
+     * &mdash; a vault that gains headroom instead of spending it (#68).
+     *
+     * <h2>Why this is not just {@link #emitProjected} with a negative depth</h2>
+     * <p>Arithmetically it very nearly is: {@code emitProjected} writes at {@code ceilingY - depth},
+     * so a negative depth already lands above the plane, and that is exactly what made #68 look
+     * cheap. What it does not do is EXCAVATE. A projecting rib hangs into air the room generator has
+     * already hollowed out; a rising vault reaches into cells that are still solid stone, and
+     * &mdash; worse &mdash; the plane cell under it has just been paved with the ceiling's own base
+     * block. Write only the block at the top and the room is unchanged, with a slab of ceiling
+     * material buried in the rock above it.</p>
+     *
+     * <p>So this clears {@code ceilingY} through {@code ceilingY + rise - 1} for every marked cell
+     * before it writes the block at {@code ceilingY + rise}. Clearing the plane cell is the load
+     * bearing half: it is the one cell an author cannot see is wrong from the JSON.</p>
+     *
+     * <h2>Ordering, and stepping</h2>
+     * <p>Air here is a placement like any other, so it obeys the same later-wins rule as everything
+     * else &mdash; which is what makes a stepped vault work. Author the steps in ascending order and
+     * each one's excavation reopens the cell the step below it just roofed, leaving only the highest
+     * block standing over any given cell. Author them descending and a lower step will roof the one
+     * above it.</p>
+     *
+     * <p>{@code rise} 0 is legal and writes exactly what a flush layer writes. That is the shape of
+     * the render-time clamp in {@code BasicCeilingGenerator}: a room with no spare floor budget gets
+     * the vault drawn flat rather than getting a hole into the rock above it.</p>
+     */
+    public void emitRaised(SurfacePlan plan, int rise, List<BlockPlacement> out) {
+        BlockState air = Blocks.AIR.defaultBlockState();
+        int rows = Math.max(0, rise);
+        for (int u = 0; u < uSize; u++) {
+            for (int v = 0; v < vSize; v++) {
+                BlockState planned = plan.get(u, v);
+                if (planned == null) {
+                    continue;
+                }
+                for (int row = 0; row < rows; row++) {
+                    out.add(BlockStateCodec.placement(xAt(u), ceilingY + row, zAt(v), air));
+                }
+                out.add(BlockStateCodec.placement(xAt(u), ceilingY + rows, zAt(v), planned));
             }
         }
     }

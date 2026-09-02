@@ -13,7 +13,9 @@
         "shaft": "minecraft:spruce_log",
         "footing": "dungeonblocks:square_stone_brick",
         "stair": "minecraft:mud_brick_stairs",
-        "corbel": "dungeonblocks:stone_corbel_block"
+        "corbel": "dungeonblocks:stone_corbel_block",
+        "wall_capital_left": "dungeonblocks:left_large_mud_brick",
+        "wall_capital_right": "dungeonblocks:right_large_mud_brick"
       },
       // MUD BRICK ON A LARGE STONE BRICK PLINTH, in every room at this depth (Gottsch,
       // 2026-08-27). This is the first band designed as a band rather than demonstrated as one.
@@ -79,6 +81,13 @@
               "type": "dungeons2:courses",
               "config": {
                 "courses": [
+                  // top course, supports/behind the crown.
+                  {
+                    "block": "$wall_capital_left",
+                    "alternate_block": "$wall_capital_right",
+                    "alternate": "strict",
+                    "anchor": "top"
+                  },
                   {
                     "block": "dungeonblocks:left_large_stone_brick",
                     "alternate_block": "dungeonblocks:right_large_stone_brick",
@@ -468,7 +477,7 @@
                 "projection": 1,
                 "config": {
                   "block": "$shaft",
-                  "bracket_block": "dungeonblocks:spruce_corbel_block",
+                  "bracket_block": "$corbel",
                   "orient": "inward",
                   "spacing": 3
                 }
@@ -476,6 +485,214 @@
             ]
           }
         },
+        /////////////////////////////
+
+        {
+          "name": "mud_joists_1",
+          "weight": 8,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": {
+            "min_count": 0,
+            "max_count": 1,
+            "min_size": 9
+          },
+          "min_size": 9,
+          "min_height": 5,
+          "ceiling": [
+            {
+              "weight": 3,
+              "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists",
+                  "projection": 1,
+                  "config": {
+                    "block": "$shaft",
+                    "bracket_block": "$corbel",
+                    "orient": "inward",
+                    "spacing": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists",
+                  "projection": 1,
+                  "config": {
+                    "block": "minecraft:stripped_spruce_log",
+                    "spacing": 4
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists",
+                  "projection": 1,
+                  "config": {
+                    "block": "$shaft",
+                    "bracket_block": "$corbel",
+                    "orient": "inward",
+                    "spacing": 4
+                  }
+                },
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "dungeonblocks:square_mud_brick",
+                    "steps": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "dungeonblocks:square_mud_brick",
+                    "steps": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 1,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "$footing",
+                    "crown_block": "dungeonblocks:mossy_square_mud_brick",
+                    "steps": 2,
+                    "step_height": 2
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "none": true
+            }
+          ],
+          "wall": [
+            {
+              "weight": 2,
+              "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:pilasters",
+                  "config": {
+                    "block": "$shaft",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
+                    "spacing": 4,
+                    "projection": 1
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:diamond",
+                  "config": {
+                    "block": "dungeonblocks:square_mud_brick",
+                    "size": 2,
+                    "spacing": 6,
+                    "filled": true
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 1,
+              "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:end_pilasters",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
+                    "projection": 1
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 3,
+              "none": true
+            }
+          ],
+          "floor": [
+            {
+              "weight": 2,
+              "type": "dungeons2:border",
+              "config": {
+                "inset": 1,
+                "corner_block": "$footing",
+                "edge_left_block": "$plinth_left",
+                "edge_right_block": "$plinth_right"
+              }
+            },
+            {
+              "weight": 2,
+              "type": "dungeons2:gradient",
+              "config": {
+                "edge_block": "minecraft:packed_mud",
+                "centre_block": "minecraft:cobblestone",
+                "edge_probability": 0.85,
+                "centre_probability": 0.05,
+                "hold_cells": 2
+              }
+            },
+            {
+              "weight": 2,
+              "type": "dungeons2:composite",
+              "config": {
+                "generators": [
+                  {
+                    "type": "dungeons2:gradient",
+                    "config": {
+                      "edge_block": "minecraft:packed_mud",
+                      "centre_block": "minecraft:cobblestone",
+                      "edge_probability": 0.85,
+                      "centre_probability": 0.05,
+                      "hold_cells": 2
+                    }
+                  },
+                  {
+                    "type": "dungeons2:path",
+                    "config": {
+                      "path_block": "minecraft:packed_mud",
+                      "width": 3
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 3,
+              "none": true
+            }
+          ]
+        },
+        /////////////////////////////
+        // pilasters
+        /////////////////////////////
         {
           // ONE SCHEME WHERE THERE WERE TWO -- the first #65 slot-options conversion, 2026-08-31.
           //
@@ -497,13 +714,9 @@
           // `none` entry on `floor` the border would draw in 100% of these rooms instead of half,
           // which is exactly how band-level joists reached 55.9% and became the band's look.
           "name": "mud_pilastered",
-          "weight": 8,
+          "weight": 12,
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "min_size": 9,
           "min_height": 7,
           // The long-wall pilasters are on BOTH options, because they are what the room is; only
@@ -572,7 +785,7 @@
                     "base_block": "$footing",
                     "cap_block": "$footing",
                     "spacing": 4,
-                    "projection": 2
+                    "projection": 1
                   }
                 }
               ]
@@ -663,11 +876,7 @@
           "name": "mud_timber_centre_pillar",
           "weight": 6,
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "min_size": 9,
           "min_height": 7,
           "pillars": {
@@ -709,11 +918,7 @@
           "name": "joisted_hall",
           "weight": 10,
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "min_size": 7,
           "min_height": 7,
           "ceiling": {
@@ -749,11 +954,7 @@
           "min_size": 9,
 
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           // A SCHEME's `floor` IS A PATTERN, NOT A FloorConfig. The band below authors
           // base/alternateBase/pattern because a BAND owns the whole floor; a scheme owns only the
           // treatment over it, so `type`/`config` sit directly here with no `pattern` wrapper and
@@ -828,11 +1029,7 @@
           "name": "mud_sunken_court",
           "weight": 3,
           // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "min_size": 9,
           "pit": {
             "type": "dungeons2:inset",
@@ -917,11 +1114,7 @@
           "name": "mud_diamond_inlay",
           "weight": 4,
           // See mud_timber_rs for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "min_size": 9,
           "min_height": 7,
           "wall": {
@@ -929,10 +1122,57 @@
               {
                 "type": "dungeons2:diamond",
                 "config": {
-                  "block": "minecraft:spruce_planks",
+                  "block": "dungeonblocks:square_mud_brick",
                   "size": 2,
                   "spacing": 6,
                   "filled": true
+                }
+              }
+            ]
+          }
+        },
+        {
+          // THE FIRST SCHEME THAT GAINS HEADROOM INSTEAD OF SPENDING IT (#68, 2026-09-01). Every
+          // other vault in this pack -- vaulted_hall in base.json -- is drawn by DROPPING its
+          // perimeter into the room, so the dome costs the player three rows of clearance and the
+          // scheme has to gate itself at min_height 7 to afford them. This one rises into the rows
+          // the floor already owns and never excavated: ceiling_budget is 15 and a procedural room
+          // is 5 to 10 high, so there are 5 to 10 blocks of untouched mud sitting over every room
+          // in this band right now. A 6-high room comes out 9 high down the middle.
+          //
+          // WHICH IS WHY THERE IS NO min_height. It would be meaningless here -- the vault takes
+          // nothing from the interior, so a short room is exactly as good a host as a tall one, and
+          // arguably a better one, since the gain reads as more. `min_size` stays, because a dome
+          // over a 7x7 is a dome over four cells.
+          //
+          // THE STEPS ARE CLAMPED PER ROOM, not gated: a room whose floor has less spare budget
+          // than the vault asks for draws a shallower dome with a flat top. That is the difference
+          // between this and a projecting vault -- there is no case where it comes out wrong, only
+          // cases where it comes out smaller. See BasicCeilingGenerator#withRiseBudget.
+          "name": "mud_vaulted_hall",
+          "weight": 8,
+          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
+          "min_size": 9,
+          "ceiling": {
+            "patterns": [
+              {
+                // A SOLID springing course, not stairs (Mark, in game 2026-09-01). Stairs are right
+                // for a HANGING vault, where you see their face and their underside from below. A
+                // rising vault's springing sits IN the ceiling plane with the room's air beneath it,
+                // so the only face anyone ever sees is the bottom one -- which on a stair is a plain
+                // full square. It reads as a full block whichever way it is turned, and turned the
+                // wrong way it reads as a backwards one.
+                //
+                // So the lip is accented by MATERIAL instead of by shape: square mud brick against
+                // the band's plain mud brick. No crown_block for the same reason it is now worth
+                // having a plain one -- with the lip carrying the accent, a second one at the apex
+                // competes with it. The dome's shape is doing the work.
+                "type": "dungeons2:vaulted",
+                "config": {
+                  "block": "minecraft:mud_bricks",
+                  "springing_block": "dungeonblocks:square_mud_brick",
+                  "steps": 3
                 }
               }
             ]

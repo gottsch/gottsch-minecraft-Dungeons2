@@ -422,8 +422,18 @@ class WeatheringProcessorListTest {
             "minecraft:chiseled_stone_bricks",
             "dungeonblocks:chiseled_stone_bricks");
 
-    /** Sources that moved here from aging and carry their own, larger budget. */
+    /**
+     * Sources that moved here from aging and carry their own, larger budget.
+     *
+     * <p>The large MUD bricks joined them on 2026-09-01 (Mark's call), when the mud band gave them
+     * the stone pair's own two-rule treatment and they composed to 0.398 against the 0.30 the
+     * substitution table budgets. They are the same masonry at a different depth and they age on the
+     * same schedule, so holding them to a tighter budget than their stone counterparts would have
+     * been an accident of which set the rules happened to be written for.</p>
+     */
     private static final Set<String> MIGRATED_SOURCES = Set.of(
             "dungeonblocks:left_large_stone_brick",
-            "dungeonblocks:right_large_stone_brick");
+            "dungeonblocks:right_large_stone_brick",
+            "dungeonblocks:left_large_mud_brick",
+            "dungeonblocks:right_large_mud_brick");
 }

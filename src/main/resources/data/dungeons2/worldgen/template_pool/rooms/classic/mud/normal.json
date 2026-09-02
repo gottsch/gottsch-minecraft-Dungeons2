@@ -86,6 +86,33 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_5",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_6",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/9x9_junction_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/mud/hallway/12x29_sunken_hallway_1a",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"
@@ -123,6 +150,42 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/mud/hallway/7x17_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/7x15_timber_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_corner_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_corner_2",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_corner_3",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"
       },

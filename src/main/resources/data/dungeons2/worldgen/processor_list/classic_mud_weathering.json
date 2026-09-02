@@ -130,6 +130,15 @@
             { "block": "minecraft:dirt", "probability": 0.25 }
           ]
         },
+        {
+          "surface": "floor",
+          "block": "dungeonblocks:large_bricks",
+          "output_blocks": [
+            { "block": "minecraft:bricks", "probability": 0.35 },
+            { "block": "dungeonblocks:cobblestone_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:gravel_brick", "probability": 0.15 }
+          ]
+        },
         // ===================================================================================
         // ABOVE THE FLOOR -- walls, ceiling, and anything standing in the room.
         //
@@ -251,6 +260,24 @@
           "output_blocks": [
             { "block": "dungeonblocks:mossy_square_stone_brick", "probability": 0.3 },
             { "block": "dungeonblocks:rubble", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:left_large_mud_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_left_large_mud_brick", "probability": 0.3 },
+            { "block": "minecraft:packed_mud", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "above_floor",
+          "block": "dungeonblocks:right_large_mud_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_right_large_mud_brick", "probability": 0.3 },
+            { "block": "minecraft:packed_mud", "probability": 0.3 },
             { "block": "minecraft:dirt", "probability": 0.15 }
           ]
         },

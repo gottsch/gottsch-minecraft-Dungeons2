@@ -47,6 +47,8 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
     /** Null means no ceiling treatment: every cell falls through to the plain ceiling block. */
     private ISurfacePatternProvider ceilingPattern;
+    /** See {@link #withRiseBudget}. Zero -- the default -- means nothing may rise. */
+    private int riseBudget;
 
     /** See {@code BasicWallGenerator#withMotifConfig}. */
     public BasicCeilingGenerator withMotifConfig(MotifConfig motifConfig) {
@@ -60,6 +62,33 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
      */
     public BasicCeilingGenerator withCeilingPattern(ISurfacePatternProvider ceilingPattern) {
         this.ceilingPattern = ceilingPattern;
+        return this;
+    }
+
+    /**
+     * How many rows of the floor's budget are still unspent ABOVE this room's ceiling &mdash; the
+     * hard cap on how far a rising vault may reach (#68). Zero, the default, means no layer rises
+     * however its scheme is authored, exactly as {@code sink_offset} 0 means no room gets a pit.
+     *
+     * <h2>The clamp is on the OUTPUT, and that is deliberate</h2>
+     * <p>Same rule {@code RoomPitGenerator} follows for {@code sink_offset}, and for the same reason:
+     * the ceiling pattern registry is open to other mods, so "respect the floor's budget or you open
+     * a hole into the floor above" is a rule a third party would forget. It is enforced here, where
+     * the room's actual height is known, rather than by any field range &mdash; no {@code intRange}
+     * can see the room.</p>
+     *
+     * <p>The value is {@code ceiling_budget - height}: a floor owns {@code ceiling_budget} rows above
+     * its walking plane, and a room {@code height} high has used {@code height} of them. So a rise
+     * can never reach the stone buffer, let alone the floor above &mdash; the arithmetic is the exact
+     * mirror of a pit's, which can never reach the ceiling below.</p>
+     *
+     * <p>A layer asking for more than this is CLAMPED rather than dropped, so a scheme authored for
+     * tall rooms still draws in a short one: it comes out flatter, which is the same picture as a
+     * plain ceiling and never a hole. At a budget of 0 a rising vault therefore renders exactly as
+     * today's flush ceiling does.</p>
+     */
+    public BasicCeilingGenerator withRiseBudget(int riseBudget) {
+        this.riseBudget = Math.max(0, riseBudget);
         return this;
     }
 
@@ -84,7 +113,16 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
             Map<Integer, SurfacePlan> projected = projecting.projectedPlans(
                     surface.uSize(), surface.vSize(), surface.facing(), random);
             for (Map.Entry<Integer, SurfacePlan> layer : projected.entrySet()) {
-                surface.emitProjected(layer.getValue(), layer.getKey(), out);
+                int depth = layer.getKey();
+                if (depth >= 0) {
+                    surface.emitProjected(layer.getValue(), depth, out);
+                } else {
+                    // #68: a NEGATIVE depth rises above the plane instead of hanging below it, and
+                    // unlike a hanging rib it has to excavate on the way -- see
+                    // CeilingSurface#emitRaised. Clamped to what this floor has left above the room
+                    // (withRiseBudget), which is the only place the room's own height is known.
+                    surface.emitRaised(layer.getValue(), Math.min(-depth, riseBudget), out);
+                }
             }
         }
     }

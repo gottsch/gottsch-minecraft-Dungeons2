@@ -745,7 +745,8 @@ public class DungeonStructure extends Structure {
 
                 List<StructurePiece> allPieces =
                         new ArrayList<>(DungeonPieceEmitter.emitTerrain(layout, emitAnchorX, emitAnchorZ,
-                                generationConfig.sinkOffset(), miningChest.orElse(null)));
+                                generationConfig.sinkOffset(), generationConfig.ceilingBudget(),
+                                miningChest.orElse(null)));
                 allPieces.addAll(entrancePieces);
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));

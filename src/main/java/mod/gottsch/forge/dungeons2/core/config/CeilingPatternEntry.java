@@ -147,6 +147,18 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                         + " bracket, and this entry has no bracket_block to turn; the beams"
                         + " themselves take their axis from the run");
             }
+            // #68. A layer hangs or it rises; it cannot do both, and a `depth` that silently picked
+            // one would hide the contradiction in the one place an author cannot see it -- the
+            // authored file says 2 and 3 and the ceiling shows one of them. Rejecting is also what
+            // keeps `depth()`'s sign convention an implementation detail rather than a rule an
+            // author has to know.
+            if (entryPattern.projection() > 0 && entryPattern.rise() > 0) {
+                return DataResult.error(() -> "ceiling pattern '"
+                        + entryPattern.pattern().getClass().getSimpleName() + "': projection "
+                        + entryPattern.projection() + " hangs the layer below the ceiling and rise "
+                        + entryPattern.rise() + " raises it above; a layer can only do one. Drop"
+                        + " whichever one you did not mean");
+            }
             // An inverted per-entry gate fits no room, so the pattern silently never draws --
             // indistinguishable at generation time from one that merely never came up, which is
             // exactly what SizeGate#validate exists to turn into a load error.
@@ -278,18 +290,37 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * stack rather than describing the pattern's own shape, and the bracket layer is authored at
      * {@code projection + 1}, which is a fact about the stack rather than about joists.</p>
      */
-    public record SurfacePatternEntry(CeilingPattern pattern, int projection, SizeGate gate) {
+    public record SurfacePatternEntry(CeilingPattern pattern, int projection, int rise, SizeGate gate) {
 
         /** See {@code CeilingPattern#withRoles}. */
         public SurfacePatternEntry withRoles(java.util.function.UnaryOperator<String> resolver) {
             CeilingPattern resolved = pattern.withRoles(resolver);
             return resolved == pattern ? this
-                    : new SurfacePatternEntry(resolved, projection, gate);
+                    : new SurfacePatternEntry(resolved, projection, rise, gate);
         }
 
         /** An ungated treatment drawn flush in the ceiling plane. */
         public SurfacePatternEntry(CeilingPattern pattern) {
-            this(pattern, 0, SizeGate.UNBOUNDED);
+            this(pattern, 0, 0, SizeGate.UNBOUNDED);
+        }
+
+        /** A treatment hanging at {@code projection}, ungated. The shape before {@code rise}. */
+        public SurfacePatternEntry(CeilingPattern pattern, int projection, SizeGate gate) {
+            this(pattern, projection, 0, gate);
+        }
+
+        /**
+         * Where this layer sits relative to the ceiling plane, as ONE signed number: positive hangs
+         * below it, negative rises above it, 0 is flush.
+         *
+         * <p>The two authored fields are separate because they mean opposite things to an author and
+         * a sign is easy to mistype, but everything downstream of here wants one axis &mdash;
+         * {@code CeilingSurface} already writes at {@code ceilingY - depth}, and a bracketed joists
+         * layer is authored one row BELOW its beam, which is {@code depth + 1} whichever side of the
+         * plane the beam is on.</p>
+         */
+        public int depth() {
+            return rise > 0 ? -rise : projection;
         }
 
         // Codecs.closed -- see RoomScheme.CODEC.
@@ -300,6 +331,10 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                         CeilingPatternRegistry.MAP_CODEC.forGetter(SurfacePatternEntry::pattern),
                         Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_PROJECTION),
                                 "projection", 0).forGetter(SurfacePatternEntry::projection),
+                        // #68. Bounded by MAX_RISE here; bounded again, and for real, by the floor's
+                        // own spare budget at render time -- see BasicCeilingGenerator.
+                        Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_RISE),
+                                "rise", 0).forGetter(SurfacePatternEntry::rise),
                         SizeGate.MAP_CODEC.forGetter(SurfacePatternEntry::gate)
                 ).apply(instance, SurfacePatternEntry::new)));
     }
@@ -340,6 +375,34 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * raising this number does not change that.</p>
      */
     public static final int MAX_PROJECTION = 4;
+
+    /**
+     * How far a ceiling treatment may rise ABOVE the ceiling plane, into the floor's own spare
+     * budget. Backlog #68.
+     *
+     * <h2>The mirror of {@code projection}, and the opposite trade</h2>
+     * <p>A projecting vault buys its shape out of the room's headroom: the perimeter drops and the
+     * player's clearance drops with it, which is why {@code MAX_PROJECTION} is derived from what the
+     * shipped schemes can afford to spend. A rising vault spends nothing the player can feel. It
+     * reaches up into rock the floor already owns and did not excavate &mdash; a room is 5 to 10 high
+     * inside a {@code ceiling_budget} of 15, so there are 5 to 10 blocks of stone sitting above every
+     * procedural room's ceiling right now &mdash; and it gives the headroom back rather than taking
+     * it. That is what makes a hall feel like a hall instead of a corridor with a pattern on the
+     * lid.</p>
+     *
+     * <h2>Where 6 comes from</h2>
+     * <p>The narrowest spare budget a shipped room can have. {@code DungeonStackPlanner} caps a
+     * procedural room at 10 and the shipped {@code ceiling_budget} is 15, so the WORST case is 5 rows
+     * of spare stone and the best is 10. Six is one step past the worst case on purpose: the clamp
+     * is at render time and per room (see {@code BasicCeilingGenerator#withRiseBudget}), so an
+     * authored 6 draws in full in the rooms that can afford it and clamps in the ones that cannot,
+     * which is the behaviour a vault wants. A bound at 5 would instead deny the taller rooms a step
+     * they have the budget for.</p>
+     *
+     * <p>Like {@link #MAX_PROJECTION} this is a SCHEMA bound and not a fit check &mdash; the fit
+     * check is the render-time clamp, which is the only place the room's actual height is known.</p>
+     */
+    public static final int MAX_RISE = 6;
 
     /** A ring following the surface's edge: the first orientable type. */
     public static final String BORDER = "border";

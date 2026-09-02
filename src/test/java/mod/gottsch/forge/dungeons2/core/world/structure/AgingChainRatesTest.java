@@ -228,34 +228,78 @@ class AgingChainRatesTest {
     }
 
     /**
-     * The composed rates for the two blocks that moved to {@code minecraft:rule} on 2026-08-05.
+     * The composed rates for the blocks that weather through {@code minecraft:rule} rather than
+     * through the aging chains: the two large STONE bricks (moved 2026-08-05) and the two large MUD
+     * bricks (authored 2026-09-01, on the stone pair's own pattern).
      *
-     * <p>The move had to be a <strong>no-op in the world</strong>, so this recomputes the rates from
-     * the shipped file and checks them against what the aging chains produced before it. The
-     * arithmetic is the same shape as {@link #composedRates}: rules are tried in order and each is
-     * reached only when every earlier one missed. It differs in one way that matters -- a
+     * <p>The arithmetic is the same shape as {@link #composedRates}: rules are tried in order and
+     * each is reached only when every earlier one missed. It differs in one way that matters -- a
      * {@code minecraft:rule} processor never re-reads its own output, so there are no stages to
-     * compound, only alternatives. That is why the four probabilities in the file look unrelated to
-     * the aging numbers they replaced.
+     * compound, only alternatives. That is why the authored probabilities look unrelated to the
+     * aging numbers they replaced.
+     *
+     * <h2>The chain now stops at cobblestone, and that is a DECISION</h2>
+     * <p>Until 2026-09-01 each of these carried four rules and ran all the way to
+     * {@code dirt} (0.0315) and {@code rubble} (0.0105); this test pinned both. Mark deleted them
+     * when the mud band took their slots, deliberately: <strong>the deep half is moving to its own
+     * rule processors keyed on mossy and cobblestone</strong>, the way
+     * {@code classic_entrance_weathering.json} already does it, rather than being four alternatives
+     * off the original block. So a source here having no dirt and no rubble is the shipped design,
+     * and the assertions that pinned them followed the rules out rather than being relaxed.</p>
+     *
+     * <p>Asserted ABSENT rather than simply dropped, so that re-adding a direct
+     * block {@literal ->} dirt route (the shape being moved away from) fails here instead of quietly
+     * doubling up with the new processors. Note that this reads only rules whose INPUT is the source
+     * block, so the coming mossy/cobblestone rules will not trip it.</p>
      */
     @Test
-    void largeStoneBrickKeepsItsRatesAfterTheMoveToVanillaRules() {
+    void theLargeBrickPairsWeatherToMossyAndCobbleAndStopThere() {
         for (String source : List.of("dungeonblocks:left_large_stone_brick",
-                "dungeonblocks:right_large_stone_brick")) {
+                "dungeonblocks:right_large_stone_brick",
+                "dungeonblocks:left_large_mud_brick",
+                "dungeonblocks:right_large_mud_brick")) {
             Map<String, Double> rates = vanillaRuleRates(source);
             String mossy = source.replace("dungeonblocks:", "dungeonblocks:mossy_");
+            // Mud crumbles to packed mud where stone crumbles to cobble -- the same rule at the same
+            // rate in the material of the band.
+            String crumbled = source.contains("mud") ? "minecraft:packed_mud" : "minecraft:cobblestone";
 
             assertEquals(0.300, rates.getOrDefault(mossy, 0.0), EPSILON, source + " -> mossy");
-            assertEquals(0.098, rates.getOrDefault("minecraft:cobblestone", 0.0), EPSILON,
-                    source + " -> cobblestone");
-            assertEquals(0.0315, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON,
-                    source + " -> dirt");
-            assertEquals(0.0105, rates.getOrDefault("dungeonblocks:rubble", 0.0), EPSILON,
-                    source + " -> rubble");
+            assertEquals(0.098, rates.getOrDefault(crumbled, 0.0), EPSILON,
+                    source + " -> " + crumbled);
 
-            double debris = rates.getOrDefault("dungeonblocks:rubble", 0.0);
-            assertTrue(debris <= WALL_ONLY_MAX_DEBRIS + EPSILON,
-                    source + " rubble " + debris + " exceeds the wall-only bound");
+            assertEquals(0.0, rates.getOrDefault("minecraft:dirt", 0.0), EPSILON,
+                    source + " decays straight to dirt again; the deep half belongs to the"
+                            + " mossy/cobblestone processors now");
+            assertEquals(0.0, rates.getOrDefault("dungeonblocks:rubble", 0.0), EPSILON,
+                    source + " decays straight to rubble again; see above");
+        }
+    }
+
+    /**
+     * The mossy output has to NAME A REAL BLOCK, which is the one thing the rate arithmetic above
+     * cannot see.
+     *
+     * <p>{@code ShippedBlockIdsTest} covers the whole datapack for this, but these four ids are
+     * worth naming here too: an unresolvable id becomes AIR rather than an error, so a typo in one
+     * of them punches holes in the band's walls at 30% while every rate in this file still composes
+     * perfectly. Exactly that shipped on 2026-09-01 ({@code mossy_left_mud__brick}).</p>
+     */
+    @Test
+    void everyMossyOutputOfThosePairsIsARealBlockId() {
+        Set<String> known = Set.of(
+                "dungeonblocks:mossy_left_large_stone_brick",
+                "dungeonblocks:mossy_right_large_stone_brick",
+                "dungeonblocks:mossy_left_large_mud_brick",
+                "dungeonblocks:mossy_right_large_mud_brick");
+        for (String source : List.of("dungeonblocks:left_large_stone_brick",
+                "dungeonblocks:right_large_stone_brick",
+                "dungeonblocks:left_large_mud_brick",
+                "dungeonblocks:right_large_mud_brick")) {
+            String mossy = source.replace("dungeonblocks:", "dungeonblocks:mossy_");
+            assertTrue(known.contains(mossy), mossy + " is not one of the four ids that exist");
+            assertTrue(vanillaRuleRates(source).containsKey(mossy),
+                    source + " no longer weathers to " + mossy);
         }
     }
 
@@ -309,13 +353,15 @@ class AgingChainRatesTest {
     void authoredProbabilitiesAreConditionalNotAbsolute() {
         Map<String, Double> rates = vanillaRuleRates("dungeonblocks:left_large_stone_brick");
 
-        // Authored 0.14, 0.0523, 0.0184 -- every one of them lands lower than it reads.
+        // Authored 0.14, and it lands lower than it reads because the mossy rule above it consumes
+        // 30% of the block first. (Two more rules used to make this point three times over; they
+        // were the dirt and rubble routes, deleted 2026-09-01 -- see
+        // theLargeBrickPairsWeatherToMossyAndCobbleAndStopThere. One surviving rule still proves it,
+        // and the shorter the run the easier this is to get wrong by hand.)
         assertTrue(rates.get("minecraft:cobblestone") < 0.14 - EPSILON,
                 "cobblestone authored at 0.14 must compose to less: " + rates);
-        assertTrue(rates.get("minecraft:dirt") < 0.0523 - EPSILON,
-                "dirt authored at 0.0523 must compose to less: " + rates);
-        assertTrue(rates.get("dungeonblocks:rubble") < 0.0184,
-                "rubble authored at 0.0184 must compose to less: " + rates);
+        assertEquals(0.7 * 0.14, rates.get("minecraft:cobblestone"), EPSILON,
+                "and it composes to exactly what the 30% above it leaves: " + rates);
 
         // And the first rule is the one exception: nothing shields it, so it lands as authored.
         assertEquals(0.30, rates.get("dungeonblocks:mossy_left_large_stone_brick"), EPSILON,

@@ -639,24 +639,6 @@
         {
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
-            "block": "dungeonblocks:left_large_stone_brick",
-            "probability": 0.0523
-          },
-          "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:dirt" }
-        },
-        {
-          "input_predicate": {
-            "predicate_type": "minecraft:random_block_match",
-            "block": "dungeonblocks:left_large_stone_brick",
-            "probability": 0.0184
-          },
-          "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "dungeonblocks:rubble" }
-        },
-        {
-          "input_predicate": {
-            "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:right_large_stone_brick",
             "probability": 0.3
           },
@@ -675,20 +657,38 @@
         {
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
-            "block": "dungeonblocks:right_large_stone_brick",
-            "probability": 0.0523
+            "block": "dungeonblocks:left_large_mud_brick",
+            "probability": 0.3
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:dirt" }
+          "output_state": { "Name": "dungeonblocks:mossy_left_large_mud_brick" }
         },
         {
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
-            "block": "dungeonblocks:right_large_stone_brick",
-            "probability": 0.0184
+            "block": "dungeonblocks:left_large_mud_brick",
+            "probability": 0.14
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "dungeonblocks:rubble" }
+          "output_state": { "Name": "minecraft:packed_mud" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_mud_brick",
+            "probability": 0.3
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "dungeonblocks:mossy_right_large_mud_brick" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_mud_brick",
+            "probability": 0.14
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:packed_mud" }
         },
         {
           "input_predicate": {

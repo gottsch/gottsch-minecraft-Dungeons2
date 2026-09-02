@@ -100,10 +100,10 @@ public final class CeilingPatternSelector {
             // joists. That used to be a switch here plus a JOISTS string test; both moved onto the
             // types when they became registry entries, which is why this file no longer knows what
             // a joist is.
-            pattern.pattern().addLayers(pattern.projection(), layers);
+            pattern.pattern().addLayers(pattern.depth(), layers);
         }
         for (Layer layer : layers) {
-            anyProjects |= layer.depth() > 0;
+            anyProjects |= layer.depth() != 0;
         }
         if (layers.isEmpty()) {
             return null;
@@ -117,7 +117,16 @@ public final class CeilingPatternSelector {
     }
 
 
-    /** One treatment and the depth it hangs at. Depth 0 is flush in the ceiling plane. */
+    /**
+     * One treatment and where it sits relative to the ceiling plane. Depth 0 is flush; POSITIVE
+     * hangs that many cells below the plane, NEGATIVE rises that many above it (#68).
+     *
+     * <p>One signed axis rather than two fields, because every consumer wants it that way:
+     * {@code CeilingSurface} writes at {@code ceilingY - depth}, and a joists bracket is authored one
+     * row below its beam, which is {@code depth + 1} on either side of the plane. The two AUTHORED
+     * fields stay separate ({@code projection} and {@code rise}) so nobody has to type a sign; they
+     * are folded here by {@code SurfacePatternEntry#depth}.</p>
+     */
     public record Layer(int depth, ISurfacePatternProvider provider) {}
 
     /**
@@ -142,7 +151,7 @@ public final class CeilingPatternSelector {
                                                         RandomSource random) {
             Map<Integer, SurfacePlan> plans = new LinkedHashMap<>();
             for (Layer layer : layers) {
-                if (layer.depth() > 0) {
+                if (layer.depth() != 0) {
                     plans.computeIfAbsent(layer.depth(),
                             depth -> planFor(depth, uSize, vSize, facing, random));
                 }

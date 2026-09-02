@@ -81,6 +81,8 @@ public final class FloorPatternRegistry {
         register(SpeckleFloorPattern.NAME, SpeckleFloorPattern.CODEC);
         register(CrossFloorPattern.NAME, CrossFloorPattern.CODEC);
         register(SpokesFloorPattern.NAME, SpokesFloorPattern.CODEC);
+        register(GradientFloorPattern.NAME, GradientFloorPattern.CODEC);
+        register(WornPathFloorPattern.NAME, WornPathFloorPattern.CODEC);
         register(CompositeFloorPattern.NAME, CompositeFloorPattern.CODEC);
     }
 

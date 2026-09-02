@@ -63,18 +63,27 @@ public class DungeonRoomPiece extends DungeonPiece {
 
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
                             int anchorX, int anchorZ) {
-        this(room, motifValue, floorY, floorIndex, anchorX, anchorZ, 0);
+        this(room, motifValue, floorY, floorIndex, anchorX, anchorZ, 0, 0);
+    }
+
+    /** The shape before {@code ceilingBudget}: a box that stops at the room's own ceiling. */
+    public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
+                            int anchorX, int anchorZ, int sinkOffset) {
+        this(room, motifValue, floorY, floorIndex, anchorX, anchorZ, sinkOffset, 0);
     }
 
     /**
      * @param sinkOffset the floor's budget BELOW its walking plane (#29), which the box has to
      *                   cover whether or not this room's scheme digs a pit into it &mdash; see
      *                   {@link #computeBox}
+     * @param ceilingBudget the floor's budget ABOVE its walking plane (#68), covered on exactly the
+     *                      same terms: a rising vault is rolled at render time, so the box is sized
+     *                      to the budget rather than to the vault
      */
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
-                            int anchorX, int anchorZ, int sinkOffset) {
+                            int anchorX, int anchorZ, int sinkOffset, int ceilingBudget) {
         super(StructurePieces.ROOM, motifValue, floorY, floorIndex, anchorX, anchorZ,
-                computeBox(room, floorY, anchorX, anchorZ, sinkOffset));
+                computeBox(room, floorY, anchorX, anchorZ, sinkOffset, ceilingBudget));
         this.room = room;
     }
 
@@ -125,13 +134,17 @@ public class DungeonRoomPiece extends DungeonPiece {
      * pit inside it to count as being in the dungeon at all.</p>
      */
     private static BoundingBox computeBox(RoomData room, int floorY, int anchorX, int anchorZ,
-                                          int sinkOffset) {
+                                          int sinkOffset, int ceilingBudget) {
         int minX = anchorX + room.getOriginX() - 1;
         int minZ = anchorZ + room.getOriginZ() - 1;
         int maxX = anchorX + room.getOriginX() + room.getWidth();
         int maxZ = anchorZ + room.getOriginZ() + room.getDepth();
         int minY = floorY - Math.max(0, sinkOffset);
-        int maxY = floorY + Math.max(1, room.getHeight()) - 1;
+        // #68, and the exact mirror of the sink above: the box covers the floor's whole budget over
+        // the walking plane, not this room's ceiling, because a rising vault -- like a pit -- is
+        // rolled from the scheme at render time and cannot be known here. max() rather than the
+        // budget outright so a room somehow taller than its floor's budget still fits its own box.
+        int maxY = floorY + Math.max(Math.max(1, room.getHeight()), ceilingBudget) - 1;
         return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
@@ -162,10 +175,15 @@ public class DungeonRoomPiece extends DungeonPiece {
         // #3: how far this floor was sunk below its walking plane, which is the hard cap on any
         // pit a scheme may dig. Read here rather than serialised -- it is a datapack value and a
         // reload should move it.
-        int sinkOffset = DungeonGenerationConfigHelper.get(level.registryAccess()).sinkOffset();
+        var generationConfig = DungeonGenerationConfigHelper.get(level.registryAccess());
+        int sinkOffset = generationConfig.sinkOffset();
+        // #68: and how much of this floor is left ABOVE the room, which is the cap on a rising
+        // vault. Same reasoning as the line above -- a datapack value, read here rather than
+        // serialised, so a reload moves it.
+        int ceilingBudget = generationConfig.ceilingBudget();
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
-        RoomPlacements placements = renderRoom(motifConfig, sinkOffset);
+        RoomPlacements placements = renderRoom(motifConfig, sinkOffset, ceilingBudget);
         safePlaceAll(level, box, stratum, placements::getBlocks);
         // Entities are spawned separately and clipped to the chunk box -- unlike blocks they are
         // not idempotent across the per-chunk postProcess re-runs. See DungeonPiece#placeEntities.
@@ -194,8 +212,18 @@ public class DungeonRoomPiece extends DungeonPiece {
 
     /** As above, on a floor sunk {@code sinkOffset} below its walking plane (#3/#29). */
     public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset) {
+        return renderRoom(motifConfig, sinkOffset, 0);
+    }
+
+    /**
+     * As above, on a floor that also owns {@code ceilingBudget} rows above its walking plane
+     * (#68) &mdash; the two halves of the same floor's budget, and the two things a scheme may
+     * spend: a pit downward, a rising vault upward.
+     */
+    public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset, int ceilingBudget) {
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(motifConfig).withSinkOffset(sinkOffset)
+                .withCeilingBudget(ceilingBudget)
                 .withMiningHaul(miningHaul)
                 .build(room, floorY, floorIndex, motif(), deterministicRandom(room.getId()), out);
         return out;

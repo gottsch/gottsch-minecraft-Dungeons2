@@ -77,6 +77,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
     private int sinkOffset = 0;
+    private int ceilingBudget = 0;
     private MiningHaul miningHaul;
 
     public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
@@ -91,6 +92,22 @@ public class BasicRoomGenerator implements IRoomGenerator {
      */
     public BasicRoomGenerator withSinkOffset(int sinkOffset) {
         this.sinkOffset = Math.max(0, sinkOffset);
+        return this;
+    }
+
+    /**
+     * The floor's budget ABOVE its walking plane ({@code floor_height - sink_offset}), which is the
+     * hard cap on how far a rising vault may reach (#68). Zero -- the default here -- means no
+     * ceiling rises however its scheme is authored, exactly as {@code sinkOffset} 0 means no pit.
+     *
+     * <p>The mirror of {@link #withSinkOffset} in every way that matters. A pit spends the budget
+     * below the walking plane and a rising vault spends what is left of the budget above it, so
+     * neither can reach the stone buffer between floors: what a rising ceiling actually gets is
+     * {@code ceilingBudget - height}, the rows this floor owns and this room did not use. At the
+     * shipped 20/5 that is 5 to 10 rows of stone sitting over every procedural room.</p>
+     */
+    public BasicRoomGenerator withCeilingBudget(int ceilingBudget) {
+        this.ceilingBudget = Math.max(0, ceilingBudget);
         return this;
     }
 
@@ -271,7 +288,11 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme,
                                                           int width, int depth, int height) {
+        // #68: what this floor owns above the room and the room did not use. Clamped at zero, so a
+        // room as tall as its floor's whole budget -- or a caller that never injected one -- gets a
+        // ceiling that cannot rise rather than one that reaches into the next floor.
         return new BasicCeilingGenerator()
+                .withRiseBudget(Math.max(0, ceilingBudget - height))
                 .withMotifConfig(motifConfig)
                 .withCeilingPattern(CeilingPatternSelector.providerFor(
                         scheme.ceilingFor(width, depth, height), motifConfig.ceiling(),

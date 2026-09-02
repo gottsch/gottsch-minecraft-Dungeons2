@@ -211,6 +211,28 @@ class TerminalRoomFitProbe {
         }
     }
 
+    @org.junit.jupiter.api.Test
+    void TEMPmeasureCandidateSizes() {
+        System.out.println("=== TEMP: boss-room ADOPTION by footprint, through placeBossRoom ===");
+        System.out.printf("%-8s", "tier");
+        int[] sides = {7, 9, 11, 13, 15, 17, 19};
+        for (int side : sides) System.out.printf("%8s", side + "x" + side);
+        System.out.println();
+        for (DungeonSize size : DungeonSize.values()) {
+            System.out.printf("%-8s", size);
+            for (int side : sides) {
+                int adopted = 0;
+                for (int i = 0; i < DUNGEONS; i++) {
+                    long seed = 0xD2_4600_0002L + i * 7919L;
+                    Optional<DungeonLayout> layout = planWithBoss(seed, size, side, side);
+                    if (layout.isPresent() && hasBossRoom(layout.get())) adopted++;
+                }
+                System.out.printf("%7.1f%%", 100.0 * adopted / DUNGEONS);
+            }
+            System.out.println();
+        }
+    }
+
     private static Optional<DungeonLayout> planWithBoss(long seed, DungeonSize size,
                                                         int width, int depth) {
         return new DungeonStackPlanner(seed, new Coords(0, 0, 0), 72, "classic",

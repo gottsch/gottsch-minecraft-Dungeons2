@@ -104,13 +104,21 @@ class RoomPostProcessTest {
      * front of this test at all &mdash; it ships at 5.</p>
      */
     private static List<DungeonRoomPiece> pieces(DungeonLayout layout) {
-        int sinkOffset = DungeonGenerationConfigHelper.get(TestRegistries.get()).sinkOffset();
+        var generationConfig = DungeonGenerationConfigHelper.get(TestRegistries.get());
+        int sinkOffset = generationConfig.sinkOffset();
+        // #68: and the budget ABOVE the walking plane, which is the other half of the same floor's
+        // budget and the cap on a rising vault. Passing only the sink is what the emitter used to
+        // do, and leaving it that way here would have this harness build a box the render then
+        // writes outside of -- which is exactly what `aRoomNeverWritesOutsideItsOwnBox` reported
+        // the moment the mud band authored its first rising vault. Production reads both from the
+        // same config; so must this.
+        int ceilingBudget = generationConfig.ceilingBudget();
         List<DungeonRoomPiece> pieces = new ArrayList<>();
         for (FloorLayout floor : layout.getFloors()) {
             for (RoomData room : floor.getRooms()) {
                 if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
                     pieces.add(new DungeonRoomPiece(room, MOTIF, floor.getFloorY(),
-                            floor.getFloorIndex(), ANCHOR_X, ANCHOR_Z, sinkOffset));
+                            floor.getFloorIndex(), ANCHOR_X, ANCHOR_Z, sinkOffset, ceilingBudget));
                 }
             }
         }

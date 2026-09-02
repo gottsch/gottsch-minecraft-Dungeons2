@@ -68,7 +68,7 @@ class FloorPatternRegistryTest {
     @Test
     void theBuiltInPatternsAreRegisteredUnderThisModsNamespace() {
         for (String path : new String[] {"plain", "border", "checkerboard", "speckle", "cross",
-                "spokes", "composite"}) {
+                "spokes", "gradient", "path", "composite"}) {
             assertTrue(FloorPatternRegistry.ids().contains(new ResourceLocation("dungeons2", path)),
                     "dungeons2:" + path + " should be registered");
         }

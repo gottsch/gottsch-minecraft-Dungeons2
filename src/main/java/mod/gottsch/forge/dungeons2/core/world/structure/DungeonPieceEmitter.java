@@ -116,6 +116,19 @@ public final class DungeonPieceEmitter {
      */
     public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
                                                    int sinkOffset, MiningChestPlan miningChest) {
+        return emitTerrain(layout, anchorX, anchorZ, sinkOffset, 0, miningChest);
+    }
+
+    /**
+     * As above, on floors that also own {@code ceilingBudget} rows above their walking planes (#68).
+     *
+     * <p>Only the room pieces care, and for the same reason {@code sinkOffset} is here: it widens
+     * their bounding box UPWARD so a rising vault cannot fall outside its own piece. The two are the
+     * two halves of one floor's budget and travel together.</p>
+     */
+    public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
+                                                   int sinkOffset, int ceilingBudget,
+                                                   MiningChestPlan miningChest) {
         List<StructurePiece> pieces = new ArrayList<>();
         String motif = layout.getMotifValue();
 
@@ -153,7 +166,7 @@ public final class DungeonPieceEmitter {
                 // procedural build (templateId non-null) is skipped for the same reason.
                 if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
                     DungeonRoomPiece piece = new DungeonRoomPiece(room, motif, floorY, floorIndex,
-                            anchorX, anchorZ, sinkOffset);
+                            anchorX, anchorZ, sinkOffset, ceilingBudget);
                     // #7: exactly one room in the whole dungeon carries the Mining Chest. Matched on
                     // floor AND room id -- room ids are unique per floor, not per dungeon, so the
                     // floor is half the key and dropping it would put a chest on every floor.
