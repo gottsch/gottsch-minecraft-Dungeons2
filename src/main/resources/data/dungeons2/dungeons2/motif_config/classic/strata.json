@@ -301,6 +301,19 @@
           // and an omitted slot is a slot this depth does not have -- not one it inherits.
           "name": "plain",
           "weight": 12,
+          "wall": {
+            "patterns": [
+              {
+                "type": "dungeons2:door_jambs",
+                "config": {
+                  "block": "dungeonblocks:square_mud_brick",
+                  "base_block": "$footing",
+                  "cap_block": "$footing",
+                  "lintel_block": "$footing"
+                }
+              }
+            ]
+          },
           "pots": {
             "max_size": 7,
             "min_count": 0,

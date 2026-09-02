@@ -211,9 +211,24 @@ class TerminalRoomFitProbe {
         }
     }
 
+    /**
+     * How often a boss room of each footprint is actually ADOPTED &mdash; the size sweep that
+     * decides whether authoring a second, smaller end room is worth it (#46's remaining question).
+     *
+     * <h2>Not the same question as {@link #measure()}</h2>
+     * <p>{@code measure} forces the terminal slot to a size and reports whether the dungeon still
+     * PLANS, which is the pre-#46 mechanism and a harsher test. This drives the real
+     * {@code placeBossRoom} path, where a footprint that does not fit degrades to the synthetic
+     * terminal room instead of taking the plan down. The two disagree, and this one is what a
+     * player experiences.</p>
+     *
+     * <p>Measured 2026-08-29: on SMALL, 11x11 is adopted on <strong>100%</strong> of seeds, 13x13
+     * on 97.7%, and the shipped 19x19 on 53.7%. MEDIUM and LARGE are 100% at every size. So the
+     * cliff is between 13 and 15, not where the forced-size table suggests.</p>
+     */
     @org.junit.jupiter.api.Test
-    void TEMPmeasureCandidateSizes() {
-        System.out.println("=== TEMP: boss-room ADOPTION by footprint, through placeBossRoom ===");
+    void measureAdoptionByFootprint() {
+        System.out.println("=== #46 boss-room ADOPTION by footprint, through placeBossRoom ===");
         System.out.printf("%-8s", "tier");
         int[] sides = {7, 9, 11, 13, 15, 17, 19};
         for (int side : sides) System.out.printf("%8s", side + "x" + side);

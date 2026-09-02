@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -93,6 +94,31 @@ public record WallSurface(int startX, int startZ, int stepX, int stepZ, int leng
         surfaces.add(new WallSurface(originX, originZ + 1, 0, 1, depth - 2, Direction.EAST));
         surfaces.add(new WallSurface(originX + width - 1, originZ + 1, 0, 1, depth - 2, Direction.WEST));
         return surfaces;
+    }
+
+    /**
+     * The {@code u} positions on this run that are doorway cells (#72).
+     *
+     * <p>Lives here because this is the class whose {@link #xAt}/{@link #zAt} define the mapping
+     * from a run position to the floor-local space the doorways are stored in &mdash; the same
+     * reason {@code CeilingSurface} owns its axis directions. A pattern is given these rather than
+     * the doorway coordinates so it never has to leave {@code (u, v)}; see
+     * {@link IDoorAwarePatternProvider}.</p>
+     *
+     * <p>Note a 2-wide door is two ADJACENT columns here, because the maze stores it as two doorway
+     * cells and this makes no attempt to merge them.</p>
+     */
+    public Set<Integer> doorColumns(Set<Coords2D> doorways) {
+        if (doorways.isEmpty()) {
+            return Set.of();
+        }
+        Set<Integer> columns = new HashSet<>();
+        for (int u = 0; u < length; u++) {
+            if (doorways.contains(new Coords2D(xAt(u), zAt(u)))) {
+                columns.add(u);
+            }
+        }
+        return columns;
     }
 
     /** Floor-local X of the cell at position {@code u} along this run. */

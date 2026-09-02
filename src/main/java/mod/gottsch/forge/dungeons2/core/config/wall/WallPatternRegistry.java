@@ -66,6 +66,7 @@ public final class WallPatternRegistry {
         register(PanelsWallPattern.NAME, PanelsWallPattern.CODEC);
         register(GradientWallPattern.NAME, GradientWallPattern.CODEC);
         register(DiamondWallPattern.NAME, DiamondWallPattern.CODEC);
+        register(DoorJambsWallPattern.NAME, DoorJambsWallPattern.CODEC);
     }
 
     static {

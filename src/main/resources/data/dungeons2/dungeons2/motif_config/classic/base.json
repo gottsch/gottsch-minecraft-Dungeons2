@@ -290,6 +290,15 @@
                 }
               ]
             }
+          },
+          {
+            "type": "dungeons2:door_jambs",
+            "config": {
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "lintel_block": "$ornament"
+            }
           }
         ]
       },

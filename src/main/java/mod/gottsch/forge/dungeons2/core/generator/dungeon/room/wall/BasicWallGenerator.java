@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomVolumeGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IDoorAwarePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
@@ -96,7 +97,7 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
 
         occupiedFloorCells = new HashSet<>();
         for (WallSurface surface : WallSurface.forRoom(room)) {
-            SurfacePlan plan = planFor(surface, wallHeight, random);
+            SurfacePlan plan = planFor(surface, wallHeight, doorways, random);
             surface.emit(plan, floorY, doorways, wallState, out);
 
             // Trim that stands out from the wall (a cornice, a moulding) lands in the room's
@@ -153,8 +154,27 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
      * walls without the provider knowing anything about the room.</p>
      */
     protected SurfacePlan planFor(WallSurface surface, int wallHeight, RandomSource random) {
-        return wallPattern == null
-                ? SurfacePlan.of(surface.length(), wallHeight)
-                : wallPattern.plan(surface.length(), wallHeight, surface.facing(), random);
+        return planFor(surface, wallHeight, Set.of(), random);
+    }
+
+    /**
+     * As above, telling a door-aware pattern which of this run's columns are an opening (#72).
+     *
+     * <p>The doorways were already in this class -- {@code WallSurface#emit} needs them to blank the
+     * two door rows, and {@code emitProjected} to keep a cornice out of an opening. All this adds is
+     * passing them one level further, to the PATTERN, and only when the pattern implements
+     * {@link IDoorAwarePatternProvider}. Every other pattern is called exactly as it was and draws
+     * exactly what it drew before.</p>
+     */
+    protected SurfacePlan planFor(WallSurface surface, int wallHeight, Set<Coords2D> doorways,
+                                  RandomSource random) {
+        if (wallPattern == null) {
+            return SurfacePlan.of(surface.length(), wallHeight);
+        }
+        if (wallPattern instanceof IDoorAwarePatternProvider doorAware) {
+            return doorAware.plan(surface.length(), wallHeight, surface.facing(),
+                    surface.doorColumns(doorways), random);
+        }
+        return wallPattern.plan(surface.length(), wallHeight, surface.facing(), random);
     }
 }
