@@ -31,6 +31,8 @@ import mod.gottsch.forge.dungeons2.core.config.pillar.GridPillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.pillar.QuartetPillarLayout;
 import mod.gottsch.forge.dungeons2.core.config.MobSetBand;
 import mod.gottsch.forge.dungeons2.core.config.PotConfig;
+import mod.gottsch.forge.dungeons2.core.config.PropConfig;
+import mod.gottsch.forge.dungeons2.core.config.SlotOptions;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
@@ -239,6 +241,53 @@ class BasicRoomGeneratorTest {
         for (var pot : out.getEntities()) {
             assertTrue(!columnCells.contains(pot.getX() + "," + pot.getZ()),
                     "pot at " + pot.getX() + "," + pot.getZ() + " is standing inside a column");
+        }
+    }
+
+    /**
+     * The {@code props} slot end to end (#73): a scheme's furniture reaches the BLOCK list, and the
+     * pots placed afterwards route around it.
+     *
+     * <p>The second half is the one worth running through the real orchestrator. A prop is a solid
+     * block and a pot is an entity with gravity, so a pot spawned in a prop's cell falls and
+     * shatters the first time the chunk ticks &mdash; and it does that out of sight of any test
+     * that only looks at the two generators separately. What is actually being checked is that
+     * {@code BasicRoomGenerator} folds the cells props claimed into {@code taken} before the pots
+     * are drawn.</p>
+     */
+    @Test
+    void propsReachTheBlockListAndThePotsRouteAroundThem() {
+        // Enough props to fill most of the inner ring, so the two slots genuinely compete. At one
+        // or two props a passing test would prove nothing.
+        RoomScheme scheme = new RoomScheme("store", 1, SizeGate.UNBOUNDED,
+                SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(),
+                SlotOptions.of(Optional.of(new PotConfig(12, 12, "dungeons2:pots/classic",
+                        List.of(new PotConfig.PotVariant("dungeonblocks:medium_pot", 1))))),
+                SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(),
+                SlotOptions.empty(),
+                SlotOptions.of(Optional.of(new PropConfig(20, 20,
+                        PropConfig.PropPlacement.AGAINST_WALL,
+                        List.of(new PropConfig.PropVariant("minecraft:barrel", 1, false))))),
+                FloorRange.ANY, Optional.empty(), false);
+
+        MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,
+                DoorConfig.DEFAULT, CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(scheme));
+
+        RoomData room = new RoomData(1, 0, 0, 11, 11, 7, RoomRole.NORMAL);
+        RoomPlacements out = new RoomPlacements();
+        new BasicRoomGenerator().withMotifConfig(config)
+                .build(room, 60, ENTRANCE_FLOOR, DungeonMotif.CLASSIC, RandomSource.create(23L), out);
+
+        java.util.Set<String> propCells = out.getBlocks().stream()
+                .filter(bp -> bp.getY() == 61 && "minecraft:barrel".equals(bp.getBlockId()))
+                .map(bp -> bp.getX() + "," + bp.getZ())
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertTrue(!propCells.isEmpty(), "the props slot should have placed barrels at all");
+        assertTrue(!out.getEntities().isEmpty(), "and the room should have pots to place");
+        for (var pot : out.getEntities()) {
+            assertTrue(!propCells.contains(pot.getX() + "," + pot.getZ()),
+                    "pot at " + pot.getX() + "," + pot.getZ() + " is standing inside a barrel");
         }
     }
 

@@ -326,6 +326,30 @@
           }
         ]
       },
+      // #73. The furniture the slot exists for, and deliberately modest: `min_count` 0, so a
+      // plain room USUALLY has none and the ones that do read as a store rather than as scenery
+      // sprayed everywhere.
+      //
+      // The barrel is `oriented: false` ON PURPOSE. A barrel's `facing` defaults to `up` -- a
+      // barrel standing on its base, which is what a barrel in a store room looks like. Orienting
+      // it would lay it on its side against the wall, which is a different (and much louder)
+      // thing. See PropConfig.PropVariant.
+      "props": {
+        "min_count": 0,
+        "max_count": 2,
+        "placement": "against_wall",
+        "variants": [
+          {
+            "block": "minecraft:barrel",
+            "weight": 3,
+            "oriented": false
+          },
+          {
+            "block": "minecraft:cauldron",
+            "weight": 1
+          }
+        ]
+      },
       "platforms": {
         "min_size": 9,
         "patterns": [
@@ -445,6 +469,16 @@
               ]
             }
           }
+        ]
+      },
+      // #73. Store-room furniture along the walls.
+      "props": {
+        "min_count": 0,
+        "max_count": 2,
+        "placement": "against_wall",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+          { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
       "spawners": {
@@ -578,6 +612,18 @@
           }
         ]
       },
+      // #73. A corner anvil, both damaged states: the deep hall reads as somewhere that was
+      // WORKED and then left, which is a different thing from somewhere merely old.
+      "props": {
+        "min_size": 9,
+        "min_count": 0,
+        "max_count": 1,
+        "placement": "corner",
+        "variants": [
+          { "block": "minecraft:damaged_anvil", "weight": 2 },
+          { "block": "minecraft:chipped_anvil", "weight": 1 }
+        ]
+      },
       "spawners": {
         "min_count": 0,
         "max_count": 1
@@ -635,6 +681,44 @@
           }
         ]
       },
+      // #73, AS AN OPTION LIST (#65) -- the first shipped slot to use one, and the right place for
+      // it: the two treatments are alternatives, not a combination, and a grand hall should be able
+      // to be either.
+      //
+      // `flanking_door` is braziers either side of a doorway, which is what makes a hall read as
+      // APPROACHED rather than merely entered. `against_wall` is ordinary furniture. A hall wants
+      // one or the other; both at once reads as a store room someone put candles in.
+      //
+      // The explicit `none` is not optional (see manual 3b): without it every grand hall would get
+      // furniture, and the slot would become the band's look rather than a room type.
+      //
+      // `min_size` 9 on the braziers because this inherits down: in a small room the flanking cells
+      // are most of the wall the player can see, and two braziers there is a shrine, not a hall.
+      // Options the room's size gates out drop BEFORE the weights are totalled, so a small hall
+      // simply rolls between the barrels and nothing.
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:cauldron", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "min_count": 1,
+          "max_count": 2,
+          "placement": "flanking_door",
+          "variants": [
+            { "block": "dungeonblocks:brazier_block", "weight": 1, "oriented": false }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
       "spawners": {
         "min_count": 0,
         "max_count": 1
@@ -729,6 +813,16 @@
             "entity": "dungeonblocks:squat_stone_pot",
             "weight": 1
           }
+        ]
+      },
+      // #73. Store-room furniture along the walls.
+      "props": {
+        "min_count": 0,
+        "max_count": 2,
+        "placement": "against_wall",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+          { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
       "spawners": {
@@ -843,6 +937,17 @@
           }
         ]
       },
+      // #73. The pilasters claim inner-ring cells, so these route around them -- which is
+      // the interaction worth having in a shipped scheme rather than only in a test.
+      "props": {
+        "min_count": 0,
+        "max_count": 2,
+        "placement": "against_wall",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+          { "block": "minecraft:cauldron", "weight": 1 }
+        ]
+      },
       "spawners": {
         "min_count": 0,
         "max_count": 1
@@ -892,6 +997,20 @@
               ]
             }
           }
+        ]
+      },
+      // #73. `free` rather than `against_wall`, and this is the room that wants it: a
+      // hypostyle hall is big enough that its walls are nowhere near most of the floor, so
+      // furniture pinned to the ring would leave the middle as empty as it ever was. Gated
+      // to 11 because in anything smaller `free` and `against_wall` are the same set.
+      "props": {
+        "min_size": 11,
+        "min_count": 0,
+        "max_count": 3,
+        "placement": "free",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+          { "block": "minecraft:hay_block", "weight": 2 }
         ]
       },
       "spawners": {
@@ -955,6 +1074,16 @@
           }
         ]
       },
+      // #73. Store-room furniture along the walls.
+      "props": {
+        "min_count": 0,
+        "max_count": 2,
+        "placement": "against_wall",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+          { "block": "minecraft:cauldron", "weight": 1 }
+        ]
+      },
       "spawners": {
         "min_count": 0,
         "max_count": 1
@@ -1005,6 +1134,16 @@
               ]
             }
           }
+        ]
+      },
+      // #73. Corner barrels. `quartet_hall` already reads as four-cornered, so putting the
+      // furniture in the corners too is the room agreeing with itself.
+      "props": {
+        "min_count": 0,
+        "max_count": 2,
+        "placement": "corner",
+        "variants": [
+          { "block": "minecraft:barrel", "weight": 1, "oriented": false }
         ]
       },
       "spawners": {

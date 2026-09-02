@@ -314,6 +314,18 @@
               }
             ]
           },
+          // #73. The mud band is a DIG, so its furniture is a dig's: barrels and stacked hay, against
+          // the walls. Written here rather than inherited -- the band replaces `plain` by NAME and
+          // replacement is whole-entry, so an omitted slot is a slot this depth does not have.
+          "props": {
+            "min_count": 0,
+            "max_count": 2,
+            "placement": "against_wall",
+            "variants": [
+              { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+              { "block": "minecraft:hay_block", "weight": 1 }
+            ]
+          },
           "pots": {
             "max_size": 7,
             "min_count": 0,
@@ -446,6 +458,16 @@
           //
           // minCount 0 is doing real work: the count is rolled per room, so 0-1 is "about half the
           // rooms that qualify", not "one each".
+          // #73. Corner barrels under the shoring: the props route around the timber posts, which is
+          // the same claim-then-avoid the pilastered hall relies on one motif up.
+          "props": {
+            "min_count": 0,
+            "max_count": 2,
+            "placement": "corner",
+            "variants": [
+              { "block": "minecraft:barrel", "weight": 1, "oriented": false }
+            ]
+          },
           "spawners": {
             "min_count": 0,
             "max_count": 1,

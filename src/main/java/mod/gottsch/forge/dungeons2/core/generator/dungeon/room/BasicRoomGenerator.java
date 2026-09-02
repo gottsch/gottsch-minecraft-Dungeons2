@@ -250,6 +250,17 @@ public class BasicRoomGenerator implements IRoomGenerator {
         taken.addAll(RoomMiningChestGenerator.placeChest(room, floorY, miningHaul, taken, random,
                 blocks));
 
+        // Furniture (#73) after every guaranteed thing and before the pots, claiming its cells.
+        // The ordering is the chests' argument one step on: a prop is a SOLID block, so a pot
+        // spawned in the same cell stands inside it and, having gravity, falls and shatters as soon
+        // as the chunk ticks. It runs after the chests rather than before because a chest is a
+        // reward and a barrel is scenery -- if the floor runs out of cells, it is the scenery that
+        // should give way.
+        taken.addAll(scheme.propsFor(width, depth, height)
+                .map(props -> RoomFurnitureGenerator.placeProps(room, floorY, props, taken, random,
+                        blocks))
+                .orElseGet(java.util.Set::of));
+
         scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
     }

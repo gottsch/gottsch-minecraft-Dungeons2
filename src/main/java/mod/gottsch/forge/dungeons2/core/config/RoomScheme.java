@@ -75,6 +75,13 @@ import java.util.stream.Stream;
  * floor, optionally carrying a brazier or the like on top. The second volume slot, and it runs after
  * {@code pillars} for the same reason: it draws in the interior air the hollow step cleared.</p>
  *
+ * <p>{@code props} holds a {@link PropConfig} &mdash; the room's furniture: barrels, crates, cages,
+ * an anvil. Very nearly the {@code pots} slot, and separate from it for two reasons: a prop is a
+ * BLOCK (so it can claim its cells against everything placed after it, which a spawned entity
+ * cannot), and furniture is not scattered &mdash; {@code placement} says whether it stands against a
+ * wall, in a corner, out in the floor, or flanking a door. Loot deliberately stays with
+ * {@code chests}; see that record.</p>
+ *
  * <p>{@code spawners} holds a {@link SpawnerConfig} &mdash; invisible proximity mob-set spawners
  * standing in the room's interior. The only slot whose output is neither seen nor collided with, and
  * the only one that reaches the world through {@code BlockEntityData}; it is what lets a
@@ -144,8 +151,24 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                          SlotOptions<SpawnerConfig> spawners,
                          SlotOptions<ChestConfig> chests,
                          SlotOptions<PitPatternEntry> pit,
+                         SlotOptions<PropConfig> props,
                          FloorRange floors,
                          Optional<String> parent, boolean isAbstract) {
+
+    /** The shape before the {@code props} slot (#73): a room whose furniture is only its pots. */
+    public RoomScheme(String name, int weight, SizeGate gate,
+                      SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
+                      SlotOptions<CeilingPatternEntry> ceiling, SlotOptions<PotConfig> pots,
+                      SlotOptions<PillarPatternEntry> pillars,
+                      SlotOptions<PlatformPatternEntry> platforms,
+                      SlotOptions<SpawnerConfig> spawners,
+                      SlotOptions<ChestConfig> chests,
+                      SlotOptions<PitPatternEntry> pit,
+                      FloorRange floors,
+                      Optional<String> parent, boolean isAbstract) {
+        this(name, weight, gate, floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
+                pit, SlotOptions.empty(), floors, parent, isAbstract);
+    }
 
     /** The shape before the {@code pit} slot (#3): a scheme whose floor is flat everywhere. */
     public RoomScheme(String name, int weight, SizeGate gate,
@@ -298,6 +321,16 @@ public record RoomScheme(String name, int weight, SizeGate gate,
             // paving pattern: it changes the room's GEOMETRY, and it is bounded by the floor's
             // sinkOffset budget rather than by anything a floor pattern knows.
             SlotOptions.field(PitPatternEntry.MAP_CODEC, "pit").forGetter(RoomScheme::pit),
+            // #73. Last in the slot order, which is deliberate and not merely chronological:
+            // SlotOptions#resolve draws in DECLARATION order, so appending keeps every existing
+            // scheme's draw byte-identical where inserting beside `pots` would have shifted the
+            // stream for every room that rolls an option list.
+            //
+            // This is also the SIXTEENTH argument to this group, which is DFU's ceiling
+            // (Products.P16). The next slot has to fold two of these into a nested MapCodec first
+            // -- SizeGate and FloorRange are the two that already did it, and SlotOptions is the
+            // natural next fold. See the class javadoc on RoomScheme's arity history.
+            SlotOptions.field(PropConfig.MAP_CODEC, "props").forGetter(RoomScheme::props),
             // The depth axis, flattened into minFloorIndex/maxFloorIndex keys. Spelled that way
             // rather than minFloor/minDepth because a scheme object already has a "floor" key
             // meaning the floor SURFACE pattern, and two unrelated senses of "floor" one line apart
@@ -348,6 +381,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                 spawners.orElse(parentScheme.spawners()),
                 chests.orElse(parentScheme.chests()),
                 pit.orElse(parentScheme.pit()),
+                props.orElse(parentScheme.props()),
                 floors,
                 parent, isAbstract);
     }
@@ -393,6 +427,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         slots = chain(slots, scheme.pillars.all().map(PillarPatternEntry::gate), scheme.name, "pillars");
         slots = chain(slots, scheme.platforms.all().map(PlatformPatternEntry::gate), scheme.name, "platforms");
         slots = chain(slots, scheme.spawners.all().map(SpawnerConfig::gate), scheme.name, "spawners");
+        slots = chain(slots, scheme.props.all().map(PropConfig::gate), scheme.name, "props");
         return slots.map(ignored -> scheme);
     }
 
@@ -452,6 +487,15 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         return pots.value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
+    /**
+     * See {@link #floorFor}. A gate here is worth more than on most slots: {@code corner} and
+     * {@code flanking_door} offer a handful of cells whatever the room's size, so a slot that reads
+     * well in a small chamber is a rounding error in a hall.
+     */
+    public Optional<PropConfig> propsFor(int width, int depth, int height) {
+        return props.value().filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
     /** See {@link #floorFor}. */
     public Optional<PillarPatternEntry> pillarsFor(int width, int depth, int height) {
         return pillars.value().filter(entry -> entry.gate().fits(width, depth, height));
@@ -484,7 +528,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         // out is exactly as much a fault as a ceiling that did.
         return !floor.isEmpty() || !wall.isEmpty() || !ceiling.isEmpty() || !pots.isEmpty()
                 || !pillars.isEmpty() || !platforms.isEmpty() || !spawners.isEmpty()
-                || !pit.isEmpty();
+                || !pit.isEmpty() || !props.isEmpty();
     }
 
     /**
@@ -504,7 +548,8 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                 || anyOptionFits(pillars, PillarPatternEntry::gate, width, depth, height)
                 || anyOptionFits(platforms, PlatformPatternEntry::gate, width, depth, height)
                 || anyOptionFits(spawners, SpawnerConfig::gate, width, depth, height)
-                || anyOptionFits(pit, PitPatternEntry::gate, width, depth, height);
+                || anyOptionFits(pit, PitPatternEntry::gate, width, depth, height)
+                || anyOptionFits(props, PropConfig::gate, width, depth, height);
     }
 
     private static <T> boolean anyOptionFits(SlotOptions<T> slot, Function<T, SizeGate> gate,
@@ -548,13 +593,14 @@ public record RoomScheme(String name, int weight, SizeGate gate,
         SlotOptions<WallPatternEntry> newWall = wall.map(entry -> entry.withRoles(lookup));
         SlotOptions<PitPatternEntry> newPit = pit.map(entry -> entry.withRoles(lookup));
         SlotOptions<ChestConfig> newChests = chests.map(entry -> entry.withRoles(lookup));
+        SlotOptions<PropConfig> newProps = props.map(entry -> entry.withRoles(lookup));
         if (newPillars == pillars && newFloor == floor && newCeiling == ceiling
                 && newPlatforms == platforms && newWall == wall && newPit == pit
-                && newChests == chests) {
+                && newChests == chests && newProps == props) {
             return this;
         }
         return new RoomScheme(name, weight, gate, newFloor, newWall, newCeiling, pots, newPillars,
-                newPlatforms, spawners, newChests, newPit, floors, parent, isAbstract);
+                newPlatforms, spawners, newChests, newPit, newProps, floors, parent, isAbstract);
     }
 
     /**
@@ -579,6 +625,7 @@ public record RoomScheme(String name, int weight, SizeGate gate,
                 spawners.resolve(random, entry -> entry.gate().fits(width, depth, height)),
                 chests.resolve(random, entry -> entry.gate().fits(width, depth, height)),
                 pit.resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                props.resolve(random, entry -> entry.gate().fits(width, depth, height)),
                 floors, parent, isAbstract);
     }
 

@@ -51,7 +51,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * process.</p>
  *
  * <p>It parses the fenced {@code json} blocks and decodes any {@code floor} / {@code wall} /
- * {@code ceiling} / {@code pillars} / {@code platforms} / {@code pots} object it finds, at whatever
+ * {@code ceiling} / {@code pillars} / {@code platforms} / {@code pots} / {@code props} object it
+ * finds, at whatever
  * depth &mdash; the blocks are a mix of whole schemes, bare slots and fragments, so it looks for
  * slots rather than assuming a shape.</p>
  *
@@ -78,7 +79,8 @@ class ManualExamplesTest {
             "ceiling", CeilingPatternEntry.CODEC,
             "pillars", PillarPatternEntry.CODEC,
             "platforms", PlatformPatternEntry.CODEC,
-            "pots", PotConfig.CODEC);
+            "pots", PotConfig.CODEC,
+            "props", PropConfig.CODEC);
 
     /** The motif-level material sections, which carry a block and an optional {@code pattern}. */
     private static final Map<String, com.mojang.serialization.Codec<?>> SECTIONS = Map.of(
