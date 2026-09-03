@@ -39,6 +39,11 @@ its fields keeps its shape rather than folding the note into oblivion.
 Only inside the arrays named by --arrays (default: output_blocks). Widen it with
 --arrays output_blocks,variants,blocks or hand it --all-leaves to collapse every leaf object in
 the file.
+
+--values goes one further and collapses a leaf object in VALUE position too -- the
+`"config": { ... }` objects that are most of a motif config's bulk. That one obeys --max-width
+(default 100), because a config naming five block ids should stay expanded rather than become one
+very long line.
 """
 
 from __future__ import annotations
@@ -206,6 +211,39 @@ def collapse(text: str, wanted: set[str] | None) -> tuple[str, int]:
     return text, len(edits)
 
 
+def collapse_values(text: str, max_width: int) -> tuple[str, int]:
+    """Collapse every leaf object, wherever it sits -- including one in VALUE position.
+
+    {@code collapse} only looks inside arrays, which is right for `output_blocks` and leaves the
+    motif configs' bulk untouched: their weight is in `"config": { ... }` objects hanging off a
+    key, four to six lines each and nested three deep. Those are leaves by the same rule, so the
+    only new thing here is where it looks.
+
+    Unlike the array case this one obeys `max_width`, because a `config` naming five block ids does
+    not want to be a 200-character line. An object that would not fit is left expanded.
+    """
+    string_mask, comment_mask = scan(text)
+
+    edits = []
+    for i, c in enumerate(text):
+        if c != "{" or string_mask[i] or comment_mask[i]:
+            continue
+        close = match_brace(text, i, string_mask, comment_mask)
+        body = text[i:close + 1]
+        # A leaf holds no nested brace, so no two leaf spans can overlap and the edits below are
+        # independent. A parent stays expanded whatever its children do, which is what we want.
+        if "\n" not in body or not leaf(body, string_mask, comment_mask, i):
+            continue
+        line = one_line(body, string_mask, i)
+        indent = i - (text.rfind("\n", 0, i) + 1)
+        if indent + len(line) <= max_width:
+            edits.append((i, close + 1, line))
+
+    for start, stop, replacement in sorted(edits, reverse=True):
+        text = text[:start] + replacement + text[stop:]
+    return text, len(edits)
+
+
 def strip_comments(text: str) -> str:
     string_mask, comment_mask = scan(text)
     return "".join(c for i, c in enumerate(text) if not comment_mask[i])
@@ -229,6 +267,11 @@ def main() -> int:
                              " (default: output_blocks)")
     parser.add_argument("--all-leaves", action="store_true",
                         help="collapse every leaf object in the file, whatever array it is in")
+    parser.add_argument("--values", action="store_true",
+                        help="also collapse a leaf object in VALUE position, e.g. a short"
+                             " \"config\": { ... }, subject to --max-width")
+    parser.add_argument("--max-width", type=int, default=100,
+                        help="longest line --values will produce (default: 100)")
     args = parser.parse_args()
 
     wanted = None if args.all_leaves else {a.strip() for a in args.arrays.split(",") if a.strip()}
@@ -237,6 +280,9 @@ def main() -> int:
     for path in args.files:
         original = path.read_text(encoding="utf-8")
         result, count = collapse(original, wanted)
+        if args.values:
+            result, extra = collapse_values(result, args.max_width)
+            count += extra
 
         # The safety net. A formatter that silently alters data is worse than no formatter, and
         # the brace matching above is exactly the kind of code that is wrong in one file out of

@@ -2,13 +2,7 @@
   "strata_by_floor_index": [
     {
       "min_floor_index": 0,
-      // #45 step 4: this is what selects dungeons2:classic_mud_weathering. The SAME name also
-      // opts the depth into rooms/classic/mud/normal (step 3) -- nothing ships that pool, so the
-      // resolver falls back to the motif's rooms, which is the ordinary case and is silent.
       "name": "mud",
-      // The band's four-line repaint (#65). Everything else -- the inlays, the plinth pair, the
-      // ornament -- is inherited from the motif's palette unchanged, because a palette OVERLAYS
-      // rather than replacing. See base.json.
       "palette": {
         "shaft": "minecraft:spruce_log",
         "footing": "dungeonblocks:square_stone_brick",
@@ -17,56 +11,10 @@
         "wall_capital_left": "dungeonblocks:left_large_mud_brick",
         "wall_capital_right": "dungeonblocks:right_large_mud_brick"
       },
-      // MUD BRICK ON A LARGE STONE BRICK PLINTH, in every room at this depth (Gottsch,
-      // 2026-08-27). This is the first band designed as a band rather than demonstrated as one.
-      //
-      // WHY THE PLINTH IS AUTHORED HERE AND NOT ON AN ABSTRACT SCHEME every other extends. The
-      // split is what the two things ARE: a band says what the depth is BUILT OF, a scheme says
-      // what is IN the room. A plinth is construction, not furniture -- every mud room has it for
-      // the same reason every mud room has mud brick walls, and neither varies by room type. An
-      // abstract parent would also spend each scheme's single `extends` hop (inheritance is one
-      // hop, deliberately) on inheriting something that is not optional, leaving nothing to share
-      // a real parent with.
-      //
-      // IT DRAWS IN EVERY ROOM, because WALLS COMPOSE. A band's wall patterns are drawn first and
-      // the rolled scheme's `wall` slot draws on top, so a scheme says what is DIFFERENT about its
-      // room rather than replacing the depth's masonry. A scheme that authors a crown gets plinth
-      // + field + crown; one that authors nothing gets plinth + field.
-      //
-      // That rule was made ON THIS COURSE, and it was made because the first version of this file
-      // did not have it: walls used to be first-match-wins like the floor and ceiling still are,
-      // ten of classic's eleven schemes name a `wall` slot, and the plinth measured 0% in game --
-      // a band that drew nowhere. See WallPatternSelector#providerFor for why walls compose where
-      // the other two surfaces do not.
-      //
-      // WHERE THEY MEET, THE SCHEME WINS: the overlay runs in list order, band first.
-      //
-      // `alternate: strict` is what makes the pair read as ONE WIDE BRICK rather than a mottled
-      // mix -- left and right halves laid down every other cell, where the default `random` rolls
-      // them per cell at 45/55. The two blocks are halves of one texture; rolling them would
-      // produce left-left and right-right neighbours, which is the thing the pair exists to avoid.
-      //
-      // `anchor` defaults to the bottom, so the plinth sits at floor level with no offset. The
-      // CROWN is the second course, added 2026-08-29 -- see its own note below.
       "wall": {
         "wall": "minecraft:mud_bricks",
         "pattern": {
           "patterns": [
-            // FIRST in the list, and it has to be. This is the only wall pattern that fills every
-            // cell rather than marking a few -- it is the wall's MATERIAL, not a treatment over
-            // one -- and patterns compose by later-non-null-wins. Listed after the course below,
-            // it would erase it.
-            //
-            // The mud stratum is the dungeon being reclaimed from underneath, so the reclaiming
-            // material has to be heaviest at the floor and thin out with height. `courses` cannot
-            // draw that: its bands have a straight edge identical in every column, which reads as
-            // masonry someone laid. Here the boundary falls somewhere different in every column
-            // and there is no line to point at.
-            //
-            // holdRows 2 keeps the foot of the wall at the full 0.9 before the ramp starts.
-            // Without it a bare ramp begins falling at row 1 and "mostly mud at the bottom" is only
-            // ever true of a single row. Top row lands on 0.05 rather than 0, so the cobble never
-            // reads as a clean band either.
             {
               "type": "dungeons2:gradient",
               "config": {
@@ -81,48 +29,15 @@
               "type": "dungeons2:courses",
               "config": {
                 "courses": [
-                  // top course, supports/behind the crown.
-                  {
-                    "block": "$wall_capital_left",
-                    "alternate_block": "$wall_capital_right",
-                    "alternate": "strict",
-                    "anchor": "top"
-                  },
-                  {
-                    "block": "dungeonblocks:left_large_stone_brick",
-                    "alternate_block": "dungeonblocks:right_large_stone_brick",
-                    "alternate": "strict"
-                  },
-                  // THE CROWN. Every mud room gets one, and "every" is why it lives here rather
-                  // than on a scheme: a band's wall patterns are drawn first and the rolled
-                  // scheme's `wall` slot composes ON TOP, so a band draws in every room at this
-                  // depth while a scheme draws only in the rooms that rolled it. That is the same
-                  // reason the plinth above is a band -- see the note at the top of this slot.
-                  //
-                  // anchor `top` with offset 0 is the wall's highest row, i.e. the one directly
-                  // under the ceiling. Measured from the TOP on purpose: rooms vary in height, so
-                  // a course counted up from the floor drifts away from the ceiling and the crown
-                  // would sit mid-wall in a tall room.
-                  //
-                  // `half: top` is what makes it a CROWN rather than a cove. Inverted, the stair is
-                  // solid across the top and cut away at the bottom-room side, so the profile
-                  // flares OUT as it rises -- which is what a crown moulding does. half=bottom
-                  // gives the opposite profile and reads as a cove tucked under the ceiling.
-                  //
-                  // `toward_wall` because mud_brick_stairs is VANILLA. The names describe where a
-                  // vanilla block's solid side ends up, and dungeonblocks' own trim is modelled
-                  // facing-inverted -- so the identical look needs `toward_room` there and
-                  // `toward_wall` here. DatapackResourcesParseTest pins that rule for scheme
-                  // courses; it does not walk strata bands, so this one is on the author.
+                  { "block": "$wall_capital_left", "alternate_block": "$wall_capital_right", "alternate": "strict", "anchor": "top" },
+                  { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" },
                   {
                     "block": "minecraft:mud_brick_stairs",
                     "anchor": "top",
                     "offset": 0,
                     "projection": 1,
                     "orient": "toward_wall",
-                    "properties": {
-                      "half": "top"
-                    }
+                    "properties": { "half": "top" }
                   }
                 ]
               }
@@ -130,54 +45,10 @@
           ]
         }
       },
-      // PLAIN mud brick -- same story as `wall` above. The authored spruce joists lived here until
-      // 2026-08-27 and drew in 55.9% of rooms at this depth, because seven of classic's ten
-      // rollable schemes name no ceiling of their own.
-      "ceiling": {
-        "ceiling": "minecraft:mud_bricks"
-      },
+      "ceiling": { "ceiling": "minecraft:mud_bricks" },
       "floor": {
-        // COBBLESTONE, not mud brick, and this is the band's paving rather than any one scheme's
-        // (Gottsch, 2026-08-26). The story: stone is what the builders laid where feet go, and the
-        // mud is what the earth has pushed back in since. It also stops the room reading as one
-        // undifferentiated tan box, which is what wall, floor and ceiling all being mud_bricks
-        // gave.
-        //
-        // `base`/`alternateBase` are the SAME block on purpose -- see FloorConfig's javadoc. They
-        // are only what an unmarked cell renders as; the variety comes from `pattern` below, and
-        // pre-baking a second block here would both duplicate it and skip the deeper decay stages.
         "base": "minecraft:cobblestone",
         "alternate_base": "minecraft:cobblestone",
-        // WHY A PATTERN AND NOT A base/alternateBase PAIR. That pair is rolled per cell at 45/55
-        // by BasicFloorGenerator -- a fixed near-even split, which reads as a checkerboard rather
-        // than as wear and cannot express "mostly cobblestone" at all. `speckle` takes its own
-        // probability, so the ratio is authored rather than inherited.
-        //
-        // 0.12 is a taste number: about one cell in eight shows mud through the paving. Raise it
-        // for a more overgrown, less maintained depth.
-        //
-        // THE ACCENT IS packed_mud, NOT mud_bricks (Gottsch, 2026-08-26). What shows through
-        // paving is the earth the paving was laid over -- unworked ground, not a second course of
-        // masonry. A mud BRICK between cobbles reads as someone having bricked a gap deliberately;
-        // packed mud reads as the floor losing to the ground, which is the story this band tells.
-        //
-        // It used to have a weathering consequence: while mud_bricks was the file's only decay
-        // SOURCE, a packed_mud accent was inert. That is fixed -- classic_mud_weathering.json now
-        // runs dungeons2:surface_aging and carries a floor-scoped packed_mud -> dirt chain, so the
-        // accent ages on the floor's own schedule rather than not at all. The floor's rules are
-        // deliberately shallower than the walls': they stop at dirt and never reach air, because a
-        // hole underfoot opens onto raw terrain rather than onto the look the wall holes give.
-        //
-        // FOOTPRINT NOTE: speckle fills the whole width x depth, where the plain floor insets by
-        // one and leaves the cells under the wall ring unplaced. So a mud room now gets a course
-        // of floor under its walls that a classic room does not. It is invisible in play (the wall
-        // starts a block higher) and it is arguably the better behaviour, but it is a change, and
-        // it is the reason a mud room's layer-0 placement count is higher than a classic one's.
-        //
-        // `type` is a REGISTRY ID now, not a bare word, and its arguments are nested under
-        // `config` -- see FloorPatternRegistry. A third-party mod registers `yourmod:yourpattern`
-        // and it is nameable here with no change to Dungeons2. An id nothing registered is a LOAD
-        // ERROR listing what is registered, rather than a silent fall back to plain floor.
         "pattern": {
           "type": "dungeons2:speckle",
           "config": {
@@ -189,64 +60,11 @@
       },
       "door": {
         "door": "minecraft:oak_door",
-        // STONE, not mud. A lintel is a keystone -- it carries the load over the opening -- so it
-        // is where a builder reaches for the strongest material they have, however crude the wall
-        // around it. Ornament does not stop at a poor floor either.
-        //
-        // square_stone_brick specifically because it reads as MONOLITHIC: one undivided block of
-        // dressed stone, which is what a lintel actually is. (Gottsch, 2026-08-25.)
-        //
-        // WHY NOT polished_andesite, which is what classic's own door uses: the two motifs sit at
-        // different points of the SAME material ladder. Each tier's ornament is the tier above its
-        // walls -- polished andesite upgrades stone bricks, and stone upgrades mud bricks. Copying
-        // classic's answer here would skip a rung. The mud room templates follow the same ladder,
-        // building their crown molding, corbels and facades from the dungeonblocks stone_* family
-        // rather than the polished_andesite one.
-        //
-        // NAMESPACE: dungeonblocks, not dungeons2 -- the block ships in DungeonBlocks. A dungeons2:
-        // id here would fail ShippedBlockIdsTest (and, unguarded, become air -- backlog #13).
-        //
-        // Was minecraft:packed_mud until 2026-08-25: tan on tan made the opening vanish into the
-        // wall entirely.
         "lintel": "dungeonblocks:square_stone_brick",
-        // COBBLESTONE, matching the room and corridor either side of it (Gottsch, 2026-08-27). It
-        // was packed_mud, which blended into a packed_mud corridor floor; now that both sides are
-        // paved, the same block would have left a one-cell mud strip in every threshold -- a seam
-        // marking the doorway rather than the doorway simply continuing the floor.
         "floor": "minecraft:cobblestone",
         "probability": 0.4
       },
-      // THE SAME ROOM ANYWHERE AT THIS DEPTH (Gottsch, 2026-08-27): mud brick walls on a large
-      // stone brick plinth over a cobblestone floor, whether you are standing in a room or walking
-      // between two. It closes the material seam that every room-to-corridor doorway used to be --
-      // the corridor paved in packed mud while the room it opened onto was paved in stone.
-      //
-      // THE WALL BLOCK IS NOT AUTHORED HERE. A corridor wall is drawn from the BAND's `wall`
-      // section (BasicCorridorGenerator reads motifConfig.wall().wallState()), so it is already
-      // mud brick and there is nothing to restate. What it does NOT read is that section's
-      // `pattern` -- a room surface and a corridor wall column are different emitters -- which is
-      // why the plinth has to be authored a second time, below, as `courses`.
-      //
-      // `courses` IS THE CORRIDOR'S PATTERN SLOT, and it is deliberately a narrower one. Three
-      // things that are legal on a room course are LOAD ERRORS here, none of which this course
-      // wants: `projection` (a projecting course would occupy the corridor cell, which is the
-      // passage itself and is where an arch haunch goes), `cornerBlock` (a corridor has no four
-      // runs to own a corner), and a SizeGate (no room dimensions to gate on).
-      //
-      // ANCHOR DEFAULTS TO THE BOTTOM, and bottom means the lowest VISIBLE row -- row 1, not row 0.
-      // Row 0 is level with the corridor's own floor plane and has floor beside it, wall above it
-      // and terrain behind: measured, 0 of 5,279 row-0 cells had a single air neighbour. Corridor
-      // anchors were fixed in Aug to mean what a room's mean, precisely so a plinth authored in
-      // both places lands on the same row of the same wall.
-      //
-      // `alternate: strict` pairs the halves on (x + z) parity here, since a corridor has no run
-      // coordinate to walk. Same wide-brick read as the room's, arrived at differently.
       "corridor": {
-        // COBBLESTONE, matching the room floor's `base` -- and BOTH slots, not a cobble/mud pair.
-        // floor/alternateFloor is a 45/55 per-cell roll, which reads as a checkerboard rather than
-        // as wear; that is the exact reason the room floor carries a 0.125 `speckle` pattern
-        // instead of a pair. A corridor has no pattern slot to do the same with, so the honest
-        // answer at this width is one block.
         "floor": "minecraft:cobblestone",
         "alternate_floor": "minecraft:cobblestone",
         "ceiling": "minecraft:mud_bricks",
@@ -255,285 +73,213 @@
         "profile": "arched",
         "arch_block": "minecraft:mud_brick_stairs",
         "courses": [
-          {
-            "block": "dungeonblocks:left_large_stone_brick",
-            "alternate_block": "dungeonblocks:right_large_stone_brick",
-            "alternate": "strict"
-          }
+          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" }
         ]
       },
-      // ===========================================================================================
-      // THE BAND'S OWN ROOMS (Gottsch, 2026-08-29). `schemes` is the one section that MERGES rather
-      // than replacing: a name the motif already declares is replaced in place, a new name is
-      // appended. So this list ADDS one room type to classic's eleven at this depth and changes
-      // nothing else -- see Stratum#schemes for why that rule, and not replace-whole.
-      //
-      // This is the mechanism the ceiling and floor need and the wall does not. A band's wall
-      // patterns COMPOSE with the rolled scheme's, which is why the plinth and crown above are
-      // stated once and draw everywhere; a floor is first-match-wins, so a depth that wants a
-      // different ROOM has to name one rather than dress whatever rolls.
-      // ===========================================================================================
       "schemes": [
         {
-          // `plain` REPLACED, NOT ADDED (Gottsch, 2026-08-29). A band scheme whose name the motif
-          // already declares replaces that entry IN PLACE at this depth and leaves it untouched
-          // everywhere else -- the one thing a `minFloorIndex` gate cannot do, since a gate can
-          // only subtract an entry, never restate one.
-          //
-          // WHY IT HAD TO BE REPLACED. The motif's `plain` is STONE-DRESSED and nobody had noticed:
-          // a stone_bricks dais with a chiseled centre, and a projecting stone_brick_stairs crown at
-          // anchor `top`. Gating the nine halls to floor 1 left it as the only scheme rolling here,
-          // so its stone was ALL of the stone still showing up in mud rooms.
-          //
-          // The crown is the instructive half. Walls COMPOSE -- the band's patterns draw first and
-          // the scheme's draw over them -- so `plain`'s stone crown landed on the same top row as
-          // the band's own mud_brick_stairs crown and simply overwrote it. Composition is not
-          // protection; a scheme naming the same anchor still wins.
-          //
-          // WHAT THIS ENTRY DELIBERATELY DOES NOT NAME. No `wall`, so the band's plinth and mud
-          // crown are what a plain mud room wears -- that is the whole point of authoring them on
-          // the band. No `platforms`, which drops the dais at this depth rather than restyling it:
-          // a mud dais is a design decision, not a translation, and it is yours to make. That does
-          // cost this depth some room content (#34), so if plain mud rooms read as empty, a dais in
-          // mud_bricks/mud_brick_stairs over packed_mud is the obvious first thing to add back.
-          //
-          // `pots` is copied VERBATIM from the motif's entry, because replace-by-name is whole-entry
-          // and an omitted slot is a slot this depth does not have -- not one it inherits.
           "name": "plain",
           "weight": 12,
-          "wall": {
-            "patterns": [
-              {
-                "type": "dungeons2:door_jambs",
-                "config": {
-                  "block": "dungeonblocks:square_mud_brick",
-                  "base_block": "$footing",
-                  "cap_block": "$footing",
-                  "lintel_block": "$footing"
+          "wall": [
+            {
+              "weight": 4,
+              "patterns": [
+                {
+                  "type": "dungeons2:door_jambs",
+                  "config": {
+                    "block": "dungeonblocks:square_mud_brick",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
+                    "lintel_block": "$footing"
+                  }
                 }
+              ]
+            },
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dungeons2:courses",
+                  "config": {
+                    "courses": [
+                      { "block": "dungeonblocks:square_mud_brick", "corner_block": "dungeonblocks:mossy_square_mud_brick", "anchor": "top" }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:diamond",
+                  "config": {
+                    "block": "dungeonblocks:square_mud_brick",
+                    "size": 2,
+                    "spacing": 6,
+                    "filled": true
+                  }
+                }
+              ]
+            },
+            { "weight": 3, "none": true }
+          ],
+          "floor": [
+            { "weight": 6, "none": true },
+            {
+              "weight": 3,
+              "type": "dungeons2:path",
+              "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "auto" }
+            },
+            {
+              "weight": 2,
+              "min_size": 9,
+              "type": "dungeons2:border",
+              "config": {
+                "inset": 1,
+                "corner_block": "$footing",
+                "edge_left_block": "$plinth_left",
+                "edge_right_block": "$plinth_right"
               }
-            ]
-          },
-          // #73. The mud band is a DIG, so its furniture is a dig's: barrels and stacked hay, against
-          // the walls. Written here rather than inherited -- the band replaces `plain` by NAME and
-          // replacement is whole-entry, so an omitted slot is a slot this depth does not have.
-          "props": {
-            "min_count": 0,
-            "max_count": 2,
-            "placement": "against_wall",
-            "variants": [
-              { "block": "minecraft:barrel", "weight": 3, "oriented": false },
-              { "block": "minecraft:hay_block", "weight": 1 }
-            ]
-          },
-          "pots": {
-            "max_size": 7,
-            "min_count": 0,
-            "max_count": 2,
-            "loot_table": "dungeons2:pots/classic",
-            "variants": [
-              {
-                "entity": "dungeonblocks:pot",
-                "weight": 2
-              },
-              {
-                "entity": "dungeonblocks:squat_clay_pot",
-                "weight": 1
-              },
-              {
-                "entity": "dungeonblocks:stone_pot",
-                "weight": 2
-              },
-              {
-                "entity": "dungeonblocks:squat_stone_pot",
-                "weight": 1
-              }
-            ]
-          }
-        },
-        {
-          // A ROOM BUILT AROUND A TRAP. The mud stratum is the dungeon losing to the ground it was
-          // dug into, and a shaft is what that looks like when the ground wins in one place --
-          // which is why the trap depth is the mud depth and not classic's.
-          //
-          // WEIGHT 6 against the twelves the hall schemes carry: half as often as an ordinary room
-          // type. A trap that is in every second room stops being a trap and becomes the floor
-          // plan, and the player learns to walk the walls.
-          "name": "mud_pit_trap",
-          // 9 leaves the 3-wide shaft a walkable ring with a cell to spare either side. The pit
-          // generator would fit the shaft to a smaller room on its own (it never touches the ring),
-          // but a 7-wide room ends up nearly all mouth, which reads as a floor that is missing
-          // rather than as a trap set in one.
-          "min_size": 7,
-          "weight": 2,
-          "pit": {
-            // HAZARD, not the court `dungeons2:centre` that vaulted_hall uses. The two shapes are
-            // opposites on purpose: a court terraces one block per ring so a player can walk out,
-            // a hazard drops sheer so they cannot. An author placing a trap has to have named it.
-            "type": "dungeons2:hazard",
-            "config": {
-              "width": 3,
-              // FOUR, under the 5 `sinkOffset` allows, and RoomPitGenerator clamps the output to
-              // that anyway -- a pit is dug from the floor's own budget and never from the gap
-              // between floors. Deep enough that the landing hurts and the walls are out of reach;
-              // one short of the budget so a future band that sinks less still gets a real shaft
-              // rather than a hole floored at the ceiling of the room below.
-              "depth": 4,
-              // OFF THE CENTRE LINE. A shaft in the exact middle of every room is an announcement
-              // -- the doorway sightlines cross there and a player reads it from the threshold.
-              // Two cells over, they read it from where they are already standing.
-              "offset_x": 2,
-              // POINTING UP, which is the only orientation that does anything: Minecraft has one
-              // dripstone block for both ends and only the upward tip multiplies fall damage, so a
-              // shaft floored with `down` is decoration. Nothing enforces it -- a pack may floor
-              // its shaft with a block whose states mean something else entirely.
-              "spike_block": "minecraft:pointed_dripstone",
-              "spike_properties": {
-                "vertical_direction": "up"
-              },
-              "spike_probability": 0.4,
-              // PACKED MUD, and the rim is the whole reason this scheme is authored at THIS depth.
-              // It is the tell: a closed lip of unworked earth around the mouth, against the
-              // cobblestone paving the band lays everywhere else. That contrast is what a careful
-              // player can read a beat before they step, and it costs the incautious nothing --
-              // the rim cells stay walkable and unexcavated.
-              //
-              // The same block the band's floor `speckle` shows through the paving at 0.125, which
-              // is what makes the lip belong to this depth rather than look applied to it: the
-              // ground is already coming up through the floor here, and the mouth is where it has
-              // come up entirely. It is also why the rim is NOT stairs -- the court's rim is a step
-              // you walk down, and nothing walks down into a sheer shaft.
-              "rim_block": "minecraft:cobblestone"
             }
-          },
-          // NEITHER `pillars` NOR `platforms`, for the reason vaulted_hall carries the same note: a
-          // column or a dais standing in an excavated cell would hang over the hole (backlog #58).
-          // Props are safe -- the excavated cells are claimed, so chests, spawners and pots keep
-          // off -- and the rim is not claimed, so they may stand on the lip.
-          "pots": {
-            "min_count": 1,
-            "max_count": 3,
-            "loot_table": "dungeons2:pots/classic",
-            "variants": [
-              {
-                "entity": "dungeonblocks:stone_pot",
-                "weight": 2
-              },
-              {
-                "entity": "dungeonblocks:squat_stone_pot",
-                "weight": 1
-              }
-            ]
-          },
-          // ONE CHEST, AT MOST, and it is bait. A trap room with something worth crossing it for is
-          // a decision; one with nothing in it is a corridor with a hole.
-          "chests": {
-            "min_count": 0,
-            "max_count": 1,
-            "variants": [
-              {
-                "block": "minecraft:chest",
-                "weight": 1
-              }
-            ]
-          },
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          }
+          ],
+          "pots": [
+            {
+              "weight": 3,
+              "max_size": 7,
+              "min_count": 0,
+              "max_count": 2,
+              "loot_table": "dungeons2:pots/classic",
+              "variants": [
+                { "entity": "dungeonblocks:pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_size": 9,
+              "min_count": 1,
+              "max_count": 2,
+              "loot_table": "dungeons2:pots/classic",
+              "variants": [
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "props": [
+            {
+              "weight": 3,
+              "min_count": 0,
+              "max_count": 2,
+              "placement": "against_wall",
+              "variants": [
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:hay_block", "weight": 1 }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_count": 0,
+              "max_count": 2,
+              "placement": "corner",
+              "variants": [
+                { "block": "minecraft:barrel", "weight": 1, "oriented": false }
+              ]
+            },
+            { "weight": 3, "none": true }
+          ],
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 }
         },
         {
-          "name": "mud_timber_pillars",
-          "weight": 2,
-          // A SPAWNER SLOT ON THE MUD STRATUM (2026-08-31). 0-1, deferring both the mob set and
-          // the mob count to the motif's depth band, which on floor 0 is vermin-heavy -- so what
-          // this actually buys is rats, and occasionally bones, in the rooms a player meets first.
-          //
-          // Which schemes get one follows base.json's own rule rather than a new one: every *_hall
-          // and feature room carries a spawner slot, and the plain filler rooms (plain / vaulted /
-          // grand / cramped there, `plain` here) do not. That keeps the most common room in the
-          // stratum quiet, which is what stops a spawner slot on eight schemes reading as a spawner
-          // in every room -- `plain` is weight 12 of 57.
-          //
-          // minCount 0 is doing real work: the count is rolled per room, so 0-1 is "about half the
-          // rooms that qualify", not "one each".
-          // #73. Corner barrels under the shoring: the props route around the timber posts, which is
-          // the same claim-then-avoid the pilastered hall relies on one motif up.
-          "props": {
-            "min_count": 0,
-            "max_count": 2,
-            "placement": "corner",
-            "variants": [
-              { "block": "minecraft:barrel", "weight": 1, "oriented": false }
-            ]
-          },
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
-          "min_size": 11,
-          "min_height": 7,
-          "pillars": {
-            "patterns": [
-              {
-                "type": "dungeons2:grid",
-                "block": "$shaft",
-                "base_block": "$footing",
-                "cap_block": "$footing",
-                "config": {
-                  "spacing": 3,
-                  "inset": 1
-                }
-              }
-            ]
-          },
-          // BEAMS OVER THE POSTS. Posts carrying nothing are furniture; posts under beams are a
-          // frame, and the frame is the reason to have either.
-          //
-          // spacing 3 matches the grid's spacing above ON PURPOSE, so a beam lands over a row of
-          // posts rather than between them. The two are separate slots and nothing checks that
-          // they agree -- joists run one direction across the SHORTER side and the grid is a
-          // lattice, so only one of the two axes can ever line up. Changing either number without
-          // the other is what breaks the look, silently.
-          //
-          // This is the joists pattern that was pulled OUT of the band on 2026-08-27, back at the
-          // scope it should have had. As a band default it drew in 55.9% of rooms at this depth --
-          // seven of classic's ten rollable schemes name no ceiling, so a band ceiling became the
-          // band's LOOK. At weight 2 on one scheme it is a room type instead.
-          //
-          // Copied from classic's own `joisted_hall`, block for block: same timber, same corbel,
-          // same orient. The mud band is the same dungeon one floor up, not a different builder.
-          "ceiling": {
-            "patterns": [
-              {
-                "type": "dungeons2:joists",
-                "projection": 1,
-                "config": {
-                  "block": "$shaft",
-                  "bracket_block": "$corbel",
-                  "orient": "inward",
-                  "spacing": 3
-                }
-              }
-            ]
-          }
-        },
-        /////////////////////////////
-
-        {
-          "name": "mud_joists_1",
-          "weight": 8,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": {
-            "min_count": 0,
-            "max_count": 1,
-            "min_size": 9
-          },
+          "name": "mud_chamber",
+          "weight": 10,
           "min_size": 9,
-          "min_height": 5,
+          "floor": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 3,
+              "type": "dungeons2:composite",
+              "config": {
+                "generators": [
+                  {
+                    "type": "dungeons2:checkerboard",
+                    "config": { "primary_block": "$footing", "secondary_block": "minecraft:stone" }
+                  },
+                  {
+                    "type": "dungeons2:border",
+                    "config": {
+                      "inset": 1,
+                      "corner_block": "$ornament",
+                      "edge_left_block": "$inlay",
+                      "edge_right_block": "$inlay"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 3,
+              "type": "dungeons2:diagonal",
+              "config": {
+                "primary_block": "minecraft:mud_bricks",
+                "secondary_block": "minecraft:packed_mud",
+                "width": 2
+              }
+            },
+            {
+              "weight": 2,
+              "min_size": 11,
+              "type": "dungeons2:chevron",
+              "config": { "block": "dungeonblocks:square_mud_brick", "spacing": 4 }
+            },
+            {
+              "weight": 2,
+              "min_size": 11,
+              "type": "dungeons2:composite",
+              "config": {
+                "generators": [
+                  {
+                    "type": "dungeons2:border",
+                    "config": {
+                      "inset": 2,
+                      "corner_block": "$footing",
+                      "edge_left_block": "dungeonblocks:square_mud_brick",
+                      "edge_right_block": "dungeonblocks:square_mud_brick"
+                    }
+                  },
+                  {
+                    "type": "dungeons2:field",
+                    "config": { "block": "minecraft:packed_mud", "inset": 3 }
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 2,
+              "type": "dungeons2:cross",
+              "config": { "thickness": 1, "block": "$footing" }
+            }
+          ],
           "ceiling": [
+            { "weight": 4, "none": true },
+            {
+              "weight": 4,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "dungeonblocks:square_mud_brick",
+                    "steps": 3
+                  }
+                }
+              ]
+            },
             {
               "weight": 3,
               "min_height": 7,
@@ -542,7 +288,7 @@
                   "type": "dungeons2:joists",
                   "projection": 1,
                   "config": {
-                    "block": "$shaft",
+                    "block": "minecraft:stripped_spruce_log",
                     "bracket_block": "$corbel",
                     "orient": "inward",
                     "spacing": 3
@@ -555,76 +301,119 @@
               "min_height": 7,
               "patterns": [
                 {
-                  "type": "dungeons2:joists",
-                  "projection": 1,
-                  "config": {
-                    "block": "minecraft:stripped_spruce_log",
-                    "spacing": 4
-                  }
+                  "type": "dungeons2:coffers",
+                  "config": { "block": "dungeonblocks:square_mud_brick", "spacing": 3 }
                 }
               ]
             },
             {
               "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:border",
+                  "config": {
+                    "block": "dungeonblocks:square_mud_brick",
+                    "corner_block": "dungeonblocks:mossy_square_mud_brick"
+                  }
+                }
+              ]
+            }
+          ],
+          "wall": [
+            { "weight": 4, "none": true },
+            {
+              "weight": 3,
               "min_height": 7,
               "patterns": [
                 {
-                  "type": "dungeons2:joists",
-                  "projection": 1,
+                  "type": "dungeons2:diamond",
                   "config": {
-                    "block": "$shaft",
-                    "bracket_block": "$corbel",
-                    "orient": "inward",
-                    "spacing": 4
+                    "block": "dungeonblocks:square_mud_brick",
+                    "size": 2,
+                    "spacing": 6,
+                    "filled": true
                   }
-                },
+                }
+              ]
+            },
+            {
+              "weight": 3,
+              "patterns": [
                 {
-                  "type": "dungeons2:vaulted",
+                  "type": "dungeons2:courses",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "springing_block": "dungeonblocks:square_mud_brick",
-                    "steps": 3
+                    "courses": [
+                      { "block": "dungeonblocks:left_large_mud_brick", "alternate_block": "dungeonblocks:right_large_mud_brick", "alternate": "strict", "anchor": "top" }
+                    ]
                   }
+                }
+              ]
+            }
+          ],
+          "pots": [
+            {
+              "weight": 2,
+              "min_count": 1,
+              "max_count": 3,
+              "loot_table": "dungeons2:pots/classic",
+              "variants": [
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 }
+        },
+        {
+          "name": "mud_hall",
+          "weight": 10,
+          "min_size": 9,
+          "min_height": 7,
+          "pillars": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dungeons2:grid",
+                  "block": "$shaft",
+                  "base_block": "$footing",
+                  "cap_block": "$footing",
+                  "config": { "spacing": 4, "inset": 2 }
                 }
               ]
             },
             {
               "weight": 2,
+              "min_size": 11,
               "patterns": [
                 {
-                  "type": "dungeons2:vaulted",
-                  "config": {
-                    "block": "minecraft:mud_bricks",
-                    "springing_block": "dungeonblocks:square_mud_brick",
-                    "steps": 3
-                  }
-                }
-              ]
-            },
-            {
-              "weight": 1,
-              "patterns": [
-                {
-                  "type": "dungeons2:vaulted",
-                  "config": {
-                    "block": "minecraft:mud_bricks",
-                    "springing_block": "$footing",
-                    "crown_block": "dungeonblocks:mossy_square_mud_brick",
-                    "steps": 2,
-                    "step_height": 2
-                  }
+                  "type": "dungeons2:grid",
+                  "block": "$shaft",
+                  "base_block": "$footing",
+                  "cap_block": "$footing",
+                  "config": { "spacing": 3, "inset": 1 }
                 }
               ]
             },
             {
               "weight": 2,
-              "none": true
+              "min_size": 11,
+              "patterns": [
+                {
+                  "type": "dungeons2:quartet",
+                  "block": "$shaft",
+                  "base_block": "$footing",
+                  "cap_block": "$footing",
+                  "config": { "spacing": 4, "inset": 2 }
+                }
+              ]
             }
           ],
           "wall": [
             {
-              "weight": 2,
-              "min_height": 7,
+              "weight": 3,
               "patterns": [
                 {
                   "type": "dungeons2:pilasters",
@@ -642,135 +431,10 @@
               "weight": 2,
               "patterns": [
                 {
-                  "type": "dungeons2:diamond",
-                  "config": {
-                    "block": "dungeonblocks:square_mud_brick",
-                    "size": 2,
-                    "spacing": 6,
-                    "filled": true
-                  }
-                }
-              ]
-            },
-            {
-              "weight": 1,
-              "min_height": 7,
-              "patterns": [
-                {
-                  "type": "dungeons2:end_pilasters",
-                  "config": {
-                    "block": "minecraft:mud_bricks",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "projection": 1
-                  }
-                }
-              ]
-            },
-            {
-              "weight": 3,
-              "none": true
-            }
-          ],
-          "floor": [
-            {
-              "weight": 2,
-              "type": "dungeons2:border",
-              "config": {
-                "inset": 1,
-                "corner_block": "$footing",
-                "edge_left_block": "$plinth_left",
-                "edge_right_block": "$plinth_right"
-              }
-            },
-            {
-              "weight": 2,
-              "type": "dungeons2:gradient",
-              "config": {
-                "edge_block": "minecraft:packed_mud",
-                "centre_block": "minecraft:cobblestone",
-                "edge_probability": 0.85,
-                "centre_probability": 0.05,
-                "hold_cells": 2
-              }
-            },
-            {
-              "weight": 2,
-              "type": "dungeons2:composite",
-              "config": {
-                "generators": [
-                  {
-                    "type": "dungeons2:gradient",
-                    "config": {
-                      "edge_block": "minecraft:packed_mud",
-                      "centre_block": "minecraft:cobblestone",
-                      "edge_probability": 0.85,
-                      "centre_probability": 0.05,
-                      "hold_cells": 2
-                    }
-                  },
-                  {
-                    "type": "dungeons2:path",
-                    "config": {
-                      "path_block": "minecraft:packed_mud",
-                      "width": 3
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "weight": 3,
-              "none": true
-            }
-          ]
-        },
-        /////////////////////////////
-        // pilasters
-        /////////////////////////////
-        {
-          // ONE SCHEME WHERE THERE WERE TWO -- the first #65 slot-options conversion, 2026-08-31.
-          //
-          // `mud_timber_pilastered` and `mud_timber_pilastered_2` were the same room at the same
-          // weight, minSize and minHeight, differing in exactly two independent decorations: one
-          // added end pilasters at the short walls and a stone footing under them, the other left
-          // the short walls plain and put pots in the middle. Written as two whole-room schemes
-          // that is two of the four combinations, chosen once by whoever typed them. Written as
-          // options it is all eight, rolled per room.
-          //
-          // EVERY ELEMENT KEEPS ITS OLD INCIDENCE EXACTLY. End pilasters were on one scheme of the
-          // two at equal weight, so 1:1 here; the border floor and the pots likewise. The scheme's
-          // own weight is 4 + 4. What changes is only the CORRELATION between them: the border no
-          // longer implies the end pilasters, and the pots no longer imply their absence. Neither
-          // pairing was load-bearing -- see mud_timber_centre_pillar below for one that is, and
-          // which is therefore NOT merged in here.
-          //
-          // The none-weights are the trap #65 warns about and they are not optional. Without the
-          // `none` entry on `floor` the border would draw in 100% of these rooms instead of half,
-          // which is exactly how band-level joists reached 55.9% and became the band's look.
-          "name": "mud_pilastered",
-          "weight": 12,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          "min_size": 9,
-          "min_height": 7,
-          // The long-wall pilasters are on BOTH options, because they are what the room is; only
-          // the short-wall treatment is in question. So this is not "pilasters or nothing" -- there
-          // is no `none` here on purpose, and its absence is the authored statement that this room
-          // always has pilasters.
-          "wall": [
-            {
-              "weight": 1,
-              "patterns": [
-                {
                   "type": "dungeons2:courses",
                   "config": {
                     "courses": [
-                      {
-                        "block": "$inlay",
-                        "corner_block": "$inlay_alt",
-                        "anchor": "top"
-                      }
+                      { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
                     ]
                   }
                 },
@@ -787,7 +451,7 @@
                 {
                   "type": "dungeons2:end_pilasters",
                   "config": {
-                    "block": "minecraft:stone_bricks",
+                    "block": "minecraft:mud_bricks",
                     "base_block": "$footing",
                     "cap_block": "$footing",
                     "projection": 1
@@ -796,22 +460,7 @@
               ]
             },
             {
-              "weight": 1,
-              "patterns": [
-                {
-                  "type": "dungeons2:pilasters",
-                  "config": {
-                    "block": "$shaft",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "spacing": 4,
-                    "projection": 1
-                  }
-                }
-              ]
-            },
-            {
-              "weight": 1,
+              "weight": 2,
               "patterns": [
                 {
                   "type": "dungeons2:end_pilasters",
@@ -819,435 +468,475 @@
                     "block": "minecraft:mud_bricks",
                     "base_block": "$footing",
                     "cap_block": "$footing",
-                    "spacing": 4,
                     "projection": 1
                   }
                 }
               ]
-            }
-          ],
-          // A STONE FOOTING RUNNING UNDER THE PILASTERS. The pilasters already stand on
-          // square_stone_brick bases; this continues that stone all the way round at floor level,
-          // so the room reads as dressed at the edge and paved in the middle rather than as
-          // cobblestone with ornament dropped on it.
-          //
-          // The border REPLACES the band's `speckle` for this room -- floor patterns are
-          // first-match-wins, unlike walls, which compose. The band's cobblestone `base` still
-          // applies underneath, because a scheme's `floor` slot is a PATTERN entry and not a whole
-          // FloorConfig; only the pattern is overridden. So the middle of the room stays plain
-          // cobble and loses the packed_mud speckle, which is the trade: this room is the
-          // maintained one at this depth. The `none` option is what keeps the other half of these
-          // rooms speckled.
-          //
-          // inset 1, NOT 0. The border's inset is measured from the room's OUTER edge, and row 0
-          // is the wall ring -- so inset 0 lays the whole footing underneath the wall, where it is
-          // invisible in play and looks in the JSON exactly like the version that works. 1 is the
-          // first interior ring, hugging the wall, which is where a footing belongs. (The pattern's
-          // own default is 2, which stands the ring off the wall as a picture frame instead.)
-          //
-          // The left/right pair is the same one the band's plinth uses and for the same reason --
-          // they are halves of one wide brick, so they have to alternate rather than be rolled.
-          "floor": [
+            },
             {
-              "weight": 1,
-              "type": "dungeons2:border",
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:arcade",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "stair_block": "minecraft:mud_brick_stairs",
+                    "impost_block": "dungeonblocks:square_mud_brick",
+                    "width": 5,
+                    "height": 5,
+                    "spacing": 2
+                  }
+                }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "ceiling": [
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists",
+                  "projection": 1,
+                  "config": {
+                    "block": "$shaft",
+                    "bracket_block": "$corbel",
+                    "orient": "inward",
+                    "spacing": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists",
+                  "projection": 1,
+                  "config": { "block": "minecraft:stripped_spruce_log", "spacing": 4 }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists",
+                  "projection": 1,
+                  "config": {
+                    "block": "$shaft",
+                    "bracket_block": "$corbel",
+                    "orient": "inward",
+                    "spacing": 4
+                  }
+                },
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "dungeonblocks:square_mud_brick",
+                    "steps": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "$footing",
+                    "crown_block": "dungeonblocks:mossy_square_mud_brick",
+                    "steps": 2,
+                    "step_height": 2
+                  }
+                }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "floor": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 2,
+              "min_size": 11,
+              "type": "dungeons2:composite",
               "config": {
-                "inset": 1,
-                "corner_block": "$footing",
-                "edge_left_block": "$plinth_left",
-                "edge_right_block": "$plinth_right"
+                "generators": [
+                  {
+                    "type": "dungeons2:border",
+                    "config": {
+                      "inset": 2,
+                      "corner_block": "$ornament",
+                      "edge_left_block": "$plinth_left",
+                      "edge_right_block": "$plinth_right"
+                    }
+                  },
+                  {
+                    "type": "dungeons2:field",
+                    "config": { "block": "dungeonblocks:square_mud_brick", "inset": 3 }
+                  }
+                ]
               }
             },
             {
-              "weight": 1,
-              "none": true
+              "weight": 2,
+              "type": "dungeons2:diagonal",
+              "config": {
+                "primary_block": "minecraft:mud_bricks",
+                "secondary_block": "$footing",
+                "width": 3
+              }
+            },
+            {
+              "weight": 2,
+              "type": "dungeons2:path",
+              "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "auto" }
             }
           ],
-          // SOMETHING IN THE ROOM. Pots are what #34 measured as actually moving the emptiness
-          // number -- small content, not platforms -- and they give this room a reason to be
-          // entered.
-          //
-          // The grey stone pots, matching `mud_pit_trap` above: the red and blue palettes are
-          // reserved for authored template rooms, and nothing in the code enforces that.
-          //
-          // Pots keep off cells the pilasters project into and off the doorway approaches, because
-          // the wall generator claims them first -- so a count of 3 is 3 in the open floor rather
-          // than 3 fighting the trim.
+          "props": [
+            {
+              "weight": 3,
+              "min_count": 0,
+              "max_count": 2,
+              "placement": "against_wall",
+              "variants": [
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:hay_block", "weight": 1 }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_size": 11,
+              "min_count": 0,
+              "max_count": 3,
+              "placement": "free",
+              "variants": [
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:hay_block", "weight": 1 }
+              ]
+            },
+            { "weight": 3, "none": true }
+          ],
           "pots": [
             {
-              "weight": 1,
+              "weight": 2,
               "min_count": 1,
               "max_count": 3,
               "loot_table": "dungeons2:pots/classic",
               "variants": [
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
+          "chests": {
+            "min_count": 0,
+            "max_count": 1,
+            "variants": [
+              { "block": "minecraft:chest", "weight": 1 }
+            ]
+          }
+        },
+        {
+          "name": "mud_works",
+          "weight": 5,
+          "min_size": 9,
+          "pit": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 2,
+              "type": "dungeons2:hazard",
+              "config": {
+                "width": 3,
+                "depth": 4,
+                "offset_x": 2,
+                "spike_block": "minecraft:pointed_dripstone",
+                "spike_properties": { "vertical_direction": "up" },
+                "spike_probability": 0.4,
+                "rim_block": "minecraft:cobblestone"
+              }
+            },
+            {
+              "weight": 2,
+              "type": "dungeons2:inset",
+              "config": { "inset": 1, "depth": 2 }
+            }
+          ],
+          "pillars": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 3,
+              "min_size": 11,
+              "min_height": 7,
+              "patterns": [
                 {
-                  "entity": "dungeonblocks:stone_pot",
-                  "weight": 2
-                },
-                {
-                  "entity": "dungeonblocks:squat_stone_pot",
-                  "weight": 1
+                  "type": "dungeons2:grid",
+                  "block": "$shaft",
+                  "base_block": "$footing",
+                  "cap_block": "$footing",
+                  "config": { "spacing": 3, "inset": 1 }
                 }
               ]
             },
             {
-              "weight": 1,
-              "none": true
+              "weight": 2,
+              "min_height": 7,
+              "patterns": [
+                { "type": "dungeons2:centre", "block": "$shaft", "base_block": "$footing", "cap_block": "$footing" }
+              ]
             }
-          ]
-        },
-        {
-          // A single timber pier in the middle of the room. `dungeons2:centre` is the one layout
-          // whose COUNT is the guarantee: grid and quartet both collapse to a lone column in a
-          // small enough room, but they stop as soon as it grows, so a pier from either is
-          // incidental rather than authored. See CentrePillarLayout.
-          //
-          // `pillars` and NOT `wall`: a layout id dispatches over the slot's own registry, and
-          // `dungeons2:centre` is a PILLAR layout. Authored under `wall` it is an unregistered wall
-          // pattern and a load error naming the id.
-          //
-          // No `config`, so `inset` takes the shared default of 2 -- a veto only, and one this
-          // scheme's minSize 9 already satisfies. The centre cannot be moved by it.
-          "name": "mud_timber_centre_pillar",
-          "weight": 6,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          "min_size": 9,
-          "min_height": 7,
-          "pillars": {
-            "patterns": [
-              {
-                "type": "dungeons2:centre",
-                "block": "$shaft",
-                "base_block": "$footing",
-                "cap_block": "$footing"
+          ],
+          "partition": [
+            { "weight": 4, "none": true },
+            {
+              "weight": 2,
+              "min_size": 11,
+              "type": "dungeons2:corner",
+              "block": "minecraft:mud_bricks",
+              "gap_block": "minecraft:oak_door",
+              "config": { "width": 3, "depth": 3 }
+            }
+          ],
+          "floor": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 3,
+              "type": "dungeons2:path",
+              "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "star" }
+            },
+            {
+              "weight": 2,
+              "type": "dungeons2:speckle",
+              "config": {
+                "primary_block": "dungeonblocks:rubble",
+                "secondary_block": "minecraft:packed_mud",
+                "probability": 0.12
               }
-            ]
-          },
-          // TWO PATHS CROSSING, WITH THE PIER STANDING AT THE CROSSING. The cross and the centre
-          // layout are BOTH centred on the same cell, which is the whole reason to pair these two
-          // in particular -- the pier lands exactly on the crossing rather than near it, so the
-          // floor explains why there is a column in the middle of the room.
-          //
-          // That alignment is why this pattern goes with THIS scheme and not with
-          // `mud_timber_pillars`: a lattice of posts has no centre to agree with, and a cross
-          // under a grid reads as two unrelated decisions.
-          //
-          // It also depends on the pier being one cell across. A `thickness` of 2 would sit half a
-          // cell off the room's centre (an even shaft cannot be centred in an odd room) while the
-          // cross stayed put, and the misalignment would be visible precisely because the cross
-          // draws the eye to where the centre is.
-          //
-          // square_stone_brick, matching the pier's own base and cap: the path is the same dressed
-          // stone as the thing standing on it. thickness 1 -- a wider cross starts to read as a
-          // paved floor with cobble corners rather than as two paths.
-          "floor": {
-            "type": "dungeons2:cross",
-            "config": {
-              "thickness": 1,
-              "block": "$footing"
             }
+          ],
+          "props": [
+            {
+              "weight": 4,
+              "min_count": 1,
+              "max_count": 3,
+              "placement": "against_wall",
+              "variants": [
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:hay_block", "weight": 1 }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_count": 0,
+              "max_count": 2,
+              "placement": "corner",
+              "variants": [
+                { "block": "minecraft:barrel", "weight": 1, "oriented": false }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "pots": [
+            {
+              "weight": 3,
+              "min_count": 1,
+              "max_count": 3,
+              "loot_table": "dungeons2:pots/classic",
+              "variants": [
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
+          "chests": {
+            "min_count": 0,
+            "max_count": 1,
+            "variants": [
+              { "block": "minecraft:chest", "weight": 1 }
+            ]
           }
         },
         {
-          "name": "joisted_hall",
-          "weight": 10,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          "min_size": 7,
+          "name": "mud_shrine",
+          "weight": 4,
+          "min_size": 9,
           "min_height": 7,
-          "ceiling": {
-            "patterns": [
-              {
-                "type": "dungeons2:joists",
-                "projection": 1,
-                "config": {
-                  "block": "minecraft:stripped_spruce_log",
-                  "bracket_block": "$corbel",
+          "platforms": [
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dais",
+                  "layout": "dungeons2:centre",
+                  "block": "minecraft:mud_bricks",
+                  "stair_block": "minecraft:mud_brick_stairs",
+                  "centre_block": "dungeonblocks:square_mud_brick",
+                  "size": 3,
+                  "config": { "inset": 1 },
                   "orient": "inward",
-                  "spacing": 3
+                  "top_block": "dungeonblocks:brazier_block",
+                  "top_properties": { "fire": "embers" }
                 }
-              }
-            ]
-          }
-        },
-        {
-          "name": "joisted_hall_2",
-          "extends": "joisted_hall",
-          "weight": 10,
-          // BOUNDS RESTATED, because `extends` does not copy them. It brings the parent's element
-          // SLOTS -- this scheme's whole ceiling is joisted_hall's joists -- and deliberately not
-          // its min_height/min_size, on the reasoning that a variant usually exists BECAUSE its
-          // eligibility differs, and a primitive with a default cannot tell "omitted" from
-          // "wrote the default". See RoomScheme#inheritFrom.
-          //
-          // Declaring neither left this at 0/0, so the inherited joists drew in rooms with no
-          // headroom for them -- found in game in a 5-high room, 2026-09-01. The spawners slot
-          // below carries its OWN min_size, which is a different gate on a different thing and is
-          // why the omission read as deliberate.
-          "min_height": 7,
-          "min_size": 9,
-
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          // A SCHEME's `floor` IS A PATTERN, NOT A FloorConfig. The band below authors
-          // base/alternateBase/pattern because a BAND owns the whole floor; a scheme owns only the
-          // treatment over it, so `type`/`config` sit directly here with no `pattern` wrapper and
-          // there is no base to set. The schema is closed, so the FloorConfig shape does not
-          // degrade -- it fails the whole motif to decode. (Fixed 2026-08-30.)
-          //
-          // Nothing is lost by dropping the base pair: `checkerboard` fills EVERY cell by
-          // (x + z) % 2, so no cell was ever going to render as the base anyway. Had the first
-          // generator been a sparse one -- speckle, cross, spokes -- the unmarked cells would fall
-          // through to the band's cobblestone instead of the stone_bricks authored here, and that
-          // would be a real change rather than a no-op.
-          "floor": {
-            "type": "dungeons2:composite",
-            "config": {
-              "generators": [
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
                 {
-                  "type": "dungeons2:checkerboard",
+                  "type": "dais",
+                  "layout": "dungeons2:centre",
+                  "block": "minecraft:mud_bricks",
+                  "stair_block": "minecraft:mud_brick_stairs",
+                  "centre_block": "$ornament",
+                  "size": 3,
+                  "config": { "inset": 1 },
+                  "orient": "inward"
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "min_size": 11,
+              "patterns": [
+                {
+                  "type": "dais",
+                  "layout": "dungeons2:corners",
+                  "block": "minecraft:mud_bricks",
+                  "stair_block": "minecraft:mud_brick_stairs",
+                  "centre_block": "$ornament",
+                  "size": 1,
+                  "config": { "inset": 1 },
+                  "orient": "inward",
+                  "top_block": "dungeonblocks:brazier_block",
+                  "top_properties": { "fire": "embers" }
+                }
+              ]
+            }
+          ],
+          "ceiling": [
+            { "weight": 3, "none": true },
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
                   "config": {
-                    "primary_block": "$footing",
-                    "secondary_block": "minecraft:stone"
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "$footing",
+                    "crown_block": "dungeonblocks:mossy_square_mud_brick",
+                    "steps": 2,
+                    "step_height": 2
                   }
-                },
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
                 {
-                  "type": "dungeons2:border",
+                  "type": "dungeons2:oculus",
                   "config": {
-                    "inset": 1,
-                    "corner_block": "$ornament",
-                    "edge_left_block": "$inlay",
-                    "edge_right_block": "$inlay"
+                    "cap_block": "minecraft:glowstone",
+                    "grate_block": "dungeonblocks:dark_iron_grate",
+                    "size": 3,
+                    "depth": 3
                   }
                 }
               ]
             }
-          }
-        },
-        {
-          // A SUNKEN COURT: the whole interior dropped, with a walkway left round the edge.
-          //
-          // `dungeons2:inset` rather than `dungeons2:centre`, which is the other way to author a
-          // sunken floor. Centre cuts a square court in the MIDDLE of an otherwise flat floor --
-          // a feature standing in a room. Inset drops everything EXCEPT the edge, so the low
-          // ground is the room and the flat part is a ledge round it. That is what "a room with a
-          // sunken floor" means as opposed to "a room with a pit in it".
-          //
-          // IT IS WALKABLE, NOT A TRAP, and that is the default rather than a setting. A pit
-          // descends in TERRACES of one block, so a player walks down into it and back out; the
-          // first version of the pit slot cut a sheer hole and was simply wrong, because a player
-          // can only jump one block and any pit 2+ deep was an inescapable trap. `mud_pit_trap`
-          // above is the deliberate exception and it uses `dungeons2:hazard` to say so.
-          //
-          // `inset` STARTS AT 1 and cannot be 0. An inset of 0 sinks the cells in front of the
-          // doorways, and a doorway opening onto a step down is a threshold nobody authored --
-          // nothing else about the pit slot knows where the doors are, so the walkway is the only
-          // thing keeping them ordinary. 1 is that minimum: a one-cell ledge all the way round,
-          // which is the widest court a given room can carry.
-          //
-          // `depth` 2 is the default and it is a MAXIMUM TWICE OVER: clamped to the floor's
-          // sinkOffset (5 as shipped) as the generator writes, and bounded by the footprint,
-          // because the court steps down one block per ring inward. At minSize 9 the interior is
-          // 7 and the sunken part 5 across, which reaches 2 and stops. Authoring 4 here would
-          // change nothing in a 9-room and only show up in the big ones -- so the number to raise
-          // alongside it is minSize, not sinkOffset.
-          //
-          // NEITHER `pillars` NOR `platforms`, the same note `mud_pit_trap` carries: a column or a
-          // dais standing in an excavated cell would hang over the drop (backlog #58). The pit set
-          // is passed to both generators as an exclusion so it degrades rather than breaking, but
-          // an authored scheme should not be relying on that to save it.
-          //
-          // Pots ARE safe, and they land on the LEDGE rather than in the court: excavated cells are
-          // claimed, so props keep off them. A pot on the rim of a sunken room is the shape this
-          // scheme wants anyway -- something to see from the doorway, at the level you enter on.
-          "name": "mud_sunken_court",
-          "weight": 3,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
+          ],
+          "floor": [
+            {
+              "weight": 3,
+              "type": "dungeons2:spokes",
+              "config": { "spokes": 4, "block": "dungeonblocks:square_mud_brick" }
+            },
+            {
+              "weight": 3,
+              "min_size": 11,
+              "type": "dungeons2:composite",
+              "config": {
+                "generators": [
+                  {
+                    "type": "dungeons2:border",
+                    "config": {
+                      "inset": 2,
+                      "corner_block": "$ornament",
+                      "edge_left_block": "dungeonblocks:square_mud_brick",
+                      "edge_right_block": "dungeonblocks:square_mud_brick"
+                    }
+                  },
+                  {
+                    "type": "dungeons2:field",
+                    "config": { "block": "minecraft:packed_mud", "inset": 3 }
+                  }
+                ]
+              }
+            },
+            { "weight": 2, "none": true }
+          ],
+          "wall": [
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dungeons2:end_pilasters",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "base_block": "$footing",
+                    "cap_block": "$footing",
+                    "projection": 1
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:courses",
+                  "config": {
+                    "courses": [
+                      { "block": "dungeonblocks:square_mud_brick", "corner_block": "dungeonblocks:mossy_square_mud_brick", "anchor": "top" }
+                    ]
+                  }
+                }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "pots": [
+            {
+              "weight": 3,
+              "min_count": 1,
+              "max_count": 2,
+              "loot_table": "dungeons2:pots/classic",
+              "variants": [
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
           "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          "min_size": 9,
-          "pit": {
-            "type": "dungeons2:inset",
-            "config": {
-              "inset": 1,
-              "depth": 2
-            }
-          },
-          "pots": {
-            "min_count": 1,
-            "max_count": 2,
-            "loot_table": "dungeons2:pots/classic",
+          "chests": {
+            "min_count": 0,
+            "max_count": 1,
             "variants": [
-              {
-                "entity": "dungeonblocks:stone_pot",
-                "weight": 2
-              },
-              {
-                "entity": "dungeonblocks:squat_stone_pot",
-                "weight": 1
-              }
-            ]
-          }
-        },
-        {
-          // A DIAMOND INLAY -- the first GEOMETRIC wall pattern in the mod, as opposed to an
-          // architectural one. `courses`, `pilasters` and `panels` all describe building elements
-          // and are positioned by the wall's structure; this one is defined by nothing but its own
-          // geometry, so it is an inlay rather than a feature. See DiamondWallPattern.
-          //
-          // minHeight 7 IS LOAD-BEARING, not tidiness (Gottsch, 2026-08-31). A wall's usable height
-          // is roomHeight - 2, so a 7-room gives exactly 5 rows and a size-2 diamond spans exactly
-          // 5. Below that the provider draws NOTHING -- it will not clip, because a clipped diamond
-          // is a triangle and a wall of triangles is a pattern nobody authored. Without this gate
-          // the scheme would roll in short rooms and render as a plain mud wall, which reads as the
-          // scheme not existing rather than as a bug worth reporting.
-          //
-          // minSize 9 is taste, not necessity. At 7 the wall is 5 cells across, the diamond is 5
-          // across, and its tips touch both corners -- legible but cramped, and it reads as one
-          // stretched mark rather than as an inlay. 9 gives a cell of clear wall either side.
-          //
-          // SPACING 6 AT SIZE 2 leaves a one-cell gap between lozenges. Dropping toward 4 makes
-          // their edges cross into a continuous lattice, which is a real and quite different look
-          // rather than a degenerate one -- worth trying if this reads as too sparse in game.
-          //
-          // SPRUCE, AND FILLED. Both changed 2026-08-31 after seeing it in game: the first
-          // version was an eight-cell OUTLINE in dungeonblocks:square_stone_brick and it did not
-          // read as a pattern at all. Recorded properly because the reasoning that produced it was
-          // sound and still wrong, and the same trap catches the next wall pattern authored here.
-          //
-          // THE CONTRAST FAILURE CAME FIRST, BEFORE ANY WEATHERING. The diamond is centred on the
-          // wall, so it spans every row, and the band's gradient hands it a DIFFERENT ground at
-          // each one -- measured on the shipped numbers (bottom 0.9, top 0.05, holdRows 2) for a
-          // 7-high room, the bottom three rows are 90% mud and the top row is 95% cobblestone.
-          // square_stone_brick is grey and cobblestone is grey, so the top half of every diamond
-          // was invisible before a single decay roll happened and the shape never closed. Picking
-          // the accent to match the band's ornament ladder was the mistake: the ladder is about
-          // what a material MEANS, and a pattern first has to be seen.
-          //
-          // A ONE-CELL OUTLINE CANNOT WIN AGAINST THIS WALL EITHER. The ground already carries mud
-          // brick, cobblestone, two mossy variants, rubble and dirt in a random field; a line one
-          // cell thick is signal underneath that noise. `filled` costs 13 cells against the
-          // outline's 8 and is what gives the shape enough mass to survive the field. The general
-          // rule for this band: thin treatments do not read where a gradient fill is running.
-          //
-          // SPRUCE FIXES BOTH HALVES AT ONCE, and a third thing besides. It is dark warm brown
-          // against tan mud AND against grey cobble, so it reads on every row rather than half of
-          // them; it is already this band's second material, so it borrows the timber schemes'
-          // vocabulary rather than inventing one; and by the shoring decision (see the note at the
-          // head of classic_mud_weathering) NOTHING SPRUCE AGES in this stratum, so the inlay stays
-          // crisp instead of dissolving into the wall it is meant to stand out from.
-          //
-          // PLANKS, NOT spruce_log: a log carries `axis` and a filled lozenge of them would show
-          // the grain running one way through a shape that has no direction. Planks have no such
-          // property to get wrong.
-          //
-          // COMPOSES ON TOP OF THE BAND'S WALL, and the order matters. The band draws the gradient
-          // fill first (mud giving way to cobble as it rises) and then its plinth and crown; a
-          // scheme's `wall` overlays that, later-non-null-wins. So the diamonds sit over whichever
-          // material the gradient happened to put behind them, which is the point -- the inlay was
-          // set into the wall, not laid with it.
-          "name": "mud_diamond_inlay",
-          "weight": 4,
-          // See mud_timber_rs for why this slot is here and why `plain` has none.
-          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          "min_size": 9,
-          "min_height": 7,
-          "wall": {
-            "patterns": [
-              {
-                "type": "dungeons2:diamond",
-                "config": {
-                  "block": "dungeonblocks:square_mud_brick",
-                  "size": 2,
-                  "spacing": 6,
-                  "filled": true
-                }
-              }
-            ]
-          }
-        },
-        {
-          // THE FIRST SCHEME THAT GAINS HEADROOM INSTEAD OF SPENDING IT (#68, 2026-09-01). Every
-          // other vault in this pack -- vaulted_hall in base.json -- is drawn by DROPPING its
-          // perimeter into the room, so the dome costs the player three rows of clearance and the
-          // scheme has to gate itself at min_height 7 to afford them. This one rises into the rows
-          // the floor already owns and never excavated: ceiling_budget is 15 and a procedural room
-          // is 5 to 10 high, so there are 5 to 10 blocks of untouched mud sitting over every room
-          // in this band right now. A 6-high room comes out 9 high down the middle.
-          //
-          // WHICH IS WHY THERE IS NO min_height. It would be meaningless here -- the vault takes
-          // nothing from the interior, so a short room is exactly as good a host as a tall one, and
-          // arguably a better one, since the gain reads as more. `min_size` stays, because a dome
-          // over a 7x7 is a dome over four cells.
-          //
-          // THE STEPS ARE CLAMPED PER ROOM, not gated: a room whose floor has less spare budget
-          // than the vault asks for draws a shallower dome with a flat top. That is the difference
-          // between this and a projecting vault -- there is no case where it comes out wrong, only
-          // cases where it comes out smaller. See BasicCeilingGenerator#withRiseBudget.
-          "name": "mud_vaulted_hall",
-          "weight": 8,
-          // See mud_timber_pillars for why this slot is here and why `plain` has none.
-          "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
-          "min_size": 9,
-          "ceiling": {
-            "patterns": [
-              {
-                // A SOLID springing course, not stairs (Mark, in game 2026-09-01). Stairs are right
-                // for a HANGING vault, where you see their face and their underside from below. A
-                // rising vault's springing sits IN the ceiling plane with the room's air beneath it,
-                // so the only face anyone ever sees is the bottom one -- which on a stair is a plain
-                // full square. It reads as a full block whichever way it is turned, and turned the
-                // wrong way it reads as a backwards one.
-                //
-                // So the lip is accented by MATERIAL instead of by shape: square mud brick against
-                // the band's plain mud brick. No crown_block for the same reason it is now worth
-                // having a plain one -- with the lip carrying the accent, a second one at the apex
-                // competes with it. The dome's shape is doing the work.
-                "type": "dungeons2:vaulted",
-                "config": {
-                  "block": "minecraft:mud_bricks",
-                  "springing_block": "dungeonblocks:square_mud_brick",
-                  "steps": 3
-                }
-              }
+              { "block": "minecraft:chest", "weight": 1 }
             ]
           }
         }
       ]
     },
-    {
-      "min_floor_index": 1
-    },
-    // =============================================================================================
-    // FLOORS 2 AND DOWN -- the second stratum to pave, and it uses a DIFFERENT provider from the
-    // mud band above on purpose (Gottsch, 2026-08-26).
-    //
-    // The point is to exercise the floor-pattern registry with two live types rather than one:
-    // band 0 dispatches to dungeons2:speckle, this one to dungeons2:composite. Two providers
-    // resolving from the same file is what proves the dispatch is really dispatching, and not just
-    // hard-wired to the single type that happened to ship first. ShippedMotifConfigTest asserts
-    // both are present and distinct, so the check outlives anyone remembering to walk a dungeon.
-    //
-    // COMPOSITE is chosen over another flat pattern because it is the only type whose codec NESTS
-    // other patterns -- so this covers the recursive decode, the per-layer closed schema, and the
-    // overlay-capability filter, none of which any other shipped entry touches. It also looks
-    // nothing like speckle, so "did the right provider run?" is answerable at a glance in game.
-    //
-    // ONLY `floor` IS SET. Every other section falls through to the motif's -- see Stratum: a band
-    // is `orElse` per section, not all-or-nothing. So these floors keep classic's stone walls,
-    // ceiling, door and corridors and change only what is underfoot.
-    //
-    // NO `name`. A named band would look for dungeons2:classic_<name>_weathering and a
-    // rooms/classic/<name> pool, both of which would silently fall back since neither is authored.
-    // Naming it would imply content that does not exist.
-    //
-    // REACHABILITY: floor counts are SMALL 1-2, MEDIUM 2-4, LARGE 3-5, so this band never appears
-    // in a SMALL dungeon and is common in the other two. It deliberately does not touch floors 0
-    // and 1, which are the ones a player sees in every dungeon.
-    //
-    // THE LOOK IS A PLACEHOLDER, not a considered depth aesthetic -- it is a checkerboard with an
-    // andesite border, picked to be legible and obviously distinct. Retune or delete it freely.
-    // =============================================================================================
+    { "min_floor_index": 1 },
     {
       "min_floor_index": 2,
       "floor": {
@@ -1256,10 +945,6 @@
         "pattern": {
           "type": "dungeons2:composite",
           "config": {
-            // FIRST entry is the base full fill; every entry after it is an overlay, and only an
-            // overlay-capable one is kept (border, cross, spokes). A non-overlay type in a later
-            // slot is silently skipped -- the one place this package still degrades quietly,
-            // because overlay-ability is a property of the provider and no codec can see it.
             "generators": [
               {
                 "type": "dungeons2:checkerboard",

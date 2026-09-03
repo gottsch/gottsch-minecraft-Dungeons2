@@ -84,6 +84,8 @@ public final class FloorPatternRegistry {
         register(GradientFloorPattern.NAME, GradientFloorPattern.CODEC);
         register(WornPathFloorPattern.NAME, WornPathFloorPattern.CODEC);
         register(FieldFloorPattern.NAME, FieldFloorPattern.CODEC);
+        register(ChevronFloorPattern.NAME, ChevronFloorPattern.CODEC);
+        register(DiagonalFloorPattern.NAME, DiagonalFloorPattern.CODEC);
         register(CompositeFloorPattern.NAME, CompositeFloorPattern.CODEC);
     }
 

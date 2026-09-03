@@ -114,6 +114,10 @@ class ShippedBlockIdsTest {
             "gap_block",
             // #77: the oculus. `cap_block` is already listed above (the pillars use it).
             "grate_block",
+            // #78: the blind arcade's springing course. Its `block` and `stair_block` are already
+            // listed above; this is the impost each arch sits on. It reached a shipped file only
+            // when the mud band's hall started rolling an arcade, which is what this test is for.
+            "impost_block",
             // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
             // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
             // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.

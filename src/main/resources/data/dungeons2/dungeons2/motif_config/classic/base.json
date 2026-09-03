@@ -1,21 +1,4 @@
 {
-  // ===============================================================================================
-  // THE MATERIAL PALETTE (#65). A pattern may write "$shaft" where a block id goes, and it resolves
-  // against this map -- overlaid by the band's own -- so one authored scheme paints itself in
-  // whatever the depth is built from. See the Room Schemes Manual.
-  //
-  // Every role here is DERIVED from what this file already said rather than invented: these are the
-  // ids that recur across the schemes below. The mud band overrides FOUR of them, which is the whole
-  // argument for the feature: four lines repaint a floor.
-  //
-  // A role resolves at BUILD time against the palette in scope, and a role no palette declares is a
-  // load error naming the scheme. Values here are always literal ids -- a role pointing at a role is
-  // a cycle nothing checks, and is rejected.
-  //
-  // NOT every literal below has been converted to a role yet. A scheme that can roll on FLOOR 0
-  // meets the mud band's palette there, so converting it would repaint it -- which is a look to
-  // choose, not a migration to run. Those schemes still name their blocks outright.
-  // ===============================================================================================
   "palette": {
     "shaft": "dungeonblocks:stone_bricks_pillar_block",
     "footing": "dungeonblocks:stone_bricks_pillar_base_block",
@@ -27,12 +10,8 @@
     "plinth_left": "dungeonblocks:left_large_stone_brick",
     "plinth_right": "dungeonblocks:right_large_stone_brick"
   },
-  "wall": {
-    "wall": "minecraft:stone_bricks"
-  },
-  "ceiling": {
-    "ceiling": "minecraft:stone_bricks"
-  },
+  "wall": { "wall": "minecraft:stone_bricks" },
+  "ceiling": { "ceiling": "minecraft:stone_bricks" },
   "door": {
     "door": "dungeonblocks:spruce_dungeon_door",
     "lintel": "minecraft:polished_andesite",
@@ -56,18 +35,8 @@
         "profile": "arched",
         "arch_block": "minecraft:stone_brick_stairs",
         "courses": [
-          {
-            "block": "dungeonblocks:left_large_stone_brick",
-            "alternate_block": "dungeonblocks:right_large_stone_brick",
-            "alternate": "strict",
-            "anchor": "bottom",
-            "offset": 0
-          },
-          {
-            "block": "minecraft:polished_andesite",
-            "anchor": "top",
-            "offset": 1
-          }
+          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict", "anchor": "bottom", "offset": 0 },
+          { "block": "minecraft:polished_andesite", "anchor": "top", "offset": 1 }
         ]
       },
       {
@@ -78,18 +47,8 @@
         "profile": "arched",
         "arch_block": "minecraft:stone_brick_stairs",
         "courses": [
-          {
-            "block": "dungeonblocks:left_large_stone_brick",
-            "alternate_block": "dungeonblocks:right_large_stone_brick",
-            "alternate": "strict",
-            "anchor": "bottom",
-            "offset": 0
-          },
-          {
-            "block": "minecraft:polished_andesite",
-            "anchor": "top",
-            "offset": 1
-          }
+          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict", "anchor": "bottom", "offset": 0 },
+          { "block": "minecraft:polished_andesite", "anchor": "top", "offset": 1 }
         ]
       },
       {
@@ -98,57 +57,32 @@
         "height": 5,
         "profile": "flat",
         "courses": [
-          {
-            "block": "dungeonblocks:left_large_stone_brick",
-            "alternate_block": "dungeonblocks:right_large_stone_brick",
-            "alternate": "strict"
-          }
+          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" }
         ]
       }
     ]
   },
-  "floor": {
-    "base": "minecraft:stone_bricks",
-    "alternate_base": "minecraft:stone_bricks"
-  },
+  "floor": { "base": "minecraft:stone_bricks", "alternate_base": "minecraft:stone_bricks" },
   "chest_loot_by_floor_index": [
     {
       "min_floor_index": 0,
       "loot_tables": [
-        {
-          "loot_table": "dungeons2:chests/classic_shallow",
-          "weight": 9
-        },
-        {
-          "loot_table": "dungeons2:chests/classic_deep",
-          "weight": 1
-        }
+        { "loot_table": "dungeons2:chests/classic_shallow", "weight": 9 },
+        { "loot_table": "dungeons2:chests/classic_deep", "weight": 1 }
       ]
     },
     {
       "min_floor_index": 2,
       "loot_tables": [
-        {
-          "loot_table": "dungeons2:chests/classic_deep",
-          "weight": 8
-        },
-        {
-          "loot_table": "dungeons2:chests/classic_shallow",
-          "weight": 2
-        }
+        { "loot_table": "dungeons2:chests/classic_deep", "weight": 8 },
+        { "loot_table": "dungeons2:chests/classic_shallow", "weight": 2 }
       ]
     },
     {
       "min_floor_index": 4,
       "loot_tables": [
-        {
-          "loot_table": "dungeons2:chests/classic_deep",
-          "weight": 7
-        },
-        {
-          "loot_table": "dungeons2:chests/classic_hoard",
-          "weight": 3
-        }
+        { "loot_table": "dungeons2:chests/classic_deep", "weight": 7 },
+        { "loot_table": "dungeons2:chests/classic_hoard", "weight": 3 }
       ]
     }
   ],
@@ -156,80 +90,32 @@
     {
       "min_floor_index": 0,
       "mob_sets": [
-        {
-          "mob_set": "dungeons2:classic_vermin",
-          "weight": 6
-        },
-        {
-          "mob_set": "dungeons2:classic_bones",
-          "weight": 4
-        },
-        {
-          "mob_set": "dungeons2:classic_undead",
-          "weight": 3
-        },
-        {
-          "mob_set": "dungeons2:classic_vanilla",
-          "weight": 3
-        },
-        {
-          "mob_set": "dungeons2:classic_lesser_ooze",
-          "weight": 2
-        }
+        { "mob_set": "dungeons2:classic_vermin", "weight": 6 },
+        { "mob_set": "dungeons2:classic_bones", "weight": 4 },
+        { "mob_set": "dungeons2:classic_undead", "weight": 3 },
+        { "mob_set": "dungeons2:classic_vanilla", "weight": 3 },
+        { "mob_set": "dungeons2:classic_lesser_ooze", "weight": 2 }
       ]
     },
     {
       "min_floor_index": 1,
       "mob_sets": [
-        {
-          "mob_set": "dungeons2:classic_bones",
-          "weight": 5
-        },
-        {
-          "mob_set": "dungeons2:classic_undead",
-          "weight": 4
-        },
-        {
-          "mob_set": "dungeons2:classic_warband",
-          "weight": 3
-        },
-        {
-          "mob_set": "dungeons2:classic_vermin",
-          "weight": 2
-        },
-        {
-          "mob_set": "dungeons2:classic_vanilla",
-          "weight": 1
-        }
+        { "mob_set": "dungeons2:classic_bones", "weight": 5 },
+        { "mob_set": "dungeons2:classic_undead", "weight": 4 },
+        { "mob_set": "dungeons2:classic_warband", "weight": 3 },
+        { "mob_set": "dungeons2:classic_vermin", "weight": 2 },
+        { "mob_set": "dungeons2:classic_vanilla", "weight": 1 }
       ]
     },
     {
       "min_floor_index": 2,
       "mob_sets": [
-        {
-          "mob_set": "dungeons2:classic_undead",
-          "weight": 4
-        },
-        {
-          "mob_set": "dungeons2:classic_elemental_bones",
-          "weight": 4
-        },
-        {
-          "mob_set": "dungeons2:classic_warband",
-          "weight": 3
-        },
-        {
-          "mob_set": "dungeons2:classic_ooze",
-          "weight": 3
-        },
-        {
-          "mob_set": "dungeons2:classic_guardians",
-          "weight": 2
-        },
-        {
-          "mob_set": "dungeons2:classic_bones",
-          "weight": 2
-        }
+        { "mob_set": "dungeons2:classic_undead", "weight": 4 },
+        { "mob_set": "dungeons2:classic_elemental_bones", "weight": 4 },
+        { "mob_set": "dungeons2:classic_warband", "weight": 3 },
+        { "mob_set": "dungeons2:classic_ooze", "weight": 3 },
+        { "mob_set": "dungeons2:classic_guardians", "weight": 2 },
+        { "mob_set": "dungeons2:classic_bones", "weight": 2 }
       ],
       "min_mobs": 2,
       "max_mobs": 4
@@ -237,26 +123,11 @@
     {
       "min_floor_index": 3,
       "mob_sets": [
-        {
-          "mob_set": "dungeons2:classic_elemental_bones",
-          "weight": 6
-        },
-        {
-          "mob_set": "dungeons2:classic_guardians",
-          "weight": 4
-        },
-        {
-          "mob_set": "dungeons2:classic_ooze",
-          "weight": 4
-        },
-        {
-          "mob_set": "dungeons2:classic_undead",
-          "weight": 3
-        },
-        {
-          "mob_set": "dungeons2:classic_warband",
-          "weight": 2
-        }
+        { "mob_set": "dungeons2:classic_elemental_bones", "weight": 6 },
+        { "mob_set": "dungeons2:classic_guardians", "weight": 4 },
+        { "mob_set": "dungeons2:classic_ooze", "weight": 4 },
+        { "mob_set": "dungeons2:classic_undead", "weight": 3 },
+        { "mob_set": "dungeons2:classic_warband", "weight": 2 }
       ],
       "min_mobs": 3,
       "max_mobs": 5
@@ -272,20 +143,14 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "dungeonblocks:left_large_stone_brick",
-                  "alternate_block": "dungeonblocks:right_large_stone_brick",
-                  "alternate": "strict"
-                },
+                { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" },
                 {
                   "block": "minecraft:stone_brick_stairs",
                   "anchor": "top",
                   "offset": 0,
                   "projection": 1,
                   "orient": "toward_wall",
-                  "properties": {
-                    "half": "top"
-                  },
+                  "properties": { "half": "top" },
                   "min_height": 6
                 }
               ]
@@ -308,46 +173,19 @@
         "max_count": 2,
         "loot_table": "dungeons2:pots/classic",
         "variants": [
-          {
-            "entity": "dungeonblocks:pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_clay_pot",
-            "weight": 1
-          },
-          {
-            "entity": "dungeonblocks:stone_pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_stone_pot",
-            "weight": 1
-          }
+          { "entity": "dungeonblocks:pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
         ]
       },
-      // #73. The furniture the slot exists for, and deliberately modest: `min_count` 0, so a
-      // plain room USUALLY has none and the ones that do read as a store rather than as scenery
-      // sprayed everywhere.
-      //
-      // The barrel is `oriented: false` ON PURPOSE. A barrel's `facing` defaults to `up` -- a
-      // barrel standing on its base, which is what a barrel in a store room looks like. Orienting
-      // it would lay it on its side against the wall, which is a different (and much louder)
-      // thing. See PropConfig.PropVariant.
       "props": {
         "min_count": 0,
         "max_count": 2,
         "placement": "against_wall",
         "variants": [
-          {
-            "block": "minecraft:barrel",
-            "weight": 3,
-            "oriented": false
-          },
-          {
-            "block": "minecraft:cauldron",
-            "weight": 1
-          }
+          { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+          { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
       "platforms": {
@@ -359,12 +197,8 @@
             "block": "minecraft:stone_bricks",
             "stair_block": "minecraft:stone_brick_stairs",
             "centre_block": "minecraft:chiseled_stone_bricks",
-            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
-            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
-            "config": {
-              "inset": 1
-            },
+            "config": { "inset": 1 },
             "orient": "inward"
           }
         ]
@@ -373,43 +207,10 @@
     {
       "name": "vaulted_hall",
       "weight": 12,
-      // OFF THE MUD FLOOR (Gottsch, 2026-08-29). The stone halls are gated to floor 1 and below so
-      // floor 0 -- the mud stratum -- rolls only `plain` and the mud band's own `mud_pit_trap`,
-      // which is what makes that depth designable and testable without stone rooms leaking into
-      // every sample.
-      //
-      // A PER-SCHEME GATE, NOT A MOVE INTO A BAND. A band's `schemes` MERGES onto the motif's and
-      // sections do not inherit from the band above, so schemes moved onto the floor-1 band would
-      // leave floors 2+ with nothing but `plain` -- covering both means writing them twice. The
-      // gate says the same thing once, and RoomSchemeSelector already reads it (`fitsFloor`).
-      //
-      // IT KEYS ON FLOOR INDEX, NOT ON THE STRATUM. The two coincide only because mud is floor 0
-      // today; move that band and these gates do not follow it. Delete the `minFloorIndex` lines
-      // to put the halls back on every floor.
       "min_floor_index": 1,
       "min_size": 9,
       "min_height": 7,
 
-      // A SUNKEN FLOOR (backlog #3). PROBE CONTENT, retuned 2026-08-27 after walking the first
-      // version: it was 3 deep and read as a stepped hole rather than a sunken floor. Mark:
-      // "it probably should only sink down 1 and ringed with stair blocks".
-      //
-      // ONE BLOCK DOWN, and the stairs are what make that a step you can see rather than a kerb
-      // you trip off. The ring is drawn on the floor cells just OUTSIDE the court, at the room's
-      // own walking plane, so a player descends floor -> the stair's low half -> the sunken floor.
-      // Those cells stay walkable and are not claimed.
-      //
-      // COBBLESTONE STAIRS because the band's floor is cobblestone: this is the same paving
-      // stepping down, not a different structure set into it. The mud band's own floor is
-      // cobblestone too, so it reads the same at both depths.
-      //
-      // `rimOrient` names where a VANILLA stair's solid half ends up. `outward` puts it away from
-      // the court, so the low edge meets the court. dungeonblocks' trim is modelled
-      // facing-inverted, so a dungeonblocks stair here would want `inward` for the same look.
-      //
-      // ON THIS SCHEME because it is the only shipped one with NEITHER `pillars` NOR `platforms`
-      // -- a column standing in an excavated cell would hang over the hole (backlog #58). Props
-      // are safe: the excavated cells are claimed, so chests, spawners and pots keep off.
       "pit": {
         "type": "dungeons2:centre",
         "config": {
@@ -428,18 +229,13 @@
               "block": "$stair",
               "inset": 0,
               "orient": "outward",
-              "properties": {
-                "half": "top"
-              }
+              "properties": { "half": "top" }
             }
           },
           {
             "type": "dungeons2:border",
             "projection": 1,
-            "config": {
-              "block": "minecraft:stone_bricks",
-              "inset": 0
-            }
+            "config": { "block": "minecraft:stone_bricks", "inset": 0 }
           },
           {
             "type": "dungeons2:border",
@@ -448,9 +244,7 @@
               "block": "$stair",
               "inset": 1,
               "orient": "outward",
-              "properties": {
-                "half": "top"
-              }
+              "properties": { "half": "top" }
             }
           }
         ]
@@ -461,17 +255,12 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
         ]
       },
-      // #73. Store-room furniture along the walls.
       "props": {
         "min_count": 0,
         "max_count": 2,
@@ -481,67 +270,16 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      },
+      "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
         "min_count": 0,
         "max_count": 1,
         "variants": [
-          {
-            "block": "minecraft:chest",
-            "weight": 1
-          }
+          { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
     {
-      // DEEP VAULT -- three corbelled steps rather than vaulted_hall's two. Backlog #28b, which
-      // raised the ceiling's projection cap from 2 to 4 by giving it its own constant instead of
-      // borrowing the wall's. This is the first scheme that spends the new depth.
-      //
-      // WHY minSize 11 AND minHeight 8, AND WHY BOTH ARE LOAD-BEARING.
-      // Two constraints pull in opposite directions and this gate is where they meet.
-      //
-      //   FOOTPRINT. Each ring steps one cell inward, so N rings eat 2N cells of interior. A vault
-      //   has to FRAME a field, not consume it -- vaulted_hall's own note records that at minSize 7
-      //   its two rings left a 1x1 apex and read as a stepped pyramid rather than as a vault. Three
-      //   rings eat 6, so the interior must be at least 9 to leave a 3x3 field, and interior 9 means
-      //   a room of 11. That is the floor on size, and it is why this cannot simply be vaulted_hall
-      //   with one more ring.
-      //
-      //   HEIGHT, AND THE TAPER RUNS THE WRONG WAY. The #51 taper makes the ceiling FALL as the
-      //   footprint grows -- long side <=7 gives maxHeight 10, <=11 gives 9, <=15 gives 8, larger
-      //   gives 7. So the big rooms a dome wants are exactly the short ones, and a bigger footprint
-      //   buys field at the cost of the headroom the extra step needs.
-      //
-      // minHeight 8 is what resolves it, and it does more work than it looks. SizeGate matches on
-      // the SHORT side (Math.min) while the height taper matches on the LONG side (Math.max), so a
-      // size gate cannot name a taper band directly. It does not have to: any room whose long side
-      // is 17+ sits in the open-ended band capped at maxHeight 7 and therefore CANNOT roll 8, so
-      // minHeight 8 excludes every room too flat to carry three steps without naming a single
-      // dimension. What survives is 11x11 at height 8-9 and 11x13 / 11x15 at height 8.
-      //
-      // CLEARANCE, CHECKED RATHER THAN ASSUMED. Interior rows are height - 2, and the vault eats
-      // three of them at the perimeter: at height 8 that leaves 3 rows of clear wall, which is
-      // exactly what vaulted_hall's two-step leaves at its own minHeight 7, and at height 9 it
-      // leaves 4. So this is never tighter overhead than the scheme already shipped.
-      //
-      // SIX PATTERNS FOR THREE STEPS, AND THE THREE EXTRA ARE NOT DECORATION. A sparse plan writes
-      // only what it marks and the space between two layers belongs to nobody, so every row between
-      // a step and the ceiling has to be filled or the step hangs below a void. Ring at inset k
-      // carries its stair at projection 3-k and needs solid fill at every projection above it:
-      // inset 0 needs fill at 1 and 2, inset 1 needs fill at 1, inset 2 needs none because the
-      // ceiling plane is already solid. Deleting any fill layer is invisible in the JSON and
-      // obvious in game. VaultedHallSchemeTest is the shape of test that catches it.
-      //
-      // stone_brick_stairs, NOT polished_andesite_stairs, copying vaulted_hall for its reason and
-      // not its look: polished andesite ages to andesite and then to GRAVEL, and gravel overhead is
-      // falling debris. stone_brick_stairs composes to dirt with no gravel and no air, and the dirt
-      // is wanted -- it is the only anchor floor_growth and hanging_growth have.
-      //
-      // minFloorIndex 1 matches every other stone hall: floor 0 is the mud stratum.
       "name": "deep_vaulted_hall",
       "weight": 10,
       "min_floor_index": 1,
@@ -602,18 +340,12 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
         ]
       },
-      // #73. A corner anvil, both damaged states: the deep hall reads as somewhere that was
-      // WORKED and then left, which is a different thing from somewhere merely old.
       "props": {
         "min_size": 9,
         "min_count": 0,
@@ -624,18 +356,12 @@
           { "block": "minecraft:chipped_anvil", "weight": 1 }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      },
+      "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
         "min_count": 0,
         "max_count": 1,
         "variants": [
-          {
-            "block": "minecraft:chest",
-            "weight": 1
-          }
+          { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
@@ -648,11 +374,7 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "minecraft:polished_andesite",
-                  "corner_block": "minecraft:andesite",
-                  "anchor": "top"
-                }
+                { "block": "minecraft:polished_andesite", "corner_block": "minecraft:andesite", "anchor": "top" }
               ]
             }
           }
@@ -663,39 +385,12 @@
         "max_count": 2,
         "loot_table": "dungeons2:pots/classic",
         "variants": [
-          {
-            "entity": "dungeonblocks:pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_clay_pot",
-            "weight": 1
-          },
-          {
-            "entity": "dungeonblocks:stone_pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_stone_pot",
-            "weight": 1
-          }
+          { "entity": "dungeonblocks:pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
         ]
       },
-      // #73, AS AN OPTION LIST (#65) -- the first shipped slot to use one, and the right place for
-      // it: the two treatments are alternatives, not a combination, and a grand hall should be able
-      // to be either.
-      //
-      // `flanking_door` is braziers either side of a doorway, which is what makes a hall read as
-      // APPROACHED rather than merely entered. `against_wall` is ordinary furniture. A hall wants
-      // one or the other; both at once reads as a store room someone put candles in.
-      //
-      // The explicit `none` is not optional (see manual 3b): without it every grand hall would get
-      // furniture, and the slot would become the band's look rather than a room type.
-      //
-      // `min_size` 9 on the braziers because this inherits down: in a small room the flanking cells
-      // are most of the wall the player can see, and two braziers there is a shrine, not a hall.
-      // Options the room's size gates out drop BEFORE the weights are totalled, so a small hall
-      // simply rolls between the barrels and nothing.
       "props": [
         {
           "weight": 3,
@@ -719,18 +414,12 @@
         },
         { "weight": 3, "none": true }
       ],
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      },
+      "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
         "min_count": 0,
         "max_count": 1,
         "variants": [
-          {
-            "block": "minecraft:chest",
-            "weight": 1
-          }
+          { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
@@ -782,11 +471,7 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
@@ -797,25 +482,12 @@
         "max_count": 2,
         "loot_table": "dungeons2:pots/classic",
         "variants": [
-          {
-            "entity": "dungeonblocks:pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_clay_pot",
-            "weight": 1
-          },
-          {
-            "entity": "dungeonblocks:stone_pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_stone_pot",
-            "weight": 1
-          }
+          { "entity": "dungeonblocks:pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
         ]
       },
-      // #73. Store-room furniture along the walls.
       "props": {
         "min_count": 0,
         "max_count": 2,
@@ -825,10 +497,7 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      }
+      "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
       "name": "pilastered_hall",
@@ -844,17 +513,11 @@
             "block": "minecraft:stone_bricks",
             "stair_block": "$stair",
             "centre_block": "$ornament",
-            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
-            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
-            "config": {
-              "inset": 1
-            },
+            "config": { "inset": 1 },
             "orient": "inward",
             "top_block": "dungeonblocks:brazier_block",
-            "top_properties": {
-              "fire": "embers"
-            }
+            "top_properties": { "fire": "embers" }
           }
         ]
       },
@@ -864,11 +527,7 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           },
@@ -887,12 +546,8 @@
               "block": "$shaft",
               "base_block": "$footing",
               "cap_block": "$footing",
-              "base_properties": {
-                "base": "up"
-              },
-              "cap_properties": {
-                "base": "down"
-              },
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
               "spacing": 4,
               "projection": 1
             }
@@ -903,12 +558,8 @@
               "block": "$shaft",
               "base_block": "$footing",
               "cap_block": "$footing",
-              "base_properties": {
-                "base": "up"
-              },
-              "cap_properties": {
-                "base": "down"
-              },
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
               "projection": 1
             }
           }
@@ -919,26 +570,12 @@
         "max_count": 4,
         "loot_table": "dungeons2:pots/classic",
         "variants": [
-          {
-            "entity": "dungeonblocks:pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_clay_pot",
-            "weight": 1
-          },
-          {
-            "entity": "dungeonblocks:stone_pot",
-            "weight": 2
-          },
-          {
-            "entity": "dungeonblocks:squat_stone_pot",
-            "weight": 1
-          }
+          { "entity": "dungeonblocks:pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
         ]
       },
-      // #73. The pilasters claim inner-ring cells, so these route around them -- which is
-      // the interaction worth having in a shipped scheme rather than only in a test.
       "props": {
         "min_count": 0,
         "max_count": 2,
@@ -948,10 +585,7 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      }
+      "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
       "name": "hypostyle_hall",
@@ -959,6 +593,25 @@
       "min_floor_index": 1,
       "min_size": 9,
       "min_height": 7,
+      "floor": [
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:diagonal",
+          "config": {
+            "primary_block": "minecraft:stone_bricks",
+            "secondary_block": "$inlay",
+            "width": 3
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:chevron",
+          "config": { "block": "$ornament", "spacing": 4 }
+        },
+        { "weight": 3, "none": true }
+      ],
       "pillars": {
         "patterns": [
           {
@@ -966,33 +619,14 @@
             "block": "$shaft",
             "base_block": "$footing",
             "cap_block": "$footing",
-            "base_properties": {
-              "base": "up"
-            },
-            "cap_properties": {
-              "base": "down"
-            },
-            // spacing/inset belong to the LAYOUT now, not the entry: they are the
-            // geometry the registered type consumes, while block/baseBlock/capBlock and
-            // the property maps stay on the entry because a pillar layout is a bare
-            // footprint and its materials travel alongside it. See PillarLayoutPattern.
-            "config": {
-              "spacing": 4,
-              "inset": 2
-            }
+            "base_properties": { "base": "up" },
+            "cap_properties": { "base": "down" },
+            "config": { "spacing": 4, "inset": 2 }
           }
         ]
       },
       "wall": {
         "patterns": [
-          // #78. A blind arcade: arch outlines flat against the masonry, which is what makes a hall
-          // read as BUILT rather than merely aged. Listed FIRST so a course drawn after it runs
-          // across the arches rather than being interrupted by them -- patterns compose by
-          // later-non-null-wins, so order here is a statement about which detail owns a shared cell.
-          //
-          // height 5 needs a wall of 5 usable rows, i.e. a room of 7, which this scheme's
-          // min_height already guarantees. Without that gate the arcade would simply draw nothing
-          // in the shorter rooms -- correct, but silently absent rather than deliberately so.
           {
             "type": "dungeons2:arcade",
             "config": {
@@ -1008,20 +642,12 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
         ]
       },
-      // #73. `free` rather than `against_wall`, and this is the room that wants it: a
-      // hypostyle hall is big enough that its walls are nowhere near most of the floor, so
-      // furniture pinned to the ring would leave the middle as empty as it ever was. Gated
-      // to 11 because in anything smaller `free` and `against_wall` are the same set.
       "props": {
         "min_size": 11,
         "min_count": 0,
@@ -1032,18 +658,12 @@
           { "block": "minecraft:hay_block", "weight": 2 }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      },
+      "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
         "min_count": 0,
         "max_count": 1,
         "variants": [
-          {
-            "block": "minecraft:chest",
-            "weight": 1
-          }
+          { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
@@ -1053,16 +673,6 @@
       "min_floor_index": 1,
       "min_size": 9,
       "min_height": 7,
-      // #75. A panelled floor: a border ring, and a `field` one inset FURTHER IN filling exactly
-      // what the ring encloses.
-      //
-      // The insets are 2 and 3 and that is not an off-by-one. Both types measure `inset` from the
-      // ROOM EDGE, the same way, so a field at the border's own inset would cover the ring as well
-      // as its interior and the frame would vanish under the panel. One further in is the whole
-      // relationship; see the manual's floor `field` section.
-      //
-      // Gated to 11 rather than riding the scheme's 9: at 9 the ring at inset 2 encloses a 3x3, and
-      // a three-cell panel inside a frame reads as a mistake rather than as a floor.
       "floor": [
         {
           "weight": 2,
@@ -1081,18 +691,12 @@
               },
               {
                 "type": "dungeons2:field",
-                "config": {
-                  "block": "$inlay",
-                  "inset": 3
-                }
+                "config": { "block": "$inlay", "inset": 3 }
               }
             ]
           }
         },
-        {
-          "weight": 3,
-          "none": true
-        }
+        { "weight": 3, "none": true }
       ],
       "pillars": {
         "patterns": [
@@ -1101,20 +705,9 @@
             "block": "$shaft",
             "base_block": "$footing",
             "cap_block": "$footing",
-            "base_properties": {
-              "base": "up"
-            },
-            "cap_properties": {
-              "base": "down"
-            },
-            // spacing/inset belong to the LAYOUT now, not the entry: they are the
-            // geometry the registered type consumes, while block/baseBlock/capBlock and
-            // the property maps stay on the entry because a pillar layout is a bare
-            // footprint and its materials travel alongside it. See PillarLayoutPattern.
-            "config": {
-              "spacing": 4,
-              "inset": 2
-            }
+            "base_properties": { "base": "up" },
+            "cap_properties": { "base": "down" },
+            "config": { "spacing": 4, "inset": 2 }
           }
         ]
       },
@@ -1124,17 +717,12 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
         ]
       },
-      // #73. Store-room furniture along the walls.
       "props": {
         "min_count": 0,
         "max_count": 2,
@@ -1144,10 +732,7 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      }
+      "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
       "name": "quartet_hall",
@@ -1163,20 +748,9 @@
             "block": "$shaft",
             "base_block": "$footing",
             "cap_block": "$footing",
-            "base_properties": {
-              "base": "up"
-            },
-            "cap_properties": {
-              "base": "down"
-            },
-            // spacing/inset belong to the LAYOUT now, not the entry: they are the
-            // geometry the registered type consumes, while block/baseBlock/capBlock and
-            // the property maps stay on the entry because a pillar layout is a bare
-            // footprint and its materials travel alongside it. See PillarLayoutPattern.
-            "config": {
-              "spacing": 6,
-              "inset": 1
-            }
+            "base_properties": { "base": "up" },
+            "cap_properties": { "base": "down" },
+            "config": { "spacing": 6, "inset": 1 }
           }
         ]
       },
@@ -1186,18 +760,12 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
         ]
       },
-      // #73. Corner barrels. `quartet_hall` already reads as four-cornered, so putting the
-      // furniture in the corners too is the room agreeing with itself.
       "props": {
         "min_count": 0,
         "max_count": 2,
@@ -1206,25 +774,9 @@
           { "block": "minecraft:barrel", "weight": 1, "oriented": false }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      }
+      "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
-      // #74. The room type the pack could not express at all before the `partition` slot: a GAOL.
-      // Bars across a corner make a cell; a run across the middle makes a guard room you pass
-      // through. Both, as slot options (#65), because they are alternatives -- a room with a cage
-      // AND a screen across it is a maze, not a gaol.
-      //
-      // `min_size` 11 on the scheme and again inside the corner option, and they are not the same
-      // check: the scheme's keeps the room type out of small rooms, and the option's is what makes
-      // the two alternatives fall back to each other. A 3x3 cell needs its own cells, the L around
-      // it and something on the far side, so it wants a bigger room than a strip does.
-      //
-      // The gap block is the motif's own DOOR rather than an iron one. An iron door needs redstone,
-      // so a cell behind one is a cell nobody opens -- the whole enclosure is only content because
-      // a player can get into it.
       "name": "gaol",
       "weight": 8,
       "min_floor_index": 1,
@@ -1237,17 +789,9 @@
           "type": "dungeons2:corner",
           "block": "minecraft:iron_bars",
           "gap_block": "dungeonblocks:spruce_dungeon_door",
-          "config": {
-            "width": 3,
-            "depth": 3
-          }
+          "config": { "width": 3, "depth": 3 }
         },
-        {
-          "weight": 2,
-          "type": "dungeons2:strip",
-          "block": "minecraft:iron_bars",
-          "gap_block": "dungeonblocks:spruce_dungeon_door"
-        }
+        { "weight": 2, "type": "dungeons2:strip", "block": "minecraft:iron_bars", "gap_block": "dungeonblocks:spruce_dungeon_door" }
       ],
       "wall": {
         "patterns": [
@@ -1255,11 +799,7 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$plinth_left",
-                  "alternate_block": "$plinth_right",
-                  "alternate": "strict"
-                }
+                { "block": "$plinth_left", "alternate_block": "$plinth_right", "alternate": "strict" }
               ]
             }
           },
@@ -1274,8 +814,6 @@
           }
         ]
       },
-      // Furniture, not treasure. A gaol that reliably paid out would be a chest room with bars in
-      // it; what it should read as is somewhere people were kept.
       "props": {
         "min_count": 1,
         "max_count": 2,
@@ -1294,10 +832,7 @@
           { "entity": "dungeonblocks:stone_pot", "weight": 1 }
         ]
       },
-      "spawners": {
-        "min_count": 1,
-        "max_count": 1
-      }
+      "spawners": { "min_count": 1, "max_count": 1 }
     },
     {
       "name": "brazier_hall",
@@ -1305,18 +840,6 @@
       "min_floor_index": 1,
       "min_size": 9,
       "min_height": 5,
-      // #77. A smoke hole over the brazier -- which is what an oculus over a hearth has always
-      // been, and the one place in a room a shaft of light means something. The dais below it is
-      // this scheme's own, so the two line up for free: both are centred.
-      //
-      // NOT a skylight (Mark). The lamp sits at the top of the shaft with a grate under it, so
-      // what a player sees looking up is a lit grille with the source hidden, not a hole to the
-      // sky. `dark_iron_grate` is the grate because light has to pass through it -- a solid block
-      // here would seal the lamp above a dark shaft, and nothing in the code can tell.
-      //
-      // The scheme's min_height is 5, which is SHORT, so many of these rooms will have little or
-      // no spare budget above them. That degrades to a grate set in (or just above) the ceiling
-      // rather than to a hole, which is why it can ride a scheme this permissive at all.
       "ceiling": {
         "patterns": [
           {
@@ -1338,17 +861,11 @@
             "block": "minecraft:stone_bricks",
             "stair_block": "$stair",
             "centre_block": "$ornament",
-            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
-            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 3,
-            "config": {
-              "inset": 1
-            },
+            "config": { "inset": 1 },
             "orient": "inward",
             "top_block": "dungeonblocks:brazier_block",
-            "top_properties": {
-              "fire": "embers"
-            }
+            "top_properties": { "fire": "embers" }
           }
         ]
       },
@@ -1358,19 +875,13 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt" }
               ]
             }
           }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1
-      }
+      "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
       "name": "brazier_corners_hall",
@@ -1386,17 +897,11 @@
             "block": "minecraft:stone_bricks",
             "stair_block": "$stair",
             "centre_block": "$ornament",
-            // `size` is the DAIS's own side and stays on the entry; `inset` is pure
-            // placement, so it belongs to the layout. See PlatformLayoutPattern.
             "size": 1,
-            "config": {
-              "inset": 1
-            },
+            "config": { "inset": 1 },
             "orient": "inward",
             "top_block": "dungeonblocks:brazier_block",
-            "top_properties": {
-              "fire": "embers"
-            }
+            "top_properties": { "fire": "embers" }
           }
         ]
       },
@@ -1406,21 +911,13 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                {
-                  "block": "$inlay",
-                  "corner_block": "$inlay_alt",
-                  "anchor": "top"
-                }
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
               ]
             }
           }
         ]
       },
-      "spawners": {
-        "min_count": 0,
-        "max_count": 1,
-        "type": "vanilla"
-      }
+      "spawners": { "min_count": 0, "max_count": 1, "type": "vanilla" }
     }
   ]
 }
