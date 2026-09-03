@@ -211,21 +211,15 @@ class ShippedMobSetsTest {
                             + band.get("min_floor_index").getAsString() + " band", dangling);
                 }
             }
-            if (!fragment.has("schemes")) {
-                continue;
-            }
-            for (JsonElement wrapped : fragment.getAsJsonArray("schemes")) {
-                JsonObject scheme = wrapped.getAsJsonObject();
-                if (!scheme.has("spawners")) {
-                    continue;
-                }
-                JsonObject spawners = scheme.getAsJsonObject("spawners");
-                // A slot with no mobSets defers to the depth table above -- nothing to check, and
-                // that is the common case by design, not an omission.
-                if (spawners.has("mob_sets")) {
-                    sources++;
-                    checkSets(spawners, shipped,
-                            where + " / " + scheme.get("name").getAsString(), dangling);
+            for (JsonObject scheme : schemesOf(fragment)) {
+                for (JsonObject spawners : slotForms(scheme, "spawners")) {
+                    // A slot with no mobSets defers to the depth table above -- nothing to check,
+                    // and that is the common case by design, not an omission.
+                    if (spawners.has("mob_sets")) {
+                        sources++;
+                        checkSets(spawners, shipped,
+                                where + " / " + scheme.get("name").getAsString(), dangling);
+                    }
                 }
             }
         }
@@ -325,9 +319,6 @@ class ShippedMobSetsTest {
         List<String> orphans = new ArrayList<>();
         for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
             JsonObject fragment = parse(file).getAsJsonObject();
-            if (!fragment.has("schemes")) {
-                continue;
-            }
             // Same folder = same motif; a fragment may hold the schemes while a sibling holds the
             // table, which is the whole point of fragments, so the table is looked for across the
             // motif's directory rather than in this file alone.
@@ -339,14 +330,12 @@ class ShippedMobSetsTest {
                     break;
                 }
             }
-            for (JsonElement wrapped : fragment.getAsJsonArray("schemes")) {
-                JsonObject scheme = wrapped.getAsJsonObject();
-                if (!scheme.has("spawners")) {
-                    continue;
-                }
-                if (!scheme.getAsJsonObject("spawners").has("mob_sets") && !tableInMotif) {
-                    orphans.add(file.getParent().getFileName() + " / "
-                            + scheme.get("name").getAsString());
+            for (JsonObject scheme : schemesOf(fragment)) {
+                for (JsonObject spawners : slotForms(scheme, "spawners")) {
+                    if (!spawners.has("mob_sets") && !tableInMotif) {
+                        orphans.add(file.getParent().getFileName() + " / "
+                                + scheme.get("name").getAsString());
+                    }
                 }
             }
         }
@@ -356,6 +345,62 @@ class ShippedMobSetsTest {
                     + " resolve to nothing and place no spawners:\n  "
                     + String.join("\n  ", orphans));
         }
+    }
+
+    /**
+     * Every scheme in a fragment, from BOTH places one can live: the motif's own top-level list,
+     * and a stratum band's own (see {@code Stratum#schemes}).
+     *
+     * <p>Only the first was swept until 2026-09-03, which made this check quietly partial: the mud
+     * band's schemes are a band's, so its spawner slots were never examined by either test below.
+     * The band's schemes are the ones a player meets on floor 0.</p>
+     */
+    private static List<JsonObject> schemesOf(JsonObject fragment) {
+        List<JsonObject> schemes = new ArrayList<>();
+        if (fragment.has("schemes")) {
+            for (JsonElement wrapped : fragment.getAsJsonArray("schemes")) {
+                schemes.add(wrapped.getAsJsonObject());
+            }
+        }
+        if (fragment.has("strata_by_floor_index")) {
+            for (JsonElement wrapped : fragment.getAsJsonArray("strata_by_floor_index")) {
+                JsonObject band = wrapped.getAsJsonObject();
+                if (band.has("schemes")) {
+                    for (JsonElement scheme : band.getAsJsonArray("schemes")) {
+                        schemes.add(scheme.getAsJsonObject());
+                    }
+                }
+            }
+        }
+        return schemes;
+    }
+
+    /**
+     * Every configuration a scheme slot holds: the one object, or each option of a weighted list.
+     *
+     * <p>A slot may be authored either way ({@code SlotOptions}), and reading it as an object when
+     * it is a list is not a wrong answer but an {@code IllegalStateException} out of Gson &mdash; so
+     * before this existed, authoring a {@code spawners} option list in a shipped file failed the
+     * build from inside a test that was supposed to be checking mob sets. An option carrying
+     * {@code "none": true} names nothing and is skipped: it is the absence of a spawner, not a
+     * spawner with no sets.</p>
+     */
+    private static List<JsonObject> slotForms(JsonObject scheme, String slot) {
+        if (!scheme.has(slot)) {
+            return List.of();
+        }
+        JsonElement value = scheme.get(slot);
+        if (value.isJsonObject()) {
+            return List.of(value.getAsJsonObject());
+        }
+        List<JsonObject> forms = new ArrayList<>();
+        for (JsonElement wrapped : value.getAsJsonArray()) {
+            JsonObject option = wrapped.getAsJsonObject();
+            if (!option.has("none")) {
+                forms.add(option);
+            }
+        }
+        return forms;
     }
 
     private static void checkSets(JsonObject holder, Set<String> shipped, String where,
