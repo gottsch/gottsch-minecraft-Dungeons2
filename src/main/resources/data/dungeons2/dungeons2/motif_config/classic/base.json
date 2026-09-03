@@ -4,8 +4,7 @@
     "footing": "dungeonblocks:stone_bricks_pillar_base_block",
     "stair": "minecraft:stone_brick_stairs",
     "corbel": "dungeonblocks:polished_andesite_corbel_block",
-    "inlay": "minecraft:polished_andesite",
-    "inlay_alt": "minecraft:andesite",
+    "inlay": "minecraft:polished_andesite", "inlay_alt": "minecraft:andesite",
     "ornament": "minecraft:chiseled_stone_bricks",
     "plinth_left": "dungeonblocks:left_large_stone_brick",
     "plinth_right": "dungeonblocks:right_large_stone_brick"
@@ -13,51 +12,45 @@
   "wall": { "wall": "minecraft:stone_bricks" },
   "ceiling": { "ceiling": "minecraft:stone_bricks" },
   "door": {
-    "door": "dungeonblocks:spruce_dungeon_door",
-    "lintel": "minecraft:polished_andesite",
-    "floor": "minecraft:polished_andesite",
-    "probability": 0.5
+    "door": "dungeonblocks:spruce_dungeon_door", "lintel": "minecraft:polished_andesite",
+    "floor": "minecraft:polished_andesite", "probability": 0.5
   },
   "corridor": {
-    "floor": "minecraft:cobblestone",
-    "alternate_floor": "minecraft:stone_bricks",
-    "ceiling": "minecraft:stone_bricks",
-    "height": 7,
-    "narrow_height": 6,
-    "profile": "arched",
+    "floor": "minecraft:cobblestone", "alternate_floor": "minecraft:stone_bricks",
+    "ceiling": "minecraft:stone_bricks", "height": 7, "narrow_height": 6, "profile": "arched",
     "arch_block": "minecraft:stone_brick_stairs",
     "styles": [
       {
-        "name": "vaulted",
-        "weight": 3,
-        "height": 7,
-        "narrow_height": 6,
-        "profile": "arched",
+        "name": "vaulted", "weight": 3, "height": 7, "narrow_height": 6, "profile": "arched",
         "arch_block": "minecraft:stone_brick_stairs",
         "courses": [
-          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict", "anchor": "bottom", "offset": 0 },
+          {
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict",
+            "anchor": "bottom", "offset": 0
+          },
           { "block": "minecraft:polished_andesite", "anchor": "top", "offset": 1 }
         ]
       },
       {
-        "name": "grand",
-        "weight": 1,
-        "height": 8,
-        "narrow_height": 7,
-        "profile": "arched",
+        "name": "grand", "weight": 1, "height": 8, "narrow_height": 7, "profile": "arched",
         "arch_block": "minecraft:stone_brick_stairs",
         "courses": [
-          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict", "anchor": "bottom", "offset": 0 },
+          {
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict",
+            "anchor": "bottom", "offset": 0
+          },
           { "block": "minecraft:polished_andesite", "anchor": "top", "offset": 1 }
         ]
       },
       {
-        "name": "cramped",
-        "weight": 2,
-        "height": 5,
-        "profile": "flat",
+        "name": "cramped", "weight": 2, "height": 5, "profile": "flat",
         "courses": [
-          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" }
+          {
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict"
+          }
         ]
       }
     ]
@@ -117,8 +110,7 @@
         { "mob_set": "dungeons2:classic_guardians", "weight": 2 },
         { "mob_set": "dungeons2:classic_bones", "weight": 2 }
       ],
-      "min_mobs": 2,
-      "max_mobs": 4
+      "min_mobs": 2, "max_mobs": 4
     },
     {
       "min_floor_index": 3,
@@ -129,27 +121,25 @@
         { "mob_set": "dungeons2:classic_undead", "weight": 3 },
         { "mob_set": "dungeons2:classic_warband", "weight": 2 }
       ],
-      "min_mobs": 3,
-      "max_mobs": 5
+      "min_mobs": 3, "max_mobs": 5
     }
   ],
   "schemes": [
     {
-      "name": "plain",
-      "weight": 12,
+      "name": "plain", "weight": 12,
       "wall": {
         "patterns": [
           {
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" },
                 {
-                  "block": "minecraft:stone_brick_stairs",
-                  "anchor": "top",
-                  "offset": 0,
-                  "projection": 1,
-                  "orient": "toward_wall",
+                  "block": "dungeonblocks:left_large_stone_brick",
+                  "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict"
+                },
+                {
+                  "block": "minecraft:stone_brick_stairs", "anchor": "top", "offset": 0,
+                  "projection": 1, "orient": "toward_wall",
                   "properties": { "half": "top" },
                   "min_height": 6
                 }
@@ -159,19 +149,14 @@
           {
             "type": "dungeons2:door_jambs",
             "config": {
-              "block": "$shaft",
-              "base_block": "$footing",
-              "cap_block": "$footing",
+              "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
               "lintel_block": "$ornament"
             }
           }
         ]
       },
       "pots": {
-        "max_size": 7,
-        "min_count": 0,
-        "max_count": 2,
-        "loot_table": "dungeons2:pots/classic",
+        "max_size": 7, "min_count": 0, "max_count": 2, "loot_table": "dungeons2:pots/classic",
         "variants": [
           { "entity": "dungeonblocks:pot", "weight": 2 },
           { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
@@ -180,9 +165,7 @@
         ]
       },
       "props": {
-        "min_count": 0,
-        "max_count": 2,
-        "placement": "against_wall",
+        "min_count": 0, "max_count": 2, "placement": "against_wall",
         "variants": [
           { "block": "minecraft:barrel", "weight": 3, "oriented": false },
           { "block": "minecraft:cauldron", "weight": 1 }
@@ -192,12 +175,9 @@
         "min_size": 9,
         "patterns": [
           {
-            "type": "dais",
-            "layout": "dungeons2:centre",
-            "block": "minecraft:stone_bricks",
+            "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:stone_bricks",
             "stair_block": "minecraft:stone_brick_stairs",
-            "centre_block": "minecraft:chiseled_stone_bricks",
-            "size": 3,
+            "centre_block": "minecraft:chiseled_stone_bricks", "size": 3,
             "config": { "inset": 1 },
             "orient": "inward"
           }
@@ -205,45 +185,31 @@
       }
     },
     {
-      "name": "vaulted_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 7,
-
+      "name": "vaulted_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
       "pit": {
         "type": "dungeons2:centre",
         "config": {
-          "size": 5,
-          "depth": 1,
-          "rim_block": "minecraft:cobblestone_stairs",
+          "size": 5, "depth": 1, "rim_block": "minecraft:cobblestone_stairs",
           "rim_orient": "outward"
         }
       },
       "ceiling": {
         "patterns": [
           {
-            "type": "dungeons2:border",
-            "projection": 2,
+            "type": "dungeons2:border", "projection": 2,
             "config": {
-              "block": "$stair",
-              "inset": 0,
-              "orient": "outward",
+              "block": "$stair", "inset": 0, "orient": "outward",
               "properties": { "half": "top" }
             }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 1,
+            "type": "dungeons2:border", "projection": 1,
             "config": { "block": "minecraft:stone_bricks", "inset": 0 }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 1,
+            "type": "dungeons2:border", "projection": 1,
             "config": {
-              "block": "$stair",
-              "inset": 1,
-              "orient": "outward",
+              "block": "$stair", "inset": 1, "orient": "outward",
               "properties": { "half": "top" }
             }
           }
@@ -262,9 +228,7 @@
         ]
       },
       "props": {
-        "min_count": 0,
-        "max_count": 2,
-        "placement": "against_wall",
+        "min_count": 0, "max_count": 2, "placement": "against_wall",
         "variants": [
           { "block": "minecraft:barrel", "weight": 3, "oriented": false },
           { "block": "minecraft:cauldron", "weight": 1 }
@@ -272,63 +236,47 @@
       },
       "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
-        "min_count": 0,
-        "max_count": 1,
+        "min_count": 0, "max_count": 1,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
     {
-      "name": "deep_vaulted_hall",
-      "weight": 10,
-      "min_floor_index": 1,
-      "min_size": 11,
+      "name": "deep_vaulted_hall", "weight": 10, "min_floor_index": 1, "min_size": 11,
       "min_height": 8,
       "ceiling": {
         "patterns": [
           {
-            "type": "dungeons2:border",
-            "projection": 3,
+            "type": "dungeons2:border", "projection": 3,
             "config": {
-              "block": "$stair",
-              "inset": 0,
-              "orient": "outward",
+              "block": "$stair", "inset": 0, "orient": "outward",
               "properties": { "half": "top" }
             }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 2,
+            "type": "dungeons2:border", "projection": 2,
             "config": { "block": "minecraft:stone_bricks", "inset": 0 }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 1,
+            "type": "dungeons2:border", "projection": 1,
             "config": { "block": "minecraft:stone_bricks", "inset": 0 }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 2,
+            "type": "dungeons2:border", "projection": 2,
             "config": {
-              "block": "$stair",
-              "inset": 1,
-              "orient": "outward",
+              "block": "$stair", "inset": 1, "orient": "outward",
               "properties": { "half": "top" }
             }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 1,
+            "type": "dungeons2:border", "projection": 1,
             "config": { "block": "minecraft:stone_bricks", "inset": 1 }
           },
           {
-            "type": "dungeons2:border",
-            "projection": 1,
+            "type": "dungeons2:border", "projection": 1,
             "config": {
-              "block": "$stair",
-              "inset": 2,
-              "orient": "outward",
+              "block": "$stair", "inset": 2, "orient": "outward",
               "properties": { "half": "top" }
             }
           }
@@ -347,10 +295,7 @@
         ]
       },
       "props": {
-        "min_size": 9,
-        "min_count": 0,
-        "max_count": 1,
-        "placement": "corner",
+        "min_size": 9, "min_count": 0, "max_count": 1, "placement": "corner",
         "variants": [
           { "block": "minecraft:damaged_anvil", "weight": 2 },
           { "block": "minecraft:chipped_anvil", "weight": 1 }
@@ -358,32 +303,31 @@
       },
       "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
-        "min_count": 0,
-        "max_count": 1,
+        "min_count": 0, "max_count": 1,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
     {
-      "name": "grand_hall",
-      "abstract": true,
+      "name": "grand_hall", "abstract": true,
       "wall": {
         "patterns": [
           {
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                { "block": "minecraft:polished_andesite", "corner_block": "minecraft:andesite", "anchor": "top" }
+                {
+                  "block": "minecraft:polished_andesite", "corner_block": "minecraft:andesite",
+                  "anchor": "top"
+                }
               ]
             }
           }
         ]
       },
       "pots": {
-        "min_count": 1,
-        "max_count": 2,
-        "loot_table": "dungeons2:pots/classic",
+        "min_count": 1, "max_count": 2, "loot_table": "dungeons2:pots/classic",
         "variants": [
           { "entity": "dungeonblocks:pot", "weight": 2 },
           { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
@@ -393,21 +337,14 @@
       },
       "props": [
         {
-          "weight": 3,
-          "min_count": 0,
-          "max_count": 2,
-          "placement": "against_wall",
+          "weight": 3, "min_count": 0, "max_count": 2, "placement": "against_wall",
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
             { "block": "minecraft:cauldron", "weight": 1 }
           ]
         },
         {
-          "weight": 2,
-          "min_size": 9,
-          "min_count": 1,
-          "max_count": 2,
-          "placement": "flanking_door",
+          "weight": 2, "min_size": 9, "min_count": 1, "max_count": 2, "placement": "flanking_door",
           "variants": [
             { "block": "dungeonblocks:brazier_block", "weight": 1, "oriented": false }
           ]
@@ -416,51 +353,35 @@
       ],
       "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
-        "min_count": 0,
-        "max_count": 1,
+        "min_count": 0, "max_count": 1,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
     {
-      "name": "joisted_hall_stone",
-      "extends": "grand_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 7,
+      "name": "joisted_hall_stone", "extends": "grand_hall", "weight": 12, "min_floor_index": 1,
+      "min_size": 9, "min_height": 7,
       "ceiling": {
         "patterns": [
           {
-            "type": "dungeons2:joists",
-            "projection": 1,
+            "type": "dungeons2:joists", "projection": 1,
             "config": {
-              "block": "$inlay",
-              "bracket_block": "$corbel",
-              "orient": "inward",
-              "spacing": 3
+              "block": "$inlay", "bracket_block": "$corbel", "orient": "inward", "spacing": 3
             }
           }
         ]
       }
     },
     {
-      "name": "joisted_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 7,
+      "name": "joisted_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
       "ceiling": {
         "patterns": [
           {
-            "type": "dungeons2:joists",
-            "projection": 1,
+            "type": "dungeons2:joists", "projection": 1,
             "config": {
-              "block": "minecraft:spruce_log",
-              "bracket_block": "dungeonblocks:spruce_corbel_block",
-              "orient": "inward",
-              "spacing": 3
+              "block": "minecraft:spruce_log", "bracket_block": "dungeonblocks:spruce_corbel_block",
+              "orient": "inward", "spacing": 3
             }
           }
         ]
@@ -478,9 +399,7 @@
         ]
       },
       "pots": {
-        "min_count": 1,
-        "max_count": 2,
-        "loot_table": "dungeons2:pots/classic",
+        "min_count": 1, "max_count": 2, "loot_table": "dungeons2:pots/classic",
         "variants": [
           { "entity": "dungeonblocks:pot", "weight": 2 },
           { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
@@ -489,9 +408,7 @@
         ]
       },
       "props": {
-        "min_count": 0,
-        "max_count": 2,
-        "placement": "against_wall",
+        "min_count": 0, "max_count": 2, "placement": "against_wall",
         "variants": [
           { "block": "minecraft:barrel", "weight": 3, "oriented": false },
           { "block": "minecraft:cauldron", "weight": 1 }
@@ -500,23 +417,14 @@
       "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
-      "name": "pilastered_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 7,
+      "name": "pilastered_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
       "platforms": {
         "patterns": [
           {
-            "type": "dais",
-            "layout": "dungeons2:centre",
-            "block": "minecraft:stone_bricks",
-            "stair_block": "$stair",
-            "centre_block": "$ornament",
-            "size": 3,
+            "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:stone_bricks",
+            "stair_block": "$stair", "centre_block": "$ornament", "size": 3,
             "config": { "inset": 1 },
-            "orient": "inward",
-            "top_block": "dungeonblocks:brazier_block",
+            "orient": "inward", "top_block": "dungeonblocks:brazier_block",
             "top_properties": { "fire": "embers" }
           }
         ]
@@ -534,30 +442,23 @@
           {
             "type": "dungeons2:panels",
             "config": {
-              "block": "dungeonblocks:stone_bricks_fluted_block",
-              "width": 3,
-              "spacing": 4,
+              "block": "dungeonblocks:stone_bricks_fluted_block", "width": 3, "spacing": 4,
               "inset": 1
             }
           },
           {
             "type": "dungeons2:pilasters",
             "config": {
-              "block": "$shaft",
-              "base_block": "$footing",
-              "cap_block": "$footing",
+              "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
               "base_properties": { "base": "up" },
               "cap_properties": { "base": "down" },
-              "spacing": 4,
-              "projection": 1
+              "spacing": 4, "projection": 1
             }
           },
           {
             "type": "dungeons2:end_pilasters",
             "config": {
-              "block": "$shaft",
-              "base_block": "$footing",
-              "cap_block": "$footing",
+              "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
               "base_properties": { "base": "up" },
               "cap_properties": { "base": "down" },
               "projection": 1
@@ -566,9 +467,7 @@
         ]
       },
       "pots": {
-        "min_count": 2,
-        "max_count": 4,
-        "loot_table": "dungeons2:pots/classic",
+        "min_count": 2, "max_count": 4, "loot_table": "dungeons2:pots/classic",
         "variants": [
           { "entity": "dungeonblocks:pot", "weight": 2 },
           { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
@@ -577,9 +476,7 @@
         ]
       },
       "props": {
-        "min_count": 0,
-        "max_count": 2,
-        "placement": "against_wall",
+        "min_count": 0, "max_count": 2, "placement": "against_wall",
         "variants": [
           { "block": "minecraft:barrel", "weight": 3, "oriented": false },
           { "block": "minecraft:cauldron", "weight": 1 }
@@ -588,26 +485,16 @@
       "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
-      "name": "hypostyle_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 7,
+      "name": "hypostyle_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
       "floor": [
         {
-          "weight": 2,
-          "min_size": 11,
-          "type": "dungeons2:diagonal",
+          "weight": 2, "min_size": 11, "type": "dungeons2:diagonal",
           "config": {
-            "primary_block": "minecraft:stone_bricks",
-            "secondary_block": "$inlay",
-            "width": 3
+            "primary_block": "minecraft:stone_bricks", "secondary_block": "$inlay", "width": 3
           }
         },
         {
-          "weight": 2,
-          "min_size": 11,
-          "type": "dungeons2:chevron",
+          "weight": 2, "min_size": 11, "type": "dungeons2:chevron",
           "config": { "block": "$ornament", "spacing": 4 }
         },
         { "weight": 3, "none": true }
@@ -615,9 +502,7 @@
       "pillars": {
         "patterns": [
           {
-            "type": "dungeons2:grid",
-            "block": "$shaft",
-            "base_block": "$footing",
+            "type": "dungeons2:grid", "block": "$shaft", "base_block": "$footing",
             "cap_block": "$footing",
             "base_properties": { "base": "up" },
             "cap_properties": { "base": "down" },
@@ -630,12 +515,8 @@
           {
             "type": "dungeons2:arcade",
             "config": {
-              "block": "$inlay",
-              "stair_block": "$stair",
-              "impost_block": "$inlay_alt",
-              "width": 5,
-              "height": 5,
-              "spacing": 2
+              "block": "$inlay", "stair_block": "$stair", "impost_block": "$inlay_alt", "width": 5,
+              "height": 5, "spacing": 2
             }
           },
           {
@@ -649,10 +530,7 @@
         ]
       },
       "props": {
-        "min_size": 11,
-        "min_count": 0,
-        "max_count": 3,
-        "placement": "free",
+        "min_size": 11, "min_count": 0, "max_count": 3, "placement": "free",
         "variants": [
           { "block": "minecraft:barrel", "weight": 3, "oriented": false },
           { "block": "minecraft:hay_block", "weight": 2 }
@@ -660,32 +538,23 @@
       },
       "spawners": { "min_count": 0, "max_count": 1 },
       "chests": {
-        "min_count": 0,
-        "max_count": 1,
+        "min_count": 0, "max_count": 1,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
       }
     },
     {
-      "name": "colonnaded_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 7,
+      "name": "colonnaded_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
       "floor": [
         {
-          "weight": 2,
-          "min_size": 11,
-          "type": "dungeons2:composite",
+          "weight": 2, "min_size": 11, "type": "dungeons2:composite",
           "config": {
             "generators": [
               {
                 "type": "dungeons2:border",
                 "config": {
-                  "inset": 2,
-                  "corner_block": "$inlay_alt",
-                  "edge_left_block": "$inlay",
+                  "inset": 2, "corner_block": "$inlay_alt", "edge_left_block": "$inlay",
                   "edge_right_block": "$inlay"
                 }
               },
@@ -701,9 +570,7 @@
       "pillars": {
         "patterns": [
           {
-            "type": "dungeons2:colonnade",
-            "block": "$shaft",
-            "base_block": "$footing",
+            "type": "dungeons2:colonnade", "block": "$shaft", "base_block": "$footing",
             "cap_block": "$footing",
             "base_properties": { "base": "up" },
             "cap_properties": { "base": "down" },
@@ -724,9 +591,7 @@
         ]
       },
       "props": {
-        "min_count": 0,
-        "max_count": 2,
-        "placement": "against_wall",
+        "min_count": 0, "max_count": 2, "placement": "against_wall",
         "variants": [
           { "block": "minecraft:barrel", "weight": 3, "oriented": false },
           { "block": "minecraft:cauldron", "weight": 1 }
@@ -735,18 +600,12 @@
       "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
-      "name": "quartet_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 7,
-      "max_size": 7,
+      "name": "quartet_hall", "weight": 12, "min_floor_index": 1, "min_size": 7, "max_size": 7,
       "min_height": 6,
       "pillars": {
         "patterns": [
           {
-            "type": "dungeons2:quartet",
-            "block": "$shaft",
-            "base_block": "$footing",
+            "type": "dungeons2:quartet", "block": "$shaft", "base_block": "$footing",
             "cap_block": "$footing",
             "base_properties": { "base": "up" },
             "cap_properties": { "base": "down" },
@@ -767,9 +626,7 @@
         ]
       },
       "props": {
-        "min_count": 0,
-        "max_count": 2,
-        "placement": "corner",
+        "min_count": 0, "max_count": 2, "placement": "corner",
         "variants": [
           { "block": "minecraft:barrel", "weight": 1, "oriented": false }
         ]
@@ -777,21 +634,17 @@
       "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
-      "name": "gaol",
-      "weight": 8,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 6,
+      "name": "gaol", "weight": 8, "min_floor_index": 1, "min_size": 9, "min_height": 6,
       "partition": [
         {
-          "weight": 3,
-          "min_size": 11,
-          "type": "dungeons2:corner",
-          "block": "minecraft:iron_bars",
+          "weight": 3, "min_size": 11, "type": "dungeons2:corner", "block": "minecraft:iron_bars",
           "gap_block": "dungeonblocks:spruce_dungeon_door",
           "config": { "width": 3, "depth": 3 }
         },
-        { "weight": 2, "type": "dungeons2:strip", "block": "minecraft:iron_bars", "gap_block": "dungeonblocks:spruce_dungeon_door" }
+        {
+          "weight": 2, "type": "dungeons2:strip", "block": "minecraft:iron_bars",
+          "gap_block": "dungeonblocks:spruce_dungeon_door"
+        }
       ],
       "wall": {
         "patterns": [
@@ -799,34 +652,30 @@
             "type": "dungeons2:courses",
             "config": {
               "courses": [
-                { "block": "$plinth_left", "alternate_block": "$plinth_right", "alternate": "strict" }
+                {
+                  "block": "$plinth_left", "alternate_block": "$plinth_right", "alternate": "strict"
+                }
               ]
             }
           },
           {
             "type": "dungeons2:door_jambs",
             "config": {
-              "block": "$shaft",
-              "base_block": "$footing",
-              "cap_block": "$footing",
+              "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
               "lintel_block": "$ornament"
             }
           }
         ]
       },
       "props": {
-        "min_count": 1,
-        "max_count": 2,
-        "placement": "against_wall",
+        "min_count": 1, "max_count": 2, "placement": "against_wall",
         "variants": [
           { "block": "minecraft:barrel", "weight": 2, "oriented": false },
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
       "pots": {
-        "min_count": 0,
-        "max_count": 2,
-        "loot_table": "dungeons2:pots/classic",
+        "min_count": 0, "max_count": 2, "loot_table": "dungeons2:pots/classic",
         "variants": [
           { "entity": "dungeonblocks:pot", "weight": 2 },
           { "entity": "dungeonblocks:stone_pot", "weight": 1 }
@@ -835,20 +684,14 @@
       "spawners": { "min_count": 1, "max_count": 1 }
     },
     {
-      "name": "brazier_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 9,
-      "min_height": 5,
+      "name": "brazier_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 5,
       "ceiling": {
         "patterns": [
           {
             "type": "dungeons2:oculus",
             "config": {
-              "cap_block": "minecraft:glowstone",
-              "grate_block": "dungeonblocks:dark_iron_grate",
-              "size": 3,
-              "depth": 3
+              "cap_block": "minecraft:glowstone", "grate_block": "dungeonblocks:dark_iron_grate",
+              "size": 3, "depth": 3
             }
           }
         ]
@@ -856,15 +699,10 @@
       "platforms": {
         "patterns": [
           {
-            "type": "dais",
-            "layout": "dungeons2:centre",
-            "block": "minecraft:stone_bricks",
-            "stair_block": "$stair",
-            "centre_block": "$ornament",
-            "size": 3,
+            "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:stone_bricks",
+            "stair_block": "$stair", "centre_block": "$ornament", "size": 3,
             "config": { "inset": 1 },
-            "orient": "inward",
-            "top_block": "dungeonblocks:brazier_block",
+            "orient": "inward", "top_block": "dungeonblocks:brazier_block",
             "top_properties": { "fire": "embers" }
           }
         ]
@@ -884,23 +722,15 @@
       "spawners": { "min_count": 0, "max_count": 1 }
     },
     {
-      "name": "brazier_corners_hall",
-      "weight": 12,
-      "min_floor_index": 1,
-      "min_size": 11,
+      "name": "brazier_corners_hall", "weight": 12, "min_floor_index": 1, "min_size": 11,
       "min_height": 5,
       "platforms": {
         "patterns": [
           {
-            "type": "dais",
-            "layout": "dungeons2:corners",
-            "block": "minecraft:stone_bricks",
-            "stair_block": "$stair",
-            "centre_block": "$ornament",
-            "size": 1,
+            "type": "dais", "layout": "dungeons2:corners", "block": "minecraft:stone_bricks",
+            "stair_block": "$stair", "centre_block": "$ornament", "size": 1,
             "config": { "inset": 1 },
-            "orient": "inward",
-            "top_block": "dungeonblocks:brazier_block",
+            "orient": "inward", "top_block": "dungeonblocks:brazier_block",
             "top_properties": { "fire": "embers" }
           }
         ]

@@ -1,13 +1,10 @@
 {
   "strata_by_floor_index": [
     {
-      "min_floor_index": 0,
-      "name": "mud",
+      "min_floor_index": 0, "name": "mud",
       "palette": {
-        "shaft": "minecraft:spruce_log",
-        "footing": "dungeonblocks:square_stone_brick",
-        "stair": "minecraft:mud_brick_stairs",
-        "corbel": "dungeonblocks:stone_corbel_block",
+        "shaft": "minecraft:spruce_log", "footing": "dungeonblocks:square_stone_brick",
+        "stair": "minecraft:mud_brick_stairs", "corbel": "dungeonblocks:stone_corbel_block",
         "wall_capital_left": "dungeonblocks:left_large_mud_brick",
         "wall_capital_right": "dungeonblocks:right_large_mud_brick"
       },
@@ -18,25 +15,26 @@
             {
               "type": "dungeons2:gradient",
               "config": {
-                "bottom_block": "minecraft:mud_bricks",
-                "top_block": "minecraft:cobblestone",
-                "bottom_probability": 0.9,
-                "top_probability": 0.05,
-                "hold_rows": 2
+                "bottom_block": "minecraft:mud_bricks", "top_block": "minecraft:cobblestone",
+                "bottom_probability": 0.9, "top_probability": 0.05, "hold_rows": 2
               }
             },
             {
               "type": "dungeons2:courses",
               "config": {
                 "courses": [
-                  { "block": "$wall_capital_left", "alternate_block": "$wall_capital_right", "alternate": "strict", "anchor": "top" },
-                  { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" },
                   {
-                    "block": "minecraft:mud_brick_stairs",
-                    "anchor": "top",
-                    "offset": 0,
-                    "projection": 1,
-                    "orient": "toward_wall",
+                    "block": "$wall_capital_left", "alternate_block": "$wall_capital_right",
+                    "alternate": "strict", "anchor": "top"
+                  },
+                  {
+                    "block": "dungeonblocks:left_large_stone_brick",
+                    "alternate_block": "dungeonblocks:right_large_stone_brick",
+                    "alternate": "strict"
+                  },
+                  {
+                    "block": "minecraft:mud_brick_stairs", "anchor": "top", "offset": 0,
+                    "projection": 1, "orient": "toward_wall",
                     "properties": { "half": "top" }
                   }
                 ]
@@ -47,39 +45,33 @@
       },
       "ceiling": { "ceiling": "minecraft:mud_bricks" },
       "floor": {
-        "base": "minecraft:cobblestone",
-        "alternate_base": "minecraft:cobblestone",
+        "base": "minecraft:cobblestone", "alternate_base": "minecraft:cobblestone",
         "pattern": {
           "type": "dungeons2:speckle",
           "config": {
-            "primary_block": "minecraft:cobblestone",
-            "secondary_block": "minecraft:packed_mud",
+            "primary_block": "minecraft:cobblestone", "secondary_block": "minecraft:packed_mud",
             "probability": 0.125
           }
         }
       },
       "door": {
-        "door": "minecraft:oak_door",
-        "lintel": "dungeonblocks:square_stone_brick",
-        "floor": "minecraft:cobblestone",
-        "probability": 0.4
+        "door": "minecraft:oak_door", "lintel": "dungeonblocks:square_stone_brick",
+        "floor": "minecraft:cobblestone", "probability": 0.4
       },
       "corridor": {
-        "floor": "minecraft:cobblestone",
-        "alternate_floor": "minecraft:cobblestone",
-        "ceiling": "minecraft:mud_bricks",
-        "height": 7,
-        "narrow_height": 6,
-        "profile": "arched",
+        "floor": "minecraft:cobblestone", "alternate_floor": "minecraft:cobblestone",
+        "ceiling": "minecraft:mud_bricks", "height": 7, "narrow_height": 6, "profile": "arched",
         "arch_block": "minecraft:mud_brick_stairs",
         "courses": [
-          { "block": "dungeonblocks:left_large_stone_brick", "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict" }
+          {
+            "block": "dungeonblocks:left_large_stone_brick",
+            "alternate_block": "dungeonblocks:right_large_stone_brick", "alternate": "strict"
+          }
         ]
       },
       "schemes": [
         {
-          "name": "plain",
-          "weight": 12,
+          "name": "plain", "weight": 12,
           "wall": [
             {
               "weight": 4,
@@ -87,10 +79,8 @@
                 {
                   "type": "dungeons2:door_jambs",
                   "config": {
-                    "block": "dungeonblocks:square_mud_brick",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "lintel_block": "$footing"
+                    "block": "dungeonblocks:square_mud_brick", "base_block": "$footing",
+                    "cap_block": "$footing", "lintel_block": "$footing"
                   }
                 }
               ]
@@ -102,22 +92,22 @@
                   "type": "dungeons2:courses",
                   "config": {
                     "courses": [
-                      { "block": "dungeonblocks:square_mud_brick", "corner_block": "dungeonblocks:mossy_square_mud_brick", "anchor": "top" }
+                      {
+                        "block": "dungeonblocks:square_mud_brick",
+                        "corner_block": "dungeonblocks:mossy_square_mud_brick", "anchor": "top"
+                      }
                     ]
                   }
                 }
               ]
             },
             {
-              "weight": 2,
-              "min_height": 7,
+              "weight": 2, "min_height": 7,
               "patterns": [
                 {
                   "type": "dungeons2:diamond",
                   "config": {
-                    "block": "dungeonblocks:square_mud_brick",
-                    "size": 2,
-                    "spacing": 6,
+                    "block": "dungeonblocks:square_mud_brick", "size": 2, "spacing": 6,
                     "filled": true
                   }
                 }
@@ -128,28 +118,20 @@
           "floor": [
             { "weight": 6, "none": true },
             {
-              "weight": 3,
-              "type": "dungeons2:path",
+              "weight": 3, "type": "dungeons2:path",
               "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "auto" }
             },
             {
-              "weight": 2,
-              "min_size": 9,
-              "type": "dungeons2:border",
+              "weight": 2, "min_size": 9, "type": "dungeons2:border",
               "config": {
-                "inset": 1,
-                "corner_block": "$footing",
-                "edge_left_block": "$plinth_left",
+                "inset": 1, "corner_block": "$footing", "edge_left_block": "$plinth_left",
                 "edge_right_block": "$plinth_right"
               }
             }
           ],
           "pots": [
             {
-              "weight": 3,
-              "max_size": 7,
-              "min_count": 0,
-              "max_count": 2,
+              "weight": 3, "max_size": 7, "min_count": 0, "max_count": 2,
               "loot_table": "dungeons2:pots/classic",
               "variants": [
                 { "entity": "dungeonblocks:pot", "weight": 2 },
@@ -159,10 +141,7 @@
               ]
             },
             {
-              "weight": 2,
-              "min_size": 9,
-              "min_count": 1,
-              "max_count": 2,
+              "weight": 2, "min_size": 9, "min_count": 1, "max_count": 2,
               "loot_table": "dungeons2:pots/classic",
               "variants": [
                 { "entity": "dungeonblocks:stone_pot", "weight": 2 },
@@ -173,20 +152,14 @@
           ],
           "props": [
             {
-              "weight": 3,
-              "min_count": 0,
-              "max_count": 2,
-              "placement": "against_wall",
+              "weight": 3, "min_count": 0, "max_count": 2, "placement": "against_wall",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 3, "oriented": false },
                 { "block": "minecraft:hay_block", "weight": 1 }
               ]
             },
             {
-              "weight": 2,
-              "min_count": 0,
-              "max_count": 2,
-              "placement": "corner",
+              "weight": 2, "min_count": 0, "max_count": 2, "placement": "corner",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 1, "oriented": false }
               ]
@@ -196,14 +169,11 @@
           "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 }
         },
         {
-          "name": "mud_chamber",
-          "weight": 10,
-          "min_size": 9,
+          "name": "mud_chamber", "weight": 10, "min_size": 9,
           "floor": [
             { "weight": 3, "none": true },
             {
-              "weight": 3,
-              "type": "dungeons2:composite",
+              "weight": 3, "type": "dungeons2:composite",
               "config": {
                 "generators": [
                   {
@@ -213,9 +183,7 @@
                   {
                     "type": "dungeons2:border",
                     "config": {
-                      "inset": 1,
-                      "corner_block": "$ornament",
-                      "edge_left_block": "$inlay",
+                      "inset": 1, "corner_block": "$ornament", "edge_left_block": "$inlay",
                       "edge_right_block": "$inlay"
                     }
                   }
@@ -223,31 +191,24 @@
               }
             },
             {
-              "weight": 3,
-              "type": "dungeons2:diagonal",
+              "weight": 3, "type": "dungeons2:diagonal",
               "config": {
-                "primary_block": "minecraft:mud_bricks",
-                "secondary_block": "minecraft:packed_mud",
+                "primary_block": "minecraft:mud_bricks", "secondary_block": "minecraft:packed_mud",
                 "width": 2
               }
             },
             {
-              "weight": 2,
-              "min_size": 11,
-              "type": "dungeons2:chevron",
+              "weight": 2, "min_size": 11, "type": "dungeons2:chevron",
               "config": { "block": "dungeonblocks:square_mud_brick", "spacing": 4 }
             },
             {
-              "weight": 2,
-              "min_size": 11,
-              "type": "dungeons2:composite",
+              "weight": 2, "min_size": 11, "type": "dungeons2:composite",
               "config": {
                 "generators": [
                   {
                     "type": "dungeons2:border",
                     "config": {
-                      "inset": 2,
-                      "corner_block": "$footing",
+                      "inset": 2, "corner_block": "$footing",
                       "edge_left_block": "dungeonblocks:square_mud_brick",
                       "edge_right_block": "dungeonblocks:square_mud_brick"
                     }
@@ -260,8 +221,7 @@
               }
             },
             {
-              "weight": 2,
-              "type": "dungeons2:cross",
+              "weight": 2, "type": "dungeons2:cross",
               "config": { "thickness": 1, "block": "$footing" }
             }
           ],
@@ -274,31 +234,25 @@
                   "type": "dungeons2:vaulted",
                   "config": {
                     "block": "minecraft:mud_bricks",
-                    "springing_block": "dungeonblocks:square_mud_brick",
-                    "steps": 3
+                    "springing_block": "dungeonblocks:square_mud_brick", "steps": 3
                   }
                 }
               ]
             },
             {
-              "weight": 3,
-              "min_height": 7,
+              "weight": 3, "min_height": 7,
               "patterns": [
                 {
-                  "type": "dungeons2:joists",
-                  "projection": 1,
+                  "type": "dungeons2:joists", "projection": 1,
                   "config": {
-                    "block": "minecraft:stripped_spruce_log",
-                    "bracket_block": "$corbel",
-                    "orient": "inward",
-                    "spacing": 3
+                    "block": "minecraft:stripped_spruce_log", "bracket_block": "$corbel",
+                    "orient": "inward", "spacing": 3
                   }
                 }
               ]
             },
             {
-              "weight": 2,
-              "min_height": 7,
+              "weight": 2, "min_height": 7,
               "patterns": [
                 {
                   "type": "dungeons2:coffers",
@@ -322,15 +276,12 @@
           "wall": [
             { "weight": 4, "none": true },
             {
-              "weight": 3,
-              "min_height": 7,
+              "weight": 3, "min_height": 7,
               "patterns": [
                 {
                   "type": "dungeons2:diamond",
                   "config": {
-                    "block": "dungeonblocks:square_mud_brick",
-                    "size": 2,
-                    "spacing": 6,
+                    "block": "dungeonblocks:square_mud_brick", "size": 2, "spacing": 6,
                     "filled": true
                   }
                 }
@@ -343,7 +294,11 @@
                   "type": "dungeons2:courses",
                   "config": {
                     "courses": [
-                      { "block": "dungeonblocks:left_large_mud_brick", "alternate_block": "dungeonblocks:right_large_mud_brick", "alternate": "strict", "anchor": "top" }
+                      {
+                        "block": "dungeonblocks:left_large_mud_brick",
+                        "alternate_block": "dungeonblocks:right_large_mud_brick",
+                        "alternate": "strict", "anchor": "top"
+                      }
                     ]
                   }
                 }
@@ -352,10 +307,7 @@
           ],
           "pots": [
             {
-              "weight": 2,
-              "min_count": 1,
-              "max_count": 3,
-              "loot_table": "dungeons2:pots/classic",
+              "weight": 2, "min_count": 1, "max_count": 3, "loot_table": "dungeons2:pots/classic",
               "variants": [
                 { "entity": "dungeonblocks:stone_pot", "weight": 2 },
                 { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
@@ -366,45 +318,34 @@
           "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 }
         },
         {
-          "name": "mud_hall",
-          "weight": 10,
-          "min_size": 9,
-          "min_height": 7,
+          "name": "mud_hall", "weight": 10, "min_size": 9, "min_height": 7,
           "pillars": [
             { "weight": 3, "none": true },
             {
               "weight": 3,
               "patterns": [
                 {
-                  "type": "dungeons2:grid",
-                  "block": "$shaft",
-                  "base_block": "$footing",
+                  "type": "dungeons2:grid", "block": "$shaft", "base_block": "$footing",
                   "cap_block": "$footing",
                   "config": { "spacing": 4, "inset": 2 }
                 }
               ]
             },
             {
-              "weight": 2,
-              "min_size": 11,
+              "weight": 2, "min_size": 11,
               "patterns": [
                 {
-                  "type": "dungeons2:grid",
-                  "block": "$shaft",
-                  "base_block": "$footing",
+                  "type": "dungeons2:grid", "block": "$shaft", "base_block": "$footing",
                   "cap_block": "$footing",
                   "config": { "spacing": 3, "inset": 1 }
                 }
               ]
             },
             {
-              "weight": 2,
-              "min_size": 11,
+              "weight": 2, "min_size": 11,
               "patterns": [
                 {
-                  "type": "dungeons2:quartet",
-                  "block": "$shaft",
-                  "base_block": "$footing",
+                  "type": "dungeons2:quartet", "block": "$shaft", "base_block": "$footing",
                   "cap_block": "$footing",
                   "config": { "spacing": 4, "inset": 2 }
                 }
@@ -418,11 +359,8 @@
                 {
                   "type": "dungeons2:pilasters",
                   "config": {
-                    "block": "$shaft",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "spacing": 4,
-                    "projection": 1
+                    "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
+                    "spacing": 4, "projection": 1
                   }
                 }
               ]
@@ -441,20 +379,15 @@
                 {
                   "type": "dungeons2:pilasters",
                   "config": {
-                    "block": "$shaft",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "spacing": 4,
-                    "projection": 1
+                    "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
+                    "spacing": 4, "projection": 1
                   }
                 },
                 {
                   "type": "dungeons2:end_pilasters",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "projection": 1
+                    "block": "minecraft:mud_bricks", "base_block": "$footing",
+                    "cap_block": "$footing", "projection": 1
                   }
                 }
               ]
@@ -465,10 +398,8 @@
                 {
                   "type": "dungeons2:end_pilasters",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "projection": 1
+                    "block": "minecraft:mud_bricks", "base_block": "$footing",
+                    "cap_block": "$footing", "projection": 1
                   }
                 }
               ]
@@ -479,11 +410,8 @@
                 {
                   "type": "dungeons2:arcade",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "stair_block": "minecraft:mud_brick_stairs",
-                    "impost_block": "dungeonblocks:square_mud_brick",
-                    "width": 5,
-                    "height": 5,
+                    "block": "minecraft:mud_bricks", "stair_block": "minecraft:mud_brick_stairs",
+                    "impost_block": "dungeonblocks:square_mud_brick", "width": 5, "height": 5,
                     "spacing": 2
                   }
                 }
@@ -496,13 +424,9 @@
               "weight": 3,
               "patterns": [
                 {
-                  "type": "dungeons2:joists",
-                  "projection": 1,
+                  "type": "dungeons2:joists", "projection": 1,
                   "config": {
-                    "block": "$shaft",
-                    "bracket_block": "$corbel",
-                    "orient": "inward",
-                    "spacing": 3
+                    "block": "$shaft", "bracket_block": "$corbel", "orient": "inward", "spacing": 3
                   }
                 }
               ]
@@ -511,8 +435,7 @@
               "weight": 2,
               "patterns": [
                 {
-                  "type": "dungeons2:joists",
-                  "projection": 1,
+                  "type": "dungeons2:joists", "projection": 1,
                   "config": { "block": "minecraft:stripped_spruce_log", "spacing": 4 }
                 }
               ]
@@ -521,21 +444,16 @@
               "weight": 2,
               "patterns": [
                 {
-                  "type": "dungeons2:joists",
-                  "projection": 1,
+                  "type": "dungeons2:joists", "projection": 1,
                   "config": {
-                    "block": "$shaft",
-                    "bracket_block": "$corbel",
-                    "orient": "inward",
-                    "spacing": 4
+                    "block": "$shaft", "bracket_block": "$corbel", "orient": "inward", "spacing": 4
                   }
                 },
                 {
                   "type": "dungeons2:vaulted",
                   "config": {
                     "block": "minecraft:mud_bricks",
-                    "springing_block": "dungeonblocks:square_mud_brick",
-                    "steps": 3
+                    "springing_block": "dungeonblocks:square_mud_brick", "steps": 3
                   }
                 }
               ]
@@ -546,10 +464,8 @@
                 {
                   "type": "dungeons2:vaulted",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "springing_block": "$footing",
-                    "crown_block": "dungeonblocks:mossy_square_mud_brick",
-                    "steps": 2,
+                    "block": "minecraft:mud_bricks", "springing_block": "$footing",
+                    "crown_block": "dungeonblocks:mossy_square_mud_brick", "steps": 2,
                     "step_height": 2
                   }
                 }
@@ -560,17 +476,13 @@
           "floor": [
             { "weight": 3, "none": true },
             {
-              "weight": 2,
-              "min_size": 11,
-              "type": "dungeons2:composite",
+              "weight": 2, "min_size": 11, "type": "dungeons2:composite",
               "config": {
                 "generators": [
                   {
                     "type": "dungeons2:border",
                     "config": {
-                      "inset": 2,
-                      "corner_block": "$ornament",
-                      "edge_left_block": "$plinth_left",
+                      "inset": 2, "corner_block": "$ornament", "edge_left_block": "$plinth_left",
                       "edge_right_block": "$plinth_right"
                     }
                   },
@@ -582,37 +494,26 @@
               }
             },
             {
-              "weight": 2,
-              "type": "dungeons2:diagonal",
+              "weight": 2, "type": "dungeons2:diagonal",
               "config": {
-                "primary_block": "minecraft:mud_bricks",
-                "secondary_block": "$footing",
-                "width": 3
+                "primary_block": "minecraft:mud_bricks", "secondary_block": "$footing", "width": 3
               }
             },
             {
-              "weight": 2,
-              "type": "dungeons2:path",
+              "weight": 2, "type": "dungeons2:path",
               "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "auto" }
             }
           ],
           "props": [
             {
-              "weight": 3,
-              "min_count": 0,
-              "max_count": 2,
-              "placement": "against_wall",
+              "weight": 3, "min_count": 0, "max_count": 2, "placement": "against_wall",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 3, "oriented": false },
                 { "block": "minecraft:hay_block", "weight": 1 }
               ]
             },
             {
-              "weight": 2,
-              "min_size": 11,
-              "min_count": 0,
-              "max_count": 3,
-              "placement": "free",
+              "weight": 2, "min_size": 11, "min_count": 0, "max_count": 3, "placement": "free",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 3, "oriented": false },
                 { "block": "minecraft:hay_block", "weight": 1 }
@@ -622,10 +523,7 @@
           ],
           "pots": [
             {
-              "weight": 2,
-              "min_count": 1,
-              "max_count": 3,
-              "loot_table": "dungeons2:pots/classic",
+              "weight": 2, "min_count": 1, "max_count": 3, "loot_table": "dungeons2:pots/classic",
               "variants": [
                 { "entity": "dungeonblocks:stone_pot", "weight": 2 },
                 { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
@@ -635,106 +533,83 @@
           ],
           "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "chests": {
-            "min_count": 0,
-            "max_count": 1,
+            "min_count": 0, "max_count": 1,
             "variants": [
               { "block": "minecraft:chest", "weight": 1 }
             ]
           }
         },
         {
-          "name": "mud_works",
-          "weight": 5,
-          "min_size": 9,
+          "name": "mud_works", "weight": 5, "min_size": 9,
           "pit": [
             { "weight": 3, "none": true },
             {
-              "weight": 2,
-              "type": "dungeons2:hazard",
+              "weight": 2, "type": "dungeons2:hazard",
               "config": {
-                "width": 3,
-                "depth": 4,
-                "offset_x": 2,
-                "spike_block": "minecraft:pointed_dripstone",
+                "width": 3, "depth": 4, "offset_x": 2, "spike_block": "minecraft:pointed_dripstone",
                 "spike_properties": { "vertical_direction": "up" },
-                "spike_probability": 0.4,
-                "rim_block": "minecraft:cobblestone"
+                "spike_probability": 0.4, "rim_block": "minecraft:cobblestone"
               }
             },
             {
-              "weight": 2,
-              "type": "dungeons2:inset",
+              "weight": 2, "type": "dungeons2:inset",
               "config": { "inset": 1, "depth": 2 }
             }
           ],
           "pillars": [
             { "weight": 3, "none": true },
             {
-              "weight": 3,
-              "min_size": 11,
-              "min_height": 7,
+              "weight": 3, "min_size": 11, "min_height": 7,
               "patterns": [
                 {
-                  "type": "dungeons2:grid",
-                  "block": "$shaft",
-                  "base_block": "$footing",
+                  "type": "dungeons2:grid", "block": "$shaft", "base_block": "$footing",
                   "cap_block": "$footing",
                   "config": { "spacing": 3, "inset": 1 }
                 }
               ]
             },
             {
-              "weight": 2,
-              "min_height": 7,
+              "weight": 2, "min_height": 7,
               "patterns": [
-                { "type": "dungeons2:centre", "block": "$shaft", "base_block": "$footing", "cap_block": "$footing" }
+                {
+                  "type": "dungeons2:centre", "block": "$shaft", "base_block": "$footing",
+                  "cap_block": "$footing"
+                }
               ]
             }
           ],
           "partition": [
             { "weight": 4, "none": true },
             {
-              "weight": 2,
-              "min_size": 11,
-              "type": "dungeons2:corner",
-              "block": "minecraft:mud_bricks",
-              "gap_block": "minecraft:oak_door",
+              "weight": 2, "min_size": 11, "type": "dungeons2:corner",
+              "block": "minecraft:mud_bricks", "gap_block": "minecraft:oak_door",
               "config": { "width": 3, "depth": 3 }
             }
           ],
           "floor": [
             { "weight": 3, "none": true },
             {
-              "weight": 3,
-              "type": "dungeons2:path",
+              "weight": 3, "type": "dungeons2:path",
               "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "star" }
             },
             {
-              "weight": 2,
-              "type": "dungeons2:speckle",
+              "weight": 2, "type": "dungeons2:speckle",
               "config": {
-                "primary_block": "dungeonblocks:rubble",
-                "secondary_block": "minecraft:packed_mud",
+                "primary_block": "dungeonblocks:rubble", "secondary_block": "minecraft:packed_mud",
                 "probability": 0.12
               }
             }
           ],
           "props": [
             {
-              "weight": 4,
-              "min_count": 1,
-              "max_count": 3,
-              "placement": "against_wall",
+              "weight": 4, "min_count": 1, "max_count": 3, "placement": "against_wall",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 3, "oriented": false },
                 { "block": "minecraft:hay_block", "weight": 1 }
               ]
             },
             {
-              "weight": 2,
-              "min_count": 0,
-              "max_count": 2,
-              "placement": "corner",
+              "weight": 2, "min_count": 0, "max_count": 2, "placement": "corner",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 1, "oriented": false }
               ]
@@ -743,10 +618,7 @@
           ],
           "pots": [
             {
-              "weight": 3,
-              "min_count": 1,
-              "max_count": 3,
-              "loot_table": "dungeons2:pots/classic",
+              "weight": 3, "min_count": 1, "max_count": 3, "loot_table": "dungeons2:pots/classic",
               "variants": [
                 { "entity": "dungeonblocks:stone_pot", "weight": 2 },
                 { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
@@ -756,32 +628,24 @@
           ],
           "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "chests": {
-            "min_count": 0,
-            "max_count": 1,
+            "min_count": 0, "max_count": 1,
             "variants": [
               { "block": "minecraft:chest", "weight": 1 }
             ]
           }
         },
         {
-          "name": "mud_shrine",
-          "weight": 4,
-          "min_size": 9,
-          "min_height": 7,
+          "name": "mud_shrine", "weight": 4, "min_size": 9, "min_height": 7,
           "platforms": [
             {
               "weight": 3,
               "patterns": [
                 {
-                  "type": "dais",
-                  "layout": "dungeons2:centre",
-                  "block": "minecraft:mud_bricks",
+                  "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:mud_bricks",
                   "stair_block": "minecraft:mud_brick_stairs",
-                  "centre_block": "dungeonblocks:square_mud_brick",
-                  "size": 3,
+                  "centre_block": "dungeonblocks:square_mud_brick", "size": 3,
                   "config": { "inset": 1 },
-                  "orient": "inward",
-                  "top_block": "dungeonblocks:brazier_block",
+                  "orient": "inward", "top_block": "dungeonblocks:brazier_block",
                   "top_properties": { "fire": "embers" }
                 }
               ]
@@ -790,11 +654,8 @@
               "weight": 2,
               "patterns": [
                 {
-                  "type": "dais",
-                  "layout": "dungeons2:centre",
-                  "block": "minecraft:mud_bricks",
-                  "stair_block": "minecraft:mud_brick_stairs",
-                  "centre_block": "$ornament",
+                  "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:mud_bricks",
+                  "stair_block": "minecraft:mud_brick_stairs", "centre_block": "$ornament",
                   "size": 3,
                   "config": { "inset": 1 },
                   "orient": "inward"
@@ -802,19 +663,14 @@
               ]
             },
             {
-              "weight": 2,
-              "min_size": 11,
+              "weight": 2, "min_size": 11,
               "patterns": [
                 {
-                  "type": "dais",
-                  "layout": "dungeons2:corners",
-                  "block": "minecraft:mud_bricks",
-                  "stair_block": "minecraft:mud_brick_stairs",
-                  "centre_block": "$ornament",
+                  "type": "dais", "layout": "dungeons2:corners", "block": "minecraft:mud_bricks",
+                  "stair_block": "minecraft:mud_brick_stairs", "centre_block": "$ornament",
                   "size": 1,
                   "config": { "inset": 1 },
-                  "orient": "inward",
-                  "top_block": "dungeonblocks:brazier_block",
+                  "orient": "inward", "top_block": "dungeonblocks:brazier_block",
                   "top_properties": { "fire": "embers" }
                 }
               ]
@@ -828,10 +684,8 @@
                 {
                   "type": "dungeons2:vaulted",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "springing_block": "$footing",
-                    "crown_block": "dungeonblocks:mossy_square_mud_brick",
-                    "steps": 2,
+                    "block": "minecraft:mud_bricks", "springing_block": "$footing",
+                    "crown_block": "dungeonblocks:mossy_square_mud_brick", "steps": 2,
                     "step_height": 2
                   }
                 }
@@ -844,9 +698,7 @@
                   "type": "dungeons2:oculus",
                   "config": {
                     "cap_block": "minecraft:glowstone",
-                    "grate_block": "dungeonblocks:dark_iron_grate",
-                    "size": 3,
-                    "depth": 3
+                    "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 3
                   }
                 }
               ]
@@ -854,21 +706,17 @@
           ],
           "floor": [
             {
-              "weight": 3,
-              "type": "dungeons2:spokes",
+              "weight": 3, "type": "dungeons2:spokes",
               "config": { "spokes": 4, "block": "dungeonblocks:square_mud_brick" }
             },
             {
-              "weight": 3,
-              "min_size": 11,
-              "type": "dungeons2:composite",
+              "weight": 3, "min_size": 11, "type": "dungeons2:composite",
               "config": {
                 "generators": [
                   {
                     "type": "dungeons2:border",
                     "config": {
-                      "inset": 2,
-                      "corner_block": "$ornament",
+                      "inset": 2, "corner_block": "$ornament",
                       "edge_left_block": "dungeonblocks:square_mud_brick",
                       "edge_right_block": "dungeonblocks:square_mud_brick"
                     }
@@ -889,10 +737,8 @@
                 {
                   "type": "dungeons2:end_pilasters",
                   "config": {
-                    "block": "minecraft:mud_bricks",
-                    "base_block": "$footing",
-                    "cap_block": "$footing",
-                    "projection": 1
+                    "block": "minecraft:mud_bricks", "base_block": "$footing",
+                    "cap_block": "$footing", "projection": 1
                   }
                 }
               ]
@@ -904,7 +750,10 @@
                   "type": "dungeons2:courses",
                   "config": {
                     "courses": [
-                      { "block": "dungeonblocks:square_mud_brick", "corner_block": "dungeonblocks:mossy_square_mud_brick", "anchor": "top" }
+                      {
+                        "block": "dungeonblocks:square_mud_brick",
+                        "corner_block": "dungeonblocks:mossy_square_mud_brick", "anchor": "top"
+                      }
                     ]
                   }
                 }
@@ -914,10 +763,7 @@
           ],
           "pots": [
             {
-              "weight": 3,
-              "min_count": 1,
-              "max_count": 2,
-              "loot_table": "dungeons2:pots/classic",
+              "weight": 3, "min_count": 1, "max_count": 2, "loot_table": "dungeons2:pots/classic",
               "variants": [
                 { "entity": "dungeonblocks:stone_pot", "weight": 2 },
                 { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
@@ -927,8 +773,7 @@
           ],
           "spawners": { "min_count": 0, "max_count": 1, "min_size": 9 },
           "chests": {
-            "min_count": 0,
-            "max_count": 1,
+            "min_count": 0, "max_count": 1,
             "variants": [
               { "block": "minecraft:chest", "weight": 1 }
             ]
@@ -940,8 +785,7 @@
     {
       "min_floor_index": 2,
       "floor": {
-        "base": "minecraft:stone_bricks",
-        "alternate_base": "minecraft:stone_bricks",
+        "base": "minecraft:stone_bricks", "alternate_base": "minecraft:stone_bricks",
         "pattern": {
           "type": "dungeons2:composite",
           "config": {
@@ -956,8 +800,7 @@
               {
                 "type": "dungeons2:border",
                 "config": {
-                  "inset": 1,
-                  "corner_block": "minecraft:andesite",
+                  "inset": 1, "corner_block": "minecraft:andesite",
                   "edge_left_block": "minecraft:polished_andesite",
                   "edge_right_block": "minecraft:polished_andesite"
                 }
