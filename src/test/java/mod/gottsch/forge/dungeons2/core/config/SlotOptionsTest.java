@@ -271,7 +271,7 @@ class SlotOptionsTest {
         assertSlotTakesOptions("pots", "{" + POT_A + "}");
         assertSlotTakesOptions("pillars", "{\"patterns\": []}");
         assertSlotTakesOptions("platforms", "{\"patterns\": []}");
-        assertSlotTakesOptions("spawners", "{\"min_count\": 0, \"max_count\": 1}");
+        assertSlotTakesOptions("spawners", "{\"min_count\": 0, \"max_count\": 1, \"proximity\": 12}");
         assertSlotTakesOptions("chests",
                 "{\"variants\": [{\"block\": \"minecraft:chest\", \"weight\": 1}]}");
         assertSlotTakesOptions("pit",

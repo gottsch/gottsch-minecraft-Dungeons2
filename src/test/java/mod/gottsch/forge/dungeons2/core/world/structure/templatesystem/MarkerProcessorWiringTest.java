@@ -85,7 +85,12 @@ class MarkerProcessorWiringTest {
     private static final Set<String> SHIPPED = Set.of(
             "classic_weathering.json",
             "classic_mud_weathering.json",
-            "classic_entrance_weathering.json");
+            "classic_entrance_weathering.json",
+            // The boss room's list (2026-09-03) is the smallest one that ships -- no decoration,
+            // no sweep, four aging rules. It is NOT exempt here and must not become so: #61 is
+            // about a marker processor missing from a list a pool names, and a deliberately
+            // minimal list is exactly where that omission is easiest to make and hardest to see.
+            "classic_boss_weathering.json");
 
     @Test
     void everyShippedListCarriesEveryMarkerProcessor() {

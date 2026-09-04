@@ -66,6 +66,16 @@ public class DungeonsBlockEntities {
 							DungeonsBlocks.CHEST_MARKER.get()).build(null));
 
 	/**
+	 * The spawner authoring marker's per-cell data. Registered last of the three markers and for the
+	 * same reason as the other two: which set, how many and how far are PER MARKER decisions, and a
+	 * codec field on the processor is per POOL. See {@link SpawnerMarkerBlockEntity}.
+	 */
+	public static final RegistryObject<BlockEntityType<SpawnerMarkerBlockEntity>> SPAWNER_MARKER =
+			Registration.BLOCK_ENTITIES.register("spawner_marker",
+					() -> BlockEntityType.Builder.of(SpawnerMarkerBlockEntity::new,
+							DungeonsBlocks.SPAWNER_MARKER.get()).build(null));
+
+	/**
 	 * Backlog #56. Like {@link #CHEST_MARKER} it carries no behaviour: it exists so a template can
 	 * store per-marker fields and {@code PotMarkerProcessor} can read them back during placement.
 	 */

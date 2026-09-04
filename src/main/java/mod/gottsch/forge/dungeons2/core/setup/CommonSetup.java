@@ -24,8 +24,13 @@ import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.dungeons2.core.item.DungeonsItems;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
+import mod.gottsch.forge.gmm.core.entity.ai.goal.CastSpellGoal;
 import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
 import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
+import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Beholder;
+import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.DeathTyrant;
+import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Spectator;
+import mod.gottsch.forge.gmm.core.entity.monster.Daemon;
 import mod.gottsch.forge.gmm.core.entity.monster.GelatinousCube;
 import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
 import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
@@ -53,9 +58,16 @@ import mod.gottsch.forge.gmm.core.entity.projectile.BoneShard;
 import mod.gottsch.forge.gmm.core.entity.projectile.Rock;
 import mod.gottsch.forge.gmm.core.entity.projectile.SpikeGrowthSpell;
 import mod.gottsch.forge.gmm.core.entity.projectile.WitheringGazeSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.ParalysisSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.HarmSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.DisintegrateSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.DisarmSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.FireSpoutSpell;
+import mod.gottsch.forge.gottschcore.random.WeightedCollection;
 import mod.gottsch.forge.gmm.core.entity.monster.Rat;
 import mod.gottsch.forge.gmm.core.entity.monster.plant.Shrieker;
 import mod.gottsch.forge.gmm.core.entity.monster.plant.VioletFungus;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -154,13 +166,88 @@ public class CommonSetup {
 		// The bodak's gaze is an ordinary direct-damage bolt, so unlike Spike Growth it is aimed
 		// here rather than by the spell.
 		WitheringGazeSpell.itemSupplier = () -> DungeonsItems.WITHERING_GAZE_SPELL_ITEM.get();
-		Bodak.spellCaster = (caster, target, x, y, z) -> {
+		CastSpellGoal.SpellLauncher witheringGazeLauncher = (caster, target, x, y, z) -> {
 			WitheringGazeSpell spell = new WitheringGazeSpell(
 					DungeonsEntities.WITHERING_GAZE_SPELL_ENTITY.get(), caster.level());
 			spell.init(caster, target.getX() - x, target.getY(0.5D) - y, target.getZ() - z);
 			spell.setPos(x, y, z);
 			caster.level().addFreshEntity(spell);
 		};
+		Bodak.spellCaster = witheringGazeLauncher;
+
+		// Beholder/DeathTyrant's real kit, ported from Dungeon Denizens -- GMM's Beholderkin owns no
+		// concrete spell (spellCaster is nullable, and left unassigned would leave both mobs biting
+		// only, with none of a beholder's signature gaze attacks -- see Beholder#registerGoals). All
+		// four fall back to a fire-charge visual (their itemSupplier is left unset here); dedicated
+		// art is a separate, later decision. summonMobs/summonDaemon are deliberately left unwired --
+		// minion summoning is a separate feature, not a stat/attack one.
+		CastSpellGoal.SpellLauncher paralysisSpell = (caster, target, x, y, z) -> {
+			ParalysisSpell spell = new ParalysisSpell(DungeonsEntities.PARALYSIS_SPELL_ENTITY.get(), caster.level());
+			spell.init(caster, target.getX() - x, target.getY(0.5D) - y, target.getZ() - z);
+			spell.setPos(x, y, z);
+			caster.level().addFreshEntity(spell);
+		};
+		CastSpellGoal.SpellLauncher harmSpell = (caster, target, x, y, z) -> {
+			HarmSpell spell = new HarmSpell(DungeonsEntities.HARM_SPELL_ENTITY.get(), caster.level());
+			spell.init(caster, target.getX() - x, target.getY(0.5D) - y, target.getZ() - z);
+			spell.setPos(x, y, z);
+			caster.level().addFreshEntity(spell);
+		};
+		CastSpellGoal.SpellLauncher disintegrateSpell = (caster, target, x, y, z) -> {
+			DisintegrateSpell spell = new DisintegrateSpell(DungeonsEntities.DISINTEGRATE_SPELL_ENTITY.get(), caster.level());
+			spell.init(caster, target.getX() - x, target.getY(0.5D) - y, target.getZ() - z);
+			spell.setPos(x, y, z);
+			caster.level().addFreshEntity(spell);
+		};
+		CastSpellGoal.SpellLauncher disarmSpell = (caster, target, x, y, z) -> {
+			DisarmSpell spell = new DisarmSpell(DungeonsEntities.DISARM_SPELL_ENTITY.get(), caster.level());
+			spell.init(caster, target.getX() - x, target.getY(0.5D) - y, target.getZ() - z);
+			spell.setPos(x, y, z);
+			caster.level().addFreshEntity(spell);
+		};
+
+		// Weights match Dungeon Denizens exactly: mostly paralysis, harm as the common follow-up,
+		// disintegrate/disarm as rare escalations.
+		WeightedCollection<Integer, CastSpellGoal.SpellLauncher> beholderSpells = new WeightedCollection<>();
+		beholderSpells.add(3, paralysisSpell);
+		beholderSpells.add(2, harmSpell);
+		beholderSpells.add(1, disintegrateSpell);
+		beholderSpells.add(1, disarmSpell);
+		Beholder.spellCaster = beholderSpells;
+		// DeathTyrant casts one spell, not a weighted pool, in Dungeon Denizens too.
+		DeathTyrant.spellCaster = paralysisSpell;
+		// Spectator: same single Paralysis cast as DeathTyrant.
+		Spectator.spellCaster = paralysisSpell;
+
+		// Daemon's fire-spout: a DIFFERENT shape than CastSpellGoal.SpellLauncher (Daemon.
+		// FireSpoutLauncher takes both the origin AND the target point, since DaemonShootSpellsGoal
+		// walks the arc itself rather than aiming a single bolt) -- GMM owns no concrete projectile
+		// for it either.
+		Daemon.fireSpoutLauncher = (daemon, x, y, z, x2, y2, z2) -> {
+			FireSpoutSpell spell = new FireSpoutSpell(DungeonsEntities.FIRESPOUT_SPELL_ENTITY.get(), daemon.level());
+			spell.init(daemon, x, y, z, x2, y2, z2);
+			daemon.level().addFreshEntity(spell);
+		};
+
+		// Beholder/DeathTyrant's minion pools, ported from Dungeon Denizens -- weights match exactly,
+		// with vanilla Zombie standing in for Headless (not pulled into this roster): Headless is
+		// itself flavoured as "a zombie about 20% better", so a plain zombie is the direct substitute
+		// rather than a different mob entirely.
+		WeightedCollection<Double, EntityType<? extends Mob>> beholderMobs = new WeightedCollection<>();
+		beholderMobs.add(60D, EntityType.ZOMBIE);
+		beholderMobs.add(40D, DungeonsEntities.ORC_ENTITY.get());
+		beholderMobs.add(20D, DungeonsEntities.SPECTATOR_ENTITY.get());
+		beholderMobs.add(20D, EntityType.BLAZE);
+		Beholder.summonMobs = beholderMobs;
+		Beholder.summonDaemon = DungeonsEntities.DAEMON_ENTITY.get();
+
+		WeightedCollection<Double, EntityType<? extends Mob>> deathTyrantMobs = new WeightedCollection<>();
+		deathTyrantMobs.add(20D, EntityType.ZOMBIE);
+		deathTyrantMobs.add(20D, EntityType.HUSK);
+		deathTyrantMobs.add(20D, EntityType.SKELETON);
+		deathTyrantMobs.add(60D, DungeonsEntities.SKELETON_WARRIOR_ENTITY.get());
+		DeathTyrant.summonMobs = deathTyrantMobs;
+		DeathTyrant.summonDaemon = DungeonsEntities.DAEMON_ENTITY.get();
 
 		// Bone shrapnel: the tainted skeleton throws it, and Bloody Bones flings its own limbs as
 		// the same projectile when it collapses to a skull.
@@ -207,6 +294,13 @@ public class CommonSetup {
 		event.put(DungeonsEntities.ORC_ENTITY.get(), Orc.createAttributes().build());
 		event.put(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShaman.createAttributes().build());
 		event.put(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), AlligatorGar.createAttributes().build());
+		// prepareAttributes, not createAttributes -- Beholderkin's own naming (Mob.createMobAttributes
+		// rather than Monster.createMonsterAttributes underneath, since it is not a PathfinderMob).
+		event.put(DungeonsEntities.BEHOLDER_ENTITY.get(), Beholder.prepareAttributes().build());
+		event.put(DungeonsEntities.DEATH_TYRANT_ENTITY.get(), DeathTyrant.prepareAttributes().build());
+		event.put(DungeonsEntities.SPECTATOR_ENTITY.get(), Spectator.prepareAttributes().build());
+		// Daemon extends GMMMonster, not Beholderkin -- createAttributes, not prepareAttributes.
+		event.put(DungeonsEntities.DAEMON_ENTITY.get(), Daemon.createAttributes().build());
 	}
 
 	/**
@@ -287,6 +381,20 @@ public class CommonSetup {
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.BODAK_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// NO_RESTRICTIONS, like the Winged Skeleton -- both hover rather than stand on solid ground.
+		event.register(DungeonsEntities.BEHOLDER_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		event.register(DungeonsEntities.DEATH_TYRANT_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		event.register(DungeonsEntities.SPECTATOR_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// ON_GROUND, unlike the Beholder-kin above -- Daemon is a GMMMonster (walks), not a FlyingMob.
+		event.register(DungeonsEntities.DAEMON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.GHOUL_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,

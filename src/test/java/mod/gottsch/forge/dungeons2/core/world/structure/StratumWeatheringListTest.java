@@ -326,9 +326,22 @@ class StratumWeatheringListTest {
         // If a stratum ever WANTS its own decoration -- different growth for a mud depth is a
         // perfectly good idea -- exempt that file here rather than deleting the test, so the
         // remaining copies stay honest.
+        // THE BOSS LIST IS EXEMPT as of 2026-09-03 (Mark). It has no dungeons2:decoration at all
+        // and that is the entire point of it: a cobweb entangles whatever walks into it, so in the
+        // one room the dungeon builds toward, its own decoration was fighting on the player's side.
+        // A pool element names exactly ONE processor_list and nothing can subtract a processor from
+        // one, so the end room got a list of its own -- deliberately minimal rather than a copy of
+        // this file with two keys deleted. Its dungeons2:spawner is its own too: a boss room's
+        // pool-level default is the boss, not the motif's vermin.
+        //
+        // Exempted BY NAME, exactly as the note above prescribes and as the surface entrance
+        // already is in the falling-block guard: every other copy stays honest, and a second file
+        // wanting this has to be a decision rather than a drift.
+        String bossExempt = MOTIF + "_boss" + WEATHERING;
+
         JsonObject classic = readList(MOTIF + "_weathering");
         for (String file : weatheringFiles()) {
-            if (file.equals(MOTIF + "_weathering")) {
+            if (file.equals(MOTIF + "_weathering") || file.equals(bossExempt)) {
                 continue;
             }
             JsonObject stratum = readList(file);

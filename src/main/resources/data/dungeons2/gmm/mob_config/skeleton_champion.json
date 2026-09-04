@@ -1,0 +1,19 @@
+{
+  "spawn": {
+    "enabled": false,
+    "minHeight": -64,
+    "maxHeight": 319
+  },
+  "properties": {
+    "rallyRange": 8.0,
+    "rallyInterval": 200.0,
+    "rallyDuration": 240.0,
+    "crowdRadius": 4.0,
+    "minCrowd": 2.0,
+    "spacingMaxTargetDistance": 12.0
+  },
+  "flags": {
+    "rally": true,
+    "avoidCrowd": true
+  }
+}

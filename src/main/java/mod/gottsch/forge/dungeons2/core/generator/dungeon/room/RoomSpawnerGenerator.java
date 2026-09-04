@@ -174,7 +174,7 @@ public final class RoomSpawnerGenerator {
                 .with(MOB_SET_NAME, mobSet)
                 .with(MIN_MOBS, String.valueOf(config.effectiveMinMobs()))
                 .with(MAX_MOBS, String.valueOf(config.clampedMaxMobs()))
-                .with(PROXIMITY, String.valueOf(config.proximity()))
+                .with(PROXIMITY, String.valueOf(config.requiredProximity()))
                 // Stamped at generation and persisted, though nothing reads it yet -- see
                 // DungeonSpawnerBlockEntity for what it is for and why it needed a field rather
                 // than just a tag key.

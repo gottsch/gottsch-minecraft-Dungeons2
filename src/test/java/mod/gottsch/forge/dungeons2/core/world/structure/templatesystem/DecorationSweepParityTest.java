@@ -78,6 +78,11 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            // The boss room's list (2026-09-03). It carries NO dungeons2:decoration and therefore
+            // no sweep either -- the sweep exists only to repair what decoration placed. Named
+            // here anyway: the parity check has to see a list with neither and agree that neither
+            // is correct, which is a different assertion from never looking at the file.
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
     };
 
     /**
@@ -124,13 +129,28 @@ class DecorationSweepParityTest {
         }
     }
 
+    /**
+     * The two are paired: both, or neither.
+     *
+     * <p>Was "both, always", until the boss room's list shipped with neither (2026-09-03) and
+     * failed here. Neither is a legitimate state and a meaningful one &mdash; that list exists
+     * precisely to have no decoration, since a cobweb entangles the boss it is supposed to
+     * threaten the player with. The sweep alone would be a pass over every cell to repair nothing.
+     *
+     * <p>What must never happen is <strong>one without the other</strong>, in either direction,
+     * which is what this now says. Decorating without sweeping strands growth on any shared wall an
+     * authored piece re-skins; sweeping without decorating is dead weight that reads as coverage.</p>
+     */
     @Test
     void everyShippedListPairsTheTwo() {
         for (String resource : SHIPPED) {
-            assertNotNull(entry(resource, DECORATION_TYPE), resource + " has no decoration entry");
-            assertNotNull(entry(resource, SWEEP_TYPE),
-                    resource + " decorates but never sweeps -- growth there will strand itself"
-                            + " on any shared wall an authored piece re-skins");
+            boolean decorates = entry(resource, DECORATION_TYPE) != null;
+            boolean sweeps = entry(resource, SWEEP_TYPE) != null;
+            assertEquals(decorates, sweeps, resource + (decorates
+                    ? " decorates but never sweeps -- growth there will strand itself on any shared"
+                            + " wall an authored piece re-skins"
+                    : " sweeps but never decorates -- the sweep exists only to repair what the"
+                            + " decoration pass placed, so it has nothing to do"));
         }
     }
 
@@ -139,10 +159,18 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
     })
     void theSweepNamesWhatTheDecorationPassPlaces(String resource) {
         JsonObject decoration = entry(resource, DECORATION_TYPE);
         JsonObject sweep = entry(resource, SWEEP_TYPE);
+        if (decoration == null && sweep == null) {
+            // A list with neither, which everyShippedListPairsTheTwo has already accepted as a
+            // pairing. Named in @ValueSource rather than left out so that everyParameterized
+            // ListMatchesShipped keeps agreeing with SHIPPED -- the drift that check exists to
+            // catch is exactly "one of these lists was updated and the others were not".
+            return;
+        }
 
         assertPalette(resource, decoration, "wall_growth", sweep, "growth");
         assertPalette(resource, decoration, "cobwebs", sweep, "webs");
@@ -156,10 +184,14 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
     })
     void theTwoBlockMatchesAreCopiedVerbatim(String resource) {
         JsonObject decoration = entry(resource, DECORATION_TYPE);
         JsonObject sweep = entry(resource, SWEEP_TYPE);
+        if (decoration == null && sweep == null) {
+            return;
+        }
 
         // `dirt` is not a palette but the predicate floor_growth and hanging_growth are tested
         // against, and `unsupported` is a tag set on both sides. Both are BlockMatch objects, so
@@ -176,12 +208,17 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
     })
     void theSweepClaimsNoEntities(String resource) {
         // floor_growth's palette holds two `entity` entries -- GMM's Shrieker and Violet Fungus,
         // grown as if they were plants (#54). They are MOBS: the sweep works on block states and
         // can neither see nor remove one, so naming them here would be a promise it cannot keep.
         JsonObject sweep = entry(resource, SWEEP_TYPE);
+        if (sweep == null) {
+            // No sweep because no decoration -- see everyShippedListPairsTheTwo.
+            return;
+        }
         for (String field : new String[] {"growth", "webs", "corner_webs", "floor_growth",
                 "hanging_growth"}) {
             JsonElement palette = sweep.get(field);

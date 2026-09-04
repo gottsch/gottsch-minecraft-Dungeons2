@@ -57,7 +57,7 @@ import java.util.Optional;
  * @author Mark Gottschling on Aug 17, 2026
  */
 public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
-                            Optional<Integer> maxMobs, double proximity,
+                            Optional<Integer> maxMobs, Optional<Double> proximity,
                             Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind) {
 
     /**
@@ -97,13 +97,25 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     /** The tuning defaults, spelled the same as {@code SpawnerMarkerProcessor}'s so the two agree. */
     public static final int DEFAULT_MIN_MOBS = 1;
     public static final int DEFAULT_MAX_MOBS = 3;
-    public static final double DEFAULT_PROXIMITY = 8.0D;
+
+    /**
+     * <strong>There is deliberately no {@code DEFAULT_PROXIMITY}.</strong> It was 8, then briefly
+     * 12, and both were a number in Java deciding how every shipped room felt while no scheme said
+     * anything about it &mdash; the tell being that raising it changed the whole mod and touched no
+     * datapack file. {@code proximity} is now <em>required</em> on a proximity spawner and
+     * <em>rejected</em> on a vanilla one, so the trigger distance is always written where it can be
+     * read and tuned, and a datapack that forgets it is a load error rather than a silent 8.
+     *
+     * <p>The counts above stay defaulted because they are genuinely three-valued &mdash; scheme,
+     * then the floor's band, then this &mdash; and {@code MobSetBand} needs "absent" to mean
+     * "whatever this depth calls for". Proximity has no band, so it has no such middle case.</p>
+     */
 
     /** Ungated spawners with explicit counts -- placed whenever the scheme is rolled. */
     public SpawnerConfig(int minCount, int maxCount, int minMobs, int maxMobs, double proximity,
                          List<MobSetEntry> mobSets) {
-        this(minCount, maxCount, Optional.of(minMobs), Optional.of(maxMobs), proximity,
-                Optional.of(mobSets), SizeGate.UNBOUNDED, Kind.PROXIMITY);
+        this(minCount, maxCount, Optional.of(minMobs), Optional.of(maxMobs),
+                Optional.of(proximity), Optional.of(mobSets), SizeGate.UNBOUNDED, Kind.PROXIMITY);
     }
 
     /**
@@ -113,8 +125,8 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * between "whatever this depth calls for" and "one to three, at every depth". The resolved
      * values are the same until a band says otherwise, and that is exactly the point.</p>
      */
-    public SpawnerConfig(String mobSet) {
-        this(1, 1, Optional.empty(), Optional.empty(), DEFAULT_PROXIMITY,
+    public SpawnerConfig(String mobSet, double proximity) {
+        this(1, 1, Optional.empty(), Optional.empty(), Optional.of(proximity),
                 Optional.of(List.of(new MobSetEntry(mobSet, 1))), SizeGate.UNBOUNDED,
                 Kind.PROXIMITY);
     }
@@ -201,10 +213,16 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
                     .forGetter(SpawnerConfig::minMobs),
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_mobs")
                     .forGetter(SpawnerConfig::maxMobs),
-            // A proximity of 0 is not "trigger on contact": the block entity clamps the squared
-            // distance up to 1.0, so it would fire only when the player stands in the cell -- an
-            // invisible block in an open room, which reads as a spawner that never works.
-            Codecs.strictOptionalFieldOf(Codec.doubleRange(1.0D, 64.0D), "proximity", DEFAULT_PROXIMITY)
+            // Optional in the CODEC and required by validate(), because whether it is required
+            // depends on a sibling key: a proximity spawner must state it, a vanilla cage must not,
+            // and RecordCodecBuilder cannot express "required when 'type' says so". Being explicit
+            // about which of the two errors you got is worth more than a fieldOf here.
+            //
+            // The lower bound is 1, not 0: a proximity of 0 is not "trigger on contact", because
+            // the block entity clamps the squared distance up to 1.0. It would fire only when the
+            // player stands in the cell -- an invisible block in an open room, which reads as a
+            // spawner that never works.
+            Codecs.strictOptionalFieldOf(Codec.doubleRange(1.0D, 64.0D), "proximity")
                     .forGetter(SpawnerConfig::proximity),
             // Optional, and absent means "use the motif's mob_sets_by_floor_index band for this floor".
             // See resolvedAgainst for why absent and empty must stay distinguishable.
@@ -230,6 +248,17 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * matching {@code PotConfig} -- an inverted count is nonsense but not ambiguous.</p>
      */
     private static DataResult<SpawnerConfig> validate(SpawnerConfig config) {
+        if (config.kind == Kind.PROXIMITY && config.proximity.isEmpty()) {
+            return DataResult.error(() -> "spawners slot: 'proximity' is required on a proximity"
+                    + " spawner. It is the trigger distance in blocks (1-64); there is no default,"
+                    + " because a number in Java deciding how far away every shipped room ambushes"
+                    + " the player is exactly what this key exists to stop");
+        }
+        if (config.kind == Kind.VANILLA && config.proximity.isPresent()) {
+            return DataResult.error(() -> "spawners slot: 'proximity' was stated on a vanilla"
+                    + " spawner, which has none -- a vanilla cage uses its own activation range."
+                    + " Drop the key, or drop \"type\": \"vanilla\"");
+        }
         if (config.mobSets.isPresent() && config.mobSets.get().isEmpty()) {
             return DataResult.error(() -> "spawners slot: 'mob_sets' is present but empty. Omit the"
                     + " key entirely to draw from the motif's mob_sets_by_floor_index table for the"
@@ -257,5 +286,19 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     /** The inclusive mobs-per-spawn range, normalised the same way. */
     public int clampedMaxMobs() {
         return Math.max(effectiveMinMobs(), maxMobs.orElse(DEFAULT_MAX_MOBS));
+    }
+
+    /**
+     * The trigger distance, for the proximity route that needs a number.
+     *
+     * <p>Throws rather than defaulting: {@link #validate} has already rejected a proximity config
+     * without one, so reaching here empty means a {@code SpawnerConfig} was built in Java bypassing
+     * the codec, and a made-up distance would hide that rather than report it. Vanilla-kind callers
+     * must not ask &mdash; see {@code RoomSpawnerGenerator}, which branches on {@link #kind} first.</p>
+     */
+    public double requiredProximity() {
+        return proximity.orElseThrow(() -> new IllegalStateException(
+                "a proximity spawner reached the generator with no proximity; the codec cannot"
+                        + " produce this, so it was constructed in Java"));
     }
 }

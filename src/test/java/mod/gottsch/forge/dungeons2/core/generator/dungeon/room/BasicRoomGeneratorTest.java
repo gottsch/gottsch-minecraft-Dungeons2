@@ -320,7 +320,7 @@ class BasicRoomGeneratorTest {
     /** The deferring form -- no mobSets at all, which is what the shipped schemes use. */
     private static String mobSetOnFloor(int floorIndex) {
         return mobSetOnFloor(floorIndex, Optional.of(new SpawnerConfig(1, 1, Optional.of(1),
-                Optional.of(3), 8.0D, Optional.empty(), SizeGate.UNBOUNDED,
+                Optional.of(3), Optional.of(8.0D), Optional.empty(), SizeGate.UNBOUNDED,
                 SpawnerConfig.Kind.PROXIMITY)));
     }
 

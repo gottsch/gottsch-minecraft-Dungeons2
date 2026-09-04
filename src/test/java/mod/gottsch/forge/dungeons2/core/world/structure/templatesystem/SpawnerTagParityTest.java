@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The two ways a Dungeons2 spawner reaches the world must configure it identically.
@@ -129,13 +131,19 @@ class SpawnerTagParityTest {
     /**
      * The processor's defaults and the scheme slot's defaults are declared in two files. An author
      * who sets neither should get the same spawner either way.
+     *
+     * <p><strong>Proximity is no longer among them.</strong> 2026-09-03: both sides now require the
+     * key, so there is no pair of defaults left to disagree. What replaces the old assertion is
+     * {@link #neitherSideWillInventAProximity} below &mdash; the property that actually matters is
+     * that neither route can produce a spawner whose trigger distance nobody wrote down.</p>
      */
     @Test
     void theTuningDefaultsAgree() {
         // The processor's defaults live in its codec, so they have to be reached through a decode
-        // of the minimal authoring form -- naming a set and nothing else.
+        // of the minimal authoring form -- naming a set, plus the one key that is now required.
         JsonObject minimal = new JsonObject();
         minimal.addProperty("mob_set", MOB_SET);
+        minimal.addProperty("proximity", 12.0D);
         CompoundTag authored = SpawnerMarkerProcessor.codec(() -> null)
                 .parse(JsonOps.INSTANCE, minimal)
                 .getOrThrow(false, error -> {
@@ -148,9 +156,30 @@ class SpawnerTagParityTest {
         // write" and is deliberately EMPTY here, because a scheme stating no count defers to the
         // floor's band before it falls back to this default. The resolved value is what the
         // processor's own default has to agree with.
-        SpawnerConfig defaults = new SpawnerConfig(MOB_SET);
+        SpawnerConfig defaults = new SpawnerConfig(MOB_SET, 12.0D);
         assertEquals(authored.getInt("minMobs"), defaults.effectiveMinMobs());
         assertEquals(authored.getInt("maxMobs"), defaults.clampedMaxMobs());
-        assertEquals(authored.getDouble("proximity"), defaults.proximity());
+    }
+
+    /**
+     * Neither route may fall back to a built-in trigger distance.
+     *
+     * <p>This is the parity that took over from the old defaults-agree assertion, and it is worth
+     * asserting on both sides at once: the failure it guards against is one route quietly regrowing
+     * a default while the other keeps requiring the key, which is exactly how the two encodings
+     * drifted before.</p>
+     */
+    @Test
+    void neitherSideWillInventAProximity() {
+        JsonObject noProximity = new JsonObject();
+        noProximity.addProperty("mob_set", MOB_SET);
+        assertTrue(SpawnerMarkerProcessor.codec(() -> null)
+                        .parse(JsonOps.INSTANCE, noProximity).error().isPresent(),
+                "the marker processor grew a proximity default again");
+
+        assertTrue(SpawnerConfig.CODEC
+                        .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1}"))
+                        .error().isPresent(),
+                "the scheme slot grew a proximity default again");
     }
 }

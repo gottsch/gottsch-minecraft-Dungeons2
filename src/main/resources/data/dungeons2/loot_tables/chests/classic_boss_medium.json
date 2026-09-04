@@ -1,0 +1,63 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_boss_medium",
+  "pools": [
+    {
+      "//": "THREE guaranteed trophies, enchanted a tier above small's. A medium dungeon is ~3.2 floors reaching Y -20 and its Mining Chest already pays a diamond, so the escalation has to be structural (one more guaranteed piece), not just bigger stacks.",
+      "rolls": 3,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond_sword", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_chestplate", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_pickaxe", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_helmet", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_leggings", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_boots", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:bow", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 14,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] }
+      ]
+    },
+    {
+      "//": "THE PRIZE -- one guaranteed. Netherite scrap enters here: a medium dungeon has been dug deep enough to be worth it, and it is the first rung of a ladder LARGE finishes.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:netherite_scrap", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_golden_apple", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_block", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_randomly", "enchantments": [ "minecraft:mending" ] } ] }
+      ]
+    },
+    {
+      "rolls": { "min": 7.0, "max": 9.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 12.0, "max": 24.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 16.0, "max": 32.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 5.0, "max": 10.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:experience_bottle", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 12.0, "max": 24.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:ender_pearl", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 4.0, "max": 8.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:lapis_lazuli", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 20.0, "max": 40.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:obsidian", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 6.0, "max": 12.0 } } ] }
+      ]
+    }
+  ]
+}

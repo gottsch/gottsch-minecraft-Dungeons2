@@ -119,7 +119,7 @@
             { "weight": 6, "none": true },
             {
               "weight": 3, "type": "dungeons2:path",
-              "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "auto" }
+              "config": { "path_block": "minecraft:dirt_path", "width": 3, "routing": "auto" }
             },
             {
               "weight": 2, "min_size": 9, "type": "dungeons2:border",
@@ -167,7 +167,7 @@
             { "weight": 3, "none": true }
           ],
           "spawners": [
-            { "weight": 5, "min_size": 9, "min_count": 1, "max_count": 1 },
+            { "weight": 5, "min_size": 9, "min_count": 1, "max_count": 1, "proximity": 12 },
             { "weight": 2, "min_size": 9, "type": "vanilla", "min_count": 1, "max_count": 1 },
             { "weight": 5, "none": true }
           ]
@@ -227,6 +227,10 @@
             {
               "weight": 2, "type": "dungeons2:cross",
               "config": { "thickness": 1, "block": "$footing" }
+            },
+            {
+              "weight": 2, "type": "dungeons2:path",
+              "config": { "path_block": "minecraft:dirt_path", "width": 3, "routing": "auto" }
             }
           ],
           "ceiling": [
@@ -320,7 +324,7 @@
             { "weight": 2, "none": true }
           ],
           "spawners": [
-            { "weight": 5, "min_count": 1, "max_count": 1 },
+            { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
             { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
             { "weight": 4, "none": true }
           ]
@@ -509,7 +513,7 @@
             },
             {
               "weight": 2, "type": "dungeons2:path",
-              "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "auto" }
+              "config": { "path_block": "minecraft:dirt_path", "width": 3, "routing": "auto" }
             }
           ],
           "props": [
@@ -540,9 +544,9 @@
             { "weight": 2, "none": true }
           ],
           "spawners": [
-            { "weight": 5, "min_count": 1, "max_count": 1 },
+            { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
             { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
-            { "weight": 1, "min_size": 11, "min_count": 2, "max_count": 2 },
+            { "weight": 1, "min_size": 11, "min_count": 2, "max_count": 2, "proximity": 12 },
             { "weight": 4, "none": true }
           ],
           "chests": {
@@ -603,7 +607,7 @@
             { "weight": 3, "none": true },
             {
               "weight": 3, "type": "dungeons2:path",
-              "config": { "path_block": "minecraft:packed_mud", "width": 3, "routing": "star" }
+              "config": { "path_block": "minecraft:dirt_path", "width": 3, "routing": "star" }
             },
             {
               "weight": 2, "type": "dungeons2:speckle",
@@ -641,7 +645,7 @@
           ],
           "spawners": [
             {
-              "weight": 5, "min_count": 1, "max_count": 1,
+              "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12,
               "mob_sets": [
                 { "mob_set": "dungeons2:classic_vermin", "weight": 6 },
                 { "mob_set": "dungeons2:classic_lesser_ooze", "weight": 2 }
@@ -756,6 +760,10 @@
                 ]
               }
             },
+            {
+              "weight": 2, "type": "dungeons2:path",
+              "config": { "path_block": "minecraft:dirt_path", "width": 3, "routing": "auto" }
+            },
             { "weight": 2, "none": true }
           ],
           "wall": [
@@ -800,7 +808,7 @@
             { "weight": 2, "none": true }
           ],
           "spawners": [
-            { "weight": 5, "min_count": 1, "max_count": 1 },
+            { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
             { "weight": 3, "type": "vanilla", "min_count": 1, "max_count": 1 },
             { "weight": 3, "none": true }
           ],

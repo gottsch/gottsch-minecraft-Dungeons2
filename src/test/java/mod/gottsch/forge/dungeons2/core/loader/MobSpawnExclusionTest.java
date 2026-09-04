@@ -66,19 +66,36 @@ class MobSpawnExclusionTest {
      * entries, which is exactly the kind of thing that works until it does not.
      */
     private static final Set<String> MINI_BOSSES =
-            Set.of("skeleton_champion", "wight", "bodak");
+            Set.of("skeleton_champion", "wight", "bodak", "beholder", "death_tyrant", "daemon");
 
     private static final String MOB_SETS = "/data/dungeons2/mob_sets";
     private static final String STRUCTURE = "/data/dungeons2/worldgen/structure/dungeon.json";
     private static final String ENTITIES_SOURCE =
             "src/main/java/mod/gottsch/forge/dungeons2/core/entity/DungeonsEntities.java";
 
-    /** No mob set may draw one. This is the spawner route. */
+    /**
+     * The category a set must declare before it may draw a mini-boss.
+     *
+     * <p>2026-09-03: the exclusion above said "until where it belongs has been designed", and a
+     * boss room is that design. It is <strong>narrowed</strong>, not lifted: a {@code boss} set is
+     * reachable only from an authored template that names it in the block entity's
+     * {@code mobSetName}, because nothing in the procedural route ever picks a set by category
+     * &mdash; the motif's {@code mob_sets} bands name sets one by one, and none of them names
+     * this one. So the failure this test was written to catch, someone dropping the whole roster
+     * into a {@code classic} set, still fails.</p>
+     */
+    private static final String BOSS_CATEGORY = "boss";
+
+    /** No mob set may draw one, unless the set declares itself a boss set. */
     @Test
     void noMobSetContainsAMiniBoss() {
         List<String> found = new ArrayList<>();
         for (Path file : mobSetFiles()) {
             JsonObject set = read(file).getAsJsonObject();
+            if (set.has("category")
+                    && BOSS_CATEGORY.equals(set.get("category").getAsString())) {
+                continue;
+            }
             for (JsonElement wrapped : set.getAsJsonArray("mobs")) {
                 String id = wrapped.getAsJsonObject().get("id").getAsString();
                 if (isMiniBoss(id)) {
@@ -134,6 +151,36 @@ class MobSpawnExclusionTest {
     }
 
     /**
+     * A placed mini-boss must not despawn, and the handler must key off the same list.
+     *
+     * <p>The despawn is the nastiest failure this feature has, because it is <em>permanent</em>: the
+     * proximity spawner {@code selfDestruct}s the instant it fires, so a boss that wanders out of
+     * range and despawns leaves a boss room that can never be re-armed. Nothing logs it and nothing
+     * in the world records that the encounter was ever there.</p>
+     *
+     * <p>Checked as source text, like {@link #theMiniBossListMatchesTheOneTheModDeclares} above and
+     * for the same reason. All three assertions matter: scoped to one hard-coded mob it would leave
+     * the other two to be found the same way later, without the {@code restrictTo} call the class is
+     * an empty listener that still reads as handled, and without the {@code hasRestriction} guard it
+     * quietly does the wrong thing on every chunk reload rather than nothing at all.</p>
+     */
+    @Test
+    void aMiniBossIsAnchoredWhereItWasPlaced() {
+        String source = sourceOf(
+                "src/main/java/mod/gottsch/forge/dungeons2/core/event/MiniBossAnchorEvent.java");
+        assertTrue(source.contains("restrictTo("),
+                "the mini-boss anchor handler no longer anchors anything -- and since the Monster"
+                        + " Manual makes the restriction the despawn guard too, that silently loses"
+                        + " BOTH halves at once");
+        assertTrue(source.contains("hasRestriction()"),
+                "re-anchoring an already-anchored boss walks its post to wherever it is standing"
+                        + " every time the chunk reloads; the guard against that is gone");
+        assertTrue(source.contains("MINI_BOSSES"),
+                "the anchor handler must key off DungeonsEntities.MINI_BOSSES, not its own list --"
+                        + " a fourth mini-boss should be covered by being added once");
+    }
+
+    /**
      * Everything that is <em>not</em> a mini-boss should be reachable, or the roster is decorative.
      *
      * <p>The other half of the exclusion, and the one that catches the opposite mistake: twenty-odd
@@ -180,11 +227,17 @@ class MobSpawnExclusionTest {
      * Entities that legitimately appear in neither list.
      *
      * <p>The fungi are placed as <em>growth</em> by the weathering pass rather than spawned, and the
-     * five projectiles are thrown by mobs. Neither is a mob a spawner could draw.</p>
+     * projectiles are thrown by mobs -- neither is a mob a spawner could draw. Spectator is the odd
+     * one out: it is drawable, just not by anything this test can see (see its own comment below).</p>
      */
     private static final Set<String> EXEMPT = Set.of(
             "shrieker", "violet_fungus",
-            "bone_shard", "bloater_arm", "rock", "spike_growth_spell", "withering_gaze_spell");
+            "bone_shard", "bloater_arm", "rock", "spike_growth_spell", "withering_gaze_spell",
+            "paralysis_spell", "harm_spell", "disintegrate_spell", "disarm_spell", "firespout_spell",
+            // Summon-only: Beholder.summonMobs is the only route that ever produces one, and that is
+            // pure Java, invisible to every JSON-based check here. Not a mini-boss (16 HP, no boss
+            // slot planned) -- just not yet folded into the ambient roster either.
+            "spectator");
 
     // -------- helpers --------
 

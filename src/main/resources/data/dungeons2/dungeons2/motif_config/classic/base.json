@@ -182,7 +182,12 @@
             "orient": "inward"
           }
         ]
-      }
+      },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "vaulted_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
@@ -234,13 +239,18 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 },
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
       "chests": {
         "min_count": 0, "max_count": 1,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
-      }
+      },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "deep_vaulted_hall", "weight": 10, "min_floor_index": 1, "min_size": 11,
@@ -301,13 +311,18 @@
           { "block": "minecraft:chipped_anvil", "weight": 1 }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 },
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
       "chests": {
         "min_count": 0, "max_count": 1,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
-      }
+      },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "grand_hall", "abstract": true,
@@ -351,7 +366,7 @@
         },
         { "weight": 3, "none": true }
       ],
-      "spawners": { "min_count": 0, "max_count": 1 },
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
       "chests": {
         "min_count": 0, "max_count": 1,
         "variants": [
@@ -371,7 +386,12 @@
             }
           }
         ]
-      }
+      },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "joisted_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
@@ -414,7 +434,12 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 }
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "pilastered_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
@@ -482,7 +507,12 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 }
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "hypostyle_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 7,
@@ -497,6 +527,8 @@
           "weight": 2, "min_size": 11, "type": "dungeons2:chevron",
           "config": { "block": "$ornament", "spacing": 4 }
         },
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
         { "weight": 3, "none": true }
       ],
       "pillars": {
@@ -536,7 +568,7 @@
           { "block": "minecraft:hay_block", "weight": 2 }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 },
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
       "chests": {
         "min_count": 0, "max_count": 1,
         "variants": [
@@ -565,6 +597,8 @@
             ]
           }
         },
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
         { "weight": 3, "none": true }
       ],
       "pillars": {
@@ -597,7 +631,7 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 }
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 }
     },
     {
       "name": "quartet_hall", "weight": 12, "min_floor_index": 1, "min_size": 7, "max_size": 7,
@@ -631,7 +665,12 @@
           { "block": "minecraft:barrel", "weight": 1, "oriented": false }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 }
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "gaol", "weight": 8, "min_floor_index": 1, "min_size": 9, "min_height": 6,
@@ -681,7 +720,12 @@
           { "entity": "dungeonblocks:stone_pot", "weight": 1 }
         ]
       },
-      "spawners": { "min_count": 1, "max_count": 1 }
+      "spawners": { "min_count": 1, "max_count": 1, "proximity": 12 },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "brazier_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 5,
@@ -719,7 +763,12 @@
           }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1 }
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 12 },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     },
     {
       "name": "brazier_corners_hall", "weight": 12, "min_floor_index": 1, "min_size": 11,
@@ -747,7 +796,12 @@
           }
         ]
       },
-      "spawners": { "min_count": 0, "max_count": 1, "type": "vanilla" }
+      "spawners": { "min_count": 0, "max_count": 1, "type": "vanilla" },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
+        { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
     }
   ]
 }

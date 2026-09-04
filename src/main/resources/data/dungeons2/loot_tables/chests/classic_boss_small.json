@@ -1,0 +1,60 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_boss_small",
+  "pools": [
+    {
+      "//": "TROPHIES -- two guaranteed. The bar this has to clear is not the Mining Chest, it is classic_hoard, which any deep room can already roll: hoard guarantees NOTHING and carries diamond gear at weight 4 of 84. Two guaranteed pieces is what makes a boss chest read as a boss chest rather than as a lucky ordinary one.",
+      "rolls": 2,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond_sword", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 22.0, "max": 30.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_chestplate", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 22.0, "max": 30.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_pickaxe", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 22.0, "max": 30.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_helmet", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 22.0, "max": 30.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_boots", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 22.0, "max": 30.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:bow", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 22.0, "max": 30.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 14,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 25.0, "max": 30.0 }, "treasure": true } ] }
+      ]
+    },
+    {
+      "//": "THE PRIZE -- one guaranteed, and the thing a player actually tells someone about. `treasure: true` on the gear above is half of it: boss gear can roll Mending, which nothing else in this mod pays.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:enchanted_golden_apple", "weight": 10 },
+        { "type": "minecraft:item", "name": "minecraft:diamond_block", "weight": 10 },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_randomly", "enchantments": [ "minecraft:mending" ] } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 5.0 } } ] }
+      ]
+    },
+    {
+      "//": "THE HOARD. Emerald is deliberate -- mining_config calls it boss-chest currency and withholds it from the Mining Chest, so it reads as the dungeon owner's wealth rather than as ore out of the walls.",
+      "rolls": { "min": 5.0, "max": 7.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 6.0, "max": 14.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 8.0, "max": 18.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:experience_bottle", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 8.0, "max": 16.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:ender_pearl", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:lapis_lazuli", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 12.0, "max": 24.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:obsidian", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 4.0, "max": 8.0 } } ] }
+      ]
+    }
+  ]
+}

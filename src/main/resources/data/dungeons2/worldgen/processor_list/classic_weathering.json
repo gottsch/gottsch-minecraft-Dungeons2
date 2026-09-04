@@ -1047,9 +1047,14 @@
     // The two build the same block-entity tag; SpawnerTagParityTest is what keeps them agreeing,
     // so a field renamed here must be renamed there.
     //
-    // ONE MARKER = ONE SET. A block carries no free text, so the per-cell override the DATA
-    // marker allowed is gone. A motif wanting a second set registers a second marker block and
-    // adds a second entry here naming it via `marker_block`.
+    // EVERY FIELD BELOW IS A DEFAULT AN INDIVIDUAL MARKER MAY OVERRIDE (2026-09-03). The marker
+    // carries a block entity, so a template can state mobSetName / proximity / minMobs / maxMobs /
+    // type on one cell with /data merge block and leave the rest of its markers on these values.
+    // This entry used to say "one marker = one set, a block carries no free text" -- that was
+    // wrong: a structure template stores block-entity NBT PER CELL and hands it to a processor as
+    // current.nbt(), which is how dungeons2:chest had been reading a per-marker loot table all
+    // along. A second marker block via `marker_block` still works and is still the right answer
+    // when a whole MOTIF wants a different default.
     // =========================================================================================
     {
       "processor_type": "dungeons2:spawner",
@@ -1059,9 +1064,10 @@
       // Defaults to dungeons2:spawner_marker; stated explicitly because it is the authored half
       // of this contract and a template author has to know what to place.
       "marker_block": "dungeons2:spawner_marker",
-      // 8 blocks: rooms run 5-13 across, so this fires as the player enters the room rather
-      // than as they step onto the cell.
-      "proximity": 8.0,
+      // Required, with no default anywhere -- see SpawnerConfig for why. 12 blocks: rooms run
+      // 5-13 across, so this fires as the player comes through the door rather than once they
+      // are well inside.
+      "proximity": 12.0,
       "min_mobs": 1,
       "max_mobs": 3
     }

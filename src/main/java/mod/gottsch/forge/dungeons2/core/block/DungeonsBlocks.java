@@ -79,10 +79,16 @@ public class DungeonsBlocks {
      *
      * <p>An ordinary solid block: it must survive to the processor, so nothing air-like or
      * replaceable. {@code noLootTable} because it is authoring scaffolding, not content.</p>
+     *
+     * <p><strong>It carries a block entity as of 2026-09-03</strong>, like {@link #CHEST_MARKER}
+     * and {@link #POT_MARKER} before it, so a single template can name its own mob set and trigger
+     * distance instead of taking the pool's. The claim that "a block cannot carry free text", which
+     * is why the mob set became a codec field on the processor in the first place, was only ever
+     * true of a block with no block entity &mdash; see {@link SpawnerMarkerBlock}.</p>
      */
     public static final RegistryObject<Block> SPAWNER_MARKER = Registration.BLOCKS.register(
             "spawner_marker",
-            () -> new Block(BlockBehaviour.Properties.of()
+            () -> new SpawnerMarkerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE).strength(3.0F).sound(SoundType.STONE).noLootTable()));
 
     /**

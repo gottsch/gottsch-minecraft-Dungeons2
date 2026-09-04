@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
@@ -108,8 +109,8 @@ class SpawnerMarkerProcessorTest {
     }
 
     /**
-     * A second motif can point at its own marker block without code, which is the replacement for
-     * the per-cell override the DATA marker's free-text string used to allow.
+     * A second motif can point at its own marker block without code. No longer the ONLY way to get
+     * a second mob set -- see the per-cell override tests below -- but still legitimate.
      */
     @Test
     void theMarkerBlockIsConfigurable() {
@@ -117,5 +118,82 @@ class SpawnerMarkerProcessorTest {
                 VERMIN, new ResourceLocation("dungeons2:other_marker"), 8.0D, 1, 3);
         assertFalse(custom.isSpawnerMarker(block(Blocks.STONE_BRICKS)));
         assertEquals(VERMIN.toString(), custom.spawnerTag().getString("mobSetName"));
+    }
+
+    // ---- per-cell overrides (2026-09-03) ------------------------------------------------------
+    //
+    // These go through Overrides directly rather than processBlock, for the reason the class note
+    // gives: the positive marker match needs dungeons2:spawner_marker in the Forge registry, which
+    // no headless test has. Overrides is where the whole of the stated-wins rule lives, so testing
+    // it here covers both routes and the log line at once.
+
+    private static SpawnerMarkerProcessor.Overrides overrides(CompoundTag nbt) {
+        return new SpawnerMarkerProcessor.Overrides(nbt);
+    }
+
+    /**
+     * The case the boss room needed: one template naming its own set at its own trigger distance,
+     * which no value of the pool-wide codec fields can express.
+     */
+    @Test
+    void aMarkerMayNameItsOwnSetAndProximity() {
+        CompoundTag marker = new CompoundTag();
+        marker.putString("mobSetName", "dungeons2:small_dungeon_boss");
+        marker.putDouble("proximity", 20.0D);
+
+        CompoundTag tag = processor().spawnerTag(overrides(marker));
+        assertEquals("dungeons2:small_dungeon_boss", tag.getString("mobSetName"));
+        assertEquals(20.0D, tag.getDouble("proximity"));
+        assertEquals(1, tag.getInt("minMobs"), "an unstated key must still come from the pool");
+        assertEquals(3, tag.getInt("maxMobs"), "an unstated key must still come from the pool");
+    }
+
+    /**
+     * The compatibility property that let every shipped template stay untouched: no NBT at all is
+     * the normal case for a structure cell, not an error.
+     */
+    @Test
+    void aMarkerThatStatesNothingIsUnchanged() {
+        assertEquals(processor().spawnerTag().toString(),
+                processor().spawnerTag(overrides(null)).toString(),
+                "a marker with no block-entity NBT must produce exactly the pool's tag");
+    }
+
+    /**
+     * An author typing {@code proximity:20} in a /data merge writes an IntTag, and {@code getDouble}
+     * on one reads 0 -- the same shape of bug as a proximity stored as a string. Accepted and
+     * converted rather than ignored, because a silent 0 is a spawner that only fires when the player
+     * stands in the cell.
+     */
+    @Test
+    void anIntegerProximityIsAccepted() {
+        CompoundTag marker = new CompoundTag();
+        marker.putInt("proximity", 20);
+        assertEquals(20.0D, processor().spawnerTag(overrides(marker)).getDouble("proximity"));
+    }
+
+    /** A marker may ask for a visible cage even though the pool's entry means the ambush block. */
+    @Test
+    void aMarkerMayOverrideTheSpawnerKind() {
+        CompoundTag marker = new CompoundTag();
+        marker.putString("type", "vanilla");
+        assertEquals(SpawnerConfig.Kind.VANILLA,
+                overrides(marker).kind(SpawnerConfig.Kind.PROXIMITY));
+    }
+
+    /**
+     * Degrade, do not throw. This runs on a worldgen thread inside a processor vanilla gives no
+     * error path, so a typo in hand-authored NBT has to leave a working dungeon and a WARN.
+     */
+    @Test
+    void aMalformedOverrideFallsBackToThePool() {
+        CompoundTag badSet = new CompoundTag();
+        badSet.putString("mobSetName", "Not A Resource Location");
+        assertEquals(VERMIN, overrides(badSet).mobSet(VERMIN));
+
+        CompoundTag badKind = new CompoundTag();
+        badKind.putString("type", "vanila");
+        assertEquals(SpawnerConfig.Kind.PROXIMITY,
+                overrides(badKind).kind(SpawnerConfig.Kind.PROXIMITY));
     }
 }

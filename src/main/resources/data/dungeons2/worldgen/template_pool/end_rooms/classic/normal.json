@@ -5,8 +5,8 @@
     {
     "element": {
       "element_type": "minecraft:single_pool_element",
-      "location": "dungeons2:end_rooms/classic/boss_1",
-      "processors": "dungeons2:classic_weathering",
+      "location": "dungeons2:end_rooms/classic/small_boss_1",
+      "processors": "dungeons2:classic_boss_weathering",
       "projection": "rigid"
     },
     "weight": 1

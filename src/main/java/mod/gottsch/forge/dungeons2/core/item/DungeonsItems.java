@@ -156,6 +156,26 @@ public class DungeonsItems {
             () -> new ForgeSpawnEggItem(DungeonsEntities.BODAK_ENTITY, 0x6b6a63, 0x2b2a26,
                     new Item.Properties()));
 
+    public static final RegistryObject<Item> BEHOLDER_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BEHOLDER + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BEHOLDER_ENTITY, 0x4a2e1a, 0xd4b896,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> DEATH_TYRANT_EGG = Registration.ITEMS.register(
+            DungeonsEntities.DEATH_TYRANT + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.DEATH_TYRANT_ENTITY, 0x2a2a2e, 0x7fd936,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> SPECTATOR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SPECTATOR + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.SPECTATOR_ENTITY, 0x344133, 0xabb685,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> DAEMON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.DAEMON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.DAEMON_ENTITY, 0xff0000, 0xff8c00,
+                    new Item.Properties()));
+
     public static final RegistryObject<Item> GHOUL_EGG = Registration.ITEMS.register(
             DungeonsEntities.GHOUL + "_egg",
             () -> new ForgeSpawnEggItem(DungeonsEntities.GHOUL_ENTITY, 0x9fc2b8, 0x4f5b56,

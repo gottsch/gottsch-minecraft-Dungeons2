@@ -1,0 +1,18 @@
+{
+  "id": "dungeons2:classic_ranged",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 3
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:winged_skeleton",
+      "weight": 8
+    },
+    {
+      "id": "minecraft:skeleton",
+      "weight": 8
+    }
+  ]
+}

@@ -1929,7 +1929,7 @@ like a vanilla spawner, it has an item (`/give @s dungeons2:spawner_marker`, or 
 Functional Blocks creative tab), and it is visible while you author — so you can see what you put
 where. At placement the `dungeons2:spawner` processor swaps it for `dungeons2:mob_set_spawner`: an
 **invisible, non-solid, non-collidable** block whose block entity spawns a datapack-defined set of
-mobs when a player comes within `proximity` blocks (8 by default, roughly "as you enter the room" at
+mobs when a player comes within `proximity` blocks (12 by default, roughly "as you come through the door" at
 Dungeons2's room sizes).
 
 Shipped example: `rooms/classic/15x21_hall_1.nbt` carries one at local `(7, 1, 10)` — centre of the
@@ -1939,9 +1939,40 @@ hall's aisle, on the walking plane.
 the motif's processor list (`worldgen/processor_list/classic_weathering.json`), and the shipped one
 is `dungeons2:classic_vermin` — the dungeon's own rats.
 
-**One marker means one set per motif.** A block carries no free text, so there is no per-cell
-override. A motif wanting a second set registers a second marker block and adds a second processor
-entry pointing `marker_block` at it; that half is pure data.
+**A single marker may override any of that, per cell.** Since 2026-09-03 the marker carries a block
+entity, like `chest_marker` and `pot_marker` do, so one template can name its own set and trigger
+distance without a second marker block. Place the marker, then point at it and:
+
+```
+/data merge block <x> <y> <z> {mobSetName:"dungeons2:small_dungeon_boss",proximity:20.0d,minMobs:1,maxMobs:1}
+```
+
+The set is named for the **role**, not the mob (`small_dungeon_boss`, not `bodak`), so its roster can
+be retuned later without editing the saved `.nbt` — a template names a slot in the encounter design,
+and which monster fills it is datapack content. A mini-boss is also made **persistent** on join
+(`MiniBossPersistenceEvent`): the spawner self-destructs when it fires, so a boss that despawned
+would leave a boss room that can never be re-armed.
+
+Every key is optional and every one that is absent falls through to the processor entry, so an
+ordinary marker still states nothing. The keys are `mobSetName`, `proximity`, `minMobs`, `maxMobs`
+and `type` (`proximity` or `vanilla`) — spelled exactly as the finished spawner's own block-entity
+tag, so `/data get block` reads the same names before and after placement. A malformed value logs a
+`[D2-SPAWNER]` WARN and falls back to the pool rather than throwing on a worldgen thread.
+
+The old note here said a block "carries no free text, so there is no per-cell override", and that a
+motif wanting a second set had to register a second marker block. **That was wrong** — a structure
+template stores block-entity NBT per cell and hands it to a processor as `current.nbt()`, which is
+how `chest_marker` had been carrying a per-marker loot table the whole time. A second marker block
+still works and is still the right answer when a whole motif wants a different default; it is just
+no longer the only way.
+
+> **Do NOT place `dungeons2:mob_set_spawner` directly while authoring.** It will disappear, and it
+> will look like the command did nothing. GottschCore's `ProximityMobSetSpawnerBlockEntity.tickServer`
+> fires on the first tick any player is within `proximity` and then calls `selfDestruct()`, which
+> sets the cell to air and removes the block entity — unconditionally, even when the mob set
+> resolves to no mobs at all. So a spawner placed at your feet is gone within a tick, and one placed
+> across the room dies as you walk over to save the structure. Place the marker instead; it is inert
+> and visible, which is the whole reason it exists.
 
 Sets live at `data/<namespace>/mob_sets/*.json` and are read by GottschCore's `MobSetDataHandler`,
 so a datapack can add or replace them without touching the mod:

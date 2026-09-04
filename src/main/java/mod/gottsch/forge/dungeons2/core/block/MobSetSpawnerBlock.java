@@ -68,7 +68,7 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock {
      * at: rooms run 5&ndash;13 across, so this fires as the player enters the room rather than as
      * they step onto the cell.
      */
-    private static final double DEFAULT_PROXIMITY = 8.0D;
+    private static final double DEFAULT_PROXIMITY = 12.0D;
 
     public MobSetSpawnerBlock(Properties properties) {
         super(properties);

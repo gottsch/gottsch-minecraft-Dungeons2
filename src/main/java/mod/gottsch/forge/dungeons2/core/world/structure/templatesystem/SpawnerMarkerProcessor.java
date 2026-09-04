@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
+import mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
@@ -32,6 +33,7 @@ import java.util.List;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -62,11 +64,20 @@ import java.util.function.Supplier;
  * Village Dungeons keys its own spawner processor on marker blocks; that looked like a stylistic
  * choice and is in fact forced.</p>
  *
- * <h2>The trade the block form makes</h2>
- * <p>A DATA marker carried a free-text string, so it could name its own mob set per cell. A block
- * cannot. {@code marker_block} is therefore a codec field: a motif wanting a second set registers a
- * second marker block and adds a second processor entry naming it, which is pure data on this side.
- * Until someone needs that, one marker means one set per motif.</p>
+ * <h2>The trade the block form was thought to make, and why it was wrong</h2>
+ * <p>This section used to read: "a DATA marker carried a free-text string, so it could name its own
+ * mob set per cell; a block cannot", and concluded that a motif wanting a second set had to register
+ * a second marker block. <strong>The premise was false.</strong> A structure template stores
+ * block-entity NBT per cell and hands it to a processor as {@code current.nbt()} &mdash;
+ * {@code ChestMarkerProcessor} was already reading a per-marker loot table that way while this note
+ * claimed it was impossible. What a block could not do was carry text with <em>no block entity</em>.
+ *
+ * <p>As of 2026-09-03 {@code dungeons2:spawner_marker} has one, so every codec field below is a pool
+ * <em>default</em> that an individual marker may override: {@code mobSetName}, {@code proximity},
+ * {@code minMobs}, {@code maxMobs} and {@code type}. A marker that states nothing behaves exactly as
+ * it did before, which is why no shipped template needed touching. {@code marker_block} stays a
+ * codec field &mdash; a second marker block is still legitimate, it is just no longer the only way
+ * to get a second set.</p>
  *
  * <h2>What this does NOT do</h2>
  * <p>It does not validate that the named mob set exists. {@code MobSetDataRegistry} is populated
@@ -126,7 +137,13 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 ResourceLocation.CODEC.fieldOf("mob_set").forGetter(p -> p.mobSet),
                 ResourceLocation.CODEC.optionalFieldOf("marker_block", DEFAULT_MARKER_BLOCK)
                         .forGetter(p -> p.markerBlock),
-                Codec.DOUBLE.optionalFieldOf("proximity", 8.0D).forGetter(p -> p.proximity),
+                // Required, and deliberately NOT defaulted -- same reasoning as the scheme slot's
+                // (see SpawnerConfig): a default here is a number in Java deciding how far away
+                // every authored ambush fires, invisible to whoever is authoring it. The one
+                // asymmetry with the slot is that this side requires it for a vanilla marker too;
+                // the value is simply unused there, and a second cross-field rule in a processor
+                // that has no validate() hook would cost more than it saves.
+                Codec.DOUBLE.fieldOf("proximity").forGetter(p -> p.proximity),
                 Codec.INT.optionalFieldOf("min_mobs", 1).forGetter(p -> p.minMobs),
                 Codec.INT.optionalFieldOf("max_mobs", 3).forGetter(p -> p.maxMobs),
                 // Same default and the same reason as the scheme slot's: every marker authored
@@ -146,6 +163,10 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         if (!isSpawnerMarker(current)) {
             return current;
         }
+        // The marker's own NBT wins over this processor's codec fields, key by key. Resolved once,
+        // before the kind branch, because `type` is itself overridable -- a template may hold an
+        // ambush marker and a visible cage side by side.
+        Overrides overrides = Overrides.of(current);
         // Diagnostic, because every failure downstream of here is invisible: the block this
         // produces cannot be seen, and a spawner that never fires looks exactly like a spawner
         // that was never placed. One line per conversion, at the position it happened.
@@ -157,16 +178,18 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // "proximity met" / "self-destructing" lines are GottschCore's, and that file has its own
         // [logging] level in config/gottschcore-common.toml.
         Dungeons.LOGGER.debug("[D2-SPAWNER] {} -> {} at {} (set {})",
-                markerBlock, kind.getSerializedName(), current.pos(), mobSet);
+                markerBlock, overrides.kind(kind).getSerializedName(),
+                current.pos().toShortString(), overrides.mobSet(mobSet));
 
-        if (kind == SpawnerConfig.Kind.VANILLA) {
-            CompoundTag vanilla = vanillaSpawnerTag(settings.getRandom(current.pos()));
+        if (overrides.kind(kind) == SpawnerConfig.Kind.VANILLA) {
+            CompoundTag vanilla = vanillaSpawnerTag(settings.getRandom(current.pos()), overrides);
             if (vanilla == null) {
                 // No resolvable mobs, so there is nothing to put in the cage. Leave the marker
                 // in place rather than emit an empty spawner: vanilla's own default is a pig, and
                 // an unconverted marker is at least visibly wrong to whoever authored it.
                 Dungeons.LOGGER.warn("[D2-SPAWNER] mob set {} resolved to no usable mobs at {};"
-                        + " leaving the marker unconverted", mobSet, current.pos());
+                        + " leaving the marker unconverted", overrides.mobSet(mobSet),
+                        current.pos().toShortString());
                 return current;
             }
             return new StructureTemplate.StructureBlockInfo(current.pos(),
@@ -176,7 +199,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // The block lookup is the ONLY part of this that needs a populated Forge registry, which is
         // why everything either side of it is separately callable -- see SpawnerMarkerProcessorTest.
         return new StructureTemplate.StructureBlockInfo(current.pos(),
-                DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(), spawnerTag());
+                DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(), spawnerTag(overrides));
     }
 
     /** Matches {@code RoomSpawnerGenerator}, so both routes name the same block entity. */
@@ -197,8 +220,8 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
      * {@code settings.getRandom(pos)} is position-derived, so the same template in the same place
      * shows the same mob.</p>
      */
-    CompoundTag vanillaSpawnerTag(RandomSource random) {
-        List<WeightedMob> mobs = MobSetDataRegistry.get(mobSet)
+    CompoundTag vanillaSpawnerTag(RandomSource random, Overrides overrides) {
+        List<WeightedMob> mobs = MobSetDataRegistry.get(overrides.mobSet(mobSet))
                 .map(VanillaSpawnerNbt::usableMobs)
                 .orElseGet(List::of);
         if (mobs.isEmpty()) {
@@ -214,7 +237,9 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 break;
             }
         }
-        int spawnCount = minMobs + (maxMobs > minMobs ? random.nextInt(maxMobs - minMobs + 1) : 0);
+        int min = overrides.minMobs(minMobs);
+        int max = overrides.maxMobs(maxMobs);
+        int spawnCount = min + (max > min ? random.nextInt(max - min + 1) : 0);
 
         try {
             CompoundTag tag = new CompoundTag();
@@ -247,16 +272,108 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         return markerBlock.equals(id);
     }
 
-    /** The block-entity tag a marker becomes. Pure: no registry, no level. */
+    /** The block-entity tag a marker becomes, taking the pool's values. Pure: no registry, no level. */
     CompoundTag spawnerTag() {
+        return spawnerTag(Overrides.NONE);
+    }
+
+    /** The block-entity tag a marker becomes, with that marker's own overrides applied. */
+    CompoundTag spawnerTag(Overrides overrides) {
         CompoundTag tag = new CompoundTag();
         // The block-entity type's registry id, which is what vanilla's placeInWorld loads against.
         tag.putString("id", new ResourceLocation(Dungeons.MOD_ID, "mob_set_spawner").toString());
-        tag.putString(MOB_SET_NAME, mobSet.toString());
-        tag.putInt(MIN_MOBS, minMobs);
-        tag.putInt(MAX_MOBS, maxMobs);
-        tag.putDouble(PROXIMITY, proximity);
+        tag.putString(MOB_SET_NAME, overrides.mobSet(mobSet).toString());
+        tag.putInt(MIN_MOBS, overrides.minMobs(minMobs));
+        tag.putInt(MAX_MOBS, overrides.maxMobs(maxMobs));
+        // putDouble, matching what the block entity reads. The marker accepts any numeric tag on
+        // the way in (see SpawnerMarkerBlockEntity) precisely so this stays the only encoding that
+        // ever reaches GottschCore.
+        tag.putDouble(PROXIMITY, overrides.proximity(proximity));
         return tag;
+    }
+
+    /**
+     * One marker's per-cell overrides, read off its block-entity NBT.
+     *
+     * <h2>Why a value type rather than five lookups at the point of use</h2>
+     * <p>Every field has the same rule &mdash; stated wins, absent falls through to the pool &mdash;
+     * and it has to be applied identically on the proximity route, the vanilla route and the log
+     * line. Spelling it out five times in three places is how the two spawner encodings drifted the
+     * first time, which is why {@code SpawnerTagParityTest} exists. Here the rule is written once.</p>
+     *
+     * <p>Null-not-empty, because {@link StructureTemplate.StructureBlockInfo#nbt()} is itself null
+     * for the overwhelming majority of cells and a marker with no NBT is the normal case, not an
+     * error. {@link #NONE} is the "this marker said nothing" instance, so callers with no template
+     * in hand (tests, and {@link #spawnerTag()}) go through exactly the same code path.</p>
+     */
+    record Overrides(CompoundTag nbt) {
+
+        /** A marker that states nothing: every accessor returns the pool's value. */
+        static final Overrides NONE = new Overrides(null);
+
+        static Overrides of(StructureTemplate.StructureBlockInfo current) {
+            return new Overrides(current.nbt());
+        }
+
+        ResourceLocation mobSet(ResourceLocation pooled) {
+            String stated = string(SpawnerMarkerBlockEntity.MOB_SET_NAME);
+            if (stated == null) {
+                return pooled;
+            }
+            // tryParse, not the constructor: a typo in a hand-authored /data merge would otherwise
+            // throw out of a worldgen thread, and an unparseable id is exactly the case where
+            // falling back to the pool's set leaves a working dungeon and a WARN to read.
+            ResourceLocation parsed = ResourceLocation.tryParse(stated);
+            if (parsed == null) {
+                Dungeons.LOGGER.warn("[D2-SPAWNER] marker names an unparseable mob set '{}';"
+                        + " using the pool's {} instead", stated, pooled);
+                return pooled;
+            }
+            return parsed;
+        }
+
+        double proximity(double pooled) {
+            return nbt != null && nbt.contains(SpawnerMarkerBlockEntity.PROXIMITY, Tag.TAG_ANY_NUMERIC)
+                    ? nbt.getDouble(SpawnerMarkerBlockEntity.PROXIMITY) : pooled;
+        }
+
+        int minMobs(int pooled) {
+            return integer(SpawnerMarkerBlockEntity.MIN_MOBS, pooled);
+        }
+
+        int maxMobs(int pooled) {
+            return integer(SpawnerMarkerBlockEntity.MAX_MOBS, pooled);
+        }
+
+        SpawnerConfig.Kind kind(SpawnerConfig.Kind pooled) {
+            String stated = string(SpawnerMarkerBlockEntity.TYPE);
+            if (stated == null) {
+                return pooled;
+            }
+            for (SpawnerConfig.Kind candidate : SpawnerConfig.Kind.values()) {
+                if (candidate.getSerializedName().equals(stated)) {
+                    return candidate;
+                }
+            }
+            // Same call as an unparseable set: a misspelled type must not silently become the other
+            // kind, and it must not stop the dungeon generating either.
+            Dungeons.LOGGER.warn("[D2-SPAWNER] marker names an unknown spawner type '{}';"
+                    + " using the pool's {} instead", stated, pooled.getSerializedName());
+            return pooled;
+        }
+
+        private String string(String key) {
+            if (nbt == null || !nbt.contains(key, Tag.TAG_STRING)) {
+                return null;
+            }
+            String value = nbt.getString(key);
+            return value.isEmpty() ? null : value;
+        }
+
+        private int integer(String key, int pooled) {
+            return nbt != null && nbt.contains(key, Tag.TAG_ANY_NUMERIC)
+                    ? nbt.getInt(key) : pooled;
+        }
     }
 
     @Override

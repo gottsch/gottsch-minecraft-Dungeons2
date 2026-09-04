@@ -131,7 +131,7 @@ class MobSetsByFloorTest {
     @Test
     void aSchemeWithNoMobSetsInheritsTheFloorsBand() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1,\"proximity\":12}"))
                 .result().orElseThrow();
         assertTrue(deferring.mobSets().isEmpty(), "the slot should be deferring, not defaulted");
 
@@ -143,7 +143,7 @@ class MobSetsByFloorTest {
 
     @Test
     void aSchemeThatNamesItsOwnSetsOverridesTheBand() {
-        SpawnerConfig owning = new SpawnerConfig(VERMIN);
+        SpawnerConfig owning = new SpawnerConfig(VERMIN, 12.0D);
         SpawnerConfig resolved = owning.resolvedAgainst(
                 List.of(new SpawnerConfig.MobSetEntry(DEEP, 1)));
         assertSame(owning, resolved, "an overriding slot should not be rebuilt");
@@ -157,7 +157,7 @@ class MobSetsByFloorTest {
      */
     @Test
     void anExplicitlyEmptyMobSetsListIsALoadError() {
-        JsonElement json = JsonParser.parseString("{\"mob_sets\":[]}");
+        JsonElement json = JsonParser.parseString("{\"proximity\":12,\"mob_sets\":[]}");
         DataResult<SpawnerConfig> result = SpawnerConfig.CODEC.parse(JsonOps.INSTANCE, json);
         assertTrue(result.error().isPresent());
         assertTrue(result.error().get().message().contains("Omit the key"),
@@ -168,7 +168,7 @@ class MobSetsByFloorTest {
     @Test
     void aDeferringSchemeOnAMotifWithNoTableResolvesToNothing() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"proximity\":12}"))
                 .result().orElseThrow();
         assertTrue(deferring.resolvedAgainst(List.of()).declaredMobSets().isEmpty());
     }
@@ -220,7 +220,7 @@ class MobSetsByFloorTest {
     @Test
     void aBandSuppliesTheMobCountWhenTheSchemeStatesNone() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1,\"proximity\":12}"))
                 .result().orElseThrow();
         assertTrue(deferring.minMobs().isEmpty(), "the slot should state no count, not a defaulted one");
 
@@ -233,7 +233,7 @@ class MobSetsByFloorTest {
     @Test
     void aSchemeThatStatesItsOwnCountOverridesTheBand() {
         SpawnerConfig owning = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":1,\"max_mobs\":2}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":1,\"max_mobs\":2,\"proximity\":12}"))
                 .result().orElseThrow();
 
         SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
@@ -248,7 +248,7 @@ class MobSetsByFloorTest {
      */
     @Test
     void aSchemeWithItsOwnSetsStillTakesTheBandsCount() {
-        SpawnerConfig owningSets = new SpawnerConfig(VERMIN);
+        SpawnerConfig owningSets = new SpawnerConfig(VERMIN, 12.0D);
         SpawnerConfig resolved = owningSets.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
 
         assertEquals(List.of(VERMIN),
@@ -262,7 +262,7 @@ class MobSetsByFloorTest {
     @Test
     void withNeitherASchemeNorABandCountTheDefaultStands() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"proximity\":12}"))
                 .result().orElseThrow();
 
         SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(band(0, DEEP)));
@@ -279,7 +279,7 @@ class MobSetsByFloorTest {
     @Test
     void aBandStatingNoCountLeavesTheSchemesOwnAlone() {
         SpawnerConfig owning = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":4,\"max_mobs\":6}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":4,\"max_mobs\":6,\"proximity\":12}"))
                 .result().orElseThrow();
 
         SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(band(0, DEEP)));
@@ -291,7 +291,7 @@ class MobSetsByFloorTest {
     @Test
     void anInvertedBandRangeClamps() {
         SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"proximity\":12}"))
                 .result().orElseThrow();
 
         SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(countingBand(0, 5, 2)));
@@ -334,7 +334,7 @@ class MobSetsByFloorTest {
     @Test
     void aSlotThatNamesNoTypeIsAProximitySpawner() {
         SpawnerConfig config = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"))
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"proximity\":12}"))
                 .result().orElseThrow();
         assertEquals(SpawnerConfig.Kind.PROXIMITY, config.kind(),
                 "defaulting to vanilla would silently turn every shipped hall's invisible ambush"
@@ -347,6 +347,31 @@ class MobSetsByFloorTest {
                 .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"type\":\"vanilla\"}"))
                 .result().orElseThrow();
         assertEquals(SpawnerConfig.Kind.VANILLA, config.kind());
+    }
+
+    /**
+     * There is no default trigger distance, on purpose &mdash; see {@code SpawnerConfig}'s note
+     * where {@code DEFAULT_PROXIMITY} used to be. A slot that omits it is a load error rather than
+     * a silent 8 (or 12), because the whole point is that changing how far away every shipped room
+     * ambushes the player should be a datapack edit, not a recompile.
+     */
+    @Test
+    void aProximitySpawnerMustStateItsProximity() {
+        DataResult<SpawnerConfig> result = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1}"));
+        assertTrue(result.error().isPresent(),
+                "a proximity spawner with no proximity must not fall back to a number in Java");
+        assertTrue(result.error().get().message().contains("proximity"),
+                "the error should name the missing key");
+    }
+
+    /** The other half: a vanilla cage has no proximity, so stating one is an authoring mistake. */
+    @Test
+    void aVanillaSpawnerMayNotStateAProximity() {
+        DataResult<SpawnerConfig> result = SpawnerConfig.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"type\":\"vanilla\",\"proximity\":12}"));
+        assertTrue(result.error().isPresent(),
+                "silently ignoring it would leave an author believing they had tuned something");
     }
 
     /** Failing rather than lenient, the same rule the rest of the schema follows. */

@@ -20,6 +20,10 @@ package mod.gottsch.forge.dungeons2.core.entity;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
 import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
+import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Beholder;
+import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.DeathTyrant;
+import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Spectator;
+import mod.gottsch.forge.gmm.core.entity.monster.Daemon;
 import mod.gottsch.forge.gmm.core.entity.monster.GelatinousCube;
 import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
 import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
@@ -44,7 +48,12 @@ import mod.gottsch.forge.gmm.core.entity.monster.zombie.GraveZombie;
 import mod.gottsch.forge.gmm.core.entity.monster.zombie.Wight;
 import mod.gottsch.forge.gmm.core.entity.projectile.BloaterArm;
 import mod.gottsch.forge.gmm.core.entity.projectile.BoneShard;
+import mod.gottsch.forge.gmm.core.entity.projectile.DisarmSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.DisintegrateSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.HarmSpell;
+import mod.gottsch.forge.gmm.core.entity.projectile.ParalysisSpell;
 import mod.gottsch.forge.gmm.core.entity.projectile.Rock;
+import mod.gottsch.forge.gmm.core.entity.projectile.FireSpoutSpell;
 import mod.gottsch.forge.gmm.core.entity.projectile.SpikeGrowthSpell;
 import mod.gottsch.forge.gmm.core.entity.projectile.WitheringGazeSpell;
 import mod.gottsch.forge.gmm.core.entity.monster.Rat;
@@ -309,6 +318,60 @@ public class DungeonsEntities {
                             .build(BODAK));
 
     /**
+     * The Beholder-kin. Registered but never spawned ambiently &mdash; see {@link #MINI_BOSSES}.
+     * Dimensions/tracking match Dungeon Denizens' own registration exactly.
+     */
+    public static final String BEHOLDER = "beholder";
+    public static final String DEATH_TYRANT = "death_tyrant";
+
+    public static final RegistryObject<EntityType<Beholder>> BEHOLDER_ENTITY =
+            Registration.ENTITIES.register(BEHOLDER,
+                    () -> EntityType.Builder.of(Beholder::new, MobCategory.MONSTER)
+                            .sized(2.25F, 3.5F)
+                            .clientTrackingRange(8)
+                            .setTrackingRange(20)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(BEHOLDER));
+
+    public static final RegistryObject<EntityType<DeathTyrant>> DEATH_TYRANT_ENTITY =
+            Registration.ENTITIES.register(DEATH_TYRANT,
+                    () -> EntityType.Builder.of(DeathTyrant::new, MobCategory.MONSTER)
+                            .sized(2.25F, 3.5F)
+                            .clientTrackingRange(8)
+                            .setTrackingRange(20)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(DEATH_TYRANT));
+
+    /** The Beholder-kin's weakest member -- a common summon target, not a boss in its own right. */
+    public static final String SPECTATOR = "spectator";
+
+    public static final RegistryObject<EntityType<Spectator>> SPECTATOR_ENTITY =
+            Registration.ENTITIES.register(SPECTATOR,
+                    () -> EntityType.Builder.of(Spectator::new, MobCategory.MONSTER)
+                            .sized(0.84375F, 1.21875F)
+                            .clientTrackingRange(8)
+                            .setTrackingRange(20)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SPECTATOR));
+
+    /**
+     * Registered but never spawned ambiently, like the other four -- see {@link #MINI_BOSSES}. Also
+     * the rare summon both Beholder and DeathTyrant can call in.
+     */
+    public static final String DAEMON = "daemon";
+
+    public static final RegistryObject<EntityType<Daemon>> DAEMON_ENTITY =
+            Registration.ENTITIES.register(DAEMON,
+                    () -> EntityType.Builder.of(Daemon::new, MobCategory.MONSTER)
+                            .sized(1F, 3F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(DAEMON));
+
+    /**
      * The ghoul. GMM's {@code SewerGhoul} is deliberately absent: Mark is reserving it for a Sewer
      * dungeon mod, and a mob that appears in two of his mods under two ids is a mob players will
      * report as a duplicate.
@@ -427,15 +490,16 @@ public class DungeonsEntities {
      * The projectiles and spells the roster's mobs throw &mdash; and the reason they have to be here.
      *
      * <h2>A GMM mob's ranged attack is opt-in, and silently absent if you skip it</h2>
-     * <p>Six of the mobs above carry a {@code public static} hook GMM leaves null: {@code Orc
-     * .projectileLauncher}, {@code OrcShaman.spellCaster}, {@code Bodak.spellCaster},
+     * <p>Several of the mobs above carry a {@code public static} hook GMM leaves null: {@code Orc
+     * .projectileLauncher}, {@code OrcShaman}/{@code Bodak}/{@code Beholder}/{@code DeathTyrant}/
+     * {@code Spectator.spellCaster}, {@code Daemon.fireSpoutLauncher},
      * {@code BloodyBones}/{@code TaintedSkeleton.shardFactory}, {@code Bloater.armFactory}. Each is
-     * guarded by a null check, so a consumer that registers the mob and stops there gets a mob that
-     * <strong>compiles, spawns, renders and never uses its signature attack</strong> &mdash; no
-     * warning, no crash. The same library-registers-nothing design as the mobs themselves, one level
-     * down, and far easier to miss.</p>
+     * guarded by a null check, so a consumer that registers the
+     * mob and stops there gets a mob that <strong>compiles, spawns, renders and never uses its
+     * signature attack</strong> &mdash; no warning, no crash. The same library-registers-nothing
+     * design as the mobs themselves, one level down, and far easier to miss.</p>
      *
-     * <p>So these five entity types exist to give those hooks something to throw; {@code CommonSetup}
+     * <p>So these entity types exist to give those hooks something to throw; {@code CommonSetup}
      * wires them. {@code MobCategory.MISC}: they are projectiles, and putting them in MONSTER would
      * enter them into the mob cap.</p>
      */
@@ -444,6 +508,11 @@ public class DungeonsEntities {
     public static final String ROCK = "rock";
     public static final String SPIKE_GROWTH_SPELL = "spike_growth_spell";
     public static final String WITHERING_GAZE_SPELL = "withering_gaze_spell";
+    public static final String PARALYSIS_SPELL = "paralysis_spell";
+    public static final String HARM_SPELL = "harm_spell";
+    public static final String DISINTEGRATE_SPELL = "disintegrate_spell";
+    public static final String DISARM_SPELL = "disarm_spell";
+    public static final String FIRESPOUT_SPELL = "firespout_spell";
 
     /** The shrapnel Bloody Bones and the Tainted Skeleton throw. */
     public static final RegistryObject<EntityType<BoneShard>> BONE_SHARD_ENTITY =
@@ -491,18 +560,69 @@ public class DungeonsEntities {
                             .build(WITHERING_GAZE_SPELL));
 
     /**
-     * The three mobs that are registered but must never be <em>spawned</em> by the dungeon (Mark,
-     * 2026-08-31: "none of the small nor big bosses are in either spawners").
+     * Beholder/DeathTyrant's spell kit, ported from Dungeon Denizens. Sizing/tracking matches DD's
+     * own registration exactly; all four fall back to a fire charge for their in-flight visual when
+     * {@code itemSupplier} is left unset (see each class), which is deliberate here -- dedicated art
+     * is a separate, later decision, not a blocker on the mobs having their real attacks.
+     */
+    public static final RegistryObject<EntityType<ParalysisSpell>> PARALYSIS_SPELL_ENTITY =
+            Registration.ENTITIES.register(PARALYSIS_SPELL,
+                    () -> EntityType.Builder.<ParalysisSpell>of(ParalysisSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(PARALYSIS_SPELL));
+
+    public static final RegistryObject<EntityType<HarmSpell>> HARM_SPELL_ENTITY =
+            Registration.ENTITIES.register(HARM_SPELL,
+                    () -> EntityType.Builder.<HarmSpell>of(HarmSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(HARM_SPELL));
+
+    public static final RegistryObject<EntityType<DisintegrateSpell>> DISINTEGRATE_SPELL_ENTITY =
+            Registration.ENTITIES.register(DISINTEGRATE_SPELL,
+                    () -> EntityType.Builder.<DisintegrateSpell>of(DisintegrateSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(DISINTEGRATE_SPELL));
+
+    public static final RegistryObject<EntityType<DisarmSpell>> DISARM_SPELL_ENTITY =
+            Registration.ENTITIES.register(DISARM_SPELL,
+                    () -> EntityType.Builder.<DisarmSpell>of(DisarmSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(DISARM_SPELL));
+
+    /** Daemon's fire-spout arc. */
+    public static final RegistryObject<EntityType<FireSpoutSpell>> FIRESPOUT_SPELL_ENTITY =
+            Registration.ENTITIES.register(FIRESPOUT_SPELL,
+                    () -> EntityType.Builder.<FireSpoutSpell>of(FireSpoutSpell::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(FIRESPOUT_SPELL));
+
+    /**
+     * The mobs that are registered but must never be reached by the dungeon's <em>ambient</em>
+     * routes (Mark, 2026-08-31: "none of the small nor big bosses are in either spawners").
      *
-     * <p>They are intended as mini-bosses / small dungeon bosses, which is a placement decision that
-     * has not been designed yet &mdash; so until it is, they are reachable by spawn egg and by
-     * {@code /summon} and by nothing else. Declared here rather than left as an absence in two JSON
-     * files, because "this mob is missing from the mob sets" and "this mob is deliberately excluded"
-     * look identical in a datapack. {@code MobSpawnExclusionTest} reads this list and fails the build
-     * if any of them turns up in a mob set or in the structure's spawn overrides.</p>
+     * <p>Placement is a per-mob decision made through a {@code category: "boss"} mob set
+     * ({@code small_dungeon_boss.json}, {@code medium_dungeon_boss.json},
+     * {@code large_dungeon_boss.json}) rather than the procedural mob sets or the structure's
+     * ambient {@code spawn_overrides} &mdash; Bodak, Skeleton Champion, Beholder and DeathTyrant are
+     * placed that way as of 2026-09-04. Wight and Daemon are not placed anywhere yet, reachable only
+     * by spawn egg, {@code /summon}, and (Daemon only) as Beholder/DeathTyrant's rare summon. Declared
+     * here rather than left as an absence in two JSON files,
+     * because "this mob is missing from the mob sets" and "this mob is deliberately excluded" look
+     * identical in a datapack. {@code MobSpawnExclusionTest} reads this list and fails the build if
+     * any of them turns up in a non-boss mob set or in the structure's spawn overrides.</p>
      */
     public static final java.util.List<String> MINI_BOSSES =
-            java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK);
+            java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK, BEHOLDER, DEATH_TYRANT, DAEMON);
 
     /** Twice the rat's health and damage; same speed, so it is a threat rather than a chase. */
     public static AttributeSupplier.Builder createGiantRatAttributes() {

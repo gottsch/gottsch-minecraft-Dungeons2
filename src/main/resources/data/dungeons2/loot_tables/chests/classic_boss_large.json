@@ -1,0 +1,67 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_boss_large",
+  "pools": [
+    {
+      "//": "THE UNIQUE -- one guaranteed, and every outcome is something the player will remember. A LARGE dungeon reaches the world floor, so this is the deepest thing they can have cleared; the vanilla comparison is bastion treasure, which pays a netherite ingot at weight 15 of ~45 in a single guaranteed roll. This is the only place in the mod a smithing template or a netherite ingot appears.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:netherite_ingot", "weight": 10 },
+        { "type": "minecraft:item", "name": "minecraft:netherite_upgrade_smithing_template", "weight": 10 },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_randomly", "enchantments": [ "minecraft:mending" ] } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_golden_apple", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_block", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 4.0 } } ] }
+      ]
+    },
+    {
+      "//": "FOUR guaranteed trophies at near-max enchant levels. 30-40 is above what a level-30 table can reach, which is the point: this is gear a player cannot make for themselves.",
+      "rolls": 4,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond_sword", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_chestplate", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_pickaxe", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_helmet", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_leggings", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond_boots", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:bow", "weight": 8,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:trident", "weight": 4,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 14,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] }
+      ]
+    },
+    {
+      "rolls": { "min": 9.0, "max": 12.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 20.0, "max": 40.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 24.0, "max": 48.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 8.0, "max": 16.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:experience_bottle", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 16.0, "max": 32.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:ancient_debris", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 4.0, "max": 7.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:ender_pearl", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 6.0, "max": 12.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_block", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:obsidian", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 8.0, "max": 16.0 } } ] }
+      ]
+    }
+  ]
+}

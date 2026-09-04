@@ -151,6 +151,11 @@ class ShippedBlockIdsTest {
             "layout",
             // content references
             "entity", "loot_table", "function", "condition", "random_sequence",
+            // ENCHANTMENT ids, on `minecraft:enchant_randomly`'s optional allow-list. New with the
+            // boss chest tables (2026-09-03), which name Mending explicitly rather than trusting a
+            // random draw to produce the one enchantment worth guaranteeing. Resolved from the
+            // enchantment registry, so no more a block than `entity` is.
+            "enchantments",
             // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
             // rather than from the block registry. ShippedMobSetsTest is what verifies it. ONE
             // entry since 2026-08-31: the marker processor and a scheme's spawners slot used to
