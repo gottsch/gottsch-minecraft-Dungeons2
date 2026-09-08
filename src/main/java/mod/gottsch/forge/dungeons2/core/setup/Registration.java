@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.HangingSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SupportSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
@@ -204,6 +205,28 @@ public class Registration {
 			STRUCTURE_PROCESSORS.register(SUPPORT_SWEEP_PROCESSOR_NAME, () -> {
 				Codec<SupportSweepProcessor> codec =
 						SupportSweepProcessor.codec(() -> Registration.SUPPORT_SWEEP_PROCESSOR.get());
+				return () -> codec;
+			});
+
+	/** Registry name of {@link HangingSweepProcessor} under this mod's namespace. */
+	public static final String HANGING_SWEEP_PROCESSOR_NAME = "hanging_sweep";
+
+	/**
+	 * Cuts a chain run loose below the link aging ate, and takes the lantern on the end with it.
+	 * Dungeons2's own, like the other two sweeps, and for the same reason: a template writes what
+	 * it is told, and "is this still hanging from anything?" is a question only something looking
+	 * at the FINISHED piece can answer.
+	 * <p>
+	 * It must sit AFTER every aging entry in a processor list -- the break it cascades from is what
+	 * aging left behind -- and it is NOT interchangeable with {@code dungeons2:support_sweep}:
+	 * support there is six-way connectivity to the ground, which keeps a severed chain hung beside
+	 * a wall. Support here is vertical, because a chain is held at its ends and nowhere else. See
+	 * {@link HangingSweepProcessor}.
+	 */
+	public static final RegistryObject<StructureProcessorType<HangingSweepProcessor>> HANGING_SWEEP_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(HANGING_SWEEP_PROCESSOR_NAME, () -> {
+				Codec<HangingSweepProcessor> codec =
+						HangingSweepProcessor.codec(() -> Registration.HANGING_SWEEP_PROCESSOR.get());
 				return () -> codec;
 			});
 

@@ -34,6 +34,7 @@ import mod.gottsch.forge.gmm.core.client.model.GhoulModel;
 import mod.gottsch.forge.gmm.core.client.model.IronSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.model.MagmaSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.model.MargoyleModel;
+import mod.gottsch.forge.gmm.core.client.model.MinotaurModel;
 import mod.gottsch.forge.gmm.core.client.model.OrcModel;
 import mod.gottsch.forge.gmm.core.client.model.OrcShamanModel;
 import mod.gottsch.forge.gmm.core.client.model.SkeletonChampionModel;
@@ -43,12 +44,15 @@ import mod.gottsch.forge.gmm.core.client.model.WingedSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AcidSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AlligatorGarRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AnimatedArmorRenderer;
+import mod.gottsch.forge.gmm.core.client.model.AnimatedWeaponModel;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.AnimatedWeaponRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BeholderRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BlackPuddingRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BloaterArmRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BloaterRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BloodyBonesRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BodakRenderer;
+import mod.gottsch.forge.dungeons2.core.client.renderer.entity.SmashShardRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BoneShardRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BurningSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.DaemonRenderer;
@@ -63,8 +67,10 @@ import mod.gottsch.forge.gmm.core.client.renderer.entity.IronSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.MagmaSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.MargoyleRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OchreJellyRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.MinotaurRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcShamanRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcWarlordRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.SkeletonChampionRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.SkeletonWarriorRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.SpikeGrowthSpellRenderer;
@@ -136,7 +142,11 @@ public class ClientSetup {
         event.registerLayerDefinition(DaemonModel.LAYER_LOCATION, DaemonModel::createBodyLayer);
         event.registerLayerDefinition(GhoulModel.LAYER_LOCATION, GhoulModel::createBodyLayer);
         event.registerLayerDefinition(BlackPuddingModel.LAYER_LOCATION, BlackPuddingModel::createBodyLayer);
+        // The animated weapon DOES have its own layer, unlike the animated armor above: its rig is
+        // a body-less pivot the equipped item hangs off, not the zombie's.
+        event.registerLayerDefinition(AnimatedWeaponModel.LAYER_LOCATION, AnimatedWeaponModel::createBodyLayer);
         event.registerLayerDefinition(MargoyleModel.LAYER_LOCATION, MargoyleModel::createBodyLayer);
+        event.registerLayerDefinition(MinotaurModel.LAYER_LOCATION, MinotaurModel::createBodyLayer);
         event.registerLayerDefinition(OrcModel.LAYER_LOCATION, OrcModel::createBodyLayer);
         event.registerLayerDefinition(OrcShamanModel.LAYER_LOCATION, OrcShamanModel::createBodyLayer);
         event.registerLayerDefinition(AlligatorGarModel.LAYER_LOCATION, AlligatorGarModel::createBodyLayer);
@@ -187,9 +197,16 @@ public class ClientSetup {
         event.registerEntityRenderer(DungeonsEntities.GRAY_OOZE_ENTITY.get(), GrayOozeRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), BlackPuddingRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmorRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeaponRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.MARGOYLE_ENTITY.get(), MargoyleRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ORC_ENTITY.get(), OrcRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.MINOTAUR_ENTITY.get(), MinotaurRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShamanRenderer::new);
+        // No layer registration of its own: OrcWarlordRenderer re-bakes OrcModel.LAYER_LOCATION,
+        // already registered above for the Orc. A renderer whose layer is registered nowhere
+        // crashes on first SIGHT of the mob rather than at load, which is the worst place to find
+        // out -- reusing the orc's layer removes that failure mode entirely.
+        event.registerEntityRenderer(DungeonsEntities.ORC_WARLORD_ENTITY.get(), OrcWarlordRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), AlligatorGarRenderer::new);
 
         // The projectiles. The rock and the withering gaze are rendered as a spinning ITEM --
@@ -201,6 +218,9 @@ public class ClientSetup {
                 provider -> new ThrownItemRenderer<>(provider, 0.6F, true));
         event.registerEntityRenderer(DungeonsEntities.BONE_SHARD_ENTITY.get(), BoneShardRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.BLOATER_ARM_ENTITY.get(), BloaterArmRenderer::new);
+        // Like Spike Growth below, this draws a real BlockState rather than a mesh -- the shard
+        // wears whatever block was smashed -- so it is this mod's own renderer, not a gmm one.
+        event.registerEntityRenderer(DungeonsEntities.SMASH_SHARD_ENTITY.get(), SmashShardRenderer::new);
         // Spike Growth draws real BlockStates rather than a mesh, so it has its own renderer.
         event.registerEntityRenderer(DungeonsEntities.SPIKE_GROWTH_SPELL_ENTITY.get(),
                 SpikeGrowthSpellRenderer::new);

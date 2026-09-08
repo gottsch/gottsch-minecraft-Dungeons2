@@ -23,8 +23,9 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
-import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.HangingSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
@@ -71,8 +72,15 @@ class WeatheringProcessorListTest {
     private static final String RESOURCE =
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json";
 
-    /** The aging processor's dispatch key as authored in the JSON. */
-    private static final String AGING_TYPE = "dungeons2:aging";
+    /**
+     * The aging processor's dispatch key as authored in the JSON.
+     *
+     * <p>{@code dungeons2:surface_aging} since 2026-09-04 (backlog #15). It is a strict superset of
+     * {@code dungeons2:aging} -- the same chains, plus a {@code surface} on each rule -- and every
+     * rule in this file states {@code any}, so nothing else in this class changed meaning. The
+     * migration bought the ability to name a surface later without a second format change.</p>
+     */
+    private static final String AGING_TYPE = "dungeons2:surface_aging";
 
     /** The decoration processor's dispatch key as authored in the JSON. */
     private static final String DECORATION_TYPE = "dungeons2:decoration";
@@ -85,6 +93,9 @@ class WeatheringProcessorListTest {
 
     /** The support sweep's dispatch key as authored in the JSON. */
     private static final String SUPPORT_TYPE = "dungeons2:support_sweep";
+
+    /** The hanging sweep's dispatch key as authored in the JSON (2026-09-07). */
+    private static final String HANGING_TYPE = "dungeons2:hanging_sweep";
     private static final String POT_TYPE = "dungeons2:pot";
     private static final String CHEST_TYPE = "dungeons2:chest";
 
@@ -122,21 +133,25 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(7, processors.size(),
-                "Expected the vanilla rule processor, aging, decoration, the decoration sweep,"
-                        + " the #10 spawner marker, the #56 pot marker and the #61 chest marker");
+        assertEquals(9, processors.size(),
+                "Expected the vanilla rule processor, the two aging processors (the main one and"
+                        + " the joist-gated timber chain, which is separate because a geometric"
+                        + " rule moves its whole processor into finalizeProcessing), decoration,"
+                        + " the decoration sweep, the hanging sweep, the #10 spawner marker, the"
+                        + " #56 pot marker and the #61 chest marker");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
             String type = processor.get("processor_type").getAsString();
             Codec<? extends StructureProcessor> codec = switch (type) {
                 case "minecraft:rule" -> RuleProcessor.CODEC;
-                case AGING_TYPE -> AgingProcessor.codec(NO_TYPE);
+                case AGING_TYPE -> SurfaceAgingProcessor.codec(NO_TYPE);
                 case DECORATION_TYPE -> DecorationProcessor.codec(NO_TYPE);
                 case SPAWNER_TYPE -> SpawnerMarkerProcessor.codec(NO_TYPE);
                 case SWEEP_TYPE -> DecorationSweepProcessor.codec(NO_TYPE);
                 case POT_TYPE -> PotMarkerProcessor.codec(NO_TYPE);
                 case CHEST_TYPE -> ChestMarkerProcessor.codec(NO_TYPE);
+                case HANGING_TYPE -> HangingSweepProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -152,7 +167,7 @@ class WeatheringProcessorListTest {
         // Both processors live in GottschCore, which registers no type of its own, so the
         // name is ours -- Registration holds it as a constant precisely so this can compare
         // it against the JSON instead of two independent string literals.
-        assertEquals("dungeons2:" + Registration.AGING_PROCESSOR_NAME, AGING_TYPE);
+        assertEquals("dungeons2:" + Registration.SURFACE_AGING_PROCESSOR_NAME, AGING_TYPE);
         assertEquals("dungeons2:" + Registration.DECORATION_PROCESSOR_NAME, DECORATION_TYPE);
         assertEquals("dungeons2:" + Registration.DECORATION_SWEEP_PROCESSOR_NAME, SWEEP_TYPE);
 
@@ -217,8 +232,19 @@ class WeatheringProcessorListTest {
         // position, so every pass that sees a given marker resolves the same chest. Its write is an
         // ordinary idempotent block write, and like the other two markers it cannot fire on a
         // procedural piece at all -- it matches a marker BLOCK, which only a template contains.
+        // dungeons2:hanging_sweep (2026-09-07) is vetted by the same third route as the other two
+        // sweeps, and its argument is the simplest of the three. It reads the level, so it lands in
+        // the clipped pass -- and the thing it judges is a VERTICAL run, while a worldgen chunk box
+        // spans the full build height. So a run is never split across two passes, and the anchor
+        // cell above or below it is in the same column and therefore the same box: clipping cannot
+        // change any answer it gives. What clipping does cost is the horizontal seam, and there it
+        // fails the same safe way everything else in this file does -- an unreadable cell counts as
+        // an anchor, so the run is kept.
+        //
+        // It cannot fire on a procedural piece at all today: nothing procedural places a chain. The
+        // day a scheme slot does, the above is what makes that safe rather than a new question.
         Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE);
+                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),
@@ -248,16 +274,17 @@ class WeatheringProcessorListTest {
         // the clipped pass and start deciding from chunk slices in isolation, which is
         // exactly the seam artifact the whole split exists to prevent.
         //
-        // For AgingProcessor it is about ORDER: marked, it shares a pass with decoration
+        // For the aging processor it is about ORDER: marked, it shares a pass with decoration
         // and keeps the order the datapack authored, so decoration sees the air and dirt
         // aging produced -- as it would for a jigsaw prefab, where vanilla runs both from
         // one unsplit list.
         assertTrue(LevelIndependentProcessor.class.isAssignableFrom(DecorationProcessor.class),
                 "DecorationProcessor must be a LevelIndependentProcessor or PieceProcessors"
                         + " will clip its input to the current chunk");
-        assertTrue(LevelIndependentProcessor.class.isAssignableFrom(AgingProcessor.class),
-                "AgingProcessor reads nothing from the level; unmarked it would run after"
-                        + " decoration instead of before it");
+        assertTrue(LevelIndependentProcessor.class.isAssignableFrom(SurfaceAgingProcessor.class),
+                "SurfaceAgingProcessor reads nothing from the level; unmarked it would be handed"
+                        + " one chunk's slice of the piece, and a surface is decided from the"
+                        + " whole one");
     }
 
     @Test
@@ -270,7 +297,7 @@ class WeatheringProcessorListTest {
                 .forEach(e -> types.add(e.getAsJsonObject().get("processor_type").getAsString()));
 
         assertTrue(types.indexOf(AGING_TYPE) < types.indexOf(DECORATION_TYPE),
-                "dungeons2:aging must be authored before dungeons2:decoration, got " + types);
+                AGING_TYPE + " must be authored before dungeons2:decoration, got " + types);
     }
 
     @Test

@@ -82,7 +82,9 @@ class DecorationSweepParityTest {
             // no sweep either -- the sweep exists only to repair what decoration placed. Named
             // here anyway: the parity check has to see a list with neither and agree that neither
             // is correct, which is a different assertion from never looking at the file.
-            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",
     };
 
     /**
@@ -159,7 +161,9 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
-            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",
     })
     void theSweepNamesWhatTheDecorationPassPlaces(String resource) {
         JsonObject decoration = entry(resource, DECORATION_TYPE);
@@ -184,7 +188,9 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
-            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",
     })
     void theTwoBlockMatchesAreCopiedVerbatim(String resource) {
         JsonObject decoration = entry(resource, DECORATION_TYPE);
@@ -208,7 +214,9 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
-            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
+            "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",
     })
     void theSweepClaimsNoEntities(String resource) {
         // floor_growth's palette holds two `entity` entries -- GMM's Shrieker and Violet Fungus,

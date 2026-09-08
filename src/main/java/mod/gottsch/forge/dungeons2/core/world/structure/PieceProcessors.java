@@ -74,7 +74,8 @@ import java.util.Optional;
  * </ol>
  *
  * <p>Splitting on "reads the level" rather than "is neighbour-aware" is deliberate: it
- * keeps {@code dungeons2:aging} and {@code dungeons2:decoration} together in pass 1, in
+ * keeps the aging processor ({@code dungeons2:aging}, or {@code dungeons2:surface_aging})
+ * and {@code dungeons2:decoration} together in pass 1, in
  * the order the datapack authored them, so decoration sees what aging did &mdash;
  * cobwebs in a gap a crumbled stair left, growth on dirt aging produced. That is what a
  * jigsaw prefab gets from vanilla's single unsplit list.</p>

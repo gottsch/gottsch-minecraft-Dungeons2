@@ -48,6 +48,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -70,6 +74,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -257,6 +263,43 @@ public class DungeonStructure extends Structure {
     }
 
     /**
+     * The size-tiered boss pool: {@code end_rooms/<motif>/<small|medium|large>/normal}.
+     *
+     * <h2>Why the boss room grew a tier after all</h2>
+     * <p>{@link #bossRoomStartPool} states that this is the one category that will never need a
+     * <em>stratum</em> tier, and that remains true &mdash; the terminal slot is always on the bottom
+     * floor. This is a different axis. What forced it was reported from a live world: the only
+     * authored end room, {@code small_boss_1}, was drawn for a LARGE dungeon and paid out
+     * {@code classic_boss_small}, because the template's own chest marker named that table. So the
+     * reward followed the ROOM when it has to follow the DUNGEON &mdash; a small boss room at the
+     * bottom of a five-floor descent is still the end of a five-floor descent.</p>
+     *
+     * <p>Splitting the pool by size is what makes the tier knowable at all. A
+     * {@link net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor} runs in
+     * {@code postProcess}, per chunk, long after planning, and is handed no dungeon &mdash; the same
+     * wall {@code ChestMarkerProcessor} documents for {@code floorIndex}. The pool, by contrast, is
+     * chosen here, where the planner has already rolled the size. So the tier rides on the pool's
+     * processor list, the templates carry only {@code boss: true} markers, and the same geometry can
+     * be drawn at any size and pay out correctly.</p>
+     */
+    static ResourceLocation bossRoomStartPool(String motifValue, DungeonSize size) {
+        return new ResourceLocation(Dungeons.MOD_ID,
+                "end_rooms/" + motifValue + "/" + size.name().toLowerCase(Locale.ROOT) + "/normal");
+    }
+
+    /**
+     * The processor list a tier's boss rooms are weathered and marked up with:
+     * {@code <motif>_boss_weathering_<size>}.
+     *
+     * <p>Only consulted on the BORROW path below. A tier that authors its own pool names its own
+     * processors in that pool's JSON like any other, and this is not involved.</p>
+     */
+    private static ResourceLocation bossProcessorList(String motifValue, DungeonSize size) {
+        return new ResourceLocation(Dungeons.MOD_ID,
+                motifValue + "_boss_weathering_" + size.name().toLowerCase(Locale.ROOT));
+    }
+
+    /**
      * Backlog #5: the motif whose pools stand in for a motif that has not authored its own.
      *
      * <p><strong>Why a fallback tier exists at all, and it is not about looks.</strong> Before this,
@@ -359,6 +402,160 @@ public class DungeonStructure extends Structure {
         }
         return resolveStartPool(context, motifValue, DungeonStructure::roomStartPool);
     }
+
+    /**
+     * The boss pool for one size tier, borrowing a lower tier's TEMPLATES with this tier's
+     * PROCESSORS when the tier authors no pool of its own.
+     *
+     * <h2>Why the borrow re-tags rather than simply falling back</h2>
+     * <p>Falling back to another tier's pool wholesale would hand back that tier's processor list
+     * too, and the processor list is where the reward lives -- so "LARGE has no pool, use SMALL's"
+     * would reproduce the exact bug this change exists to fix, one level up. The template is the
+     * part that is safe to borrow (a boss room is a room; a small one in a large dungeon is a modest
+     * room, not a broken one). The tier is the part that must not be.</p>
+     *
+     * <p>Order is LARGE -&gt; MEDIUM -&gt; SMALL -&gt; the untiered {@code end_rooms/<motif>/normal}:
+     * a tier borrows DOWNWARD, never up. Downward always fits -- a floor that holds a large boss
+     * room holds a small one -- whereas a SMALL dungeon's bottom floor may genuinely not fit a LARGE
+     * template, and {@code placeBossRoom} would burn its four attempts discovering that and fall
+     * through to the procedural terminal room. The untiered id is last so a pack written before the
+     * tiers existed keeps working.</p>
+     *
+     * <h2>How the re-tag is done, and why not by hand</h2>
+     * <p>Round-trip the donor pool through {@link StructureTemplatePool#DIRECT_CODEC} and rewrite
+     * each element's {@code processors} field in the encoded form. That is {@code PoolElementIds}'
+     * argument applied to a whole pool: the codec IS the datapack format, so weights, projections,
+     * the fallback and element types all survive without this code knowing what they are, and
+     * nothing depends on a field name that obfuscation would rename. Rebuilding the pool by hand
+     * would mean reading weights vanilla exposes no accessor for.</p>
+     *
+     * <p><strong>Only elements that name a {@code location} are re-tagged</strong> -- single and
+     * legacy-single. An empty or feature element has no processors to give, and a {@code list}
+     * element nests its own. A boss room's markers live on the piece the pool starts from, so a
+     * boss room authored as a jigsaw CHAIN must carry its boss markers on that start piece: its
+     * children are placed through their own pools with their own processors, which this does not
+     * reach.</p>
+     */
+    static Optional<? extends Holder<StructureTemplatePool>> resolveBossRoomStartPool(
+            GenerationContext context, String motifValue, DungeonSize size) {
+        Registry<StructureTemplatePool> poolRegistry =
+                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        ResourceLocation own = bossRoomStartPool(motifValue, size);
+        if (poolRegistry.containsKey(own)) {
+            return poolRegistry.getHolder(ResourceKey.create(Registries.TEMPLATE_POOL, own));
+        }
+        for (ResourceLocation donorId : bossBorrowOrder(motifValue, size)) {
+            if (!poolRegistry.containsKey(donorId)) {
+                continue;
+            }
+            Optional<Holder.Reference<StructureTemplatePool>> donor =
+                    poolRegistry.getHolder(ResourceKey.create(Registries.TEMPLATE_POOL, donorId));
+            if (donor.isEmpty() || donor.get().value().size() == 0) {
+                continue;
+            }
+            ResourceLocation processors = bossProcessorList(motifValue, size);
+            if (!context.registryAccess().registryOrThrow(Registries.PROCESSOR_LIST)
+                    .containsKey(processors)) {
+                // No tier processor list to re-tag WITH, so borrowing here would hand back the
+                // donor's own tier -- the bug, not the fix. Fall through to the motif fallback,
+                // which at least borrows a motif that authored the whole set.
+                if (BORROWED_POOLS.add(own)) {
+                    Dungeons.LOGGER.warn("no boss pool {} and no processor list {} to weather {}'s"
+                            + " templates with; the {} tier has no authored boss room",
+                            own, processors, donorId, size);
+                }
+                break;
+            }
+            if (BORROWED_POOLS.add(own)) {
+                Dungeons.LOGGER.warn("no boss pool {} -- borrowing {}'s templates and weathering"
+                        + " them with {}, so the reward still matches a {} dungeon. Author that"
+                        + " pool to silence this.", own, donorId, processors, size);
+            }
+            return Optional.of(Holder.direct(
+                    retagged(context, donorId, donor.get().value(), processors)));
+        }
+        // Nothing of this motif's own at any tier. The motif fallback (#5) is the last resort and
+        // borrows classic's pool for THIS size, processors and all -- correct by construction,
+        // because that pool is authored for this size.
+        return resolveStartPool(context, motifValue, m -> bossRoomStartPool(m, size));
+    }
+
+    /**
+     * Whether this motif (or {@code classic}, through #5's fallback) has any non-empty boss pool at
+     * any tier. The switch for {@code withBossRoomAssembler}.
+     *
+     * <p>Non-emptiness is still the load-bearing half, for the reason the call site records: a
+     * present but EMPTY pool resolves happily, so testing only for presence would switch the
+     * feature on the moment a placeholder file shipped -- which is the fault this guard exists to
+     * prevent, arriving through the file added to document it.</p>
+     */
+    private static boolean hasAnyBossPool(GenerationContext context, String motifValue) {
+        Registry<StructureTemplatePool> poolRegistry =
+                context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        List<ResourceLocation> candidates = new ArrayList<>();
+        for (String motif : List.of(motifValue, FALLBACK_MOTIF)) {
+            for (DungeonSize size : DungeonSize.values()) {
+                candidates.add(bossRoomStartPool(motif, size));
+            }
+            candidates.add(bossRoomStartPool(motif));
+        }
+        for (ResourceLocation id : candidates) {
+            if (poolRegistry.getOptional(id).map(pool -> pool.size() > 0).orElse(false)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Tiers this one may borrow templates from, nearest first, then the untiered id. */
+    static List<ResourceLocation> bossBorrowOrder(String motifValue, DungeonSize size) {
+        List<ResourceLocation> order = new ArrayList<>(DungeonSize.values().length);
+        for (int i = size.ordinal() - 1; i >= 0; i--) {
+            order.add(bossRoomStartPool(motifValue, DungeonSize.values()[i]));
+        }
+        order.add(bossRoomStartPool(motifValue));
+        return order;
+    }
+
+    /**
+     * {@code donor} with every location-bearing element's {@code processors} replaced. See
+     * {@link #resolveBossRoomStartPool} for why this is a codec round-trip.
+     *
+     * <p>Cached per (donor, processors): {@code placeBossRoom} assembles up to four times per
+     * dungeon and every attempt resolves the pool, so an uncached round-trip would re-encode and
+     * re-decode a pool several times per dungeon for a result that cannot change while a pack
+     * stays loaded.</p>
+     */
+    private static StructureTemplatePool retagged(GenerationContext context,
+                                                  ResourceLocation donorId,
+                                                  StructureTemplatePool donor,
+                                                  ResourceLocation processors) {
+        return RETAGGED_POOLS.computeIfAbsent(new RetagKey(donorId, processors), key -> {
+            RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, context.registryAccess());
+            Tag encoded = StructureTemplatePool.DIRECT_CODEC.encodeStart(ops, donor)
+                    .getOrThrow(false, err -> Dungeons.LOGGER.error(
+                            "could not encode boss pool for re-tagging: {}", err));
+            if (encoded instanceof CompoundTag pool
+                    && pool.get("elements") instanceof ListTag elements) {
+                for (Tag entry : elements) {
+                    if (entry instanceof CompoundTag pair
+                            && pair.get("element") instanceof CompoundTag element
+                            && element.contains("location")) {
+                        element.putString("processors", processors.toString());
+                    }
+                }
+            }
+            return StructureTemplatePool.DIRECT_CODEC.parse(ops, encoded)
+                    .getOrThrow(false, err -> Dungeons.LOGGER.error(
+                            "could not decode re-tagged boss pool: {}", err));
+        });
+    }
+
+    /** Identity of a re-tag, so the round-trip happens once per (donor pool, processor list). */
+    private record RetagKey(ResourceLocation donor, ResourceLocation processors) {}
+
+    private static final Map<RetagKey, StructureTemplatePool> RETAGGED_POOLS =
+            new ConcurrentHashMap<>();
 
     /** {@link #chooseStartPool} against the live registry, warning once per borrowed pool. */
     private static Optional<Holder.Reference<StructureTemplatePool>> resolveStartPool(
@@ -595,16 +792,19 @@ public class DungeonStructure extends Structure {
         // #46: the authored boss room. Same staging list as the interior prefabs -- both are
         // adopted by commitStagedRooms on a non-null templateId, so there is nothing for a second
         // list to key differently. Same contract, a different pool.
-        DungeonStackPlanner.RoomAssembler bossRoomAssembler =
-                (worldX, worldY, worldZ, floorIndex, assemblySeed, commit) -> {
+        DungeonStackPlanner.BossRoomAssembler bossRoomAssembler =
+                (worldX, worldY, worldZ, floorIndex, size, assemblySeed, commit) -> {
             // floorIndex is deliberately unused: the terminal slot is always on the bottom floor,
             // which is always in the deepest stratum, so there is exactly one stratum a boss room
             // could ever be authored for and a per-stratum tier would be a folder level with one
             // possible value. See bossRoomStartPool.
+            //
+            // `size` is a different axis and IS used: it selects the tier pool, which is what
+            // carries the boss chest's loot table and the boss spawner's mob set. See
+            // resolveBossRoomStartPool.
             context.random().setSeed(assemblySeed);
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
-            List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue,
-                    DungeonStructure::bossRoomStartPool);
+            List<StructurePiece> assembled = assembleBossRoom(context, candidatePos, motifValue, size);
             RoomGeometry rgeo = scanRoomGeometry(assembled, templateManager, seed);
             if (rgeo == null) {
                 // No end_rooms pool authored is the normal case today, and it is silent on purpose:
@@ -615,8 +815,10 @@ public class DungeonStructure extends Structure {
             seatRoomOnWalkingPlane(assembled, rgeo, worldY, generationConfig.sinkOffset());
             if (commit) {
                 stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
-                Dungeons.LOGGER.info("[D2-BOSS] boss room {} at ({},{},{}) {}x{}",
-                        describeElements(assembled), worldX, worldY, worldZ,
+                // The tier is printed because it is the whole point of the pool split and is
+                // otherwise invisible: two dungeons draw the same template and pay out differently.
+                Dungeons.LOGGER.info("[D2-BOSS] boss room {} ({} tier) at ({},{},{}) {}x{}",
+                        describeElements(assembled), size, worldX, worldY, worldZ,
                         rgeo.worldFootprint().getWidth(), rgeo.worldFootprint().getHeight());
             }
             return Optional.of(new DungeonStackPlanner.AssembledRoom(
@@ -631,7 +833,10 @@ public class DungeonStructure extends Structure {
         // nothing assembled with door markers.
         // One resolve, every knob -- see where generationConfig is resolved, above.
         planner.withCorridorWidth(generationConfig.corridorWidth());
-        planner.withRoomTemplateAttempts(generationConfig.roomTemplateAttemptsPerFloor());
+        // A DENSITY, not a count (2026-09-07). The flat per-floor count this replaced gave a LARGE
+        // dungeon the same four attempts as a SMALL one over three times the area, so the authored
+        // share fell from 31% to 11% as dungeons got bigger. See DEFAULT_FLOOR_CELLS_PER_ROOM_TEMPLATE.
+        planner.withRoomTemplateDensity(generationConfig.floorCellsPerRoomTemplate());
         // The floor-to-floor pitch. Set BEFORE the height bands below, which are checked against it.
         planner.withFloorHeight(generationConfig.floorHeight());
         planner.withGapBetweenFloors(generationConfig.gapBetweenFloors());
@@ -665,8 +870,15 @@ public class DungeonStructure extends Structure {
         // but empty pool resolves happily, so testing only for presence would switch the feature
         // "on" the moment that placeholder shipped -- which is the exact fault this guard exists
         // to prevent, arriving through the file added to document it.
-        if (resolveStartPool(context, motifValue, DungeonStructure::bossRoomStartPool)
-                .map(pool -> pool.value().size() > 0).orElse(false)) {
+        //
+        // ANY tier now, not one pool: the pool is chosen per size and the size is not rolled until
+        // the planner runs, so this cannot ask about the tier that will actually be used. Asking
+        // about one fixed id would switch the feature off for a pack that authored only, say, the
+        // large tier -- the guard silently deciding a content question. Anything authored anywhere
+        // in this motif's end_rooms wires the assembler; the per-size resolve inside it then either
+        // finds a pool, borrows one, or returns empty and the planner builds the procedural
+        // terminal room exactly as before.
+        if (hasAnyBossPool(context, motifValue)) {
             planner.withBossRoomAssembler(bossRoomAssembler);
         }
         if (geo != null) {
@@ -1311,13 +1523,19 @@ public class DungeonStructure extends Structure {
         return assembleFrom(context, position, resolveStartPool(context, motifValue, poolFor));
     }
 
+    /** The boss room's own entry point, resolving through the size tier and its borrow. */
+    private static List<StructurePiece> assembleBossRoom(GenerationContext context, BlockPos position,
+                                                         String motifValue, DungeonSize size) {
+        return assembleFrom(context, position, resolveBossRoomStartPool(context, motifValue, size));
+    }
+
     /**
      * The assembly itself, once a pool has been resolved. Split out by #45 step 3 so the interior
      * rooms can resolve through three tiers and the boss room through two without either growing a
      * second copy of the {@code addPieces} call.
      */
     private static List<StructurePiece> assembleFrom(GenerationContext context, BlockPos position,
-                                                     Optional<Holder.Reference<StructureTemplatePool>> startPool) {
+                                                     Optional<? extends Holder<StructureTemplatePool>> startPool) {
         if (startPool.isEmpty()) {
             return List.of();
         }

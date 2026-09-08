@@ -13,6 +13,10 @@
     {
       "id": "dungeons2:margoyle",
       "weight": 4
+    },
+    {
+      "id": "dungeons2:animated_weapon",
+      "weight": 4
     }
   ]
 }

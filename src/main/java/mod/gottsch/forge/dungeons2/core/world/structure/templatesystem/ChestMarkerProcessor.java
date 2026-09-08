@@ -49,8 +49,11 @@ import java.util.function.Supplier;
  *
  * <h2>Where the loot table comes from, in order</h2>
  * <ol>
- *   <li>the marker's own {@code lootTable}, read off its block entity NBT &mdash; per cell, so one
- *       special chest in a template of ordinary ones costs one line;</li>
+ *   <li>this processor's {@code boss_loot_table}, when the marker set {@code boss: true} &mdash;
+ *       the one rung where the POOL outranks the marker, because the marker is declaring a role and
+ *       asking to be told the value. See {@link #bossLootTable};</li>
+ *   <li>otherwise the marker's own {@code lootTable}, read off its block entity NBT &mdash; per
+ *       cell, so one special chest in a template of ordinary ones costs one line;</li>
  *   <li>otherwise a weighted draw over this processor's {@code loot_tables} list &mdash; per pool,
  *       and what a template full of ordinary chests relies on.</li>
  * </ol>
@@ -110,12 +113,20 @@ public class ChestMarkerProcessor extends StructureProcessor {
     static final String LOOT_TABLE_SEED_TAG = "LootTableSeed";
 
     private final List<ChestConfig.LootTableEntry> lootTables;
+    private final Optional<ResourceLocation> bossLootTable;
     private final ResourceLocation markerBlock;
     private final ResourceLocation chestBlock;
 
     public ChestMarkerProcessor(List<ChestConfig.LootTableEntry> lootTables,
                                 ResourceLocation markerBlock, ResourceLocation chestBlock) {
+        this(lootTables, Optional.empty(), markerBlock, chestBlock);
+    }
+
+    public ChestMarkerProcessor(List<ChestConfig.LootTableEntry> lootTables,
+                                Optional<ResourceLocation> bossLootTable,
+                                ResourceLocation markerBlock, ResourceLocation chestBlock) {
         this.lootTables = lootTables;
+        this.bossLootTable = bossLootTable;
         this.markerBlock = markerBlock;
         this.chestBlock = chestBlock;
     }
@@ -142,7 +153,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * at all. The list form below is immune by construction: its default is a real empty list, not
      * a null dressed as one.</p>
      *
-     * <h2>Why all three fields are {@code Codecs.strictOptionalFieldOf}</h2>
+     * <h2>Why every field here is {@code Codecs.strictOptionalFieldOf}</h2>
      * <p>DFU's own {@code optionalFieldOf(name, default)} swallows a decode FAILURE and hands back
      * the default, so it cannot tell "the author said nothing" from "the author said something
      * malformed". On this processor that lenience produces #61's bug from the other direction: a
@@ -151,11 +162,18 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * marker blocks standing in it &mdash; reported by nothing louder than a WARN per chest. Strict
      * makes it a load error naming the field, which is the {@code #31} closed-schema decision
      * applied to a processor entry.</p>
+     *
+     * <p>{@code boss_loot_table} takes the {@code Optional} overload rather than a default, because
+     * there is no defensible value to default it to: "no boss table declared" is a real and normal
+     * configuration -- every pool in the mod outside {@code end_rooms} is in it -- and any id
+     * invented here would be one that fired on a template the author never meant as a boss room.</p>
      */
     public static Codec<ChestMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
                 Codecs.strictOptionalFieldOf(ChestConfig.LootTableEntry.CODEC.listOf(),
                         "loot_tables", List.of()).forGetter(p -> p.lootTables),
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "boss_loot_table")
+                        .forGetter(p -> p.bossLootTable),
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "marker_block",
                         DEFAULT_MARKER_BLOCK).forGetter(p -> p.markerBlock),
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "chest_block",
@@ -173,7 +191,10 @@ public class ChestMarkerProcessor extends StructureProcessor {
             return current;
         }
 
-        String table = markerLootTable(current);
+        String table = bossLootTable(current);
+        if (table == null) {
+            table = markerLootTable(current);
+        }
         if (table == null) {
             // settings.getRandom(pos) is seeded from the block's own position, so the draw is
             // deterministic per cell: the same marker rolls the same table on every pass over it,
@@ -236,6 +257,36 @@ public class ChestMarkerProcessor extends StructureProcessor {
                 settings.getRotation(), chest.hasProperty(ChestMarkerBlock.FACING)
                         ? chest.getValue(ChestMarkerBlock.FACING) : "none");
         return new StructureTemplate.StructureBlockInfo(current.pos(), chest, tag);
+    }
+
+    /**
+     * The tier's table when this marker declared itself the boss chest, else {@code null}.
+     *
+     * <h2>Highest precedence, above the marker's own {@code lootTable}</h2>
+     * <p>Backwards from the pattern every other field on this marker follows, and deliberately.
+     * {@code boss: true} is not the marker stating a value, it is the marker stating a <em>role</em>
+     * and asking the pool that placed it to supply the value &mdash; so the pool has to win, or the
+     * flag would do nothing on any marker that also named a table. The size tier is knowable only at
+     * the pool ({@code end_rooms/&lt;motif&gt;/&lt;size&gt;/normal}); the template cannot know which
+     * size of dungeon drew it.</p>
+     *
+     * <p>Silent when the marker is a boss but the processor entry names no {@code boss_loot_table}:
+     * this falls through to the ordinary chain, so a boss marker in a non-boss pool behaves exactly
+     * like the ordinary chest it visually is, rather than failing. A boss room whose pool forgot the
+     * field is caught at authoring time by {@code BossRoomAuthoringTest}, which is a better place to
+     * catch it than a WARN in a worldgen log.</p>
+     */
+    String bossLootTable(StructureTemplate.StructureBlockInfo current) {
+        if (bossLootTable.isEmpty() || !isBossMarker(current)) {
+            return null;
+        }
+        return bossLootTable.get().toString();
+    }
+
+    /** Whether this individual marker declared itself the dungeon's boss chest. */
+    static boolean isBossMarker(StructureTemplate.StructureBlockInfo current) {
+        CompoundTag nbt = current.nbt();
+        return nbt != null && nbt.getBoolean(ChestMarkerBlockEntity.BOSS);
     }
 
     /** Whether this individual marker opted in to a Treasure2 chest. */

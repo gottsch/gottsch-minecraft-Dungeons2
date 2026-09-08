@@ -9,6 +9,10 @@
     {
       "id": "dungeons2:beholder",
       "weight": 10
+    },
+    {
+      "id": "dungeons2:minotaur",
+      "weight": 10
     }
   ]
 }

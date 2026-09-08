@@ -1,0 +1,482 @@
+// =============================================================================================
+// THE BOSS ROOM'S PROCESSOR LIST -- deliberately the BARE MINIMUM, 2026-09-03.
+//
+// WHY IT EXISTS: COBWEBS. A cobweb entangles whatever walks into it, and in a boss room that is
+// the boss and its escort -- so the dungeon's own decoration was fighting on the player's side in
+// the one fight it builds toward. A pool element names exactly ONE processor_list and there is no
+// way to subtract a processor from one, so dropping webs from the end room means the end room
+// gets its own list. (`cobwebs` and `corner_cobwebs` are strictOptionalFieldOf(..., NONE) on
+// dungeons2:decoration, so omitting a key disables it -- but that only helps inside a list you
+// already own.)
+//
+// WHAT IS DELIBERATELY ABSENT, and it is most of classic_weathering:
+//   * dungeons2:decoration and dungeons2:decoration_sweep -- no webs, and no growth either. The
+//     sweep only exists to repair what decoration placed, so with no decoration it has nothing
+//     to do; keeping it would be a pass over every cell to fix nothing.
+//   * every aging chain except the four stone-brick families the room is actually built from.
+//     A boss room is authored, not rolled, so its weathering can be authored too: add the rule
+//     when you add the block, rather than carrying 500 lines of rules for blocks this room does
+//     not contain.
+//
+// This file is NOT a copy of classic_weathering and must not become one. If it grows to look
+// like classic_weathering with two keys deleted, the honest move is a shared list plus a way to
+// subtract -- not two thousand lines that drift.
+//
+// THE THREE MARKER PROCESSORS ARE MANDATORY, not optional trimming -- backlog #61. A marker
+// processor missing from a list a pool names is an authored marker left standing in a finished
+// dungeon: a visible spawner-textured block where a spawner should be, a chest_marker where the
+// boss chest should be. StratumWeatheringListTest sweeps every *_weathering.json, which is what
+// makes this file's coverage checkable rather than remembered.
+// =============================================================================================
+{
+  "processors": [
+    {
+      // Shaped blocks (stairs/slabs/walls) carry their properties across the substitution, which
+      // is the one thing this processor does that minecraft:rule cannot. Only square_stone_brick
+      // and minecraft:stone_bricks are here; left_/right_large_stone_brick are plain full cubes
+      // and live in the minecraft:rule processor below, exactly as in classic_weathering.
+      "processor_type": "dungeons2:aging",
+      // 2, not 3: the deep-decay third stages are not carried over. Raise it if you author a
+      // three-stage chain here -- a chain only ever applies as many stages as it lists, so this
+      // is a cap, not a promise.
+      "agings": 2,
+      "rules": [
+        {
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cracked_stone_bricks", "probability": 0.3 },
+            { "block": "minecraft:cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:mossy_stone_bricks", "probability": 0.43 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:mossy_stone_brick_stairs", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:square_stone_brick_stairs",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick_stairs", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "minecraft:mangrove_stairs",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.2 }
+          ]
+        },
+        {
+          "block": "minecraft:red_carpet",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.2 }
+          ]
+        },
+        {
+          "block": "minecraft:polished_blackstone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cracked_polished_blackstone_bricks", "probability": 0.2 }
+          ]
+        },
+        {
+          "block": "minecraft:deepslate_tiles",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "minecraft:cobblestone", "probability": 0.3 }
+          ]
+        },
+
+        // ===================================================================================
+        // CHAINS (added 2026-09-07). small_boss_1 hangs a six-cell run of
+        // dungeonblocks:swinging_chain over the middle of the room, which is the longest run in
+        // any shipped template and the most visible object in the most visible room.
+        //
+        // 10% a link, matching classic_weathering so the boss room's chains read as the same age
+        // as the corridor outside its door -- the same call the stonework rates above make. The
+        // reasoning lives on that file's matching rules; read it there before retuning either.
+        // The short version: a link is not a brick, because everything under a missing link is
+        // left hanging from nothing, and the dungeons2:hanging_sweep entry lower down is what
+        // makes these rules safe to have at all.
+        //
+        // A LONGER RUN IS A DIMMER ROOM, and that is not a mistake to correct here. Six cells at
+        // 10% comes through undamaged 0.9^6 = 53.1% of the time against a hallway's 65.6%, so
+        // about half of all boss rooms are lit by something other than that chain. THIS IS THE
+        // ROOM WHERE THAT MATTERS -- it is the one fight in the dungeon, and if the boss reads
+        // as unfairly dark the fix is this file's rate, which is why it is a separate file from
+        // classic_weathering's at all. A shorter chain would be fixing the wrong thing.
+        //
+        // BOTH ARE dungeons2:aging, never minecraft:rule -- a vanilla rule DROPS properties, so
+        // it would stand every surviving link on end and strip the lantern off the last one.
+        // minecraft:chain is listed even though no boss template uses one yet: the two rules
+        // travel together, and a rule for a block the room never places is inert, not wrong.
+        // ===================================================================================
+        {
+          "block": "minecraft:chain",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:swinging_chain",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        }
+      ]
+    },
+
+    {
+      // Blackstone's SECOND stage, and the reason it is a processor of its own rather than another
+      // rule beside the first: rules inside one dungeons2:aging processor do not feed each other,
+      // so a cracked -> air rule sitting next to polished -> cracked would only ever fire on blocks
+      // the TEMPLATE authored as cracked, never on the ones the pass just cracked. Separate
+      // processors run in sequence over the piece, so this one sees the previous one's output and
+      // the two stages actually compose.
+      //
+      // That composition is PER BLOCK and multiplicative: 0.2 then 0.2 means about 4% of polished
+      // blackstone ends as a hole, not 20%. Tune the two numbers together.
+      "processor_type": "minecraft:rule",
+      "rules": [
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:cracked_polished_blackstone_bricks",
+            "probability": 0.2
+          },
+          "location_predicate": {
+            "predicate_type": "minecraft:always_true"
+          },
+          "output_state": {
+            "Name": "minecraft:air"
+          }
+        }
+      ]
+    },
+
+    {
+      // The two large stone bricks. Plain full cubes with no properties to carry, so a vanilla
+      // rule is the right tool -- see classic_weathering's long note on why they moved here.
+      // Rates match classic_weathering's so the boss room's stonework reads as the same age as
+      // the corridor outside its door.
+      "processor_type": "minecraft:rule",
+      "rules": [
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.3
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "dungeonblocks:mossy_left_large_stone_brick" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.14
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.3
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "dungeonblocks:mossy_right_large_stone_brick" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.14
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:square_stone_brick_facade_block",
+            "probability": 0.14
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        }
+      ]
+    },
+    {
+      "processor_type": "minecraft:rule",
+      "rules": [
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:cobblestone",
+            "probability": 0.15
+          },
+          "location_predicate": {
+            "predicate_type": "minecraft:always_true"
+          },
+          "output_state": {
+            "Name": "dungeonblocks:rubble"
+          }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:cobblestone",
+            "probability": 0.2
+          },
+          "location_predicate": {
+            "predicate_type": "minecraft:always_true"
+          },
+          "output_state": {
+            "Name": "minecraft:dirt"
+          }
+        }
+      ]
+    },
+    {
+      // =====================================================================================
+      // Decoration, MINUS the webs. This is the whole reason the file exists: `cobwebs` and
+      // `corner_cobwebs` are strictOptionalFieldOf(..., DecorationRule.NONE) on this processor,
+      // so a key that is absent is a rule that is off. Everything else is classic_weathering's,
+      // verbatim and at the same rates, so the boss room grows the same lichen and mushrooms as
+      // the rooms leading to it.
+      //
+      // DO NOT ADD THE TWO KEYS BACK. A cobweb entangles whatever walks into it, and in the one
+      // room the dungeon builds toward that is the boss and its escort -- the dungeon's own
+      // decoration fighting on the player's side. Not a rate to tune: any web at all is a web the
+      // boss can be caught in.
+      // =====================================================================================
+      "processor_type": "dungeons2:decoration",
+
+      "wall_growth": {
+        "probability": 0.04,
+        "bonus": 0.22,
+        "max": 0.55,
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // What counts as dirt for floor_growth/hanging_growth. Classic rooms are not authored with
+      // dirt -- this catches the dirt the aging processor above makes out of decayed stairs.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+
+      // Weighted: the two `entity` entries are GMM mobs grown as if they were plants (#54), and
+      // unweighted they would be a quarter of everything that grows. At 1 against the mushrooms'
+      // 10 they are about 3%. Kept here on purpose -- a Shrieker rooted in a boss room's decayed
+      // corner is atmosphere, and unlike a cobweb it does not fight on the player's side.
+      "floor_growth": {
+        "probability": 0.35,
+        "blocks": [
+          { "block": "minecraft:brown_mushroom", "weight": 10 },
+          { "block": "minecraft:red_mushroom", "weight": 10 },
+          { "block": "minecraft:moss_carpet", "weight": 10 },
+          { "block": "minecraft:grass", "weight": 10 },
+          { "block": "minecraft:fern", "weight": 10 },
+          { "block": "minecraft:dead_bush", "weight": 10 },
+          { "entity": "dungeons2:shrieker", "weight": 1 },
+          { "entity": "dungeons2:violet_fungus", "weight": 1 }
+        ]
+      },
+      "hanging_growth": {
+        "probability": 0.3,
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // Corbels and ledges delete themselves once the wall behind them is gone. Structural, so no
+      // probability -- it either has a wall or it does not.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+    },
+
+    // =========================================================================================
+    // The three marker processors. #61: mandatory in every list a pool names -- see the header.
+    //
+    // No pool-level defaults on the spawner or the chest, unlike classic_weathering: a boss room
+    // has a handful of hand-placed markers and every one of them should say what it is. An
+    // authored marker's own NBT wins over these anyway; they are here so a marker that forgot to
+    // state something still becomes SOMETHING rather than staying a marker.
+    //
+    // THE TWO `boss_` FIELDS ARE THE ONLY THING THAT DIFFERS BETWEEN THE THREE TIER LISTS, and
+    // BossTierWiringTest asserts that. They are the reward and the fight, and they are here
+    // rather than on the template's markers because they follow the DUNGEON's size, not the room's
+    // geometry: the same end room drawn into a SMALL and a LARGE dungeon must pay out differently.
+    // A processor cannot ask which size drew it -- it runs in postProcess, per chunk, long after
+    // planning -- so the size is decided one level up, by which POOL is chosen
+    // (end_rooms/classic/<size>/normal), and each pool names its own tier's list. The templates
+    // carry only `boss: true`, which says WHICH marker is the boss's and nothing about the tier.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:pot"
+    },
+    {
+      "processor_type": "dungeons2:chest",
+
+      // The boss chest. Claimed by the one marker in the template that set `boss: true`, and by
+      // nothing else -- an ordinary chest marker in the same room still takes its own lootTable or
+      // the weighted default below. See ChestMarkerBlockEntity.BOSS for why this is a flag on the
+      // marker rather than the table id itself.
+      "boss_loot_table": "dungeons2:chests/classic_boss_medium",
+
+      // Every OTHER chest marker in a boss room that names no table of its own. Unrelated to the
+      // tier: the ordinary chests in a boss room are ordinary chests.
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_boss_small", "weight": 1 }
+      ]
+    },
+    {
+      // =====================================================================================
+      // The sweep, paired with the decoration pass above -- both or neither, which is what
+      // DecorationSweepParityTest asserts. It removes decoration left stranded by a cell that a
+      // later pass emptied, so its palettes must name what the pass above places: `webs` and
+      // `corner_webs` are absent here for the same reason `cobwebs` and `corner_cobwebs` are
+      // absent there, and a sweep naming a palette its own pass never places would be dead
+      // weight that reads as coverage.
+      //
+      // AFTER the pot and chest entries, deliberately: dungeons2:pot rewrites each marker cell to
+      // air in finalizeProcessing, and the sweep has to run once the cell is empty or it sweeps
+      // against stale ground.
+      // =====================================================================================
+      "processor_type": "dungeons2:decoration_sweep",
+
+      // wall_growth. Multiface, so this repairs FACE BY FACE: a patch wrapping a corner keeps the
+      // faces whose walls survived and loses only the dead one.
+      "growth": {
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // Must be the same match as the decoration pass's `dirt` -- it is what the two growth
+      // palettes below are tested against.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+
+      // floor_growth minus the two entity entries: a Shrieker or a Violet Fungus is a MOB, and a
+      // block sweep neither sees nor removes one.
+      "floor_growth": {
+        "blocks": [
+          "minecraft:brown_mushroom",
+          "minecraft:red_mushroom",
+          "minecraft:moss_carpet",
+          "minecraft:grass",
+          "minecraft:fern",
+          "minecraft:dead_bush"
+        ]
+      },
+      "hanging_growth": {
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+    },
+
+    // =========================================================================================
+    // dungeons2:hanging_sweep (added 2026-09-07) -- cuts a chain run loose below the link the
+    // aging above just ate, and takes the lantern on the end of it with it.
+    //
+    // It is the second half of the chain rules and neither half works alone. A template writes
+    // what it is told, so a link removed from the middle of a run leaves everything beneath it
+    // hanging from nothing: a lit lantern floating in the middle of the room. Without this
+    // entry the aging must be reverted, not merely retuned.
+    //
+    // AUTHORED AFTER EVERY AGING ENTRY, because finalizeProcessing runs the list in order and
+    // the break it cascades from is what those left behind. Order against decoration and the
+    // markers does not matter -- none of them touch a chain -- but it is placed after the
+    // decoration sweep so that the two "undo what an earlier pass assumed" entries sit together.
+    //
+    // NOT dungeons2:support_sweep, and the two are not interchangeable. That one asks whether a
+    // block is connected in ANY of six directions to something that reaches the ground,
+    // specifically so a lintel over a door and a corbel bracketed onto a wall survive. A chain
+    // is the opposite case: it is held at its ends and by nothing else, so six-way connectivity
+    // would keep every severed run that happens to hang beside a wall -- which in these
+    // hallways is most of them. Support here is vertical for that reason alone.
+    //
+    // `hanging` NAMES EVERY BLOCK IN THE RUN, links and fixture alike, because the run is
+    // judged as a unit. The lanterns are listed even though nothing ages them: a
+    // dungeonblocks:dungeon_lantern is what hangs on the end of a minecraft:chain, and unless
+    // it is a member the sweep cuts the chain above it and leaves it floating -- the exact
+    // artifact this exists to remove. minecraft:lantern and soul_lantern are here because
+    // swinging_chain's own `fixture` enum offers them, so an author may reach for one next.
+    //
+    // A STANDING LANTERN IS SAFE. A run is anchored at EITHER end, so entrance_2's floor
+    // lantern (hanging=false) is held by the cell beneath it and is never touched. That is why
+    // the rule cannot simply be "look up": a BlockMatch names a BLOCK, and the standing and the
+    // hanging lantern are the same block. The processor's own axis guard covers the other half
+    // of that -- a minecraft:chain laid on its side is a bar, not a run, and is left alone.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:hanging_sweep",
+      "hanging": {
+        "blocks": [
+          "minecraft:chain",
+          "dungeonblocks:swinging_chain",
+          "dungeonblocks:dungeon_lantern",
+          "minecraft:lantern",
+          "minecraft:soul_lantern"
+        ]
+      }
+    },
+
+    {
+      "processor_type": "dungeons2:spawner",
+
+      // The boss itself. Same opt-in as the chest above: only the marker that set `boss: true`.
+      "boss_mob_set": "dungeons2:medium_dungeon_boss",
+
+      // The boss's guard, split by the role the template authored -- the melee group on the floor
+      // and the archers on the galleries. Tiered for the same reason the boss is: before this the
+      // room a LARGE dungeon ends in was garrisoned by a SMALL dungeon's grave zombies, so the
+      // boss scaled and its guard did not. SMALL deliberately points at the sets that already
+      // shipped, so the tier that has been walked in game is unchanged.
+      "escort_mob_set": "dungeons2:medium_dungeon_escort",
+      "ranged_escort_mob_set": "dungeons2:medium_dungeon_escort_ranged",
+
+      // The pool default, for a marker that names no set and declares no role. NOT the boss's and
+      // not an escort's -- making absence mean any role would turn a marker that merely forgot to
+      // say what it is into that role, silently.
+      "mob_set": "dungeons2:classic_undead",
+      "marker_block": "dungeons2:spawner_marker",
+      "proximity": 20.0,
+      "min_mobs": 1,
+      "max_mobs": 1
+    }
+  ]
+}

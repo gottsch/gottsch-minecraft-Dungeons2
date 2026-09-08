@@ -67,6 +67,12 @@
           "maxCount": 1
         },
         {
+          "type": "dungeons2:animated_weapon",
+          "weight": 2,
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
           "type": "dungeons2:ochre_jelly",
           "weight": 2,
           "minCount": 1,

@@ -50,6 +50,34 @@ import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry;
  * is placed on the dais's centre, one row up. Authoring them separately would make the wrong thing
  * the easy thing.</p>
  *
+ * <h2>{@code top_props}: the pots ON the dais (backlog #86)</h2>
+ * <p>The same argument one step further. The {@code pots} slot places at the room's walking plane,
+ * so a pot authored "on" a dais would be placed INSIDE the dais block and shatter as soon as the
+ * chunk ticks; and the dais's cells are reported through {@link
+ * mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.IDungeonPlatformGenerator#occupiedFloorCells}
+ * precisely so the room's own pots keep off them. Pots on a dais therefore cannot come from the
+ * pots slot at all &mdash; they have to be authored where the dais is, which is here.</p>
+ *
+ * <h2>{@code top_chest}: the treasure ON the dais</h2>
+ * <p>Same row as {@code top_block} and mutually exclusive with it &mdash; both stand on the centre
+ * cell, so authoring both is a load error rather than a silent overwrite. It takes a whole
+ * {@code ChestConfig}, so {@code min_count: 0, max_count: 1} means "sometimes" without new
+ * vocabulary, and the chest is a real chest with real loot rather than the empty
+ * {@code minecraft:chest} a {@code top_block} would have produced.</p>
+ *
+ * <p><strong>{@code loot_tables} is REQUIRED here</strong>, unlike on the room's own {@code chests}
+ * slot where absence means "take the motif's depth table". A dais is drawn by the platform
+ * generator, which is handed a motif but not the floor's chest band, so there is nothing to fall
+ * back to &mdash; and the fallback failing silently would produce exactly the empty chest the whole
+ * chest slot refuses to place. Declared, or a load error.</p>
+ *
+ * <p>It takes a whole {@code PotConfig} rather than a bare variant list, so the counts, the weighted
+ * variants and the loot table read exactly as they do on the {@code pots} slot. Two rules are the
+ * dais's own: a prop never stands on a STAIR cell (the ring's straight runs, where a pot would float
+ * over the slope's low half), and never on the centre when {@code top_block} already stands there.
+ * At {@code size: 1} that leaves exactly one cell, which is the "ornamental block with a pot on it"
+ * this was asked for; at 3 it leaves the four corners and the middle.</p>
+ *
  * <h2>Geometry</h2>
  * <pre>
  *   B s B      B  corner / fill block   (floorY + 1)
@@ -120,6 +148,8 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                                 Optional<String> topBlock, int size,
                                 SurfaceOrient orient, Map<String, String> properties,
                                 Optional<Map<String, String>> topProperties,
+                                Optional<PotConfig> topProps,
+                                Optional<ChestConfig> topChest,
                                 SizeGate gate) {
 
         /**
@@ -137,14 +167,14 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                 return this;
             }
             return new PlatformEntry(type, layout, resolvedBlock, resolvedStair, resolvedCentre,
-                    resolvedTop, size, orient, properties, topProperties, gate);
+                    resolvedTop, size, orient, properties, topProperties, topProps, topChest, gate);
         }
 
         /** A plain ungated dais of one block at the room's centre. */
         public PlatformEntry(String block) {
             this(DAIS, new CentrePlatformLayout(), block, Optional.empty(), Optional.empty(),
                     Optional.empty(), DEFAULT_SIZE, SurfaceOrient.INWARD, Map.of(),
-                    Optional.empty(), SizeGate.UNBOUNDED);
+                    Optional.empty(), Optional.empty(), Optional.empty(), SizeGate.UNBOUNDED);
         }
 
         /** The stair block, falling back to {@link #block} when unauthored. */
@@ -187,6 +217,15 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                         "properties", Map.of()).forGetter(PlatformEntry::properties),
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                         "top_properties").forGetter(PlatformEntry::topProperties),
+                // The pots standing on the dais -- see the class doc for why they cannot come from
+                // the room's own `pots` slot. The whole PotConfig, so the vocabulary is the one an
+                // author already knows.
+                Codecs.strictOptionalFieldOf(PotConfig.CODEC, "top_props")
+                        .forGetter(PlatformEntry::topProps),
+                // The chest standing where top_block would -- see the class doc, including why its
+                // loot_tables are required where the room's chests slot leaves them optional.
+                Codecs.strictOptionalFieldOf(ChestConfig.CODEC, "top_chest")
+                        .forGetter(PlatformEntry::topChest),
                 SizeGate.MAP_CODEC.forGetter(PlatformEntry::gate)
         ).apply(instance, PlatformEntry::new)));
     }
@@ -225,6 +264,16 @@ public record PlatformPatternEntry(List<PlatformEntry> patterns, SizeGate gate) 
                 return DataResult.error(() -> "platform '" + pattern.type() + "': size "
                         + pattern.size() + " is even, so the dais has no centre cell for its top"
                         + " block to stand on -- use an odd size");
+            }
+            if (pattern.topChest().isPresent() && pattern.topBlock().isPresent()) {
+                return DataResult.error(() -> "platform '" + pattern.type() + "': both top_block and"
+                        + " top_chest stand on the centre cell, so only one of them may be authored");
+            }
+            if (pattern.topChest().isPresent()
+                    && pattern.topChest().orElseThrow().declaredLootTables().isEmpty()) {
+                return DataResult.error(() -> "platform '" + pattern.type() + "': top_chest declares"
+                        + " no loot_tables, and a dais has no floor band to fall back to -- name the"
+                        + " table, or the chest would generate empty");
             }
             if (pattern.topBlock().isPresent() && pattern.size() < 1) {
                 return DataResult.error(() -> "platform '" + pattern.type()

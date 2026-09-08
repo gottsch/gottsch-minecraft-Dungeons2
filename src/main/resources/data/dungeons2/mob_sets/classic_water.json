@@ -2,13 +2,17 @@
   "id": "dungeons2:classic_water",
   "category": "classic",
   "count": {
-    "min": 1,
+    "min": 0,
     "max": 3
   },
   "mobs": [
     {
       "id": "dungeons2:alligator_gar",
       "weight": 10
+    },
+    {
+      "id": "dungeons2:animated_weapon",
+      "weight": 5
     }
   ]
 }

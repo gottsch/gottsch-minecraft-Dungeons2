@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -28,7 +29,6 @@ import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
-import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.BlockMatch;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationRule;
@@ -49,6 +49,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -186,31 +187,38 @@ class DecorationOnRealRoomTest {
      * rules that match air and replace it. Stone bricks is all-vanilla, and is what
      * {@code BasicWallGenerator} builds with anyway.</p>
      */
-    private static AgingProcessor shippedStoneBrickAging() {
+    private static SurfaceAgingProcessor shippedStoneBrickAging() {
         try (InputStream in = DecorationOnRealRoomTest.class.getResourceAsStream(
                 "/data/dungeons2/worldgen/processor_list/classic_weathering.json")) {
             JsonObject root = JsonParser.parseReader(
                     new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
 
-            JsonObject aging = null;
+            // Swept across EVERY aging processor rather than one: the shipped file has carried two
+            // since the joist-gated timber chain was split out, and picking one by position would
+            // silently return no stone-brick rules at all the next time they move.
+            JsonArray stoneBrickRules = new JsonArray();
+            JsonElement agings = null;
             for (var element : root.getAsJsonArray("processors")) {
                 JsonObject processor = element.getAsJsonObject();
-                if ("dungeons2:aging".equals(processor.get("processor_type").getAsString())) {
-                    aging = processor;
+                if (!"dungeons2:surface_aging".equals(
+                        processor.get("processor_type").getAsString())) {
+                    continue;
+                }
+                for (var ruleElement : processor.getAsJsonArray("rules")) {
+                    if ("minecraft:stone_bricks".equals(
+                            ruleElement.getAsJsonObject().get("block").getAsString())) {
+                        stoneBrickRules.add(ruleElement);
+                        agings = processor.get("agings");
+                    }
                 }
             }
-            JsonArray stoneBrickRules = new JsonArray();
-            for (var element : aging.getAsJsonArray("rules")) {
-                if ("minecraft:stone_bricks".equals(
-                        element.getAsJsonObject().get("block").getAsString())) {
-                    stoneBrickRules.add(element);
-                }
-            }
+            assertFalse(stoneBrickRules.isEmpty(),
+                    "no stone_bricks aging rules found in the shipped list");
             JsonObject filtered = new JsonObject();
-            filtered.add("agings", aging.get("agings"));
+            filtered.add("agings", agings);
             filtered.add("rules", stoneBrickRules);
 
-            return AgingProcessor.codec(NO_TYPE).parse(JsonOps.INSTANCE, filtered)
+            return SurfaceAgingProcessor.codec(NO_TYPE).parse(JsonOps.INSTANCE, filtered)
                     .getOrThrow(false, msg -> {
                         throw new AssertionError("aging rules failed to decode: " + msg);
                     });

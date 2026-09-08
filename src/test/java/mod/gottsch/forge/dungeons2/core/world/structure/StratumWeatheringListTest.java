@@ -84,9 +84,12 @@ class StratumWeatheringListTest {
     private static final String AGING_TYPE = "dungeons2:aging";
 
     /**
-     * The mud stratum's own, surface-scoped aging. It is a strict superset of {@link #AGING_TYPE}
-     * -- same chains, plus a `surface` on each rule -- so everything asserted about ordering,
-     * chunk-safety and chain rates applies to either, and the helpers below accept both.
+     * Surface-scoped aging: a strict superset of {@link #AGING_TYPE} -- same chains, plus a
+     * `surface` on each rule -- so everything asserted about ordering, chunk-safety and chain rates
+     * applies to either, and the helpers below accept both.
+     *
+     * <p>The mud stratum's alone until 2026-09-04, when `classic_weathering.json` migrated to it as
+     * well (backlog #15). Both remain shipped, so neither may be assumed.</p>
      */
     private static final String SURFACE_AGING_TYPE = "dungeons2:surface_aging";
 
@@ -98,11 +101,20 @@ class StratumWeatheringListTest {
     private static final String POT_TYPE = "dungeons2:pot";
     private static final String SUPPORT_TYPE = "dungeons2:support_sweep";
     private static final String CHEST_TYPE = "dungeons2:chest";
+    private static final String HANGING_TYPE = "dungeons2:hanging_sweep";
+
+    /**
+     * The blocks whose aging obliges a list to carry {@link #HANGING_TYPE}: everything that is a
+     * LINK in a run rather than the thing on the end of one. A lantern is not here -- nothing ages
+     * one, and one going missing strands nothing.
+     */
+    private static final Set<String> HANGING_BLOCKS =
+            Set.of("minecraft:chain", "dungeonblocks:swinging_chain");
 
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
             Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE);
+                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE);
 
     private static final double EPSILON = 1.0e-6;
 
@@ -218,7 +230,54 @@ class StratumWeatheringListTest {
                         file + ": dungeons2:decoration_sweep must be authored after"
                                 + " dungeons2:decoration. Got " + types);
             }
+
+            // The hanging sweep, and its ordering against the aging that makes it necessary. A list
+            // that ages a chain without it is the one combination that is WORSE than not ageing
+            // chains at all: the run below the break stays put, so the player gets a lantern
+            // hovering in mid-air. Both directions are asserted -- a list with no chain rule needs
+            // no sweep, and a list with the sweep authored BEFORE its aging silently sweeps against
+            // an unbroken run and does nothing.
+            boolean agesAChain = agesAChain(readList(file));
+            assertEquals(agesAChain, types.contains(HANGING_TYPE),
+                    file + ": ageing minecraft:chain or dungeonblocks:swinging_chain and carrying"
+                            + " dungeons2:hanging_sweep are one feature. Got aging=" + agesAChain
+                            + ", sweep=" + types.contains(HANGING_TYPE));
+            if (agesAChain) {
+                int lastAging = -1;
+                for (int i = 0; i < types.size(); i++) {
+                    if (AGING_TYPES.contains(types.get(i))) {
+                        lastAging = i;
+                    }
+                }
+                assertTrue(lastAging < types.indexOf(HANGING_TYPE),
+                        file + ": dungeons2:hanging_sweep must be authored after EVERY aging entry"
+                                + " -- the break it cascades from is what they leave behind. Got "
+                                + types);
+            }
         }
+    }
+
+    /**
+     * Whether a list has an aging rule keyed on a block that hangs.
+     *
+     * <p>Read off the JSON rather than a decoded processor, so it covers {@code dungeons2:aging}
+     * and {@code dungeons2:surface_aging} without caring which one a given list uses -- the rule
+     * shape is identical and only the surface field differs.</p>
+     */
+    private static boolean agesAChain(JsonObject list) {
+        for (var element : list.getAsJsonArray("processors")) {
+            JsonObject processor = element.getAsJsonObject();
+            if (!AGING_TYPES.contains(processor.get("processor_type").getAsString())) {
+                continue;
+            }
+            for (var ruleElement : processor.getAsJsonArray("rules")) {
+                String block = ruleElement.getAsJsonObject().get("block").getAsString();
+                if (HANGING_BLOCKS.contains(block)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Test
@@ -453,6 +512,113 @@ class StratumWeatheringListTest {
                             + " claim, so a cell can decay twice. Move every rule into"
                             + " surface_aging and give each one a surface.");
         }
+    }
+
+    /**
+     * Backlog #15 left one thing behind, <strong>and only where a geometric chain actually feeds a
+     * rule entry</strong>. A {@code wall}, a {@code ceiling} and a {@code joist} are questions
+     * about a cell's neighbours, so a {@code dungeons2:surface_aging} processor naming one of them
+     * decides in {@code finalizeProcessing} instead of {@code processBlock}. Vanilla runs every
+     * {@code processBlock} before any {@code finalizeProcessing}, so a {@code minecraft:rule} entry
+     * can no longer see what that processor produced -- however the file is ordered, and with the
+     * JSON still reading as though it could.
+     *
+     * <p>So this compares what a geometric processor can <em>produce</em> against what the rule
+     * entry <em>consumes</em>, rather than refusing the combination outright. That distinction is
+     * load-bearing in {@code classic_weathering.json}, which does both at once: its main aging
+     * processor ages several sources to {@code minecraft:cobblestone} and the rule entry takes
+     * cobblestone as an input, so those two are a genuine two-stage chain and the main processor
+     * must stay in {@code processBlock} -- while the timber chain beside it is gated on
+     * {@code joist} and outputs only air, which nothing downstream consumes. <strong>Splitting the
+     * geometric rules into their own processor is what makes both true at once</strong>, and is the
+     * fix this failure is asking for.</p>
+     *
+     * <p>A processor whose rules only name {@code any} / {@code floor} / {@code above_floor} never
+     * leaves {@code processBlock} and is not considered here at all.</p>
+     *
+     * <p>{@code ProcessorPhaseOrderTest} is where the phase rules themselves are pinned.</p>
+     */
+    @Test
+    void aGeometricAgingProcessorFeedsNoRuleProcessor() {
+        for (String file : weatheringFiles()) {
+            JsonObject list = readList(file);
+            Set<String> ruleInputs = ruleProcessorInputs(list);
+            if (ruleInputs.isEmpty()) {
+                continue;
+            }
+            for (JsonObject processor : processorsOfType(list, SURFACE_AGING_TYPE)) {
+                if (!asksAGeometricQuestion(processor)) {
+                    continue;
+                }
+                Set<String> stranded = new java.util.LinkedHashSet<>(outputsOf(processor));
+                stranded.retainAll(ruleInputs);
+                assertTrue(stranded.isEmpty(),
+                        file + ": a surface_aging processor naming " + GEOMETRIC_SURFACES
+                                + " decides in finalizeProcessing, which runs after EVERY"
+                                + " processBlock -- so the minecraft:rule entry can no longer see"
+                                + " what it produced. It produces " + stranded + ", which that"
+                                + " entry takes as input, so those chains would silently stop"
+                                + " composing. Split the geometric rules into a processor of their"
+                                + " own (as the timber chain is), or fold the rule entry into the"
+                                + " aging one.");
+            }
+        }
+    }
+
+    /**
+     * The surfaces that force {@code surface_aging} into the later phase, and so out of reach of a
+     * {@code minecraft:rule}. {@code any} / {@code floor} / {@code above_floor} are answerable from
+     * Y and leave the processor in {@code processBlock}, where it chains with rules as it always
+     * did.
+     */
+    private static final Set<String> GEOMETRIC_SURFACES = Set.of("wall", "ceiling", "joist");
+
+    private static boolean asksAGeometricQuestion(JsonObject processor) {
+        for (var ruleElement : processor.getAsJsonArray("rules")) {
+            JsonObject rule = ruleElement.getAsJsonObject();
+            if (rule.has("surface")
+                    && GEOMETRIC_SURFACES.contains(rule.get("surface").getAsString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Every block any chain in {@code processor} can produce. */
+    private static Set<String> outputsOf(JsonObject processor) {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        for (var ruleElement : processor.getAsJsonArray("rules")) {
+            for (var stage : ruleElement.getAsJsonObject().getAsJsonArray("output_blocks")) {
+                out.add(stage.getAsJsonObject().get("block").getAsString());
+            }
+        }
+        return out;
+    }
+
+    /** Every block a {@code minecraft:rule} entry in {@code list} matches on. */
+    private static Set<String> ruleProcessorInputs(JsonObject list) {
+        Set<String> out = new java.util.LinkedHashSet<>();
+        for (JsonObject processor : processorsOfType(list, "minecraft:rule")) {
+            for (var ruleElement : processor.getAsJsonArray("rules")) {
+                JsonObject predicate =
+                        ruleElement.getAsJsonObject().getAsJsonObject("input_predicate");
+                if (predicate.has("block")) {
+                    out.add(predicate.get("block").getAsString());
+                }
+            }
+        }
+        return out;
+    }
+
+    private static List<JsonObject> processorsOfType(JsonObject list, String type) {
+        List<JsonObject> out = new ArrayList<>();
+        for (var element : list.getAsJsonArray("processors")) {
+            JsonObject processor = element.getAsJsonObject();
+            if (type.equals(processor.get("processor_type").getAsString())) {
+                out.add(processor);
+            }
+        }
+        return out;
     }
 
     /** Every rule in a surface_aging processor must state its surface, or the partition has a hole. */

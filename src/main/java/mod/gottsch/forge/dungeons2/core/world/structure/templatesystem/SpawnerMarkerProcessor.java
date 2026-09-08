@@ -22,6 +22,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
 import mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity;
+import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
@@ -42,6 +43,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProc
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -74,7 +76,7 @@ import java.util.function.Supplier;
  *
  * <p>As of 2026-09-03 {@code dungeons2:spawner_marker} has one, so every codec field below is a pool
  * <em>default</em> that an individual marker may override: {@code mobSetName}, {@code proximity},
- * {@code minMobs}, {@code maxMobs} and {@code type}. A marker that states nothing behaves exactly as
+ * {@code minMobs}, {@code maxMobs}, {@code probability} and {@code type}. A marker that states nothing behaves exactly as
  * it did before, which is why no shipped template needed touching. {@code marker_block} stays a
  * codec field &mdash; a second marker block is still legitimate, it is just no longer the only way
  * to get a second set.</p>
@@ -99,16 +101,27 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     public static final ResourceLocation DEFAULT_MARKER_BLOCK =
             new ResourceLocation(Dungeons.MOD_ID, "spawner_marker");
 
+    /**
+     * Certainty. Every marker authored before {@code probability} existed states nothing, and a pool
+     * that states nothing lands here &mdash; so the field is inert until somebody opts in, which is
+     * what {@code processBlock} relies on to leave existing worlds' random streams untouched.
+     */
+    public static final float DEFAULT_PROBABILITY = 1.0F;
+
     private static final String MOB_SET_NAME = "mobSetName";
     private static final String MIN_MOBS = "minMobs";
     private static final String MAX_MOBS = "maxMobs";
     private static final String PROXIMITY = "proximity";
 
     private final ResourceLocation mobSet;
+    private final Optional<ResourceLocation> bossMobSet;
+    private final Optional<ResourceLocation> escortMobSet;
+    private final Optional<ResourceLocation> rangedEscortMobSet;
     private final ResourceLocation markerBlock;
     private final double proximity;
     private final int minMobs;
     private final int maxMobs;
+    private final float probability;
     private final SpawnerConfig.Kind kind;
 
     /** The proximity form, which is what every marker authored before vanilla spawners meant. */
@@ -119,11 +132,46 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
 
     public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity,
                                   int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
+        this(mobSet, Optional.empty(), Optional.empty(), Optional.empty(),
+                markerBlock, proximity, minMobs, maxMobs, kind);
+    }
+
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
+                                  ResourceLocation markerBlock, double proximity,
+                                  int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
+        this(mobSet, bossMobSet, Optional.empty(), Optional.empty(),
+                markerBlock, proximity, minMobs, maxMobs, kind);
+    }
+
+    /**
+     * The form without a probability, which is every caller that predates it. Delegates at
+     * {@link #DEFAULT_PROBABILITY}, so a pool that says nothing converts every marker exactly as
+     * before.
+     */
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
+                                  Optional<ResourceLocation> escortMobSet,
+                                  Optional<ResourceLocation> rangedEscortMobSet,
+                                  ResourceLocation markerBlock, double proximity,
+                                  int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
+        this(mobSet, bossMobSet, escortMobSet, rangedEscortMobSet, markerBlock, proximity,
+                minMobs, maxMobs, DEFAULT_PROBABILITY, kind);
+    }
+
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
+                                  Optional<ResourceLocation> escortMobSet,
+                                  Optional<ResourceLocation> rangedEscortMobSet,
+                                  ResourceLocation markerBlock, double proximity,
+                                  int minMobs, int maxMobs, float probability,
+                                  SpawnerConfig.Kind kind) {
         this.mobSet = mobSet;
+        this.bossMobSet = bossMobSet;
+        this.escortMobSet = escortMobSet;
+        this.rangedEscortMobSet = rangedEscortMobSet;
         this.markerBlock = markerBlock;
         this.proximity = proximity;
         this.minMobs = minMobs;
         this.maxMobs = maxMobs;
+        this.probability = probability;
         this.kind = kind;
     }
 
@@ -135,6 +183,20 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     public static Codec<SpawnerMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         Codec<SpawnerMarkerProcessor> codec = RecordCodecBuilder.create(instance -> instance.group(
                 ResourceLocation.CODEC.fieldOf("mob_set").forGetter(p -> p.mobSet),
+                // Strict, unlike its neighbours: a misspelled value here would otherwise decode to
+                // Optional.empty() and the boss marker would quietly take the pool's ordinary set --
+                // a boss room whose boss is a skeleton, reported by nothing. The neighbours predate
+                // #31 and are left alone; see ChestMarkerProcessor's codec note.
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "boss_mob_set")
+                        .forGetter(p -> p.bossMobSet),
+                // The boss's guard, split by the role the template authored. Strict for the same
+                // reason as boss_mob_set: a misspelling here would silently garrison a large
+                // dungeon's boss room with the small tier's mobs, which is the fault this whole
+                // set of fields exists to remove.
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "escort_mob_set")
+                        .forGetter(p -> p.escortMobSet),
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "ranged_escort_mob_set")
+                        .forGetter(p -> p.rangedEscortMobSet),
                 ResourceLocation.CODEC.optionalFieldOf("marker_block", DEFAULT_MARKER_BLOCK)
                         .forGetter(p -> p.markerBlock),
                 // Required, and deliberately NOT defaulted -- same reasoning as the scheme slot's
@@ -146,6 +208,21 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 Codec.DOUBLE.fieldOf("proximity").forGetter(p -> p.proximity),
                 Codec.INT.optionalFieldOf("min_mobs", 1).forGetter(p -> p.minMobs),
                 Codec.INT.optionalFieldOf("max_mobs", 3).forGetter(p -> p.maxMobs),
+                // How often an authored marker produces a spawner at all -- the authored answer to
+                // what `min_count: 0` does for the procedural slot. A pool default like its
+                // neighbours, overridable per marker.
+                //
+                // floatRange, not FLOAT, and so NOT clamped the way the marker's own NBT is: a
+                // datapack value is authored once and read by a human, so "probability": 5.0 should
+                // be a load error (#31's posture), whereas marker NBT arrives during worldgen where
+                // throwing is not an option.
+                //
+                // And STRICT, unlike the min_mobs/max_mobs above: DFU's own optionalFieldOf(name,
+                // default) SWALLOWS a decode failure and hands back the default, so an out-of-range
+                // value there would silently read as 1.0 and the range check would be decorative.
+                // The neighbours predate #31 and are left alone; a new field does not get to.
+                Codecs.strictOptionalFieldOf(Codec.floatRange(0.0F, 1.0F), "probability",
+                        DEFAULT_PROBABILITY).forGetter(p -> p.probability),
                 // Same default and the same reason as the scheme slot's: every marker authored
                 // before vanilla spawners existed means the ambush block.
                 SpawnerConfig.Kind.CODEC.optionalFieldOf("type", SpawnerConfig.Kind.PROXIMITY)
@@ -167,6 +244,32 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // before the kind branch, because `type` is itself overridable -- a template may hold an
         // ambush marker and a visible cage side by side.
         Overrides overrides = Overrides.of(current);
+
+        // ONE source for this block, not one per use. settings.getRandom(pos) is seeded FROM the
+        // position, so a second call returns an equivalently-seeded source and the chance roll
+        // would come off the same stream position as the mob draw -- correlated, not independent.
+        RandomSource random = settings.getRandom(current.pos());
+
+        if (rollsOut(overrides, random)) {
+            Dungeons.LOGGER.debug("[D2-SPAWNER] {} rolled out at {} (probability {})",
+                    markerBlock, current.pos().toShortString(),
+                    overrides.probability(this.probability));
+            // Air, and NOT null. Returning null skips placement, which leaves whatever the piece
+            // already generated in that cell -- inside a room that is not guaranteed to be air.
+            // PotMarkerProcessor states the same reasoning at its own roll: an empty roll must
+            // leave an empty cell rather than a marker.
+            //
+            // Distinct on purpose from the "no usable mobs" branch below, which leaves the marker
+            // UNCONVERTED because that case is a fault somebody needs to see. This one is an
+            // authored decision, so it leaves nothing behind.
+            return new StructureTemplate.StructureBlockInfo(current.pos(),
+                    Blocks.AIR.defaultBlockState(), null);
+        }
+
+        // The tier's set when this marker declared itself the boss, otherwise the ordinary chain.
+        // Resolved once here and passed down, so the log line, the vanilla cage and the proximity
+        // block cannot disagree about which set fired -- the same reason Overrides itself exists.
+        ResourceLocation resolvedSet = resolveMobSet(current, overrides);
         // Diagnostic, because every failure downstream of here is invisible: the block this
         // produces cannot be seen, and a spawner that never fires looks exactly like a spawner
         // that was never placed. One line per conversion, at the position it happened.
@@ -179,16 +282,18 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // [logging] level in config/gottschcore-common.toml.
         Dungeons.LOGGER.debug("[D2-SPAWNER] {} -> {} at {} (set {})",
                 markerBlock, overrides.kind(kind).getSerializedName(),
-                current.pos().toShortString(), overrides.mobSet(mobSet));
+                current.pos().toShortString(), resolvedSet);
 
         if (overrides.kind(kind) == SpawnerConfig.Kind.VANILLA) {
-            CompoundTag vanilla = vanillaSpawnerTag(settings.getRandom(current.pos()), overrides);
+            // The same source the probability roll used, rather than a fresh getRandom(pos) -- see
+            // the note where it is created.
+            CompoundTag vanilla = vanillaSpawnerTag(random, overrides, resolvedSet);
             if (vanilla == null) {
                 // No resolvable mobs, so there is nothing to put in the cage. Leave the marker
                 // in place rather than emit an empty spawner: vanilla's own default is a pig, and
                 // an unconverted marker is at least visibly wrong to whoever authored it.
                 Dungeons.LOGGER.warn("[D2-SPAWNER] mob set {} resolved to no usable mobs at {};"
-                        + " leaving the marker unconverted", overrides.mobSet(mobSet),
+                        + " leaving the marker unconverted", resolvedSet,
                         current.pos().toShortString());
                 return current;
             }
@@ -199,7 +304,28 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // The block lookup is the ONLY part of this that needs a populated Forge registry, which is
         // why everything either side of it is separately callable -- see SpawnerMarkerProcessorTest.
         return new StructureTemplate.StructureBlockInfo(current.pos(),
-                DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(), spawnerTag(overrides));
+                DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(),
+                spawnerTag(overrides, resolvedSet));
+    }
+
+    /**
+     * Whether this marker rolls itself out of existence rather than becoming a spawner.
+     *
+     * <p>Separately callable for the reason the class note gives about the rest of this processor:
+     * the marker <em>match</em> needs {@code dungeons2:spawner_marker} in a populated Forge registry
+     * and no headless test has one, while this decision needs nothing but the NBT and a random
+     * source. So the whole of the probability rule is testable, and
+     * {@code SpawnerMarkerProcessorTest} tests it directly.</p>
+     *
+     * <p><strong>Consumes a random value only when the probability is under 1.0.</strong> That is
+     * not an optimisation. Rolling unconditionally would draw a {@code nextFloat()} ahead of the mob
+     * draw on every marker in every world, changing which mob already-generated spawners show, for a
+     * feature nobody opted into. A marker that states nothing must take byte-identical code to the
+     * code that ran before this field existed.</p>
+     */
+    boolean rollsOut(Overrides overrides, RandomSource random) {
+        float probability = overrides.probability(this.probability);
+        return probability < 1.0F && random.nextFloat() >= probability;
     }
 
     /** Matches {@code RoomSpawnerGenerator}, so both routes name the same block entity. */
@@ -221,7 +347,13 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
      * shows the same mob.</p>
      */
     CompoundTag vanillaSpawnerTag(RandomSource random, Overrides overrides) {
-        List<WeightedMob> mobs = MobSetDataRegistry.get(overrides.mobSet(mobSet))
+        return vanillaSpawnerTag(random, overrides, overrides.mobSet(mobSet));
+    }
+
+    /** The form used in {@code processBlock}, taking the already-resolved set. */
+    CompoundTag vanillaSpawnerTag(RandomSource random, Overrides overrides,
+                                  ResourceLocation resolvedSet) {
+        List<WeightedMob> mobs = MobSetDataRegistry.get(resolvedSet)
                 .map(VanillaSpawnerNbt::usableMobs)
                 .orElseGet(List::of);
         if (mobs.isEmpty()) {
@@ -267,6 +399,51 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
      * makes {@code marker_block} a genuine datapack knob rather than a constant with a codec in
      * front of it.</p>
      */
+    /**
+     * The set this marker's pool offers it: the tier's {@code boss_mob_set} when the marker declared
+     * itself the boss, otherwise this processor's ordinary {@code mob_set}.
+     *
+     * <h2>The boss rung outranks the marker's own {@code mobSetName}</h2>
+     * <p>Backwards from every other field on this marker, and for the reason
+     * {@code ChestMarkerProcessor#bossLootTable} spells out: {@code boss: true} declares a ROLE and
+     * asks the pool for the value, so a pool that could be overridden by the template would leave
+     * the flag doing nothing on the one template most likely to also name a set. Only the pool knows
+     * which size of dungeon drew this room; the template cannot.</p>
+     *
+     * <p>A boss marker in a pool that declares no {@code boss_mob_set} falls straight through to the
+     * ordinary chain rather than failing &mdash; so the flag is inert outside {@code end_rooms},
+     * which is what lets a boss room be probed by tooling and tests that use an ordinary
+     * processor list.</p>
+     */
+    private ResourceLocation resolveMobSet(StructureTemplate.StructureBlockInfo current,
+                                           Overrides overrides) {
+        if (bossMobSet.isPresent() && flagged(current, SpawnerMarkerBlockEntity.BOSS)) {
+            return bossMobSet.get();
+        }
+        // Ranged first: the two escort flags are meant to be exclusive, and checking the more
+        // specific one first makes a marker that carries both behave predictably rather than
+        // depending on field order. BossRoomAuthoringTest rejects a marker that carries both.
+        if (rangedEscortMobSet.isPresent()
+                && flagged(current, SpawnerMarkerBlockEntity.RANGED_ESCORT)) {
+            return rangedEscortMobSet.get();
+        }
+        if (escortMobSet.isPresent() && flagged(current, SpawnerMarkerBlockEntity.ESCORT)) {
+            return escortMobSet.get();
+        }
+        return overrides.mobSet(mobSet);
+    }
+
+    /** Whether this marker set the given boolean role flag. */
+    static boolean flagged(StructureTemplate.StructureBlockInfo current, String flag) {
+        CompoundTag nbt = current.nbt();
+        return nbt != null && nbt.getBoolean(flag);
+    }
+
+    /** Whether this individual marker declared itself the dungeon's boss spawner. */
+    static boolean isBossMarker(StructureTemplate.StructureBlockInfo current) {
+        return flagged(current, SpawnerMarkerBlockEntity.BOSS);
+    }
+
     boolean isSpawnerMarker(StructureTemplate.StructureBlockInfo info) {
         ResourceLocation id = ForgeRegistries.BLOCKS.getKey(info.state().getBlock());
         return markerBlock.equals(id);
@@ -279,10 +456,22 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
 
     /** The block-entity tag a marker becomes, with that marker's own overrides applied. */
     CompoundTag spawnerTag(Overrides overrides) {
+        return spawnerTag(overrides, overrides.mobSet(mobSet));
+    }
+
+    /**
+     * The form used in {@code processBlock}, taking the already-resolved set.
+     *
+     * <p>{@code resolvedSet} is used VERBATIM -- {@link Overrides#mobSet} has already been consulted
+     * (or deliberately bypassed, for a boss marker) by {@link #resolveMobSet}. Applying the override
+     * again here is the bug that shipped in the first draft of the tier split: a boss marker with a
+     * leftover {@code mobSetName} took the template's set back off the tier.</p>
+     */
+    CompoundTag spawnerTag(Overrides overrides, ResourceLocation resolvedSet) {
         CompoundTag tag = new CompoundTag();
         // The block-entity type's registry id, which is what vanilla's placeInWorld loads against.
         tag.putString("id", new ResourceLocation(Dungeons.MOD_ID, "mob_set_spawner").toString());
-        tag.putString(MOB_SET_NAME, overrides.mobSet(mobSet).toString());
+        tag.putString(MOB_SET_NAME, resolvedSet.toString());
         tag.putInt(MIN_MOBS, overrides.minMobs(minMobs));
         tag.putInt(MAX_MOBS, overrides.maxMobs(maxMobs));
         // putDouble, matching what the block entity reads. The marker accepts any numeric tag on
@@ -343,6 +532,20 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
 
         int maxMobs(int pooled) {
             return integer(SpawnerMarkerBlockEntity.MAX_MOBS, pooled);
+        }
+
+        /**
+         * Clamped here as well as in {@link SpawnerMarkerBlockEntity}: this reads {@code current
+         * .nbt()} straight off the template, so the block entity's own clamp never runs on this
+         * path. An out-of-range authored value has to mean something rather than throw.
+         */
+        float probability(float pooled) {
+            if (nbt == null
+                    || !nbt.contains(SpawnerMarkerBlockEntity.PROBABILITY, Tag.TAG_ANY_NUMERIC)) {
+                return pooled;
+            }
+            float stated = nbt.getFloat(SpawnerMarkerBlockEntity.PROBABILITY);
+            return Math.max(0.0F, Math.min(1.0F, stated));
         }
 
         SpawnerConfig.Kind kind(SpawnerConfig.Kind pooled) {

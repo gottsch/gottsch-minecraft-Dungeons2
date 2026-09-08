@@ -58,7 +58,9 @@
   "entity.dungeons2.black_pudding": "Black Pudding",
   "item.dungeons2.black_pudding_egg": "Black Pudding Spawn Egg",
   "entity.dungeons2.animated_armor": "Animated Armor",
+  "entity.dungeons2.animated_weapon": "Animated Weapon",
   "item.dungeons2.animated_armor_egg": "Animated Armor Spawn Egg",
+  "item.dungeons2.animated_weapon_egg": "Animated Weapon Spawn Egg",
   "entity.dungeons2.margoyle": "Margoyle",
   "item.dungeons2.margoyle_egg": "Margoyle Spawn Egg",
   "entity.dungeons2.orc": "Orc",
@@ -78,5 +80,15 @@
   "entity.dungeons2.alligator_gar": "Alligator Gar",
   "item.dungeons2.alligator_gar_egg": "Alligator Gar Spawn Egg",
   "item.dungeons2.rock": "Rock",
-  "item.dungeons2.withering_gaze_spell": "Withering Gaze"
+  "item.dungeons2.withering_gaze_spell": "Withering Gaze",
+  "entity.dungeons2.minotaur": "Minotaur",
+  "entity.dungeons2.orc_warlord": "Orc Warlord",
+  "message.dungeons2.boss_room_sealed": "The room resists — its guardian still lives.",
+  "entity.dungeons2.smash_shard": "Masonry Shard",
+  "item.dungeons2.club": "Club",
+  "item.dungeons2.minotaur_axe": "Minotaur Axe",
+  "item.dungeons2.minotaur_egg": "Minotaur Spawn Egg",
+  "item.dungeons2.orc_warlord_cleaver": "Orc Warlord Cleaver",
+  "item.dungeons2.orc_warlord_egg": "Orc Warlord Spawn Egg",
+  "item.dungeons2.spiked_club": "Spiked Club"
 }

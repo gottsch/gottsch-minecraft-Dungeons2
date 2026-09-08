@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform;
 
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
@@ -50,6 +51,18 @@ public interface IDungeonPlatformGenerator {
     default void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
                        List<BlockPlacement> out) {
         build(room, floorY, motif, random, out, Set.of());
+    }
+
+    /**
+     * The pots standing on this generator's daises, valid after {@link #build}.
+     *
+     * <p>Returned rather than appended to a list handed in, because {@link #build}'s signature is
+     * about BLOCKS and every other platform generator would have to grow an argument it never uses.
+     * The caller drains this into the room's entity list the same way it already drains
+     * {@link #occupiedFloorCells}. Empty unless a dais authored {@code top_props}.</p>
+     */
+    default List<EntityPlacement> entities() {
+        return List.of();
     }
 
     /**

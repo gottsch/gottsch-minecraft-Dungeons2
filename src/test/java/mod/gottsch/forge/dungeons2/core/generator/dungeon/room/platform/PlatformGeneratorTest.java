@@ -15,6 +15,9 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
+import mod.gottsch.forge.dungeons2.core.config.PotConfig;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
@@ -56,9 +59,39 @@ class PlatformGeneratorTest {
     private static final String TOP = "minecraft:campfire";
 
     private static PlatformEntry dais(PlatformLayoutPattern layout, int size, Optional<String> top) {
+        return dais(layout, size, top, Optional.empty());
+    }
+
+    private static PlatformEntry dais(PlatformLayoutPattern layout, int size, Optional<String> top,
+                                      Optional<PotConfig> topProps) {
+        return dais(layout, size, top, topProps, Optional.empty());
+    }
+
+    private static PlatformEntry dais(PlatformLayoutPattern layout, int size, Optional<String> top,
+                                      Optional<PotConfig> topProps, Optional<ChestConfig> topChest) {
         return new PlatformEntry("dais", layout, BLOCK, Optional.of(STAIR),
                 Optional.of("minecraft:chiseled_stone_bricks"), top, size,
-                SurfaceOrient.INWARD, Map.of(), Optional.empty(), SizeGate.UNBOUNDED);
+                SurfaceOrient.INWARD, Map.of(), Optional.empty(), topProps, topChest,
+                SizeGate.UNBOUNDED);
+    }
+
+    /** A chest that always draws, from one named table. */
+    private static Optional<ChestConfig> chest() {
+        return Optional.of(new ChestConfig(1, 1,
+                Optional.of(List.of(new ChestConfig.LootTableEntry("dungeons2:chests/classic_shallow", 1))),
+                List.of(new ChestConfig.ChestVariant("minecraft:chest", 1)), SizeGate.UNBOUNDED));
+    }
+
+    /** Exactly {@code count} pots, so a test can assert WHICH cells rather than how many. */
+    private static Optional<PotConfig> props(int count) {
+        return Optional.of(new PotConfig(count, count, "dungeons2:pots/classic",
+                List.of(new PotConfig.PotVariant("dungeonblocks:stone_pot", 1))));
+    }
+
+    private static List<EntityPlacement> buildProps(RoomData room, PlatformEntry entry) {
+        BasicPlatformGenerator gen = new BasicPlatformGenerator();
+        build(room, entry, gen);
+        return gen.entities();
     }
 
     private static List<BlockPlacement> build(RoomData room, PlatformEntry entry,
@@ -120,7 +153,8 @@ class PlatformGeneratorTest {
     void outwardIsTheOppositeOnEverySide() {
         PlatformEntry entry = new PlatformEntry("dais", new CentrePlatformLayout(), BLOCK,
                 Optional.of(STAIR), Optional.empty(), Optional.empty(), 3,
-                SurfaceOrient.OUTWARD, Map.of(), Optional.empty(), SizeGate.UNBOUNDED);
+                SurfaceOrient.OUTWARD, Map.of(), Optional.empty(), Optional.empty(),
+                Optional.empty(), SizeGate.UNBOUNDED);
         List<BlockPlacement> out = build(room(11, 11, 7), entry, new BasicPlatformGenerator());
         assertEquals("east", at(out, 6, 5).getProperties().get("facing"));
         assertEquals("west", at(out, 4, 5).getProperties().get("facing"));
@@ -170,7 +204,8 @@ class PlatformGeneratorTest {
     void aDaisTouchingADoorwayApproachIsDroppedWhole() {
         PlatformEntry wide = new PlatformEntry("dais", new CentrePlatformLayout(0), BLOCK,
                 Optional.of(STAIR), Optional.empty(), Optional.empty(), 5,
-                SurfaceOrient.INWARD, Map.of(), Optional.empty(), SizeGate.UNBOUNDED);
+                SurfaceOrient.INWARD, Map.of(), Optional.empty(), Optional.empty(),
+                Optional.empty(), SizeGate.UNBOUNDED);
 
         RoomData room = room(7, 7, 7);   // interior 5x5; a size-5 dais covers all of it
         assertEquals(25, build(room, wide, new BasicPlatformGenerator()).size(), "no doors yet");
@@ -291,6 +326,133 @@ class PlatformGeneratorTest {
         assertFalse(viaOverload.isEmpty(), "nothing built, so the comparison is vacuous");
         assertEquals(viaOverload.size(), viaEmptySet.size(),
                 "the no-exclusion overload and an empty exclusion set built different rooms");
+    }
+
+    // ---------- top_props: the pots ON the dais (#86) ----------
+
+    /**
+     * A dais pot stands a row ABOVE the dais blocks, which is two rows above the finished floor.
+     *
+     * <p>This is the whole reason the room's own {@code pots} slot cannot do it: that slot places at
+     * the walking plane, which here is the row the dais itself occupies -- a pot authored there
+     * would be inside the dais block and would drop and shatter on the first chunk tick.</p>
+     */
+    @Test
+    void aDaisPotStandsOnTheDaisRatherThanInIt() {
+        List<EntityPlacement> pots = buildProps(room(11, 11, 7),
+                dais(new CentrePlatformLayout(), 1, Optional.empty(), props(1)));
+
+        assertEquals(1, pots.size());
+        assertEquals(62, pots.get(0).getY(),
+                "the dais block is at 61, so its surface is 62");
+        assertEquals(5, pots.get(0).getX(), "the centre of an 11-wide room");
+        assertEquals(5, pots.get(0).getZ());
+        assertEquals("dungeons2:pots/classic", pots.get(0).getLootTable(),
+                "a dais pot is a pot: it carries the same loot table vocabulary");
+    }
+
+    /**
+     * The one-block plinth carries its pot on the only cell it has &mdash; the "ornamental block
+     * with a pot on it" this was asked for. Nothing is excluded at {@code size: 1}, even though the
+     * stair block and the centre block are the same id there.
+     */
+    @Test
+    void theOneBlockPlinthIsItselfAValidPerch() {
+        List<EntityPlacement> pots = buildProps(room(7, 7, 7),
+                dais(new CentrePlatformLayout(), 1, Optional.empty(), props(1)));
+
+        assertEquals(1, pots.size(), "size 1 has exactly one cell and it is a surface, not a step");
+        assertEquals(3, pots.get(0).getX(), "the centre of a 7-wide room");
+        assertEquals(3, pots.get(0).getZ());
+    }
+
+    /**
+     * A pot never stands on a step, and never where {@code top_block} already stands. On a 3x3 that
+     * leaves the four corners exactly &mdash; asked for four, four corners come back.
+     */
+    @Test
+    void daisPotsKeepOffTheStepsAndOffTheTopBlock() {
+        List<EntityPlacement> pots = buildProps(room(11, 11, 7),
+                dais(new CentrePlatformLayout(), 3, Optional.of(TOP), props(4)));
+
+        Set<Coords2D> where = pots.stream()
+                .map(pot -> new Coords2D(pot.getX(), pot.getZ()))
+                .collect(Collectors.toSet());
+        assertEquals(Set.of(new Coords2D(4, 4), new Coords2D(6, 4),
+                        new Coords2D(4, 6), new Coords2D(6, 6)), where,
+                "the four corners: the mid-sides are steps and the centre holds the top block");
+        for (EntityPlacement pot : pots) {
+            assertEquals(62, pot.getY());
+        }
+    }
+
+    /** With the centre free it becomes a perch too: five surfaces on a 3x3, not four. */
+    @Test
+    void aDaisWithNoTopBlockOffersItsCentreAsWell() {
+        List<EntityPlacement> pots = buildProps(room(11, 11, 7),
+                dais(new CentrePlatformLayout(), 3, Optional.empty(), props(9)));
+
+        Set<Coords2D> where = pots.stream()
+                .map(pot -> new Coords2D(pot.getX(), pot.getZ()))
+                .collect(Collectors.toSet());
+        assertEquals(5, where.size(), "four corners and the centre; the four mid-sides are steps");
+        assertTrue(where.contains(new Coords2D(5, 5)), "the centre is free, so it is a perch");
+    }
+
+    /** A dais that authored none produces none, and the generator reports an empty list. */
+    @Test
+    void aDaisWithoutTopPropsProducesNoEntities() {
+        assertTrue(buildProps(room(11, 11, 7),
+                        dais(new CentrePlatformLayout(), 3, Optional.of(TOP))).isEmpty(),
+                "nothing was authored, so nothing may be placed");
+    }
+
+    // ---------- top_chest: the treasure ON the dais (#86) ----------
+
+    /**
+     * A dais chest is a REAL chest: it stands on the dais surface and carries the loot table that
+     * makes it worth walking to.
+     *
+     * <p>The alternative an author would otherwise reach for is {@code top_block:
+     * "minecraft:chest"}, which places a chest with no block entity data at all &mdash; a chest that
+     * generates EMPTY. That is the outcome the whole chest slot refuses ("an empty chest costs the
+     * player a walk to find out it was empty"), which is why the chest is its own field rather than
+     * a block id.</p>
+     */
+    @Test
+    void aDaisChestStandsOnTheDaisAndCarriesItsLootTable() {
+        List<BlockPlacement> out = build(room(11, 11, 7),
+                dais(new CentrePlatformLayout(), 1, Optional.empty(), Optional.empty(), chest()),
+                new BasicPlatformGenerator());
+
+        BlockPlacement chest = out.stream()
+                .filter(placement -> "minecraft:chest".equals(placement.getBlockId()))
+                .findFirst().orElseThrow(() -> new AssertionError("no chest was placed"));
+        assertEquals(62, chest.getY(), "the plinth is at 61, so its surface is 62");
+        assertEquals(5, chest.getX());
+        assertEquals(5, chest.getZ());
+        assertTrue(chest.getProperties().containsKey("facing"),
+                "a chest with no wall behind it still has to face somewhere");
+        assertEquals("dungeons2:chests/classic_shallow",
+                chest.getBlockEntityNbt().getData().get("LootTable"),
+                "without this the chest generates empty");
+        assertFalse("0".equals(chest.getBlockEntityNbt().getData().get("LootTableSeed")),
+                "a zero seed means 'roll fresh on open', which is a re-rollable chest");
+    }
+
+    /** The pots keep off a centre a chest is standing in, exactly as they do for a top block. */
+    @Test
+    void daisPotsKeepOffAChestToo() {
+        BasicPlatformGenerator gen = new BasicPlatformGenerator();
+        build(room(11, 11, 7),
+                dais(new CentrePlatformLayout(), 3, Optional.empty(), props(9), chest()), gen);
+
+        Set<Coords2D> where = gen.entities().stream()
+                .map(pot -> new Coords2D(pot.getX(), pot.getZ()))
+                .collect(Collectors.toSet());
+        assertFalse(where.contains(new Coords2D(5, 5)),
+                "the chest is standing in the centre cell's air; a pot there would be inside it");
+        assertEquals(4, where.size(), "which leaves the four corners");
     }
 
     private static BlockPlacement at(List<BlockPlacement> out, int x, int z) {

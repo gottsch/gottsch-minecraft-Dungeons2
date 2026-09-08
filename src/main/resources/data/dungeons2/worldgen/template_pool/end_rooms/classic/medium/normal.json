@@ -1,0 +1,19 @@
+{
+  // The MEDIUM dungeon's boss room. One pool per size tier, because the pool is the only place the
+  // dungeon's size is knowable by the time the room is built -- see DungeonStructure's
+  // resolveBossRoomStartPool. The tier rides on `processors`, NOT on the template: `small_boss_1`
+  // is tier-neutral geometry and is drawn by all three tiers today.
+  "name": "dungeons2:end_rooms/classic/medium/normal",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:end_rooms/classic/small_boss_1",
+        "processors": "dungeons2:classic_boss_weathering_medium",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

@@ -161,6 +161,15 @@ class ShippedBlockIdsTest {
             // entry since 2026-08-31: the marker processor and a scheme's spawners slot used to
             // spell it `mob_set` and `mobSet` respectively, and this list carried both.
             "mob_set",
+            // The boss tier's set, 2026-09-04. Its own key rather than a second value under
+            // mob_set, because the two answer different markers: mob_set is what an unnamed
+            // spawner falls back to, while boss_mob_set fires only on a marker that declared
+            // itself the boss.
+            "boss_mob_set",
+            // The boss's guard, 2026-09-05. Two keys because the template authors two roles --
+            // the melee group on the floor and the archers on the galleries.
+            "escort_mob_set",
+            "ranged_escort_mob_set",
             // block TAGS -- the same class of typo, but resolved from datapacks rather than the
             // block registry, so out of scope here. Worth its own sweep if one ever bites.
             "tags",
@@ -173,7 +182,10 @@ class ShippedBlockIdsTest {
             // diamond ore pays back a diamond. Resolved from the item registry, so out of scope
             // here and verified instead by MiningHaulCalibrationTest.everyOreBandNamesARealItem,
             // which is the item-registry equivalent of this sweep.
-            "item");
+            "item",
+            // The boss tier's loot table, 2026-09-04 -- see boss_mob_set above for why it is a
+            // key of its own and not another loot_table. Same registry, same missing sweep.
+            "boss_loot_table");
 
     /** Where a modded block proves it exists, absent a running game. See the class notes. */
     private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";

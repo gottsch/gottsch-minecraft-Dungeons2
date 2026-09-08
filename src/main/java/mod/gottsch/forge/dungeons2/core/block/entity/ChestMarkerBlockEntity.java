@@ -49,9 +49,36 @@ public class ChestMarkerBlockEntity extends BlockEntity {
     public static final String LOOT_TABLE = "lootTable";
     /** Whether this chest should be a Treasure2 chest when Treasure2 is installed. */
     public static final String TREASURE = "treasure";
+    /**
+     * Marks this as <strong>the dungeon's boss chest</strong>, so the processor's
+     * {@code boss_loot_table} decides what it holds rather than {@link #LOOT_TABLE} or the pool's
+     * ordinary weighted default.
+     *
+     * <h2>Why an opt-in flag and not a named table</h2>
+     * <p>The reward has to follow the <em>dungeon's</em> size tier, not the room's geometry: a small
+     * boss room drawn into a LARGE dungeon still sits at the bottom of a five-floor descent and must
+     * pay out accordingly. Naming {@code dungeons2:chests/classic_boss_small} on the marker &mdash;
+     * which is exactly what {@code small_boss_1} did until this existed &mdash; welds the payout to
+     * the template, so the one boss room that shipped handed out small loot at every size.</p>
+     *
+     * <p>The tier therefore lives on the processor entry, which is per <em>pool</em>, and the pool
+     * is chosen per size ({@code end_rooms/&lt;motif&gt;/&lt;size&gt;/normal}). The marker's job is
+     * only to say <em>which</em> chest is the boss's. That keeps the template tier-neutral and
+     * reusable at every size.</p>
+     *
+     * <h2>Why a boolean rather than a sentinel id in {@link #LOOT_TABLE}</h2>
+     * <p>A sentinel such as {@code dungeons2:chests/boss} sits in a field typed as a real table id
+     * and reads as one. If the substitution ever failed to run, it would fall through to "no such
+     * loot table" &mdash; a chest that generates empty, indistinguishable from a looted one, which
+     * is the exact failure {@link ChestMarkerProcessor} refuses to produce elsewhere. A boolean
+     * cannot be mistaken for a table. It also matches {@link #TREASURE}, already an opt-in flag on
+     * this same marker that redirects where the contents come from.</p>
+     */
+    public static final String BOSS = "boss";
 
     private String lootTable;
     private boolean treasure;
+    private boolean boss;
 
     public ChestMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(DungeonsBlockEntities.CHEST_MARKER.get(), pos, state);
@@ -66,6 +93,9 @@ public class ChestMarkerBlockEntity extends BlockEntity {
         if (tag.contains(TREASURE)) {
             this.treasure = tag.getBoolean(TREASURE);
         }
+        if (tag.contains(BOSS)) {
+            this.boss = tag.getBoolean(BOSS);
+        }
     }
 
     @Override
@@ -78,6 +108,9 @@ public class ChestMarkerBlockEntity extends BlockEntity {
         }
         if (treasure) {
             tag.putBoolean(TREASURE, true);
+        }
+        if (boss) {
+            tag.putBoolean(BOSS, true);
         }
     }
 
@@ -95,5 +128,13 @@ public class ChestMarkerBlockEntity extends BlockEntity {
 
     public void setTreasure(boolean treasure) {
         this.treasure = treasure;
+    }
+
+    public boolean isBoss() {
+        return boss;
+    }
+
+    public void setBoss(boolean boss) {
+        this.boss = boss;
     }
 }

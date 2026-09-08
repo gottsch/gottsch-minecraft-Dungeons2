@@ -215,6 +215,9 @@ public class BasicRoomGenerator implements IRoomGenerator {
         IDungeonPlatformGenerator platformGen =
                 selectPlatformGenerator(motif, scheme, width, depth, height);
         platformGen.build(room, floorY, motif, random, blocks, blockedFloorCells);
+        // The pots standing ON a dais (#86). They are the platform's, not the pots slot's:
+        // the slot places at the walking plane and is kept OFF the dais's cells entirely.
+        out.getEntities().addAll(platformGen.entities());
 
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.

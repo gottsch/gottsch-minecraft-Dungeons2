@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:iron_sword",
+    "minecraft:iron_axe",
+    "dungeons2:club",
+    "dungeons2:spiked_club"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "dungeons2:medium_dungeon_escort",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 4
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:grave_zombie",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:ghoul",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:bloater",
+      "weight": 5
+    },
+    {
+      "id": "dungeons2:skeleton_warrior",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:orc",
+      "weight": 5
+    }
+  ]
+}

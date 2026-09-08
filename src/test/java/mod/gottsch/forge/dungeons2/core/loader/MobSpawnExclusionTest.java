@@ -66,7 +66,8 @@ class MobSpawnExclusionTest {
      * entries, which is exactly the kind of thing that works until it does not.
      */
     private static final Set<String> MINI_BOSSES =
-            Set.of("skeleton_champion", "wight", "bodak", "beholder", "death_tyrant", "daemon");
+            Set.of("skeleton_champion", "wight", "bodak", "beholder", "death_tyrant", "daemon",
+                    "orc_warlord", "minotaur");
 
     private static final String MOB_SETS = "/data/dungeons2/mob_sets";
     private static final String STRUCTURE = "/data/dungeons2/worldgen/structure/dungeon.json";
@@ -233,6 +234,8 @@ class MobSpawnExclusionTest {
     private static final Set<String> EXEMPT = Set.of(
             "shrieker", "violet_fungus",
             "bone_shard", "bloater_arm", "rock", "spike_growth_spell", "withering_gaze_spell",
+            // debris thrown by SmashBlocksGoal, not a mob a spawner could draw
+            "smash_shard",
             "paralysis_spell", "harm_spell", "disintegrate_spell", "disarm_spell", "firespout_spell",
             // Summon-only: Beholder.summonMobs is the only route that ever produces one, and that is
             // pure Java, invisible to every JSON-based check here. Not a mini-boss (16 HP, no boss

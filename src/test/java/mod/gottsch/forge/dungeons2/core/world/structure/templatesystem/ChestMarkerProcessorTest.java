@@ -85,6 +85,91 @@ class ChestMarkerProcessorTest {
                 ChestMarkerProcessor.lootSeed(new BlockPos(3, 2, 1)));
     }
 
+    // ---- the boss rung (2026-09-04) ------------------------------------------------------------
+    //
+    // The tier's table, claimed by `boss: true` and nothing else. The one rung where the POOL
+    // outranks the marker: the flag declares a role and asks to be told the value, because only
+    // the pool knows which size of dungeon drew this room.
+
+    private static final ResourceLocation BOSS_TABLE =
+            new ResourceLocation("dungeons2:chests/classic_boss_large");
+
+    private static ChestMarkerProcessor tiered() {
+        return new ChestMarkerProcessor(
+                List.of(new ChestConfig.LootTableEntry("dungeons2:chests/classic_shallow", 1)),
+                Optional.of(BOSS_TABLE),
+                new ResourceLocation("dungeons2:chest_marker"),
+                new ResourceLocation("minecraft:chest"));
+    }
+
+    /** The reported bug in one assertion: the tier's table, not the template's. */
+    @Test
+    void aBossMarkerTakesTheTiersTable() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        assertTrue(ChestMarkerProcessor.isBossMarker(marker(nbt)));
+        assertEquals(BOSS_TABLE.toString(), tiered().bossLootTable(marker(nbt)));
+    }
+
+    /**
+     * A boss marker that ALSO names a table still takes the tier's -- inverted from every other
+     * field here, and the reason BossRoomAuthoringTest rejects such a template outright: an
+     * authored id that the pool silently overrides is how the next author concludes the tier lives
+     * on the template.
+     */
+    @Test
+    void theTierOutranksAnAuthoredTableOnABossMarker() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        nbt.putString(ChestMarkerBlockEntity.LOOT_TABLE, "dungeons2:chests/classic_boss_small");
+        assertEquals(BOSS_TABLE.toString(), tiered().bossLootTable(marker(nbt)));
+    }
+
+    /** An ordinary marker in a tiered pool is untouched by the boss rung. */
+    @Test
+    void anOrdinaryMarkerIsNotTheBoss() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(ChestMarkerBlockEntity.LOOT_TABLE, "dungeons2:chests/classic_hoard");
+        assertNull(tiered().bossLootTable(marker(nbt)));
+        assertNull(tiered().bossLootTable(marker(null)),
+                "a cell with no block entity at all is the normal case, not a boss");
+    }
+
+    /** A boss marker in a pool that declares no tier falls through rather than failing. */
+    @Test
+    void aBossMarkerInAnUntieredPoolFallsThrough() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        assertNull(processor("dungeons2:chests/classic_shallow").bossLootTable(marker(nbt)));
+    }
+
+    /** Absent means absent: the Optional overload, not DFU's optionalFieldOf(name, null) NPE. */
+    @Test
+    void anEntryWithNoBossTableDecodes() {
+        DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"));
+        assertTrue(decoded.result().isPresent(),
+                "boss_loot_table must be genuinely optional: " + decoded.error().orElse(null));
+        assertNull(decoded.result().get().bossLootTable(marker(bossNbt())));
+    }
+
+    /** A malformed value must be a load error, not a silent Optional.empty(). See #31. */
+    @Test
+    void aMalformedBossTableIsALoadError() {
+        DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE,
+                        JsonParser.parseString("{\"boss_loot_table\": \"NOT AN ID\"}"));
+        assertTrue(decoded.error().isPresent(),
+                "a misspelled boss table must name the field and fail the pack, not decode to"
+                        + " empty and hand the boss the ordinary weighted default");
+    }
+
+    private static CompoundTag bossNbt() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        return nbt;
+    }
+
     /** The per-cell table is the whole reason the marker carries a block entity. */
     @Test
     void aMarkersOwnTableIsReadOffItsNbt() {

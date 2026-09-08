@@ -34,9 +34,12 @@ import mod.gottsch.forge.gmm.core.entity.monster.Daemon;
 import mod.gottsch.forge.gmm.core.entity.monster.GelatinousCube;
 import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
 import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
+import mod.gottsch.forge.gmm.core.entity.monster.Minotaur;
 import mod.gottsch.forge.gmm.core.entity.monster.Orc;
 import mod.gottsch.forge.gmm.core.entity.monster.OrcShaman;
+import mod.gottsch.forge.gmm.core.entity.monster.OrcWarlord;
 import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedArmor;
+import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedWeapon;
 import mod.gottsch.forge.gmm.core.entity.monster.gargoyle.Margoyle;
 import mod.gottsch.forge.gmm.core.entity.monster.ghoul.Ghoul;
 import mod.gottsch.forge.gmm.core.entity.monster.skeleton.AcidSkeleton;
@@ -241,6 +244,22 @@ public class CommonSetup {
 		Beholder.summonMobs = beholderMobs;
 		Beholder.summonDaemon = DungeonsEntities.DAEMON_ENTITY.get();
 
+		// The Orc Warlord's horn. Same contract as the two above, and the same silent failure: left
+		// null the goal is never added and the chief never calls anyone.
+		//
+		// His own warband, weighted 3:1 toward the rank-and-file orc so reinforcements read as
+		// TROOPS rather than as a second boss wave. The shaman is in at 25% for texture -- one
+		// caster among three grunts changes where the player has to stand, where four identical
+		// melee orcs would just be more of the same body.
+		//
+		// Nothing else: a summoned mob the ORC_WARLORD_RALLY_ALLIES tag does not name would arrive
+		// and then be excluded from the rally, which is the one combination that makes the chief
+		// look broken rather than dangerous.
+		WeightedCollection<Double, EntityType<? extends Mob>> warlordMobs = new WeightedCollection<>();
+		warlordMobs.add(75D, DungeonsEntities.ORC_ENTITY.get());
+		warlordMobs.add(25D, DungeonsEntities.ORC_SHAMAN_ENTITY.get());
+		OrcWarlord.summonMobs = warlordMobs;
+
 		WeightedCollection<Double, EntityType<? extends Mob>> deathTyrantMobs = new WeightedCollection<>();
 		deathTyrantMobs.add(20D, EntityType.ZOMBIE);
 		deathTyrantMobs.add(20D, EntityType.HUSK);
@@ -290,9 +309,12 @@ public class CommonSetup {
 		event.put(DungeonsEntities.GRAY_OOZE_ENTITY.get(), GrayOoze.createAttributes().build());
 		event.put(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), BlackPudding.createAttributes().build());
 		event.put(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmor.createAttributes().build());
+		event.put(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeapon.createAttributes().build());
 		event.put(DungeonsEntities.MARGOYLE_ENTITY.get(), Margoyle.createAttributes().build());
 		event.put(DungeonsEntities.ORC_ENTITY.get(), Orc.createAttributes().build());
+		event.put(DungeonsEntities.MINOTAUR_ENTITY.get(), Minotaur.createAttributes().build());
 		event.put(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShaman.createAttributes().build());
+		event.put(DungeonsEntities.ORC_WARLORD_ENTITY.get(), OrcWarlord.createAttributes().build());
 		event.put(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), AlligatorGar.createAttributes().build());
 		// prepareAttributes, not createAttributes -- Beholderkin's own naming (Mob.createMobAttributes
 		// rather than Monster.createMonsterAttributes underneath, since it is not a PathfinderMob).
@@ -415,10 +437,27 @@ public class CommonSetup {
 		event.register(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
+		// NO_RESTRICTIONS, like the Winged Skeleton and the Beholder-kin -- the animated weapon
+		// hovers rather than stands, so requiring a solid block under it would only place it
+		// somewhere it immediately leaves.
+		event.register(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.MARGOYLE_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.ORC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// Registered like the other mini-bosses even though nothing spawns it ambiently -- same
+		// reasoning as the block below.
+		event.register(DungeonsEntities.MINOTAUR_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// Registered like the other mini-bosses even though nothing spawns it ambiently:
+		// MiniBossAnchorEvent restricts it by registry id, and a placement rule is what a
+		// spawn EGG and the spawner marker both go through.
+		event.register(DungeonsEntities.ORC_WARLORD_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,

@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The floor-to-floor pitch as a datapack knob, and the {@code _comment} that warns about it.
  *
  * <h2>Why this knob is different from the others in the file</h2>
- * <p>{@code corridor_width} and {@code room_template_attempts_per_floor} are tuning: turn them and the
+ * <p>{@code corridor_width} and {@code floor_cells_per_room_template} are tuning: turn them and the
  * generator does something else, correctly. The pitch is not &mdash; it is the exact distance every
  * shipped entrance and transition {@code .nbt} was cut for, so changing it makes those templates
  * wrong, and no amount of code can fix that from inside the file. Hence three separate warnings for

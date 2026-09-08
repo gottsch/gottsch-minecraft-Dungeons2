@@ -47,15 +47,15 @@ import java.util.Optional;
  *
  * @author Mark Gottschling on Jul 25, 2026
  */
-public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttemptsPerFloor,
+public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTemplate,
                                       List<RoomHeightBand> roomHeightBands,
                                       int floorHeight, int gapBetweenFloors, int sinkOffset) {
 
     /** The shape before {@code sink_offset}: a floor whose walking plane is its own slab. */
-    public DungeonGenerationConfig(int corridorWidth, int roomTemplateAttemptsPerFloor,
+    public DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTemplate,
                                    List<RoomHeightBand> roomHeightBands,
                                    int floorHeight, int gapBetweenFloors) {
-        this(corridorWidth, roomTemplateAttemptsPerFloor, roomHeightBands, floorHeight,
+        this(corridorWidth, floorCellsPerRoomTemplate, roomHeightBands, floorHeight,
                 gapBetweenFloors, DEFAULT_SINK_OFFSET);
     }
 
@@ -131,8 +131,44 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
             new RoomHeightBand(Optional.empty(), 5, 7));
 
     /** Fallback used when no entry exists, so lookups never NPE. */
+    /**
+     * Floor cells per prefab-room attempt &mdash; the knob that decides how much of a dungeon is
+     * AUTHORED rather than procedurally dressed. One attempt is made per this many cells of a
+     * floor's own footprint, so a big floor gets proportionally more attempts than a small one.
+     *
+     * <h2>Why this replaced a flat per-floor count (2026-09-07)</h2>
+     * <p>It used to be {@code room_template_attempts_per_floor}, shipped at 4: every floor of every
+     * dungeon got the same four attempts regardless of how big it was. But
+     * {@link #pickNumberOfRooms} has always scaled room count with AREA
+     * ({@code cells / 100} plus a tier bonus), and a LARGE floor is about three times a MEDIUM one
+     * &mdash; so a fixed numerator over a growing denominator made the prefab share fall off a
+     * cliff as dungeons got bigger. Measured over 300 seeds per tier at the shipped 4:</p>
+     *
+     * <pre>
+     *   SMALL    31.3% of interior rooms authored
+     *   MEDIUM   20.6%
+     *   LARGE    11.0%
+     * </pre>
+     *
+     * <p>Exactly backwards from what anyone wants: the biggest dungeon, where a player spends the
+     * most time and sees the most rooms, was the one that felt the most generated. Raising the flat
+     * count could not fix it &mdash; at the old codec ceiling of 8, LARGE still only reached 20.2%
+     * while SMALL hit 68.2% and its floors began to crowd (adoption fell to 94.6%, i.e. attempts
+     * starting to fail for want of anywhere to put them).</p>
+     *
+     * <h2>The shipped value</h2>
+     * <p><strong>520</strong>, chosen by Mark on 2026-09-07 to land ~20% on ALL THREE tiers &mdash;
+     * roughly where MEDIUM already was, which was the tier the feel was judged on. So this raises
+     * LARGE (11.0% &rarr; ~20%) and deliberately LOWERS SMALL (31.3% &rarr; ~20%): the goal was to
+     * level the three, not to lift every one of them. Re-measure with
+     * {@code RoomAssemblyPlacementTest}, never quote these numbers &mdash; a change to room COUNT
+     * moves the share without anything touching this field, and that has already caught this
+     * project out twice.</p>
+     */
+    public static final int DEFAULT_FLOOR_CELLS_PER_ROOM_TEMPLATE = 520;
+
     public static final DungeonGenerationConfig DEFAULT =
-            new DungeonGenerationConfig(3, 4, DEFAULT_ROOM_HEIGHT_BANDS,
+            new DungeonGenerationConfig(3, DEFAULT_FLOOR_CELLS_PER_ROOM_TEMPLATE, DEFAULT_ROOM_HEIGHT_BANDS,
                     DEFAULT_FLOOR_HEIGHT, DEFAULT_GAP_BETWEEN_FLOORS, DEFAULT_SINK_OFFSET);
 
     /**
@@ -166,12 +202,18 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
             Codecs.documented(RecordCodecBuilder.<DungeonGenerationConfig>mapCodec(instance -> instance.group(
                     Codecs.strictOptionalFieldOf(Codec.intRange(1, 3), "corridor_width",
                             DEFAULT.corridorWidth()).forGetter(DungeonGenerationConfig::corridorWidth),
+                    // A DENSITY, not a count -- see the field's own javadoc for why the flat
+                    // per-floor count it replaced (2026-09-07) could not express what this does.
+                    //
                     // 0 is meaningful and deliberately in range: it turns prefab rooms off entirely
-                    // without deleting the pool, which is the only way to A/B them. The upper bound
-                    // is a cost guard -- each attempt is TWO jigsaw assemblies (probe + place).
-                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "room_template_attempts_per_floor",
-                            DEFAULT.roomTemplateAttemptsPerFloor())
-                            .forGetter(DungeonGenerationConfig::roomTemplateAttemptsPerFloor),
+                    // without deleting the pool, which is the only way to A/B them. The LOWER bound
+                    // of the non-zero range is the cost guard the old upper bound of 8 was -- each
+                    // attempt is TWO jigsaw assemblies (probe + place), and 100 cells per template
+                    // would put ~56 attempts on a big LARGE floor. The upper bound is only a
+                    // sanity rail: past ~6000 even a maximal floor rounds to a single attempt.
+                    Codecs.strictOptionalFieldOf(Codec.intRange(0, 10000), "floor_cells_per_room_template",
+                            DEFAULT.floorCellsPerRoomTemplate())
+                            .forGetter(DungeonGenerationConfig::floorCellsPerRoomTemplate),
                     // #51. Omitting the key keeps the shipped taper rather than removing the cap:
                     // an uncapped roll puts a height-10 ceiling on a 19x19 room, which is the box
                     // this exists to prevent, so "absent" must not mean "off".
@@ -198,7 +240,7 @@ public record DungeonGenerationConfig(int corridorWidth, int roomTemplateAttempt
             // "//sink_offset" sits beside the field it explains rather than in the header block: the
             // header is the pitch warning, and burying a second unrelated essay in it is how both
             // stop being read.
-            "_comment", "//sink_offset", "//room_height_bands"));
+            "_comment", "//sink_offset", "//room_height_bands", "//floor_cells_per_room_template"));
 
     /**
      * The one thing this file can say that no field range can catch: a {@code sink_offset} that

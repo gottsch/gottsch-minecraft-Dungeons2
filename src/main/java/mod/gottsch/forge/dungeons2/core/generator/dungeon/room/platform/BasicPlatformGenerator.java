@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
 import mod.gottsch.forge.dungeons2.core.config.PlatformPatternEntry.PlatformEntry;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
@@ -59,6 +60,14 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
         return this;
     }
 
+    /** The pots standing on this room's daises. See {@link #entities()}. */
+    private final List<EntityPlacement> entities = new java.util.ArrayList<>();
+
+    @Override
+    public List<EntityPlacement> entities() {
+        return entities;
+    }
+
     @Override
     public void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,
                       List<BlockPlacement> out, Set<Coords2D> excluded) {
@@ -88,7 +97,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
                                 || taken.contains(cell))) {
                     continue;
                 }
-                emit(dais, at, entry, room, floorY, out);
+                emit(dais, at, entry, room, floorY, random, out);
                 taken.addAll(dais.keySet());
             }
         }
@@ -128,7 +137,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
     }
 
     private void emit(Map<Coords2D, String> dais, Coords2D centre, PlatformEntry entry,
-                      RoomData room, int floorY, List<BlockPlacement> out) {
+                      RoomData room, int floorY, RandomSource random, List<BlockPlacement> out) {
         int centreX = room.getOriginX() + 1 + centre.getX();
         int centreZ = room.getOriginZ() + 1 + centre.getY();
         String stair = entry.stairBlockOrBase();
@@ -148,6 +157,62 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
 
         entry.topBlock().ifPresent(top -> out.add(new BlockPlacement(
                 centreX, floorY + 2, centreZ, top, entry.topPropertiesOrBase())));
+
+        // The chest ON the dais (#86), on the centre cell and in the same row as topBlock --
+        // which is why the codec refuses to let a dais author both.
+        entry.topChest().ifPresent(chest -> mod.gottsch.forge.dungeons2.core.generator.dungeon.room
+                .RoomChestGenerator.placeChestsOn(
+                        List.of(new Coords2D(centreX, centreZ)), floorY + 2, chest,
+                        cell -> mod.gottsch.forge.dungeons2.core.generator.dungeon.room
+                                .RoomChestGenerator.randomHorizontalFacing(random),
+                        random, out));
+
+        // The pots ON the dais (#86). floorY + 2, one row above the dais blocks themselves --
+        // the same row topBlock occupies, because both stand on the platform's surface.
+        entry.topProps().ifPresent(props -> mod.gottsch.forge.dungeons2.core.generator.dungeon.room
+                .RoomPropGenerator.placePotsOn(
+                        propCells(dais, entry, centreX, centreZ), floorY + 2, props, random,
+                        entities));
+    }
+
+    /**
+     * Where a {@code top_props} pot may stand: the dais's own cells, minus the stairs and minus a
+     * centre already holding {@code top_block}.
+     *
+     * <p>Stairs are excluded because a pot is an ENTITY resting on the block below it, so one on a
+     * stair would sit at the full block height and float over the slope's low half. Which cells
+     * those are is recomputed from the geometry rather than read back off the block ids, because at
+     * {@code size: 1} the stair block and the centre block are the SAME id (both fall back to
+     * {@code block}) and an id test would throw away the only cell there is.</p>
+     *
+     * <p>Sorted, so the draw is a function of the plan rather than of {@code HashMap} iteration
+     * order -- {@code placePotsOn} takes the caller's order as given, and every other generator here
+     * is careful about the same thing.</p>
+     */
+    private static List<Coords2D> propCells(Map<Coords2D, String> dais, PlatformEntry entry,
+                                            int centreX, int centreZ) {
+        int half = entry.size() / 2;
+        // A chest counts exactly as topBlock does: it is standing in the centre cell's air, and a
+        // pot placed into that air stands inside it.
+        boolean centreTaken = entry.topBlock().isPresent() || entry.topChest().isPresent();
+        List<Coords2D> cells = new java.util.ArrayList<>();
+        for (Coords2D cell : dais.keySet()) {
+            int dx = Math.abs(cell.getX() - centreX);
+            int dz = Math.abs(cell.getY() - centreZ);
+            boolean onEdge = dx == half || dz == half;
+            boolean onCorner = dx == half && dz == half;
+            if (half > 0 && onEdge && !onCorner) {
+                continue; // a step, not a surface
+            }
+            if (centreTaken && dx == 0 && dz == 0) {
+                continue; // top_block is already standing there
+            }
+            cells.add(cell);
+        }
+        cells.sort((a, b) -> a.getX() != b.getX()
+                ? Integer.compare(a.getX(), b.getX())
+                : Integer.compare(a.getY(), b.getY()));
+        return cells;
     }
 
     /**

@@ -101,7 +101,12 @@ class VaultedHallSchemeTest {
      * would make this a flaky search rather than a test.
      */
     private static Map<String, BlockState> build() {
-        RoomScheme scheme = vaultedHall();
+                // Resolve before drawing. The shipped scheme's `floor` slot holds three weighted
+        // alternatives (#65), and SlotOptions#value THROWS on an unresolved slot rather than
+        // quietly drawing nothing -- so "bypassing only the roll" stopped being free the day the
+        // slot gained options. A fixed seed keeps this deterministic, and which floor it picks
+        // does not reach the assertions below, which are about the vault/beams and the ceiling.
+        RoomScheme scheme = vaultedHall().resolve(WIDTH, DEPTH, HEIGHT, RandomSource.create(7L));
         RoomData room = new RoomData(1, ORIGIN, ORIGIN, WIDTH, DEPTH, HEIGHT, RoomRole.NORMAL);
         RoomPlacements out = new RoomPlacements();
 

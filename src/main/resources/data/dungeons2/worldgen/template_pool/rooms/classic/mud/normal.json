@@ -113,6 +113,33 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x11_store_room_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x9_sewer_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x13_sewer_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/mud/hallway/12x29_sunken_hallway_1a",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"

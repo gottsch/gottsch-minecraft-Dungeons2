@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 
+import mod.gottsch.forge.dungeons2.diagnostic.FakeWorldGenLevel;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingStage;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
@@ -31,14 +32,18 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The surface gate, exercised a block at a time.
+ * The surface gate, exercised a piece at a time -- which is the only way it can be, since
+ * backlog #15 the processor decides in {@code finalizeProcessing} from the whole block list.
  *
  * <p>{@code StratumWeatheringListTest} asserts the shipped JSON is shaped right; this asserts the
  * processor actually honours it. Both matter and neither implies the other &mdash; a gate that
@@ -53,6 +58,7 @@ class SurfaceAgingProcessorTest {
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        FILL = Blocks.DEEPSLATE;
     }
 
     /** The piece origin. Relative Y 0 is the floor, so this Y is the floor's. */
@@ -66,13 +72,70 @@ class SurfaceAgingProcessorTest {
         return new SurfaceAgingProcessor(() -> null, 4, List.of(rules));
     }
 
-    /** Runs one block at {@code relativeY} above the origin and returns what came back. */
+    /**
+     * A filler no rule in this class names, so a scaffold column never decays and only the cell
+     * under test can change.
+     *
+     * <p>Assigned in {@link #bootstrap()} rather than initialised inline: touching {@link Blocks}
+     * from a static initialiser loads the block registry before {@code Bootstrap.bootStrap()} has
+     * run, which fails the whole class with an {@code ExceptionInInitializerError} whenever it is
+     * the first to load -- i.e. when this class is run on its own.</p>
+     */
+    private static Block FILL;
+
+    /** How tall the scaffold column is; anything above the tallest {@code relativeY} tested. */
+    private static final int COLUMN_TOP = 14;
+
+    private static StructureTemplate.StructureBlockInfo at(BlockPos pos, BlockState state) {
+        return new StructureTemplate.StructureBlockInfo(pos, state, null);
+    }
+
+    /**
+     * Runs a whole piece through the processor and returns it keyed by position.
+     *
+     * <p>Through {@code StructureTemplate.processBlockInfos} rather than by calling one method,
+     * because the processor no longer decides in a fixed phase: rules answerable from Y stay in
+     * {@code processBlock} and geometric ones move to {@code finalizeProcessing}. Only vanilla's
+     * own loop runs both, so only it tests what a dungeon actually does.
+     * {@code ProcessorPhaseOrderTest} is where that split is pinned directly.</p>
+     */
+    private static Map<BlockPos, BlockState> run(
+            SurfaceAgingProcessor processor, List<StructureTemplate.StructureBlockInfo> piece) {
+
+        // processBlockInfos offsets what it is given by the origin, so hand it the piece the way
+        // a template stores one: relative. What comes back is in world space.
+        List<StructureTemplate.StructureBlockInfo> relative = new ArrayList<>(piece.size());
+        for (StructureTemplate.StructureBlockInfo info : piece) {
+            relative.add(new StructureTemplate.StructureBlockInfo(
+                    info.pos().subtract(ORIGIN), info.state(), info.nbt()));
+        }
+
+        StructurePlaceSettings settings = new StructurePlaceSettings();
+        settings.addProcessor(processor);
+
+        Map<BlockPos, BlockState> byPos = new HashMap<>();
+        for (StructureTemplate.StructureBlockInfo info : StructureTemplate.processBlockInfos(
+                FakeWorldGenLevel.create().level(), ORIGIN, ORIGIN, settings, relative, null)) {
+            byPos.put(info.pos(), info.state());
+        }
+        return byPos;
+    }
+
+    /**
+     * Puts {@code state} at {@code relativeY} in a solid column standing on the floor, and returns
+     * what came back for that cell.
+     *
+     * <p>The column matters: a surface is a question about a cell's neighbours now, so a lone block
+     * hanging in space is not the case any of these tests mean. Standing on something makes every
+     * cell above layer 0 a {@link PieceSurface#WALL}, which is the ordinary case
+     * {@link PieceSurface#ABOVE_FLOOR} has always described.</p>
+     */
     private static BlockState run(SurfaceAgingProcessor processor, BlockState state, int relativeY) {
-        BlockPos pos = ORIGIN.above(relativeY);
-        StructureTemplate.StructureBlockInfo info =
-                new StructureTemplate.StructureBlockInfo(pos, state, null);
-        return processor.processBlock(null, ORIGIN, ORIGIN, info, info, new StructurePlaceSettings())
-                .state();
+        List<StructureTemplate.StructureBlockInfo> piece = new ArrayList<>();
+        for (int y = 0; y <= COLUMN_TOP; y++) {
+            piece.add(at(ORIGIN.above(y), y == relativeY ? state : FILL.defaultBlockState()));
+        }
+        return run(processor, piece).get(ORIGIN.above(relativeY));
     }
 
     // ---------- the gate ----------
@@ -153,6 +216,120 @@ class SurfaceAgingProcessorTest {
                 run(processor, Blocks.STONE_BRICKS.defaultBlockState(), 0));
     }
 
+    // ---------- backlog #15: the surfaces above the floor ----------
+
+    /**
+     * A room reduced to what the classifier reads: a floor that insets by one (so the wall ring
+     * stands on nothing the piece placed), a wall ring, a ceiling over the interior only, and one
+     * joist hanging under it.
+     *
+     * @param post {@code true} to stand a post on the floor at the room's centre, which is the
+     *             cell a joist rule must not reach
+     */
+    private static List<StructureTemplate.StructureBlockInfo> room(BlockState beam, boolean post) {
+        List<StructureTemplate.StructureBlockInfo> piece = new ArrayList<>();
+        for (int x = 0; x <= 4; x++) {
+            for (int z = 0; z <= 4; z++) {
+                boolean ring = x == 0 || x == 4 || z == 0 || z == 4;
+                if (ring) {
+                    // Walls span [1 .. height-2], and the floor does NOT reach under them.
+                    for (int y = 1; y <= 4; y++) {
+                        piece.add(at(ORIGIN.offset(x, y, z), FILL.defaultBlockState()));
+                    }
+                } else {
+                    piece.add(at(ORIGIN.offset(x, 0, z), FILL.defaultBlockState()));
+                    piece.add(at(ORIGIN.offset(x, 5, z), FILL.defaultBlockState()));
+                }
+            }
+        }
+        if (post) {
+            // A post of the same material, standing on the floor, at the room's centre.
+            for (int y = 1; y <= 4; y++) {
+                piece.add(at(ORIGIN.offset(2, y, 2), beam));
+            }
+        }
+        // A beam across the interior, hanging one course under the ceiling. Where a post is
+        // present it already owns the centre cell, so the beam runs to either side of it.
+        for (int x = 1; x <= 3; x++) {
+            if (!(post && x == 2)) {
+                piece.add(at(ORIGIN.offset(x, 4, 2), beam));
+            }
+        }
+        return piece;
+    }
+
+    /**
+     * The wall ring's top course is the highest block in its own column, because the ceiling insets
+     * by one. Reading a ceiling as "the highest block in the column" would decay the top course of
+     * every procedural room on the ceiling's schedule.
+     */
+    @Test
+    void aWallRunsTopCourseIsNotACeiling() {
+        SurfaceAgingProcessor processor = processor(
+                rule(PieceSurface.CEILING, FILL, Blocks.DIRT));
+
+        Map<BlockPos, BlockState> result = run(processor, room(FILL.defaultBlockState(), false));
+
+        assertSame(Blocks.DIRT.defaultBlockState(), result.get(ORIGIN.offset(2, 5, 2)),
+                "the ceiling slab itself should have decayed");
+        assertSame(FILL.defaultBlockState(), result.get(ORIGIN.offset(0, 4, 0)),
+                "the top course of the wall ring is a wall, however high it reaches");
+        assertSame(FILL.defaultBlockState(), result.get(ORIGIN.offset(0, 1, 0)),
+                "the bottom course stands on the floor plane even where the floor insets away");
+    }
+
+    /**
+     * Backlog #45's blocker, in one test. A {@code spruce_log} beam may crumble to a gap because
+     * the shell above it stays intact; the identical block used as a post may not, because that
+     * leaves whatever it carries floating. Both are {@link PieceSurface#ABOVE_FLOOR} and no rule
+     * keyed on the block could tell them apart.
+     */
+    @Test
+    void aJoistDecaysWhereThePostOfTheSameTimberDoesNot() {
+        SurfaceAgingProcessor processor = processor(
+                rule(PieceSurface.JOIST, Blocks.SPRUCE_LOG, Blocks.AIR));
+
+        Map<BlockPos, BlockState> result =
+                run(processor, room(Blocks.SPRUCE_LOG.defaultBlockState(), true));
+
+        assertSame(Blocks.AIR.defaultBlockState(), result.get(ORIGIN.offset(1, 4, 2)),
+                "the beam should have gapped");
+        for (int y = 1; y <= 4; y++) {
+            assertSame(Blocks.SPRUCE_LOG.defaultBlockState(), result.get(ORIGIN.offset(2, y, 2)),
+                    "the post is standing on something at relative Y " + y + " and is not a joist");
+        }
+    }
+
+    /**
+     * The union still covers all three, so an existing rule keeps its reach &mdash; and it reaches
+     * the same cells <strong>whether or not the piece was scanned</strong>.
+     *
+     * <p>That second half is the point. A processor whose rules only name {@code any},
+     * {@code floor} or {@code above_floor} skips building the {@link PieceSurfaceMap} entirely,
+     * since none of those needs the geometry; the two runs here differ only in a
+     * {@link PieceSurface#JOIST} rule on an unrelated block, which is enough to switch the scan on.
+     * If the skipped path ever stopped agreeing with the scanned one, every list shipped today
+     * would quietly change its decay and no other test would notice.</p>
+     */
+    @Test
+    void anAboveFloorRuleReadsTheSameScannedOrNot() {
+        List<StructureTemplate.StructureBlockInfo> piece =
+                room(Blocks.SPRUCE_LOG.defaultBlockState(), true);
+
+        Map<BlockPos, BlockState> unscanned = run(processor(
+                rule(PieceSurface.ABOVE_FLOOR, Blocks.SPRUCE_LOG, Blocks.AIR)), piece);
+        Map<BlockPos, BlockState> scanned = run(processor(
+                rule(PieceSurface.ABOVE_FLOOR, Blocks.SPRUCE_LOG, Blocks.AIR),
+                rule(PieceSurface.JOIST, Blocks.OAK_LOG, Blocks.AIR)), piece);
+
+        assertSame(Blocks.AIR.defaultBlockState(), unscanned.get(ORIGIN.offset(1, 4, 2)),
+                "above_floor must still reach a joist");
+        assertSame(Blocks.AIR.defaultBlockState(), unscanned.get(ORIGIN.offset(2, 1, 2)),
+                "above_floor must still reach a wall");
+        assertEquals(unscanned, scanned,
+                "skipping the scan changed the piece, so the two paths have diverged");
+    }
+
     // ---------- inherited behaviour that must not have been lost in the copy ----------
 
     /**
@@ -196,13 +373,14 @@ class SurfaceAgingProcessorTest {
         SurfaceAgingProcessor processor = processor(new SurfaceAgingRule(PieceSurface.FLOOR,
                 Blocks.COBBLESTONE, List.of(new AgingStage(Blocks.MOSSY_COBBLESTONE, 0.5))));
 
-        int aged = 0;
+        List<StructureTemplate.StructureBlockInfo> floor = new ArrayList<>();
         for (int x = 0; x < 40; x++) {
-            BlockPos pos = ORIGIN.offset(x, 0, 0);
-            StructureTemplate.StructureBlockInfo info = new StructureTemplate.StructureBlockInfo(
-                    pos, Blocks.COBBLESTONE.defaultBlockState(), null);
-            if (processor.processBlock(null, ORIGIN, ORIGIN, info, info, new StructurePlaceSettings())
-                    .state().is(Blocks.MOSSY_COBBLESTONE)) {
+            floor.add(at(ORIGIN.offset(x, 0, 0), Blocks.COBBLESTONE.defaultBlockState()));
+        }
+
+        int aged = 0;
+        for (BlockState state : run(processor, floor).values()) {
+            if (state.is(Blocks.MOSSY_COBBLESTONE)) {
                 aged++;
             }
         }

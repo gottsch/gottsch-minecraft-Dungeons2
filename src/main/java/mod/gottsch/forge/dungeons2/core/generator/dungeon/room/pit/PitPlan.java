@@ -46,6 +46,10 @@ import java.util.Set;
  * @param fills  interior-local cell to a block standing ON that terrace (a stalagmite, say), for
  *               the cells that have one. Nullable states are not stored; a cell with nothing simply
  *               has no entry.
+ * @param fillData block-entity data for a fill that needs some -- today only a chest, which is
+ *               inert without the {@code LootTable} that says what is in it. A PARALLEL map rather
+ *               than a richer fill type: exactly one provider populates it, one line reads it, and
+ *               every other fill (a stalagmite, an altar stone) has no block entity at all.
  * @param rim    interior-local cells OUTSIDE the pit whose floor block is replaced, at the room's
  *               own walking plane &mdash; a ring of stairs around a sunken floor. These cells stay
  *               walkable and are NOT excavated: the pit is one block down, and the stair's low half
@@ -55,7 +59,14 @@ import java.util.Set;
  * @author Mark Gottschling on Aug 27, 2026
  */
 public record PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
-                      Map<Coords2D, BlockState> rim) {
+                      Map<Coords2D, BlockState> rim,
+                      Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData) {
+
+    /** The shape this record had before a fill could carry block-entity data. */
+    public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
+                   Map<Coords2D, BlockState> rim) {
+        this(depths, fills, rim, Map.of());
+    }
 
     public PitPlan(Map<Coords2D, Integer> depths) {
         this(depths, Map.of(), Map.of());

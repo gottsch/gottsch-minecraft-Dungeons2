@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.maze;
 
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
@@ -28,7 +29,10 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,8 +57,20 @@ class RoomAssemblyPlacementTest {
     private static final int FLOORS = 3;
     /** The planner's own default, which this test drives explicitly rather than relying on. */
     private static final int ATTEMPTS_PER_FLOOR = 2;
-    /** What {@code generation_config/default.json} ships (backlog #16). */
-    private static final int SHIPPED_ATTEMPTS_PER_FLOOR = 4;
+    /**
+     * A fixed count near the top of what the shipped density asks of a big floor, so the crowding
+     * question is still pinned now that no single number is "the shipped attempt count".
+     *
+     * <p>It used to be literally {@code generation_config}'s value (backlog #16, 4). That field is a
+     * DENSITY since 2026-09-07, so a LARGE floor now asks for around 8 and a SMALL one for 2 &mdash;
+     * and the thing worth guarding is the top of that range, where attempts compete hardest for
+     * floor area.</p>
+     */
+    private static final int CROWDED_ATTEMPTS_PER_FLOOR = 8;
+
+    /** What {@code generation_config/default.json} ships: floor cells per prefab attempt. */
+    private static final int SHIPPED_CELLS_PER_TEMPLATE =
+            DungeonGenerationConfig.DEFAULT_FLOOR_CELLS_PER_ROOM_TEMPLATE;
 
     @Test
     void aRotatedRoomPrefabIsAlmostAlwaysAdopted() {
@@ -62,14 +78,14 @@ class RoomAssemblyPlacementTest {
     }
 
     /**
-     * Adoption has to survive the count the mod actually ships, not just the planner's default.
-     * More attempts per floor compete for the same floor area &mdash; each adopted prefab reserves
-     * its footprint against the next attempt &mdash; so a rate measured at 2 says nothing about 4.
-     * This is the check that would catch raising the shipped number too far.
+     * Adoption has to survive a CROWDED floor, not just the planner's default. Attempts on one floor
+     * compete for the same area &mdash; each adopted prefab reserves its footprint against the next
+     * &mdash; so a rate measured at 2 says nothing about 8. This is the check that would catch
+     * lowering {@code floor_cells_per_room_template} too far.
      */
     @Test
-    void adoptionSurvivesTheShippedAttemptCount() {
-        assertAdoptionHolds(SHIPPED_ATTEMPTS_PER_FLOOR);
+    void adoptionSurvivesACrowdedFloor() {
+        assertAdoptionHolds(CROWDED_ATTEMPTS_PER_FLOOR);
     }
 
     private void assertAdoptionHolds(int attemptsPerFloor) {
@@ -118,6 +134,82 @@ class RoomAssemblyPlacementTest {
                         + "assembly point, so a slot picked before the footprint is known lands out "
                         + "of bounds and is dropped",
                 rate * 100, adopted, slots, attemptsPerFloor));
+    }
+
+    /**
+     * The invariant the density knob was bought for: <strong>a LARGE dungeon is no more procedural
+     * than a SMALL one.</strong>
+     *
+     * <h2>The defect, which was silent and had been shipping for a month</h2>
+     * <p>{@code floor_cells_per_room_template} used to be a flat
+     * {@code room_template_attempts_per_floor}, so every floor got the same handful of attempts
+     * however big it was &mdash; while {@code DungeonStackPlanner#pickNumberOfRooms} has always
+     * scaled room COUNT with area. A fixed numerator over a growing denominator, and measured over
+     * 300 seeds per tier at the shipped 4 the authored share ran <strong>31.3% / 20.6% /
+     * 11.0%</strong> across SMALL / MEDIUM / LARGE. Exactly backwards: the dungeon a player spends
+     * longest in was the one that felt the most generated, and nothing in the game or the logs said
+     * so &mdash; a floor that adopts no prefab is simply covered by procedural fill.</p>
+     *
+     * <h2>Why this asserts a SPREAD and not a value</h2>
+     * <p>Pinning "MEDIUM is 20%" would fail the day anyone retunes room count, which moves the share
+     * without touching this knob at all &mdash; the project has been caught by exactly that twice,
+     * which is why the config comment says re-measure and never quote. The levelling is the
+     * property that actually has to hold, so the assertion is on the spread between tiers. The band
+     * is deliberately wide enough to survive ordinary retuning and far too tight to survive the flat
+     * count coming back, which spread 20 points.</p>
+     */
+    @Test
+    void theAuthoredShareIsLevelAcrossSizeTiers() {
+        Map<DungeonSize, Double> share = new EnumMap<>(DungeonSize.class);
+        for (DungeonSize size : DungeonSize.values()) {
+            int floors = switch (size) {
+                case SMALL -> 2;
+                case MEDIUM -> 3;
+                case LARGE -> 4;
+            };
+            int adopted = 0;
+            int normalRooms = 0;
+            for (long seed = 0; seed < SEEDS; seed++) {
+                Optional<DungeonLayout> opt = new DungeonStackPlanner(
+                        seed, new Coords(128, 0, 256), 72, "classic", new TemplateCatalog())
+                        .withSize(size)
+                        .withFloorCount(floors)
+                        .withRoomTemplateDensity(SHIPPED_CELLS_PER_TEMPLATE)
+                        .withRoomAssembler(ROTATED_7X7)
+                        .plan();
+                if (opt.isEmpty()) {
+                    continue;
+                }
+                for (FloorLayout floor : opt.get().getFloors()) {
+                    for (RoomData room : floor.getRooms()) {
+                        if (room.getRole() == RoomRole.NORMAL) {
+                            normalRooms++;
+                        }
+                        if (room.getTemplateId() != null
+                                && room.getTemplateId().contains("rooms/assembled")) {
+                            adopted++;
+                        }
+                    }
+                }
+            }
+            share.put(size, 100.0 * adopted / normalRooms);
+        }
+
+        System.out.printf("authored share at %d cells/template: SMALL %.1f%%  MEDIUM %.1f%%  "
+                        + "LARGE %.1f%%%n", SHIPPED_CELLS_PER_TEMPLATE, share.get(DungeonSize.SMALL),
+                share.get(DungeonSize.MEDIUM), share.get(DungeonSize.LARGE));
+
+        double min = Collections.min(share.values());
+        double max = Collections.max(share.values());
+        assertTrue(max - min <= 6.0, String.format(
+                "the authored share should be level across size tiers, but spread %.1f points: %s."
+                        + " A flat per-floor attempt count spreads about 20 -- if that is what this"
+                        + " is measuring, floor_cells_per_room_template has stopped being applied"
+                        + " per floor area", max - min, share));
+        // And it has to be a real share, not level at zero -- which is what a density that stopped
+        // being injected would look like, and would otherwise pass the spread check above.
+        assertTrue(min > 5.0,
+                "authored share collapsed to " + share + "; the density is not reaching the planner");
     }
 
     /**
@@ -181,7 +273,7 @@ class RoomAssemblyPlacementTest {
                 7L, new Coords(128, 0, 256), 72, "classic", new TemplateCatalog())
                 .withSize(DungeonSize.MEDIUM)
                 .withFloorCount(FLOORS)
-                .withRoomTemplateAttempts(SHIPPED_ATTEMPTS_PER_FLOOR)
+                .withRoomTemplateAttempts(CROWDED_ATTEMPTS_PER_FLOOR)
                 .withRoomAssembler(recording)
                 .plan();
 

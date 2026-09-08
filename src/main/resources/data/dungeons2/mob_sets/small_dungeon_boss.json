@@ -13,6 +13,14 @@
     {
       "id": "dungeons2:skeleton_champion",
       "weight": 10
+    },
+    {
+      "id": "dungeons2:wight",
+      "weight": 10
+    },
+    {
+      "id": "dungeons2:orc_warlord",
+      "weight": 10
     }
   ]
 }

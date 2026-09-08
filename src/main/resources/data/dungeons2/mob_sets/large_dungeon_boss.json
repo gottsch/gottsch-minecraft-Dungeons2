@@ -9,6 +9,10 @@
     {
       "id": "dungeons2:death_tyrant",
       "weight": 10
+    },
+    {
+      "id": "dungeons2:daemon",
+      "weight": 10
     }
   ]
 }

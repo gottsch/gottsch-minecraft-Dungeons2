@@ -20,13 +20,12 @@ package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /**
- * <strong>PROTOTYPE (backlog: mud-stratum floors).</strong> Which surface of a piece a block
- * belongs to, decided from its <em>piece-relative</em> Y &mdash; the gate that lets one weathering
- * rule apply to floors and a different one to everything else, without either rule being keyed on
- * block identity.
+ * Which surface of a piece a block belongs to &mdash; the gate that lets one weathering rule apply
+ * to floors, another to beams and another to the ceiling above them, without any of them being
+ * keyed on block identity. The floor is decided from <em>piece-relative</em> Y; everything above it
+ * is decided by {@link PieceSurfaceMap} from the piece's whole block list.
  *
  * <h2>Why this is not keyed on the block</h2>
  * <p>The obvious way to give the mud stratum a cobblestone floor with its own decay is a rule on
@@ -80,13 +79,25 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * {@code PieceSurfaceTest.proceduralRoomHasNothingBelowLayerZero} is the guard: it fails the day
  * a procedural placement drops below the origin.</p>
  *
- * <h2>There is deliberately no {@code CEILING}</h2>
- * <p>A ceiling is at {@code height - 1}, and <strong>{@code processBlock} is never told the
- * piece's height</strong>: it sees one block, the piece origin, and a {@code StructurePlaceSettings}
- * whose bounding box is the <em>chunk</em> box, not the piece's. The template's size is not
- * reachable either. So {@link #ABOVE_FLOOR} is as precise as a per-block gate can be, and a real
- * ceiling gate needs a processor that decides in {@code finalizeProcessing} (which does see the
- * whole block list, and so can compute a maximum Y) rather than per block.</p>
+ * <h2>2026-09-04, backlog #15: the three surfaces above the floor</h2>
+ * <p>This enum used to stop at {@link #ABOVE_FLOOR}, and said so at length: a ceiling is at
+ * {@code height - 1}, and <strong>{@code processBlock} is never told the piece's height</strong>
+ * &mdash; it sees one block, the piece origin, and a {@code StructurePlaceSettings} whose bounding
+ * box is the <em>chunk</em> box. That reasoning was right about {@code processBlock} and is why
+ * {@link SurfaceAgingProcessor} no longer decides there: {@code finalizeProcessing} is handed the
+ * whole block list, so {@link #WALL}, {@link #CEILING} and {@link #JOIST} became answerable.</p>
+ *
+ * <p><strong>The classification is {@link PieceSurfaceMap}'s, not this enum's</strong>, because
+ * every one of the three is a question about a cell's neighbours rather than its Y. That map owns
+ * the definitions and the reasoning; what lives here is the vocabulary a datapack authors against
+ * and the union each value stands for. Note in particular that a ceiling is <em>not</em> "the
+ * highest block in the column" &mdash; a procedural room's ceiling insets by one, so the wall
+ * ring's top course is the top of its own column, and reading it as a ceiling would have
+ * misclassified the top course of every room.</p>
+ *
+ * <p>{@link #ABOVE_FLOOR} stays, and is now exactly the union of the three. It is not deprecated:
+ * a rule that means "anything but the floor" should keep saying so rather than listing three
+ * values, and every shipped rule that names it keeps its behaviour to the block.</p>
  *
  * <h2>THE EXEMPTION PROBLEM IS NOT SOLVED BY GATING THE FLOOR RULE ALONE</h2>
  * <p>A processor list is chained &mdash; each processor sees the previous one's output &mdash; so
@@ -112,13 +123,16 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * stays entirely D2-local and mud-only, because that file already REPLACES the motif's list
  * wholesale rather than extending it.</p>
  *
- * <h2>Scope: one stratum's own processor, NOT {@code dungeons2:aging}</h2>
- * <p>This gate is <strong>not</strong> going into GottschCore's {@code AgingProcessor}. That
- * processor is shared by every motif and every stratum, and adding a surface field to it would put
- * the concept in front of authoring that has no use for it (Mark, 2026-08-26). The mud stratum is
- * the only band that wants floors decaying on their own schedule, so the gate belongs to a
- * D2-local processor named only by {@code classic_mud_weathering.json}. Nothing else loads it, so
- * nothing else can be broken by it.</p>
+ * <h2>Scope: Dungeons2's own processor, NOT GottschCore's {@code AgingProcessor}</h2>
+ * <p>This gate is <strong>not</strong> going into GottschCore's {@code AgingProcessor}, which is
+ * shared by every mod depending on it and would carry the concept in front of authoring that has no
+ * use for it (Mark, 2026-08-26). It belongs to {@link SurfaceAgingProcessor}, which is Dungeons2's.
+ * </p>
+ *
+ * <p>Named by {@code classic_mud_weathering.json} since 2026-08-26 and by
+ * {@code classic_weathering.json} since 2026-09-04, whose every rule says {@link #ANY} &mdash; the
+ * migration bought the <em>ability</em> to name a surface, and changed no behaviour. The boss and
+ * entrance lists still use {@code dungeons2:aging}.</p>
  *
  * <h2>Scope: rooms and hallways only</h2>
  * <p>Transition and entrance templates do not obey the convention and should not &mdash; a
@@ -131,30 +145,47 @@ public enum PieceSurface implements StringRepresentable {
     /** Every block, i.e. the ungated behaviour every rule has today. */
     ANY("any") {
         @Override
-        public boolean matches(int relativeY) {
+        public boolean matches(PieceSurface primary) {
             return true;
         }
     },
 
     /** The piece's bottom layer, and nothing else. */
-    FLOOR("floor") {
+    FLOOR("floor"),
+
+    /**
+     * Everything the floor is not, as one value: the union of {@link #WALL}, {@link #CEILING} and
+     * {@link #JOIST}, plus the interior air between them.
+     */
+    ABOVE_FLOOR("above_floor") {
         @Override
-        public boolean matches(int relativeY) {
-            return relativeY == FLOOR_RELATIVE_Y;
+        public boolean matches(PieceSurface primary) {
+            return primary != FLOOR;
         }
     },
 
     /**
-     * Everything the floor is not &mdash; walls, ceilings, props, and the interior air between
-     * them. The complement of {@link #FLOOR} rather than a {@code WALL} value, because a per-block
-     * gate cannot separate a wall from a ceiling (see the class doc).
+     * Architecture that stands on something &mdash; a wall run, a pilaster, a partition, a
+     * free-standing post, a prop on the floor. The load-bearing half of {@link #ABOVE_FLOOR}, and
+     * the reason a {@code spruce_log} rule can now say "posts do not gap" while
+     * {@link #JOIST} says beams do.
      */
-    ABOVE_FLOOR("above_floor") {
-        @Override
-        public boolean matches(int relativeY) {
-            return relativeY > FLOOR_RELATIVE_Y;
-        }
-    };
+    WALL("wall"),
+
+    /**
+     * The piece's overhead surface: a cell that hangs, with nothing of the piece above it in its
+     * column. A vault's raised cap and a corridor arch's keystone row both qualify; the wall ring
+     * beneath them does not, however high it reaches.
+     */
+    CEILING("ceiling"),
+
+    /**
+     * A beam: a cell that hangs with the piece's own ceiling still above it. What separates a
+     * ceiling joist from the post holding a roof up &mdash; backlog #45's mud-band
+     * {@code spruce_log} rule was blocked on exactly this distinction, since both are
+     * {@link #ABOVE_FLOOR} and only one may decay to a gap.
+     */
+    JOIST("joist");
 
     /** The layer both pipelines put the floor on. */
     public static final int FLOOR_RELATIVE_Y = 0;
@@ -165,20 +196,28 @@ public enum PieceSurface implements StringRepresentable {
         this.name = name;
     }
 
-    /** Whether a block at this piece-relative Y belongs to this surface. */
-    public abstract boolean matches(int relativeY);
+    /**
+     * Whether a cell {@link PieceSurfaceMap#classify classified} as {@code primary} belongs to this
+     * surface. The default is identity, which is what {@link #FLOOR}, {@link #WALL},
+     * {@link #CEILING} and {@link #JOIST} want; the two unions, {@link #ANY} and
+     * {@link #ABOVE_FLOOR}, override it.
+     *
+     * <p>Because the map returns exactly one primary per cell and only those four are ever
+     * returned, "the gates partition the piece" is structural here rather than a property four
+     * separate predicates have to be kept agreeing on. {@code PieceSurfaceTest} pins it.</p>
+     */
+    public boolean matches(PieceSurface primary) {
+        return primary == this;
+    }
 
     /**
-     * Whether the block {@code current} sits on, as handed to
-     * {@code StructureProcessor#processBlock}, belongs to this surface.
+     * Whether the cell at {@code worldPos} belongs to this surface, given the piece it is part of.
      *
-     * @param piecePos the processor's first {@code BlockPos} argument &mdash; the piece origin
-     *                 vanilla offsets every block by
-     * @param current  the block info being processed, whose {@code pos()} is already in world
-     *                 space
+     * @param surfaces the piece's classification, built once in {@code finalizeProcessing}
+     * @param worldPos the cell, in world space, as a block info carries it
      */
-    public boolean matches(BlockPos piecePos, StructureTemplate.StructureBlockInfo current) {
-        return matches(relativeY(piecePos, current.pos()));
+    public boolean matches(PieceSurfaceMap surfaces, BlockPos worldPos) {
+        return matches(surfaces.classify(worldPos));
     }
 
     /** A block's Y measured from the piece's bottom layer. */

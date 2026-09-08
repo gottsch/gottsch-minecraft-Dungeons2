@@ -1,0 +1,34 @@
+{
+  "id": "dungeons2:large_dungeon_escort",
+  "category": "classic",
+  "count": {
+    "min": 3,
+    "max": 5
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:ghoul",
+      "weight": 6
+    },
+    {
+      "id": "dungeons2:bloater",
+      "weight": 6
+    },
+    {
+      "id": "dungeons2:skeleton_warrior",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:animated_armor",
+      "weight": 6
+    },
+    {
+      "id": "dungeons2:bloody_bones",
+      "weight": 5
+    },
+    {
+      "id": "dungeons2:margoyle",
+      "weight": 4
+    }
+  ]
+}

@@ -90,7 +90,13 @@ class MarkerProcessorWiringTest {
             // no sweep, four aging rules. It is NOT exempt here and must not become so: #61 is
             // about a marker processor missing from a list a pool names, and a deliberately
             // minimal list is exactly where that omission is easiest to make and hardest to see.
-            "classic_boss_weathering.json");
+            // One per DungeonSize tier since 2026-09-04: three near-identical lists differing
+            // only in boss_loot_table / boss_mob_set. All three, not one representative -- a
+            // marker processor dropped from just the large tier would be invisible to every
+            // player who never rolled a large dungeon.
+            "classic_boss_weathering_small.json",
+            "classic_boss_weathering_medium.json",
+            "classic_boss_weathering_large.json");
 
     @Test
     void everyShippedListCarriesEveryMarkerProcessor() {

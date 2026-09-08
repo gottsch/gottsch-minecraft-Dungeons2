@@ -17,19 +17,26 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Backlog #10: the authored marker block becomes the right block-entity tag.
@@ -172,6 +179,77 @@ class SpawnerMarkerProcessorTest {
         assertEquals(20.0D, processor().spawnerTag(overrides(marker)).getDouble("proximity"));
     }
 
+    // ---- the boss rung (2026-09-04) ------------------------------------------------------------
+    //
+    // The one field where the POOL outranks the marker, because `boss: true` declares a role and
+    // asks to be told the value. These go through spawnerTag(overrides, pooled) with the resolved
+    // set passed in, mirroring what processBlock does -- the marker match itself still needs a
+    // Forge registry no headless test has.
+
+    private static final ResourceLocation BOSS_SET =
+            new ResourceLocation("dungeons2:large_dungeon_boss");
+
+    private static SpawnerMarkerProcessor tiered() {
+        return new SpawnerMarkerProcessor(VERMIN, Optional.of(BOSS_SET),
+                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D, 1, 3,
+                mod.gottsch.forge.dungeons2.core.config.SpawnerConfig.Kind.PROXIMITY);
+    }
+
+    private static StructureTemplate.StructureBlockInfo marker(CompoundTag nbt) {
+        return new StructureTemplate.StructureBlockInfo(BlockPos.ZERO,
+                Blocks.STONE_BRICKS.defaultBlockState(), nbt);
+    }
+
+    /** The reported bug, in one assertion: the tier's set, not the template's. */
+    @Test
+    void aBossMarkerTakesTheTiersSet() {
+        CompoundTag boss = new CompoundTag();
+        boss.putBoolean("boss", true);
+        assertTrue(SpawnerMarkerProcessor.isBossMarker(marker(boss)));
+        assertEquals(BOSS_SET.toString(),
+                tiered().spawnerTag(overrides(boss), BOSS_SET).getString("mobSetName"));
+    }
+
+    /**
+     * A boss marker that ALSO names a set still takes the tier's. Inverted from every other field
+     * on this marker, and deliberately: the flag would otherwise do nothing on the template most
+     * likely to carry a leftover id, which is exactly how the tier got welded on the first time.
+     * BossRoomAuthoringTest fails such a template outright; this pins the runtime behaviour if one
+     * ever reaches here.
+     */
+    @Test
+    void theTierOutranksAnAuthoredSetOnABossMarker() {
+        CompoundTag boss = new CompoundTag();
+        boss.putBoolean("boss", true);
+        boss.putString("mobSetName", "dungeons2:small_dungeon_boss");
+        assertEquals(BOSS_SET.toString(),
+                tiered().spawnerTag(overrides(boss), BOSS_SET).getString("mobSetName"));
+    }
+
+    /**
+     * The footgun that made the flag worth having. An ordinary spawner that names no set must take
+     * the pool's ORDINARY default, never the boss's -- a boss room holds several of these and
+     * exactly one boss.
+     */
+    @Test
+    void aMarkerThatNamesNoSetIsNotTreatedAsTheBoss() {
+        assertFalse(SpawnerMarkerProcessor.isBossMarker(marker(null)));
+        assertFalse(SpawnerMarkerProcessor.isBossMarker(marker(new CompoundTag())));
+        assertEquals(VERMIN.toString(),
+                tiered().spawnerTag(overrides(new CompoundTag())).getString("mobSetName"),
+                "absence must mean the pool's ordinary set, not the boss's");
+    }
+
+    /** A pool that declares no tier leaves a boss marker on the ordinary chain rather than failing. */
+    @Test
+    void aBossMarkerInAnUntieredPoolFallsThrough() {
+        CompoundTag boss = new CompoundTag();
+        boss.putBoolean("boss", true);
+        boss.putString("mobSetName", "dungeons2:classic_undead");
+        assertEquals("dungeons2:classic_undead",
+                processor().spawnerTag(overrides(boss)).getString("mobSetName"));
+    }
+
     /** A marker may ask for a visible cage even though the pool's entry means the ambush block. */
     @Test
     void aMarkerMayOverrideTheSpawnerKind() {
@@ -195,5 +273,149 @@ class SpawnerMarkerProcessorTest {
         badKind.putString("type", "vanila");
         assertEquals(SpawnerConfig.Kind.PROXIMITY,
                 overrides(badKind).kind(SpawnerConfig.Kind.PROXIMITY));
+    }
+
+    // ---- probability (2026-09-06) --------------------------------------------------------------
+    //
+    // The authored answer to what `min_count: 0` does for the procedural slot: a marker that
+    // sometimes produces no spawner at all. Tested through rollsOut rather than processBlock for
+    // the reason in the class note -- the marker MATCH needs a populated Forge registry, this
+    // decision does not.
+
+    private static SpawnerMarkerProcessor withProbability(float probability) {
+        return new SpawnerMarkerProcessor(VERMIN, Optional.empty(), Optional.empty(),
+                Optional.empty(), SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D, 1, 3,
+                probability, SpawnerConfig.Kind.PROXIMITY);
+    }
+
+    private static CompoundTag probabilityTag(float probability) {
+        CompoundTag marker = new CompoundTag();
+        marker.putFloat("probability", probability);
+        return marker;
+    }
+
+    /**
+     * The regression this whole design is shaped around, and the only test that would catch it.
+     *
+     * <p>An unconditional roll would draw a {@code nextFloat()} ahead of the mob draw on every
+     * marker in every world, so every already-generated spawner would show a different mob after
+     * this field shipped. Asserting "returns false" is not enough &mdash; the source must be
+     * <em>untouched</em>, which is what the second assertion checks.</p>
+     */
+    @Test
+    void aMarkerThatStatesNoProbabilityConsumesNoRandomValue() {
+        RandomSource used = RandomSource.create(42L);
+        RandomSource untouched = RandomSource.create(42L);
+
+        assertFalse(processor().rollsOut(overrides(null), used),
+                "a marker that states nothing must never roll out");
+        assertEquals(untouched.nextInt(1000), used.nextInt(1000),
+                "an unstated probability must consume NO random value, or every existing world's"
+                        + " spawners draw a different mob");
+    }
+
+    /** The same guarantee for a pool that states the default explicitly. */
+    @Test
+    void anExplicitProbabilityOfOneConsumesNoRandomValue() {
+        RandomSource used = RandomSource.create(7L);
+        RandomSource untouched = RandomSource.create(7L);
+
+        assertFalse(withProbability(1.0F).rollsOut(overrides(probabilityTag(1.0F)), used));
+        assertEquals(untouched.nextInt(1000), used.nextInt(1000));
+    }
+
+    /** Zero is never, whatever the seed. */
+    @Test
+    void aProbabilityOfZeroAlwaysRollsOut() {
+        for (long seed = 0L; seed < 25L; seed++) {
+            assertTrue(withProbability(0.0F).rollsOut(overrides(null), RandomSource.create(seed)),
+                    "probability 0 must roll out at every seed, including " + seed);
+        }
+    }
+
+    /** The layering is the point of putting it in the codec at all: the marker wins, both ways. */
+    @Test
+    void aMarkerOverridesThePoolsProbability() {
+        assertTrue(withProbability(1.0F).rollsOut(overrides(probabilityTag(0.0F)),
+                        RandomSource.create(3L)),
+                "a marker stating 0 must roll out even though the pool is certain");
+
+        for (long seed = 0L; seed < 25L; seed++) {
+            assertFalse(withProbability(0.0F).rollsOut(overrides(probabilityTag(1.0F)),
+                            RandomSource.create(seed)),
+                    "a marker stating 1 must never roll out even though the pool is never");
+        }
+    }
+
+    /**
+     * Clamped rather than thrown, unlike the datapack field below: this arrives on a worldgen thread
+     * where there is no error path, and {@code probability:5} is unambiguous about the intent.
+     */
+    @Test
+    void anOutOfRangeMarkerProbabilityIsClamped() {
+        assertEquals(1.0F, overrides(probabilityTag(5.0F)).probability(0.0F));
+        assertEquals(0.0F, overrides(probabilityTag(-1.0F)).probability(1.0F));
+
+        for (long seed = 0L; seed < 25L; seed++) {
+            assertFalse(withProbability(0.0F).rollsOut(overrides(probabilityTag(5.0F)),
+                    RandomSource.create(seed)), "a clamped 5.0 must behave exactly as 1.0");
+        }
+    }
+
+    /**
+     * An author typing {@code probability:0} in a /data merge writes an IntTag, the same trap
+     * {@link #anIntegerProximityIsAccepted} covers for proximity. A silently ignored 0 would be a
+     * marker that always spawns while its author believes it never does.
+     */
+    @Test
+    void anIntegerProbabilityIsAccepted() {
+        CompoundTag marker = new CompoundTag();
+        marker.putInt("probability", 0);
+        assertEquals(0.0F, overrides(marker).probability(1.0F));
+        assertTrue(processor().rollsOut(overrides(marker), RandomSource.create(11L)));
+    }
+
+    // ---- the datapack field --------------------------------------------------------------------
+
+    private static DataResult<SpawnerMarkerProcessor> decode(String json) {
+        return SpawnerMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(json));
+    }
+
+    /** Absent means certain, which is what keeps every shipped processor list working untouched. */
+    @Test
+    void aProcessorListThatStatesNoProbabilityDecodesToCertainty() {
+        SpawnerMarkerProcessor decoded = decode(
+                "{\"mob_set\":\"dungeons2:classic_vermin\",\"proximity\":8.0}")
+                .result().orElseThrow();
+
+        RandomSource used = RandomSource.create(5L);
+        RandomSource untouched = RandomSource.create(5L);
+        assertFalse(decoded.rollsOut(overrides(null), used));
+        assertEquals(untouched.nextInt(1000), used.nextInt(1000));
+    }
+
+    /** And a stated one is carried through to the roll. */
+    @Test
+    void aProcessorListMayStateAProbability() {
+        SpawnerMarkerProcessor decoded = decode(
+                "{\"mob_set\":\"dungeons2:classic_vermin\",\"proximity\":8.0,\"probability\":0.0}")
+                .result().orElseThrow();
+        assertTrue(decoded.rollsOut(overrides(null), RandomSource.create(9L)));
+    }
+
+    /**
+     * A load error, NOT a clamp -- the opposite of {@link #anOutOfRangeMarkerProbabilityIsClamped},
+     * and deliberately so. A datapack value is authored once and read by a human, so #31's posture
+     * applies: say it is wrong rather than quietly meaning something else.
+     */
+    @Test
+    void anOutOfRangeDatapackProbabilityIsALoadError() {
+        assertTrue(decode("{\"mob_set\":\"dungeons2:classic_vermin\",\"proximity\":8.0,"
+                        + "\"probability\":5.0}").error().isPresent(),
+                "probability above 1 must fail the load rather than clamp");
+        assertTrue(decode("{\"mob_set\":\"dungeons2:classic_vermin\",\"proximity\":8.0,"
+                        + "\"probability\":-0.5}").error().isPresent(),
+                "probability below 0 must fail the load rather than clamp");
     }
 }

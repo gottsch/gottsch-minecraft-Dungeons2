@@ -90,8 +90,32 @@ public final class RoomPropGenerator {
             return;
         }
 
-        List<Coords2D> candidates = eligibleCells(room, occupied);
-        if (candidates.isEmpty()) {
+        placePotsOn(eligibleCells(room, occupied), floorY + 1, config, random, out);
+    }
+
+    /**
+     * Places pots on exactly {@code candidates}, at exactly {@code y} &mdash; the one place a pot
+     * ENTITY is built, whoever chose the cells.
+     *
+     * <p>Extracted when the dais grew a {@code top_props} slot (backlog #86). A dais top is not a
+     * floor: the cells are the platform's own, and the Y is a row higher than the room's walking
+     * plane, so neither half of {@link #placePots}'s rule applies &mdash; but every rule about the
+     * pot itself does, and those are the ones worth not having two copies of. The loot seed in
+     * particular is a trap with a 1-in-2^64 tail (see {@link #lootSeed}), which is exactly the kind
+     * of thing a second implementation gets wrong and nobody notices.</p>
+     *
+     * <p>{@code candidates} is taken in the caller's order and not sorted here: a caller that wants
+     * a reproducible draw must hand over a deterministic list, the same contract {@link CellDraw}
+     * already has.</p>
+     */
+    public static void placePotsOn(List<Coords2D> candidates, int y, PotConfig config,
+                                   RandomSource random, List<EntityPlacement> out) {
+        List<PotConfig.PotVariant> variants = config.variants();
+        if (variants.isEmpty() || candidates.isEmpty()) {
+            return;
+        }
+        int totalVariantWeight = variants.stream().mapToInt(PotConfig.PotVariant::weight).sum();
+        if (totalVariantWeight <= 0) {
             return;
         }
 
@@ -100,7 +124,7 @@ public final class RoomPropGenerator {
             Coords2D cell = draw.next();
 
             EntityPlacement pot = new EntityPlacement(
-                    cell.getX(), floorY + 1, cell.getY(),
+                    cell.getX(), y, cell.getY(),
                     pickVariant(variants, totalVariantWeight, random),
                     random.nextFloat() * 360.0F,
                     config.lootTable(),

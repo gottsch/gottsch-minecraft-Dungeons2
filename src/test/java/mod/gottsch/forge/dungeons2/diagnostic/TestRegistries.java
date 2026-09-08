@@ -32,6 +32,7 @@ import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.AgingProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.HangingSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SupportSweepProcessor;
@@ -244,6 +245,19 @@ public final class TestRegistries {
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.SUPPORT_SWEEP_PROCESSOR_NAME),
                 supportType);
+
+        // The hanging sweep, which every shipped list names right after the decoration sweep. Same
+        // reason as every type above, and it collected the same toll on the way in, to the letter:
+        // adding it to the six JSONs without adding it here failed 98 tests with "could not read
+        // classic_boss_weathering_large.json" and nothing anywhere naming the missing type.
+        StructureProcessorType<?>[] hangingSelf = new StructureProcessorType<?>[1];
+        Codec<HangingSweepProcessor> hangingCodec =
+                HangingSweepProcessor.codec(() -> hangingSelf[0]);
+        StructureProcessorType<HangingSweepProcessor> hangingType = () -> hangingCodec;
+        hangingSelf[0] = hangingType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.HANGING_SWEEP_PROCESSOR_NAME),
+                hangingType);
 
         registry.freeze();
     }

@@ -92,8 +92,36 @@ public final class RoomChestGenerator {
             return Set.of();
         }
 
-        List<Coords2D> candidates = RoomPropGenerator.eligibleCells(room, occupied);
-        if (candidates.isEmpty()) {
+        // floorY + 1: resting on the floor surface, the same row the pots and spawners use.
+        return placeChestsOn(RoomPropGenerator.eligibleCells(room, occupied), floorY + 1, config,
+                cell -> facingAwayFromWall(room, cell), random, out);
+    }
+
+    /**
+     * Places chests on exactly {@code candidates}, at exactly {@code y}, each facing whatever
+     * {@code facing} says &mdash; the one place a chest BLOCK is built, whoever chose the cells.
+     *
+     * <p>Extracted when a dais and a sunken court grew centrepiece chests (backlog #86). Neither is
+     * a floor cell and neither has a wall to back onto, so the two halves of {@link #placeChests}'s
+     * own rule (wall-adjacent cells, face away from the wall) do not apply &mdash; but everything
+     * about the chest itself does, and those are the parts worth having one copy of: the weighted
+     * variant, the weighted table, and above all the non-zero loot seed, whose failure is invisible
+     * and roughly one draw in four billion (see {@link #chestData}).</p>
+     *
+     * <p>The count still means what it always meant. A centrepiece hands in a single cell, so
+     * {@code min_count: 0, max_count: 1} is "a chest here sometimes" without any new vocabulary.</p>
+     */
+    public static Set<Coords2D> placeChestsOn(List<Coords2D> candidates, int y, ChestConfig config,
+                                              java.util.function.Function<Coords2D, String> facing,
+                                              RandomSource random, List<BlockPlacement> out) {
+        List<ChestConfig.ChestVariant> variants = config.variants();
+        int totalWeight = variants.stream().mapToInt(ChestConfig.ChestVariant::weight).sum();
+        if (variants.isEmpty() || totalWeight <= 0 || candidates.isEmpty()) {
+            return Set.of();
+        }
+        List<ChestConfig.LootTableEntry> tables = config.declaredLootTables();
+        int totalTableWeight = tables.stream().mapToInt(ChestConfig.LootTableEntry::weight).sum();
+        if (tables.isEmpty() || totalTableWeight <= 0) {
             return Set.of();
         }
 
@@ -103,10 +131,9 @@ public final class RoomChestGenerator {
             Coords2D cell = draw.next();
 
             Map<String, String> properties = new LinkedHashMap<>();
-            properties.put(FACING, facingAwayFromWall(room, cell));
+            properties.put(FACING, facing.apply(cell));
 
-            // floorY + 1: resting on the floor surface, the same row the pots and spawners use.
-            BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
+            BlockPlacement placement = new BlockPlacement(cell.getX(), y, cell.getY(),
                     pickVariant(variants, totalWeight, random), properties);
             String table = pickTable(tables, totalTableWeight, random);
             placement.setBlockEntityNbt(chestData(table, random));
@@ -126,6 +153,48 @@ public final class RoomChestGenerator {
             used.add(cell);
         }
         return used;
+    }
+
+    /**
+     * One chest's block id and its block-entity data, for a caller that places the block itself
+     * rather than handing over cells &mdash; today the sunken court, whose centrepiece is written by
+     * the pit generator as part of the plan and not by this class at all.
+     *
+     * <p>Empty when the config names no variant or no table. An unresolvable table means NO chest,
+     * never an empty one: an empty chest costs the player the walk to find out it was empty, which
+     * is worse than no chest at all. That rule is the reason this returns an {@code Optional} rather
+     * than a chest with a null table.</p>
+     */
+    public static java.util.Optional<ChestDraw> drawChest(ChestConfig config, RandomSource random) {
+        List<ChestConfig.ChestVariant> variants = config.variants();
+        int totalWeight = variants.stream().mapToInt(ChestConfig.ChestVariant::weight).sum();
+        List<ChestConfig.LootTableEntry> tables = config.declaredLootTables();
+        int totalTableWeight = tables.stream().mapToInt(ChestConfig.LootTableEntry::weight).sum();
+        if (variants.isEmpty() || totalWeight <= 0 || tables.isEmpty() || totalTableWeight <= 0) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(new ChestDraw(pickVariant(variants, totalWeight, random),
+                chestData(pickTable(tables, totalTableWeight, random), random)));
+    }
+
+    /** What {@link #drawChest} hands back: the block to place, and the data to hang on it. */
+    public record ChestDraw(String block, BlockEntityData data) {}
+
+    /**
+     * A horizontal facing chosen at random &mdash; for a chest with no wall behind it.
+     *
+     * <p>A centrepiece stands in the middle of a dais or a court and is approached from every side,
+     * so there is no direction {@link #facingAwayFromWall}'s argument could be made for. Rolled
+     * rather than fixed because a fixed one would line every centrepiece in a dungeon up the same
+     * way, which reads as generated.</p>
+     */
+    public static String randomHorizontalFacing(RandomSource random) {
+        return switch (random.nextInt(4)) {
+            case 0 -> "north";
+            case 1 -> "south";
+            case 2 -> "east";
+            default -> "west";
+        };
     }
 
     /**

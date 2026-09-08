@@ -179,8 +179,19 @@ public class DungeonStackPlanner {
      */
     private List<CorridorStyleWeight> corridorStyles = List.of();
     private int minRoomGap = 0;
-    /** See {@link #DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR}; injected by {@link #withRoomTemplateAttempts}. */
-    private int roomTemplateAttempts = DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR;
+    /**
+     * A FIXED per-floor attempt count, or null for "not set". Boxed so that 0 &mdash; prefabs off
+     * &mdash; is distinguishable from never having been injected, which falls back to
+     * {@link #DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR}. Set by {@link #withRoomTemplateAttempts}.
+     */
+    private Integer roomTemplateAttempts = null;
+    /**
+     * Floor cells per attempt, or null for "not set" &mdash; the production knob, injected by
+     * {@link #withRoomTemplateDensity}. Boxed for the same reason as the field above, and it matters
+     * more here: an unboxed 0 default would mean a planner nobody configured silently placed no
+     * prefabs at all.
+     */
+    private Integer roomTemplateCells = null;
 
     // -------- Phase 4b: assembled-entrance overrides (all-or-nothing) --------
     // When set (see withAssembledEntrance), floor 0 is driven by the jigsaw-
@@ -318,7 +329,7 @@ public class DungeonStackPlanner {
      * procedurally exactly as it is today. Degrade toward generating, the convention every
      * missing-content path here follows.
      */
-    public DungeonStackPlanner withBossRoomAssembler(RoomAssembler assembler) {
+    public DungeonStackPlanner withBossRoomAssembler(BossRoomAssembler assembler) {
         this.bossRoomAssembler = assembler;
         return this;
     }
@@ -336,15 +347,72 @@ public class DungeonStackPlanner {
     }
 
     /**
-     * Override how many jigsaw-assembled rooms this planner tries to place per floor. Zero is a
-     * legitimate value &mdash; it turns prefab rooms off without emptying the pool &mdash; so this
-     * floors at 0 rather than 1. The codec is where an out-of-range value becomes a load error;
-     * there is deliberately no upper clamp here that could turn a bad datapack into a slow dungeon
-     * with nothing saying why.
+     * Override how many jigsaw-assembled rooms this planner tries to place per floor, as a FIXED
+     * count that ignores how big the floor is.
+     *
+     * <p><strong>This is the test and diagnostic path, not the production one.</strong> Worldgen
+     * calls {@link #withRoomTemplateDensity(int)} instead, because a flat count spread over floors
+     * whose area triples between size tiers is what made the prefab share fall from 31% on SMALL to
+     * 11% on LARGE. It survives because a fixed count is exactly what a harness measuring ADOPTION
+     * wants &mdash; "of N slots asked for, how many were filled" is only a rate if N is known, and
+     * deriving N from a rolled footprint would make the denominator move with the seed.</p>
+     *
+     * <p>Set, it WINS over any density. Zero is a legitimate value &mdash; it turns prefab rooms off
+     * without emptying the pool &mdash; so this floors at 0 rather than 1, and 0 here is
+     * distinguishable from "never called" (see {@link #roomTemplateAttempts}). The codec is where an
+     * out-of-range value becomes a load error; there is deliberately no upper clamp here that could
+     * turn a bad datapack into a slow dungeon with nothing saying why.</p>
      */
     public DungeonStackPlanner withRoomTemplateAttempts(int attempts) {
         this.roomTemplateAttempts = Math.max(0, attempts);
         return this;
+    }
+
+    /**
+     * Override the prefab-room DENSITY: one assembly attempt per this many cells of a floor's own
+     * footprint. This is what production worldgen sets, from
+     * {@code generation_config}'s {@code floor_cells_per_room_template}.
+     *
+     * <p>Zero turns prefab rooms off entirely, and is distinguishable from "never called" &mdash;
+     * the field is boxed for exactly that reason, because the fallback for an unset planner is 2
+     * attempts per floor and NOT zero. Getting that wrong would silently strip every prefab out of
+     * every dungeon while the pool still loaded and every test still passed.</p>
+     *
+     * <p>No upper clamp on the derived count, for the same reason the fixed setter has none: the
+     * codec's range is where a hostile value is rejected, and a clamp here would turn a bad datapack
+     * into a quietly different dungeon rather than a loud one.</p>
+     */
+    public DungeonStackPlanner withRoomTemplateDensity(int floorCellsPerTemplate) {
+        this.roomTemplateCells = Math.max(0, floorCellsPerTemplate);
+        return this;
+    }
+
+    /**
+     * How many prefab attempts this floor gets, resolving the three ways the count can be set.
+     *
+     * <p>Precedence is fixed count, then density, then the planner's own historical default. The
+     * default is what keeps every test that sets neither producing byte-identical layouts, which is
+     * the whole reason {@link #DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR} is 2 rather than tracking
+     * what the mod ships.</p>
+     *
+     * <p><strong>Rounds to nearest, and does not floor at 1.</strong> A floor small enough to round
+     * to zero attempts gets none, which is the density doing its job rather than a bug to paper
+     * over &mdash; clamping to 1 would make every density above about 1900 behave identically on a
+     * SMALL floor, and silently so. At the shipped 520 the smallest floor any tier rolls (31x31 =
+     * 961) still comes to 2.</p>
+     */
+    private int roomTemplateAttemptsFor(Rectangle2D floorFootprint) {
+        if (roomTemplateAttempts != null) {
+            return roomTemplateAttempts;
+        }
+        if (roomTemplateCells == null) {
+            return DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR;
+        }
+        if (roomTemplateCells == 0) {
+            return 0;
+        }
+        int cells = floorFootprint.getWidth() * floorFootprint.getHeight();
+        return Math.round((float) cells / roomTemplateCells);
     }
 
     /**
@@ -560,16 +628,16 @@ public class DungeonStackPlanner {
 
     /**
      * Assembles the authored boss room for the bottom floor's terminal slot &mdash; backlog #46.
-     * Same {@link RoomAssembler} contract as the interior-room path, drawing from a different pool
-     * ({@code end_rooms/<motif>/}); a separate interface of identical shape would have been two
-     * names for one protocol.
+     * {@link BossRoomAssembler}: the interior-room path's contract plus the dungeon's
+     * {@link DungeonSize}, drawing from {@code end_rooms/<motif>/<size>/normal}. See that interface
+     * for why the size had to become a parameter rather than stay implicit.
      *
      * <p><strong>Null consumes no randomness and takes no branch</strong>, so a dungeon planned
      * without a boss assembler is byte-identical to one planned before this existed. That is
      * load-bearing: the probe below draws from {@code random}, so a boss room that is merely
      * <em>attempted</em> already shifts the stream. Same contract as {@link #templateLimits}.</p>
      */
-    private RoomAssembler bossRoomAssembler;
+    private BossRoomAssembler bossRoomAssembler;
 
     /**
      * How many pool draws the boss slot gets before falling back to the procedural terminal room.
@@ -628,6 +696,31 @@ public class DungeonStackPlanner {
     }
 
     /**
+     * Assembles the bottom floor's authored boss room &mdash; {@link RoomAssembler}'s protocol plus
+     * the dungeon's {@link DungeonSize}.
+     *
+     * <h2>Why this is now its own interface</h2>
+     * <p>It was {@code RoomAssembler}, and the note on {@link #bossRoomAssembler} said a separate
+     * interface "would have been two names for one protocol". That was true while the shapes were
+     * identical and stopped being true here: the boss room's <em>reward</em> has to follow the
+     * dungeon's size tier, so the implementation resolves {@code end_rooms/<motif>/<size>/normal}
+     * and needs the size to do it.</p>
+     *
+     * <p>A parameter, not a setter, for exactly the reason {@code floorIndex} is one on the
+     * interior-room path: a setter left unset would assemble every dungeon's boss room at one tier,
+     * silently &mdash; which is the bug this whole change exists to fix, reintroduced through the
+     * plumbing meant to fix it.</p>
+     *
+     * <p>{@code floorIndex} is kept even though the boss slot is always the bottom floor: the
+     * implementation logs it, and the parity note above applies &mdash; the two prefab paths differ
+     * in as few ways as possible.</p>
+     */
+    public interface BossRoomAssembler {
+        Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ, int floorIndex,
+                                         DungeonSize size, long assemblySeed, boolean commit);
+    }
+
+    /**
      * Real geometry read back from an assembled room; world-space.
      * {@code premadeWorldCells} are {@code dungeons2:connector} markers &mdash;
      * extra candidate doorways the maze may pick, but any it does pick get no
@@ -670,7 +763,9 @@ public class DungeonStackPlanner {
      *
      * <p>It is kept at the historical <strong>2</strong> rather than tracking the shipped value,
      * because a great many tests were written against the layouts it produces and silently
-     * re-rolling all of them is not a change this constant should be able to make on its own.</p>
+     * re-rolling all of them is not a change this constant should be able to make on its own. That
+     * argument survived the 2026-09-07 move to a density: production no longer sets a count at all,
+     * but this constant still has to mean what it meant, or every layout a test asserts moves.</p>
      */
     private static final int DEFAULT_ROOM_TEMPLATE_ATTEMPTS_PER_FLOOR = 2;
 
@@ -1049,7 +1144,7 @@ public class DungeonStackPlanner {
                 endFootprint = transitionLocalFootprints.get(i);
             } else {
                 bossSlot = placeBossRoom(footprint, startFootprint, planAnchor, floorFloors[i], i,
-                        random);
+                        size, random);
                 if (bossSlot != null) {
                     endFootprint = bossSlot.footprint();
                 } else {
@@ -1125,7 +1220,8 @@ public class DungeonStackPlanner {
                 // bounding box's min corner off the position we asked for (6 blocks,
                 // for the 7x7 prefabs that ship). A slot picked before that is known
                 // is a guess, and 44% of them were being thrown away.
-                for (int attempt = 0; attempt < roomTemplateAttempts; attempt++) {
+                int attemptsThisFloor = roomTemplateAttemptsFor(footprint);
+                for (int attempt = 0; attempt < attemptsThisFloor; attempt++) {
                     long assemblySeed = random.nextLong();
                     int probeWorldX = planAnchor.getX();
                     int probeWorldZ = planAnchor.getZ();
@@ -1560,7 +1656,8 @@ public class DungeonStackPlanner {
      * simpler problem, not a new one.</p>
      */
     private BossSlot placeBossRoom(Rectangle2D footprint, Rectangle2D startFootprint,
-                                   ICoords planAnchor, int floorY, int floorIndex, Random random) {
+                                   ICoords planAnchor, int floorY, int floorIndex, DungeonSize size,
+                                   Random random) {
         if (bossRoomAssembler == null) {
             // Before any draw from `random` -- see the field's note on byte-identical plans.
             return null;
@@ -1568,7 +1665,7 @@ public class DungeonStackPlanner {
         for (int attempt = 0; attempt < BOSS_ASSEMBLY_ATTEMPTS; attempt++) {
             long assemblySeed = random.nextLong();
             Optional<AssembledRoom> probe = bossRoomAssembler.assemble(
-                    planAnchor.getX(), floorY, planAnchor.getZ(), floorIndex, assemblySeed, false);
+                    planAnchor.getX(), floorY, planAnchor.getZ(), floorIndex, size, assemblySeed, false);
             if (probe.isEmpty()) {
                 continue;
             }
@@ -1588,7 +1685,7 @@ public class DungeonStackPlanner {
             int offsetZ = probeRect.getMinY() - planAnchor.getZ();
             Optional<AssembledRoom> placed = bossRoomAssembler.assemble(
                     planAnchor.getX() + slot.getMinX() - offsetX, floorY,
-                    planAnchor.getZ() + slot.getMinY() - offsetZ, floorIndex, assemblySeed, true);
+                    planAnchor.getZ() + slot.getMinY() - offsetZ, floorIndex, size, assemblySeed, true);
             if (placed.isEmpty()) {
                 continue;
             }

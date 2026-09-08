@@ -171,18 +171,69 @@
           { "block": "minecraft:cauldron", "weight": 1 }
         ]
       },
-      "platforms": {
-        "min_size": 9,
-        "patterns": [
-          {
-            "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:stone_bricks",
-            "stair_block": "minecraft:stone_brick_stairs",
-            "centre_block": "minecraft:chiseled_stone_bricks", "size": 3,
-            "config": { "inset": 1 },
-            "orient": "inward"
-          }
-        ]
-      },
+      "platforms": [
+        {
+          "weight": 1, "min_size": 9,
+          "patterns": [
+            {
+              "type": "dais", "layout": "dungeons2:centre", "block": "minecraft:stone_bricks",
+              "stair_block": "minecraft:stone_brick_stairs",
+              "centre_block": "minecraft:chiseled_stone_bricks", "size": 3,
+              "config": { "inset": 1 },
+              "orient": "inward"
+            }
+          ]
+        },
+        {
+          "weight": 2, "max_size": 7,
+          "patterns": [
+            {
+              "type": "dais", "layout": "dungeons2:centre",
+              "block": "minecraft:chiseled_stone_bricks", "size": 1,
+              "config": { "inset": 1 },
+              "top_props": {
+                "min_count": 1, "max_count": 1, "loot_table": "dungeons2:pots/classic",
+                "variants": [
+                  { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                  { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 },
+                  { "entity": "dungeonblocks:pot", "weight": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 1, "max_size": 7,
+          "patterns": [
+            {
+              "type": "dais", "layout": "dungeons2:centre",
+              "block": "minecraft:stone_brick_slab", "size": 1,
+              "config": { "inset": 1 },
+              "properties": { "type": "bottom" }
+            }
+          ]
+        },
+        {
+          "weight": 1, "max_size": 7,
+          "patterns": [
+            {
+              "type": "dais", "layout": "dungeons2:centre",
+              "block": "minecraft:chiseled_stone_bricks", "size": 1,
+              "config": { "inset": 1 },
+              "top_chest": {
+                "min_count": 1, "max_count": 1,
+                "loot_tables": [
+                  { "loot_table": "dungeons2:chests/classic_shallow", "weight": 3 },
+                  { "loot_table": "dungeons2:chests/classic_deep", "weight": 1 }
+                ],
+                "variants": [
+                  { "block": "minecraft:chest", "weight": 1 }
+                ]
+              }
+            }
+          ]
+        }
+      ],
       "floor": [
         { "weight": 2, "type": "dungeons2:path", "config": { "path_block": "minecraft:cobblestone" } },
         { "weight": 1, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "dungeonblocks:dark_iron_grate", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
@@ -728,6 +779,91 @@
       ]
     },
     {
+      "name": "sunken_shrine", "weight": 10, "min_floor_index": 1, "min_size": 7,
+      "pit": [
+        {
+          "weight": 3,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3, "depth": 1,
+            "rim_block": "$stair", "rim_orient": "outward",
+            "centre_block": "dungeonblocks:brazier_block",
+            "centre_properties": { "fire": "embers" }
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3, "depth": 1,
+            "rim_block": "$stair", "rim_orient": "outward",
+            "centre_block": "dungeonblocks:dungeon_lantern",
+            "centre_properties": { "hanging": "false" }
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3, "depth": 1,
+            "rim_block": "$stair", "rim_orient": "outward",
+            "centre_block": "$ornament"
+          }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3, "depth": 1,
+            "rim_block": "$stair", "rim_orient": "outward"
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3, "depth": 1,
+            "rim_block": "$stair", "rim_orient": "outward",
+            "centre_chest": {
+              "min_count": 1, "max_count": 1,
+              "loot_tables": [
+                { "loot_table": "dungeons2:chests/classic_shallow", "weight": 2 },
+                { "loot_table": "dungeons2:chests/classic_deep", "weight": 1 }
+              ],
+              "variants": [
+                { "block": "minecraft:chest", "weight": 1 }
+              ]
+            }
+          }
+        }
+      ],
+      "wall": {
+        "patterns": [
+          {
+            "type": "dungeons2:courses",
+            "config": {
+              "courses": [
+                { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top" }
+              ]
+            }
+          }
+        ]
+      },
+      "pots": {
+        "min_count": 1, "max_count": 3, "loot_table": "dungeons2:pots/classic",
+        "variants": [
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:pot", "weight": 1 }
+        ]
+      },
+      "spawners": { "min_count": 0, "max_count": 1, "proximity": 10 },
+      "floor": [
+        { "weight": 2, "type": "dungeons2:border", "config": { "inset": 0, "corner_block": "$ornament", "edge_left_block": "minecraft:stone_bricks", "edge_right_block": "minecraft:stone_bricks" } },
+        { "weight": 3, "none": true }
+      ]
+    },
+    {
       "name": "brazier_hall", "weight": 12, "min_floor_index": 1, "min_size": 9, "min_height": 5,
       "ceiling": {
         "patterns": [
@@ -747,7 +883,15 @@
             "stair_block": "$stair", "centre_block": "$ornament", "size": 3,
             "config": { "inset": 1 },
             "orient": "inward", "top_block": "dungeonblocks:brazier_block",
-            "top_properties": { "fire": "embers" }
+            "top_properties": { "fire": "embers" },
+            "top_props": {
+              "min_count": 0, "max_count": 2, "loot_table": "dungeons2:pots/classic",
+              "variants": [
+                { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:squat_stone_pot", "weight": 2 },
+                { "entity": "dungeonblocks:pot", "weight": 1 }
+              ]
+            }
           }
         ]
       },

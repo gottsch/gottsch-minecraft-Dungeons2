@@ -255,7 +255,7 @@ class TerminalRoomFitProbe {
                 .withSize(size)
                 // Stands in for vanilla jigsaw at the shipped footprint, honouring the protocol:
                 // the same shape BossRoomPlacementTest uses, with one authored door on its edge.
-                .withBossRoomAssembler((worldX, worldY, worldZ, floorIndex, assemblySeed, commit) ->
+                .withBossRoomAssembler((worldX, worldY, worldZ, floorIndex, dungeonSize, assemblySeed, commit) ->
                         Optional.of(new DungeonStackPlanner.AssembledRoom(
                                 new Rectangle2D(worldX, worldZ, width, depth),
                                 List.of(new Coords2D(worldX, worldZ + depth / 2)),

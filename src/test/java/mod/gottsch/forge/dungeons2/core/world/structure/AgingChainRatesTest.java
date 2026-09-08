@@ -62,7 +62,13 @@ class AgingChainRatesTest {
     private static final String RESOURCE =
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json";
 
-    private static final String AGING_TYPE = "dungeons2:aging";
+    /**
+     * Migrated from {@code dungeons2:aging} with the shipped file, 2026-09-04 (backlog #15).
+     * {@code surface_aging} is a strict superset -- the same chains, plus a {@code surface} on each
+     * rule -- and every rule in this file states {@code any}, so every rate asserted below is
+     * unchanged. What the rates are composed FROM did not move.
+     */
+    private static final String AGING_TYPE = "dungeons2:surface_aging";
 
     /**
      * Blocks the deep-decay chains are authored for.
@@ -141,14 +147,48 @@ class AgingChainRatesTest {
         }
     }
 
-    private static JsonObject agingProcessor() {
+    /**
+     * Every aging processor in the shipped list, in authored order.
+     *
+     * <p>There are two since 2026-09-04: the main one, and a second holding the file's single
+     * {@code joist}-gated timber rule. The split is structural rather than cosmetic -- a geometric
+     * rule moves its whole processor into {@code finalizeProcessing}, and the main one cannot go
+     * there because the {@code minecraft:rule} entry consumes the cobblestone it produces. See the
+     * block comment on that processor, and
+     * {@code StratumWeatheringListTest#aGeometricAgingProcessorFeedsNoRuleProcessor}.</p>
+     */
+    private static List<JsonObject> agingProcessors() {
+        List<JsonObject> out = new java.util.ArrayList<>();
         for (var element : readJson().getAsJsonArray("processors")) {
             JsonObject processor = element.getAsJsonObject();
             if (AGING_TYPE.equals(processor.get("processor_type").getAsString())) {
-                return processor;
+                out.add(processor);
             }
         }
-        throw new AssertionError("No " + AGING_TYPE + " processor in the shipped list");
+        if (out.isEmpty()) {
+            throw new AssertionError("No " + AGING_TYPE + " processor in the shipped list");
+        }
+        return out;
+    }
+
+    /**
+     * The processor holding {@code source}'s chains. A block's rules live in exactly one of them,
+     * which is what keeps {@link #composedRates} honest: the conditional discount it applies --
+     * each chain reached only if the earlier ones missed -- is a property of one processor walking
+     * its own rule list, and would be wrong across two.
+     *
+     * <p>{@code null} when nothing ages {@code source}, which several tests here assert on purpose:
+     * ladders, doors and the stripped variants are all deliberately un-aged.</p>
+     */
+    private static JsonObject agingProcessorFor(String source) {
+        for (JsonObject processor : agingProcessors()) {
+            for (var element : processor.getAsJsonArray("rules")) {
+                if (source.equals(element.getAsJsonObject().get("block").getAsString())) {
+                    return processor;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -158,7 +198,10 @@ class AgingChainRatesTest {
      * <i>k-1</i> was, capped at {@code agings} stages; the deepest stage reached is the result.
      */
     private static Map<String, Double> composedRates(String source) {
-        JsonObject processor = agingProcessor();
+        JsonObject processor = agingProcessorFor(source);
+        if (processor == null) {
+            return Map.of();
+        }
         int agings = processor.get("agings").getAsInt();
 
         Map<String, Double> rates = new LinkedHashMap<>();
@@ -195,12 +238,14 @@ class AgingChainRatesTest {
         // A chain applies min(agings, stages) stages, so a cap below the longest chain
         // silently makes that chain's last stage unreachable -- no error, it just never
         // happens.
-        int agings = agingProcessor().get("agings").getAsInt();
-        for (var element : agingProcessor().getAsJsonArray("rules")) {
-            JsonArray stages = element.getAsJsonObject().getAsJsonArray("output_blocks");
-            assertTrue(agings >= stages.size(),
-                    "agings=" + agings + " cannot reach stage " + stages.size() + " of "
-                            + element.getAsJsonObject().get("block").getAsString());
+        for (JsonObject processor : agingProcessors()) {
+            int agings = processor.get("agings").getAsInt();
+            for (var element : processor.getAsJsonArray("rules")) {
+                JsonArray stages = element.getAsJsonObject().getAsJsonArray("output_blocks");
+                assertTrue(agings >= stages.size(),
+                        "agings=" + agings + " cannot reach stage " + stages.size() + " of "
+                                + element.getAsJsonObject().get("block").getAsString());
+            }
         }
     }
 
@@ -459,7 +504,9 @@ class AgingChainRatesTest {
         // invisible in game: classic authors no dirt anywhere, so if aging stops producing
         // it, both behaviours quietly do nothing while every one of their own tests passes.
         Set<String> dirtProducers = new LinkedHashSet<>();
-        for (var element : agingProcessor().getAsJsonArray("rules")) {
+        for (var element : agingProcessors().stream()
+                .flatMap(processor -> processor.getAsJsonArray("rules").asList().stream())
+                .toList()) {
             JsonObject rule = element.getAsJsonObject();
             String source = rule.get("block").getAsString();
             if (composedRates(source).getOrDefault("minecraft:dirt", 0.0) > 0.0) {

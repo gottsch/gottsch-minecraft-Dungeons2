@@ -202,11 +202,32 @@ def pipeline(processors: list[dict], surface: str | None = None):
     return result
 
 
+#: The population of cells no gate in the file claims. Any string no rule gates on works, because
+#: `applies` then admits the ungated rules and nothing else -- which is exactly what such a cell
+#: gets. Named rather than `None`: `None` means "ignore the gates", which counts a gated rule as
+#: always firing and overstates every outcome it reaches.
+UNGATED = "no gate"
+
+
 def surface_classes(processors: list[dict]) -> list[str | None]:
-    """The surface classes a file partitions its piece into, or `[None]` when it does not gate."""
-    classes = sorted({rule.get("surface", "") for entry in processors
-                      for rule in entry.get("rules", [])} - {"", "any"})
-    return list(classes) if classes else [None]
+    """The populations a file's rules divide its piece into.
+
+    `[None]` when nothing gates: one pipeline over every rule, the ordinary case.
+
+    Otherwise one class per gate -- plus `UNGATED` when the file ALSO carries ungated rules, since
+    those still run on cells no gate claims and that population would otherwise go unmodelled. A
+    file whose every rule is gated needs no such sheet, which is the shape the manual calls a real
+    partition (`classic_mud_weathering.json`); a file with one gated chain among ungated ones
+    (`classic_weathering.json`, whose timber is gated on `joist`) needs both.
+    """
+    gates = {rule.get("surface", "") for entry in processors
+             for rule in entry.get("rules", [])}
+    classes = sorted(gates - {"", "any"})
+    if not classes:
+        return [None]
+    if gates & {"", "any"}:
+        classes.append(UNGATED)
+    return classes
 
 
 def sheet_for(workbook: Workbook, title: str, processor: dict, source_name: str):
@@ -346,9 +367,12 @@ def pipeline_sheet(workbook: Workbook, title: str, processors: list[dict], sourc
         if surface is not None:
             label = sheet.cell(row=row, column=1, value=f"surface: {surface}")
             label.font = BLOCK_FONT
-            sheet.cell(row=row, column=2,
-                       value="a separate population -- gated rules only partition the piece when "
-                             "EVERY rule carries a gate").font = NOTE
+            note = ("the cells no gate in this file claims -- they get the ungated rules and "
+                    "nothing else"
+                    if surface == UNGATED else
+                    "a separate population -- gated rules only partition the piece when EVERY "
+                    "rule carries a gate")
+            sheet.cell(row=row, column=2, value=note).font = NOTE
             row += 1
 
         header_row = row

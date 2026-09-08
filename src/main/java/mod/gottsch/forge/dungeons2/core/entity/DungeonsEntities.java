@@ -27,9 +27,13 @@ import mod.gottsch.forge.gmm.core.entity.monster.Daemon;
 import mod.gottsch.forge.gmm.core.entity.monster.GelatinousCube;
 import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
 import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
+import mod.gottsch.forge.gmm.core.entity.monster.Minotaur;
 import mod.gottsch.forge.gmm.core.entity.monster.Orc;
 import mod.gottsch.forge.gmm.core.entity.monster.OrcShaman;
+import mod.gottsch.forge.dungeons2.core.entity.projectile.SmashShard;
+import mod.gottsch.forge.gmm.core.entity.monster.OrcWarlord;
 import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedArmor;
+import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedWeapon;
 import mod.gottsch.forge.gmm.core.entity.monster.gargoyle.Margoyle;
 import mod.gottsch.forge.gmm.core.entity.monster.ghoul.Ghoul;
 import mod.gottsch.forge.gmm.core.entity.monster.skeleton.AcidSkeleton;
@@ -430,9 +434,17 @@ public class DungeonsEntities {
 
     /** Constructs, the margoyle, and the orcs. */
     public static final String ANIMATED_ARMOR = "animated_armor";
+    public static final String ANIMATED_WEAPON = "animated_weapon";
     public static final String MARGOYLE = "margoyle";
+    public static final String MINOTAUR = "minotaur";
     public static final String ORC = "orc";
     public static final String ORC_SHAMAN = "orc_shaman";
+    /**
+     * The warband's chief. A mini-boss like the Champion it is modelled on -- registered, egg-able,
+     * and reachable only through the boss room's spawner marker, never ambiently. See
+     * {@link #MINI_BOSSES}.
+     */
+    public static final String ORC_WARLORD = "orc_warlord";
 
     public static final RegistryObject<EntityType<AnimatedArmor>> ANIMATED_ARMOR_ENTITY =
             Registration.ENTITIES.register(ANIMATED_ARMOR,
@@ -442,6 +454,23 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ANIMATED_ARMOR));
 
+    /**
+     * The masterless blade. Unlike the {@link #ANIMATED_ARMOR_ENTITY} beside it this one has no
+     * wielder to pose as, so it has no dormant/ambush state and reads as an ordinary hostile --
+     * it is in the procedural and ambient routes both, not held back like the mini-bosses.
+     *
+     * <p>0.75 cubed rather than the sword-sized 0.5 the model actually measures: Dungeon Denizens
+     * shipped the smaller box first and it combined with the erratic hover into an unreasonably
+     * small click target. Transcribed from that mod's {@code ANIMATED_WEAPON_TYPE}.</p>
+     */
+    public static final RegistryObject<EntityType<AnimatedWeapon>> ANIMATED_WEAPON_ENTITY =
+            Registration.ENTITIES.register(ANIMATED_WEAPON,
+                    () -> EntityType.Builder.of(AnimatedWeapon::new, MobCategory.MONSTER)
+                            .sized(0.75F, 0.75F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ANIMATED_WEAPON));
+
     public static final RegistryObject<EntityType<Margoyle>> MARGOYLE_ENTITY =
             Registration.ENTITIES.register(MARGOYLE,
                     () -> EntityType.Builder.of(Margoyle::new, MobCategory.MONSTER)
@@ -450,6 +479,23 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(MARGOYLE));
 
+    /**
+     * 1.0 wide rather than the ~1.25 the shoulders and horns measure, matching the Orc's convention
+     * for the same reason: a hitbox over 1.0 cannot path a 1-block corridor, and a dungeon brute
+     * that cannot follow the player down a hallway is not a threat. Height 2.2 is the real model
+     * (feet to horn tips). Transcribed from Dungeon Denizens' {@code MINOTAUR_TYPE}.
+     *
+     * <p>On {@link #MINI_BOSSES} pending a placement decision -- registered and egg-able, in neither
+     * spawner route.</p>
+     */
+    public static final RegistryObject<EntityType<Minotaur>> MINOTAUR_ENTITY =
+            Registration.ENTITIES.register(MINOTAUR,
+                    () -> EntityType.Builder.of(Minotaur::new, MobCategory.MONSTER)
+                            .sized(1.0F, 2.2F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(MINOTAUR));
+
     public static final RegistryObject<EntityType<Orc>> ORC_ENTITY =
             Registration.ENTITIES.register(ORC,
                     () -> EntityType.Builder.of(Orc::new, MobCategory.MONSTER)
@@ -457,6 +503,20 @@ public class DungeonsEntities {
                             .clientTrackingRange(12)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ORC));
+
+    /**
+     * Sized as an Orc, NOT 1.2x. The 1.2x is a RENDER scale in {@code OrcWarlordRenderer}; growing
+     * the hitbox to match would wedge the chief in the doorways his own warband walks through, and
+     * a boss that cannot leave its room is worse than one that looks slightly small for its
+     * silhouette. Same call {@code SkeletonChampion} makes.
+     */
+    public static final RegistryObject<EntityType<OrcWarlord>> ORC_WARLORD_ENTITY =
+            Registration.ENTITIES.register(ORC_WARLORD,
+                    () -> EntityType.Builder.of(OrcWarlord::new, MobCategory.MONSTER)
+                            .sized(1F, 1.99F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ORC_WARLORD));
 
     public static final RegistryObject<EntityType<OrcShaman>> ORC_SHAMAN_ENTITY =
             Registration.ENTITIES.register(ORC_SHAMAN,
@@ -505,6 +565,7 @@ public class DungeonsEntities {
      */
     public static final String BONE_SHARD = "bone_shard";
     public static final String BLOATER_ARM = "bloater_arm";
+    public static final String SMASH_SHARD = "smash_shard";
     public static final String ROCK = "rock";
     public static final String SPIKE_GROWTH_SPELL = "spike_growth_spell";
     public static final String WITHERING_GAZE_SPELL = "withering_gaze_spell";
@@ -531,6 +592,21 @@ public class DungeonsEntities {
                             .clientTrackingRange(4)
                             .updateInterval(20)
                             .build(BLOATER_ARM));
+
+    /**
+     * The masonry chips {@code SmashBlocksGoal} throws off a wall it is breaking.
+     *
+     * <p>{@code updateInterval} and tracking range match the bone shard rather than the rock: a
+     * swing spawns several at once and they live a second or two, so they are cheap short-lived
+     * debris, not a tracked thrown weapon.</p>
+     */
+    public static final RegistryObject<EntityType<SmashShard>> SMASH_SHARD_ENTITY =
+            Registration.ENTITIES.register(SMASH_SHARD,
+                    () -> EntityType.Builder.<SmashShard>of(SmashShard::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(4)
+                            .updateInterval(20)
+                            .build(SMASH_SHARD));
 
     /** The Orc's thrown rock. */
     public static final RegistryObject<EntityType<Rock>> ROCK_ENTITY =
@@ -622,7 +698,8 @@ public class DungeonsEntities {
      * any of them turns up in a non-boss mob set or in the structure's spawn overrides.</p>
      */
     public static final java.util.List<String> MINI_BOSSES =
-            java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK, BEHOLDER, DEATH_TYRANT, DAEMON);
+            java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK, BEHOLDER, DEATH_TYRANT, DAEMON,
+                    ORC_WARLORD, MINOTAUR);
 
     /** Twice the rat's health and damage; same speed, so it is a threat rather than a chase. */
     public static AttributeSupplier.Builder createGiantRatAttributes() {

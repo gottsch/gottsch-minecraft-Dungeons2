@@ -22,7 +22,10 @@ import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
@@ -206,14 +209,31 @@ public class DungeonsItems {
             () -> new ForgeSpawnEggItem(DungeonsEntities.ANIMATED_ARMOR_ENTITY, 0xc0c0c8, 0x4a4a52,
                     new Item.Properties()));
 
+    public static final RegistryObject<Item> ANIMATED_WEAPON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ANIMATED_WEAPON + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ANIMATED_WEAPON_ENTITY, 0xa8adb5, 0xc9a227,
+                    new Item.Properties()));
+
     public static final RegistryObject<Item> MARGOYLE_EGG = Registration.ITEMS.register(
             DungeonsEntities.MARGOYLE + "_egg",
             () -> new ForgeSpawnEggItem(DungeonsEntities.MARGOYLE_ENTITY, 0x7f7f7f, 0x5a6d41,
                     new Item.Properties()));
 
+    public static final RegistryObject<Item> MINOTAUR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.MINOTAUR + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.MINOTAUR_ENTITY, 0x8a4a34, 0xe8e2d2,
+                    new Item.Properties()));
+
     public static final RegistryObject<Item> ORC_EGG = Registration.ITEMS.register(
             DungeonsEntities.ORC + "_egg",
             () -> new ForgeSpawnEggItem(DungeonsEntities.ORC_ENTITY, 0x6b8e4e, 0x3f5c2c,
+                    new Item.Properties()));
+
+    // The warband green of ORC_EGG's primary, over the warlord's oxblood -- the egg reads as
+    // "an orc, but the red one", which is exactly what the mob is.
+    public static final RegistryObject<Item> ORC_WARLORD_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ORC_WARLORD + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.ORC_WARLORD_ENTITY, 0x5d6b4a, 0x6b1f22,
                     new Item.Properties()));
 
     public static final RegistryObject<Item> ORC_SHAMAN_EGG = Registration.ITEMS.register(
@@ -258,6 +278,75 @@ public class DungeonsItems {
 
 
     /**
+     * The Minotaur's signature greataxe, and the first item in this mod that a player can actually
+     * <em>use</em>. Everything else registered here is a spawn egg, a marker's {@link BlockItem}, or
+     * one of the two projectile textures ({@link #ROCK_ITEM}) that exist only to be drawn on a
+     * thrown entity and are in no tab at all.
+     *
+     * <p>It is the whole of the {@code gmm:minotaur/weapons} pool rather than one option among
+     * several: gmm ships no default for that tag precisely so a consumer's entry becomes the pool.
+     * See {@code Minotaur#populateDefaultEquipmentSlots}.</p>
+     *
+     * <p>Stats and texture match Dungeon Denizens' item of the same name, so the same weapon reads
+     * the same in a pack carrying both. Unlike the rock, the texture is <strong>not</strong> shared
+     * across the namespace &mdash; each mod carries its own copy, because neither is a dependency of
+     * the other and gmm, which both do depend on, owns no items.</p>
+     */
+    public static final RegistryObject<Item> MINOTAUR_AXE = Registration.ITEMS.register(
+            "minotaur_axe",
+            () -> new AxeItem(Tiers.IRON, 7F, -3.4F, new Item.Properties()));
+
+    /**
+     * The warband's low end, and half of the {@code gmm:orc/weapons} pool.
+     *
+     * <p>Dungeon Denizens' pool verbatim &mdash; {@code iron_sword}, {@code iron_axe}, club, spiked
+     * club &mdash; so an orc reads the same in a pack carrying either mod. The two vanilla entries
+     * need no item here; these two do, because gmm registers no items of its own and D2 does not
+     * depend on DD (nor DD on D2). Same reasoning, and the same duplicated-texture consequence, as
+     * {@link #MINOTAUR_AXE}: each mod carries its own copy of the art.</p>
+     *
+     * <p>Wood tier on purpose. The pool is deliberately uneven &mdash; a club is a bad weapon and an
+     * iron axe is a good one &mdash; because gmm draws from it uniformly per orc, so the spread is
+     * what makes one orc in a warband more dangerous than the next. Flattening it to four
+     * comparable weapons would remove the only variation the mob has.</p>
+     *
+     * <p>Not a {@code Club} class: DD has one and has deprecated it, since an item that only changes
+     * damage numbers does not need a subclass.</p>
+     */
+    public static final RegistryObject<Item> CLUB = Registration.ITEMS.register(
+            "club",
+            () -> new SwordItem(Tiers.WOOD, 4, -3.0F, new Item.Properties()));
+
+    /** The club with nails in it. See {@link #CLUB}; one more damage, same swing. */
+    public static final RegistryObject<Item> SPIKED_CLUB = Registration.ITEMS.register(
+            "spiked_club",
+            () -> new SwordItem(Tiers.WOOD, 5, -3.0F, new Item.Properties()));
+
+    /**
+     * The Orc Warlord's blade, and the whole of the {@code gmm:orc_warlord/weapons} pool.
+     *
+     * <p>gmm's {@code ORC_WARLORD_WEAPONS} javadoc describes iron/diamond/netherite axes as a
+     * shipped default, but gmm carries no tag files at all &mdash; it is a library that registers
+     * nothing, items included &mdash; so in practice the pool is empty until a consumer fills it,
+     * exactly as with {@code gmm:minotaur/weapons}. This entry is therefore the pool, not one
+     * option among several, and the chief is armed with it every time. Should gmm ever ship that
+     * default, {@code "replace": false} means the cleaver joins it rather than replacing it.</p>
+     *
+     * <p>A {@link SwordItem}, not an {@link AxeItem} like the {@link #MINOTAUR_AXE}: the cleaver is
+     * a blade, and a warlord who could also strip logs reads wrong. Stats sit deliberately under
+     * the Minotaur's greataxe &mdash; less damage, a faster swing &mdash; because the warlord's
+     * threat is the warband he rallies, not the single hit. Iron tier keeps the drop from
+     * out-classing what a player at boss-room depth is likely carrying; his 0.15 mainhand drop
+     * chance is set in {@code OrcWarlord#populateDefaultEquipmentSlots}.</p>
+     *
+     * <p>Unlike the Minotaur's axe this has no Dungeon Denizens counterpart to match &mdash; the
+     * Orc Warlord is a gmm/D2 mob with no DD equivalent, so there is nothing to keep in parity.</p>
+     */
+    public static final RegistryObject<Item> ORC_WARLORD_CLEAVER = Registration.ITEMS.register(
+            "orc_warlord_cleaver",
+            () -> new SwordItem(Tiers.IRON, 5, -2.6F, new Item.Properties()));
+
+    /**
      * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
      * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
      * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
@@ -300,6 +389,12 @@ public class DungeonsItems {
             event.accept(GIANT_RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(SHRIEKER_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(VIOLET_FUNGUS_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            event.accept(MINOTAUR_AXE.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(ORC_WARLORD_CLEAVER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(SPIKED_CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);

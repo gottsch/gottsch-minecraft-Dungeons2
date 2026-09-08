@@ -26,6 +26,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -55,9 +57,16 @@ import java.util.function.Supplier;
  *
  * <h2>Why it is Dungeons2's and not GottschCore's</h2>
  * <p>Adding a {@code surface} field to the shared {@code AgingProcessor} would put the concept in
- * front of every motif and every stratum, almost all of which have no use for it (Gottsch,
- * 2026-08-26). Only the mud band wants surface-scoped decay, so only the mud band's processor list
- * names this. Nothing else loads it, so nothing else can be broken by it.</p>
+ * front of every mod depending on GottschCore, almost all of which have no use for it (Gottsch,
+ * 2026-08-26). It is Dungeons2's own, and only Dungeons2's lists name it.</p>
+ *
+ * <p><strong>It started as the mud band's alone and is now the classic motif's too</strong>
+ * ({@code classic_weathering.json}, migrated 2026-09-04). That migration was a type change and
+ * nothing else: this is a strict superset of {@code dungeons2:aging} &mdash; the same chains, plus
+ * a {@code surface} on each rule &mdash; so a file whose every rule says {@code any} behaves
+ * identically, down to the roll. It was done ahead of any rule wanting a surface so the weathering
+ * pass would not need a second format change halfway through. {@code dungeons2:aging} is still
+ * registered and still used by the boss and entrance lists.</p>
  *
  * <h2>IT MUST OWN A LIST'S AGING ENTIRELY</h2>
  * <p><strong>Do not put this alongside a {@code dungeons2:aging} entry in the same file.</strong> A
@@ -74,9 +83,54 @@ import java.util.function.Supplier;
  * <h2>Determinism across the chunk seam</h2>
  * <p>Like the processor it mirrors, the random is seeded from the block's absolute world position
  * ({@code Mth.getSeed}), so a piece spanning two chunks resolves every cell identically in both
- * passes. This is a {@link LevelIndependentProcessor}: it reads nothing but the block it was
+ * passes. This is a {@link LevelIndependentProcessor}: it reads nothing but the blocks it was
  * handed, so {@code PieceProcessors} gives it the whole piece unclipped, in authored order,
  * alongside {@code dungeons2:decoration}.</p>
+ *
+ * <h2>2026-09-04, backlog #15: which phase it ages in depends on its rules</h2>
+ * <p>{@link PieceSurface} grew {@code wall}, {@code ceiling} and {@code joist}, none of which a
+ * per-block gate can answer &mdash; they are questions about a cell's neighbours, and
+ * {@code processBlock} sees one block at a time. So a processor whose rules ask a geometric
+ * question decides in {@link #finalizeProcessing}, which is handed the whole list, classifying it
+ * once through {@link PieceSurfaceMap}.</p>
+ *
+ * <p><strong>A processor whose rules do not ask one stays in {@code processBlock}, exactly where it
+ * always was.</strong> That is not an optimisation, it is the compatibility guarantee: deciding in
+ * the later phase costs something real, and a list that cannot use what it buys should not pay it.
+ * {@code any}, {@code floor} and {@code above_floor} are answerable from Y, so
+ * {@link PieceSurfaceMap#byHeight} answers them with nothing allocated and nothing scanned. Every
+ * rule shipped today is one of those three.</p>
+ *
+ * <p>The choice is per <em>processor</em>, never per rule, so authored order still decides which of
+ * two rules on the same block gets first refusal. Splitting one processor's rules across two phases
+ * would have silently reordered them.</p>
+ *
+ * <h2>What the later phase costs: it can be fed, but it can only feed forwards</h2>
+ * <p>Vanilla runs every {@code processBlock} before any {@code finalizeProcessing}, so:</p>
+ * <ul>
+ *   <li>Two {@code surface_aging} entries still chain in list order &mdash; <strong>multi-step
+ *       aging across processors is intact</strong>, whichever phase they are in.</li>
+ *   <li>A {@code minecraft:rule} entry <em>before</em> one still feeds it. So does one after it,
+ *       which is the misleading half.</li>
+ *   <li>A {@code minecraft:rule} entry can <strong>never</strong> be fed by a geometric
+ *       {@code surface_aging}, however the file is ordered. It would read as a second stage and not
+ *       be one.</li>
+ * </ul>
+ *
+ * <p>{@code ProcessorPhaseOrderTest} pins all three;
+ * {@code StratumWeatheringListTest.aSurfaceAgedListCarriesNoRuleProcessor} refuses the combination
+ * in a shipped file rather than leaving it to be found in a world. Express the second stage as
+ * another {@code surface_aging} entry instead.</p>
+ *
+ * <p><strong>Decoration was never at risk</strong>, which is why the phase split needed no change in
+ * GottschCore. {@code PieceProcessors} requires decoration to see what aging did &mdash; cobwebs in
+ * the gap a crumbled stair left, growth on the dirt aging produced &mdash; and
+ * {@code dungeons2:decoration} has always worked in {@code finalizeProcessing} too (it has no
+ * {@code processBlock} at all). Aging reaches it from either phase. The standing requirement is
+ * unchanged: <strong>this entry must precede {@code dungeons2:decoration} in the file</strong>.</p>
+ *
+ * <p>Output is untouched where no rule names a new surface: the roll is still seeded from the
+ * block's own world position and the rules are still walked in authored order.</p>
  */
 public class SurfaceAgingProcessor extends StructureProcessor implements LevelIndependentProcessor {
 
@@ -85,6 +139,13 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
     private final List<SurfaceAgingRule> rules;
     /** Rules indexed by source block, preserving authored order, for an O(1) miss. */
     private final Map<Block, List<SurfaceAgingRule>> rulesByBlock;
+    /**
+     * Whether any rule asks a question the piece's own geometry has to answer. Decided once at
+     * construction, because a processor is built from the datapack and then reused for every piece
+     * of every dungeon: a list that only names {@code floor} / {@code above_floor} / {@code any}
+     * never pays for a scan it cannot use.
+     */
+    private final boolean needsTheWholePiece;
 
     public SurfaceAgingProcessor(Supplier<StructureProcessorType<?>> type, int agings,
                                  List<SurfaceAgingRule> rules) {
@@ -95,7 +156,12 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
         for (SurfaceAgingRule rule : this.rules) {
             rulesByBlock.computeIfAbsent(rule.block(), block -> new ArrayList<>()).add(rule);
         }
+        this.needsTheWholePiece = this.rules.stream().anyMatch(rule -> GEOMETRIC.contains(rule.surface()));
     }
+
+    /** The surfaces {@link PieceSurfaceMap} has to scan the piece to tell apart. */
+    private static final Set<PieceSurface> GEOMETRIC =
+            Set.of(PieceSurface.WALL, PieceSurface.CEILING, PieceSurface.JOIST);
 
     /** See {@code Registration} for the codec/type registration idiom. */
     public static Codec<SurfaceAgingProcessor> codec(Supplier<StructureProcessorType<?>> type) {
@@ -107,6 +173,15 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
         ).apply(instance, (agings, rules) -> new SurfaceAgingProcessor(type, agings, rules)));
     }
 
+    /**
+     * Ages one block, when this processor's rules can be answered from Y alone.
+     *
+     * <p>Which is to say: unless a rule names {@code wall}, {@code ceiling} or {@code joist}, this
+     * processor stays exactly where it always was, and so keeps the one thing the later phase
+     * cannot offer &mdash; a {@code minecraft:rule} entry after it in the file still sees what it
+     * did. See {@link #finalizeProcessing} for the trade, and {@code ProcessorPhaseOrderTest} for
+     * the phase rules it turns on.</p>
+     */
     @Override
     public StructureTemplate.StructureBlockInfo processBlock(
             LevelReader level, BlockPos piecePos, BlockPos structurePos,
@@ -114,19 +189,73 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
             StructureTemplate.StructureBlockInfo current,
             StructurePlaceSettings settings) {
 
+        return needsTheWholePiece ? current : age(current, piecePos, null);
+    }
+
+    /**
+     * Ages the piece, classifying it once via {@link PieceSurfaceMap} and then walking every block
+     * exactly as the per-block version does.
+     *
+     * <p>Only for a processor whose rules need the piece's geometry, since {@code processBlock}
+     * cannot answer a question about a cell's neighbours. The map is built from
+     * {@code processedBlocks} <em>as handed over</em>, i.e. the architecture before any of it
+     * decays, so a cell's surface never depends on what the rolls did to its neighbours &mdash; a
+     * wall that crumbles to a gap does not turn the course above it into a joist.</p>
+     *
+     * <p><strong>What deciding here costs, and why it is opt-in.</strong> Vanilla runs every
+     * {@code processBlock} before any {@code finalizeProcessing}, so a processor that decides here
+     * can be <em>fed</em> by anything but can only <em>feed</em> another finalize-phase processor.
+     * Two {@code surface_aging} entries still chain, so multi-step aging across processors is
+     * intact; what is out of reach is a {@code minecraft:rule} authored after this one, which would
+     * read as a second stage and silently not be one. That is why only a list actually asking a
+     * geometric question pays for it, and why
+     * {@code StratumWeatheringListTest.aSurfaceAgedListCarriesNoRuleProcessor} refuses the
+     * combination rather than leaving it to be discovered in a world.</p>
+     */
+    @Override
+    public List<StructureTemplate.StructureBlockInfo> finalizeProcessing(
+            ServerLevelAccessor level, BlockPos piecePos, BlockPos relativePos,
+            List<StructureTemplate.StructureBlockInfo> originalBlocks,
+            List<StructureTemplate.StructureBlockInfo> processedBlocks,
+            StructurePlaceSettings settings) {
+
+        if (!needsTheWholePiece || rulesByBlock.isEmpty()) {
+            return processedBlocks;
+        }
+
+        PieceSurfaceMap surfaces = PieceSurfaceMap.of(piecePos, processedBlocks);
+        List<StructureTemplate.StructureBlockInfo> aged = new ArrayList<>(processedBlocks.size());
+        for (StructureTemplate.StructureBlockInfo info : processedBlocks) {
+            aged.add(age(info, piecePos, surfaces));
+        }
+        return aged;
+    }
+
+    /**
+     * One block's decay, or {@code current} unchanged if no rule of its surface takes.
+     *
+     * @param surfaces the piece's classification, or {@code null} when this processor's rules can
+     *                 be answered from Y alone and no piece was scanned
+     */
+    private StructureTemplate.StructureBlockInfo age(
+            StructureTemplate.StructureBlockInfo current, BlockPos piecePos,
+            PieceSurfaceMap surfaces) {
+
         List<SurfaceAgingRule> candidates = rulesByBlock.get(current.state().getBlock());
         if (candidates == null) {
             return current;
         }
 
-        // `current.pos()` is already in world space; `piecePos` is the origin vanilla offset it by.
-        // Rotation and mirroring are horizontal, so neither disturbs this.
-        int relativeY = PieceSurface.relativeY(piecePos, current.pos());
+        // `current.pos()` is already in world space, which is what the map is keyed on. Rotation
+        // and mirroring are horizontal, so neither disturbs the surface.
+        PieceSurface primary = surfaces != null
+                ? surfaces.classify(current.pos())
+                : PieceSurfaceMap.byHeight(piecePos, current.pos());
 
         RandomSource random = RandomSource.create(Mth.getSeed(current.pos()));
         Block aged = null;
         for (SurfaceAgingRule rule : candidates) {
-            if (!rule.surface().matches(relativeY)) {
+            if (!rule.surface().matches(primary)) {
                 continue;
             }
             aged = decay(rule, random);

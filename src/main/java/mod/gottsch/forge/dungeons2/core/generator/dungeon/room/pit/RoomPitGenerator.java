@@ -148,7 +148,15 @@ public final class RoomPitGenerator {
             if (fill != null) {
                 // On the terrace, not in it -- a spike stands on the floor it was planned for, and
                 // the clamp may have raised that floor since the provider chose the cell.
-                out.add(BlockStateCodec.placement(x, y + 1, z, fill));
+                BlockPlacement placement = BlockStateCodec.placement(x, y + 1, z, fill);
+                // A fill with a block entity: a chest centrepiece and its loot table. Without this
+                // the chest generates EMPTY, which the chest generator refuses to do elsewhere.
+                mod.gottsch.forge.dungeons2.core.data.BlockEntityData data =
+                        plan.fillData().get(cell.getKey());
+                if (data != null) {
+                    placement.setBlockEntityNbt(data);
+                }
+                out.add(placement);
             }
         }
         line(dug, room, originX, originZ, floorY, floorState, out);

@@ -360,8 +360,8 @@ is authored; see the motif-naming note above — e.g. a desert theme would add
 |------|------|----------|
 | `dungeons2:rooms/<motif>/normal` | the only pool | Complete, self-contained pieces (`minecraft:single_pool_element`, like `ladder1.nbt`/`stairs_1.nbt`) with `dungeons2:door` (and optionally `dungeons2:connector`) candidates around the perimeter at local Y=0, the room's own walking plane. No assembly joints, no segments, no top/bottom split — a room is never chained. |
 
-Per floor, the planner tries `roomTemplateAttemptsPerFloor` candidate slots — see
-**[Prefab frequency](#prefab-frequency-roomtemplateattemptsperfloor)** below. For each
+Per floor, the planner tries a number of candidate slots derived from that floor's own area — see
+**[Prefab frequency](#prefab-frequency-floor_cells_per_room_template)** below. For each
 it assembles the prefab once to **measure** it, reserves a slot at that real size (kept clear
 of the floor's own boundary), then assembles it again anchored so it lands exactly there, and
 hands its footprint and door markers to the maze as one of `MazeLevelGenerator2D`'s **supplied
@@ -544,46 +544,59 @@ new; the old cap piled on the long side in exactly the same way.
 > where it is and the band clamps the result, so the planner's random stream is identical whatever
 > table is loaded: mazes, footprints and corridors of existing worlds are untouched.
 
-#### Prefab frequency (`roomTemplateAttemptsPerFloor`)
+#### Prefab frequency (`floor_cells_per_room_template`)
 
-How many prefab rooms a dungeon gets is a datapack knob, in
-`data/dungeons2/dungeons2/generation_config/<name>.json` alongside `corridorWidth`:
+How much of a dungeon is **authored** rather than procedurally dressed is a datapack knob, in
+`data/dungeons2/dungeons2/generation_config/<name>.json` alongside `corridor_width`:
 
 ```json
 {
-  "corridorWidth": 3,
-  "roomTemplateAttemptsPerFloor": 4
+  "corridor_width": 3,
+  "floor_cells_per_room_template": 520
 }
 ```
 
-Range **0–8**, default **4**. It is *attempts*, but adoption measures at 100%, so in practice it is
-the number of prefabs per floor. Measured over 200 MEDIUM dungeons of 3 floors:
+Range **0–10000**, default **520**. It is a **density, not a count**: one assembly attempt per that
+many cells of a floor's own footprint, so a big floor gets proportionally more attempts than a small
+one. Adoption measures at ~100% up to about 8 attempts on a floor, so in practice it is the number
+of prefabs per floor.
 
-| attempts/floor | prefabs per dungeon | prefab share of rooms | dungeons missing a given template |
-|---|---|---|---|
-| 2 (the old hardcoded value) | 6.0 | 11.3% | ~18%\* |
-| **4 (shipped)** | **12.0** | **20.6%** | ~3%\* |
+**It used to be a flat `roomTemplateAttemptsPerFloor`, and that was quietly wrong.** Every floor got
+the same four attempts however big it was — while room *count* has always scaled with floor **area**
+(`pickNumberOfRooms` is `cells / 100` plus a tier bonus). A fixed numerator over a growing
+denominator, so the authored share fell off a cliff as dungeons got bigger. Measured over 300 seeds
+per tier:
 
-\* The first two columns are measured; the last is computed as `(3/4)^prefabs` for the four-entry
-`classic` pool, because the placement harness uses a synthetic prefab and cannot see which pool
-entry vanilla picked. It is trustworthy only because the computed 17.8% at 6 prefabs matches the
-19% measured directly over 400 dungeons in Jul 2026. Making the real template id reach
-`RoomData.templateId` (it is currently the constant `dungeons2:rooms/assembled`) would let a test
-assert this properly.
+| | at the old flat 4 | at 520 cells/template |
+|---|---|---|
+| SMALL (31–43) | 31.3% | **21.5%** |
+| MEDIUM (35–55) | 20.6% | **20.4%** |
+| LARGE (55–75) | 11.0% | **20.7%** |
 
-**Raising this is the right lever, not pool weights.** Weights only reshuffle a fixed budget, so
-favouring one template makes the others correspondingly rarer; only the attempt count changes how
-many prefab rooms exist at all. The "missing a given template" column is what this fixes — at 2
-attempts with four pool entries, nearly one dungeon in five contained no `7x7_junction_1` at all.
+Backwards from what anyone wants: the biggest dungeon, where a player sees the most rooms, felt the
+most generated — and nothing said so, because a floor that adopts no prefab is simply covered by
+procedural fill. Raising the flat count could not fix it either. At its ceiling of 8, LARGE still
+only reached 20.2% while SMALL hit 68.2% and its floors began to crowd (adoption fell to 94.6%).
+
+**520 levels the three tiers** at roughly where MEDIUM already was, which is the tier the feel was
+judged on — so it raises LARGE and deliberately *lowers* SMALL. Lower the number for more authored
+rooms everywhere: **~320 → ~30%**, **~215 → ~45%**. `RoomAssemblyPlacementTest` prints the measured
+share and asserts the levelling; **re-measure rather than quoting these figures**, because a change
+to room count moves the share without anything touching this knob.
+
+**This is the right lever, not pool weights.** Weights only reshuffle a fixed budget, so favouring
+one template makes the others correspondingly rarer; only the density changes how many prefab rooms
+exist at all.
 
 **`0` is a legitimate value** and is in range on purpose: it turns prefab rooms off without deleting
 the pool, which is the only way to compare a dungeon with and without them.
 
-**The cost is real.** Each attempt is *two* jigsaw assemblies — one to measure the rotated
-footprint, one to place it — so doubling the count doubles that work per floor. It is piece-list
-construction with no block placement, and the planner-side cost of the change measured at +8%, but
-that was against a synthetic assembler; the real vanilla `JigsawPlacement` cost at 8 has not been
-measured in game.
+**The cost is real, and it now scales with dungeon size.** Each attempt is *two* jigsaw assemblies —
+one to measure the rotated footprint, one to place it — so halving this number doubles that work per
+floor. A LARGE floor at 520 asks for around 8 attempts where it used to ask for 4. It is piece-list
+construction with no block placement, and the planner-side cost measured at +8% when the count was
+last doubled, but that was against a synthetic assembler; the real vanilla `JigsawPlacement` cost
+has not been measured in game.
 
 ---
 

@@ -32,6 +32,8 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -56,10 +58,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * <strong>PROTOTYPE.</strong> Pins the one invariant {@link PieceSurface} rests on &mdash;
- * <em>the floor, and only the floor, is at piece-relative Y 0</em> &mdash; on <strong>both</strong>
- * halves of the pipeline, because a surface gate that held for procedural rooms and not for
- * prefabs would decay the two sides of a shared wall differently.
+ * Pins the one invariant {@link PieceSurface} rests on &mdash; <em>the floor, and only the floor,
+ * is at piece-relative Y 0</em> &mdash; on <strong>both</strong> halves of the pipeline, because a
+ * surface gate that held for procedural rooms and not for prefabs would decay the two sides of a
+ * shared wall differently. Since backlog #15 it also pins what {@link PieceSurfaceMap} calls each
+ * part of a room, which is where every surface above the floor is decided.
  *
  * <p>The template half is worth having whatever happens to the gate: it is the only thing that
  * would catch an author building a room whose bottom layer is hollow, which places verbatim and is
@@ -85,18 +88,113 @@ class PieceSurfaceTest {
 
     // ---------- the enum itself ----------
 
+    /**
+     * The four primaries partition the piece and the two unions are exactly what they claim, both
+     * asserted over the whole vocabulary rather than a sample &mdash; a value added later that
+     * forgot to be either a primary or a union fails here.
+     */
     @Test
-    void floorMatchesLayerZeroOnlyAndAboveFloorIsItsComplement() {
-        assertTrue(PieceSurface.FLOOR.matches(0));
-        assertFalse(PieceSurface.FLOOR.matches(1));
-        assertFalse(PieceSurface.ABOVE_FLOOR.matches(0));
-        assertTrue(PieceSurface.ABOVE_FLOOR.matches(1));
-        for (int relativeY = 0; relativeY < 24; relativeY++) {
-            assertTrue(PieceSurface.ANY.matches(relativeY));
-            assertEquals(PieceSurface.FLOOR.matches(relativeY),
-                    !PieceSurface.ABOVE_FLOOR.matches(relativeY),
-                    "FLOOR and ABOVE_FLOOR must partition every layer at relativeY=" + relativeY);
+    void theTwoUnionsAreExactlyTheirPrimaries() {
+        for (PieceSurface primary : PRIMARIES) {
+            assertTrue(PieceSurface.ANY.matches(primary), "ANY must cover " + primary);
+            assertEquals(primary != PieceSurface.FLOOR, PieceSurface.ABOVE_FLOOR.matches(primary),
+                    "ABOVE_FLOOR is every primary but FLOOR, and " + primary + " disagreed");
+
+            long claimed = Stream.of(PieceSurface.values())
+                    .filter(surface -> surface != PieceSurface.ANY
+                            && surface != PieceSurface.ABOVE_FLOOR)
+                    .filter(surface -> surface.matches(primary))
+                    .count();
+            assertEquals(1, claimed,
+                    "exactly one non-union value may claim " + primary + ", or the gates stop"
+                            + " partitioning the piece and a cell can decay on two schedules");
         }
+    }
+
+    /** {@link PieceSurfaceMap#classify} only ever answers with a primary. */
+    @Test
+    void classifyOnlyEverReturnsAPrimary() {
+        PieceSurfaceMap surfaces = PieceSurfaceMap.of(ROOM_ORIGIN, room());
+        for (int x = -1; x <= 5; x++) {
+            for (int y = -1; y <= 7; y++) {
+                for (int z = -1; z <= 5; z++) {
+                    PieceSurface classified = surfaces.classify(ROOM_ORIGIN.offset(x, y, z));
+                    assertTrue(PRIMARIES.contains(classified),
+                            classified + " is a union, not a surface a cell can be");
+                }
+            }
+        }
+    }
+
+    // ---------- backlog #15: what the classifier calls each part of a room ----------
+
+    /** The values a cell can actually be; {@code ANY} and {@code ABOVE_FLOOR} are unions of them. */
+    private static final Set<PieceSurface> PRIMARIES = Set.of(
+            PieceSurface.FLOOR, PieceSurface.WALL, PieceSurface.CEILING, PieceSurface.JOIST);
+
+    private static final BlockPos ROOM_ORIGIN = new BlockPos(48, 30, -112);
+
+    /**
+     * A 5x5x6 room shaped the way the procedural generators shape one: the floor insets by one so
+     * nothing is paved under the wall ring, the walls span {@code [1..height-2]}, the ceiling
+     * covers the interior only, and a beam hangs one course beneath it.
+     */
+    private static List<StructureTemplate.StructureBlockInfo> room() {
+        List<StructureTemplate.StructureBlockInfo> piece = new ArrayList<>();
+        for (int x = 0; x <= 4; x++) {
+            for (int z = 0; z <= 4; z++) {
+                if (x == 0 || x == 4 || z == 0 || z == 4) {
+                    for (int y = 1; y <= 4; y++) {
+                        piece.add(cell(x, y, z));
+                    }
+                } else {
+                    piece.add(cell(x, 0, z));
+                    piece.add(cell(x, 5, z));
+                }
+            }
+        }
+        for (int x = 1; x <= 3; x++) {
+            piece.add(cell(x, 4, 2));
+        }
+        return piece;
+    }
+
+    private static StructureTemplate.StructureBlockInfo cell(int x, int y, int z) {
+        return new StructureTemplate.StructureBlockInfo(
+                ROOM_ORIGIN.offset(x, y, z), Blocks.STONE_BRICKS.defaultBlockState(), null);
+    }
+
+    @Test
+    void aRoomClassifiesIntoFloorWallsCeilingAndBeam() {
+        PieceSurfaceMap surfaces = PieceSurfaceMap.of(ROOM_ORIGIN, room());
+
+        assertEquals(PieceSurface.FLOOR, surfaces.classify(ROOM_ORIGIN.offset(2, 0, 2)));
+        assertEquals(PieceSurface.WALL, surfaces.classify(ROOM_ORIGIN.offset(0, 1, 0)),
+                "the bottom course stands on the floor plane even where the floor insets away");
+        assertEquals(PieceSurface.WALL, surfaces.classify(ROOM_ORIGIN.offset(0, 4, 0)),
+                "the wall ring's top course is the highest thing in its column and is still a wall");
+        assertEquals(PieceSurface.CEILING, surfaces.classify(ROOM_ORIGIN.offset(2, 5, 2)));
+        assertEquals(PieceSurface.JOIST, surfaces.classify(ROOM_ORIGIN.offset(1, 4, 2)),
+                "a beam hangs with the ceiling still above it");
+    }
+
+    /**
+     * {@code structure_void} places nothing and leaves the terrain, so the piece has no surface
+     * there and must not be given a ceiling over the void column the {@code 11x11_corner_*}
+     * templates deliberately carry.
+     */
+    @Test
+    void aVoidColumnIsNotOccupiedAndGrowsNoCeiling() {
+        List<StructureTemplate.StructureBlockInfo> piece = new ArrayList<>(room());
+        BlockPos voided = ROOM_ORIGIN.offset(1, 5, 1);
+        piece.removeIf(info -> info.pos().equals(voided));
+        piece.add(new StructureTemplate.StructureBlockInfo(
+                voided, Blocks.STRUCTURE_VOID.defaultBlockState(), null));
+
+        PieceSurfaceMap surfaces = PieceSurfaceMap.of(ROOM_ORIGIN, piece);
+        assertFalse(surfaces.isOccupied(voided));
+        assertEquals(PieceSurface.WALL, surfaces.classify(voided),
+                "an unfilled cell above the floor falls back to the ungated answer, not a ceiling");
     }
 
     @Test
@@ -169,97 +267,30 @@ class PieceSurfaceTest {
 
     // ---------- half two: the shipped prefabs ----------
 
-    /**
-     * Every shipped room / hallway template must have a <em>complete</em>, non-air layer 0 &mdash;
-     * one block for every cell of its footprint. That is what makes relative Y 0 mean "floor" on
-     * the prefab side.
-     */
-    @Test
-    void everyShippedRoomTemplateHasASolidFloorOnLayerZero() {
-        List<String> offenders = new ArrayList<>();
-        int checked = 0;
-        for (Path file : templateFiles()) {
-            if (isOutOfScope(file)) {
-                continue;
-            }
-            checked++;
-            CompoundTag root = read(file);
-            int sizeX = root.getList("size", Tag.TAG_INT).getInt(0);
-            int sizeZ = root.getList("size", Tag.TAG_INT).getInt(2);
-            List<String> palette = palette(root);
-
-            int cells = 0;
-            int openings = 0;
-            for (Tag tag : root.getList("blocks", Tag.TAG_COMPOUND)) {
-                CompoundTag block = (CompoundTag) tag;
-                if (block.getList("pos", Tag.TAG_INT).getInt(1) != PieceSurface.FLOOR_RELATIVE_Y) {
-                    continue;
-                }
-                cells++;
-                // structure_void is NOT an opening as far as the gate is concerned: it places
-                // nothing, so no block ever reaches a processor at that cell and there is nothing
-                // to mis-gate.
-                //
-                // Three shipped templates have one -- a full-height void column at x=1,z=9 in each
-                // of the 11x11 corners. That is DELIBERATE (Mark, 2026-08-26): structure_void means
-                // "leave whatever is here", so the column is filled with vanilla-generated terrain,
-                // not opened to air. Do not "fix" it.
-                //
-                // `air` IS an opening: it places, and a floor cell authored as air means layer 0 is
-                // not reliably the floor.
-                if (palette.get(block.getInt("state")).equals("minecraft:air")) {
-                    openings++;
-                }
-            }
-            int footprint = sizeX * sizeZ;
-            if (cells != footprint || openings > 0) {
-                offenders.add(file.getFileName() + "  layer0=" + cells + "/" + footprint
-                        + ", air-or-void=" + openings);
-            }
-        }
-        assertTrue(checked >= 20, "expected the shipped room set, read " + checked + " template(s)");
-        if (!offenders.isEmpty()) {
-            fail(offenders.size() + " room template(s) do not have a solid floor on layer 0, which"
-                    + " is what PieceSurface.FLOOR keys off. A hollow layer 0 places verbatim and"
-                    + " is silent in every log:\n  " + String.join("\n  ", offenders));
-        }
-    }
-
-    /**
-     * The other direction, and the one that actually distinguishes "layer 0 is the floor" from
-     * "layer 0 is solid": layer 1 must be where the walls start, i.e. it must contain air. A
-     * template whose layer 1 were also solid would mean the floor is two blocks thick and the gate
-     * is catching only half of it.
-     */
-    @Test
-    void everyShippedRoomTemplateOpensUpOnLayerOne() {
-        List<String> offenders = new ArrayList<>();
-        for (Path file : templateFiles()) {
-            if (isOutOfScope(file)) {
-                continue;
-            }
-            CompoundTag root = read(file);
-            List<String> palette = palette(root);
-            boolean sawAir = false;
-            for (Tag tag : root.getList("blocks", Tag.TAG_COMPOUND)) {
-                CompoundTag block = (CompoundTag) tag;
-                if (block.getList("pos", Tag.TAG_INT).getInt(1) != PieceSurface.FLOOR_RELATIVE_Y + 1) {
-                    continue;
-                }
-                if (palette.get(block.getInt("state")).equals("minecraft:air")) {
-                    sawAir = true;
-                    break;
-                }
-            }
-            if (!sawAir) {
-                offenders.add(file.getFileName().toString());
-            }
-        }
-        if (!offenders.isEmpty()) {
-            fail(offenders.size() + " room template(s) have no air on layer 1, so layer 0 is not"
-                    + " the only floor layer:\n  " + String.join("\n  ", offenders));
-        }
-    }
+    // ---------- half two: the shipped prefabs -- REMOVED 2026-09-07 ----------
+    //
+    // Two tests lived here, and both asserted something that is not true of an authored room:
+    //
+    //   everyShippedRoomTemplateHasASolidFloorOnLayerZero -- every cell of layer 0 present and
+    //     non-air.
+    //   everyShippedRoomTemplateOpensUpOnLayerOne         -- layer 1 must contain air.
+    //
+    // Mark, 2026-09-07: "layer-0 could have air or structure_void authored into it. And layer 1
+    // won't necessarily carry air either in an authored room." Both premises are wrong, and the
+    // failures they produced were all correct templates:
+    //
+    //   - the mud 11x11 corners omit a structure_void cell from layer 0. structure_void is not
+    //     saved into the blocks list, so a template that uses one legitimately has fewer layer-0
+    //     entries than its footprint. The test read that as a hole.
+    //   - 12x29_sunken_hallway_1b is one of THREE pieces that join into a 12x29 hallway; it is
+    //     named for the assembled length, and only the columns it actually owns carry blocks.
+    //   - the sewers have water on layer 1, not air, because the channel is the room.
+    //
+    // There is nothing to weaken these into. "Layer 0 is the floor" is a useful default for the
+    // PROCEDURAL pieces, which is what the first half of this file still covers through
+    // PieceSurface itself; on the prefab side it is an authoring choice per template, and a test
+    // that cannot tell a sunken floor from a hole is a test that will be silenced rather than
+    // read. Deleted rather than @Disabled so it does not come back as a puzzle.
 
     // ---------- reading the binary templates ----------
 

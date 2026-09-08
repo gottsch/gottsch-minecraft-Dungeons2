@@ -120,7 +120,23 @@ class PoolWiringTest {
      * needs in order to be able to fail.</p>
      */
     private record Category(String id, String templateRoot, String poolRoot,
-                            String poolPrefix, String startPool, boolean chained) {
+                            String poolPrefix, String startPool, boolean chained,
+                            List<String> alsoRequired) {
+
+        Category(String id, String templateRoot, String poolRoot, String poolPrefix,
+                 String startPool, boolean chained) {
+            this(id, templateRoot, poolRoot, poolPrefix, startPool, chained, List.of());
+        }
+
+        /** Every start pool a motif in this category must ship, {@link #startPool} first. */
+        List<String> requiredPools(String motif) {
+            List<String> all = new java.util.ArrayList<>();
+            all.add(String.format(startPool, motif));
+            for (String extra : alsoRequired) {
+                all.add(String.format(extra, motif));
+            }
+            return all;
+        }
     }
 
     private static final List<Category> CATEGORIES = List.of(
@@ -143,7 +159,15 @@ class PoolWiringTest {
             new Category("end_rooms",
                     "/data/dungeons2/structures/end_rooms",
                     "/data/dungeons2/worldgen/template_pool/end_rooms",
-                    "dungeons2:end_rooms/%s/", "dungeons2:end_rooms/%s/normal", false),
+                    // Size-tiered since 2026-09-04: there is no untiered end_rooms start pool any
+            // more. The tier is what carries the boss chest's loot table and the boss spawner's
+            // mob set, so a motif that authors end rooms has to author one pool per DungeonSize
+            // or the reward stops following the dungeon. All three are required rather than any
+            // one: a motif with only a small pool would silently hand small loot to large
+            // dungeons, which is the exact bug the tier split exists to fix.
+            "dungeons2:end_rooms/%s/", "dungeons2:end_rooms/%s/small/normal", false,
+                    List.of("dungeons2:end_rooms/%s/medium/normal",
+                            "dungeons2:end_rooms/%s/large/normal")),
             // Reached only from another piece's joint -- a room's centre jigsaw today. No start
             // pool, hence the null; see Category.
             new Category("decorations",
@@ -166,11 +190,13 @@ class PoolWiringTest {
             }
             Map<String, List<String>> pools = poolsById(category);
             for (String motif : motifs(category)) {
-                String expected = String.format(category.startPool(), motif);
-                assertTrue(pools.containsKey(expected),
-                        "motif '" + motif + "' ships " + category.id() + " templates but no start"
-                                + " pool named " + expected + " -- DungeonStructure would find"
-                                + " nothing and degrade silently. Pools found: " + pools.keySet());
+                for (String expected : category.requiredPools(motif)) {
+                    assertTrue(pools.containsKey(expected),
+                            "motif '" + motif + "' ships " + category.id() + " templates but no"
+                                    + " start pool named " + expected + " -- DungeonStructure would"
+                                    + " find nothing and degrade silently. Pools found: "
+                                    + pools.keySet());
+                }
             }
         }
     }

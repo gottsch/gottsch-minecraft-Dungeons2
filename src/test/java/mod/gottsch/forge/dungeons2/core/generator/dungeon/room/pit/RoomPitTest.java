@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit;
 
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
+import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
 import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.PitPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
@@ -338,6 +340,143 @@ class RoomPitTest {
                     "cell " + cell + " is not floor-local within the room");
         }
         assertTrue(dug.contains(new Coords2D(5, 5)), "the centre of an 11-wide room");
+    }
+
+    // ---------- the sunken dais (#86) ----------
+
+    /**
+     * The inverted dais: a court one block down with a centrepiece standing in the middle of it.
+     *
+     * <p>The Y is the whole point and is easy to get wrong by one. A fill is written on the terrace
+     * floor, not in it, so at {@code depth: 1} the block occupies the room's own floor row and its
+     * TOP is flush with the walking plane the rest of the room stands on. That is what makes it read
+     * as something walked around at eye level rather than a pillar rising out of a hole &mdash; and
+     * it is why the sunken dais is authored at depth 1 rather than at the court's default 2.</p>
+     */
+    @Test
+    void aSunkenDaisStandsItsCentrepieceFlushWithTheRoomsOwnFloor() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(11),
+                new PitPatternEntry(new CentrePitShape(3, 1, Optional.empty(),
+                        SurfaceOrient.OUTWARD, Optional.of("minecraft:chiseled_stone_bricks"),
+                        Map.of())),
+                4, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        assertEquals(9, dug.size(), "a 3x3 court");
+        Coords2D centre = new Coords2D(5, 5);
+        assertEquals(Blocks.CHISELED_STONE_BRICKS,
+                world.get(centre).get(FLOOR_Y).getBlock(),
+                "the centrepiece stands ON the terrace, so at depth 1 that is the room's floor row");
+        assertEquals(Blocks.STONE_BRICKS, world.get(centre).get(FLOOR_Y - 1).getBlock(),
+                "and the court's own floor is the row below it");
+    }
+
+    /** Only the middle cell carries it -- the other eight stay open court. */
+    @Test
+    void onlyTheMiddleCellOfASunkenDaisIsFilled() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(11),
+                new PitPatternEntry(new CentrePitShape(3, 1, Optional.empty(),
+                        SurfaceOrient.OUTWARD, Optional.of("minecraft:chiseled_stone_bricks"),
+                        Map.of())),
+                4, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        for (Coords2D cell : dug) {
+            BlockState atFloorRow = world.get(cell).get(FLOOR_Y);
+            if (cell.equals(new Coords2D(5, 5))) {
+                assertEquals(Blocks.CHISELED_STONE_BRICKS, atFloorRow.getBlock());
+            } else {
+                assertEquals(Blocks.AIR, atFloorRow.getBlock(),
+                        "cell " + cell + " should be open court, not filled");
+            }
+        }
+    }
+
+    /**
+     * {@code size} is a MAXIMUM, so a tight interior can shrink an odd authored size to an even fit
+     * &mdash; and an even court has no middle cell to stand the centrepiece in. The provider steps
+     * the fit down to odd rather than dropping the court or silently losing the centrepiece.
+     *
+     * <p>A 10-wide room has an 8x8 interior, so the widest court that leaves a walkable ring is 6.
+     * Authored at 7 it fits at 6, and the centrepiece forces 5.</p>
+     */
+    @Test
+    void anEvenFitStepsDownToOddSoTheCentrepieceKeepsItsMiddle() {
+        List<BlockPlacement> bare = new ArrayList<>();
+        Set<Coords2D> withoutCentre = excavate(room(10),
+                new PitPatternEntry(new CentrePitShape(7, 1)), 4, bare);
+        assertEquals(36, withoutCentre.size(), "6x6: the widest court an 8x8 interior can hold");
+
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(10),
+                new PitPatternEntry(new CentrePitShape(7, 1, Optional.empty(),
+                        SurfaceOrient.OUTWARD, Optional.of("minecraft:chiseled_stone_bricks"),
+                        Map.of())),
+                4, out);
+
+        assertEquals(25, dug.size(), "5x5 once a middle cell is required");
+        long centrepieces = out.stream()
+                .filter(placement -> placement.getY() == FLOOR_Y)
+                .filter(placement -> BlockStateCodec.resolve(placement).getBlock()
+                        == Blocks.CHISELED_STONE_BRICKS)
+                .count();
+        assertEquals(1, centrepieces, "exactly one centrepiece, in the one middle cell");
+    }
+
+    /**
+     * The court's centrepiece may be a real chest, with the loot table that makes it worth walking
+     * down to.
+     *
+     * <p>{@code centre_block: "minecraft:chest"} would place a chest with no block entity data at
+     * all, which generates EMPTY -- the outcome {@code RoomChestGenerator} refuses everywhere else,
+     * on the grounds that an empty chest costs the player the walk to find out it was empty. So the
+     * chest is its own field, drawn through that generator, and it carries a table or it is not
+     * placed.</p>
+     */
+    @Test
+    void aSunkenCourtMayHoldARealChest() {
+        List<BlockPlacement> out = new ArrayList<>();
+        excavate(room(11), new PitPatternEntry(new CentrePitShape(3, 1, Optional.empty(),
+                        SurfaceOrient.OUTWARD, Optional.empty(), Map.of(),
+                        Optional.of(new ChestConfig(1, 1,
+                                Optional.of(List.of(new ChestConfig.LootTableEntry(
+                                        "dungeons2:chests/classic_deep", 1))),
+                                List.of(new ChestConfig.ChestVariant("minecraft:chest", 1)),
+                                SizeGate.UNBOUNDED)))),
+                4, out);
+
+        BlockPlacement chest = out.stream()
+                .filter(placement -> "minecraft:chest".equals(placement.getBlockId()))
+                .findFirst().orElseThrow(() -> new AssertionError("no chest was placed"));
+        assertEquals(5, chest.getX(), "the middle of an 11-wide room");
+        assertEquals(5, chest.getZ());
+        assertEquals(FLOOR_Y, chest.getY(),
+                "standing ON the terrace, so at depth 1 that is the room's own floor row");
+        assertEquals("dungeons2:chests/classic_deep",
+                chest.getBlockEntityNbt().getData().get("LootTable"),
+                "a chest without its table generates empty, which is worse than no chest");
+    }
+
+    /**
+     * And a chest whose table cannot be resolved leaves the court bare rather than placing an empty
+     * one. The codec refuses an unauthored {@code loot_tables} outright; this pins the generator
+     * half, which is what a datapack reaching the same state by other means would hit.
+     */
+    @Test
+    void aCourtChestWithNoTableIsNotPlacedAtAll() {
+        List<BlockPlacement> out = new ArrayList<>();
+        excavate(room(11), new PitPatternEntry(new CentrePitShape(3, 1, Optional.empty(),
+                        SurfaceOrient.OUTWARD, Optional.empty(), Map.of(),
+                        Optional.of(new ChestConfig(1, 1, Optional.of(List.of()),
+                                List.of(new ChestConfig.ChestVariant("minecraft:chest", 1)),
+                                SizeGate.UNBOUNDED)))),
+                4, out);
+
+        assertTrue(out.stream().noneMatch(
+                        placement -> "minecraft:chest".equals(placement.getBlockId())),
+                "no table resolved, so no chest -- an empty one is worse than none");
     }
 
     // ---------- the hazard provider ----------
