@@ -596,16 +596,17 @@ public class DungeonsEntities {
     /**
      * The masonry chips {@code SmashBlocksGoal} throws off a wall it is breaking.
      *
-     * <p>{@code updateInterval} and tracking range match the bone shard rather than the rock: a
-     * swing spawns several at once and they live a second or two, so they are cheap short-lived
-     * debris, not a tracked thrown weapon.</p>
+     * <p>The shard itself is gmm's {@code BoneShard} in stone &mdash; same rig, physics, damage and
+     * despawn. Tracking range matches it too; {@code updateInterval} does not, and that is the one
+     * deliberate difference: the bone shard's 20 is far too coarse for something thrown a couple of
+     * blocks, and at 20 the client was told where a shard was about as often as it existed.</p>
      */
     public static final RegistryObject<EntityType<SmashShard>> SMASH_SHARD_ENTITY =
             Registration.ENTITIES.register(SMASH_SHARD,
                     () -> EntityType.Builder.<SmashShard>of(SmashShard::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F)
                             .clientTrackingRange(4)
-                            .updateInterval(20)
+                            .updateInterval(2)
                             .build(SMASH_SHARD));
 
     /** The Orc's thrown rock. */

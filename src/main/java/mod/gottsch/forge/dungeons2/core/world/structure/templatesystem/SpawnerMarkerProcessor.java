@@ -32,12 +32,16 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import java.util.List;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
+import mod.gottsch.forge.dungeons2.core.world.BossRoomRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -442,6 +446,66 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     /** Whether this individual marker declared itself the dungeon's boss spawner. */
     static boolean isBossMarker(StructureTemplate.StructureBlockInfo current) {
         return flagged(current, SpawnerMarkerBlockEntity.BOSS);
+    }
+
+    /**
+     * Records the boss room's bounds as it generates, for {@code BossRoomProtectionEvent}.
+     *
+     * <p>This is the <strong>only</strong> moment the room's extent is knowable exactly and cheaply.
+     * Afterwards it cannot be recovered: the structure cannot be queried from inside a dungeon (the
+     * chunk holds no references to it past eight chunks from the start), and measuring the room from
+     * the world by flooding it works only until the weathering pass punches a hole through a wall
+     * into a corridor, which it does routinely. Here the piece has not been touched by decay, a
+     * player, or anything else, and the block list <em>is</em> the room.</p>
+     *
+     * <p>A piece is a boss room when it holds a marker that declared itself the boss spawner. The
+     * flag is read from the ORIGINAL block list, because by the time processing is finished the
+     * marker has become a spawner and the flag has been consumed; the box is measured from the
+     * PROCESSED list, whose positions are the world positions actually being written.</p>
+     *
+     * <p><strong>Hops to the server thread to save.</strong> This runs on a chunk-generation worker,
+     * and {@code DimensionDataStorage} is not safe to touch from one. The task only writes data, so
+     * it does not care when it lands.</p>
+     */
+    private void recordBossRoom(ServerLevelAccessor level,
+                                List<StructureTemplate.StructureBlockInfo> blocks,
+                                List<StructureTemplate.StructureBlockInfo> processedBlocks) {
+        if (bossMobSet.isEmpty() || processedBlocks.isEmpty()) {
+            return;
+        }
+        boolean bossRoom = blocks.stream().anyMatch(info -> isSpawnerMarker(info) && isBossMarker(info));
+        if (!bossRoom) {
+            return;
+        }
+        BlockPos first = processedBlocks.get(0).pos();
+        int minX = first.getX();
+        int minY = first.getY();
+        int minZ = first.getZ();
+        int maxX = minX;
+        int maxY = minY;
+        int maxZ = minZ;
+        for (StructureTemplate.StructureBlockInfo info : processedBlocks) {
+            BlockPos pos = info.pos();
+            minX = Math.min(minX, pos.getX());
+            maxX = Math.max(maxX, pos.getX());
+            minY = Math.min(minY, pos.getY());
+            maxY = Math.max(maxY, pos.getY());
+            minZ = Math.min(minZ, pos.getZ());
+            maxZ = Math.max(maxZ, pos.getZ());
+        }
+        BoundingBox room = new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+        ServerLevel serverLevel = level.getLevel();
+        serverLevel.getServer().execute(() -> BossRoomRegistry.get(serverLevel).add(room));
+    }
+
+    @Override
+    public List<StructureTemplate.StructureBlockInfo> finalizeProcessing(
+            ServerLevelAccessor level, BlockPos piecePos, BlockPos originalPos,
+            List<StructureTemplate.StructureBlockInfo> blocks,
+            List<StructureTemplate.StructureBlockInfo> processedBlocks,
+            StructurePlaceSettings settings) {
+        recordBossRoom(level, blocks, processedBlocks);
+        return super.finalizeProcessing(level, piecePos, originalPos, blocks, processedBlocks, settings);
     }
 
     boolean isSpawnerMarker(StructureTemplate.StructureBlockInfo info) {

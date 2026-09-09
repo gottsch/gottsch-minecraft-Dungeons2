@@ -18,8 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.event;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
-import mod.gottsch.forge.dungeons2.core.world.BossRoomLock;
-import mod.gottsch.forge.dungeons2.core.world.BossRooms;
+import mod.gottsch.forge.dungeons2.core.world.BossRoomRegistry;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -27,13 +26,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.block.piston.PistonStructureResolver;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.event.level.PistonEvent;
-import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -44,24 +44,51 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A boss room cannot be dismantled until its boss is dead.
+ * You cannot dismantle the room around a living boss.
  *
- * <p>The design problem this exists for: a boss room's reward is behind its boss, but a room is
- * made of blocks, and a player with a pickaxe can tunnel in through the floor, take the chest and
- * leave without ever meeting what the room was built around. Every other part of the encounter
- * &mdash; the tier, the escort, the reward &mdash; assumes the fight happened.</p>
+ * <p>The design problem: a boss room's reward sits behind its boss, but a room is made of blocks, and
+ * a player with a pickaxe (or TNT, or a piston) can tunnel in through the floor, take the chest and
+ * leave without ever meeting what the room was built around.</p>
  *
- * <h2>What is protected, and until when</h2>
- * <p>Every block inside the boss room piece's bounding box: walls, floor, ceiling and the contents.
- * The floor matters as much as the walls, since tunnelling <em>under</em> the chest is the specific
- * hole being closed. Protection ends the moment a boss dies inside that box, and the room is
- * recorded cleared permanently &mdash; the room is a lock on the fight, not a museum afterwards.</p>
+ * <h2>The room is recorded when it GENERATES</h2>
+ * <p>{@code SpawnerMarkerProcessor} measures the piece holding the boss spawner and files it in
+ * {@link BossRoomRegistry}. That is the only moment the room's extent is knowable exactly, and it is
+ * knowable for free: the block list being placed <em>is</em> the room. Everything here is then two
+ * containment tests &mdash; which recorded room holds this block, and is a boss alive inside it.</p>
+ *
+ * <p>Three earlier attempts are worth remembering, because each looked reasonable:</p>
+ * <ol>
+ *   <li><strong>Ask the structure at runtime.</strong> Never worked once. {@code getStructureAt}
+ *       reads the chunk's references back to the structure, vanilla writes those only within eight
+ *       chunks of a structure's start, and a dungeon sprawls past 128 blocks &mdash; so from inside
+ *       its own boss room the dungeon is invisible. Failed closed and silently, for a day.</li>
+ *   <li><strong>A box around the boss.</strong> Cheap and visibly wrong: round where a room is
+ *       square, and sliding about as the boss paced. Rejected outright (Mark, 2026-09-08): "it
+ *       either needs to fit exactly on the boss room, or don't do it. Having one wall possibly
+ *       breakable while the other wall and partial hallway is protected, doesn't work."</li>
+ *   <li><strong>Flood-fill the room at runtime.</strong> Exact while the room is sealed &mdash; and
+ *       the weathering pass punches holes through walls routinely, after which the fill escapes into
+ *       the corridor beyond. It also paid for a fill on every block break near a boss.</li>
+ * </ol>
+ *
+ * <p>Recording at generation answers all three. The measurement happens before decay, before a
+ * player, before anything: <strong>weathering holes, open doors and existing breaches change
+ * nothing</strong>, because the room was measured when it was still pristine. Rotation is likewise
+ * irrelevant &mdash; the positions recorded are the ones actually written to the world.</p>
+ *
+ * <h2>What this deliberately does not cover</h2>
+ * <p><strong>A boss that has not spawned yet guards nothing</strong>, because the protection asks
+ * whether a boss is alive in the room. The boss room's spawner is a proximity spawner, so
+ * approaching the chest is very likely to have released it first, but a player tunnelling from far
+ * enough out could in principle beat it.</p>
+ *
+ * <p><strong>Rooms in worlds generated before this existed are not recorded</strong>, and cannot be
+ * &mdash; there is no way to recover their bounds afterwards. They are unprotected for ever.</p>
  *
  * <h2>The asymmetry with SmashBlocksGoal is deliberate</h2>
- * <p>A Minotaur may break these walls and a player may not. That reads oddly written down and
- * correctly in play: a mob breaching a wall <em>is</em> the fight, and a player breaching one is
- * skipping it. Mechanically they do not even collide &mdash; the goal calls {@code destroyBlock}
- * directly and never raises {@link BlockEvent.BreakEvent}, which is what this listens to.</p>
+ * <p>A Minotaur may break these walls and a player may not. A mob breaching a wall <em>is</em> the
+ * fight; a player breaching one is skipping it. They do not collide mechanically either &mdash; the
+ * goal calls {@code destroyBlock} directly and never raises {@link BlockEvent.BreakEvent}.</p>
  *
  * @author Mark Gottschling on Sep 7, 2026
  */
@@ -69,15 +96,11 @@ import java.util.stream.Collectors;
 public class BossRoomProtectionEvent {
 
     /**
-     * The mob sets whose members count as "the boss" for the purpose of unlocking a room.
+     * The mob sets whose members guard the blocks around them.
      *
-     * <p>The boss sets only &mdash; deliberately not the escort sets. Killing the escort and
-     * leaving the boss alive is exactly the outcome the lock is meant to refuse to reward, and a
-     * room that opened when the last grave zombie fell would be no lock at all.</p>
-     *
-     * <p>Read from the mob sets rather than hard-coded as entity types so that adding a boss to a
-     * tier arms it here with no code change, which is how every other boss-tier decision in this
-     * mod is made.</p>
+     * <p>The boss sets only, deliberately not the escort sets: a room that opened when the last
+     * grave zombie fell would be no lock. Read from the mob sets rather than hard-coded as entity
+     * types, so adding a boss to a tier arms it here with no code change.</p>
      */
     private static final List<ResourceLocation> BOSS_MOB_SETS = List.of(
             new ResourceLocation(Dungeons.MOD_ID, "small_dungeon_boss"),
@@ -97,33 +120,25 @@ public class BossRoomProtectionEvent {
         if (player != null && player.isCreative()) {
             return;
         }
-        BlockPos pos = event.getPos();
-        Optional<BoundingBox> room = BossRooms.at(level, pos);
-        if (room.isEmpty()) {
-            return;
-        }
-        if (BossRoomLock.get(level).isCleared(BossRooms.keyOf(room.get()))) {
-            return;
-        }
-        event.setCanceled(true);
-        if (player != null) {
-            // Above the hotbar rather than in chat: it fires per attempted swing, and a player
-            // holding the button down would otherwise fill their chat log with it.
-            player.displayClientMessage(Component.translatable(BLOCKED_MESSAGE), true);
+        // Search wide enough that a boss anchored across the room still counts: the anchor, not the
+        // boss, is the centre of the volume, and the two can be up to its restriction radius apart.
+        if (guarded(level, event.getPos())) {
+            event.setCanceled(true);
+            if (player != null) {
+                // Above the hotbar rather than in chat: it fires per attempted swing, and a player
+                // holding the button down would otherwise fill their chat log with it.
+                player.displayClientMessage(Component.translatable(BLOCKED_MESSAGE), true);
+            }
         }
     }
 
     /**
-     * A blast may not take out a boss room wall either.
+     * A blast may not take the room out either.
      *
-     * <p>TNT is the obvious way round a break gate: a player who cannot mine the floor can place a
-     * charge on it instead, and the blast never raises {@link BlockEvent.BreakEvent}. Affected
-     * positions inside an uncleared room are dropped from the blast list rather than the explosion
-     * being cancelled, so the charge still goes off, still throws the player, and still destroys
-     * everything <em>outside</em> the room &mdash; only the protected shell survives.</p>
-     *
-     * <p>This catches creeper blasts as well as placed charges. That is wanted: a boss room opened
-     * by its own escort blowing up would be the same skipped fight, arrived at by luck.</p>
+     * <p>Guarded positions are dropped from the blast list rather than the explosion being
+     * cancelled, so the charge still goes off, still throws the player, and still destroys
+     * everything outside the guarded volume. Creeper blasts count too: a boss room opened by its own
+     * escort exploding is the same skipped fight, arrived at by luck.</p>
      */
     @SubscribeEvent
     public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
@@ -134,35 +149,22 @@ public class BossRoomProtectionEvent {
         if (affected.isEmpty()) {
             return;
         }
-        List<BoundingBox> rooms = unclearedRoomsAt(level,
-                BlockPos.containing(event.getExplosion().getPosition()));
-        if (rooms.isEmpty()) {
-            return;
-        }
-        affected.removeIf(pos -> isInAny(rooms, pos));
+        affected.removeIf(pos -> guarded(level, pos));
     }
 
     /**
-     * Nor may a piston pull the room apart.
+     * Nor may a piston pull it apart.
      *
-     * <p>The other way round a break gate, and the quieter one: a sticky piston can pull a wall
-     * block out from the far side, and a piston can shove a hole's worth of blocks into a room, all
-     * without a break event. Cancelled outright rather than filtered &mdash; unlike a blast, a
-     * partially-honoured push has no sensible meaning.</p>
-     *
-     * <p>Both ends of the move are checked. The piston itself may be outside the room while the
-     * blocks it moves are inside it, which is precisely how the exploit would be built.</p>
+     * <p>Cancelled outright rather than filtered &mdash; unlike a blast, a partly-honoured push has
+     * no sensible meaning. Both ends are checked, because the exploit is a piston <em>outside</em>
+     * the guarded volume moving blocks that are inside it.</p>
      */
     @SubscribeEvent
     public static void onPistonPre(PistonEvent.Pre event) {
         if (!(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
-        List<BoundingBox> rooms = unclearedRoomsAt(level, event.getPos());
-        if (rooms.isEmpty()) {
-            return;
-        }
-        if (isInAny(rooms, event.getPos()) || isInAny(rooms, event.getFaceOffsetPos())) {
+        if (guarded(level, event.getPos()) || guarded(level, event.getFaceOffsetPos())) {
             event.setCanceled(true);
             return;
         }
@@ -173,57 +175,50 @@ public class BossRoomProtectionEvent {
             return;
         }
         for (BlockPos pos : resolver.getToPush()) {
-            if (isInAny(rooms, pos)) {
+            if (guarded(level, pos)) {
                 event.setCanceled(true);
                 return;
             }
         }
         for (BlockPos pos : resolver.getToDestroy()) {
-            if (isInAny(rooms, pos)) {
+            if (guarded(level, pos)) {
                 event.setCanceled(true);
                 return;
             }
         }
     }
 
-    /** The boss rooms of the dungeon at {@code pos} that still hold a living boss. */
-    private static List<BoundingBox> unclearedRoomsAt(ServerLevel level, BlockPos pos) {
-        List<BoundingBox> all = BossRooms.allAt(level, pos);
-        if (all.isEmpty()) {
-            return all;
+    /**
+     * Whether {@code pos} is in a boss room that still holds a living boss.
+     *
+     * <p>Two cheap tests and no search of the world: which recorded room contains the block (a
+     * containment check against a handful of boxes), then whether any living boss is inside that
+     * same room. The room came from {@code SpawnerMarkerProcessor} when it generated, so it is the
+     * template's real extent &mdash; every wall, the ceiling and the floor plane, at whatever size
+     * and rotation was placed, and unaffected by anything that happened to the room afterwards.</p>
+     */
+    private static boolean guarded(ServerLevel level, BlockPos pos) {
+        Optional<BoundingBox> room = BossRoomRegistry.get(level).roomAt(pos);
+        if (room.isEmpty()) {
+            return false;
         }
-        BossRoomLock lock = BossRoomLock.get(level);
-        return all.stream()
-                .filter(room -> !lock.isCleared(BossRooms.keyOf(room)))
-                .toList();
+        return !bossesIn(level, room.get()).isEmpty();
     }
 
-    private static boolean isInAny(List<BoundingBox> rooms, BlockPos pos) {
-        return rooms.stream().anyMatch(room -> room.isInside(pos));
-    }
-
-    @SubscribeEvent
-    public static void onLivingDeath(LivingDeathEvent event) {
-        Entity entity = event.getEntity();
-        if (!(entity.level() instanceof ServerLevel level)) {
-            return;
-        }
-        if (!isBoss(entity.getType())) {
-            return;
-        }
-        // The boss's own position, not its killer's: a boss lured to the doorway and killed one
-        // block outside has still been fought, but one that wandered off down a corridor should not
-        // unlock a room the player never entered.
-        BossRooms.at(level, entity.blockPosition())
-                .ifPresent(room -> BossRoomLock.get(level).markCleared(BossRooms.keyOf(room)));
+    /** Living bosses inside a room. Bounded by the room, so this never scans the wider world. */
+    private static List<Mob> bossesIn(ServerLevel level, BoundingBox room) {
+        AABB area = new AABB(room.minX(), room.minY(), room.minZ(),
+                room.maxX() + 1.0D, room.maxY() + 1.0D, room.maxZ() + 1.0D);
+        return level.getEntitiesOfClass(Mob.class, area,
+                mob -> mob.isAlive() && isBoss(mob.getType()));
     }
 
     /**
      * Whether this type is named by any boss mob set.
      *
      * <p>Resolved on each call rather than cached: {@code MobSetDataRegistry} is refilled on every
-     * datapack reload, and a cache built at mod-init would hold the pre-reload roster forever. The
-     * call happens once per boss death, which is not a rate worth optimising for.</p>
+     * datapack reload, and a cache built at mod-init would hold the pre-reload roster for ever. The
+     * calls happen on block breaks and explosions, which is not a rate worth optimising for.</p>
      */
     private static boolean isBoss(EntityType<?> type) {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(type);

@@ -385,10 +385,26 @@ public class DungeonsItems {
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
-            event.accept(RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(GIANT_RAT_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(SHRIEKER_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(VIOLET_FUNGUS_EGG.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            // EVERY registered spawn egg, found by type rather than listed by name.
+            //
+            // This was four hand-written accept() calls until 2026-09-08, and by then thirty-five
+            // eggs were registered -- so thirty-one of them, the Minotaur and the Orc Warlord among
+            // them, existed, had models, had lang entries, and could be /give'n, but appeared in no
+            // tab at all. Nothing failed and nothing logged; the list was simply written when there
+            // were four mobs and never grown with the roster.
+            //
+            // A list that has to be edited in a second place every time a mob is added will drift
+            // again, and the eggs are exactly the items where that is expensive: for the
+            // mini-bosses, which are excluded from every mob set and spawn override, the egg is the
+            // ONLY way to see the mob at all.
+            //
+            // DeferredRegister keeps its entries in insertion order, so the tab reads in
+            // declaration order -- rats, fungi, skeletons, and so on -- which groups the families
+            // the way the file does.
+            Registration.ITEMS.getEntries().stream()
+                    .map(RegistryObject::get)
+                    .filter(item -> item instanceof ForgeSpawnEggItem)
+                    .forEach(egg -> event.accept(egg, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
         }
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(MINOTAUR_AXE.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);

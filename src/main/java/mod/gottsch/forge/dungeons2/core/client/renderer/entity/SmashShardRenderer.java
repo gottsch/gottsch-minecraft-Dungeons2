@@ -18,75 +18,73 @@
 package mod.gottsch.forge.dungeons2.core.client.renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.entity.projectile.SmashShard;
-import net.minecraft.client.Minecraft;
+import mod.gottsch.forge.gmm.core.client.model.BoneShardModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.util.Mth;
 
 /**
- * Draws a {@link SmashShard} as a shrunken copy of the block it was cut from.
+ * Draws a {@link SmashShard} with gmm's bone-shard rig and this mod's stone texture.
  *
- * <p>There is no model and no texture here on purpose. {@code renderSingleBlock} draws whatever
- * {@link SmashShard#getSmashedState()} says, so the shard is automatically the right material for
- * whatever the mob just broke &mdash; every motif, every strata band, and anything a datapack adds
- * later &mdash; and there is no art to keep in step with the palettes. {@code BoneShardRenderer}
- * carries a rig and a texture because a bone shard is one fixed thing; a chip of wall is not.</p>
+ * <p>A deliberate copy of {@code BoneShardRenderer}. The model is gmm's, and its layer definitions
+ * are <em>already</em> registered by {@code ClientSetup} for the bone shard itself, so reusing them
+ * costs nothing and guarantees the two read as the same kind of object. Only {@link #TEXTURE}
+ * differs, which is the whole intent: a masonry chip should look like a bone shard cut from stone.</p>
+ *
+ * <p>{@code stone_shard.png} is a luminance remap of gmm's {@code bone_shard.png} onto a stone-brick
+ * grey ramp, so it lands on exactly the UVs the rig was authored against. Re-derive it the same way
+ * if the bone shard's own texture is ever re-cut.</p>
  *
  * @author Mark Gottschling on Sep 7, 2026
  */
 public class SmashShardRenderer extends EntityRenderer<SmashShard> {
 
-    /**
-     * Degrees of tumble per tick. Fast enough to read as debris rather than as a thrown weapon,
-     * which is the difference between this and the bone shard's flight.
-     */
-    private static final float SPIN_DEGREES_PER_TICK = 22.0F;
+    private static final ResourceLocation TEXTURE =
+            new ResourceLocation(Dungeons.MOD_ID, "textures/entity/stone_shard.png");
+
+    private final BoneShardModel[] models;
 
     public SmashShardRenderer(EntityRendererProvider.Context context) {
         super(context);
+        this.models = new BoneShardModel[BoneShardModel.LAYERS.length];
+        for (int i = 0; i < this.models.length; i++) {
+            this.models[i] = new BoneShardModel(context.bakeLayer(BoneShardModel.LAYERS[i]));
+        }
     }
 
     @Override
     public void render(SmashShard entity, float yaw, float partialTick, PoseStack poseStack,
                        MultiBufferSource buffer, int packedLight) {
-        BlockState state = entity.getSmashedState();
-        float scale = entity.getScale();
-        float age = entity.tickCount + partialTick;
-
         poseStack.pushPose();
-        // Tumble on two axes, offset per entity so a burst from one swing does not spin in unison
-        // -- the id is stable client-side and needs no syncing of its own.
-        float phase = (entity.getId() * 37) % 360;
-        poseStack.mulPose(Axis.YP.rotationDegrees(phase + age * SPIN_DEGREES_PER_TICK));
-        poseStack.mulPose(Axis.XP.rotationDegrees(phase + age * SPIN_DEGREES_PER_TICK * 0.7F));
-        poseStack.scale(scale, scale, scale);
-        // renderSingleBlock draws from the block's corner, so back off by half to spin about the
-        // shard's own centre rather than about one of its corners.
-        poseStack.translate(-0.5D, -0.5D, -0.5D);
-
-        Minecraft.getInstance().getBlockRenderer()
-                .renderSingleBlock(state, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
+        // orient toward motion
+        poseStack.mulPose(Axis.YP.rotationDegrees(
+                Mth.lerp(partialTick, entity.yRotO, entity.getYRot()) - 90.0F));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(
+                Mth.lerp(partialTick, entity.xRotO, entity.getXRot())));
+        // tumble on the long axis -- frozen once the shard sticks/stops (spinTicks stops advancing)
+        float spin = (entity.getSpinTicks() + (entity.isStuck() ? 0.0F : partialTick)) * 40.0F;
+        poseStack.mulPose(Axis.XP.rotationDegrees(spin));
+        float scale = entity.getScale();
+        if (scale != 1.0F) {
+            poseStack.scale(scale, scale, scale);
+        }
+        BoneShardModel model = this.models[Math.floorMod(entity.getVariant(), this.models.length)];
+        VertexConsumer vertexConsumer = buffer.getBuffer(model.renderType(TEXTURE));
+        model.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY,
+                1.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
-
         super.render(entity, yaw, partialTick, poseStack, buffer, packedLight);
     }
 
-    /**
-     * Never sampled &mdash; {@code renderSingleBlock} binds the block atlas itself. Required by
-     * {@link EntityRenderer}, so it returns the atlas rather than a texture of this mod's that
-     * would have to exist without ever being drawn.
-     *
-     * <p>{@code InventoryMenu.BLOCK_ATLAS} rather than gmm's {@code TextureAtlas.LOCATION_BLOCKS};
-     * they are the same location and the latter is deprecated.</p>
-     */
     @Override
     public ResourceLocation getTextureLocation(SmashShard entity) {
-        return InventoryMenu.BLOCK_ATLAS;
+        return TEXTURE;
     }
 }

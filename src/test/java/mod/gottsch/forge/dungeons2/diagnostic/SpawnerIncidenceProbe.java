@@ -39,6 +39,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -141,6 +142,7 @@ class SpawnerIncidenceProbe {
     private static final String MOB_SETS = "/data/dungeons2/mob_sets";
 
     @Test
+    @Disabled("the 2026-09-09 classic schemes do-over: no shipped classic scheme fills a `spawners` slot any more, so this measures nothing. Re-enable as the schemes are re-authored.")
     void howOftenDoesARoomGetASpawner() {
         MotifConfig config = MotifConfigs.load("classic");
 
