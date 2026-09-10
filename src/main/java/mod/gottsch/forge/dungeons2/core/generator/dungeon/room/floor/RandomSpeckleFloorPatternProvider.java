@@ -29,19 +29,23 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Fills the whole floor with {@code baseBlock}, sprinkling {@code accentBlock} in at
- * {@code probability} per cell &mdash; a rarer, randomized cousin of {@link
- * CheckerboardFloorPatternProvider}'s regular alternation. Unlike the border/checkerboard
- * patterns, this one's output isn't a pure function of {@code (x, z)}: it actually consumes the
- * room's {@code random}, same as {@link BasicFloorGenerator}'s own primary/alternate roll.
+ * Sprinkles {@code accentBlock} in at {@code probability} per cell &mdash; a rarer, randomized
+ * cousin of {@link CheckerboardFloorPatternProvider}'s regular alternation. Unlike the
+ * border/checkerboard patterns, this one's output isn't a pure function of {@code (x, z)}: it
+ * actually consumes the room's {@code random}, same as {@link BasicFloorGenerator}'s own
+ * primary/alternate roll.
  *
- * <p>Both blocks are required per instance, sourced from {@code floor_pattern_config} (see
- * {@code FloorPatternEntry}'s {@code primaryBlock}/{@code secondaryBlock} fields, reused here for
- * base/accent) &mdash; there is deliberately no Java-side default block for either slot; {@code
- * FloorPatternSelector} degrades a {@code "speckle"} entry to plain floor rather than constructing
- * this class with a guessed block when either fails to resolve. {@code probability} keeps its own
- * default ({@link #DEFAULT_PROBABILITY}) since it's a pattern-shape knob, not a motif-scoped
- * material; a probability of {@code 0} makes the accent simply never appear.</p>
+ * <p>This is the FULL-FILL half of {@code speckle}: every cell gets the base, some get the accent.
+ * That is what the mud stratum paves with, cobblestone showing packed mud through at 0.12. A
+ * speckle authored with no {@code primary_block} is a different provider entirely &mdash; see
+ * {@link SpeckleFloorOverlayProvider}, which accents an existing floor instead of replacing it.
+ * The split is deliberate: {@code CompositeFloorPatternProvider} decides what may be a layer with
+ * an {@code instanceof IFloorOverlayGenerator}, and a full fill in an overlay slot would stomp
+ * everything under it.</p>
+ *
+ * <p>{@code probability} keeps its own default ({@link #DEFAULT_PROBABILITY}) since it's a
+ * pattern-shape knob, not a motif-scoped material; a probability of {@code 0} makes the accent
+ * simply never appear.</p>
  *
  * @author Mark Gottschling on Jul 31, 2026
  */
@@ -66,7 +70,7 @@ public class RandomSpeckleFloorPatternProvider implements IDungeonFloorGenerator
 
     /**
      * Builds the pattern for a floor of the given size at the given origin, independent of
-     * {@link RoomData} (e.g. for use outside the room pipeline).
+     * {@link RoomData} (e.g. for use outside the room pipeline). Full-fill mode only.
      */
     public void build(int width, int depth, int originX, int originZ, int floorY, RandomSource random,
                        List<BlockPlacement> out) {

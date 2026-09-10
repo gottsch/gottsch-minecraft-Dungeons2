@@ -21,6 +21,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -74,8 +75,17 @@ class TimberJoistAuthoringTest {
         // PieceSurfaceMap calls a joist. Any OTHER use of the log in this motif -- a pillar shaft, a
         // wall course, a prop -- would be a cell the shipped rule silently no longer covers, and the
         // beams would go on decaying while it looked as though timber aging had simply been retuned.
+        // EVERY fragment in the motif's folder, not just base.json. The 2026-09-09 split moved the
+        // schemes -- which is where the joists live -- into schemes.json, and reading one file made
+        // this pass by finding nothing at all rather than by the motif being clean.
         List<String> uses = new ArrayList<>();
-        find(read("/data/dungeons2/dungeons2/motif_config/classic/base.json"), "", null, uses);
+        // strata.json is deliberately NOT swept: the mud band's palette names spruce_log as its
+        // pillar `shaft`, so including it fails immediately on content that predates this test and
+        // is a separate decision (does a mud post age, and on which gate?). Sweeping the motif's own
+        // two files keeps the scope this test has always had.
+        for (String file : List.of("base.json", "schemes.json")) {
+            find(read("/data/dungeons2/dungeons2/motif_config/classic/" + file), "", null, uses);
+        }
 
         assertFalse(uses.isEmpty(),
                 "classic ships no " + LOG + " at all, so this test is asserting nothing."

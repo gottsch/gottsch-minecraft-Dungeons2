@@ -101,7 +101,6 @@ class ChestIncidenceProbe {
     }
 
     @Test
-    @Disabled("the 2026-09-09 classic schemes do-over: no shipped classic scheme fills a `chests` slot any more, so this measures nothing. Re-enable as the schemes are re-authored.")
     void howOftenDoesARoomGetAChest() {
         MotifConfig config = MotifConfigs.load("classic");
 

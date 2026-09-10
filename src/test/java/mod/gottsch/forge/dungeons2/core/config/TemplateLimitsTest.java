@@ -42,8 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TemplateLimitsTest {
 
     private static final Gson GSON = new Gson();
-    private static final String MIGHTY = "dungeons2:rooms/classic/11x11/mighty_hall";
-    private static final String SHRINE = "dungeons2:rooms/classic/9x9/shrine";
+    private static final String MIGHTY = "dungeons2:rooms/classic/mighty_hall";
+    private static final String SHRINE = "dungeons2:rooms/classic/shrine";
 
     private static MotifConfigFragment fragment(String json) {
         return MotifConfigFragment.CODEC

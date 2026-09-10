@@ -480,10 +480,36 @@ public class DungeonsEntities {
                             .build(MARGOYLE));
 
     /**
+     * The height GMM's Minotaur rig was authored at, feet to horn tips. Transcribed from Dungeon
+     * Denizens' {@code MINOTAUR_TYPE}, and the baseline {@link #MINOTAUR_MODEL_SCALE} measures
+     * against -- NOT the size this mod renders it at.
+     */
+    public static final float MINOTAUR_RIG_HEIGHT = 2.2F;
+
+    /**
+     * How tall the Minotaur actually stands here (Mark, 2026-09-09: "slightly bigger, but less than
+     * 3 blocks tall").
+     *
+     * <p><strong>Under 3 is a hard ceiling, not a preference.</strong> Corridors are 7 high and
+     * rooms 5 to 10, so headroom is not the constraint -- but a mob needs its full height in clear
+     * blocks to path, and this is already over the 2 blocks a doorway opens (see
+     * {@code BasicDoorGenerator}: sill, two open rows, lintel). Going past 3 would start costing
+     * clearance the dungeon does not have anywhere.</p>
+     */
+    public static final float MINOTAUR_HEIGHT = 2.6F;
+
+    /**
+     * Applied by {@code ScaledMinotaurRenderer}. DERIVED so the model and the hitbox cannot drift:
+     * change {@link #MINOTAUR_HEIGHT} and the render follows.
+     */
+    public static final float MINOTAUR_MODEL_SCALE = MINOTAUR_HEIGHT / MINOTAUR_RIG_HEIGHT;
+
+    /**
      * 1.0 wide rather than the ~1.25 the shoulders and horns measure, matching the Orc's convention
      * for the same reason: a hitbox over 1.0 cannot path a 1-block corridor, and a dungeon brute
-     * that cannot follow the player down a hallway is not a threat. Height 2.2 is the real model
-     * (feet to horn tips). Transcribed from Dungeon Denizens' {@code MINOTAUR_TYPE}.
+     * that cannot follow the player down a hallway is not a threat. <strong>The width does not
+     * scale with the height</strong> for that reason -- {@link #MINOTAUR_MODEL_SCALE} widens the
+     * rig and this stays at 1.0, which widens a gap that already existed rather than creating one.
      *
      * <p>On {@link #MINI_BOSSES} pending a placement decision -- registered and egg-able, in neither
      * spawner route.</p>
@@ -491,7 +517,7 @@ public class DungeonsEntities {
     public static final RegistryObject<EntityType<Minotaur>> MINOTAUR_ENTITY =
             Registration.ENTITIES.register(MINOTAUR,
                     () -> EntityType.Builder.of(Minotaur::new, MobCategory.MONSTER)
-                            .sized(1.0F, 2.2F)
+                            .sized(1.0F, MINOTAUR_HEIGHT)
                             .clientTrackingRange(12)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(MINOTAUR));

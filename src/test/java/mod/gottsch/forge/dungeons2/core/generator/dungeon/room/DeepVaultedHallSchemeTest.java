@@ -34,6 +34,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -60,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author Mark Gottschling on Aug 31, 2026
  */
+@Disabled("the 2026-09-09 classic schemes do-over: classic no longer ships 'deep_vaulted_hall'. Re-enable when the scheme it is about is re-authored -- the assertions are still what that scheme should do.")
 class DeepVaultedHallSchemeTest {
 
     /** 11 is the scheme's own minSize, and the footprint the ring arithmetic was derived for. */

@@ -59,8 +59,20 @@ public class MinotaurGoalsEvent {
      */
     private static final int BLOCKED_GRACE_TICKS = 20;
 
-    /** Ticks between swings. Slow enough to watch a wall come apart rather than evaporate. */
-    private static final int SWING_INTERVAL_TICKS = 25;
+    /**
+     * Ticks between swings.
+     *
+     * <p>Was 25, chosen so a wall came apart at a watchable pace. <strong>That was the wrong thing
+     * to optimise for</strong> (Mark, 2026-09-09): in a maze the Minotaur is not putting on a show,
+     * it is STUCK, and every swing interval is time the player spends waiting for a boss that
+     * cannot reach them. At 25 a one-block wall cost 1.25s per block on top of the grace second,
+     * and it gets wedged often enough that the cost is paid repeatedly.</p>
+     *
+     * <p>12 keeps the swing readable &mdash; still an animation per block, not an evaporating wall
+     * &mdash; while roughly halving the time to dig out. Raise it again only if the smashing starts
+     * reading as a jackhammer rather than as a bull hitting a wall.</p>
+     */
+    private static final int SWING_INTERVAL_TICKS = 12;
 
     /**
      * Hardness cap. Dungeon brick and its kin sit at 1.5-2, so 6 admits the structure comfortably

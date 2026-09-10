@@ -33,6 +33,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author Mark Gottschling on Aug 5, 2026
  */
+@Disabled("the 2026-09-09 classic schemes do-over: classic no longer ships 'pilastered_hall'. Re-enable when the scheme it is about is re-authored -- the assertions are still what that scheme should do.")
 class PilasteredHallSchemeTest {
 
     private static final int WIDTH = 13;

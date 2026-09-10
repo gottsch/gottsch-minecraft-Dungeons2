@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor;
 
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
+import mod.gottsch.forge.dungeons2.core.config.floor.CellLocalFloorPattern;
 import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
@@ -201,7 +202,17 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     private static void emitCorridorColumn(int x, int z, int floorY, int height, int ceilingHeight,
                                             Direction haunch, String haunchShape, Palette palette,
                                             RandomSource random, List<BlockPlacement> out) {
+        // The pair is rolled FIRST and unconditionally, so `alternate_floor` still means something
+        // under a pattern: an overlay speckle accents a cell or leaves this standing. Draw counts
+        // are constant per cell -- 1 with no pattern, 2 with one -- which is what keeps the run
+        // identical however the piece is cut into chunks.
         BlockState floor = RandomHelper.checkProbability(random, 45) ? palette.floor : palette.alternateFloor;
+        if (palette.cellFloor != null) {
+            BlockState painted = palette.cellFloor.at(x, z, random);
+            if (painted != null) {
+                floor = painted;
+            }
+        }
         out.add(BlockStateCodec.placement(x, floorY, z, floor));
         int haunchRow = ceilingHeight - 2;
         for (int yOffset = 1; yOffset < ceilingHeight - 1; yOffset++) {
@@ -583,7 +594,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                 motifConfig.wall().wallState(),
                 Blocks.AIR.defaultBlockState(),
                 motifConfig.corridor().ceilingState(),
-                motifConfig.corridor().archStateFor(style));
+                motifConfig.corridor().archStateFor(style),
+                // Null unless the corridor authors a cell-local floor pattern; resolved once per
+                // render pass, like every other state here, rather than per cell.
+                motifConfig.corridor().cellFloor());
     }
 
     /** True if the cell at (x,z) is a wall-equivalent for corridor-wall placement. */
@@ -610,5 +624,5 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
 
     /** Resolved block states for one corridor render pass. {@code arch} is null on a flat profile. */
     private record Palette(BlockState floor, BlockState alternateFloor, BlockState wall, BlockState air,
-                            BlockState ceiling, BlockState arch) {}
+                            BlockState ceiling, BlockState arch, CellLocalFloorPattern.CellFloor cellFloor) {}
 }

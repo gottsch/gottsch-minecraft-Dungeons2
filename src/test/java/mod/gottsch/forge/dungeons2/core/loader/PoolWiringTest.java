@@ -357,10 +357,15 @@ class PoolWiringTest {
     /**
      * The first folder <em>below the category root</em>; null for a template loose at the root.
      *
-     * <p>Not simply the parent folder, which is what the entrance-only version did: rooms nest a
-     * size folder under the motif ({@code rooms/classic/11x11/...}), so a parent lookup would read
-     * the motif of every 11x11 room as "11x11" and the checks would compare against a motif that
-     * does not exist.</p>
+     * <p>Not simply the parent folder, which is what the entrance-only version did: rooms nest
+     * further folders under the motif ({@code rooms/classic/hallway/...},
+     * {@code rooms/classic/mud/...}), so a parent lookup would read the motif of every hallway as
+     * "hallway" and the checks would compare against a motif that does not exist.</p>
+     *
+     * <p>The examples used to be size folders ({@code rooms/classic/11x11/...}). Those were
+     * flattened on 2026-09-09 &mdash; the file names already carry the size &mdash; but the
+     * grouping folders that remain make the same point, and {@code mud} is a real motif band, so
+     * this cannot go back to reading the parent.</p>
      */
     private static String motifOf(Category category, Path template) {
         Path root = resourceRoot(category.templateRoot());

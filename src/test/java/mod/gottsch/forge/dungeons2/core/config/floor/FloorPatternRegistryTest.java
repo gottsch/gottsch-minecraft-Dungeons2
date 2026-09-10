@@ -131,7 +131,7 @@ class FloorPatternRegistryTest {
                 + "\"secondary_block\": \"minecraft:packed_mud\","
                 + "\"probability\": 0.12}}");
         SpeckleFloorPattern speckle = assertInstanceOf(SpeckleFloorPattern.class, entry.pattern());
-        assertEquals("minecraft:cobblestone", speckle.primaryBlock());
+        assertEquals("minecraft:cobblestone", speckle.primaryBlock().orElseThrow());
         assertEquals("minecraft:packed_mud", speckle.secondaryBlock());
         assertEquals(0.12, speckle.probability());
     }

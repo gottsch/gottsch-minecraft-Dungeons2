@@ -73,7 +73,7 @@ class MaterialRolesFloorTest {
                 "{\"type\": \"dungeons2:speckle\", \"config\": {"
                         + "\"primary_block\": \"$a\", \"secondary_block\": \"$b\","
                         + " \"probability\": 0.25}}");
-        assertEquals("minecraft:stone", speckle.primaryBlock());
+        assertEquals("minecraft:stone", speckle.primaryBlock().orElseThrow());
         assertEquals("minecraft:cobblestone", speckle.secondaryBlock());
         assertEquals(0.25D, speckle.probability(), 1.0e-9,
                 "rebuilding the record must carry every field it did not resolve");
@@ -197,7 +197,7 @@ class MaterialRolesFloorTest {
                                                   "secondary_block": "minecraft:cobblestone"}}}}""");
         SpeckleFloorPattern speckle = (SpeckleFloorPattern)
                 motif.forFloor(0).floor().pattern().orElseThrow().pattern();
-        assertEquals("minecraft:packed_mud", speckle.primaryBlock());
+        assertEquals("minecraft:packed_mud", speckle.primaryBlock().orElseThrow());
     }
 
     /** And a band that repaints the section gets the band's palette, not the motif's. */
@@ -215,7 +215,7 @@ class MaterialRolesFloorTest {
                                                      "secondary_block": "minecraft:cobblestone"}}}}]}""");
         SpeckleFloorPattern speckle = (SpeckleFloorPattern)
                 motif.forFloor(0).floor().pattern().orElseThrow().pattern();
-        assertEquals("minecraft:packed_mud", speckle.primaryBlock());
+        assertEquals("minecraft:packed_mud", speckle.primaryBlock().orElseThrow());
     }
 
     /** A motif with no schemes at all still has its floor section checked. */

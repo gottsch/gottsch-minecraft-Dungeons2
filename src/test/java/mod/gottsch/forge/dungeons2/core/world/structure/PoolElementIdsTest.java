@@ -54,7 +54,7 @@ class PoolElementIdsTest {
     private static final String SHIPPED_ELEMENT = """
             {
               "element_type": "minecraft:single_pool_element",
-              "location": "dungeons2:rooms/classic/5x5/5x5_junction_1",
+              "location": "dungeons2:rooms/classic/5x5_junction_1",
               "processors": "dungeons2:classic_weathering",
               "projection": "rigid"
             }""";
@@ -82,7 +82,7 @@ class PoolElementIdsTest {
 
     @Test
     void aSinglePoolElementReportsTheLocationThePackDeclared() {
-        assertEquals(Optional.of("dungeons2:rooms/classic/5x5/5x5_junction_1"),
+        assertEquals(Optional.of("dungeons2:rooms/classic/5x5_junction_1"),
                 PoolElementIds.locationOf(decode(SHIPPED_ELEMENT)));
     }
 
@@ -92,11 +92,11 @@ class PoolElementIdsTest {
      */
     @Test
     void anyLocationRoundTripsVerbatim() {
-        for (String location : List.of("dungeons2:rooms/classic/11x11/11x11_hall_1",
+        for (String location : List.of("dungeons2:rooms/classic/11x11_hall_1",
                 "minecraft:village/plains/houses/plains_small_house_1",
                 "someaddon:rooms/x")) {
             String json = SHIPPED_ELEMENT.replace(
-                    "dungeons2:rooms/classic/5x5/5x5_junction_1", location);
+                    "dungeons2:rooms/classic/5x5_junction_1", location);
             assertEquals(Optional.of(location), PoolElementIds.locationOf(decode(json)),
                     "location did not survive the round trip: " + location);
         }

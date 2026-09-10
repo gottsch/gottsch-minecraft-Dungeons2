@@ -25,10 +25,11 @@ import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.CheckerboardFloorPatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 /** Regular alternation of two blocks, a pure function of {@code (x, z)}. Both blocks required. */
 public record CheckerboardFloorPattern(String primaryBlock, String secondaryBlock)
-        implements FloorPattern {
+        implements FloorPattern, CellLocalFloorPattern {
 
     public static final String NAME = "checkerboard";
 
@@ -54,6 +55,25 @@ public record CheckerboardFloorPattern(String primaryBlock, String secondaryBloc
     @Override
     public MapCodec<? extends FloorPattern> codec() {
         return CODEC;
+    }
+
+    /**
+     * Cell-local, but on WORLD coordinates rather than the room-local ones the room provider uses
+     * -- see {@link CellLocalFloorPattern}. In a corridor that keeps the phase continuous along the
+     * whole run instead of restarting at each segment.
+     */
+    @Override
+    public CellFloor cellFloor() {
+        Block primary = FloorPatterns.block(primaryBlock);
+        Block secondary = FloorPatterns.block(secondaryBlock);
+        if (!FloorPatterns.allResolve(primary, secondary)) {
+            return null;
+        }
+        BlockState primaryState = primary.defaultBlockState();
+        BlockState secondaryState = secondary.defaultBlockState();
+        // floorMod, not %: a corridor runs into negative coordinates, where % would flip the phase
+        // at the origin and leave a visible seam there.
+        return (x, z, random) -> Math.floorMod(x + z, 2) == 0 ? primaryState : secondaryState;
     }
 
     @Override

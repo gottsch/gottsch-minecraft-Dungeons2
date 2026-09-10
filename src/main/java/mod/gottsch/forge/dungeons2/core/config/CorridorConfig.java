@@ -20,6 +20,9 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import mod.gottsch.forge.dungeons2.core.config.floor.CellLocalFloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.FloorPattern;
+import mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Blocks;
@@ -59,7 +62,16 @@ import java.util.Set;
  */
 public record CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
                              Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
-                             List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses) {
+                             List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
+                             Optional<FloorPattern> pattern) {
+
+    /** The pre-pattern form: a corridor paved only by its floor/alternate_floor pair. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                          Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
+                          List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses) {
+        this(floor, alternateFloor, ceiling, height, profile, archBlock, narrowHeight, styles,
+                courses, Optional.empty());
+    }
 
     /** The pre-courses form. */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
@@ -230,14 +242,19 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
         String resolvedAlternate = Codecs.resolveRole(alternateFloor, resolver);
         String resolvedCeiling = Codecs.resolveRole(ceiling, resolver);
         Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
+        Optional<FloorPattern> resolvedPattern = pattern.map(p -> p.withRoles(resolver));
         if (resolvedCourses == courses && resolvedStyles == null && resolvedFloor.equals(floor)
                 && resolvedAlternate.equals(alternateFloor) && resolvedCeiling.equals(ceiling)
-                && resolvedArch.equals(archBlock)) {
+                && resolvedArch.equals(archBlock)
+                // Identity, not equals: FloorPattern#withRoles contracts to return `this` when
+                // nothing changed, and this runs on the per-piece path.
+                && resolvedPattern.orElse(null) == pattern.orElse(null)) {
             return this;
         }
         return new CorridorConfig(resolvedFloor, resolvedAlternate, resolvedCeiling, height,
                 profile, resolvedArch, narrowHeight,
-                resolvedStyles == null ? styles : List.copyOf(resolvedStyles), resolvedCourses);
+                resolvedStyles == null ? styles : List.copyOf(resolvedStyles), resolvedCourses,
+                resolvedPattern);
     }
 
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
@@ -257,7 +274,12 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                             .forGetter(CorridorConfig::styles),
                     Codecs.strictOptionalFieldOf(WallPatternEntry.CourseEntry.CODEC.listOf(), "courses",
                                     List.of())
-                            .forGetter(CorridorConfig::courses)
+                            .forGetter(CorridorConfig::courses),
+                    // A bare pattern, NOT a FloorPatternEntry: that wrapper carries a SizeGate, and
+                    // a corridor has no width/depth/height for one to be about. Restricted to
+                    // CellLocalFloorPattern by validate() below.
+                    Codecs.strictOptionalFieldOf(FloorPatternRegistry.CODEC, "pattern")
+                            .forGetter(CorridorConfig::pattern)
             ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);
 
     /**
@@ -293,12 +315,33 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                 duplicates.add(style.name());
             }
         }
+        // The whole reason corridors never took a floor pattern: most of them need a rectangle.
+        // A load error rather than a silent skip, for the same reason an unknown pattern type is
+        // one -- the author would otherwise see a passage paved plain and have nothing to read.
+        if (config.pattern.isPresent() && !(config.pattern.get() instanceof CellLocalFloorPattern)) {
+            String type = config.pattern.get().getClass().getSimpleName();
+            return DataResult.error(() -> "corridor: floor pattern " + type + " needs a room-sized "
+                    + "rectangle and a corridor is a 1-3 cell run. Only cell-local patterns "
+                    + "(speckle, checkerboard) can pave one -- see CellLocalFloorPattern");
+        }
         if (!duplicates.isEmpty()) {
             return DataResult.error(() -> "corridor: duplicate style name(s) " + duplicates
                     + " -- a corridor stores only its style's name, so a duplicate makes its geometry "
                     + "depend on the order of the styles list");
         }
         return DataResult.success(config);
+    }
+
+    /**
+     * The cell painter for this corridor's floor pattern, or {@code null} when it authors none or
+     * one of its blocks will not resolve. In both cases the caller falls back to the
+     * {@code floor}/{@code alternate_floor} pair.
+     */
+    public CellLocalFloorPattern.CellFloor cellFloor() {
+        return pattern.filter(CellLocalFloorPattern.class::isInstance)
+                .map(CellLocalFloorPattern.class::cast)
+                .map(CellLocalFloorPattern::cellFloor)
+                .orElse(null);
     }
 
     public BlockState floorState() {

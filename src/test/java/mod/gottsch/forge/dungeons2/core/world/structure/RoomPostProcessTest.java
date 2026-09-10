@@ -17,6 +17,9 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
@@ -37,8 +40,11 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -196,11 +202,39 @@ class RoomPostProcessTest {
      *
      * <p>Asserted by building each dungeon twice, once per chunk and once with a single box covering
      * the whole piece, and demanding the two worlds are identical.</p>
+     *
+     * <h2>Scoped to the UNCLIPPED pass (2026-09-09)</h2>
+     * <p>Blocks owned by a level-reading sweep are exempt, and that is a statement about the
+     * architecture rather than a tolerance for a bug. {@code PieceProcessors} runs
+     * level-independent processors unclipped, over the whole piece, and everything that reads the
+     * level in a second pass <strong>clipped to the chunk</strong> -- which is correct, since the
+     * neighbouring chunk may not exist yet. So a sweep that removes growth whose support is gone
+     * can only see support inside its own clip box, and the two runs here cannot agree about a cell
+     * whose support is across the seam. Demanding they do is demanding the clipped pass read a
+     * chunk that has not been generated.</p>
+     *
+     * <p>Found by a real case: seed 3, {@code 15, 5, 48}, a {@code glow_lichen} with
+     * {@code east=true} whose supporting cube is at {@code x=16} -- one block over, in the next
+     * chunk. The whole-piece run removed it; the per-chunk run could not see the support and kept
+     * it. What survives in game is one unsupported lichen patch at a seam, about one block in
+     * 100,000; what would be needed to prevent it is not available to a piece-local processor.</p>
+     *
+     * <p><strong>What this still guards, which is the part that has actually broken:</strong>
+     * everything the unclipped pass owns -- geometry, trim, stair shapes, the scheme roll itself.
+     * #80's first fix silently gave up every mitre in the mod and no other assertion noticed.
+     * Nothing in the exemption below would have hidden that.</p>
+     *
+     * <p><strong>Not guarded, and worth knowing:</strong> the clipped pass is sensitive to which
+     * neighbouring chunks happen to exist when it runs, which can vary with the direction a player
+     * approaches from. That is pre-existing and by design -- it applies to cobwebs and unsupported
+     * corbels too, not just to growth -- but with this exemption nothing is watching it.</p>
      */
     @Test
     void splittingARoomAcrossChunksBuildsTheSameThing() {
         List<String> all = new ArrayList<>();
+        Set<String> sweptBlocks = sweptBlocks();
         int total = 0;
+        int exempt = 0;
         for (long seed = 0; seed < SEEDS; seed++) {
             FakeWorldGenLevel chunked = FakeWorldGenLevel.create();
             FakeWorldGenLevel whole = FakeWorldGenLevel.create();
@@ -220,17 +254,86 @@ class RoomPostProcessTest {
             for (BlockPos pos : positions) {
                 BlockState a = chunked.blockAt(pos);
                 BlockState b = whole.blockAt(pos);
-                if (!a.equals(b)) {
-                    all.add("seed " + seed + " " + pos.toShortString()
-                            + ": per-chunk " + a + " vs whole-piece " + b);
+                if (a.equals(b)) {
+                    continue;
                 }
+                if (sweptBlocks.contains(idOf(a)) || sweptBlocks.contains(idOf(b))) {
+                    exempt++;
+                    continue;
+                }
+                all.add("seed " + seed + " " + pos.toShortString()
+                        + ": per-chunk " + a + " vs whole-piece " + b);
             }
             total += positions.size();
         }
 
+        // The exemption is meant to cover the odd cell whose support sits across a seam, not to
+        // become a blanket. If it ever grows past a tenth of a percent, something has changed about
+        // WHERE the sweep runs rather than about which cells it reaches, and that is worth failing
+        // over even though every one of these blocks is individually excusable. Measured at 1 in
+        // 107,670 when this was written.
+        assertTrue(exempt * 1000L < total, exempt + " of " + total + " differing block(s) were "
+                + "excused as swept, which is over a tenth of a percent -- the level-reading pass is "
+                + "disagreeing across seams far more than an occasional support cell explains");
         assertTrue(all.isEmpty(), all.size() + " of " + total
                 + " block(s) differ depending on how the room was split across chunks -- a visible"
-                + " seam at a multiple of 16. First few: " + all.subList(0, Math.min(12, all.size())));
+                + " seam at a multiple of 16. This EXCLUDES " + exempt + " difference(s) in blocks a"
+                + " level-reading sweep owns, which cannot agree across a seam. First few: "
+                + all.subList(0, Math.min(12, all.size())));
+    }
+
+    private static final String WEATHERING =
+            "/data/dungeons2/worldgen/processor_list/classic_weathering.json";
+
+    /**
+     * Every block id named by a {@code *_sweep} processor in the room's shipped weathering list.
+     *
+     * <p>Read out of the datapack rather than listed here, so the exemption tracks the sweep: a
+     * block added to {@code decoration_sweep} is exempt the moment it is authored, and one removed
+     * stops being exempt. A hardcoded list would silently keep excusing a block nothing sweeps any
+     * more -- which is the shape of failure this whole class exists to catch one layer down.</p>
+     *
+     * <p>Tag-based entries ({@code dungeonblocks:corbels}, {@code minecraft:dirt}) are skipped:
+     * expanding a tag needs a loaded registry this test does not have, and every block behind those
+     * two either resolves to air on this classpath or is a SUPPORT rather than a thing swept.</p>
+     */
+    private static Set<String> sweptBlocks() {
+        Set<String> blocks = new LinkedHashSet<>();
+        for (JsonElement element : readJson(WEATHERING).getAsJsonArray("processors")) {
+            JsonObject processor = element.getAsJsonObject();
+            JsonElement type = processor.get("processor_type");
+            if (type == null || !type.getAsString().endsWith("_sweep")) {
+                continue;
+            }
+            for (String field : processor.keySet()) {
+                JsonElement value = processor.get(field);
+                if (!value.isJsonObject() || !value.getAsJsonObject().has("blocks")) {
+                    continue;
+                }
+                for (JsonElement block : value.getAsJsonObject().getAsJsonArray("blocks")) {
+                    blocks.add(block.getAsString());
+                }
+            }
+        }
+        assertFalse(blocks.isEmpty(), WEATHERING + " names no sweep blocks, so the exemption is"
+                + " empty and this test is quietly stricter than it reads");
+        return blocks;
+    }
+
+    private static String idOf(BlockState state) {
+        return state.getBlock().builtInRegistryHolder().key().location().toString();
+    }
+
+    /** The shipped lists carry {@code //} comments, which Gson rejects in strict mode. */
+    private static JsonObject readJson(String resource) {
+        try (InputStream in = RoomPostProcessTest.class.getResourceAsStream(resource)) {
+            assertTrue(in != null, "missing " + resource);
+            String text = new String(in.readAllBytes(), StandardCharsets.UTF_8)
+                    .replaceAll("(?m)^\\s*//.*$", "");
+            return JsonParser.parseString(text).getAsJsonObject();
+        } catch (Exception e) {
+            throw new AssertionError("could not read " + resource, e);
+        }
     }
 
     /** Guards the test above from being vacuous: it proves nothing if no room crosses a boundary. */

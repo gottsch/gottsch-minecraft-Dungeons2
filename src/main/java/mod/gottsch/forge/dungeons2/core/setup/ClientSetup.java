@@ -67,7 +67,7 @@ import mod.gottsch.forge.gmm.core.client.renderer.entity.IronSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.MagmaSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.MargoyleRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OchreJellyRenderer;
-import mod.gottsch.forge.gmm.core.client.renderer.entity.MinotaurRenderer;
+import mod.gottsch.forge.dungeons2.core.client.renderer.entity.ScaledMinotaurRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcShamanRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcWarlordRenderer;
@@ -200,7 +200,7 @@ public class ClientSetup {
         event.registerEntityRenderer(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeaponRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.MARGOYLE_ENTITY.get(), MargoyleRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ORC_ENTITY.get(), OrcRenderer::new);
-        event.registerEntityRenderer(DungeonsEntities.MINOTAUR_ENTITY.get(), MinotaurRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.MINOTAUR_ENTITY.get(), ScaledMinotaurRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShamanRenderer::new);
         // No layer registration of its own: OrcWarlordRenderer re-bakes OrcModel.LAYER_LOCATION,
         // already registered above for the Orc. A renderer whose layer is registered nowhere

@@ -173,7 +173,15 @@ public class SmashBlocksGoal extends Goal {
      */
     private static final double MAX_WALL_SEARCH_DISTANCE_SQR = 576.0D;
 
-    /** Below this distance the mob is in reach and should be attacking, not mining. */
+    /**
+     * Below this distance the mob is close enough that a wall in its line of sight is more likely
+     * to be scenery than an obstruction, so route one stands down and it attacks instead.
+     *
+     * <p><strong>This is not a reach test</strong>, and it was read as one until 2026-09-09. A
+     * Minotaur is 2.2 blocks tall; a single block at head height stops it dead while the player
+     * stands well inside three blocks. Route two -- no navigable route AND something smashable
+     * ahead -- is exempt from it for that reason. See {@link #canUse()}.</p>
+     */
     private static final double MIN_BLOCKED_DISTANCE_SQR = 9.0D;
 
     /**
@@ -319,12 +327,6 @@ public class SmashBlocksGoal extends Goal {
             this.blockedTicks = 0;
             return false;
         }
-        // Never while already in reach: a mob that is landing hits should be landing hits, not
-        // mining the floor between them.
-        if (this.mob.distanceToSqr(target) < MIN_BLOCKED_DISTANCE_SQR) {
-            this.blockedTicks = 0;
-            return false;
-        }
         // TWO WAYS IN.
         //   1. A wall between us, asked directly by looking.
         //   2. A clear LINE but no clear ROUTE -- which is what the mob is left with the moment it
@@ -332,7 +334,27 @@ public class SmashBlocksGoal extends Goal {
         //      the goal could see through its own peephole, decline to start, and leave the mob
         //      staring through a gap it cannot fit into.
         BlockPos wall = wallBetween(target);
-        if (wall == null && !(cannotReach(target) && findSmashTarget(directionTo(target)) != null)) {
+        boolean noRoute = cannotReach(target) && findSmashTarget(directionTo(target)) != null;
+        if (wall == null && !noRoute) {
+            this.blockedTicks = 0;
+            return false;
+        }
+        // Not while already in reach: a mob that is landing hits should be landing hits, not mining
+        // the floor between them.
+        //
+        // ROUTE TWO IS EXEMPT, and that exemption is the whole point (Mark, 2026-09-09: a Minotaur
+        // two blocks away, held by a single overhanging block). "Within three blocks" was standing
+        // in for "in reach", and for a mob 2.2 blocks tall those are different questions: one block
+        // jutting out at head height stops it moving forward while the player stands close enough
+        // to trip this guard and too far to be hit. The result was a deadlock -- too close to dig,
+        // too blocked to close, too far to swing -- and the mob simply stood there.
+        //
+        // Route two already answers the real question, twice over: the navigation cannot reach the
+        // target AND there is a smashable block in the way. A mob genuinely toe to toe with its
+        // target has air in front of it, so findSmashTarget returns null and this guard still
+        // holds. The proximity test therefore only vetoes route ONE, where "there is a wall in the
+        // line of sight" really can be true of a mob that should be attacking instead.
+        if (!noRoute && this.mob.distanceToSqr(target) < MIN_BLOCKED_DISTANCE_SQR) {
             this.blockedTicks = 0;
             return false;
         }

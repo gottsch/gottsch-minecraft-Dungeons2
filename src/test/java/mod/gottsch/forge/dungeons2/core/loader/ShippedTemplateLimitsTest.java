@@ -49,7 +49,7 @@ import java.util.stream.Stream;
  * for mob sets and {@code SpawnerMarkerProcessor} for its own set.</p>
  *
  * <p>Which leaves the typo completely silent: a limit keyed on
- * {@code dungeons2:rooms/classic/11x11/mighty_hal} caps nothing, logs nothing, and looks exactly
+ * {@code dungeons2:rooms/classic/mighty_hal} caps nothing, logs nothing, and looks exactly
  * like a limit that is simply never reached. The room it was meant to constrain goes on appearing
  * four times a dungeon. This turns that into a build failure.</p>
  *

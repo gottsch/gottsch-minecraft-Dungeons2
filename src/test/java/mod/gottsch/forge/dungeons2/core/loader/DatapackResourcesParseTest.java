@@ -23,6 +23,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
+import mod.gottsch.forge.dungeons2.core.config.pillar.CentrePillarLayout;
+import mod.gottsch.forge.dungeons2.core.config.platform.CentrePlatformLayout;
+import mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape;
+import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
+import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
+import net.minecraft.util.Mth;
+import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigFragment;
 import mod.gottsch.forge.dungeons2.core.config.RoomHeightBand;
@@ -148,7 +155,9 @@ class DatapackResourcesParseTest {
         for (String name : MOTIFS) {
             MotifConfig config = motif(name);
             for (RoomScheme scheme : config.schemes()) {
-                scheme.pots().ifPresent(pots -> {
+                // all(), not ifPresent: see courses(). A typo'd loot table in the second
+                // alternative would otherwise ship.
+                scheme.pots().all().forEach(pots -> {
                     String id = pots.lootTable();
                     assertTrue(id.startsWith("dungeons2:"),
                             "scheme '" + scheme.name() + "' points at a foreign loot table (" + id
@@ -172,10 +181,31 @@ class DatapackResourcesParseTest {
      * rather than caring which pattern each came from.</p>
      */
     private static List<WallPatternEntry.CourseEntry> courses(RoomScheme scheme) {
-        return scheme.wall().stream()
+        // all(), not stream(): a slot may hold weighted alternatives (#65), and reading an
+        // unresolved slot throws. These are authoring checks, so EVERY alternative has to be
+        // walked -- a sill set flush in option three is just as wrong as one in option one, and
+        // resolving to a single draw here would inspect one of them at random.
+        return scheme.wall().all()
                 .flatMap(wall -> wall.patterns().stream())
                 .flatMap(pattern -> pattern.coursesOrEmpty().stream())
                 .toList();
+    }
+
+    /**
+     * A course block as a real block id, with any material role (#65) looked up in the motif's
+     * palette.
+     *
+     * <p>Both checks below classify a block by its ID -- one on the {@code sill} name, one on the
+     * {@code minecraft:} namespace -- and {@code motif()} is the UNPROJECTED fold, where a role is
+     * still {@code $stair}. Without this, {@code $stair} reads as neither vanilla nor a sill, so a
+     * cornice built from a role was judged by the wrong rule and a sill named by one was not judged
+     * at all. Roles only reach a block id in {@code forFloor}, which needs a depth these sweeps do
+     * not have; the palette lookup is the same substitution without one.</p>
+     */
+    private static String resolved(MotifConfig config, String block) {
+        return block.startsWith("$")
+                ? config.palette().getOrDefault(block.substring(1), block)
+                : block;
     }
 
     // NOTE: `noSchemeCombinesPotsWithAFloorLevelProjectingCourse` used to live here, forbidding a
@@ -199,9 +229,10 @@ class DatapackResourcesParseTest {
             MotifConfig config = motif(name);
             for (RoomScheme scheme : config.schemes()) {
                 for (WallPatternEntry.CourseEntry course : courses(scheme)) {
-                    if (course.block().contains("sill")) {
+                    String block = resolved(config, course.block());
+                    if (block.contains("sill")) {
                         assertTrue(course.projection() > 0, "scheme '" + scheme.name()
-                                + "' uses " + course.block() + " flush in the wall; a sill is a "
+                                + "' uses " + block + " flush in the wall; a sill is a "
                                 + "ledge and needs \"projection\": 1");
                     }
                 }
@@ -228,12 +259,14 @@ class DatapackResourcesParseTest {
                     if (course.projection() == 0) {
                         continue;
                     }
-                    boolean vanilla = course.block().startsWith("minecraft:");
+                    String block = resolved(config, course.block());
+                    boolean vanilla = block.startsWith("minecraft:");
                     WallPatternEntry.CourseOrient expected = vanilla
                             ? WallPatternEntry.CourseOrient.TOWARD_WALL
                             : WallPatternEntry.CourseOrient.TOWARD_ROOM;
                     assertEquals(expected, course.orient(), "scheme '" + scheme.name() + "': "
-                            + course.block() + " projects, so it needs orient=" + expected
+                            + course.block() + " (" + block + ") projects, so it needs orient="
+                            + expected
                             + " -- dungeonblocks trim faces opposite to vanilla");
                 }
             }
@@ -463,6 +496,121 @@ class DatapackResourcesParseTest {
                     + "' but declares " + bound + " " + childValue + " where the parent has "
                     + parentValue + " -- the inherited content is drawn in rooms it does not fit");
         }
+    }
+
+    /**
+     * <strong>Every corridor a motif can roll has to fit the biggest thing that walks it.</strong>
+     *
+     * <p>Raised 2026-09-09, when Mark asked whether dropping the {@code cramped} style would stop
+     * the lower floors having low ceilings. It would, and the number that made it worth answering
+     * carefully is this one: {@code cramped} at height 5 left exactly THREE clear rows, and the
+     * Minotaur is 2.6 blocks tall, so it fit with nothing to spare. The style went to height 6
+     * instead of being deleted &mdash; keeping the motif's only flat-profile corridor &mdash; which
+     * takes the worst case to four.</p>
+     *
+     * <p>The point of pinning it here is the <strong>coupling</strong>: corridor geometry and mob
+     * height are authored in two different places by two different kinds of decision, and nothing
+     * else would notice them crossing. Raise {@code MINOTAUR_HEIGHT} past what the tightest style
+     * clears and this fails, naming both numbers, instead of a boss silently becoming unable to walk
+     * down a hallway.</p>
+     *
+     * <h2>What counts as clear</h2>
+     * <p>{@code height} spans floor to ceiling inclusive, so the air between them is
+     * {@code height - 2}. An ARCHED profile spends the top one of those on its haunch stair, which
+     * is solid enough to stop a mob, so it costs a row &mdash; but only in the cells that get a
+     * haunch, and a narrow cell never does (there is no cross-section to arch). Hence
+     * {@code narrow_height} being measured without the arch deduction.</p>
+     *
+     * <p>Doorways are deliberately NOT checked. They open two blocks
+     * ({@code BasicDoorGenerator}: sill / open / open / lintel), which no mob this size has ever
+     * fit through &mdash; the Minotaur smashes the lintel out, and that is the intended behaviour
+     * rather than a clearance to fix. See {@code SmashBlocksGoal}.</p>
+     */
+    @Test
+    void everyCorridorStyleClearsTheTallestMobThatWalksIt() {
+        int needed = Mth.ceil(DungeonsEntities.MINOTAUR_HEIGHT);
+        for (String name : MOTIFS) {
+            CorridorConfig corridor = motif(name).corridor();
+            for (CorridorStyle style : corridor.rollableStyles()) {
+                boolean arched = style.profile() == CorridorConfig.Profile.ARCHED;
+                // The wide case pays for its haunch; the narrow case never has one.
+                int wide = style.height() - 2 - (arched ? 1 : 0);
+                int narrow = style.narrowHeight().orElse(style.height()) - 2;
+                int clear = Math.min(wide, narrow);
+                assertTrue(clear >= needed, "motif '" + name + "' corridor style '" + style.name()
+                        + "' leaves " + clear + " clear row(s), and the Minotaur is "
+                        + DungeonsEntities.MINOTAUR_HEIGHT + " blocks tall, needing " + needed
+                        + ". Either raise the style's height or bring the mob back down -- these two"
+                        + " numbers are authored apart and nothing else checks them against each"
+                        + " other");
+            }
+        }
+    }
+
+    /**
+     * <strong>Nothing may put two things at the room's centre.</strong>
+     *
+     * <p>Found in game by Mark, 2026-09-09: a column growing out of a lit brazier. {@code hall} had
+     * a {@code dungeons2:centre} PILLAR and a {@code dungeons2:centre} dais carrying a brazier as
+     * its {@code top_block}, in two different slots. Slot options roll INDEPENDENTLY (#65), so
+     * roughly one room in sixteen that rolled both got them in the same cell &mdash; the dais places
+     * its own cells around a column already standing, which is deliberate, but its centrepiece
+     * still lands on the middle.</p>
+     *
+     * <p>The codebase already knew this shape: a pit and a platform cannot share a scheme for
+     * exactly the same reason, and that is why {@code sunken_shrine} is its own scheme. This
+     * generalises the rule to every pair of centre-seeking slots, because the next one will be
+     * some other pair.</p>
+     *
+     * <p>Checked on the GATES rather than by rolling: two centre-seekers may coexist in a scheme so
+     * long as no single room can draw both. {@code hall} keeps its centre dais (capped at
+     * {@code max_size} 11) and its 3x3 centre pier ({@code min_size} 13) that way &mdash; the
+     * exclusion is structural, not a matter of weights.</p>
+     */
+    @Test
+    void noSchemePutsTwoThingsAtTheCentreOfTheSameRoom() {
+        for (String name : MOTIFS) {
+            for (RoomScheme scheme : motif(name).schemes()) {
+                for (int size = 5; size <= 17; size += 2) {
+                    for (int height = 5; height <= 10; height++) {
+                        List<String> centred = new ArrayList<>();
+                        collectCentreSeekers(scheme, size, height, centred);
+                        assertTrue(centred.size() < 2, "motif '" + name + "', scheme '"
+                                + scheme.name() + "': " + centred + " all claim the middle of a "
+                                + size + "x" + size + " room " + height + " high. They will be "
+                                + "drawn into the same cell -- give one of them a gate that "
+                                + "excludes the other, or move it to its own scheme");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Every slot of this scheme that would draw at the room's centre, across ALL of its authored
+     * alternatives. Deliberately pessimistic: two options of the SAME slot cannot both be rolled,
+     * so this over-reports there -- but a slot holding two centre-seekers is fine by construction
+     * and no shipped scheme does it, so the simpler sweep is the one worth having.
+     */
+    private static void collectCentreSeekers(RoomScheme scheme, int size, int height,
+                                             List<String> into) {
+        scheme.pillars().all()
+                .filter(entry -> entry.gate().fits(size, size, height))
+                .flatMap(entry -> entry.forRoom(size, size, height).patterns().stream())
+                .filter(pattern -> pattern.layout() instanceof CentrePillarLayout)
+                .findFirst()
+                .ifPresent(pattern -> into.add("pillars:centre"));
+        scheme.platforms().all()
+                .filter(entry -> entry.gate().fits(size, size, height))
+                .flatMap(entry -> entry.forRoom(size, size, height).patterns().stream())
+                .filter(pattern -> pattern.layout() instanceof CentrePlatformLayout)
+                .findFirst()
+                .ifPresent(pattern -> into.add("platforms:centre"));
+        scheme.pit().all()
+                .filter(entry -> entry.gate().fits(size, size, height))
+                .filter(entry -> entry.shape() instanceof CentrePitShape)
+                .findFirst()
+                .ifPresent(entry -> into.add("pit:centre"));
     }
 
     /**

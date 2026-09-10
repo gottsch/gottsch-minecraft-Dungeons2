@@ -48,8 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class EmptyRoomProbe {
 
-    /** The entrance floor. These cases are about size and weight, not depth. */
-    private static final int ENTRANCE_FLOOR = 0;
 
     private static final int DUNGEONS = 60;
 
@@ -94,7 +92,12 @@ class EmptyRoomProbe {
                     int h = room.getHeight();
                     rooms++;
 
-                    RoomScheme scheme = RoomSchemeSelector.select(config.schemes(), w, d, h, ENTRANCE_FLOOR, random);
+                    RoomScheme scheme = RoomSchemeSelector.select(
+                            // The room's OWN floor, not a constant 0. This walks every floor of the
+                            // dungeon, and since the 2026-09-09 do-over classic's schemes carry
+                            // min_floor_index -- so passing the entrance index reported the mud
+                            // floor's answer for the whole stack.
+                            config.schemes(), w, d, h, floor.getFloorIndex(), random);
                     // [total, at min side 7, at min side 9, at 11+]
                     int minSide = Math.min(w, d);
                     int[] tally = bySchemeAndSize.computeIfAbsent(scheme.name(), k -> new int[4]);

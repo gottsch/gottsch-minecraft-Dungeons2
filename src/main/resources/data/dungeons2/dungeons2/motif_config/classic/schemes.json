@@ -1,0 +1,936 @@
+{
+  "schemes": [
+    {
+      "name": "plain",
+      "weight": 4,
+
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:cauldron", "weight": 1 }
+          ]
+        },
+        { "weight": 4, "none": true }
+      ],
+
+      "pots": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 4, "min_count": 1, "max_count": 1, "proximity": 12 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 6, "none": true }
+      ]
+    },
+
+    {
+      "name": "chamber",
+      "weight": 12,
+      "min_floor_index": 1,
+
+      "wall": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "$inlay",
+                    "corner_block": "$inlay_alt",
+                    "anchor": "top",
+                    "offset": 1
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:panels",
+              "config": {
+                "block": "dungeonblocks:stone_bricks_fluted_block",
+                "width": 3,
+                "spacing": 4,
+                "inset": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:diamond",
+              "config": { "block": "$ornament", "size": 2, "spacing": 6, "filled": true }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:door_jambs",
+              "config": {
+                "block": "$inlay",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "lintel_block": "$inlay_alt"
+              }
+            }
+          ]
+        }
+      ],
+
+      "ceiling": [
+        { "weight": 6, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_height": 7,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:joists",
+              "projection": 1,
+              "config": {
+                "block": "minecraft:spruce_log",
+                "bracket_block": "dungeonblocks:spruce_corbel_block",
+                "orient": "inward",
+                "spacing": 3
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 3,
+          "type": "dungeons2:path",
+          "config": { "path_block": "minecraft:cobblestone", "width": 3, "routing": "auto" }
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "type": "dungeons2:border",
+          "config": {
+            "inset": 1,
+            "corner_block": "$footing",
+            "edge_left_block": "$plinth_left",
+            "edge_right_block": "$plinth_right"
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "type": "dungeons2:cross",
+          "config": { "thickness": 1, "block": "$inlay" }
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:diagonal",
+          "config": { "primary_block": "$base", "secondary_block": "$inlay", "width": 3 }
+        },
+        {
+          "weight": 3,
+          "type": "dungeons2:gradient",
+          "config": {
+            "edge_block": "minecraft:cobblestone",
+            "centre_block": "$base",
+            "edge_probability": 0.8,
+            "centre_probability": 0.05,
+            "hold_cells": 1
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$inlay" }
+        }
+      ],
+
+      "pots": [
+        {
+          "weight": 3,
+          "max_size": 7,
+          "min_count": 0,
+          "max_count": 2,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "min_count": 1,
+          "max_count": 3,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 },
+            { "entity": "dungeonblocks:pot", "weight": 1 }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:cauldron", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "corner",
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 2, "oriented": false },
+            { "block": "minecraft:hay_block", "weight": 1 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 5, "none": true }
+      ]
+    },
+
+    {
+      "name": "hall",
+      "weight": 10,
+      "min_floor_index": 1,
+      "min_size": 9,
+      "min_height": 7,
+
+      "pillars": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:grid",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 4, "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:grid",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 3, "inset": 1 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:colonnade",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 3, "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:centre",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "thickness": 3,
+              "config": { "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:quartet",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 4, "inset": 2 }
+            }
+          ]
+        }
+      ],
+
+      "wall": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "$inlay",
+                    "corner_block": "$inlay_alt",
+                    "anchor": "top",
+                    "offset": 1
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "$inlay",
+                    "corner_block": "$inlay_alt",
+                    "anchor": "top",
+                    "offset": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "dungeons2:pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "spacing": 4,
+                "projection": 1
+              }
+            },
+            {
+              "type": "dungeons2:end_pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:panels",
+              "config": {
+                "block": "dungeonblocks:stone_bricks_fluted_block",
+                "width": 3,
+                "spacing": 4,
+                "inset": 1
+              }
+            },
+            {
+              "type": "dungeons2:end_pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:arcade",
+              "config": {
+                "block": "$inlay",
+                "stair_block": "$stair",
+                "impost_block": "$inlay_alt",
+                "width": 5,
+                "height": 5,
+                "spacing": 2
+              }
+            }
+          ]
+        }
+      ],
+
+      "ceiling": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:joists",
+              "projection": 1,
+              "config": {
+                "block": "minecraft:spruce_log",
+                "bracket_block": "dungeonblocks:spruce_corbel_block",
+                "orient": "inward",
+                "spacing": 3
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": {
+                "block": "$base",
+                "springing_block": "$inlay",
+                "crown_block": "$ornament",
+                "steps": 2,
+                "step_height": 2
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } },
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "projection": 2,
+              "config": {
+                "block": "$stair",
+                "inset": 0,
+                "orient": "outward",
+                "properties": { "half": "top" }
+              }
+            },
+            {
+              "type": "dungeons2:border",
+              "projection": 1,
+              "config": { "block": "$base", "inset": 0 }
+            },
+            {
+              "type": "dungeons2:border",
+              "projection": 1,
+              "config": {
+                "block": "$stair",
+                "inset": 1,
+                "orient": "outward",
+                "properties": { "half": "top" }
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            },
+            {
+              "type": "dungeons2:field",
+              "config": { "block": "$inlay_alt", "inset": 2 }
+            },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:oculus",
+              "config": {
+                "cap_block": "minecraft:glowstone",
+                "grate_block": "dungeonblocks:dark_iron_grate",
+                "size": 3,
+                "depth": 3
+              }
+            }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 4, "none": true },
+        {
+          "weight": 3,
+          "type": "dungeons2:path",
+          "config": { "path_block": "minecraft:cobblestone", "width": 3, "routing": "auto" }
+        },
+        {
+          "weight": 3,
+          "min_size": 11,
+          "type": "dungeons2:composite",
+          "config": {
+            "generators": [
+              {
+                "type": "dungeons2:border",
+                "config": {
+                  "inset": 2,
+                  "corner_block": "$ornament",
+                  "edge_left_block": "$plinth_left",
+                  "edge_right_block": "$plinth_right"
+                }
+              },
+              { "type": "dungeons2:field", "config": { "block": "$inlay", "inset": 3 } }
+            ]
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:chevron",
+          "config": { "block": "$ornament", "spacing": 4 }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 4, "block": "$inlay" }
+        },
+        {
+          "weight": 3,
+          "type": "dungeons2:gradient",
+          "config": {
+            "edge_block": "minecraft:cobblestone",
+            "centre_block": "$base",
+            "edge_probability": 0.75,
+            "centre_probability": 0.05,
+            "hold_cells": 2
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$inlay" }
+        }
+      ],
+
+      "platforms": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 3,
+          "max_size": 11,
+          "patterns": [
+            {
+              "type": "dais",
+              "layout": "dungeons2:centre",
+              "block": "$base",
+              "stair_block": "$stair",
+              "centre_block": "$ornament",
+              "size": 3,
+              "config": { "inset": 1 },
+              "orient": "inward",
+              "top_block": "dungeonblocks:brazier_block",
+              "top_properties": { "fire": "embers" }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dais",
+              "layout": "dungeons2:corners",
+              "block": "$base",
+              "stair_block": "$stair",
+              "centre_block": "$ornament",
+              "size": 1,
+              "config": { "inset": 1 },
+              "orient": "inward",
+              "top_block": "dungeonblocks:brazier_block",
+              "top_properties": { "fire": "embers" }
+            }
+          ]
+        }
+      ],
+
+      "pots": [
+        {
+          "weight": 3,
+          "min_count": 1,
+          "max_count": 3,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "min_count": 2,
+          "max_count": 4,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:cauldron", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "min_count": 0,
+          "max_count": 3,
+          "placement": "free",
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:hay_block", "weight": 2 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 2, "min_size": 11, "min_count": 2, "max_count": 2, "proximity": 12 },
+        { "weight": 4, "none": true }
+      ],
+
+      "partition": [
+        { "weight": 7, "none": true },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:strip",
+          "block": "$base",
+          "config": { "axis": "any" }
+        },
+        {
+          "weight": 2,
+          "min_size": 13,
+          "type": "dungeons2:strip",
+          "block": "$base",
+          "gap_block": "dungeonblocks:spruce_dungeon_door",
+          "config": { "axis": "any" }
+        }
+      ],
+
+      "chests": {
+        "min_count": 0,
+        "max_count": 1,
+        "variants": [
+          { "block": "minecraft:chest", "weight": 1 }
+        ]
+      }
+    },
+
+    {
+      "name": "sunken_shrine",
+      "weight": 6,
+      "min_floor_index": 1,
+      "min_size": 7,
+
+      "pit": [
+        {
+          "weight": 1,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_block": "dungeonblocks:brazier_block",
+            "centre_properties": { "fire": "embers" }
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_block": "dungeonblocks:dungeon_lantern",
+            "centre_properties": { "hanging": "false" }
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_block": "$ornament"
+          }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward"
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_chest": {
+              "min_count": 1,
+              "max_count": 1,
+              "loot_tables": [
+                { "loot_table": "dungeons2:chests/classic_shallow", "weight": 2 },
+                { "loot_table": "dungeons2:chests/classic_deep", "weight": 1 }
+              ],
+              "variants": [
+                { "block": "minecraft:chest", "weight": 1 }
+              ]
+            }
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 5,
+            "depth": 1,
+            "rim_block": "minecraft:cobblestone_stairs",
+            "rim_orient": "outward"
+          }
+        }
+      ],
+
+      "wall": [
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top", "offset": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:end_pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "projection": 1
+              }
+            }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "ceiling": [
+        { "weight": 4, "none": true },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:oculus",
+              "config": {
+                "cap_block": "minecraft:glowstone",
+                "grate_block": "dungeonblocks:dark_iron_grate",
+                "size": 3,
+                "depth": 3
+              }
+            }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 2,
+          "type": "dungeons2:border",
+          "config": {
+            "inset": 0,
+            "corner_block": "$ornament",
+            "edge_left_block": "$base",
+            "edge_right_block": "$base"
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 4, "block": "$inlay" }
+        }
+      ],
+
+      "pots": [
+        {
+          "weight": 4,
+          "min_count": 1,
+          "max_count": 3,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:pot", "weight": 1 }
+          ]
+        },
+        { "weight": 1, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 10 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 3, "none": true }
+      ]
+    }
+  ]
+}

@@ -50,7 +50,9 @@ import java.util.Set;
  * this or you open a hole into the room below" was a rule waiting to be forgotten by someone who
  * had never read it.</p>
  *
- * <p>{@code sinkOffset} 0 therefore writes nothing at all, which is what ships today.</p>
+ * <p>{@code sinkOffset} 0 therefore writes nothing at all. That was what shipped when this was
+ * written; the constants flipped to {@code floorHeight} 20 / {@code sinkOffset} 5 on
+ * 2026-08-27, so a pit has five blocks of budget below the walking plane today.</p>
  *
  * <h2>AND THE LINING, which is the same kind of rule</h2>
  * <p>Every vertical face a pit cuts is <strong>lined</strong> here, in the neighbouring column,
