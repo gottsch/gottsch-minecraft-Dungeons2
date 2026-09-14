@@ -17,18 +17,34 @@
  */
 package mod.gottsch.forge.dungeons2.core.block.entity;
 
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.gottschcore.block.entity.ProximityMobSetSpawnerBlockEntity;
+import mod.gottsch.forge.gottschcore.mobset.MobSetData;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
+import mod.gottsch.forge.gottschcore.random.RandomHelper;
 import mod.gottsch.forge.gottschcore.size.IntegerRange;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.gottschcore.util.SpawnUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * GottschCore's proximity mob-set spawner plus the one thing Dungeons2 knows that a generic spawner
- * cannot: <strong>which floor of the dungeon it is on</strong>.
+ * GottschCore's proximity mob-set spawner plus two things Dungeons2 knows that a generic spawner
+ * cannot: <strong>which floor of the dungeon it is on</strong>, and <strong>which boss the planner
+ * chose</strong>.
  *
  * <h2>Why a subclass and not just another tag field</h2>
  * <p>{@code BlockEntityData} can carry any key, and {@code DungeonPiece.applyBlockEntity} will load
@@ -50,16 +66,29 @@ import java.util.function.Supplier;
  * under a mountain has its floor 3 higher than a ravine dungeon's floor 0. This field is the
  * dungeon-relative ordinal, 0 at the entrance.</p>
  *
+ * <h2>The pinned boss</h2>
+ * <p>Since 2026-09-10 a dungeon's boss is drawn at PLANNING, so that loot placed long before the
+ * player arrives can depend on who it is. The draw reaches the boss spawner as {@link #PINNED_MOB},
+ * written <strong>beside</strong> {@code mobSetName}, never in place of it (Mark: a set assigned to
+ * a spawner in data must stay the spawner's set). The set keeps the final word: the pin is honoured
+ * only while that set still offers the mob, so a datapack that later takes the Minotaur off the
+ * medium menu wins over a Minotaur pinned into an old world, and the spawner draws from the set as
+ * it always did.</p>
+ *
  * @author Mark Gottschling on Aug 17, 2026
  */
 public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity {
 
     public static final String FLOOR_INDEX = "floorIndex";
+    /** Marker/BE NBT, camelCase like its neighbours. See the class javadoc. */
+    public static final String PINNED_MOB = "pinnedMob";
 
     /** Unset. Distinguishable from floor 0, which is a real and common answer. */
     public static final int UNKNOWN_FLOOR = -1;
 
     private int floorIndex = UNKNOWN_FLOOR;
+    /** The planner's boss, or null to draw from the set. */
+    private ResourceLocation pinnedMob;
 
     public DungeonSpawnerBlockEntity(Supplier<BlockEntityType<?>> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -70,6 +99,9 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
         super.load(tag);
         if (tag.contains(FLOOR_INDEX)) {
             this.floorIndex = tag.getInt(FLOOR_INDEX);
+        }
+        if (tag.contains(PINNED_MOB, Tag.TAG_STRING)) {
+            this.pinnedMob = ResourceLocation.tryParse(tag.getString(PINNED_MOB));
         }
     }
 
@@ -91,6 +123,59 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
         }
         super.saveAdditional(tag);
         tag.putInt(FLOOR_INDEX, floorIndex);
+        if (pinnedMob != null) {
+            tag.putString(PINNED_MOB, pinnedMob.toString());
+        }
+    }
+
+    /**
+     * Spawns the pinned boss when there is one its set still offers; otherwise exactly the parent's
+     * draw.
+     *
+     * <p>The tail repeats the parent's {@code selfDestruct}, which is private: mark dead, clear the
+     * cell, drop the block entity. Same three steps in the same order, so a pinned spawner leaves
+     * the same trace as a drawn one.</p>
+     */
+    @Override
+    public void execute(Level world, RandomSource random, ICoords blockCoords, ICoords playerCoords) {
+        Optional<EntityType<?>> pinned = world.isClientSide() ? Optional.empty() : honouredPin();
+        if (pinned.isEmpty()) {
+            super.execute(world, random, blockCoords, playerCoords);
+            return;
+        }
+        ServerLevel level = (ServerLevel) world;
+        IntegerRange range = getMobSizeRange() != null ? getMobSizeRange() : new IntegerRange(1, 1);
+        int count = RandomHelper.randomInt(random, range.getMin(), range.getMax());
+        @SuppressWarnings("unchecked")
+        EntityType<? extends LivingEntity> type = (EntityType<? extends LivingEntity>) pinned.get();
+        for (int i = 0; i < count; i++) {
+            SpawnUtil.spawnAndAddMob(level, random, type, blockCoords);
+        }
+        setDead(true);
+        level.setBlock(getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+        level.removeBlockEntity(getBlockPos());
+    }
+
+    /** The pinned mob's type, if there is a pin and the assigned set still offers it. */
+    private Optional<EntityType<?>> honouredPin() {
+        if (pinnedMob == null) {
+            return Optional.empty();
+        }
+        boolean offered = MobSetDataRegistry.get(getMobSetName())
+                .map(data -> setOffers(data, pinnedMob))
+                .orElse(false);
+        if (!offered) {
+            Dungeons.LOGGER.warn("[D2-SPAWNER] pinned boss {} is no longer offered by {} at {};"
+                    + " drawing from the set instead", pinnedMob, getMobSetName(),
+                    getBlockPos().toShortString());
+            return Optional.empty();
+        }
+        return EntityType.byString(pinnedMob.toString());
+    }
+
+    /** Whether {@code data} still offers {@code mob} at a weight that can be drawn. */
+    public static boolean setOffers(MobSetData data, ResourceLocation mob) {
+        return data.getMobs().stream().anyMatch(entry -> entry.weight() > 0 && entry.id().equals(mob));
     }
 
     /** Which floor of the dungeon this spawner is on, 0 at the entrance; {@link #UNKNOWN_FLOOR} if unset. */
@@ -100,5 +185,9 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
 
     public void setFloorIndex(int floorIndex) {
         this.floorIndex = floorIndex;
+    }
+
+    public ResourceLocation getPinnedMob() {
+        return pinnedMob;
     }
 }

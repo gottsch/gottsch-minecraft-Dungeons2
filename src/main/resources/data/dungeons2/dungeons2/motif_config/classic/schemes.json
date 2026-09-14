@@ -46,6 +46,26 @@
       "weight": 12,
       "min_floor_index": 1,
 
+      // Hazard pits live here and not on hall: a pit and a platform cannot share a scheme (the pit
+      // emits first and the dais is dropped silently), and hall carries platforms.
+      "pit": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "type": "dungeons2:hazard",
+          "config": {
+            "width": 3,
+            "depth": 4,
+            "offset_x": 2,
+            "spike_block": "minecraft:pointed_dripstone",
+            "spike_properties": { "vertical_direction": "up" },
+            "spike_probability": 0.4,
+            "rim_block": "$inlay"
+          }
+        }
+      ],
+
       "wall": [
         { "weight": 5, "none": true },
         {
@@ -748,7 +768,7 @@
 
     {
       "name": "sunken_shrine",
-      "weight": 6,
+      "weight": 3,
       "min_floor_index": 1,
       "min_size": 7,
 
@@ -774,7 +794,7 @@
             "rim_block": "$stair",
             "rim_orient": "outward",
             "centre_block": "dungeonblocks:dungeon_lantern",
-            "centre_properties": { "hanging": "false" }
+            "centre_properties": { "hanging": "false", "lit": "true", "waterlogged": "false" }
           }
         },
         {

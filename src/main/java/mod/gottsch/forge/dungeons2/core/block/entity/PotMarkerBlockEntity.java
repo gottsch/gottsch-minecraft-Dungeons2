@@ -42,10 +42,12 @@ import java.util.List;
  * <ul>
  *   <li>{@code probability} &mdash; 0..1, whether this marker produces anything at all. 1 by
  *       default, so a marker placed and never configured is simply "a pot stands here".</li>
- *   <li>{@code minCount} / {@code maxCount} &mdash; how many pots at THIS cell. 1/1 by default. A
- *       marker is one cell, so this is a cluster count and not the room-wide count
- *       {@code PotConfig} rolls; the two words mean different things because they answer to
- *       different scopes.</li>
+ *   <li>{@code minCount} / {@code maxCount} &mdash; how many pots in THIS marker's group. 1/1 by
+ *       default. The pots are packed round the marker a pot's width plus a small gap apart, so
+ *       small ones share its block and big ones overhang onto free floor beside it; a group with
+ *       no room to fit places fewer, down to one. This is a
+ *       cluster count and not the room-wide count {@code PotConfig} rolls; the two words mean
+ *       different things because they answer to different scopes.</li>
  *   <li>{@code variants} &mdash; weighted entity ids, the same shape as {@code PotConfig.PotVariant}
  *       and for the same reason: "mostly the tall pot, occasionally a squat one" without repeating
  *       ids. This is also how a template asks for the RED and BLUE palettes, which are reserved for

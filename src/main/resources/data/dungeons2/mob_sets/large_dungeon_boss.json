@@ -13,6 +13,10 @@
     {
       "id": "dungeons2:daemon",
       "weight": 10
+    },
+    {
+      "id": "dungeons2:stone_colossus",
+      "weight": 10
     }
   ]
 }

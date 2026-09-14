@@ -329,6 +329,12 @@ public class DungeonStackPlanner {
      * procedurally exactly as it is today. Degrade toward generating, the convention every
      * missing-content path here follows.
      */
+    /** Who the boss will be. See {@link BossPicker}. */
+    public DungeonStackPlanner withBossPicker(BossPicker picker) {
+        this.bossPicker = picker;
+        return this;
+    }
+
     public DungeonStackPlanner withBossRoomAssembler(BossRoomAssembler assembler) {
         this.bossRoomAssembler = assembler;
         return this;
@@ -639,6 +645,16 @@ public class DungeonStackPlanner {
      */
     private BossRoomAssembler bossRoomAssembler;
 
+    /** Draws the boss at planning time. Null draws nothing and leaves the boss to the spawner. */
+    private BossPicker bossPicker;
+
+    /**
+     * The {@link #mixSeed} index the boss draw is seeded from. Its own stream, never {@code random}:
+     * the boss is a new draw, and taking it from the planner's stream would shift every draw after it
+     * and re-roll the layout of every existing world. -1 is the planner's own stream.
+     */
+    private static final int BOSS_SEED_INDEX = -2;
+
     /**
      * How many pool draws the boss slot gets before falling back to the procedural terminal room.
      *
@@ -716,8 +732,27 @@ public class DungeonStackPlanner {
      * in as few ways as possible.</p>
      */
     public interface BossRoomAssembler {
+        /**
+         * @param boss the entity id {@link BossPicker} drew, which the room must be built to spawn;
+         *             null to leave the choice to the tier's boss mob set, as before it existed
+         */
         Optional<AssembledRoom> assemble(int worldX, int worldY, int worldZ, int floorIndex,
-                                         DungeonSize size, long assemblySeed, boolean commit);
+                                         DungeonSize size, String boss, long assemblySeed, boolean commit);
+    }
+
+    /**
+     * Draws which mob will be this dungeon's boss, once its size is known.
+     *
+     * <p>Exists so the boss is known at PLANNING: the boss spawner otherwise draws its mob when a
+     * player walks up to it, after every chest has been filled, and nothing could ever depend on who
+     * the boss is (Mark, 2026-09-10: loot that only turns up where a Beholder-kin spawns). The
+     * planner stays free of mob sets and registries &mdash; it asks, the caller answers.</p>
+     *
+     * @return an entity id, or null for "no pinned boss"
+     */
+    @FunctionalInterface
+    public interface BossPicker {
+        String pick(DungeonSize size, Random random);
     }
 
     /**
@@ -831,6 +866,10 @@ public class DungeonStackPlanner {
         Random random = new Random(mixSeed(seed, -1));
 
         DungeonSize size = forcedSize != null ? forcedSize : rollSize(random);
+        // Its own seeded stream -- see BOSS_SEED_INDEX. Drawn even if the boss room later fails to
+        // seat; it is only RECORDED on the layout once one does.
+        String boss = bossPicker == null ? null
+                : bossPicker.pick(size, new Random(mixSeed(seed, BOSS_SEED_INDEX)));
         int floorCount = forcedFloorCount != null
                 ? forcedFloorCount
                 : rollInRange(random, size.getMinFloors(), size.getMaxFloors());
@@ -1144,9 +1183,11 @@ public class DungeonStackPlanner {
                 endFootprint = transitionLocalFootprints.get(i);
             } else {
                 bossSlot = placeBossRoom(footprint, startFootprint, planAnchor, floorFloors[i], i,
-                        size, random);
+                        size, boss, random);
                 if (bossSlot != null) {
                     endFootprint = bossSlot.footprint();
+                    // Only now: a boss room that never seated is a boss that never spawns.
+                    layout.setBoss(boss);
                 } else {
                     // Bottom-floor terminal room. 7x7 synthetic by default; an authored boss
                     // template hands over its own measured footprint instead (#46).
@@ -1657,7 +1698,7 @@ public class DungeonStackPlanner {
      */
     private BossSlot placeBossRoom(Rectangle2D footprint, Rectangle2D startFootprint,
                                    ICoords planAnchor, int floorY, int floorIndex, DungeonSize size,
-                                   Random random) {
+                                   String boss, Random random) {
         if (bossRoomAssembler == null) {
             // Before any draw from `random` -- see the field's note on byte-identical plans.
             return null;
@@ -1665,7 +1706,7 @@ public class DungeonStackPlanner {
         for (int attempt = 0; attempt < BOSS_ASSEMBLY_ATTEMPTS; attempt++) {
             long assemblySeed = random.nextLong();
             Optional<AssembledRoom> probe = bossRoomAssembler.assemble(
-                    planAnchor.getX(), floorY, planAnchor.getZ(), floorIndex, size, assemblySeed, false);
+                    planAnchor.getX(), floorY, planAnchor.getZ(), floorIndex, size, boss, assemblySeed, false);
             if (probe.isEmpty()) {
                 continue;
             }
@@ -1685,7 +1726,7 @@ public class DungeonStackPlanner {
             int offsetZ = probeRect.getMinY() - planAnchor.getZ();
             Optional<AssembledRoom> placed = bossRoomAssembler.assemble(
                     planAnchor.getX() + slot.getMinX() - offsetX, floorY,
-                    planAnchor.getZ() + slot.getMinY() - offsetZ, floorIndex, size, assemblySeed, true);
+                    planAnchor.getZ() + slot.getMinY() - offsetZ, floorIndex, size, boss, assemblySeed, true);
             if (placed.isEmpty()) {
                 continue;
             }

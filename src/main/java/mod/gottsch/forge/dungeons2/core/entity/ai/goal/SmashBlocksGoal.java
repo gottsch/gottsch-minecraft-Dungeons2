@@ -18,9 +18,13 @@
 package mod.gottsch.forge.dungeons2.core.entity.ai.goal;
 
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
+import mod.gottsch.forge.dungeons2.core.entity.ai.SmashDebris;
 import mod.gottsch.forge.dungeons2.core.entity.projectile.SmashShard;
+import mod.gottsch.forge.dungeons2.core.world.BossRoomRegistry;
+import mod.gottsch.forge.gmm.core.entity.monster.IBurstingMob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -35,6 +39,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
@@ -143,21 +148,9 @@ public class SmashBlocksGoal extends Goal {
      * rather than six -- it should look like a wall coming down, not like mining.
      */
     private static final int DEFAULT_BLOCKS_PER_SWING = 3;
-    /** gmm's bone-shard damage, verbatim. See {@link #SHARD_SPEED}. */
+    /** gmm's bone-shard damage, verbatim. See {@code SmashDebris.SHARD_SPEED}. */
     private static final double DEFAULT_SHARD_BASE_DAMAGE = 2.0D;
 
-    /** How far the burst is turned from "straight out of the block" toward the mob's target. */
-    private static final double ROOMWARD_BIAS = 0.45D;
-    /** Constant upward component, so shards arc and fall instead of skimming the floor. */
-    private static final double LIFT = 0.35D;
-    /**
-     * Launch speed and spread, and the damage below, are gmm's bone-shard numbers verbatim
-     * ({@code TaintedSkeleton.spawnShrapnel}: {@code shoot(dx, dy, dz, 0.9F, 12.0F)} and
-     * {@code setBaseDamage(2.0)}). Deliberate (Mark, 2026-09-08) &mdash; the two are the same kind
-     * of shrapnel and should hit the same, not merely look alike.
-     */
-    private static final float SHARD_SPEED = 0.9F;
-    private static final float SHARD_INACCURACY = 12.0F;
     /**
      * How long the mob keeps working at a wall after its target is dropped.
      *
@@ -195,27 +188,30 @@ public class SmashBlocksGoal extends Goal {
     private static final int LEASH_RADIUS = 48;
 
     /**
-     * The heights the mob clears, relative to its feet, in the order it clears them.
-     *
-     * <p>Floor first, then body, then head. It used to be chest-head-knee, "the order a thing this
-     * size would swing at", and that was the wrong idea entirely: the goal is not to hit a wall
-     * convincingly, it is to make a <strong>hole the mob can walk through</strong>. A Minotaur is
-     * 2.2 blocks tall, so it needs all three of these clear; carving from the floor up means the
-     * passage becomes usable at the moment the last one goes.</p>
-     *
-     * <p>Height is a constant because it is the same three blocks for anything this goal is
-     * sensibly attached to. <strong>Width is not</strong> &mdash; see {@link #findSmashTarget},
-     * which reads it off the mob's bounding box, because a full-block-wide mob straddles two
-     * columns and a one-column hole is impassable however tall it is.</p>
-     */
-    private static final int[] PASSAGE_HEIGHTS = {0, 1, 2};
-
-    /**
      * Shrinks the mob's box a hair before reading which columns it covers. A box whose edge lands
      * exactly on a block boundary would otherwise claim the next column along and widen every
      * opening by one for no reason.
      */
     private static final double EDGE_BIAS = 1.0E-7D;
+
+    /** No burst in progress. */
+    private static final int NO_BURST = -1;
+
+    /** No blow in flight. */
+    private static final int NO_STRIKE = -1;
+
+    /**
+     * Ticks between a plain swing starting and the blocks going.
+     *
+     * <p>They used to go on the SAME tick as {@code mob.swing()}, which is the tick the arm starts
+     * MOVING: vanilla's swing runs six ticks from rest to the bottom of the arc, so the wall came
+     * apart with the fist still up beside the mob's head and the swing then played through empty
+     * air (Mark, 2026-09-14). Four ticks puts the break near the bottom of the arc.</p>
+     *
+     * <p>A mob with a real wind-up does not use this at all &mdash; it publishes its own wind-up
+     * length and the blocks go on the tick the fist arrives. See {@link IBurstingMob}.</p>
+     */
+    private static final int SWING_STRIKE_DELAY_TICKS = 4;
 
     private static final int CONFINED_GRACE_TICKS = 60;
     /** How often the flood fill re-runs. Confinement does not change tick to tick. */
@@ -224,16 +220,6 @@ public class SmashBlocksGoal extends Goal {
     private static final int CONFINEMENT_SEARCH_CAP = 160;
     /** Reaching this far from the mob counts as being out. */
     private static final int CONFINEMENT_ESCAPE_RADIUS = 6;
-
-    /** How far inside the broken block an edge origin is pulled. See {@code throwShards}. */
-    private static final double EDGE_INSET = 0.12D;
-    /**
-     * Render scale, where 1.0 is the bone shard's own size. A little variety so a burst is not three
-     * identical objects; centred on 1.0 rather than shrunk, because the shard rig is already sized
-     * to be a chip rather than a block.
-     */
-    private static final float MIN_SHARD_SCALE = 0.85F;
-    private static final float MAX_SHARD_SCALE = 1.15F;
 
     private final Mob mob;
     /** Ticks of continuous blockage before the first swing. */
@@ -248,6 +234,21 @@ public class SmashBlocksGoal extends Goal {
 
     private int blockedTicks;
     private int swingCooldown;
+    /**
+     * The mob's wall-burst animation, or null for one that just swings.
+     *
+     * <p>Resolved once at construction rather than tested per tick: whether a mob has a punch to
+     * throw is a fact about its class.</p>
+     */
+    private final IBurstingMob burster;
+    /**
+     * Ticks into the current burst, or {@link #NO_BURST}. <strong>Server-side and the goal's own
+     * count</strong> -- see {@link IBurstingMob}: the flag is what crosses the wire, the clock does
+     * not, because the two sides' tick counters are not the same clock.
+     */
+    private int burstTicks = NO_BURST;
+    /** Ticks left before a swing already in the air lands, or {@link #NO_STRIKE}. */
+    private int strikeDelay = NO_STRIKE;
     private BlockPos smashing;
     /** Cached answer from {@link #isConfined()}; see {@link #confinedLongEnough()}. */
     private boolean confined;
@@ -265,22 +266,36 @@ public class SmashBlocksGoal extends Goal {
                 DEFAULT_SHARDS_PER_SWING, DEFAULT_SHARD_BASE_DAMAGE, anchoredAtSpawn(mob));
     }
 
+    public SmashBlocksGoal(Mob mob, int blockedGraceTicks, int swingIntervalTicks, float maxHardness,
+                           int shardsPerSwing, double shardBaseDamage,
+                           Predicate<BlockPos> smashableArea) {
+        this(mob, blockedGraceTicks, swingIntervalTicks, maxHardness,
+                shardsPerSwing, shardBaseDamage, smashableArea, DEFAULT_BLOCKS_PER_SWING);
+    }
+
     /**
      * @param shardsPerSwing how many {@link SmashShard}s a swing throws; 0 disables them entirely,
      *                       which is the way to get the pre-2026-09-07 behaviour back for a mob
      *                       that should break walls quietly.
      * @param shardBaseDamage the shards' {@code baseDamage} &mdash; see
      *                        {@link #DEFAULT_SHARD_BASE_DAMAGE} for how that becomes real damage.
+     * @param blocksPerSwing blocks a single swing takes out. A parameter rather than
+     *                       {@link #DEFAULT_BLOCKS_PER_SWING} because it is the difference between
+     *                       a Minotaur working a doorway open over a couple of swings and a Stone
+     *                       Colossus taking a whole 3 x 7 face out in one telegraphed blow. Set it
+     *                       at or above the size of the face the mob wants and the wall goes in one
+     *                       hit; leave it small and the same mob reads as mining.
      */
     public SmashBlocksGoal(Mob mob, int blockedGraceTicks, int swingIntervalTicks, float maxHardness,
                            int shardsPerSwing, double shardBaseDamage,
-                           Predicate<BlockPos> smashableArea) {
+                           Predicate<BlockPos> smashableArea, int blocksPerSwing) {
         this.mob = mob;
         this.blockedGraceTicks = blockedGraceTicks;
         this.swingIntervalTicks = swingIntervalTicks;
         this.maxHardness = maxHardness;
         this.shardsPerSwing = shardsPerSwing;
-        this.blocksPerSwing = DEFAULT_BLOCKS_PER_SWING;
+        this.blocksPerSwing = Math.max(1, blocksPerSwing);
+        this.burster = mob instanceof IBurstingMob burstingMob ? burstingMob : null;
         this.shardBaseDamage = shardBaseDamage;
         this.smashableArea = smashableArea;
         // MOVE and LOOK, and registered ABOVE the charge and melee goals -- see the class javadoc.
@@ -306,8 +321,44 @@ public class SmashBlocksGoal extends Goal {
      * mini-boss to 16 blocks of where it was placed.</p>
      */
     private static Predicate<BlockPos> anchoredAtSpawn(Mob mob) {
+        return anchoredAtSpawn(mob, LEASH_RADIUS);
+    }
+
+    private static Predicate<BlockPos> anchoredAtSpawn(Mob mob, int radius) {
         BlockPos home = mob.blockPosition();
-        return pos -> pos.distSqr(home) <= LEASH_RADIUS * LEASH_RADIUS;
+        return pos -> pos.distSqr(home) <= (double) radius * radius;
+    }
+
+    /**
+     * The leash for a boss that is supposed to <strong>stay in its room and break the doorway</strong>:
+     * the room box {@link BossRoomRegistry} recorded when the dungeon generated, inflated by
+     * {@code inflate}.
+     *
+     * <p>A radius will not do here, and the reason is the goal's second route. "No navigable route
+     * AND something smashable ahead" is true of a player who has walked off down a corridor, so a
+     * radius-leashed Stone Colossus would bore along after them &mdash; which is option B, the design
+     * that was rejected (see the Stone Colossus plan, &sect;5). Inflating the recorded box by a
+     * block or two is exactly enough to take out the doorway and the wall it is cut into, and not
+     * enough to reach the corridor beyond. <strong>The leash is what makes "stays in its room" a
+     * property of the mob rather than a hope about player behaviour.</strong></p>
+     *
+     * <p>Resolved once, at construction, from where the mob is standing &mdash; the room is recorded
+     * at generation, long before anything spawns in it, and a boss that has been knocked out of its
+     * own box should still be leashed to it. Where no room is recorded (a spawn egg in the
+     * overworld, an older world, a mob placed outside any boss room) it falls back to a small radius
+     * around the spawn: small, not {@link #LEASH_RADIUS}, because the fallback should behave like the
+     * arena it stands in for rather than like a Minotaur loose in a maze.</p>
+     */
+    public static Predicate<BlockPos> boundToBossRoom(Mob mob, int inflate, int fallbackRadius) {
+        BlockPos home = mob.blockPosition();
+        BoundingBox room = mob.level() instanceof ServerLevel serverLevel
+                ? BossRoomRegistry.get(serverLevel).roomAt(home).orElse(null)
+                : null;
+        if (room == null) {
+            return anchoredAtSpawn(mob, fallbackRadius);
+        }
+        BoundingBox leash = room.inflatedBy(inflate);
+        return leash::isInside;
     }
 
     @Override
@@ -404,11 +455,22 @@ public class SmashBlocksGoal extends Goal {
         this.confinedTicks = 0;
         this.digToward = null;
         this.persistTicks = 0;
+        this.strikeDelay = NO_STRIKE;
+        // A goal that ends mid-punch would otherwise leave the flag set and the arm cocked for
+        // ever: the pose is driven entirely by the synched boolean, and nothing else clears it.
+        cancelBurst();
     }
 
     @Override
     public void tick() {
         LivingEntity target = this.mob.getTarget();
+        // A burst already in flight owns the mob until it lands: the fist is committed, and
+        // re-aiming at a different block halfway through a punch would slide the mob sideways
+        // under a pose that is already swinging.
+        if (this.burstTicks != NO_BURST) {
+            tickBurst(target);
+            return;
+        }
         if (this.confined) {
             // A confined mob digs its way out whether or not it has anyone to dig towards.
             this.smashing = findEscapeTarget();
@@ -434,13 +496,91 @@ public class SmashBlocksGoal extends Goal {
         this.mob.getLookControl().setLookAt(face.x, face.y, face.z);
         this.mob.getMoveControl().setWantedPosition(face.x, this.mob.getY(), face.z, 1.0D);
 
+        // A swing already in the air lands whatever else is going on -- including on a tick the
+        // cooldown would have returned early from.
+        if (this.strikeDelay != NO_STRIKE && --this.strikeDelay < 0) {
+            this.strikeDelay = NO_STRIKE;
+            breakFace(target);
+        }
+
         if (--this.swingCooldown > 0) {
             return;
         }
+
+        // A mob with a punch winds up first; the blocks go on the tick the fist arrives. Everything
+        // else swings and breaks in the same tick, which is what a Minotaur shouldering a wall
+        // should look like.
+        if (this.burster != null) {
+            beginBurst();
+            return;
+        }
+
         this.swingCooldown = this.swingIntervalTicks;
-
         this.mob.swing(InteractionHand.MAIN_HAND);
+        // NOT in this tick: the arm has only just started moving. See SWING_STRIKE_DELAY_TICKS.
+        this.strikeDelay = SWING_STRIKE_DELAY_TICKS;
+    }
 
+    /**
+     * Starts a wall burst: raise the flag, pick the fist, and let {@link #tickBurst} count.
+     *
+     * <p>The fist alternates rather than being random. A boss that throws the same arm every time
+     * reads as one animation replayed; alternating reads as working at the wall, and it costs a
+     * single bit that is already being synched.</p>
+     */
+    private void beginBurst() {
+        this.burster.setBurstLeftFisted(!this.burster.isBurstLeftFisted());
+        this.burster.setBursting(true);
+        this.burstTicks = 0;
+    }
+
+    /**
+     * Counts a burst out: rooted through the wind-up, blocks on the impact tick, still committed
+     * through the recovery.
+     *
+     * <p>The mob is held still for the whole blow. It is already standing at the wall -- it got
+     * here by pushing at it -- and letting the move control keep shoving while the punch plays
+     * walks it into its own hole.</p>
+     */
+    private void tickBurst(LivingEntity target) {
+        Vec3 face = Vec3.atCenterOf(this.smashing);
+        this.mob.getNavigation().stop();
+        this.mob.getLookControl().setLookAt(face.x, face.y, face.z);
+
+        int windup = Math.max(1, this.burster.getBurstWindupTicks());
+        int recovery = Math.max(0, this.burster.getBurstRecoveryTicks());
+        this.burstTicks++;
+        if (this.burstTicks == windup) {
+            breakFace(target);
+        } else if (this.burstTicks >= windup + recovery) {
+            this.burster.setBursting(false);
+            this.burstTicks = NO_BURST;
+            // The interval is measured from the END of the blow, not its start, so lengthening the
+            // wind-up does not silently shorten the gap between punches.
+            this.swingCooldown = this.swingIntervalTicks;
+        }
+    }
+
+    private void cancelBurst() {
+        if (this.burster != null) {
+            this.burster.setBursting(false);
+        }
+        this.burstTicks = NO_BURST;
+    }
+
+    /**
+     * Takes the blocks out: {@link #blocksPerSwing} of them, or as much of the passage as is left.
+     */
+    private void breakFace(LivingEntity target) {
+        // The cached block was chosen when the blow began -- which, for a burst, was a wind-up ago.
+        // A player can mine it out from the other side in that time, and a shard burst wearing the
+        // texture of air is not what that should look like.
+        if (this.smashing != null && this.mob.level().getBlockState(this.smashing).isAir()) {
+            this.smashing = nextTarget(target);
+        }
+        if (this.smashing == null) {
+            return;
+        }
         // A SWING TAKES SEVERAL BLOCKS, not one. One block a swing meant a Minotaur needed six
         // swings to open a doorway it could walk through (2 wide x 3 tall), which read as mining
         // rather than as something shouldering a wall down. Each block is re-found rather than
@@ -451,118 +591,28 @@ public class SmashBlocksGoal extends Goal {
             if (pos == null) {
                 break;
             }
-            // read the state BEFORE the break -- the shards wear it, and a moment later the
-            // position is air
-            BlockState smashed = this.mob.level().getBlockState(pos);
             // destroyBlock plays the break sound and particles and honours loot, so a smashed wall
             // leaves its bricks on the floor rather than vanishing
             this.mob.level().destroyBlock(pos, true, this.mob);
-            throwShards(pos, smashed, target, shardsEach);
-        }
-
-    }
-
-    /**
-     * Throws a burst of {@link SmashShard}s off the block that was just broken.
-     *
-     * <p>They are a real hazard, not a particle effect: a player standing in front of a wall while
-     * something comes through it takes a hit for it. That is the point &mdash; it gives the player
-     * a reason to back off from a wall the mob is working on, rather than standing on the far side
-     * of it and hitting a mob that cannot reach back.</p>
-     *
-     * <p>Shards are aimed outward from the block <em>blended with</em> the direction of the target,
-     * so a wall comes apart into the room the mob is trying to reach rather than spraying evenly in
-     * all directions. Vertical lift is small and always positive: chips arc and fall, they do not
-     * fountain.</p>
-     */
-    private void throwShards(BlockPos pos, BlockState smashed, LivingEntity target, int count) {
-        Level level = this.mob.level();
-        if (level.isClientSide || count <= 0) {
-            return;
-        }
-        Vec3 centre = Vec3.atCenterOf(pos);
-        // Where the wall is coming apart TOWARDS. With a target that is the target; escaping
-        // confinement there is nobody to aim at, so the shards follow the mob's own heading out.
-        Vec3 toward = target != null
-                ? target.position().subtract(centre)
-                : Vec3.atCenterOf(pos).subtract(this.mob.position());
-        toward = new Vec3(toward.x, 0.0D, toward.z);
-        // a target directly above or below leaves no horizontal direction to throw along; fall back
-        // to pure outward rather than normalizing a zero vector
-        Vec3 roomward = toward.lengthSqr() < 1.0E-4D ? Vec3.ZERO : toward.normalize();
-
-        for (int i = 0; i < count; i++) {
-            Vec3 edge = randomEdgePoint(pos);
-            Vec3 outward = edge.subtract(centre);
-            outward = outward.lengthSqr() < 1.0E-4D ? roomward : outward.normalize();
-
-            // Pull the origin just inside the (now empty) block. On the boundary exactly, a shard
-            // starts flush against whatever the wall's neighbour is and the very first collision
-            // test kills it -- and most of a wall block's edges are shared with MORE WALL, so most
-            // of the burst would wink out on the frame it spawned. Inside by a fraction it still
-            // reads as coming off the edge and it has somewhere to fly.
-            Vec3 origin = edge.subtract(outward.scale(EDGE_INSET));
-
-            Vec3 heading = outward.scale(1.0D - ROOMWARD_BIAS).add(roomward.scale(ROOMWARD_BIAS));
-            if (heading.lengthSqr() < 1.0E-4D) {
-                continue;
-            }
-            heading = heading.normalize();
-            // A shard aimed into the rest of the wall travels a few centimetres and stops, which
-            // looks like a bug rather than like debris. Send those into the room instead: the edge
-            // origin is what the eye reads, the direction is free to be the sensible one.
-            if (roomward.lengthSqr() > 1.0E-4D && isSolidNeighbour(pos, heading)) {
-                heading = roomward;
-            }
-            heading = heading.add(0.0D, LIFT, 0.0D);
-
-            SmashShard shard = new SmashShard(
-                    DungeonsEntities.SMASH_SHARD_ENTITY.get(), this.mob, level);
-            shard.setPos(origin.x, origin.y, origin.z);
-            shard.setBaseDamage(this.shardBaseDamage);
-            shard.setScale(MIN_SHARD_SCALE
-                    + this.mob.getRandom().nextFloat() * (MAX_SHARD_SCALE - MIN_SHARD_SCALE));
-            shard.shoot(heading.x, heading.y, heading.z, SHARD_SPEED, SHARD_INACCURACY);
-            level.addFreshEntity(shard);
+            throwShards(pos, target, shardsEach);
         }
     }
 
     /**
-     * A random point on one of the block's twelve <strong>edges</strong>, never its middle.
+     * Throws the debris burst off a block this swing has just broken.
      *
-     * <p>Deliberate, and it is what makes a burst read as a block coming apart rather than as a
-     * mob firing something. Spawned from the centre, every shard in a swing starts at the same
-     * point and they leave in a visible starburst from a single spot &mdash; which looks like an
-     * emitter. Started on the edges, they appear along the block's outline and the eye reads the
-     * whole block as shattering.</p>
-     *
-     * <p>Two of the three axes are pinned to a face, leaving one free: that is an edge rather than
-     * a face, and it puts the origins at the corners and margins where a real block would fracture
-     * first. It also keeps every origin clear of the block's interior, which matters now that the
-     * position is already air but its neighbours may not be.</p>
+     * <p>The burst itself lives in {@link SmashDebris}, shared with the boulder: a player has no
+     * reason to expect a wall to come apart differently depending on whether a fist or a thrown
+     * rock arrived.</p>
      */
-    /**
-     * Whether the block one step along {@code heading} would stop a shard immediately. Cheap enough
-     * to run per shard, and it is one lookup against a chunk that is certainly loaded &mdash; the
-     * mob is standing next to it.
-     */
-    private boolean isSolidNeighbour(BlockPos pos, Vec3 heading) {
-        BlockPos neighbour = pos.relative(Direction.getNearest(heading.x, heading.y, heading.z));
-        Level level = this.mob.level();
-        return level.getBlockState(neighbour).isSolidRender(level, neighbour);
+    private void throwShards(BlockPos pos, LivingEntity target, int count) {
+        // Aimed at the target where there is one. Escaping confinement there is nobody to aim at,
+        // and null makes the burst follow the mob's own heading out -- which is the way it is
+        // digging.
+        SmashDebris.throwShards(this.mob, pos, count, this.shardBaseDamage,
+                target == null ? null : target.position());
     }
 
-    private Vec3 randomEdgePoint(BlockPos pos) {
-        RandomSource random = this.mob.getRandom();
-        int freeAxis = random.nextInt(3);
-        double[] offset = new double[3];
-        for (int axis = 0; axis < 3; axis++) {
-            offset[axis] = axis == freeAxis
-                    ? random.nextDouble()          // anywhere along the edge
-                    : (random.nextBoolean() ? 0.0D : 1.0D);  // pinned to a face
-        }
-        return new Vec3(pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2]);
-    }
 
     /**
      * The block standing between the mob's eyes and its target's, or null if it can see out.
@@ -757,9 +807,10 @@ public class SmashBlocksGoal extends Goal {
         // attached to, with no width constant to keep in step with the entity's registration.
         AABB body = this.mob.getBoundingBox();
         int feetY = Mth.floor(body.minY);
+        int topRow = passageRows(body) - 1;
         for (int step = 1; step <= 2; step++) {
             AABB ahead = body.move(direction.x * step, 0.0D, direction.z * step);
-            for (int dy : PASSAGE_HEIGHTS) {
+            for (int dy = 0; dy <= topRow; dy++) {
                 for (int x = Mth.floor(ahead.minX); x <= Mth.floor(ahead.maxX - EDGE_BIAS); x++) {
                     for (int z = Mth.floor(ahead.minZ); z <= Mth.floor(ahead.maxZ - EDGE_BIAS); z++) {
                         BlockPos pos = new BlockPos(x, feetY + dy, z);
@@ -771,6 +822,30 @@ public class SmashBlocksGoal extends Goal {
             }
         }
         return null;
+    }
+
+    /**
+     * How many rows above its feet the mob has to clear, read off its own bounding box.
+     *
+     * <p>Rows are cleared floor first, then body, then head. It used to be chest-head-knee, "the
+     * order a thing this size would swing at", and that was the wrong idea entirely: the goal is not
+     * to hit a wall convincingly, it is to make a <strong>hole the mob can walk through</strong>.
+     * Carving from the floor up means the passage becomes usable at the moment the last row goes.
+     *
+     * <p><strong>The count used to be the constant three</strong>, on the reasoning that it was the
+     * same three blocks for anything this goal is sensibly attached to. That held only while the
+     * Minotaur was the only consumer. A 7-block Stone Colossus would have carved a 3-tall hole it
+     * cannot enter &mdash; and then gone quiet with the wall still standing, because
+     * {@link #findSmashTarget} would find nothing left in those three rows. Taking it off the box,
+     * exactly as the columns already are, gives the Minotaur the same three rows it always had and
+     * the Colossus the seven it needs, with no constant to keep in step with an entity's
+     * registration.</p>
+     */
+    private static int passageRows(AABB body) {
+        // The highest row the body occupies, not the row above it: a box from y to y+2.6 needs
+        // y, y+1 and y+2 clear and nothing more. EDGE_BIAS keeps a box that ends exactly on a
+        // boundary from claiming the row above, the same reason the columns use it.
+        return Math.max(1, Mth.ceil(body.maxY - EDGE_BIAS) - Mth.floor(body.minY));
     }
 
     private boolean isSmashable(BlockPos pos, boolean escaping) {
@@ -788,15 +863,7 @@ public class SmashBlocksGoal extends Goal {
         if (!escaping && !this.smashableArea.test(pos)) {
             return false;
         }
-        BlockState state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty()) {
-            return false;
-        }
-        // chests, spawners and the dungeons2 markers all carry one -- see the class javadoc
-        if (state.hasBlockEntity()) {
-            return false;
-        }
-        float hardness = state.getDestroySpeed(level, pos);
-        return hardness >= 0.0F && hardness <= this.maxHardness;
+        // WHAT may be broken is shared with the boulder; WHERE is this goal's, above.
+        return SmashDebris.isBreakable(level, pos, this.maxHardness);
     }
 }

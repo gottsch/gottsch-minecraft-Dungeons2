@@ -42,6 +42,10 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.maze.DungeonStackPlanner;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
+import mod.gottsch.forge.gottschcore.mobset.MobSetData;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
+import mod.gottsch.forge.gottschcore.mobset.WeightedMob;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -65,6 +69,9 @@ import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pools.JigsawPlacement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import java.util.ArrayList;
@@ -77,6 +84,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -557,6 +565,132 @@ public class DungeonStructure extends Structure {
     private static final Map<RetagKey, StructureTemplatePool> RETAGGED_POOLS =
             new ConcurrentHashMap<>();
 
+    // -------- the boss, decided at planning (2026-09-10) --------
+
+    /**
+     * Draws this dungeon's boss from its tier's boss mob set &mdash; the {@link DungeonStackPlanner.BossPicker}.
+     *
+     * <p><strong>The menu is still the tier set</strong> ({@code medium_dungeon_boss.json} and its
+     * siblings), read off the tier's own processor list so there is one place that says which set a
+     * tier fights with. Authoring who can be a medium dungeon's boss is unchanged; what changed is
+     * WHEN the draw happens.</p>
+     *
+     * <p>Null &mdash; leave the draw to the spawner, as before &mdash; when there is no tier list or
+     * no menu to draw from.</p>
+     *
+     * <p><strong>The draw is a PIN, not a new set.</strong> A first version swapped the spawner's
+     * assigned set for a one-boss set named by convention ({@code boss_<mob>}), so what the data
+     * assigned was no longer what the spawner got (Mark, 2026-09-10). Now the spawner keeps the tier's
+     * set and carries the drawn mob beside it &mdash; see {@code DungeonSpawnerBlockEntity}.</p>
+     */
+    private static String pickBoss(GenerationContext context, String motifValue, DungeonSize size,
+                                   Random random) {
+        Optional<ResourceLocation> tierSet = tierBossMobSet(context, motifValue, size);
+        Optional<MobSetData> menu = tierSet.flatMap(MobSetDataRegistry::get);
+        if (menu.isEmpty()) {
+            return null;
+        }
+        List<WeightedMob> mobs = menu.get().getMobs();
+        int total = mobs.stream().mapToInt(mob -> Math.max(0, mob.weight())).sum();
+        if (total <= 0) {
+            return null;
+        }
+        int roll = random.nextInt(total);
+        for (WeightedMob mob : mobs) {
+            roll -= Math.max(0, mob.weight());
+            if (roll < 0) {
+                return mob.id().toString();
+            }
+        }
+        return null;
+    }
+
+    /** The {@code boss_mob_set} the tier's processor list names &mdash; this motif's, else classic's. */
+    private static Optional<ResourceLocation> tierBossMobSet(GenerationContext context, String motifValue,
+                                                             DungeonSize size) {
+        Registry<StructureProcessorList> lists =
+                context.registryAccess().registryOrThrow(Registries.PROCESSOR_LIST);
+        for (String motif : List.of(motifValue, FALLBACK_MOTIF)) {
+            Optional<StructureProcessorList> list = lists.getOptional(bossProcessorList(motif, size));
+            if (list.isEmpty()) {
+                continue;
+            }
+            for (StructureProcessor processor : list.get().list()) {
+                if (processor instanceof SpawnerMarkerProcessor spawner && spawner.bossMobSet().isPresent()) {
+                    return spawner.bossMobSet();
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * {@code pool} with every element's processor list rewritten so its boss spawner carries
+     * {@code boss} as its pinned mob. The boss SET is untouched &mdash; the pin only says which of that
+     * set's mobs to spawn. Unchanged when there is no boss to pin.
+     *
+     * <p>Works for every way the pool can arrive &mdash; the tier's own, a borrow re-tagged by
+     * {@link #retagged}, the motif fallback &mdash; because it rewrites whatever list each element
+     * already names rather than assuming which one that is. The rewritten list is written INLINE
+     * into the element, which the processors field accepts as readily as an id; it therefore saves
+     * with the structure piece and reloads with it.</p>
+     *
+     * <p>Same codec round-trip as {@link #retagged}, for the same reason, but the list itself is
+     * rewritten as OBJECTS rather than as JSON: {@link SpawnerMarkerProcessor#withBossMob} is the
+     * one place that knows how that processor is put together.</p>
+     */
+    private static Optional<? extends Holder<StructureTemplatePool>> pinBoss(
+            GenerationContext context, Optional<? extends Holder<StructureTemplatePool>> pool, String boss) {
+        if (boss == null || pool.isEmpty()) {
+            return pool;
+        }
+        ResourceLocation mob = new ResourceLocation(boss);
+        StructureTemplatePool pinned = PINNED_POOLS.computeIfAbsent(
+                new PinKey(pool.get().value(), mob), key -> pinned(context, key.pool(), key.mob()));
+        return Optional.of(Holder.direct(pinned));
+    }
+
+    private static StructureTemplatePool pinned(GenerationContext context, StructureTemplatePool pool,
+                                                ResourceLocation mob) {
+        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, context.registryAccess());
+        Tag encoded = StructureTemplatePool.DIRECT_CODEC.encodeStart(ops, pool)
+                .getOrThrow(false, err -> Dungeons.LOGGER.error(
+                        "could not encode boss pool for pinning: {}", err));
+        if (encoded instanceof CompoundTag root && root.get("elements") instanceof ListTag elements) {
+            for (Tag entry : elements) {
+                if (!(entry instanceof CompoundTag pair
+                        && pair.get("element") instanceof CompoundTag element
+                        && element.contains("processors"))) {
+                    continue;
+                }
+                Optional<StructureProcessorList> named = StructureProcessorType.LIST_CODEC
+                        .parse(ops, element.get("processors")).result().map(Holder::value);
+                if (named.isEmpty()) {
+                    continue;
+                }
+                List<StructureProcessor> rewritten = new ArrayList<>(named.get().list().size());
+                for (StructureProcessor processor : named.get().list()) {
+                    rewritten.add(processor instanceof SpawnerMarkerProcessor spawner
+                            && spawner.bossMobSet().isPresent()
+                            ? spawner.withBossMob(mob) : processor);
+                }
+                StructureProcessorType.DIRECT_CODEC.encodeStart(ops, new StructureProcessorList(rewritten))
+                        .result().ifPresent(inline -> element.put("processors", inline));
+            }
+        }
+        return StructureTemplatePool.DIRECT_CODEC.parse(ops, encoded)
+                .getOrThrow(false, err -> Dungeons.LOGGER.error(
+                        "could not decode pinned boss pool: {}", err));
+    }
+
+    /**
+     * Identity of a pin. The pool by INSTANCE: registry pools and {@link #RETAGGED_POOLS}' values are
+     * both stable for as long as a pack is loaded, which is exactly as long as a pin is valid.
+     */
+    private record PinKey(StructureTemplatePool pool, ResourceLocation mob) {}
+
+    private static final Map<PinKey, StructureTemplatePool> PINNED_POOLS = new ConcurrentHashMap<>();
+
     /** {@link #chooseStartPool} against the live registry, warning once per borrowed pool. */
     private static Optional<Holder.Reference<StructureTemplatePool>> resolveStartPool(
             GenerationContext context, String motifValue, Function<String, ResourceLocation> poolFor) {
@@ -793,7 +927,7 @@ public class DungeonStructure extends Structure {
         // adopted by commitStagedRooms on a non-null templateId, so there is nothing for a second
         // list to key differently. Same contract, a different pool.
         DungeonStackPlanner.BossRoomAssembler bossRoomAssembler =
-                (worldX, worldY, worldZ, floorIndex, size, assemblySeed, commit) -> {
+                (worldX, worldY, worldZ, floorIndex, size, boss, assemblySeed, commit) -> {
             // floorIndex is deliberately unused: the terminal slot is always on the bottom floor,
             // which is always in the deepest stratum, so there is exactly one stratum a boss room
             // could ever be authored for and a per-stratum tier would be a folder level with one
@@ -804,7 +938,7 @@ public class DungeonStructure extends Structure {
             // resolveBossRoomStartPool.
             context.random().setSeed(assemblySeed);
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
-            List<StructurePiece> assembled = assembleBossRoom(context, candidatePos, motifValue, size);
+            List<StructurePiece> assembled = assembleBossRoom(context, candidatePos, motifValue, size, boss);
             RoomGeometry rgeo = scanRoomGeometry(assembled, templateManager, seed);
             if (rgeo == null) {
                 // No end_rooms pool authored is the normal case today, and it is silent on purpose:
@@ -817,8 +951,9 @@ public class DungeonStructure extends Structure {
                 stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
                 // The tier is printed because it is the whole point of the pool split and is
                 // otherwise invisible: two dungeons draw the same template and pay out differently.
-                Dungeons.LOGGER.info("[D2-BOSS] boss room {} ({} tier) at ({},{},{}) {}x{}",
-                        describeElements(assembled), size, worldX, worldY, worldZ,
+                Dungeons.LOGGER.info("[D2-BOSS] boss room {} ({} tier, boss {}) at ({},{},{}) {}x{}",
+                        describeElements(assembled), size, boss == null ? "drawn by spawner" : boss,
+                        worldX, worldY, worldZ,
                         rgeo.worldFootprint().getWidth(), rgeo.worldFootprint().getHeight());
             }
             return Optional.of(new DungeonStackPlanner.AssembledRoom(
@@ -880,6 +1015,9 @@ public class DungeonStructure extends Structure {
         // terminal room exactly as before.
         if (hasAnyBossPool(context, motifValue)) {
             planner.withBossRoomAssembler(bossRoomAssembler);
+            // The boss is drawn at planning so the rest of the dungeon can know it (2026-09-10) --
+            // see pickBoss. Only alongside the assembler: with no boss room there is no boss.
+            planner.withBossPicker((size, random) -> pickBoss(context, motifValue, size, random));
         }
         if (geo != null) {
             Rectangle2D entranceWorldRect = new Rectangle2D(geo.minX(), geo.minZ(),
@@ -1523,10 +1661,14 @@ public class DungeonStructure extends Structure {
         return assembleFrom(context, position, resolveStartPool(context, motifValue, poolFor));
     }
 
-    /** The boss room's own entry point, resolving through the size tier and its borrow. */
+    /**
+     * The boss room's own entry point, resolving through the size tier and its borrow, then pinning
+     * the boss the planner drew (null leaves the spawner to draw, as before).
+     */
     private static List<StructurePiece> assembleBossRoom(GenerationContext context, BlockPos position,
-                                                         String motifValue, DungeonSize size) {
-        return assembleFrom(context, position, resolveBossRoomStartPool(context, motifValue, size));
+                                                         String motifValue, DungeonSize size, String boss) {
+        return assembleFrom(context, position,
+                pinBoss(context, resolveBossRoomStartPool(context, motifValue, size), boss));
     }
 
     /**

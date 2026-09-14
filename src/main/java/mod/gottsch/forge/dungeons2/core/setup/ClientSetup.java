@@ -33,9 +33,11 @@ import mod.gottsch.forge.gmm.core.client.model.ElectricSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.model.GhoulModel;
 import mod.gottsch.forge.gmm.core.client.model.IronSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.model.MagmaSkeletonModel;
+import mod.gottsch.forge.gmm.core.client.model.GargoyleModel;
 import mod.gottsch.forge.gmm.core.client.model.MargoyleModel;
 import mod.gottsch.forge.gmm.core.client.model.MinotaurModel;
 import mod.gottsch.forge.gmm.core.client.model.OrcModel;
+import mod.gottsch.forge.gmm.core.client.model.StoneColossusModel;
 import mod.gottsch.forge.gmm.core.client.model.OrcShamanModel;
 import mod.gottsch.forge.gmm.core.client.model.SkeletonChampionModel;
 import mod.gottsch.forge.gmm.core.client.model.SkeletonWarriorModel;
@@ -52,6 +54,7 @@ import mod.gottsch.forge.gmm.core.client.renderer.entity.BloaterArmRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BloaterRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BloodyBonesRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BodakRenderer;
+import mod.gottsch.forge.dungeons2.core.client.renderer.entity.BoulderRenderer;
 import mod.gottsch.forge.dungeons2.core.client.renderer.entity.SmashShardRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BoneShardRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BurningSkeletonRenderer;
@@ -65,9 +68,12 @@ import mod.gottsch.forge.gmm.core.client.renderer.entity.GraveZombieRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.GrayOozeRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.IronSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.MagmaSkeletonRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.GargoyleRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.MargoyleRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OchreJellyRenderer;
+import mod.gottsch.forge.dungeons2.core.client.renderer.entity.AnnihilationRayRenderer;
 import mod.gottsch.forge.dungeons2.core.client.renderer.entity.ScaledMinotaurRenderer;
+import mod.gottsch.forge.dungeons2.core.client.renderer.entity.ScaledStoneColossusRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcShamanRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.OrcWarlordRenderer;
@@ -145,8 +151,10 @@ public class ClientSetup {
         // The animated weapon DOES have its own layer, unlike the animated armor above: its rig is
         // a body-less pivot the equipped item hangs off, not the zombie's.
         event.registerLayerDefinition(AnimatedWeaponModel.LAYER_LOCATION, AnimatedWeaponModel::createBodyLayer);
+        event.registerLayerDefinition(GargoyleModel.LAYER_LOCATION, GargoyleModel::createBodyLayer);
         event.registerLayerDefinition(MargoyleModel.LAYER_LOCATION, MargoyleModel::createBodyLayer);
         event.registerLayerDefinition(MinotaurModel.LAYER_LOCATION, MinotaurModel::createBodyLayer);
+        event.registerLayerDefinition(StoneColossusModel.LAYER_LOCATION, StoneColossusModel::createBodyLayer);
         event.registerLayerDefinition(OrcModel.LAYER_LOCATION, OrcModel::createBodyLayer);
         event.registerLayerDefinition(OrcShamanModel.LAYER_LOCATION, OrcShamanModel::createBodyLayer);
         event.registerLayerDefinition(AlligatorGarModel.LAYER_LOCATION, AlligatorGarModel::createBodyLayer);
@@ -198,9 +206,11 @@ public class ClientSetup {
         event.registerEntityRenderer(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), BlackPuddingRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmorRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeaponRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.GARGOYLE_ENTITY.get(), GargoyleRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.MARGOYLE_ENTITY.get(), MargoyleRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ORC_ENTITY.get(), OrcRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.MINOTAUR_ENTITY.get(), ScaledMinotaurRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.STONE_COLOSSUS_ENTITY.get(), ScaledStoneColossusRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShamanRenderer::new);
         // No layer registration of its own: OrcWarlordRenderer re-bakes OrcModel.LAYER_LOCATION,
         // already registered above for the Orc. A renderer whose layer is registered nowhere
@@ -221,9 +231,30 @@ public class ClientSetup {
         // Like Spike Growth below, this draws a real BlockState rather than a mesh -- the shard
         // wears whatever block was smashed -- so it is this mod's own renderer, not a gmm one.
         event.registerEntityRenderer(DungeonsEntities.SMASH_SHARD_ENTITY.get(), SmashShardRenderer::new);
+        // Same reason, one size up: the boulder IS a block-sized lump of masonry, so it is drawn as
+        // the block state it carries rather than as a mesh.
+        event.registerEntityRenderer(DungeonsEntities.BOULDER_ENTITY.get(), BoulderRenderer::new);
         // Spike Growth draws real BlockStates rather than a mesh, so it has its own renderer.
         event.registerEntityRenderer(DungeonsEntities.SPIKE_GROWTH_SPELL_ENTITY.get(),
                 SpikeGrowthSpellRenderer::new);
+        // The Beholder-kin and Daemon spells (2026-09-04) were registered as entity types with NO
+        // renderer, which crashes the client the first time one comes into view -- found 2026-09-10
+        // when a Beholder cast its first Paralysis bolt. All five are thrown ITEMS (each implements
+        // ItemSupplier and falls back to a fire charge); scale and full-bright match Dungeon
+        // Denizens' own registration. RendererCoverageTest now fails the build on the next one.
+        event.registerEntityRenderer(DungeonsEntities.PARALYSIS_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.HARM_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.DISINTEGRATE_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.DISARM_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.FIRESPOUT_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.5F, true));
+        // No layer to register: the beam is raw additive quads, not a model.
+        event.registerEntityRenderer(DungeonsEntities.ANNIHILATION_RAY_ENTITY.get(),
+                AnnihilationRayRenderer::new);
     }
 
     private ClientSetup() {}

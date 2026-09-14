@@ -20,17 +20,21 @@ package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 import mod.gottsch.forge.dungeons2.core.block.entity.PotMarkerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.block.entity.PotMarkerBlockEntity.Variant;
 import mod.gottsch.forge.dungeons2.core.data.PotionEffectSpec;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor.Spot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -207,6 +211,171 @@ class PotMarkerProcessorTest {
         CompoundTag tag = new CompoundTag();
         tag.putString(PotMarkerBlockEntity.LOOT_TABLE, "dungeons2:pots/boss");
         assertEquals("dungeons2:pots/boss", PotMarkerProcessor.markerLootTable(tag));
+    }
+
+    // ---------- the group ----------
+
+    private static final BlockPos MARKER = new BlockPos(40, 64, -12);
+    /** dungeonblocks' widest pot entity, and its flask. */
+    private static final double BIG = 0.625D;
+    private static final double FLASK = 0.25D;
+
+    private static void assertNoOverlap(List<Spot> spots) {
+        for (int i = 0; i < spots.size(); i++) {
+            for (int j = i + 1; j < spots.size(); j++) {
+                assertFalse(spots.get(i).overlaps(spots.get(j)),
+                        "pots " + i + " and " + j + " overlap: " + spots);
+            }
+        }
+    }
+
+    private static List<Spot> arrange(BlockPos marker, int count, double width,
+                                      Predicate<BlockPos> canStand, long seed) {
+        return PotMarkerProcessor.arrange(marker, count, width, canStand, new ArrayList<>(),
+                RandomSource.create(seed));
+    }
+
+    @Test
+    void oneMarkerAskingForSeveralPotsNoLongerStacksThem() {
+        // The bug: every pot was spawned at the marker's position, so three pots were one.
+        List<Spot> spots = arrange(MARKER, 3, BIG, cell -> true, 7L);
+
+        assertEquals(3, spots.size());
+        assertNoOverlap(spots);
+    }
+
+    @Test
+    void aOnePotMarkerStandsAtTheCentreOfItsBlock() {
+        List<Spot> spots = arrange(MARKER, 1, BIG, cell -> false, 1L);
+
+        assertEquals(1, spots.size());
+        assertEquals(MARKER.getX() + 0.5D, spots.get(0).x(), 1.0E-9);
+        assertEquals(MARKER.getZ() + 0.5D, spots.get(0).z(), 1.0E-9);
+        assertTrue(arrange(MARKER, 0, BIG, cell -> true, 1L).isEmpty());
+    }
+
+    @Test
+    void smallPotsPackIntoTheMarkersOwnBlock() {
+        // Nothing around the marker is floor, and four flasks still fit: entities do not need a
+        // block each, which is the whole point of spacing by width.
+        List<Spot> spots = arrange(MARKER, 4, FLASK, cell -> false, 3L);
+
+        assertEquals(4, spots.size());
+        assertNoOverlap(spots);
+        for (Spot spot : spots) {
+            assertEquals(List.of(MARKER), PotMarkerProcessor.footprint(spot, FLASK, MARKER.getY()),
+                    "a flask left the marker's block: " + spot);
+        }
+    }
+
+    @Test
+    void theGroupIsTight() {
+        // A pot's width plus the gap apart, not a block apart: every pot in a big-pot group
+        // touches (at clearance) the one nearest to it.
+        List<Spot> spots = arrange(MARKER, 4, BIG, cell -> true, 5L);
+        double spacing = BIG + PotMarkerProcessor.POT_GAP;
+        for (Spot spot : spots) {
+            double nearest = spots.stream().filter(other -> other != spot)
+                    .mapToDouble(other -> Math.hypot(spot.x() - other.x(), spot.z() - other.z()))
+                    .min().orElseThrow();
+            assertEquals(spacing, nearest, 1.0E-9, "a pot stands apart from the group: " + spot);
+        }
+    }
+
+    @Test
+    void overhangLandsOnlyOnFreeFloor() {
+        // A wall along the whole west side and the north: only east and south are floor.
+        Predicate<BlockPos> canStand = cell -> cell.getX() >= MARKER.getX()
+                && cell.getZ() >= MARKER.getZ();
+
+        List<Spot> spots = arrange(MARKER, 3, BIG, canStand, 3L);
+
+        assertEquals(3, spots.size(), "there is room to the south-east for three");
+        for (Spot spot : spots) {
+            for (BlockPos cell : PotMarkerProcessor.footprint(spot, BIG, MARKER.getY())) {
+                assertTrue(cell.equals(MARKER) || canStand.test(cell),
+                        "a pot stands half in a wall at " + cell.toShortString());
+            }
+        }
+    }
+
+    @Test
+    void aMarkerAgainstAWallStillGetsItsWholeGroup() {
+        // Wall along the north. Pots are most often put against walls, and a group centred on the
+        // marker pokes a triangle vertex into the wall at every angle -- the slide off-centre is
+        // what lets the whole group stand.
+        Predicate<BlockPos> canStand = cell -> cell.getZ() >= MARKER.getZ();
+
+        List<Spot> spots = arrange(MARKER, 3, BIG, canStand, 21L);
+
+        assertEquals(3, spots.size());
+        assertNoOverlap(spots);
+        for (Spot spot : spots) {
+            for (BlockPos cell : PotMarkerProcessor.footprint(spot, BIG, MARKER.getY())) {
+                assertTrue(cell.equals(MARKER) || canStand.test(cell),
+                        "a pot stands half in the wall at " + cell.toShortString());
+            }
+        }
+    }
+
+    @Test
+    void aCrowdedMarkerGetsFewerPotsNotOverlappingOnes() {
+        // Walled in on every side: three big pots cannot fit in one block at any angle, so the
+        // group shrinks to the one that can rather than overlapping or poking into the walls.
+        List<Spot> spots = arrange(MARKER, 3, BIG, cell -> false, 9L);
+
+        assertEquals(1, spots.size());
+        assertEquals(MARKER.getX() + 0.5D, spots.get(0).x(), 1.0E-9);
+    }
+
+    @Test
+    void neighbouringMarkersDoNotPushTheirGroupsIntoEachOther() {
+        List<Spot> taken = new ArrayList<>();
+        List<Spot> first = PotMarkerProcessor.arrange(MARKER, 4, BIG, cell -> true, taken,
+                RandomSource.create(11L));
+        taken.addAll(first);
+        List<Spot> second = PotMarkerProcessor.arrange(MARKER.east(), 4, BIG, cell -> true, taken,
+                RandomSource.create(12L));
+
+        assertFalse(second.isEmpty());
+        List<Spot> all = new ArrayList<>(first);
+        all.addAll(second);
+        assertNoOverlap(all);
+    }
+
+    @Test
+    void everyLayoutKeepsItsPotsAtLeastOneSpacingApart() {
+        double spacing = 0.75D;
+        for (int count = 1; count <= 19; count++) {
+            List<double[]> offsets = PotMarkerProcessor.layout(count, spacing);
+            assertEquals(count, offsets.size());
+            for (int i = 0; i < offsets.size(); i++) {
+                for (int j = i + 1; j < offsets.size(); j++) {
+                    double distance = Math.hypot(offsets.get(i)[0] - offsets.get(j)[0],
+                            offsets.get(i)[1] - offsets.get(j)[1]);
+                    assertTrue(distance >= spacing - 1.0E-9,
+                            count + " pots: two are " + distance + " apart");
+                }
+            }
+        }
+    }
+
+    @Test
+    void theSameSeedPlansTheSameGroup() {
+        // Every chunk pass plans the group independently and spawns only the pots in its own box,
+        // so any disagreement between passes is a missing or a doubled pot.
+        Predicate<BlockPos> canStand = cell -> (cell.getX() + cell.getZ()) % 3 != 0;
+        long seed = PotMarkerProcessor.seedFor(MARKER);
+
+        assertEquals(arrange(MARKER, 5, BIG, canStand, seed),
+                arrange(MARKER, 5, BIG, canStand, seed));
+    }
+
+    @Test
+    void eachPotInAGroupGetsItsOwnLoot() {
+        assertNotEquals(PotMarkerProcessor.lootSeed(MARKER, 0),
+                PotMarkerProcessor.lootSeed(MARKER, 1));
+        assertNotEquals(0L, PotMarkerProcessor.lootSeed(BlockPos.ZERO, 0));
     }
 
     // ---------- the loot seed ----------

@@ -210,11 +210,26 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
         // Platforms after columns, and for a concrete reason rather than symmetry: both draw in the
         // interior air, and where a dais meets a column the column should be the thing standing on
-        // it. Running the dais second lets it place its own cells around a column already there,
-        // and its footprint check skips cells another platform took.
+        // it.
+        //
+        // ORDER ALONE WAS NOT ENOUGH, exactly as it was not enough for the pit (#58 above), and
+        // this comment claimed more than the code did for the same reason. Running second only
+        // makes the columns EXIST before the dais is planned; the dais still has to be told where
+        // they are, and it was not -- it was handed the pit-and-partition set and nothing else. So
+        // a dais footprint could sit right over a column, and its centrepiece landed in the
+        // column's own cell: Mark walked into a room with a brazier skewered on a pillar
+        // (2026-09-09), twice, the second time after the scheme-level fix that was supposed to stop
+        // it. The scheme gate could only ever have stopped the pair it named; ANY layout can put a
+        // column under ANY dais.
+        //
+        // Handed the columns explicitly, the dais's own all-or-nothing footprint check does the
+        // rest: it declines that position outright rather than building around the obstruction,
+        // which is right -- a dais with a pillar through it is not a dais.
+        Set<Coords2D> blockedByColumns = new HashSet<>(blockedFloorCells);
+        blockedByColumns.addAll(pillarGen.occupiedFloorCells());
         IDungeonPlatformGenerator platformGen =
                 selectPlatformGenerator(motif, scheme, width, depth, height);
-        platformGen.build(room, floorY, motif, random, blocks, blockedFloorCells);
+        platformGen.build(room, floorY, motif, random, blocks, blockedByColumns);
         // The pots standing ON a dais (#86). They are the platform's, not the pots slot's:
         // the slot places at the walking plane and is kept OFF the dais's cells entirely.
         out.getEntities().addAll(platformGen.entities());

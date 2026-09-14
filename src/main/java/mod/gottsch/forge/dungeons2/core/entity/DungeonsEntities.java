@@ -29,7 +29,11 @@ import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
 import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
 import mod.gottsch.forge.gmm.core.entity.monster.Minotaur;
 import mod.gottsch.forge.gmm.core.entity.monster.Orc;
+import mod.gottsch.forge.gmm.core.entity.monster.StoneColossus;
+import mod.gottsch.forge.gmm.core.entity.monster.gargoyle.Gargoyle;
 import mod.gottsch.forge.gmm.core.entity.monster.OrcShaman;
+import mod.gottsch.forge.dungeons2.core.entity.projectile.AnnihilationRay;
+import mod.gottsch.forge.dungeons2.core.entity.projectile.Boulder;
 import mod.gottsch.forge.dungeons2.core.entity.projectile.SmashShard;
 import mod.gottsch.forge.gmm.core.entity.monster.OrcWarlord;
 import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedArmor;
@@ -435,10 +439,16 @@ public class DungeonsEntities {
     /** Constructs, the margoyle, and the orcs. */
     public static final String ANIMATED_ARMOR = "animated_armor";
     public static final String ANIMATED_WEAPON = "animated_weapon";
+    public static final String GARGOYLE = "gargoyle";
     public static final String MARGOYLE = "margoyle";
     public static final String MINOTAUR = "minotaur";
     public static final String ORC = "orc";
     public static final String ORC_SHAMAN = "orc_shaman";
+    /**
+     * The large tier's bruiser boss (#83). Dormant scenery until approached, and big enough that it
+     * never leaves the room it wakes in -- see the Stone Colossus plan.
+     */
+    public static final String STONE_COLOSSUS = "stone_colossus";
     /**
      * The warband's chief. A mini-boss like the Champion it is modelled on -- registered, egg-able,
      * and reachable only through the boss room's spawner marker, never ambiently. See
@@ -470,6 +480,20 @@ public class DungeonsEntities {
                             .clientTrackingRange(10)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ANIMATED_WEAPON));
+
+    /**
+     * The margoyle's smaller kin, and the reason {@code gargoyles.json} could not resolve: that set
+     * has named {@code dungeons2:gargoyle} since it was written, but nothing registered it, so the
+     * spawner rolled an id that was not there -- spawning nothing and logging nothing. Transcribed
+     * from Dungeon Denizens' {@code GARGOYLE_TYPE}, as the margoyle beside it was.
+     */
+    public static final RegistryObject<EntityType<Gargoyle>> GARGOYLE_ENTITY =
+            Registration.ENTITIES.register(GARGOYLE,
+                    () -> EntityType.Builder.of(Gargoyle::new, MobCategory.MONSTER)
+                            .sized(0.75F, 1.75F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GARGOYLE));
 
     public static final RegistryObject<EntityType<Margoyle>> MARGOYLE_ENTITY =
             Registration.ENTITIES.register(MARGOYLE,
@@ -521,6 +545,51 @@ public class DungeonsEntities {
                             .clientTrackingRange(12)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(MINOTAUR));
+
+    /**
+     * The height the Stone Colossus rig was authored at: 44 model pixels, feet to the top of the
+     * helmet. The baseline {@link #STONE_COLOSSUS_MODEL_SCALE} measures against -- NOT the size
+     * this mod draws it at.
+     */
+    public static final float STONE_COLOSSUS_RIG_HEIGHT = 2.75F;
+
+    /**
+     * Seven blocks, and the whole design rests on it. A doorway is two clear blocks
+     * ({@code BasicDoorGenerator}: sill, two open rows, lintel) and a corridor leaves four, so
+     * <strong>nothing this tall walks out of the room it wakes in</strong> -- which is why the
+     * colossus is an arena boss that breaks the doorway rather than a pursuer.
+     *
+     * <p>Its eyes sit at 0.85 x this, ~5.95, well above a two-block doorway: a player standing in
+     * the doorway can see its legs while it cannot see them. That blind spot is what the wall
+     * burst exists to answer; if this height changes, re-check that reasoning.</p>
+     */
+    public static final float STONE_COLOSSUS_HEIGHT = 7.0F;
+
+    /**
+     * Applied by {@code ScaledStoneColossusRenderer}. DERIVED so the model and the hitbox cannot
+     * drift: change {@link #STONE_COLOSSUS_HEIGHT} and the render follows.
+     */
+    public static final float STONE_COLOSSUS_MODEL_SCALE =
+            STONE_COLOSSUS_HEIGHT / STONE_COLOSSUS_RIG_HEIGHT;
+
+    /**
+     * 1.8 wide against a rig that measures ~1.91 across the shoulders -- the same
+     * rig-wider-than-box relationship the {@link #MINOTAUR_ENTITY} has, and for the same reason:
+     * the box is what the mob has to fit through, not what it looks like. At 1.8 the opening the
+     * wall burst carves is 2 block columns (3 when it straddles a boundary), and vanilla melee
+     * reach, which scales with width, comes out around 3.6 blocks.
+     *
+     * <p>On {@link #MINI_BOSSES}: reachable through a boss room's spawner marker, never ambiently.</p>
+     */
+    public static final float STONE_COLOSSUS_WIDTH = 1.8F;
+
+    public static final RegistryObject<EntityType<StoneColossus>> STONE_COLOSSUS_ENTITY =
+            Registration.ENTITIES.register(STONE_COLOSSUS,
+                    () -> EntityType.Builder.of(StoneColossus::new, MobCategory.MONSTER)
+                            .sized(STONE_COLOSSUS_WIDTH, STONE_COLOSSUS_HEIGHT)
+                            .clientTrackingRange(16)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(STONE_COLOSSUS));
 
     public static final RegistryObject<EntityType<Orc>> ORC_ENTITY =
             Registration.ENTITIES.register(ORC,
@@ -592,6 +661,7 @@ public class DungeonsEntities {
     public static final String BONE_SHARD = "bone_shard";
     public static final String BLOATER_ARM = "bloater_arm";
     public static final String SMASH_SHARD = "smash_shard";
+    public static final String BOULDER = "boulder";
     public static final String ROCK = "rock";
     public static final String SPIKE_GROWTH_SPELL = "spike_growth_spell";
     public static final String WITHERING_GAZE_SPELL = "withering_gaze_spell";
@@ -600,6 +670,7 @@ public class DungeonsEntities {
     public static final String DISINTEGRATE_SPELL = "disintegrate_spell";
     public static final String DISARM_SPELL = "disarm_spell";
     public static final String FIRESPOUT_SPELL = "firespout_spell";
+    public static final String ANNIHILATION_RAY = "annihilation_ray";
 
     /** The shrapnel Bloody Bones and the Tainted Skeleton throw. */
     public static final RegistryObject<EntityType<BoneShard>> BONE_SHARD_ENTITY =
@@ -635,6 +706,22 @@ public class DungeonsEntities {
                             .updateInterval(2)
                             .build(SMASH_SHARD));
 
+    /**
+     * The Stone Colossus's thrown lump of the room.
+     *
+     * <p>{@code noSave}, like the Annihilation Ray: it lives about two seconds and a rock frozen in
+     * mid-air across a world reload would be scenery nobody threw. Tracked further than a shard
+     * because the whole point of it is being seen coming from across a room.</p>
+     */
+    public static final RegistryObject<EntityType<Boulder>> BOULDER_ENTITY =
+            Registration.ENTITIES.register(BOULDER,
+                    () -> EntityType.Builder.<Boulder>of(Boulder::new, MobCategory.MISC)
+                            .sized(0.85F, 0.85F)
+                            .noSave()
+                            .clientTrackingRange(8)
+                            .updateInterval(2)
+                            .build(BOULDER));
+
     /** The Orc's thrown rock. */
     public static final RegistryObject<EntityType<Rock>> ROCK_ENTITY =
             Registration.ENTITIES.register(ROCK,
@@ -664,9 +751,9 @@ public class DungeonsEntities {
 
     /**
      * Beholder/DeathTyrant's spell kit, ported from Dungeon Denizens. Sizing/tracking matches DD's
-     * own registration exactly; all four fall back to a fire charge for their in-flight visual when
-     * {@code itemSupplier} is left unset (see each class), which is deliberate here -- dedicated art
-     * is a separate, later decision, not a blocker on the mobs having their real attacks.
+     * own registration exactly. Each is drawn as a thrown ITEM whose art {@code CommonSetup} wires
+     * through the spell's {@code itemSupplier} (2026-09-10; before that, a fire charge each) &mdash;
+     * see {@code DungeonsItems.PARALYSIS_SPELL_ITEM}.
      */
     public static final RegistryObject<EntityType<ParalysisSpell>> PARALYSIS_SPELL_ENTITY =
             Registration.ENTITIES.register(PARALYSIS_SPELL,
@@ -710,6 +797,25 @@ public class DungeonsEntities {
                             .build(FIRESPOUT_SPELL));
 
     /**
+     * The Beholder and Death Tyrant's annihilation ray &mdash; this mod's own spell, not a gmm one.
+     *
+     * <p>{@code noSave}: a beam is a second and a half of light, and one reloaded without its caster
+     * would have nothing to hang from. {@code updateInterval(1)}: its position is the caster's eye
+     * and the culling box is built from it, so a coarse interval would cull a beam still on screen.
+     * The renderer does not read that position for the beam's own ends &mdash; see
+     * {@code AnnihilationRayRenderer}.</p>
+     */
+    public static final RegistryObject<EntityType<AnnihilationRay>> ANNIHILATION_RAY_ENTITY =
+            Registration.ENTITIES.register(ANNIHILATION_RAY,
+                    () -> EntityType.Builder.<AnnihilationRay>of(AnnihilationRay::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .noSave()
+                            .fireImmune()
+                            .clientTrackingRange(8)
+                            .updateInterval(1)
+                            .build(ANNIHILATION_RAY));
+
+    /**
      * The mobs that are registered but must never be reached by the dungeon's <em>ambient</em>
      * routes (Mark, 2026-08-31: "none of the small nor big bosses are in either spawners").
      *
@@ -726,7 +832,7 @@ public class DungeonsEntities {
      */
     public static final java.util.List<String> MINI_BOSSES =
             java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK, BEHOLDER, DEATH_TYRANT, DAEMON,
-                    ORC_WARLORD, MINOTAUR);
+                    ORC_WARLORD, MINOTAUR, STONE_COLOSSUS);
 
     /** Twice the rat's health and damage; same speed, so it is a threat rather than a chase. */
     public static AttributeSupplier.Builder createGiantRatAttributes() {

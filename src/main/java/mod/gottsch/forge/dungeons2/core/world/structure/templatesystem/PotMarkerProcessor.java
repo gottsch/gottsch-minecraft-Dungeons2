@@ -25,13 +25,17 @@ import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.PotionEffectSpec;
 import mod.gottsch.forge.dungeons2.core.world.structure.EntitySpawner;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
@@ -40,8 +44,12 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -70,6 +78,13 @@ import java.util.function.Supplier;
  * pots. Every spawn is therefore clipped to {@code settings.getBoundingBox()}, which during worldgen
  * is the chunk being generated &mdash; the same clip {@code DungeonPiece#placeEntities} applies for
  * the same reason, and the hazard {@link EntityPlacement} was documented with from the start.</p>
+ *
+ * <p>The clip is on each POT's cell, not the marker's. A marker asking for several pots packs them
+ * round itself ({@link #arrange}), a group of big pots overhangs into neighbouring blocks, and so a
+ * group can straddle a chunk edge. That
+ * works because the list {@code finalizeProcessing} receives is the whole piece in every pass
+ * &mdash; vanilla applies the box only when it writes &mdash; so every pass plans the identical
+ * group and each pot is spawned by exactly one of them, into the chunk being generated.</p>
  *
  * <p><strong>Randomness is derived from the marker's position</strong>, not from a field or a
  * shared source. A processor instance is shared across placements, so per-instance state would leak
@@ -144,6 +159,20 @@ public class PotMarkerProcessor extends StructureProcessor {
                     settings);
         }
 
+        if (processedBlocks.stream().noneMatch(info -> info.state().is(marker))) {
+            return super.finalizeProcessing(level, piecePos, originalPos, blocks, processedBlocks,
+                    settings);
+        }
+
+        // The WHOLE piece, not this chunk's slice: vanilla's placeInWorld hands processBlockInfos
+        // the full palette and applies the chunk box only afterwards, in its write loop. So every
+        // chunk pass sees the same cells and plans the same group -- see groupCells.
+        Map<BlockPos, BlockState> states = new HashMap<>(processedBlocks.size() * 2);
+        for (StructureTemplate.StructureBlockInfo info : processedBlocks) {
+            states.put(info.pos(), info.state());
+        }
+        List<Spot> taken = new ArrayList<>();
+
         BoundingBox box = settings.getBoundingBox();
         List<StructureTemplate.StructureBlockInfo> out = new ArrayList<>(processedBlocks.size());
         for (StructureTemplate.StructureBlockInfo info : processedBlocks) {
@@ -156,16 +185,34 @@ public class PotMarkerProcessor extends StructureProcessor {
             out.add(new StructureTemplate.StructureBlockInfo(info.pos(),
                     Blocks.AIR.defaultBlockState(), null));
 
-            if (box != null && !box.isInside(info.pos())) {
-                continue;   // Another chunk's pass owns this one. See the class note.
+            // Planned in EVERY pass, spawned only in the pass whose box holds each pot's own cell.
+            // A marker near a chunk edge can group across it, so no single pass owns the whole
+            // group; planning everywhere is what keeps the taken spots -- and the random draws --
+            // the same in each pass, which is what makes the per-cell clip exactly-once.
+            boolean owner = box == null || box.isInside(info.pos());
+            Predicate<BlockPos> canStand = cell -> standsFree(states.get(cell),
+                    states.get(cell.below()));
+            for (EntityPlacement placement : plan(info, canStand, taken, owner)) {
+                BlockPos cell = new BlockPos(placement.getX(), placement.getY(), placement.getZ());
+                if (box != null && !box.isInside(cell)) {
+                    continue;   // Another chunk's pass spawns this one. See the class note.
+                }
+                // Position is absolute here, unlike the floor-local coords EntityPlacement carries
+                // out of the room planners -- so the cell is passed straight through as world coords.
+                EntitySpawner.spawn(level, placement, cell.getX(), cell.getY(), cell.getZ());
             }
-            spawnAt(level, info);
         }
         return super.finalizeProcessing(level, piecePos, originalPos, blocks, out, settings);
     }
 
-    /** Rolls one marker and spawns whatever it asked for. */
-    private void spawnAt(ServerLevelAccessor level, StructureTemplate.StructureBlockInfo info) {
+    /**
+     * Rolls one marker into the pots it asks for, one {@link EntityPlacement} per cell. Pure apart
+     * from logging, and identical in every chunk pass; {@code owner} only stops each warning being
+     * repeated once per chunk the piece spans.
+     */
+    private List<EntityPlacement> plan(StructureTemplate.StructureBlockInfo info,
+                                       Predicate<BlockPos> canStand, List<Spot> taken,
+                                       boolean owner) {
         CompoundTag nbt = info.nbt();
         BlockPos pos = info.pos();
         RandomSource random = RandomSource.create(seedFor(pos));
@@ -173,7 +220,7 @@ public class PotMarkerProcessor extends StructureProcessor {
         float probability = nbt != null && nbt.contains(PotMarkerBlockEntity.PROBABILITY)
                 ? nbt.getFloat(PotMarkerBlockEntity.PROBABILITY) : 1.0F;
         if (random.nextFloat() >= probability) {
-            return;
+            return List.of();
         }
 
         List<PotMarkerBlockEntity.Variant> variants = variants(nbt);
@@ -181,15 +228,17 @@ public class PotMarkerProcessor extends StructureProcessor {
             variants = defaultVariants();
         }
         if (variants.isEmpty()) {
-            Dungeons.LOGGER.warn("[D2-POT] marker at {} names no pot variant and the processor has"
-                    + " no default -- nothing spawned", pos.toShortString());
-            return;
+            if (owner) {
+                Dungeons.LOGGER.warn("[D2-POT] marker at {} names no pot variant and the processor"
+                        + " has no default -- nothing spawned", pos.toShortString());
+            }
+            return List.of();
         }
         String table = markerLootTable(nbt);
         if (table == null) {
             table = lootTable.map(ResourceLocation::toString).orElse(null);
         }
-        if (table == null) {
+        if (table == null && owner) {
             // Not fatal, but it is always a mistake: PotEntity#dropLoot returns early on a null
             // table with no fallback to the entity type's own, so this pot shatters into nothing.
             // PotConfig makes the same field required for the procedural path and says why.
@@ -205,14 +254,245 @@ public class PotMarkerProcessor extends StructureProcessor {
         max = Math.max(min, max);
         int count = min == max ? min : min + random.nextInt(max - min + 1);
 
+        // Variants first: the group's spacing comes from the widest pot actually drawn, so a
+        // cluster of flasks packs into one block where a cluster of big pots spreads.
+        List<String> ids = new ArrayList<>(count);
+        double width = 0.0D;
         for (int i = 0; i < count; i++) {
-            EntityPlacement placement = new EntityPlacement(pos.getX(), pos.getY(), pos.getZ(),
-                    pick(variants, random), random.nextFloat() * 360.0F, table, seedFor(pos));
-            placement.setEffects(effects);
-            // Position is absolute here, unlike the floor-local coords EntityPlacement carries out
-            // of the room planners -- so the offsets are passed straight through as world coords.
-            EntitySpawner.spawn(level, placement, pos.getX(), pos.getY(), pos.getZ());
+            String id = pick(variants, random);
+            ids.add(id);
+            width = Math.max(width, widthOf(id));
         }
+        List<Spot> spots = arrange(pos, count, width, canStand, taken, random);
+        if (spots.size() < count && owner) {
+            Dungeons.LOGGER.info("[D2-POT] marker at {} rolled {} pot(s) but only {} fit on the free"
+                    + " floor around it -- the rest are dropped", pos.toShortString(), count,
+                    spots.size());
+        }
+        List<EntityPlacement> out = new ArrayList<>(spots.size());
+        for (int i = 0; i < spots.size(); i++) {
+            Spot spot = spots.get(i);
+            taken.add(spot);
+            BlockPos cell = BlockPos.containing(spot.x(), pos.getY(), spot.z());
+            // Seeded per POT: seeding every pot by the marker gave a whole group identical loot.
+            EntityPlacement placement = new EntityPlacement(cell.getX(), cell.getY(), cell.getZ(),
+                    ids.get(i), random.nextFloat() * 360.0F, table, lootSeed(pos, i));
+            placement.setXOffset(spot.x() - cell.getX());
+            placement.setZOffset(spot.z() - cell.getZ());
+            placement.setEffects(effects);
+            out.add(placement);
+        }
+        return out;
+    }
+
+    /** An entity type's footprint width, or a whole block for an id that does not resolve. */
+    private static double widthOf(String id) {
+        // A bad id spawns nothing (EntitySpawner warns), so its width only has to be harmless.
+        return EntityType.byString(id).map(type -> (double) type.getWidth()).orElse(1.0D);
+    }
+
+    /** Clear space between two neighbouring pots, in blocks: two pixels, so each reads as its own prop. */
+    static final double POT_GAP = 0.125D;
+
+    /** Angles tried for a group before settling for one pot fewer. */
+    private static final int ROTATION_TRIES = 8;
+
+    /**
+     * How far a group's centre may slide off the centre of the marker's block, nearest first: up
+     * to half a block each way, so the group still centres inside the block the author chose.
+     */
+    private static final List<double[]> SHIFTS = shifts();
+
+    private static List<double[]> shifts() {
+        double[] steps = {0.0D, 0.25D, -0.25D, 0.5D, -0.5D};
+        List<double[]> out = new ArrayList<>(steps.length * steps.length);
+        for (double dx : steps) {
+            for (double dz : steps) {
+                out.add(new double[] {dx, dz});
+            }
+        }
+        out.sort(Comparator.comparingDouble(s -> s[0] * s[0] + s[1] * s[1]));
+        return List.copyOf(out);
+    }
+
+    /**
+     * Where one pot stands: the world X/Z of its centre, and its CLEARANCE radius -- half its
+     * footprint plus half the gap, so two spots touch exactly when their pots are one gap apart.
+     */
+    record Spot(double x, double z, double radius) {
+        boolean overlaps(Spot other) {
+            double dx = x - other.x;
+            double dz = z - other.z;
+            double reach = radius + other.radius;
+            return dx * dx + dz * dz < reach * reach - 1.0E-9;
+        }
+    }
+
+    /**
+     * Where a marker's {@code count} pots stand, as a group packed round the centre of the
+     * marker's block.
+     *
+     * <p>Every pot used to be spawned at the marker's own position, so a marker asking for three
+     * pots produced three entities in one spot. A pot is an ENTITY, not a block, so a group only
+     * needs its pots' widths plus a gap: centres are {@code width + POT_GAP} apart, where
+     * {@code width} is the widest pot in the group. Four flasks fit inside the marker's block; three
+     * big pots overhang it.</p>
+     *
+     * <p><strong>Overhang must land on free floor.</strong> Every block a pot's footprint covers,
+     * other than the marker's own, has to pass {@code canStand}, or the pot would stand half inside
+     * a wall. The shape ({@link #layout}) is turned to a random angle, which both varies the
+     * groups and lets one that meets a wall find the orientation that runs along it; and its centre
+     * may slide up to half a block off the marker's ({@link #SHIFTS}, centred first). The slide is
+     * what makes walls and corners work -- where pots are most often put. A centred triangle of big
+     * pots pokes a vertex into a wall at every angle; slid half a block away from it, it fits. If
+     * nothing fits the whole group it tries one pot fewer, down to a single pot at the centre -- so
+     * a cramped marker gets a smaller group that still reads as a group, never an overlap.</p>
+     *
+     * <p>{@code taken} holds the pots of markers planned earlier in this piece, so two markers
+     * placed side by side do not push their groups into each other.</p>
+     *
+     * <p>Package-private for {@code PotMarkerProcessorTest}.</p>
+     */
+    static List<Spot> arrange(BlockPos marker, int count, double width,
+                              Predicate<BlockPos> canStand, List<Spot> taken, RandomSource random) {
+        double spacing = width + POT_GAP;
+        double centreX = marker.getX() + 0.5D;
+        double centreZ = marker.getZ() + 0.5D;
+        for (int size = count; size >= 1; size--) {
+            List<double[]> offsets = layout(size, spacing);
+            // A lone pot at the centre looks the same at every angle, so one try is all of them.
+            int tries = size == 1 ? 1 : ROTATION_TRIES;
+            for (int attempt = 0; attempt < tries; attempt++) {
+                double angle = size == 1 ? 0.0D : random.nextDouble() * Math.PI * 2.0D;
+                double sin = Math.sin(angle);
+                double cos = Math.cos(angle);
+                for (double[] shift : SHIFTS) {
+                    List<Spot> spots = place(offsets, centreX + shift[0], centreZ + shift[1],
+                            sin, cos, spacing, width, marker, canStand, taken);
+                    if (spots != null) {
+                        return spots;
+                    }
+                }
+            }
+        }
+        return List.of();
+    }
+
+    /** One orientation and position of a group: every spot, or null if any pot does not fit. */
+    private static List<Spot> place(List<double[]> offsets, double centreX, double centreZ,
+                                    double sin, double cos, double spacing, double width,
+                                    BlockPos marker, Predicate<BlockPos> canStand,
+                                    List<Spot> taken) {
+        List<Spot> spots = new ArrayList<>(offsets.size());
+        for (double[] offset : offsets) {
+            Spot spot = new Spot(centreX + offset[0] * cos - offset[1] * sin,
+                    centreZ + offset[0] * sin + offset[1] * cos, spacing / 2.0D);
+            if (!fits(spot, width, marker, canStand, taken)) {
+                return null;
+            }
+            spots.add(spot);
+        }
+        return spots;
+    }
+
+    /**
+     * A group's shape as X/Z offsets from its centre, neighbours {@code spacing} apart: one pot
+     * at the centre, two to six evenly round a ring, seven or more packed hexagonally
+     * nearest-first (a ring of six round a centre pot, then the next ring).
+     */
+    static List<double[]> layout(int count, double spacing) {
+        List<double[]> out = new ArrayList<>(Math.max(count, 1));
+        if (count <= 1) {
+            out.add(new double[] {0.0D, 0.0D});
+            return out;
+        }
+        if (count <= 6) {
+            // The radius at which neighbours on the ring sit exactly one spacing apart.
+            double radius = spacing / (2.0D * Math.sin(Math.PI / count));
+            for (int i = 0; i < count; i++) {
+                double angle = 2.0D * Math.PI * i / count;
+                out.add(new double[] {radius * Math.cos(angle), radius * Math.sin(angle)});
+            }
+            return out;
+        }
+        int rings = 1;
+        while (3 * rings * (rings + 1) + 1 < count) {
+            rings++;
+        }
+        double rowStep = spacing * Math.sqrt(3.0D) / 2.0D;
+        for (int q = -rings; q <= rings; q++) {
+            for (int r = -rings; r <= rings; r++) {
+                if (Math.abs(q + r) <= rings) {
+                    out.add(new double[] {spacing * (q + r / 2.0D), rowStep * r});
+                }
+            }
+        }
+        out.sort(Comparator.<double[]>comparingDouble(p -> p[0] * p[0] + p[1] * p[1])
+                .thenComparingDouble(p -> Math.atan2(p[1], p[0])));
+        return new ArrayList<>(out.subList(0, count));
+    }
+
+    /**
+     * Every block, at the marker's level, that a pot of {@code width} centred on {@code spot}
+     * covers. Package-private for {@code PotMarkerProcessorTest}.
+     */
+    static List<BlockPos> footprint(Spot spot, double width, int y) {
+        double half = width / 2.0D;
+        // The far edge is exclusive: a pot ending exactly on a block boundary does not reach into
+        // the next block.
+        int minX = (int) Math.floor(spot.x() - half);
+        int maxX = (int) Math.floor(spot.x() + half - 1.0E-9);
+        int minZ = (int) Math.floor(spot.z() - half);
+        int maxZ = (int) Math.floor(spot.z() + half - 1.0E-9);
+        List<BlockPos> out = new ArrayList<>(4);
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                out.add(new BlockPos(x, y, z));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The marker's own block passes unconditionally: the author put the marker there, and the
+     * marker block itself is not air, so asking {@code canStand} about it would always say no.
+     */
+    private static boolean fits(Spot spot, double width, BlockPos marker,
+                                Predicate<BlockPos> canStand, List<Spot> taken) {
+        for (BlockPos cell : footprint(spot, width, marker.getY())) {
+            if (!cell.equals(marker) && !canStand.test(cell)) {
+                return false;
+            }
+        }
+        for (Spot other : taken) {
+            if (spot.overlaps(other)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Never 0, like {@link #seedFor}, and different for each pot of one marker's group. */
+    static long lootSeed(BlockPos marker, int index) {
+        long seed = marker.asLong() * 31L + index;
+        return seed == 0L ? 1L : seed;
+    }
+
+    /**
+     * Whether a pot can stand in a cell, judged from the processed piece: empty itself, with a
+     * floor under it that is solid on top.
+     *
+     * <p>An absent cell is NOT free. The list holds every block the template authored, air
+     * included (only structure blocks are stripped), so absence means {@code structure_void} or
+     * outside the piece -- places a pot would stand in whatever the world already holds there.
+     * The processed state is read rather than the level because nothing has been written yet (see
+     * the class note), and it already carries decoration's cobwebs and anything else placed in the
+     * cell before this processor.</p>
+     */
+    private static boolean standsFree(BlockState cell, BlockState below) {
+        return cell != null && cell.isAir()
+                && below != null
+                && below.isFaceSturdy(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, Direction.UP);
     }
 
     // Package-private, not private: Forge LOCKS the block registry headlessly, so the marker

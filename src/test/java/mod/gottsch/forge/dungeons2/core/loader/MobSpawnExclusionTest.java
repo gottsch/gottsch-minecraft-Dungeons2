@@ -67,7 +67,7 @@ class MobSpawnExclusionTest {
      */
     private static final Set<String> MINI_BOSSES =
             Set.of("skeleton_champion", "wight", "bodak", "beholder", "death_tyrant", "daemon",
-                    "orc_warlord", "minotaur");
+                    "orc_warlord", "minotaur", "stone_colossus");
 
     private static final String MOB_SETS = "/data/dungeons2/mob_sets";
     private static final String STRUCTURE = "/data/dungeons2/worldgen/structure/dungeon.json";
@@ -236,7 +236,11 @@ class MobSpawnExclusionTest {
             "bone_shard", "bloater_arm", "rock", "spike_growth_spell", "withering_gaze_spell",
             // debris thrown by SmashBlocksGoal, not a mob a spawner could draw
             "smash_shard",
+            // the Stone Colossus's thrown lump of the room -- ThrowBoulderGoal is the only route
+            "boulder",
             "paralysis_spell", "harm_spell", "disintegrate_spell", "disarm_spell", "firespout_spell",
+            // the Beholder-kin's ray, cast by them, never spawned
+            "annihilation_ray",
             // Summon-only: Beholder.summonMobs is the only route that ever produces one, and that is
             // pure Java, invisible to every JSON-based check here. Not a mini-boss (16 HP, no boss
             // slot planned) -- just not yet folded into the ambient roster either.

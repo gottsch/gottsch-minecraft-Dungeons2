@@ -219,9 +219,21 @@ public class DungeonsItems {
             () -> new ForgeSpawnEggItem(DungeonsEntities.MARGOYLE_ENTITY, 0x7f7f7f, 0x5a6d41,
                     new Item.Properties()));
 
+    /** Dungeon Denizens' colours for the same mob, so it reads the same in a pack with either. */
+    public static final RegistryObject<Item> GARGOYLE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GARGOYLE + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.GARGOYLE_ENTITY, 0x6d6d81, 0x373b41,
+                    new Item.Properties()));
+
     public static final RegistryObject<Item> MINOTAUR_EGG = Registration.ITEMS.register(
             DungeonsEntities.MINOTAUR + "_egg",
             () -> new ForgeSpawnEggItem(DungeonsEntities.MINOTAUR_ENTITY, 0x8a4a34, 0xe8e2d2,
+                    new Item.Properties()));
+
+    /** Weathered blue-grey stone against the gem blue, the two colours the model reads as. */
+    public static final RegistryObject<Item> STONE_COLOSSUS_EGG = Registration.ITEMS.register(
+            DungeonsEntities.STONE_COLOSSUS + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.STONE_COLOSSUS_ENTITY, 0x6c7a81, 0x3abae4,
                     new Item.Properties()));
 
     public static final RegistryObject<Item> ORC_EGG = Registration.ITEMS.register(
@@ -275,6 +287,28 @@ public class DungeonsItems {
     /** See {@link #ROCK_ITEM}. */
     public static final RegistryObject<Item> WITHERING_GAZE_SPELL_ITEM = Registration.ITEMS.register(
             DungeonsEntities.WITHERING_GAZE_SPELL, () -> new Item(new Item.Properties()));
+
+    /**
+     * The Beholder-kin spells' in-flight art (2026-09-10), until then fire charges &mdash; which
+     * made the shield rule unreadable: a player cannot learn "orbs go through your shield, fire does
+     * not" when everything looks like fire. Same arrangement as {@link #ROCK_ITEM}: the textures are
+     * GMM's ({@code gmm:item/<name>}, moved there from Dungeon Denizens, where Paralysis was
+     * {@code slow.png}), and these items exist only to carry them onto the thrown entity.
+     *
+     * <p>Fire Spout has no item on purpose. It IS fire, so GMM's fire-charge fallback is its right
+     * look, and it sits on the blockable side of the rule.</p>
+     */
+    public static final RegistryObject<Item> PARALYSIS_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.PARALYSIS_SPELL, () -> new Item(new Item.Properties()));
+    /** See {@link #PARALYSIS_SPELL_ITEM}. */
+    public static final RegistryObject<Item> HARM_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.HARM_SPELL, () -> new Item(new Item.Properties()));
+    /** See {@link #PARALYSIS_SPELL_ITEM}. */
+    public static final RegistryObject<Item> DISINTEGRATE_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.DISINTEGRATE_SPELL, () -> new Item(new Item.Properties()));
+    /** See {@link #PARALYSIS_SPELL_ITEM}. */
+    public static final RegistryObject<Item> DISARM_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.DISARM_SPELL, () -> new Item(new Item.Properties()));
 
 
     /**

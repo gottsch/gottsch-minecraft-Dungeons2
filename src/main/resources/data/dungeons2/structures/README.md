@@ -850,12 +850,24 @@ sides across its width, so it never arches itself shut; only the ends of the run
 wall behind and open passage ahead, get a haunch. Inside corners have two candidate directions and
 take the lowest of N/S/W/E, deterministically.
 
-Corridors are never dressed by a scheme — a border ring or checkerboard needs a room-sized
+Corridors take no SCHEME, and most floor patterns cannot dress one either — a border ring needs a room-sized
 rectangle. Corridor *walls* come from the shared `wall` section. Room `base`/`alternateBase` are
 rolled per interior cell at 45/55; `classic` sets both to the same block so the floor is uniform
 before weathering (the weathering processor list already produces the stone_bricks → cracked/mossy
 → cobblestone → dirt → gravel spread, and pre-baking a second block here both duplicated it and
 skipped the deeper decay stages).
+
+**The exception, added 2026-09-09: a CELL-LOCAL floor pattern.** `speckle` and `checkerboard`
+answer for a cell from that cell alone, so they need no rectangle and a corridor may carry one as
+`corridor.pattern`. Anything else is a **load error** naming the type, rather than a quiet skip that
+leaves an author staring at a plain passage. It is the floor's version of the exception corridors
+already make for wall `courses`.
+
+Two things follow from a corridor having no origin to index from. Coordinates handed to a cell
+painter are WORLD coordinates, so a checkerboard's phase runs continuously along the whole passage
+instead of restarting at every segment. And a painter may DECLINE a cell, in which case the
+corridor's own `floor`/`alternate_floor` roll stands — which is how a `speckle` with no
+`primary_block` accents the existing paving rather than replacing it.
 
 ### Room schemes
 
@@ -1971,6 +1983,14 @@ ordinary marker still states nothing. The keys are `mobSetName`, `proximity`, `m
 and `type` (`proximity` or `vanilla`) — spelled exactly as the finished spawner's own block-entity
 tag, so `/data get block` reads the same names before and after placement. A malformed value logs a
 `[D2-SPAWNER]` WARN and falls back to the pool rather than throwing on a worldgen thread.
+
+**A boss spawner may also carry `pinnedMob`, and you never author it.** Since 2026-09-10 a dungeon's
+boss is drawn when the dungeon is PLANNED (so loot placed long before the fight can depend on it), and
+the draw reaches the boss marker's spawner as `pinnedMob` **beside** the tier's `mobSetName`, never
+in place of it. The spawner honours the pin only while that set still offers the mob; otherwise it
+draws from the set as always. It is written by the processor (its `boss_mob` field, injected by the
+planner) — `/data get block` on a fired-up boss room will show it, and hand-authoring one would pin
+the same boss into every dungeon of that tier.
 
 The old note here said a block "carries no free text, so there is no per-cell override", and that a
 motif wanting a second set had to register a second marker block. **That was wrong** — a structure

@@ -1024,16 +1024,17 @@
           "dungeonblocks:corbels",
           "dungeonblocks:ledges"
         ]
-      }
+      },
 
-      // -----------------------------------------------------------------------------
-      // Water growth is OFF for classic -- classic dungeons have no standing water.
-      // Copy this into a motif that does. Water on a solid floor becomes seagrass; the
-      // air on top of water gets lily pads:
-      //
-      //   "underwater_growth": { "probability": 0.15, "blocks": ["minecraft:seagrass"] },
+      // Water standing on a solid floor becomes seagrass. Only the piece's OWN water: the
+      // sewer rooms, the well and stairs_1 author it. Aquifer water that seeps in after
+      // generation is not in the block list and gets nothing.
+      "underwater_growth": {
+        "probability": 0.15,
+        "blocks": ["minecraft:seagrass"]
+      }
+      // Lily pads on the air above water are available but OFF:
       //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
-      // -----------------------------------------------------------------------------
     },
     // =========================================================================================
     // dungeons2:pot (added 2026-08-29) -- backlog #56. Turns an authored dungeons2:pot_marker into
@@ -1111,8 +1112,8 @@
     // EVERY FIELD MIRRORS ONE dungeons2:decoration BEHAVIOUR and must name the same blocks it
     // does; a processor cannot see its siblings in the list, so the pairing is by convention and
     // pinned by DecorationSweepParityTest, which reads both entries out of this file.
-    // (No underwater_growth/floating_growth counterparts, for the same reason there are none
-    // above: classic dungeons have no standing water.)
+    // (No underwater_growth counterpart: seagrass only replaces water the piece authored on its
+    // own floor, so no later piece is placed to undercut it. floating_growth is off above.)
     // =========================================================================================
     {
       "processor_type": "dungeons2:decoration_sweep",

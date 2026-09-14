@@ -57,8 +57,22 @@ public class DungeonLayout {
     private List<FloorLayout> floors = new ArrayList<>();
     private List<TransitionData> transitions = new ArrayList<>();
     private long seed;
+    /**
+     * Entity id of the mob the boss room was built for (e.g. {@code "dungeons2:beholder"}), or null
+     * when there is none &mdash; no authored boss room assembled, or no boss was drawn.
+     *
+     * <p>Decided at PLANNING, not when the boss spawner fires (2026-09-10). A spawner draws its mob
+     * the moment a player comes near, long after every chest in the dungeon was filled, so anything
+     * that should depend on who the boss is &mdash; loot that only turns up where a Beholder-kin
+     * waits &mdash; had nothing to read. Set only once the boss room is actually adopted, so a
+     * dungeon that fell back to the procedural terminal room never claims a boss it will not have.</p>
+     */
+    private String boss;
 
     public DungeonLayout() {}
+
+    public String getBoss() { return boss; }
+    public void setBoss(String boss) { this.boss = boss; }
 
     public String getMotifValue() { return motifValue; }
     public void setMotifValue(String motifValue) { this.motifValue = motifValue; }

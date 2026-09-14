@@ -59,7 +59,7 @@ class BossRoomPlacementTest {
 
     /** Stands in for vanilla jigsaw: honours the protocol, always returns a SIDExSIDE footprint. */
     private static DungeonStackPlanner.BossRoomAssembler fixedSize(int side) {
-        return (worldX, worldY, worldZ, floorIndex, size, assemblySeed, commit) -> Optional.of(
+        return (worldX, worldY, worldZ, floorIndex, size, boss, assemblySeed, commit) -> Optional.of(
                 new DungeonStackPlanner.AssembledRoom(
                         new Rectangle2D(worldX, worldZ, side, side),
                         // One authored door on the room's own edge, as a real template carries.
@@ -69,7 +69,7 @@ class BossRoomPlacementTest {
 
     /** The pool is absent, or nothing assembled: the planner must degrade, not fail. */
     private static final DungeonStackPlanner.BossRoomAssembler NEVER_ASSEMBLES =
-            (worldX, worldY, worldZ, floorIndex, size, assemblySeed, commit) -> Optional.empty();
+            (worldX, worldY, worldZ, floorIndex, size, boss, assemblySeed, commit) -> Optional.empty();
 
     private static Optional<DungeonLayout> plan(long seed, DungeonSize size,
                                                 DungeonStackPlanner.BossRoomAssembler boss) {

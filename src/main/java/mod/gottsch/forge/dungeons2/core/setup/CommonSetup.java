@@ -21,10 +21,18 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.api.DungeonsApi;
 import mod.gottsch.forge.dungeons2.core.config.Config;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
+import mod.gottsch.forge.dungeons2.core.entity.projectile.AnnihilationRay;
 import mod.gottsch.forge.dungeons2.core.item.DungeonsItems;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
+import mod.gottsch.forge.dungeons2.core.entity.ai.SlamRimCollapse;
 import mod.gottsch.forge.gmm.core.entity.ai.goal.CastSpellGoal;
+import mod.gottsch.forge.gmm.core.entity.ai.goal.GroundSlamGoal;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
 import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Beholder;
@@ -36,6 +44,8 @@ import mod.gottsch.forge.gmm.core.entity.monster.GrayOoze;
 import mod.gottsch.forge.gmm.core.entity.monster.OchreJelly;
 import mod.gottsch.forge.gmm.core.entity.monster.Minotaur;
 import mod.gottsch.forge.gmm.core.entity.monster.Orc;
+import mod.gottsch.forge.gmm.core.entity.monster.StoneColossus;
+import mod.gottsch.forge.gmm.core.entity.monster.gargoyle.Gargoyle;
 import mod.gottsch.forge.gmm.core.entity.monster.OrcShaman;
 import mod.gottsch.forge.gmm.core.entity.monster.OrcWarlord;
 import mod.gottsch.forge.gmm.core.entity.monster.construct.AnimatedArmor;
@@ -95,6 +105,7 @@ public class CommonSetup {
 	 */
 	public static void common(final FMLCommonSetupEvent event) {
 		wireRangedAttacks();
+		wireGroundSlam();
 		// add mod specific logging
 		Config.instance.addRollingFileAppender(Dungeons.MOD_ID);
 
@@ -147,6 +158,29 @@ public class CommonSetup {
 	 * <p>Called from {@code common} rather than from a registry event because it reads
 	 * {@code RegistryObject#get}, which is only safe once the registries are frozen.</p>
 	 */
+	/**
+	 * Hands gmm's ground slam the two things a library cannot decide: what the blow IS, and what it
+	 * does to the world.
+	 *
+	 * <p>Both are null in gmm and both fail quietly if left that way -- an unwired slam still knocks
+	 * players about, it just deals generic mob damage and moves no blocks, which looks like a
+	 * half-finished attack rather than a missing hook. Same shape as
+	 * {@link #wireRangedAttacks()}.</p>
+	 */
+	private static void wireGroundSlam() {
+		// A damage type of our own buys three things: a death message, correct attribution, and a
+		// hook the Boots of Shock Absorption (#97) can test for without knowing what hit the player.
+		GroundSlamGoal.damageSource = mob -> new DamageSource(
+				mob.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+						.getHolderOrThrow(GROUND_SLAM_DAMAGE_TYPE), mob);
+		GroundSlamGoal.blockEffect = SlamRimCollapse::collapse;
+	}
+
+	/** The slam's damage type, shipped at {@code data/dungeons2/damage_type/ground_slam.json}. */
+	private static final ResourceKey<DamageType> GROUND_SLAM_DAMAGE_TYPE =
+			ResourceKey.create(Registries.DAMAGE_TYPE,
+					new ResourceLocation(Dungeons.MOD_ID, "ground_slam"));
+
 	private static void wireRangedAttacks() {
 		// The orc lobs a rock. The goal computes the spawn point (the orc's right hand); this
 		// creates the projectile and gives it its ballistic arc.
@@ -180,10 +214,17 @@ public class CommonSetup {
 
 		// Beholder/DeathTyrant's real kit, ported from Dungeon Denizens -- GMM's Beholderkin owns no
 		// concrete spell (spellCaster is nullable, and left unassigned would leave both mobs biting
-		// only, with none of a beholder's signature gaze attacks -- see Beholder#registerGoals). All
-		// four fall back to a fire-charge visual (their itemSupplier is left unset here); dedicated
-		// art is a separate, later decision. summonMobs/summonDaemon are deliberately left unwired --
-		// minion summoning is a separate feature, not a stat/attack one.
+		// only, with none of a beholder's signature gaze attacks -- see Beholder#registerGoals).
+		//
+		// Their in-flight ART (2026-09-10). Until now all four fell back to GMM's fire charge, which
+		// made the shield rule unreadable: magic orbs go through an ordinary shield and fire does not,
+		// and a player cannot learn that when everything looks like fire. The textures are Dungeon
+		// Denizens' own, moved into GMM -- see DungeonsItems.PARALYSIS_SPELL_ITEM. Fire Spout keeps the
+		// fire charge on purpose: it is fire.
+		ParalysisSpell.itemSupplier = () -> DungeonsItems.PARALYSIS_SPELL_ITEM.get();
+		HarmSpell.itemSupplier = () -> DungeonsItems.HARM_SPELL_ITEM.get();
+		DisintegrateSpell.itemSupplier = () -> DungeonsItems.DISINTEGRATE_SPELL_ITEM.get();
+		DisarmSpell.itemSupplier = () -> DungeonsItems.DISARM_SPELL_ITEM.get();
 		CastSpellGoal.SpellLauncher paralysisSpell = (caster, target, x, y, z) -> {
 			ParalysisSpell spell = new ParalysisSpell(DungeonsEntities.PARALYSIS_SPELL_ENTITY.get(), caster.level());
 			spell.init(caster, target.getX() - x, target.getY(0.5D) - y, target.getZ() - z);
@@ -209,17 +250,37 @@ public class CommonSetup {
 			caster.level().addFreshEntity(spell);
 		};
 
-		// Weights match Dungeon Denizens exactly: mostly paralysis, harm as the common follow-up,
-		// disintegrate/disarm as rare escalations.
+		// This mod's own spell, not ported: the annihilation ray (2026-09-10). A beam rather than a
+		// bolt, and it burns through walls -- see AnnihilationRay. The goal's computed spawn point
+		// is ignored; the beam leaves from the caster's eye, wherever that is each tick.
+		//
+		// This is only its LINE-OF-SIGHT half. CastSpellGoal charges only while the caster can see
+		// its target, so from the pool the beam could never fire through a wall or out of a sealed
+		// room. BeholderkinBeamEvent injects BeamBreachGoal for exactly those cases.
+		CastSpellGoal.SpellLauncher annihilationRay = (caster, target, x, y, z) ->
+				AnnihilationRay.fire(caster, AnnihilationRay.aimAt(caster, target),
+						AnnihilationRay.Mode.STRIKE);
+
+		// Weights match Dungeon Denizens exactly -- mostly paralysis, harm as the common follow-up,
+		// disintegrate/disarm as rare escalations -- plus the beam at 2: the signature attack, so
+		// more often than the escalations, never more than the paralysis it opens with.
 		WeightedCollection<Integer, CastSpellGoal.SpellLauncher> beholderSpells = new WeightedCollection<>();
 		beholderSpells.add(3, paralysisSpell);
 		beholderSpells.add(2, harmSpell);
 		beholderSpells.add(1, disintegrateSpell);
 		beholderSpells.add(1, disarmSpell);
+		beholderSpells.add(2, annihilationRay);
 		Beholder.spellCaster = beholderSpells;
-		// DeathTyrant casts one spell, not a weighted pool, in Dungeon Denizens too.
-		DeathTyrant.spellCaster = paralysisSpell;
-		// Spectator: same single Paralysis cast as DeathTyrant.
+		// DeathTyrant casts one spell in Dungeon Denizens, and its hook is typed for ONE launcher, not
+		// a pool. The beam made it two, so the launcher it is handed draws from a pool itself:
+		// paralysis stays the reliable cast the wiki describes, the beam is the one in four.
+		WeightedCollection<Integer, CastSpellGoal.SpellLauncher> deathTyrantSpells = new WeightedCollection<>();
+		deathTyrantSpells.add(3, paralysisSpell);
+		deathTyrantSpells.add(1, annihilationRay);
+		DeathTyrant.spellCaster = (caster, target, x, y, z) ->
+				deathTyrantSpells.next().cast(caster, target, x, y, z);
+		// Spectator: the single Paralysis cast DeathTyrant had before the beam. It is a summon, not
+		// a boss, and does not get the ray.
 		Spectator.spellCaster = paralysisSpell;
 
 		// Daemon's fire-spout: a DIFFERENT shape than CastSpellGoal.SpellLauncher (Daemon.
@@ -236,10 +297,16 @@ public class CommonSetup {
 		// with vanilla Zombie standing in for Headless (not pulled into this roster): Headless is
 		// itself flavoured as "a zombie about 20% better", so a plain zombie is the direct substitute
 		// rather than a different mob entirely.
+		//
+		// NOT DD's weights any more (Mark, 2026-09-10): zombie 60 -> 30, spectator 20 -> 40. At DD's
+		// 20 of 140 the Spectator was one summon in seven -- about six minutes of fighting in sight
+		// before one appeared -- and a summon is its ONLY route into the game (see
+		// MobSpawnExclusionTest.EXEMPT). Now 40 of 130, about one in three. The zombie is the one
+		// that gave way: it is a stand-in for Headless anyway, and the least interesting draw here.
 		WeightedCollection<Double, EntityType<? extends Mob>> beholderMobs = new WeightedCollection<>();
-		beholderMobs.add(60D, EntityType.ZOMBIE);
+		beholderMobs.add(30D, EntityType.ZOMBIE);
 		beholderMobs.add(40D, DungeonsEntities.ORC_ENTITY.get());
-		beholderMobs.add(20D, DungeonsEntities.SPECTATOR_ENTITY.get());
+		beholderMobs.add(40D, DungeonsEntities.SPECTATOR_ENTITY.get());
 		beholderMobs.add(20D, EntityType.BLAZE);
 		Beholder.summonMobs = beholderMobs;
 		Beholder.summonDaemon = DungeonsEntities.DAEMON_ENTITY.get();
@@ -308,6 +375,8 @@ public class CommonSetup {
 		event.put(DungeonsEntities.OCHRE_JELLY_ENTITY.get(), OchreJelly.createAttributes().build());
 		event.put(DungeonsEntities.GRAY_OOZE_ENTITY.get(), GrayOoze.createAttributes().build());
 		event.put(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), BlackPudding.createAttributes().build());
+		event.put(DungeonsEntities.STONE_COLOSSUS_ENTITY.get(), StoneColossus.createAttributes().build());
+		event.put(DungeonsEntities.GARGOYLE_ENTITY.get(), Gargoyle.createAttributes().build());
 		event.put(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmor.createAttributes().build());
 		event.put(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeapon.createAttributes().build());
 		event.put(DungeonsEntities.MARGOYLE_ENTITY.get(), Margoyle.createAttributes().build());

@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.block.entity.DungeonSpawnerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
 import mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.config.Codecs;
@@ -119,6 +120,14 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
 
     private final ResourceLocation mobSet;
     private final Optional<ResourceLocation> bossMobSet;
+    /**
+     * Which of {@link #bossMobSet}'s mobs the boss spawner will spawn, when the planner has already
+     * decided (2026-09-10). Written into the spawner beside the set, never INSTEAD of it: the set the
+     * tier assigns stays the spawner's set, and {@code DungeonSpawnerBlockEntity} honours the pin only
+     * while that set still offers the mob. Normally injected by {@code DungeonStructure#pinBoss};
+     * authoring it in a processor list would pin the same boss into every dungeon of that tier.
+     */
+    private final Optional<ResourceLocation> bossMob;
     private final Optional<ResourceLocation> escortMobSet;
     private final Optional<ResourceLocation> rangedEscortMobSet;
     private final ResourceLocation markerBlock;
@@ -167,8 +176,21 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                                   ResourceLocation markerBlock, double proximity,
                                   int minMobs, int maxMobs, float probability,
                                   SpawnerConfig.Kind kind) {
+        this(mobSet, bossMobSet, Optional.empty(), escortMobSet, rangedEscortMobSet, markerBlock,
+                proximity, minMobs, maxMobs, probability, kind);
+    }
+
+    /** The full form, with a boss already drawn at planning time &mdash; see {@link #bossMob}. */
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
+                                  Optional<ResourceLocation> bossMob,
+                                  Optional<ResourceLocation> escortMobSet,
+                                  Optional<ResourceLocation> rangedEscortMobSet,
+                                  ResourceLocation markerBlock, double proximity,
+                                  int minMobs, int maxMobs, float probability,
+                                  SpawnerConfig.Kind kind) {
         this.mobSet = mobSet;
         this.bossMobSet = bossMobSet;
+        this.bossMob = bossMob;
         this.escortMobSet = escortMobSet;
         this.rangedEscortMobSet = rangedEscortMobSet;
         this.markerBlock = markerBlock;
@@ -177,6 +199,27 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         this.maxMobs = maxMobs;
         this.probability = probability;
         this.kind = kind;
+    }
+
+    /** The tier's boss set, if this list names one. Read at planning time to draw the boss. */
+    public Optional<ResourceLocation> bossMobSet() {
+        return this.bossMobSet;
+    }
+
+    /** The pinned boss, if the planner drew one. See {@link #bossMob}. */
+    public Optional<ResourceLocation> bossMob() {
+        return this.bossMob;
+    }
+
+    /**
+     * This processor with a boss pinned &mdash; how a boss drawn at planning time reaches the room.
+     * The boss SET is left exactly as the tier assigned it; everything else is carried over too, so
+     * the pinned room weathers and garrisons exactly as the tier's list says.
+     */
+    public SpawnerMarkerProcessor withBossMob(ResourceLocation mob) {
+        return new SpawnerMarkerProcessor(this.mobSet, this.bossMobSet, Optional.of(mob),
+                this.escortMobSet, this.rangedEscortMobSet, this.markerBlock, this.proximity,
+                this.minMobs, this.maxMobs, this.probability, this.kind);
     }
 
     /**
@@ -193,6 +236,11 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 // #31 and are left alone; see ChestMarkerProcessor's codec note.
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "boss_mob_set")
                         .forGetter(p -> p.bossMobSet),
+                // In the codec, not merely a field, because the pinned list is written INLINE into
+                // the boss room's pool element and saved with the structure piece. A field the codec
+                // did not carry would survive generation and vanish on the first chunk reload.
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "boss_mob")
+                        .forGetter(p -> p.bossMob),
                 // The boss's guard, split by the role the template authored. Strict for the same
                 // reason as boss_mob_set: a misspelling here would silently garrison a large
                 // dungeon's boss room with the small tier's mobs, which is the fault this whole
@@ -307,9 +355,14 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
 
         // The block lookup is the ONLY part of this that needs a populated Forge registry, which is
         // why everything either side of it is separately callable -- see SpawnerMarkerProcessorTest.
+        CompoundTag tag = spawnerTag(overrides, resolvedSet);
+        // The planner's boss, beside the set rather than instead of it. Proximity route only: a
+        // vanilla cage respawns from its potentials for ever, so "which one mob" means nothing there.
+        if (bossMob.isPresent() && bossMobSet.isPresent() && isBossMarker(current)) {
+            tag.putString(DungeonSpawnerBlockEntity.PINNED_MOB, bossMob.get().toString());
+        }
         return new StructureTemplate.StructureBlockInfo(current.pos(),
-                DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(),
-                spawnerTag(overrides, resolvedSet));
+                DungeonsBlocks.MOB_SET_SPAWNER.get().defaultBlockState(), tag);
     }
 
     /**

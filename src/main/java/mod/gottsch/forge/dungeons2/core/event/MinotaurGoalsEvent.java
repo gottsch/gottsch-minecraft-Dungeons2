@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.event;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.entity.ai.goal.SmashBlocksGoal;
+import mod.gottsch.forge.gmm.core.entity.ai.goal.TallMeleeAttackGoal;
 import mod.gottsch.forge.gmm.core.entity.monster.Minotaur;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
@@ -98,9 +99,17 @@ public class MinotaurGoalsEvent {
      */
     private static final int GOAL_PRIORITY = 2;
 
-    /** gmm's own priority and speed for the melee goal, kept identical across the swap. */
+    /**
+     * gmm's own priority, speed and swing rate for the melee goal, kept identical across the swap.
+     *
+     * <p>The interval has to be repeated here rather than inherited: this event REPLACES the goal
+     * gmm registered, so gmm's constructor argument is not in play and a default here would quietly
+     * put the Minotaur back on vanilla's 20 — the exact fault the `TallMeleeAttackGoal` swap
+     * already walked into once. Keep it in step with `Minotaur.MELEE_INTERVAL_TICKS`.</p>
+     */
     private static final int MELEE_GOAL_PRIORITY = 4;
     private static final double MELEE_SPEED_MODIFIER = 1.0D;
+    private static final int MELEE_INTERVAL_TICKS = 30;
 
     /**
      * How long a boss remembers a target it cannot see: 30 seconds, against vanilla's 3. Long
@@ -148,8 +157,13 @@ public class MinotaurGoalsEvent {
                 .map(WrappedGoal::getGoal)
                 .filter(MeleeAttackGoal.class::isInstance)
                 .forEach(minotaur.goalSelector::removeGoal);
+        // TallMeleeAttackGoal, not MeleeAttackGoal: gmm swapped the Minotaur onto it because
+        // vanilla's reach is a single feet-to-feet distance, which counts a 2.6-block mob's own
+        // height against it. The filter above removes that goal too (it IS a MeleeAttackGoal), so
+        // re-adding the vanilla one here would quietly undo the fix -- with nothing to see but a
+        // Minotaur that will not hit a player standing on a step.
         minotaur.goalSelector.addGoal(MELEE_GOAL_PRIORITY,
-                new MeleeAttackGoal(minotaur, MELEE_SPEED_MODIFIER, true));
+                new TallMeleeAttackGoal(minotaur, MELEE_SPEED_MODIFIER, true, MELEE_INTERVAL_TICKS));
 
         minotaur.targetSelector.getAvailableGoals().stream()
                 .map(WrappedGoal::getGoal)

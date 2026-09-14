@@ -7,14 +7,6 @@
   },
   "mobs": [
     {
-      "id": "dungeons2:magma_skeleton",
-      "weight": 5
-    },
-    {
-      "id": "dungeons2:burning_skeleton",
-      "weight": 4
-    },
-    {
       "id": "dungeons2:electric_skeleton",
       "weight": 4
     },
