@@ -3,6 +3,8 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 import mod.gottsch.forge.dungeons2.core.config.PropConfig;
 import mod.gottsch.forge.dungeons2.core.config.PropConfig.PropPlacement;
 import mod.gottsch.forge.dungeons2.core.config.PropConfig.PropVariant;
+import mod.gottsch.forge.dungeons2.core.config.SizeGate;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
@@ -54,7 +56,7 @@ class RoomFurnitureGeneratorTest {
                                               Set<Coords2D> occupied, long seed) {
         List<BlockPlacement> out = new ArrayList<>();
         RoomFurnitureGenerator.placeProps(room, FLOOR_Y, config, occupied,
-                RandomSource.create(seed), out);
+                RandomSource.create(seed), out, new ArrayList<>());
         return out;
     }
 
@@ -68,6 +70,34 @@ class RoomFurnitureGeneratorTest {
     }
 
     // ---- counts ---------------------------------------------------------------------------------
+
+    /**
+     * #99, and the half that is easy to get wrong: the rate is on the SLOT but eligibility is on
+     * the BLOCK. Driven at 1.0 with a mixed variant list, so the only thing that can keep the
+     * cauldron a cauldron is the block check.
+     */
+    @Test
+    void onlyABarrelPropEverBecomesAMimic() {
+        List<BlockPlacement> blocks = new ArrayList<>();
+        List<EntityPlacement> entities = new ArrayList<>();
+        PropConfig always = new PropConfig(6, 6, PropPlacement.AGAINST_WALL,
+                List.of(new PropConfig.PropVariant("minecraft:barrel", 1, false),
+                        new PropConfig.PropVariant("minecraft:cauldron", 1, false)),
+                1.0D, SizeGate.UNBOUNDED);
+
+        RoomFurnitureGenerator.placeProps(room(), FLOOR_Y, always, Set.of(),
+                RandomSource.create(7L), blocks, entities);
+
+        assertFalse(entities.isEmpty(), "with a 1.0 rate at least one barrel must have bitten");
+        for (EntityPlacement mimic : entities) {
+            assertEquals("dungeons2:barrel_mimic", mimic.getEntityId());
+        }
+        for (BlockPlacement prop : blocks) {
+            assertNotEquals("minecraft:barrel", prop.getBlockId(),
+                    "no barrel may survive a 1.0 mimic_chance; only the cauldron should be left");
+        }
+        assertEquals(6, blocks.size() + entities.size(), "every drawn cell still got something");
+    }
 
     @Test
     void placesTheRequestedNumberOfProps() {
@@ -199,7 +229,8 @@ class RoomFurnitureGeneratorTest {
         List<BlockPlacement> out = new ArrayList<>();
         RoomData room = room();
         Set<Coords2D> used = RoomFurnitureGenerator.placeProps(room, FLOOR_Y,
-                props(3, 3, PropPlacement.AGAINST_WALL), Set.of(), RandomSource.create(11L), out);
+                props(3, 3, PropPlacement.AGAINST_WALL), Set.of(), RandomSource.create(11L), out,
+                new ArrayList<>());
         assertEquals(cellsOf(out), used);
         assertEquals(3, used.size());
     }

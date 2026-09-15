@@ -10,6 +10,7 @@
           "min_count": 0,
           "max_count": 2,
           "placement": "against_wall",
+          "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
             { "block": "minecraft:cauldron", "weight": 1 }
@@ -264,6 +265,7 @@
           "min_count": 0,
           "max_count": 2,
           "placement": "against_wall",
+          "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
             { "block": "minecraft:cauldron", "weight": 1 }
@@ -274,6 +276,7 @@
           "min_count": 0,
           "max_count": 2,
           "placement": "corner",
+          "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 2, "oriented": false },
             { "block": "minecraft:hay_block", "weight": 1 }
@@ -712,6 +715,7 @@
           "min_count": 0,
           "max_count": 2,
           "placement": "against_wall",
+          "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
             { "block": "minecraft:cauldron", "weight": 1 }
@@ -723,6 +727,7 @@
           "min_count": 0,
           "max_count": 3,
           "placement": "free",
+          "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
             { "block": "minecraft:hay_block", "weight": 2 }
@@ -760,6 +765,9 @@
       "chests": {
         "min_count": 0,
         "max_count": 1,
+        // #99. Low, because a hall's chest is not guaranteed in the first place -- a rate that
+        // bites often on a thing you rarely find makes finding one feel bad rather than tense.
+        "mimic_chance": 0.04,
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
@@ -829,6 +837,11 @@
             "centre_chest": {
               "min_count": 1,
               "max_count": 1,
+              // Double the hall's, and the best mimic in the mod: this chest is GUARANTEED and it
+              // sits alone on a lit dais in the middle of a shrine, which is exactly the chest a
+              // player walks straight up to. The rate can be higher precisely because the room
+              // always has one -- nobody loses a rare find, they lose an easy one.
+              "mimic_chance": 0.08,
               "loot_tables": [
                 { "loot_table": "dungeons2:chests/classic_shallow", "weight": 2 },
                 { "loot_table": "dungeons2:chests/classic_deep", "weight": 1 }

@@ -1,5 +1,37 @@
 {
   "wall": {
     "wall": "minecraft:bricks"
+  },
+  "corridor": {
+    "floor": "minecraft:cobblestone",
+    "alternate_floor": "minecraft:bricks",
+    "ceiling": "minecraft:bricks",
+    "pattern": {
+      "type": "dungeons2:speckle",
+      "config": {
+        "secondary_block": "minecraft:cracked_stone_bricks",
+        "probability": 0.1
+      }
+    },
+    "height": 7,
+    "narrow_height": 6,
+    "profile": "arched",
+    "arch_block": "minecraft:brick_stairs",
+    "styles": [
+      {
+        "name": "vaulted",
+        "weight": 3,
+        "height": 7,
+        "narrow_height": 6,
+        "profile": "arched",
+        "arch_block": "minecraft:brick_stairs"
+      },
+      {
+        "name": "cramped",
+        "weight": 2,
+        "height": 6,
+        "profile": "flat"
+      }
+    ]
   }
 }

@@ -244,7 +244,56 @@ class MobSpawnExclusionTest {
             // Summon-only: Beholder.summonMobs is the only route that ever produces one, and that is
             // pure Java, invisible to every JSON-based check here. Not a mini-boss (16 HP, no boss
             // slot planned) -- just not yet folded into the ambient roster either.
-            "spectator");
+            "spectator",
+            // The mimics (#99). Reachable, and by a route no JSON check here can see: a chest or a
+            // barrel that was going to be placed is swapped for one at PLAN time, in
+            // RoomChestGenerator / RoomFurnitureGenerator. Same shape as spectator's exemption --
+            // pure Java, invisible from the data. What must stay true of them is the opposite of
+            // reachability, and noMobSetOrOverrideContainsAMimic asserts it.
+            "vanilla_chest_mimic", "barrel_mimic");
+
+    /**
+     * The two mimics must appear in NEITHER spawner route, and unlike a mini-boss the reason is
+     * not "not designed yet" -- it is the design.
+     *
+     * <p>A mimic is a container that turns out to be a monster. Drawn from a mob set it would
+     * arrive in the middle of a floor with no container anywhere near it, and a chest sitting in
+     * open air next to three skeletons is not an ambush, it is a rendering bug the player reports.
+     * The swap that puts one where a chest would have been is the only route in, on purpose.</p>
+     *
+     * <p>Stated here rather than as a comment for {@code MobSpawnExclusionTest}'s founding reason:
+     * a mob set that omits the mimic and a mob set that FORGOT it are the same file.</p>
+     */
+    private static final Set<String> MIMICS = Set.of("vanilla_chest_mimic", "barrel_mimic");
+
+    @Test
+    void noMobSetOrOverrideContainsAMimic() {
+        List<String> found = new ArrayList<>();
+        for (Path file : mobSetFiles()) {
+            for (JsonElement wrapped : read(file).getAsJsonObject().getAsJsonArray("mobs")) {
+                String id = wrapped.getAsJsonObject().get("id").getAsString();
+                if (isMimic(id)) {
+                    found.add(file.getFileName() + " -> " + id);
+                }
+            }
+        }
+        JsonObject overrides = readResource(STRUCTURE).getAsJsonObject()
+                .getAsJsonObject("spawn_overrides");
+        for (String category : overrides.keySet()) {
+            for (JsonElement wrapped : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
+                String id = wrapped.getAsJsonObject().get("type").getAsString();
+                if (isMimic(id)) {
+                    found.add("spawn_overrides/" + category + " -> " + id);
+                }
+            }
+        }
+        assertTrue(found.isEmpty(), "a mimic is named by a spawner route. It must appear only where"
+                + " a container would have been -- see RoomChestGenerator's swap: " + found);
+    }
+
+    private static boolean isMimic(String id) {
+        return id.startsWith("dungeons2:") && MIMICS.contains(id.substring("dungeons2:".length()));
+    }
 
     // -------- helpers --------
 

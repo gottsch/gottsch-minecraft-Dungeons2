@@ -19,6 +19,10 @@ package mod.gottsch.forge.dungeons2.core.setup;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
+import mod.gottsch.forge.gmm.core.client.model.BarrelMimicModel;
+import mod.gottsch.forge.gmm.core.client.model.VanillaChestMimicModel;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.BarrelMimicRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.VanillaChestMimicRenderer;
 import mod.gottsch.forge.gmm.core.client.model.AlligatorGarModel;
 import mod.gottsch.forge.gmm.core.client.model.BlackPuddingModel;
 import mod.gottsch.forge.gmm.core.client.model.BloaterArmModel;
@@ -121,6 +125,8 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(RatModel.LAYER_LOCATION, RatModel::createBodyLayer);
+        event.registerLayerDefinition(VanillaChestMimicModel.LAYER_LOCATION, VanillaChestMimicModel::createBodyLayer);
+        event.registerLayerDefinition(BarrelMimicModel.LAYER_LOCATION, BarrelMimicModel::createBodyLayer);
         // The fungi do NOT share a layer, despite sharing a look today: VioletFungusModel
         // delegates to the shrieker's rig for now but owns its own LAYER_LOCATION, so it gets its
         // own registration and keeps working when GMM gives it the tentacle geometry.
@@ -205,6 +211,8 @@ public class ClientSetup {
         event.registerEntityRenderer(DungeonsEntities.GRAY_OOZE_ENTITY.get(), GrayOozeRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), BlackPuddingRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmorRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), VanillaChestMimicRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BARREL_MIMIC_ENTITY.get(), BarrelMimicRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeaponRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.GARGOYLE_ENTITY.get(), GargoyleRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.MARGOYLE_ENTITY.get(), MargoyleRenderer::new);

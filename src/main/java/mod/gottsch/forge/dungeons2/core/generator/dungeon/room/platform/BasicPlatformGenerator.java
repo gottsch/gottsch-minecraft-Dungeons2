@@ -165,7 +165,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
                         List.of(new Coords2D(centreX, centreZ)), floorY + 2, chest,
                         cell -> mod.gottsch.forge.dungeons2.core.generator.dungeon.room
                                 .RoomChestGenerator.randomHorizontalFacing(random),
-                        random, out));
+                        random, out, entities));
 
         // The pots ON the dais (#86). floorY + 2, one row above the dais blocks themselves --
         // the same row topBlock occupies, because both stand on the platform's surface.

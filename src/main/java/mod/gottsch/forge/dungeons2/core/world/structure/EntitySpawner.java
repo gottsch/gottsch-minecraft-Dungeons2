@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.gmm.core.entity.monster.mimic.Mimic;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.PotionEffectSpec;
@@ -114,6 +115,18 @@ public final class EntitySpawner {
         }
 
         String lootTable = placement.getLootTable();
+
+        // A MIMIC takes its table by hand, and has to (#99). The round trip below writes the
+        // vanilla "LootTable" key, which is the CONTAINER convention -- a Mob reads
+        // "DeathLootTable" instead, so a mimic loaded from that tag would arrive with the chest's
+        // reward silently dropped. gmm's Mimic exposes setLootTable for precisely this swap, and
+        // casting to it is fair where casting to dungeonblocks' PotEntity is not: gmm is an API
+        // dependency of this mod, not a content one.
+        if (entity instanceof Mimic mimic && lootTable != null && !lootTable.isBlank()) {
+            mimic.setLootTable(new ResourceLocation(lootTable));
+            return level.addFreshEntity(entity);
+        }
+
         CompoundTag effects = effectsTag(placement);
         boolean wantsLoot = lootTable != null && !lootTable.isBlank();
         if (wantsLoot || effects != null) {

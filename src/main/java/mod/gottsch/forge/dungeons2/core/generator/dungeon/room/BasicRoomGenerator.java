@@ -281,7 +281,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         scheme.chestsFor(width, depth, height).ifPresent(chests ->
                 taken.addAll(RoomChestGenerator.placeChests(room, floorY,
                         chests.resolvedAgainst(motifConfig.chestBandFor(floorIndex)),
-                        taken, random, blocks)));
+                        taken, random, blocks, out.getEntities())));
 
         // The Mining Chest, before the pots and claiming its cell for the same reason an ordinary
         // chest does: it is a solid block, and a pot entity standing inside one falls and shatters
@@ -299,7 +299,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // should give way.
         taken.addAll(scheme.propsFor(width, depth, height)
                 .map(props -> RoomFurnitureGenerator.placeProps(room, floorY, props, taken, random,
-                        blocks))
+                        blocks, out.getEntities()))
                 .orElseGet(java.util.Set::of));
 
         scheme.potsFor(width, depth, height).ifPresent(pots ->

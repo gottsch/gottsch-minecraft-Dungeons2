@@ -74,6 +74,13 @@ class BossRoomAuthoringTest {
             "/data/dungeons2/worldgen/template_pool/end_rooms";
     private static final String CHEST_MARKER = "dungeons2:chest_marker";
     private static final String SPAWNER_MARKER = "dungeons2:spawner_marker";
+    private static final String PROCESSOR_LISTS = "/data/dungeons2/worldgen/processor_list";
+    private static final String CLASSIC_BASE =
+            "/data/dungeons2/dungeons2/motif_config/classic/base.json";
+
+    /** The keys a tier processor list hands a boss room its reward and its mobs through. */
+    private static final Set<String> TIER_VALUE_KEYS =
+            Set.of("boss_loot_table", "boss_mob_set", "escort_mob_set", "ranged_escort_mob_set");
 
     /**
      * No boss marker may also name its own table or mob set.
@@ -294,6 +301,143 @@ class BossRoomAuthoringTest {
             return NbtIo.readCompressed(in);
         } catch (IOException unreadable) {
             throw new UncheckedIOException("could not read " + file, unreadable);
+        }
+    }
+
+    /**
+     * <strong>No end-room marker may name a value a TIER would have supplied</strong> &mdash;
+     * whether or not it declares a role.
+     *
+     * <h2>The gap this closes</h2>
+     * <p>{@link #aBossMarkerNamesNoRewardOfItsOwn} above only inspects markers that ALREADY declare
+     * {@code boss}, so a marker carrying a value and <em>no role at all</em> is invisible to it.
+     * {@link #everyEndRoomHasOneBossChestAndABossSpawner} then counts zero boss markers and says
+     * so &mdash; truthfully, and without mentioning the chest marker sitting right there in the
+     * file. A marker that names a value and declares nothing falls between the two.</p>
+     *
+     * <p>That is not hypothetical. On 2026-09-14 both {@code medium_boss_1.nbt} and
+     * {@code large_boss_1.nbt} were authored exactly that way: {@code mobSetName:
+     * dungeons2:medium_dungeon_boss} on the boss spawner, {@code lootTable:
+     * dungeons2:chests/classic_boss_medium} on the chest, and not one {@code boss} byte between
+     * them. Both had just been re-saved, so the first suspicion was that the edit never reached
+     * {@code src} &mdash; the failure said nothing to rule that out.</p>
+     *
+     * <h2>What counts as a tier's value</h2>
+     * <p>Read from the tier processor lists themselves rather than pattern-matched on the id: the
+     * offending set is exactly "a value the pool would have supplied anyway", which is the whole
+     * argument, and a list that gains a fourth tier is covered without anyone editing this.</p>
+     *
+     * <p><strong>Minus whatever the ordinary route also draws.</strong> The small tier's escort
+     * sets are {@code classic_undead} and {@code classic_ranged}, which the motif's ordinary
+     * {@code mob_sets} bands name too &mdash; so a spawner naming one of those is an ordinary
+     * spawner making an ordinary choice, not a tier weld, and flagging it would be a false
+     * positive that teaches people to work around this test. What is left after the subtraction is
+     * the genuinely tier-scoped ids, which nothing but a tier has any business naming.</p>
+     */
+    @Test
+    void noEndRoomMarkerNamesATierScopedValue() {
+        Set<String> tierScoped = tierSuppliedValues();
+        tierScoped.removeAll(ordinaryMobSets());
+        assertFalse(tierScoped.isEmpty(), "every value the boss tiers supply is also drawn by the"
+                + " ordinary route, so this sweep can no longer catch anything -- the subtraction"
+                + " has outlived the wiring it was written against");
+
+        List<String> offenders = new ArrayList<>();
+        for (Path template : endRooms()) {
+            for (CompoundTag marker : markers(template)) {
+                String id = marker.getString("id");
+                String named = null;
+                String field = null;
+                if (CHEST_MARKER.equals(id) && marker.contains(ChestMarkerBlockEntity.LOOT_TABLE)) {
+                    named = marker.getString(ChestMarkerBlockEntity.LOOT_TABLE);
+                    field = "lootTable";
+                } else if (SPAWNER_MARKER.equals(id)
+                        && marker.contains(SpawnerMarkerBlockEntity.MOB_SET_NAME)) {
+                    named = marker.getString(SpawnerMarkerBlockEntity.MOB_SET_NAME);
+                    field = "mobSetName";
+                }
+                if (named != null && tierScoped.contains(named)) {
+                    offenders.add(template.getFileName() + ": " + field + " = " + named);
+                }
+            }
+        }
+        if (!offenders.isEmpty()) {
+            fail("an end-room marker NAMES a value that a boss tier's processor list already"
+                    + " supplies. Delete the field and declare the ROLE instead -- boss: 1b,"
+                    + " escort: 1b or ranged_escort: 1b on a spawner, boss: 1b (with treasure: 1b)"
+                    + " on the chest. See small_boss_1.nbt, which is authored correctly:\n  "
+                    + String.join("\n  ", offenders));
+        }
+    }
+
+    /** Every boss/escort set and boss table the tier processor lists hand out. */
+    private static Set<String> tierSuppliedValues() {
+        Set<String> values = new LinkedHashSet<>();
+        for (Path list : tierListFiles()) {
+            collectStrings(json(list), TIER_VALUE_KEYS, values);
+        }
+        assertFalse(values.isEmpty(), "no tier processor list supplies a boss mob set or table,"
+                + " so this sweep reads nothing -- see BossTierWiringTest, which owns the lists");
+        return values;
+    }
+
+    /** Every mob set the motif's ordinary depth bands can draw. */
+    private static Set<String> ordinaryMobSets() {
+        Set<String> sets = new LinkedHashSet<>();
+        collectStrings(jsonResource(CLASSIC_BASE), Set.of("mob_set"), sets);
+        return sets;
+    }
+
+    /** Every string value under any of {@code keys}, anywhere in the tree. */
+    private static void collectStrings(JsonElement element, Set<String> keys, Set<String> into) {
+        if (element.isJsonObject()) {
+            for (String key : element.getAsJsonObject().keySet()) {
+                JsonElement child = element.getAsJsonObject().get(key);
+                if (keys.contains(key) && child.isJsonPrimitive()) {
+                    into.add(child.getAsString());
+                } else {
+                    collectStrings(child, keys, into);
+                }
+            }
+        } else if (element.isJsonArray()) {
+            for (JsonElement child : element.getAsJsonArray()) {
+                collectStrings(child, keys, into);
+            }
+        }
+    }
+
+    private static List<Path> tierListFiles() {
+        URL url = BossRoomAuthoringTest.class.getResource(PROCESSOR_LISTS);
+        if (url == null) {
+            return fail("no processor lists at " + PROCESSOR_LISTS);
+        }
+        try (Stream<Path> paths = Files.walk(Paths.get(url.toURI()))) {
+            return paths.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().startsWith("classic_boss_"))
+                    .sorted()
+                    .toList();
+        } catch (IOException | URISyntaxException unreadable) {
+            return fail("could not walk " + PROCESSOR_LISTS + ": " + unreadable);
+        }
+    }
+
+    private static JsonElement json(Path file) {
+        try (java.io.Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            return JsonParser.parseReader(reader);
+        } catch (IOException unreadable) {
+            throw new UncheckedIOException("could not read " + file, unreadable);
+        }
+    }
+
+    private static JsonElement jsonResource(String resource) {
+        try (InputStream in = BossRoomAuthoringTest.class.getResourceAsStream(resource)) {
+            if (in == null) {
+                return fail("missing datapack resource on classpath: " + resource);
+            }
+            return JsonParser.parseReader(
+                    new java.io.InputStreamReader(in, StandardCharsets.UTF_8));
+        } catch (IOException unreadable) {
+            throw new UncheckedIOException("could not read " + resource, unreadable);
         }
     }
 

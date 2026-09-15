@@ -101,5 +101,12 @@
   "item.dungeons2.stone_colossus_egg": "Stone Colossus Spawn Egg",
   "item.dungeons2.orc_warlord_cleaver": "Orc Warlord Cleaver",
   "item.dungeons2.orc_warlord_egg": "Orc Warlord Spawn Egg",
-  "item.dungeons2.spiked_club": "Spiked Club"
+  "item.dungeons2.spiked_club": "Spiked Club",
+  "entity.dungeons2.vanilla_chest_mimic": "Chest Mimic",
+  "entity.dungeons2.barrel_mimic": "Barrel Mimic",
+  "item.dungeons2.vanilla_chest_mimic_egg": "Chest Mimic Spawn Egg",
+  "item.dungeons2.barrel_mimic_egg": "Barrel Mimic Spawn Egg",
+  "item.dungeons2.boots_of_shock_absorption": "Boots of Shock Absorption",
+  "tooltip.dungeons2.boots_of_shock_absorption": "The ground's shock passes through you, not into you.",
+  "tooltip.dungeons2.boots_of_shock_absorption.fall": "Blunts a slammed floor, and the fall when it gives way."
 }

@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.PropConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import net.minecraft.util.RandomSource;
@@ -59,6 +60,9 @@ public final class RoomFurnitureGenerator {
 
     /** Vanilla's horizontal facing property; see {@link PropConfig.PropVariant} on {@code oriented}. */
     static final String FACING = "facing";
+    /** The one prop a mimic can pose as, and what it becomes (#99). */
+    static final String BARREL = "minecraft:barrel";
+    static final String BARREL_MIMIC_ENTITY = "dungeons2:barrel_mimic";
 
     /** The four horizontal facings, in a fixed order so a random draw over them is reproducible. */
     private static final String[] HORIZONTAL = {"north", "east", "south", "west"};
@@ -73,7 +77,8 @@ public final class RoomFurnitureGenerator {
      */
     public static Set<Coords2D> placeProps(RoomData room, int floorY, PropConfig config,
                                            Set<Coords2D> occupied, RandomSource random,
-                                           List<BlockPlacement> out) {
+                                           List<BlockPlacement> out,
+                                           List<EntityPlacement> entities) {
         List<PropConfig.PropVariant> variants = config.variants();
         int totalWeight = variants.stream().mapToInt(PropConfig.PropVariant::weight).sum();
         if (variants.isEmpty() || totalWeight <= 0) {
@@ -95,6 +100,25 @@ public final class RoomFurnitureGenerator {
             if (variant.oriented()) {
                 properties.put(FACING, facingFor(room, cell, random));
             }
+            // #99, and gated on the BLOCK as well as the rate. The slot's mimic_chance says how
+            // often furniture bites; only a barrel can, because BarrelMimic is the only prop-shaped
+            // model gmm ships. A crate or an anvil that stood up would need art that does not
+            // exist, and silently turning one into a barrel would be worse than not swapping.
+            //
+            // No loot table: a barrel is a prop and props carry no loot promise (#73), so this
+            // mimic drops whatever its type's own table says. The chest's swap is the one that has
+            // a reward to preserve.
+            if (BARREL.equals(variant.block()) && config.mimicChance() > 0.0D
+                    && random.nextDouble() < config.mimicChance()) {
+                entities.add(new EntityPlacement(cell.getX(), floorY + 1, cell.getY(),
+                        BARREL_MIMIC_ENTITY));
+                mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info("[D2-PROP] PROC MIMIC at {}",
+                        new net.minecraft.core.BlockPos(cell.getX(), floorY + 1, cell.getY())
+                                .toShortString());
+                used.add(cell);
+                continue;
+            }
+
             // floorY + 1: resting on the floor surface, the same row the pots, chests and spawners
             // use.
             out.add(new BlockPlacement(cell.getX(), floorY + 1, cell.getY(), variant.block(),

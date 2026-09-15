@@ -101,6 +101,20 @@
             { "block": "minecraft:cobblestone", "probability": 0.3 }
           ]
         },
+        {
+          "block": "dungeonblocks:undead_banner",
+          "output_blocks": [
+            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.3 },
+            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:orc_war_banner",
+          "output_blocks": [
+            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.3 },
+            { "block": "dungeonblocks:bloodstained_orcr_banner", "probability": 0.3 }
+          ]
+        },
 
         // ===================================================================================
         // CHAINS (added 2026-09-07). small_boss_1 hangs a six-cell run of

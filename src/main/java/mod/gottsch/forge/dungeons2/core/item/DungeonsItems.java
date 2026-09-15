@@ -381,6 +381,38 @@ public class DungeonsItems {
             () -> new SwordItem(Tiers.IRON, 5, -2.6F, new Item.Properties()));
 
     /**
+     * The mimics' eggs (#99). These need one MORE than the ordinary roster does, for the
+     * mini-bosses' reason taken further: a mimic is in no mob set and no spawn override, so short
+     * of generating a dungeon and finding the one container in it that bites, the egg is the only
+     * way to see one at all.
+     *
+     * <p>Dungeon Denizens' colours verbatim, so the same mob reads the same in a pack with both.</p>
+     */
+    public static final RegistryObject<Item> VANILLA_CHEST_MIMIC_EGG = Registration.ITEMS.register(
+            DungeonsEntities.VANILLA_CHEST_MIMIC + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY, 0x8f691d, 0x2f3a24,
+                    new Item.Properties()));
+
+    /** See {@link #VANILLA_CHEST_MIMIC_EGG}. */
+    public static final RegistryObject<Item> BARREL_MIMIC_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BARREL_MIMIC + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.BARREL_MIMIC_ENTITY, 0x9f854d, 0x54452c,
+                    new Item.Properties()));
+
+    /**
+     * Backlog #97: the Stone Colossus's counter-item, and the first ARMOUR this mod registers.
+     *
+     * <p>The behaviour is entirely {@code ShockAbsorptionEvent}'s; see {@link
+     * BootsOfShockAbsorption} for why it is not in the item. Not craftable and, for now, not in a
+     * loot table either &mdash; #97's boss&rarr;counter-item routing is built once for these and
+     * the Mirror Shield together, so until the shield exists the boots are reachable by
+     * {@code /give} and the creative tab only.</p>
+     */
+    public static final RegistryObject<Item> BOOTS_OF_SHOCK_ABSORPTION = Registration.ITEMS.register(
+            "boots_of_shock_absorption",
+            () -> new BootsOfShockAbsorption(new Item.Properties()));
+
+    /**
      * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
      * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
      * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
@@ -445,6 +477,8 @@ public class DungeonsItems {
             event.accept(ORC_WARLORD_CLEAVER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(SPIKED_CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            // Armour lives in COMBAT in 1.20.1 -- there is no separate armour tab to put it in.
+            event.accept(BOOTS_OF_SHOCK_ABSORPTION.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);

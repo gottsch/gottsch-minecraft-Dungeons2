@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -61,6 +62,8 @@ public final class RoomChestGenerator {
     static final String LOOT_TABLE_SEED = "LootTableSeed";
     /** The block-entity type {@code DungeonPiece.applyBlockEntity} routes on. */
     static final String CHEST_ENTITY = "minecraft:chest";
+    /** What a chest becomes when it bites (#99). */
+    static final String CHEST_MIMIC_ENTITY = "dungeons2:vanilla_chest_mimic";
     /** Vanilla's chest facing property. */
     static final String FACING = "facing";
 
@@ -74,7 +77,8 @@ public final class RoomChestGenerator {
      */
     public static Set<Coords2D> placeChests(RoomData room, int floorY, ChestConfig config,
                                             Set<Coords2D> occupied, RandomSource random,
-                                            List<BlockPlacement> out) {
+                                            List<BlockPlacement> out,
+                                            List<EntityPlacement> entities) {
         List<ChestConfig.ChestVariant> variants = config.variants();
         int totalWeight = variants.stream().mapToInt(ChestConfig.ChestVariant::weight).sum();
         if (variants.isEmpty() || totalWeight <= 0) {
@@ -94,7 +98,7 @@ public final class RoomChestGenerator {
 
         // floorY + 1: resting on the floor surface, the same row the pots and spawners use.
         return placeChestsOn(RoomPropGenerator.eligibleCells(room, occupied), floorY + 1, config,
-                cell -> facingAwayFromWall(room, cell), random, out);
+                cell -> facingAwayFromWall(room, cell), random, out, entities);
     }
 
     /**
@@ -113,7 +117,8 @@ public final class RoomChestGenerator {
      */
     public static Set<Coords2D> placeChestsOn(List<Coords2D> candidates, int y, ChestConfig config,
                                               java.util.function.Function<Coords2D, String> facing,
-                                              RandomSource random, List<BlockPlacement> out) {
+                                              RandomSource random, List<BlockPlacement> out,
+                                              List<EntityPlacement> entities) {
         List<ChestConfig.ChestVariant> variants = config.variants();
         int totalWeight = variants.stream().mapToInt(ChestConfig.ChestVariant::weight).sum();
         if (variants.isEmpty() || totalWeight <= 0 || candidates.isEmpty()) {
@@ -133,9 +138,28 @@ public final class RoomChestGenerator {
             Map<String, String> properties = new LinkedHashMap<>();
             properties.put(FACING, facing.apply(cell));
 
-            BlockPlacement placement = new BlockPlacement(cell.getX(), y, cell.getY(),
-                    pickVariant(variants, totalWeight, random), properties);
+            String variant = pickVariant(variants, totalWeight, random);
             String table = pickTable(tables, totalTableWeight, random);
+
+            // #99. The roll happens AFTER the table is drawn, deliberately: the mimic carries the
+            // very table the chest would have had, so killing it pays exactly what opening the
+            // chest would have. That is why this is a swap and not a deletion -- the player loses
+            // the free reward, not the reward.
+            //
+            // Rolled per chest. A two-chest room can have one of each, which is the worse thing to
+            // walk into and the better thing to have built.
+            if (config.mimicChance() > 0.0D && random.nextDouble() < config.mimicChance()) {
+                entities.add(mimicFor(cell, y, table));
+                mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info(
+                        "[D2-CHEST] PROC MIMIC at {} (table {})",
+                        new net.minecraft.core.BlockPos(cell.getX(), y, cell.getY()).toShortString(),
+                        table);
+                used.add(cell);
+                continue;
+            }
+
+            BlockPlacement placement = new BlockPlacement(cell.getX(), y, cell.getY(),
+                    variant, properties);
             placement.setBlockEntityNbt(chestData(table, random));
             // The procedural route's probe, and it is INFO for the same reason the marker route's
             // is: at the shipped "info" level a debug line is invisible to the person verifying the
@@ -210,6 +234,25 @@ public final class RoomChestGenerator {
         return new BlockEntityData(CHEST_ENTITY)
                 .with(LOOT_TABLE, lootTable)
                 .with(LOOT_TABLE_SEED, Long.toString(lootSeed(random)));
+    }
+
+    /**
+     * The chest that is not a chest (#99).
+     *
+     * <p>No {@code facing}: the mimic is an entity and turns to look at whoever wakes it, so a
+     * baked-in rotation would only be wrong a moment later. No loot SEED either &mdash; a chest's
+     * seed is fixed at generation so a player cannot re-roll it by reloading, but a mimic's table
+     * is rolled when it dies, which is an event the player cannot replay. The seed's whole job is
+     * already done.</p>
+     *
+     * <p>The table rides on {@link EntityPlacement#getLootTable()} and is transferred by
+     * {@code EntitySpawner}, which hands it to {@code Mimic#setLootTable} &mdash; the vanilla
+     * {@code LootTable} NBT key the field is normally written as means nothing to a Mob.</p>
+     */
+    static EntityPlacement mimicFor(Coords2D cell, int y, String lootTable) {
+        EntityPlacement mimic = new EntityPlacement(cell.getX(), y, cell.getY(), CHEST_MIMIC_ENTITY);
+        mimic.setLootTable(lootTable);
+        return mimic;
     }
 
     /**

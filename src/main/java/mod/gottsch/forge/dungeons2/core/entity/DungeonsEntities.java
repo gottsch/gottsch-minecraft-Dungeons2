@@ -21,6 +21,8 @@ import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
 import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Beholder;
+import mod.gottsch.forge.gmm.core.entity.monster.mimic.BarrelMimic;
+import mod.gottsch.forge.gmm.core.entity.monster.mimic.VanillaChestMimic;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.DeathTyrant;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Spectator;
 import mod.gottsch.forge.gmm.core.entity.monster.Daemon;
@@ -455,6 +457,38 @@ public class DungeonsEntities {
      * {@link #MINI_BOSSES}.
      */
     public static final String ORC_WARLORD = "orc_warlord";
+
+    /**
+     * The two mimics (#99). Registered, egg-able and <strong>in no mob set and no spawn
+     * override</strong> &mdash; a mimic exists only where a container would have been, so the swap
+     * that puts one there is the only route in. Naming one in a mob set would put a chest-shaped
+     * ambush in the middle of a floor with no chest anywhere near it, which reads as a bug.
+     */
+    public static final String VANILLA_CHEST_MIMIC = "vanilla_chest_mimic";
+    /** See {@link #VANILLA_CHEST_MIMIC}. */
+    public static final String BARREL_MIMIC = "barrel_mimic";
+
+    /**
+     * Dungeon Denizens' dimensions verbatim (1x1), so the same mob reads the same in a pack
+     * carrying both -- and because a mimic that is not exactly a block wide gives itself away
+     * standing next to a real chest, which is the entire point of the disguise.
+     */
+    public static final RegistryObject<EntityType<VanillaChestMimic>> VANILLA_CHEST_MIMIC_ENTITY =
+            Registration.ENTITIES.register(VANILLA_CHEST_MIMIC,
+                    () -> EntityType.Builder.of(VanillaChestMimic::new, MobCategory.MONSTER)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(VANILLA_CHEST_MIMIC));
+
+    /** See {@link #VANILLA_CHEST_MIMIC_ENTITY}; the same base disguised as a barrel. */
+    public static final RegistryObject<EntityType<BarrelMimic>> BARREL_MIMIC_ENTITY =
+            Registration.ENTITIES.register(BARREL_MIMIC,
+                    () -> EntityType.Builder.of(BarrelMimic::new, MobCategory.MONSTER)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BARREL_MIMIC));
 
     public static final RegistryObject<EntityType<AnimatedArmor>> ANIMATED_ARMOR_ENTITY =
             Registration.ENTITIES.register(ANIMATED_ARMOR,

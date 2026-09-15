@@ -26,6 +26,8 @@ import mod.gottsch.forge.dungeons2.core.item.DungeonsItems;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.world.structure.StructurePieces;
 import mod.gottsch.forge.dungeons2.core.entity.ai.SlamRimCollapse;
+import mod.gottsch.forge.gmm.core.entity.monster.mimic.BarrelMimic;
+import mod.gottsch.forge.gmm.core.entity.monster.mimic.VanillaChestMimic;
 import mod.gottsch.forge.gmm.core.entity.ai.goal.CastSpellGoal;
 import mod.gottsch.forge.gmm.core.entity.ai.goal.GroundSlamGoal;
 import net.minecraft.core.registries.Registries;
@@ -177,7 +179,7 @@ public class CommonSetup {
 	}
 
 	/** The slam's damage type, shipped at {@code data/dungeons2/damage_type/ground_slam.json}. */
-	private static final ResourceKey<DamageType> GROUND_SLAM_DAMAGE_TYPE =
+	public static final ResourceKey<DamageType> GROUND_SLAM_DAMAGE_TYPE =
 			ResourceKey.create(Registries.DAMAGE_TYPE,
 					new ResourceLocation(Dungeons.MOD_ID, "ground_slam"));
 
@@ -378,6 +380,8 @@ public class CommonSetup {
 		event.put(DungeonsEntities.STONE_COLOSSUS_ENTITY.get(), StoneColossus.createAttributes().build());
 		event.put(DungeonsEntities.GARGOYLE_ENTITY.get(), Gargoyle.createAttributes().build());
 		event.put(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmor.createAttributes().build());
+		event.put(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), VanillaChestMimic.createAttributes().build());
+		event.put(DungeonsEntities.BARREL_MIMIC_ENTITY.get(), BarrelMimic.createAttributes().build());
 		event.put(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeapon.createAttributes().build());
 		event.put(DungeonsEntities.MARGOYLE_ENTITY.get(), Margoyle.createAttributes().build());
 		event.put(DungeonsEntities.ORC_ENTITY.get(), Orc.createAttributes().build());
@@ -501,6 +505,16 @@ public class CommonSetup {
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// Registered like the mini-bosses, and for the stronger version of their reason: nothing
+		// spawns a mimic ambiently or from a mob set (#99) -- it appears only where a container
+		// would have been. A placement rule is still what a spawn EGG goes through, and an egg is
+		// the only way to look at one without generating a dungeon.
+		event.register(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		event.register(DungeonsEntities.BARREL_MIMIC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,

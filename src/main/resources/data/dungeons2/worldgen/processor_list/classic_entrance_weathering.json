@@ -127,11 +127,30 @@
           ]
         },
         {
+          "block": "minecraft:spruce_stairs",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "minecraft:stone_brick_wall",
+          "output_blocks": [
+            { "block": "minecraft:mossy_cobblestone_wall", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.2 }
+          ]
+        },
+        {
           "block": "minecraft:stone_brick_slab",
           "output_blocks": [
             { "block": "minecraft:mossy_stone_brick_slab", "probability": 0.3 },
             { "block": "minecraft:cobblestone_slab", "probability": 0.3 },
             { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "block": "minecraft:spruce_slab",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.3 }
           ]
         },
         {
@@ -232,12 +251,35 @@
           ]
         },
         {
+          "block": "minecraft:spruce_planks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "block": "minecraft:spruce_door",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "block": "minecraft:spruce_trapdoor",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
           "block": "dungeonblocks:spruce_corbel_block",
           "output_blocks": [
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         },
-
+        {
+          "block": "minecraft:iron_bars",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
         // ===================================================================================
         // CHAINS (added 2026-09-07). Both idioms reach this list: entrance_2 hangs a run of
         // dungeonblocks:swinging_chain over its shaft, and the transition templates that share

@@ -59,13 +59,26 @@ import java.util.Optional;
  * @author Mark Gottschling on Aug 18, 2026
  */
 public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEntry>> lootTables,
-                         List<ChestVariant> variants, SizeGate gate) {
+                         List<ChestVariant> variants, double mimicChance, SizeGate gate) {
 
     /** Ungated -- placed whenever the scheme is rolled. */
     public ChestConfig(int minCount, int maxCount, Optional<List<LootTableEntry>> lootTables,
                        List<ChestVariant> variants) {
-        this(minCount, maxCount, lootTables, variants, SizeGate.UNBOUNDED);
+        this(minCount, maxCount, lootTables, variants, NO_MIMICS, SizeGate.UNBOUNDED);
     }
+
+    /** The pre-{@code mimic_chance} form. */
+    public ChestConfig(int minCount, int maxCount, Optional<List<LootTableEntry>> lootTables,
+                       List<ChestVariant> variants, SizeGate gate) {
+        this(minCount, maxCount, lootTables, variants, NO_MIMICS, gate);
+    }
+
+    /**
+     * A chest slot that never bites. The default, deliberately: a pack that has not heard of #99
+     * must generate exactly what it did before, and "the author said nothing" has to mean "no
+     * mimics" rather than a rate nobody chose.
+     */
+    public static final double NO_MIMICS = 0.0D;
 
     /** The single-table form, for a scheme (or a test) naming one table outright. */
     public ChestConfig(int minCount, int maxCount, String lootTable, List<ChestVariant> variants) {
@@ -92,7 +105,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
             return this;
         }
         return new ChestConfig(minCount, maxCount, Optional.of(band.get().lootTables()), variants,
-                gate);
+                mimicChance, gate);
     }
 
     /**
@@ -190,6 +203,12 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
             Codecs.strictOptionalFieldOf(LootTableEntry.CODEC.listOf(), "loot_tables")
                     .forGetter(ChestConfig::lootTables),
             ChestVariant.CODEC.listOf().fieldOf("variants").forGetter(ChestConfig::variants),
+            // #99. On the SLOT rather than on the motif, so a scheme can decide how dangerous its
+            // own containers are -- a store room full of chests earns a higher rate than the one
+            // chest in an alcove, and a treasury that promises the player something can set it to
+            // zero outright. Rolled per chest, not per room.
+            Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D), "mimic_chance", NO_MIMICS)
+                    .forGetter(ChestConfig::mimicChance),
             SizeGate.MAP_CODEC.forGetter(ChestConfig::gate)
     ).apply(instance, ChestConfig::new));
 
@@ -221,7 +240,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
             resolved.add(new ChestVariant(block, variant.weight()));
         }
         return resolved == null ? this
-                : new ChestConfig(minCount, maxCount, lootTables, List.copyOf(resolved), gate);
+                : new ChestConfig(minCount, maxCount, lootTables, List.copyOf(resolved), mimicChance, gate);
     }
 
     /**

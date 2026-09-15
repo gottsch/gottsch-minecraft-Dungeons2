@@ -60,13 +60,22 @@ import java.util.function.UnaryOperator;
  * @author Mark Gottschling on Sep 2, 2026
  */
 public record PropConfig(int minCount, int maxCount, PropPlacement placement,
-                         List<PropVariant> variants, SizeGate gate) {
+                         List<PropVariant> variants, double mimicChance, SizeGate gate) {
 
     /** Ungated props -- placed whenever the scheme is rolled. */
     public PropConfig(int minCount, int maxCount, PropPlacement placement,
                       List<PropVariant> variants) {
-        this(minCount, maxCount, placement, variants, SizeGate.UNBOUNDED);
+        this(minCount, maxCount, placement, variants, NO_MIMICS, SizeGate.UNBOUNDED);
     }
+
+    /** The pre-{@code mimic_chance} form. */
+    public PropConfig(int minCount, int maxCount, PropPlacement placement,
+                      List<PropVariant> variants, SizeGate gate) {
+        this(minCount, maxCount, placement, variants, NO_MIMICS, gate);
+    }
+
+    /** See {@code ChestConfig#NO_MIMICS} -- silence means no mimics, never a rate nobody chose. */
+    public static final double NO_MIMICS = 0.0D;
 
     /**
      * Where in the room a prop may stand. The one field that makes this slot different in kind from
@@ -179,6 +188,11 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
             Codecs.strictOptionalFieldOf(PropPlacement.CODEC, "placement", PropPlacement.AGAINST_WALL)
                     .forGetter(PropConfig::placement),
             PropVariant.CODEC.listOf().fieldOf("variants").forGetter(PropConfig::variants),
+            // #99, and it applies ONLY to a barrel variant -- see RoomFurnitureGenerator. A crate
+            // or an anvil that stood up and bit would need a model that does not exist, so the
+            // rate is on the slot but the eligibility is on the block.
+            Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D), "mimic_chance", NO_MIMICS)
+                    .forGetter(PropConfig::mimicChance),
             SizeGate.MAP_CODEC.forGetter(PropConfig::gate)
     ).apply(instance, PropConfig::new));
 
@@ -205,7 +219,7 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
             resolved.add(new PropVariant(block, variant.weight(), variant.oriented()));
         }
         return resolved == null ? this
-                : new PropConfig(minCount, maxCount, placement, List.copyOf(resolved), gate);
+                : new PropConfig(minCount, maxCount, placement, List.copyOf(resolved), mimicChance, gate);
     }
 
     /**

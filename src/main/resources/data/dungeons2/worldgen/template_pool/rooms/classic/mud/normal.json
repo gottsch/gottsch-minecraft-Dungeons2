@@ -217,6 +217,15 @@
         "projection": "rigid"
       },
       "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_sewer_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
     }
   ]
 }

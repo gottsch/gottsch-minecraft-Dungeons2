@@ -2,6 +2,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
+import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
@@ -49,8 +50,50 @@ class RoomChestGeneratorTest {
     private static List<BlockPlacement> place(ChestConfig config, long seed, Set<Coords2D> occupied) {
         List<BlockPlacement> out = new ArrayList<>();
         RoomChestGenerator.placeChests(room(9, 9), 64, config, occupied,
-                RandomSource.create(seed), out);
+                RandomSource.create(seed), out, new ArrayList<>());
         return out;
+    }
+
+    /**
+     * #99. A mimic REPLACES the chest and INHERITS its table -- the two halves that make it a swap
+     * rather than a deletion. If the block still went out there would be two rewards in one cell;
+     * if the table did not follow, killing the thing that ate your chest would pay nothing, which
+     * is the version a player would rightly call a bug.
+     *
+     * <p>Driven at {@code mimic_chance} 1.0 rather than by fishing for a seed that happens to
+     * roll one: the rate is the thing under test everywhere else, and a probabilistic assertion
+     * here would be the flakiest test in the suite for no gain.</p>
+     */
+    @Test
+    void aMimicReplacesTheChestAndTakesItsTable() {
+        List<BlockPlacement> blocks = new ArrayList<>();
+        List<EntityPlacement> entities = new ArrayList<>();
+        ChestConfig always = new ChestConfig(2, 2, Optional.of(List.of(
+                        new ChestConfig.LootTableEntry(TABLE, 1))),
+                List.of(new ChestConfig.ChestVariant("minecraft:chest", 1)), 1.0D,
+                SizeGate.UNBOUNDED);
+
+        Set<Coords2D> claimed = RoomChestGenerator.placeChests(room(9, 9), 64, always, Set.of(),
+                RandomSource.create(42L), blocks, entities);
+
+        assertTrue(blocks.isEmpty(), "every chest became a mimic, so no chest block may be placed");
+        assertEquals(2, entities.size());
+        assertEquals(2, claimed.size(), "a mimic claims its cell exactly as the chest would have");
+        for (EntityPlacement mimic : entities) {
+            assertEquals("dungeons2:vanilla_chest_mimic", mimic.getEntityId());
+            assertEquals(TABLE, mimic.getLootTable(), "the mimic must carry the chest's own table");
+        }
+    }
+
+    /** The other side of it: at the default rate of zero, nothing changes. */
+    @Test
+    void noMimicsWhenTheSlotDoesNotAskForThem() {
+        List<BlockPlacement> blocks = new ArrayList<>();
+        List<EntityPlacement> entities = new ArrayList<>();
+        RoomChestGenerator.placeChests(room(9, 9), 64, config(2, 2), Set.of(),
+                RandomSource.create(42L), blocks, entities);
+        assertEquals(2, blocks.size());
+        assertTrue(entities.isEmpty());
     }
 
     @Test
@@ -104,7 +147,7 @@ class RoomChestGeneratorTest {
         occupied.remove(free);
 
         Set<Coords2D> claimed = RoomChestGenerator.placeChests(room, 64, config(4, 4), occupied,
-                RandomSource.create(11L), out);
+                RandomSource.create(11L), out, new ArrayList<>());
 
         assertEquals(1, out.size(), "only one cell was left free, so only one chest fits");
         assertEquals(Set.of(free), claimed);
@@ -118,7 +161,7 @@ class RoomChestGeneratorTest {
         Set<Coords2D> everything = new HashSet<>(RoomPropGenerator.eligibleCells(room));
         List<BlockPlacement> out = new ArrayList<>();
         assertTrue(RoomChestGenerator.placeChests(room, 64, config(2, 2), everything,
-                RandomSource.create(3L), out).isEmpty());
+                RandomSource.create(3L), out, new ArrayList<>()).isEmpty());
         assertTrue(out.isEmpty());
     }
 
@@ -152,7 +195,7 @@ class RoomChestGeneratorTest {
         List<BlockPlacement> out = new ArrayList<>();
         assertTrue(RoomChestGenerator.placeChests(room(9, 9), 64,
                 new ChestConfig(1, 1, TABLE, List.of()), Set.of(),
-                RandomSource.create(5L), out).isEmpty());
+                RandomSource.create(5L), out, new ArrayList<>()).isEmpty());
         assertTrue(out.isEmpty());
     }
 
