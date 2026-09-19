@@ -1969,7 +1969,7 @@ entity, like `chest_marker` and `pot_marker` do, so one template can name its ow
 distance without a second marker block. Place the marker, then point at it and:
 
 ```
-/data merge block <x> <y> <z> {mobSetName:"dungeons2:small_dungeon_boss",proximity:20.0d,minMobs:1,maxMobs:1}
+/data merge block <x> <y> <z> {mobSetName:"dungeons2:small_dungeon_boss",proximity:20.0d}
 ```
 
 The set is named for the **role**, not the mob (`small_dungeon_boss`, not `bodak`), so its roster can
@@ -1979,7 +1979,9 @@ and which monster fills it is datapack content. A mini-boss is also made **persi
 would leave a boss room that can never be re-armed.
 
 Every key is optional and every one that is absent falls through to the processor entry, so an
-ordinary marker still states nothing. The keys are `mobSetName`, `proximity`, `minMobs`, `maxMobs`
+ordinary marker still states nothing. **Except the counts:** the processor entry has no
+`min_mobs`/`max_mobs` (removed 2026-09-17), so an absent `minMobs`/`maxMobs` falls through to the
+drawn mob set's own `count` — tune a set's crowd size there, not per marker. The keys are `mobSetName`, `proximity`, `minMobs`, `maxMobs`
 and `type` (`proximity` or `vanilla`) — spelled exactly as the finished spawner's own block-entity
 tag, so `/data get block` reads the same names before and after placement. A malformed value logs a
 `[D2-SPAWNER]` WARN and falls back to the pool rather than throwing on a worldgen thread.

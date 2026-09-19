@@ -94,7 +94,7 @@
             {
               "type": "dungeons2:panels",
               "config": {
-                "block": "dungeonblocks:stone_bricks_fluted_block",
+                "block": "$pilaster",
                 "width": 3,
                 "spacing": 4,
                 "inset": 1
@@ -165,7 +165,7 @@
               "projection": 1,
               "config": {
                 "block": "minecraft:spruce_log",
-                "bracket_block": "dungeonblocks:spruce_corbel_block",
+                "bracket_block": "$joist_bracket",
                 "orient": "inward",
                 "spacing": 3
               }
@@ -186,7 +186,7 @@
         {
           "weight": 3,
           "type": "dungeons2:path",
-          "config": { "path_block": "minecraft:cobblestone", "width": 3, "routing": "auto" }
+          "config": { "path_block": "$rubble", "width": 3, "routing": "auto" }
         },
         {
           "weight": 2,
@@ -215,7 +215,7 @@
           "weight": 3,
           "type": "dungeons2:gradient",
           "config": {
-            "edge_block": "minecraft:cobblestone",
+            "edge_block": "$rubble",
             "centre_block": "$base",
             "edge_probability": 0.8,
             "centre_probability": 0.05,
@@ -445,7 +445,7 @@
             {
               "type": "dungeons2:panels",
               "config": {
-                "block": "dungeonblocks:stone_bricks_fluted_block",
+                "block": "$pilaster",
                 "width": 3,
                 "spacing": 4,
                 "inset": 1
@@ -493,7 +493,7 @@
               "projection": 1,
               "config": {
                 "block": "minecraft:spruce_log",
-                "bracket_block": "dungeonblocks:spruce_corbel_block",
+                "bracket_block": "$joist_bracket",
                 "orient": "inward",
                 "spacing": 3
               }
@@ -592,7 +592,7 @@
         {
           "weight": 3,
           "type": "dungeons2:path",
-          "config": { "path_block": "minecraft:cobblestone", "width": 3, "routing": "auto" }
+          "config": { "path_block": "$rubble", "width": 3, "routing": "auto" }
         },
         {
           "weight": 3,
@@ -628,7 +628,7 @@
           "weight": 3,
           "type": "dungeons2:gradient",
           "config": {
-            "edge_block": "minecraft:cobblestone",
+            "edge_block": "$rubble",
             "centre_block": "$base",
             "edge_probability": 0.75,
             "centre_probability": 0.05,
@@ -757,7 +757,7 @@
           "min_size": 13,
           "type": "dungeons2:strip",
           "block": "$base",
-          "gap_block": "dungeonblocks:spruce_dungeon_door",
+          "gap_block": "$door_block",
           "config": { "axis": "any" }
         }
       ],
@@ -859,7 +859,7 @@
           "config": {
             "size": 5,
             "depth": 1,
-            "rim_block": "minecraft:cobblestone_stairs",
+            "rim_block": "$rubble_stair",
             "rim_orient": "outward"
           }
         }

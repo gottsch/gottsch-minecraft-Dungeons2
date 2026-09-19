@@ -156,10 +156,15 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
         for (SurfaceAgingRule rule : this.rules) {
             rulesByBlock.computeIfAbsent(rule.block(), block -> new ArrayList<>()).add(rule);
         }
-        this.needsTheWholePiece = this.rules.stream().anyMatch(rule -> GEOMETRIC.contains(rule.surface()));
+        this.needsTheWholePiece = this.rules.stream().anyMatch(
+                rule -> GEOMETRIC.contains(rule.surface()) || rule.elevation() != PieceElevation.ANY);
     }
 
-    /** The surfaces {@link PieceSurfaceMap} has to scan the piece to tell apart. */
+    /**
+     * The surfaces {@link PieceSurfaceMap} has to scan the piece to tell apart. A non-ANY
+     * {@link PieceElevation} forces the same phase for the same reason: a band boundary is a
+     * fraction of the piece's own height, which no single block can answer.
+     */
     private static final Set<PieceSurface> GEOMETRIC =
             Set.of(PieceSurface.WALL, PieceSurface.CEILING, PieceSurface.JOIST);
 
@@ -189,7 +194,7 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
             StructureTemplate.StructureBlockInfo current,
             StructurePlaceSettings settings) {
 
-        return needsTheWholePiece ? current : age(current, piecePos, null);
+        return needsTheWholePiece ? current : age(current, piecePos, null, null);
     }
 
     /**
@@ -224,9 +229,10 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
         }
 
         PieceSurfaceMap surfaces = PieceSurfaceMap.of(piecePos, processedBlocks);
+        PieceElevation.Bands bands = PieceElevation.Bands.of(processedBlocks);
         List<StructureTemplate.StructureBlockInfo> aged = new ArrayList<>(processedBlocks.size());
         for (StructureTemplate.StructureBlockInfo info : processedBlocks) {
-            aged.add(age(info, piecePos, surfaces));
+            aged.add(age(info, piecePos, surfaces, bands));
         }
         return aged;
     }
@@ -239,7 +245,7 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
      */
     private StructureTemplate.StructureBlockInfo age(
             StructureTemplate.StructureBlockInfo current, BlockPos piecePos,
-            PieceSurfaceMap surfaces) {
+            PieceSurfaceMap surfaces, PieceElevation.Bands bands) {
 
         List<SurfaceAgingRule> candidates = rulesByBlock.get(current.state().getBlock());
         if (candidates == null) {
@@ -254,8 +260,13 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
 
         RandomSource random = RandomSource.create(Mth.getSeed(current.pos()));
         Block aged = null;
+        // Only paid for when a rule asks for it: a list with no banded rule never runs the
+        // whole-piece phase at all, so bands is null and this stays ANY.
+        PieceElevation band = bands != null ? bands.classify(current.pos()) : PieceElevation.ANY;
+
         for (SurfaceAgingRule rule : candidates) {
-            if (!rule.surface().matches(primary)) {
+            // ANDed, and both default to ANY -- a rule naming neither matches every block.
+            if (!rule.surface().matches(primary) || !rule.elevation().matches(band)) {
                 continue;
             }
             aged = decay(rule, random);

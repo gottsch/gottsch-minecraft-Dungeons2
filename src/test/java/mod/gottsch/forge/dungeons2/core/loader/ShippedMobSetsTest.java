@@ -238,12 +238,9 @@ class ShippedMobSetsTest {
     /**
      * A shipped depth curve must not get <em>easier</em> as it descends.
      *
-     * <p>Bands may set their own {@code min_mobs}/{@code max_mobs}; a band that omits them falls back
-     * to {@link SpawnerConfig#DEFAULT_MIN_MOBS}/{@link SpawnerConfig#DEFAULT_MAX_MOBS}, so the
-     * comparison has to be made on the <em>resolved</em> numbers rather than the declared ones. That
-     * is the whole trap here: declaring counts on the deep band alone reads as an escalation, but
-     * declaring them on the shallow band alone silently makes the depths tamer, and the JSON looks
-     * equally deliberate either way.</p>
+     * <p>A band's {@code bonus_mobs} is added to the drawn mob set's own {@code count}, so the
+     * escalation the table controls is the bonus alone; an omitted bonus is 0. Which sets a deeper
+     * band draws is a separate axis and is not judged here.</p>
      *
      * <p>Not a codec rule. A pack is entitled to author a curve that eases off &mdash; a mod whose
      * deep floors are meant to be sparse and tense is a legitimate thing to build. This pins what
@@ -252,7 +249,7 @@ class ShippedMobSetsTest {
     @Test
     void theShippedDepthCurveNeverGetsEasierAsItDescends() {
         List<String> regressions = new ArrayList<>();
-        int declaredCounts = 0;
+        int declaredBonuses = 0;
 
         for (Path file : jsonFilesUnder(MOTIF_CONFIGS)) {
             JsonObject fragment = parse(file).getAsJsonObject();
@@ -270,40 +267,31 @@ class ShippedMobSetsTest {
             bands.sort(java.util.Comparator.comparingInt(
                     band -> band.has("min_floor_index") ? band.get("min_floor_index").getAsInt() : 0));
 
-            int previousMin = Integer.MIN_VALUE;
-            int previousMax = Integer.MIN_VALUE;
+            int previousBonus = Integer.MIN_VALUE;
             String previousWhere = null;
             for (JsonObject band : bands) {
                 int start = band.has("min_floor_index") ? band.get("min_floor_index").getAsInt() : 0;
-                if (band.has("min_mobs") || band.has("max_mobs")) {
-                    declaredCounts++;
+                if (band.has("bonus_mobs")) {
+                    declaredBonuses++;
                 }
-                int min = band.has("min_mobs")
-                        ? band.get("min_mobs").getAsInt() : SpawnerConfig.DEFAULT_MIN_MOBS;
-                int max = band.has("max_mobs")
-                        ? band.get("max_mobs").getAsInt() : SpawnerConfig.DEFAULT_MAX_MOBS;
-                String here = where + " / floor " + start + " band (" + min + ".." + max + ")";
+                int bonus = band.has("bonus_mobs") ? band.get("bonus_mobs").getAsInt() : 0;
+                String here = where + " / floor " + start + " band (+" + bonus + ")";
 
-                if (previousWhere != null && (min < previousMin || max < previousMax)) {
-                    regressions.add(here + " releases fewer mobs than the shallower "
-                            + previousWhere);
+                if (previousWhere != null && bonus < previousBonus) {
+                    regressions.add(here + " adds fewer mobs than the shallower " + previousWhere);
                 }
-                previousMin = min;
-                previousMax = max;
+                previousBonus = bonus;
                 previousWhere = here;
             }
         }
 
         org.junit.jupiter.api.Assertions.assertTrue(regressions.isEmpty(),
                 "a shipped depth band gets EASIER as it descends, which is the opposite of what the"
-                        + " table is for. Remember an omitted count resolves to the default ("
-                        + SpawnerConfig.DEFAULT_MIN_MOBS + ".." + SpawnerConfig.DEFAULT_MAX_MOBS
-                        + "), so a shallow band declaring counts can cause this without the deep"
-                        + " band changing at all:\n  " + String.join("\n  ", regressions));
+                        + " table is for:\n  " + String.join("\n  ", regressions));
 
-        org.junit.jupiter.api.Assertions.assertTrue(declaredCounts > 0,
-                "no shipped band declares min_mobs/max_mobs, so this check passed vacuously -- either"
-                        + " the per-band counts were removed or the keys were renamed");
+        org.junit.jupiter.api.Assertions.assertTrue(declaredBonuses > 0,
+                "no shipped band declares bonus_mobs, so this check passed vacuously -- either"
+                        + " the per-band bonus was removed or the key was renamed");
     }
 
     /**

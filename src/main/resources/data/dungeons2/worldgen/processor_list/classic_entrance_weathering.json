@@ -13,10 +13,51 @@
 // is NOT about severity is duplicated from classic_weathering.json and has to be kept in step by
 // hand. #47 rewrites all three.
 //
-// THE RATES BELOW ARE STILL CLASSIC'S. This file was forked so severity can be tuned in one place
-// without touching the rest of the dungeon; tuning it is a separate, deliberate edit. Raise the
-// FIRST stage of a chain to make more of the building decay at all, and the LAST to trade crumbled
-// stone for open holes.
+// THE RATES ARE NO LONGER CLASSIC'S (2026-09-18). The fork finally got the tuning pass it was made
+// for: every stage of every chain in this file, and every probability in the vanilla rule
+// processors, is 0.5. That is the number Mark asked for and it is meant to be read as one number
+// rather than as a per-block judgement -- retune the whole file by changing them together, not by
+// picking at individual chains.
+//
+// 0.5 EVERYWHERE WAS NOT A RUIN, and the reason is the single most useful thing in this header.
+// A conditional chain thins fast -- a 4-stage chain at 0.5 reaches its last stage 6.25% of the time,
+// not 50% -- and worse, every stage that is not air produces a FULL CUBE. Mossy, cracked, andesite:
+// half a wall being mossy is still a wall. The first pass at 0.5 left a stone brick wall ~4.7% air
+// and it read, correctly, as a well-kept building with moss on it (Mark, in game, 2026-09-18).
+//
+// SO THE SHAPE OF THE FILE CHANGED, not just its numbers. Three edits made it a husk, and they are
+// listed in the order of how much each one matters:
+//
+//   1. COLLAPSE BY HEIGHT, the last section of the surface_aging rules -- masonry goes to air at
+//      0.6 in the top third of the piece, 0.25 in the middle and 0.05 at the footings. This is
+//      the ruin, and its own comment explains why the SPREAD matters more than the average. It
+//      replaced a flat 0.25 knockout on 2026-09-18, which brought the building down evenly and
+//      left courses hanging in the sky.
+//   2. mossy_stone_bricks and cracked_stone_bricks crumble onward instead of terminating, so the
+//      0.5 pass feeds the debris route rather than parking blocks in an "aged" dead end.
+//   3. Debris (rubble / mossy_rubble / gravel) blows away on the SAME gradient, steeper: 0.85 at
+//      the crown down to 0.15 at the base. It was a flat 0.8 in a processor of its own, which
+//      quietly undid the base band -- see the debris note in the collapse section. Every chain in
+//      the aging processor whose LAST stage is air ends at 0.8 rather than 0.5.
+//
+// The material passes leave a stone brick wall block roughly 33% mossy, 17% cracked, 17% cobble
+// or mossy cobble and 12% untouched, with the rest debris; collapse then takes its share of ALL
+// of that by height. dungeons2:support_sweep runs last and drops what the holes left floating --
+// which, now that the top third is mostly gone, is a collapsed upper storey rather than the
+// perforated one the flat rate produced.
+//
+// THREE RATES ARE DELIBERATELY NOT 0.5, each for a gameplay reason rather than a visual one:
+//
+//   * minecraft:ladder -- aged, but at the lowest rates in the file (0.4 / 0.2 / 0.08 by band),
+//     because a pristine ladder up the middle of a collapsed building reads as a bug. It is
+//     also `nonstructural` on the sweep, so what survives of it holds nothing up.
+//   * minecraft:chain / dungeonblocks:swinging_chain -- held at 0.1. dungeons2:hanging_sweep drops
+//     everything below a broken link, so the rate is per RUN, not per block: at 0.5 a link,
+//     essentially no lantern run in the shaft survives and the descent goes dark.
+//   * dungeonblocks:dungeon_lantern -- held at 0.15, same reason. It is the light the chain carries.
+//
+// Raise the FIRST stage of a chain to make more of the building decay at all, and the LAST to trade
+// crumbled stone for open holes.
 //
 // AND THAT IS WHAT dungeons2:support_sweep AT THE BOTTOM IS FOR. Severe decay eats blocks out of
 // the middle of a wall, and what was resting on them does not fall -- a template writes what it is
@@ -64,123 +105,142 @@
 {
   "processors": [
     {
-      // dungeons2:aging -- for SHAPED blocks (stairs, slabs, walls). Unlike a vanilla
+      // dungeons2:surface_aging -- for SHAPED blocks (stairs, slabs, walls). Unlike a vanilla
       // rule, it carries the source block's properties (facing/half/shape/waterlogged)
       // onto the replacement, and supports multi-stage decay chains.
       // "agings" caps how many stages of a chain may apply.
-      "processor_type": "dungeons2:aging",
+      //
+      // WAS dungeons2:aging until 2026-09-18. It was swapped for surface_aging to get the
+      // "elevation" gate, which the COLLAPSE section at the bottom of these rules needs; every
+      // rule above that section names no surface and no band, and surface_aging is a strict
+      // superset of aging, so none of them changed meaning in the swap.
+      "processor_type": "dungeons2:surface_aging",
       "agings": 4,
       "rules": [
         {
+          "surface": "any",
           "block": "minecraft:brick_stairs",
           "output_blocks": [
-            { "block": "dungeonblocks:mossy_brick_stairs", "probability": 0.3 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "dungeonblocks:mossy_brick_stairs", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:stone_brick_stairs",
           "output_blocks": [
-            { "block": "minecraft:mossy_stone_brick_stairs", "probability": 0.3 },
-            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 },
-            { "block": "minecraft:dirt", "probability": 0.05 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:mossy_stone_brick_stairs", "probability": 0.5 },
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:stone_brick_stairs",
           "output_blocks": [
-            { "block": "minecraft:cobblestone_stairs", "probability": 0.43 },
-            { "block": "minecraft:dirt", "probability": 0.05 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:cobblestone_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:polished_andesite_stairs",
           "output_blocks": [
             { "block": "minecraft:andesite_stairs", "probability": 0.5 },
-            { "block": "minecraft:air", "probability": 0.3 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:cobblestone_stairs",
           "output_blocks": [
-            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 },
-            { "block": "minecraft:dirt", "probability": 0.05 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "dungeonblocks:square_stone_brick_stairs",
           "output_blocks": [
-            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 },
-            { "block": "minecraft:dirt", "probability": 0.1 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "dungeonblocks:square_stone_brick_stairs",
           "output_blocks": [
-            { "block": "minecraft:cobblestone_stairs", "probability": 0.43 },
-            { "block": "minecraft:dirt", "probability": 0.1 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:cobblestone_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:spruce_stairs",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.3 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:stone_brick_wall",
           "output_blocks": [
-            { "block": "minecraft:mossy_cobblestone_wall", "probability": 0.3 },
-            { "block": "minecraft:air", "probability": 0.2 }
+            { "block": "minecraft:mossy_cobblestone_wall", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:stone_brick_slab",
           "output_blocks": [
-            { "block": "minecraft:mossy_stone_brick_slab", "probability": 0.3 },
-            { "block": "minecraft:cobblestone_slab", "probability": 0.3 },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:mossy_stone_brick_slab", "probability": 0.5 },
+            { "block": "minecraft:cobblestone_slab", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:spruce_slab",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.3 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:stone_brick_wall",
           "output_blocks": [
             {
               "block": "minecraft:mossy_stone_brick_wall",
-              "probability": 0.3
+              "probability": 0.5
             },
             {
               "block": "minecraft:cobblestone_wall",
-              "probability": 0.3
+              "probability": 0.5
             },
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "dungeonblocks:polished_andesite_crown_molding_block",
           "output_blocks": [
-            { "block": "dungeonblocks:polished_andesite_crown_molding_block", "probability": 0.2 },
-            { "block": "dungeonblocks:mossy_cobblestone_crown_molding_block", "probability": 0.3 },
-            { "block": "minecraft:air", "probability": 0.25 }
+            { "block": "dungeonblocks:polished_andesite_crown_molding_block", "probability": 0.5 },
+            { "block": "dungeonblocks:mossy_cobblestone_crown_molding_block", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "dungeonblocks:polished_andesite_facade_block",
           "output_blocks": [
-            { "block": "dungeonblocks:polished_andesite_facade_block", "probability": 0.2 },
-            { "block": "dungeonblocks:mossy_cobblestone_facade_block", "probability": 0.3 },
-            { "block": "minecraft:air", "probability": 0.25 }
+            { "block": "dungeonblocks:polished_andesite_facade_block", "probability": 0.5 },
+            { "block": "dungeonblocks:mossy_cobblestone_facade_block", "probability": 0.5 },
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
 
@@ -232,8 +292,6 @@
         // asserts both, so retune there too.
         //
         // NOT AGED, deliberately:
-        //   * minecraft:ladder -- the entrance shaft is built from it. A hole in a ladder is
-        //     not decoration, it is a descent the player cannot make.
         //   * the dungeon doors (spruce/dark_oak) -- dungeonblocks ships no aged form of one,
         //     and "sometimes there is no door" is ALREADY a feature (the motif's door
         //     probability, ~1/3 of openings). Ageing them to air would double-count it.
@@ -245,41 +303,603 @@
         //     re-resolves what it just produced, so producing a block never ages it.)
         // ===================================================================================
         {
+          "surface": "any",
           "block": "minecraft:spruce_log",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.15 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:spruce_planks",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.15 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:spruce_door",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.15 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:spruce_trapdoor",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.15 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "dungeonblocks:spruce_corbel_block",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.1 }
+            { "block": "minecraft:air", "probability": 0.8 }
           ]
         },
         {
+          "surface": "any",
           "block": "minecraft:iron_bars",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.8 }
+          ]
+        },
+        // The sconce is entrance_exit_1's wall light. It is a single decorative cell holding a
+        // torch, not a structural block and not the only light on the piece, so it takes the file's
+        // rate with no exception argued for it.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:torch_sconce_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.8 }
+          ]
+        },
+        // ===================================================================================
+        // COLLAPSE, BY HEIGHT (2026-09-18). This is what makes the entrance read as a RUIN rather
+        // than as a building with damage sprayed evenly over it.
+        //
+        // THE PROBLEM IT FIXES, from three screenshots Mark took of the flat 0.25 knockout it
+        // replaces: the building came down, but it came down UNIFORMLY, so what was left was
+        // isolated courses hanging in the sky and single blocks floating beside a column. That is
+        // not support_sweep failing -- the sweep asks whether a block connects in any of six
+        // directions to something grounded, deliberately, so a lintel and a corbel survive, and a
+        // top course still touching the one surviving column is grounded by that test and stays.
+        // A flat rate GUARANTEES those fragments, because it thins every height equally and the
+        // last column standing keeps whatever is bolted to it.
+        //
+        // A real ruin loses its top first. Weather, gravity and anything that knocked it down all
+        // work from above, and the footings are the last thing standing. So: thirds of the piece's
+        // own height, and the rate falls with them.
+        //
+        //     crown   0.6    the top third goes almost entirely
+        //     middle  0.25   broken but standing
+        //     base    0.05   footings, doorsills, the outline of the building on the ground
+        //
+        // KEYED ON THE DECAYED IDS, NOT JUST THE AUTHORED ONES, and this is the part that is easy
+        // to get wrong. A banded rule has to run in the whole-piece phase, and EVERY processBlock
+        // pass in a list runs before ANY finalize pass -- so by the time this section sees the
+        // building, the minecraft:rule processors below have already turned most of its stone
+        // mossy, cracked, cobbled or andesite. Keying only on minecraft:stone_bricks would collapse
+        // the handful of blocks that happened to survive all of them. Every id the cascade can
+        // produce is listed instead.
+        //
+        // TO TUNE: these three numbers are the ruin, and their SPREAD matters more than their
+        // average -- flattening them back towards each other is what produced the screenshots.
+        // ===================================================================================
+        // CROWN -- 0.6
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:mossy_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:cracked_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:mossy_chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:mossy_left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:mossy_right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:mossy_square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:mossy_cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:polished_andesite",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:andesite",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.6 }
+          ]
+        },
+        // MIDDLE -- 0.25
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:mossy_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:cracked_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:mossy_chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:mossy_left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:mossy_right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:mossy_square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:mossy_cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:polished_andesite",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:andesite",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        // BASE -- 0.05
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:mossy_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:cracked_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:mossy_chiseled_stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:mossy_left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:mossy_right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:mossy_square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:mossy_cobblestone",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:polished_andesite",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:andesite",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+
+        // DEBRIS, on the same gradient but steeper. It was a flat 0.8 in a processor of its
+        // own until 2026-09-18, and that is why the footings came back as scattered blocks in
+        // a dirt pit rather than as the outline of a building: the band gate said 0.05 at the
+        // base and an ungated 0.8 downstream undid it. Rubble and gravel at ground level are
+        // the spoil heap a collapse leaves behind, so most of it stays there now.
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:rubble",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.85 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "dungeonblocks:mossy_rubble",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.85 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:gravel",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.85 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:rubble",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.5 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "dungeonblocks:mossy_rubble",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.5 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:gravel",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.5 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:rubble",
           "output_blocks": [
             { "block": "minecraft:air", "probability": 0.15 }
           ]
         },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "dungeonblocks:mossy_rubble",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:gravel",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+
+        // THE LADDER, gently (2026-09-18). It was excluded from this file entirely until
+        // Mark asked for it: "it should age as well -- maybe not as extreme as everything
+        // else, but it should." A pristine ladder running up the middle of a collapsed
+        // building was the single most artificial thing left in the frame.
+        //
+        // WHY IT WAS EXCLUDED, and why that argument is weaker than it looks. A gap in a
+        // ladder was called "a descent the player cannot make". It is not: entrance_2's
+        // column is 8 tall, so the worst a hole in it costs is a few blocks of fall, and
+        // the actual descent into the dungeon is a DIFFERENT piece (descent_ladder, on
+        // classic_weathering) where no rule here reaches. The rates are still the lowest
+        // of any block in the file, and the base is nearly untouched, so the bottom of a
+        // climb is the part least likely to be missing.
+        //
+        // It stays in `nonstructural` on the sweep at the bottom REGARDLESS of this: what
+        // survives of a ladder still must not hold a stone roof up.
+        {
+          "surface": "any",
+          "elevation": "crown",
+          "block": "minecraft:ladder",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.4 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "middle",
+          "block": "minecraft:ladder",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.2 }
+          ]
+        },
+        {
+          "surface": "any",
+          "elevation": "base",
+          "block": "minecraft:ladder",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.08 }
+          ]
+        },
+
+        // ===================================================================================
+        // DARK IRON -- the rust ladder. dungeonblocks cuts three aged stages for the grate and
+        // the heavy trapdoor and for nothing else in the dark iron family, so these two blocks
+        // get a chain and the plate brackets get none: tarnished (a dulled sheen), rusted
+        // (orange bloom), corroded (eaten through and pitted).
+        //
+        // IT NEVER REACHES AIR, unlike the chain rules beside it. Both blocks are things the
+        // player stands on or opens, so a missing one is a hole to fall through rather than a
+        // bit of decay to walk past. Corroded is the end of the ladder on purpose.
+        //
+        // Composed over the three stages at this file's 0.5: tarnished on 50% of grates, rusted on
+        // 25%, corroded on 12.5%. The other lists run the same ladder at 0.4/0.35/0.25.
+        // ===================================================================================
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_grate",
+          "output_blocks": [
+            { "block": "dungeonblocks:tarnished_dark_iron_grate", "probability": 0.5 },
+            { "block": "dungeonblocks:rusted_dark_iron_grate", "probability": 0.5 },
+            { "block": "dungeonblocks:corroded_dark_iron_grate", "probability": 0.5 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_heavy_trapdoor",
+          "output_blocks": [
+            { "block": "dungeonblocks:tarnished_dark_iron_heavy_trapdoor", "probability": 0.5 },
+            { "block": "dungeonblocks:rusted_dark_iron_heavy_trapdoor", "probability": 0.5 },
+            { "block": "dungeonblocks:corroded_dark_iron_heavy_trapdoor", "probability": 0.5 }
+          ]
+        },
+
         // ===================================================================================
         // CHAINS (added 2026-09-07). Both idioms reach this list: entrance_2 hangs a run of
         // dungeonblocks:swinging_chain over its shaft, and the transition templates that share
@@ -295,18 +915,31 @@
         // BOTH ARE dungeons2:aging, never minecraft:rule -- a vanilla rule DROPS properties, so
         // it would stand every surviving link on end and strip the lantern off the last one.
         //
-        // THE SHAFT LADDER IS STILL NOT AGED, and a chain is not a counter-example to that
-        // note: a gap in the ladder is a descent the player cannot make, while a gap in a chain
-        // costs a lamp. If a future entrance ever hangs a chain the player is meant to climb,
-        // this rule needs a surface gate and this file needs to be surface_aging first.
+        // THE LADDER IS NOW AGED TOO, at its own much lower rates -- see its rules above. The
+        // distinction this note used to draw (a gap in a chain costs a lamp, a gap in a ladder
+        // costs the descent) survives as the gap between the two sets of rates, not as an
+        // exclusion. This file is surface_aging now, so a rule that wants a surface gate can
+        // simply state one.
         // ===================================================================================
+        // The lantern is held at 0.15 for the chain's reason, not the sconce's: it is what lights
+        // the shaft, and hanging_sweep already takes it whenever the link above it goes. Aging it at
+        // the file's 0.5 on top of that would leave the descent dark twice over.
         {
+          "surface": "any",
+          "block": "dungeonblocks:dungeon_lantern",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "any",
           "block": "minecraft:chain",
           "output_blocks": [
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         },
         {
+          "surface": "any",
           "block": "dungeonblocks:swinging_chain",
           "output_blocks": [
             { "block": "minecraft:air", "probability": 0.1 }
@@ -356,7 +989,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:left_large_stone_brick",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "dungeonblocks:mossy_left_large_stone_brick" }
@@ -365,7 +998,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:left_large_stone_brick",
-            "probability": 0.14
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:cobblestone" }
@@ -374,7 +1007,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:right_large_stone_brick",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "dungeonblocks:mossy_right_large_stone_brick" }
@@ -383,7 +1016,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:right_large_stone_brick",
-            "probability": 0.14
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:cobblestone" }
@@ -392,7 +1025,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:square_stone_brick",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "dungeonblocks:mossy_square_stone_brick" }
@@ -401,7 +1034,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:square_stone_brick",
-            "probability": 0.14
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:cobblestone" }
@@ -411,7 +1044,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:stone_bricks",
-            "probability": 0.25
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:mossy_stone_bricks" }
@@ -420,7 +1053,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:stone_bricks",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:cracked_stone_bricks" }
@@ -429,7 +1062,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:stone_bricks",
-            "probability": 0.2
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:cobblestone" }
@@ -439,7 +1072,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:polished_andesite",
-            "probability": 0.4
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:andesite" }
@@ -448,7 +1081,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:chiseled_stone_bricks",
-            "probability": 0.4
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "dungeonblocks:mossy_chiseled_stone_bricks" }
@@ -461,8 +1094,73 @@
         {
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:stone_bricks",
+            "probability": 0.25
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:air" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:left_large_stone_brick",
+            "probability": 0.25
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:air" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:right_large_stone_brick",
+            "probability": 0.25
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:air" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "dungeonblocks:square_stone_brick",
+            "probability": 0.25
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:air" }
+        }
+      ]
+    },
+    {
+      "processor_type": "minecraft:rule",
+      "rules": [
+        // mossy_stone_bricks and cracked_stone_bricks are the OTHER half of the husk problem.
+        // The pass above turns half of every wall mossy and half of the rest cracked, and both
+        // are full cubes that terminate there -- so most of the building ended up "aged" without
+        // ever being on a route to a hole. These two rules put them back on one: mossy goes to
+        // mossy_cobblestone and cracked to cobblestone, and the passes below already carry both
+        // through rubble and gravel to air.
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:mossy_stone_bricks",
+            "probability": 0.5
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:mossy_cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:cracked_stone_bricks",
+            "probability": 0.5
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:mossy_left_large_stone_brick",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:mossy_cobblestone" }
@@ -471,7 +1169,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:mossy_right_large_stone_brick",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:mossy_cobblestone" }
@@ -480,7 +1178,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "dungeonblocks:mossy_square_stone_brick",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:mossy_cobblestone" }
@@ -497,7 +1195,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:cobblestone",
-            "probability": 0.3
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:mossy_cobblestone" }
@@ -506,7 +1204,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:cobblestone",
-            "probability": 0.075
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "dungeonblocks:rubble" }
@@ -518,7 +1216,7 @@
             // between them (0.3, then 0.7 x 0.15), so only 59.5% reaches this one, and gravel ->
             // air in the last entry takes 10% of the result: 0.595 x 0.1494 x 0.9 = 8.0%.
             "block": "minecraft:cobblestone",
-            "probability": 0.075
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:gravel" }
@@ -542,7 +1240,7 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:mossy_cobblestone",
-            "probability": 0.15
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "dungeonblocks:mossy_rubble" }
@@ -551,45 +1249,13 @@
           "input_predicate": {
             "predicate_type": "minecraft:random_block_match",
             "block": "minecraft:mossy_cobblestone",
-            // 0.0889 FOR AN 8% FINAL SHARE. Nothing is ahead of this rule, so its number IS its
-            // share of the block; the only adjustment is gravel -> air in the last entry taking
-            // 10% of it (0.0889 x 0.9 = 8.0%).
-            "probability": 0.075
+            // Nothing is ahead of this rule, so its number IS its share of the block. What
+            // becomes of that gravel afterwards is the banded debris rules' business now, and
+            // depends on how high up it sits -- there is no single figure to quote here.
+            "probability": 0.5
           },
           "location_predicate": { "predicate_type": "minecraft:always_true" },
           "output_state": { "Name": "minecraft:gravel" }
-        }
-      ]
-    },
-    {
-      "processor_type": "minecraft:rule",
-      "rules": [
-        {
-          "input_predicate": {
-            "predicate_type": "minecraft:random_block_match",
-            "block": "dungeonblocks:rubble",
-            "probability": 0.1
-          },
-          "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:air" }
-        },
-        {
-          "input_predicate": {
-            "predicate_type": "minecraft:random_block_match",
-            "block": "dungeonblocks:mossy_rubble",
-            "probability": 0.1
-          },
-          "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:air" }
-        },
-        {
-          "input_predicate": {
-            "predicate_type": "minecraft:random_block_match",
-            "block": "minecraft:gravel",
-            "probability": 0.1
-          },
-          "location_predicate": { "predicate_type": "minecraft:always_true" },
-          "output_state": { "Name": "minecraft:air" }
         }
       ]
     },
@@ -950,9 +1616,7 @@
       // Required, with no default anywhere -- see SpawnerConfig for why. 12 blocks: rooms run
       // 5-13 across, so this fires as the player comes through the door rather than once they
       // are well inside.
-      "proximity": 12.0,
-      "min_mobs": 1,
-      "max_mobs": 3
+      "proximity": 12.0
     },
 
     // =========================================================================================
@@ -970,7 +1634,32 @@
     // this building is one. Add it only for something a template hangs off a NEIGHBOURING piece.
     // =========================================================================================
     {
-      "processor_type": "dungeons2:support_sweep"
+      "processor_type": "dungeons2:support_sweep",
+
+      // `nonstructural` -- GROUNDED, BUT LOAD-BEARING FOR NOTHING (2026-09-18). The sweep asks
+      // whether a block connects in any of six directions to something that reaches the ground,
+      // and that is right for masonry: it is what keeps a lintel, an arch and a corbel. It is
+      // wrong for a ladder. entrance_2 runs a SINGLE ladder column at (6,6) from y1 to y8 --
+      // through all three elevation bands -- and it ages far more slowly than the stone around
+      // it, so most of that column is still there after the collapse. Every
+      // crown fragment still touching that column counted as grounded and stayed: a stone cap
+      // hanging in the sky off a ladder, which is what the screenshot showed.
+      //
+      // Naming a block here neither protects nor condemns it. It still has to be grounded itself
+      // to survive -- a ladder bolted to a wall that reaches the floor is not floating -- but
+      // grounding STOPS at it instead of spreading through it.
+      //
+      // The chain is here for the same reason, and its own rules and dungeons2:hanging_sweep are
+      // not a substitute: those decide whether the RUN survives, while this decides whether the
+      // run may hold up the building it hangs in.
+      "nonstructural": {
+        "blocks": [
+          "minecraft:ladder",
+          "minecraft:chain",
+          "dungeonblocks:swinging_chain",
+          "minecraft:iron_bars"
+        ]
+      }
     }
   ]
 }

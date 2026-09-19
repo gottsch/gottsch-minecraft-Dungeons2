@@ -458,6 +458,37 @@
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         },
+        // ===================================================================================
+        // DARK IRON -- the rust ladder. dungeonblocks cuts three aged stages for the grate and
+        // the heavy trapdoor and for nothing else in the dark iron family, so these two blocks
+        // get a chain and the plate brackets get none: tarnished (a dulled sheen), rusted
+        // (orange bloom), corroded (eaten through and pitted).
+        //
+        // IT NEVER REACHES AIR, unlike the chain rules beside it. Both blocks are things the
+        // player stands on or opens, so a missing one is a hole to fall through rather than a
+        // bit of decay to walk past. Corroded is the end of the ladder on purpose.
+        //
+        // Composed over the three stages: tarnished on ~40% of grates, rusted on ~14%, corroded
+        // on ~3.5%. Retune the first number to move the whole ladder.
+        // ===================================================================================
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_grate",
+          "output_blocks": [
+            { "block": "dungeonblocks:tarnished_dark_iron_grate", "probability": 0.4 },
+            { "block": "dungeonblocks:rusted_dark_iron_grate", "probability": 0.35 },
+            { "block": "dungeonblocks:corroded_dark_iron_grate", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_heavy_trapdoor",
+          "output_blocks": [
+            { "block": "dungeonblocks:tarnished_dark_iron_heavy_trapdoor", "probability": 0.4 },
+            { "block": "dungeonblocks:rusted_dark_iron_heavy_trapdoor", "probability": 0.35 },
+            { "block": "dungeonblocks:corroded_dark_iron_heavy_trapdoor", "probability": 0.25 }
+          ]
+        },
 
         // ------------------------------------------------------------------------------------
         // CHAINS (added 2026-09-07). The mud band's hallways hang the same lantern runs the dry
@@ -913,9 +944,7 @@
       // Required, with no default anywhere -- see SpawnerConfig for why. 12 blocks: rooms run
       // 5-13 across, so this fires as the player comes through the door rather than once they
       // are well inside.
-      "proximity": 12.0,
-      "min_mobs": 1,
-      "max_mobs": 3
+      "proximity": 12.0
     }
   ]
 }

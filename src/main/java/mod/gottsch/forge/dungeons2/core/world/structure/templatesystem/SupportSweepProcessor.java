@@ -126,18 +126,24 @@ public class SupportSweepProcessor extends StructureProcessor {
      * marker another processor is going to resolve into something else after this runs.</p>
      */
     private final BlockMatch ignore;
+    private final BlockMatch nonstructural;
 
-    public SupportSweepProcessor(Supplier<StructureProcessorType<?>> type, BlockMatch ignore) {
+    public SupportSweepProcessor(Supplier<StructureProcessorType<?>> type, BlockMatch ignore,
+                                 BlockMatch nonstructural) {
         this.type = type;
         this.ignore = ignore;
+        this.nonstructural = nonstructural;
     }
 
     /** Strict throughout, per backlog #31: an undeclared key is a load error, not a shrug. */
     public static Codec<SupportSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "ignore", BlockMatch.NONE)
-                        .forGetter(processor -> processor.ignore)
-        ).apply(instance, ignore -> new SupportSweepProcessor(type, ignore)));
+                        .forGetter(processor -> processor.ignore),
+                StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "nonstructural", BlockMatch.NONE)
+                        .forGetter(processor -> processor.nonstructural)
+        ).apply(instance, (ignore, nonstructural) ->
+                new SupportSweepProcessor(type, ignore, nonstructural)));
     }
 
     /** Nothing to decide per block: the whole point is that support is a property of the piece. */
@@ -218,6 +224,18 @@ public class SupportSweepProcessor extends StructureProcessor {
 
         while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
+
+            // A non-structural block may BE grounded -- a ladder bolted to a wall that reaches the
+            // floor is not floating -- but it does not CARRY anything, so grounding stops here
+            // rather than spreading to its neighbours. Without this, entrance_2's single ladder
+            // column, which runs y1 to y8 through every elevation band and is never aged,
+            // six-way-grounds every fragment it touches: the collapse takes the walls and leaves a
+            // stone cap hanging in the sky off the ladder (Mark's screenshot, 2026-09-18).
+            BlockState here = pending.get(pos);
+            if (here != null && nonstructural.matches(here)) {
+                continue;
+            }
+
             for (Direction direction : Direction.values()) {
                 BlockPos neighbour = pos.relative(direction);
                 BlockState state = pending.get(neighbour);

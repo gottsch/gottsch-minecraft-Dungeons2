@@ -61,7 +61,7 @@ class BossPinTest {
         Codec<SpawnerMarkerProcessor> codec = SpawnerMarkerProcessor.codec(() -> null);
         SpawnerMarkerProcessor pinned = new SpawnerMarkerProcessor(
                 new ResourceLocation("dungeons2", "classic_undead"), Optional.of(MEDIUM),
-                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 20.0D, 1, 1, SpawnerConfig.Kind.PROXIMITY)
+                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 20.0D, SpawnerConfig.Kind.PROXIMITY)
                 .withBossMob(BEHOLDER);
 
         JsonElement json = codec.encodeStart(JsonOps.INSTANCE, pinned)
@@ -81,7 +81,7 @@ class BossPinTest {
         Codec<SpawnerMarkerProcessor> codec = SpawnerMarkerProcessor.codec(() -> null);
         SpawnerMarkerProcessor plain = new SpawnerMarkerProcessor(
                 new ResourceLocation("dungeons2", "classic_undead"), Optional.of(MEDIUM),
-                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 20.0D, 1, 1, SpawnerConfig.Kind.PROXIMITY);
+                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 20.0D, SpawnerConfig.Kind.PROXIMITY);
         JsonElement json = codec.encodeStart(JsonOps.INSTANCE, plain)
                 .getOrThrow(false, err -> fail("encode: " + err));
         assertFalse(json.getAsJsonObject().has("boss_mob"), "an unpinned list must not grow the field");

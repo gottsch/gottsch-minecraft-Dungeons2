@@ -860,6 +860,125 @@
           }
         }
       }
+    },
+
+    // ------------------------------------------------------------------------------------
+    // The DEEPEST band: the 5th floor down, which only a LARGE dungeon reaches.
+    //
+    // min_floor_index 4, not 5. DungeonSize.LARGE tops out at 5 floors and floorIndex counts
+    // from 0 at the entrance, so the deepest floor a dungeon can ever have is index 4 --
+    // a band at 5 would be unreachable, and nothing validates that (Stratum.validate only
+    // insists floor 0 is covered). "Floor 5" in the authoring sense is index 4.
+    //
+    // Almost all of this is the PALETTE. base.json's wall, ceiling, floor and schemes are
+    // already written against roles ($base, $shaft, $stair, $plinth_left...), so repainting
+    // the ten roles turns the whole shell and every rollable scheme to deepslate for free --
+    // this band declares no wall and no ceiling for exactly that reason. What it does restate
+    // is the three sections that still carry LITERAL stone ids no role can reach: the floor's
+    // speckle aggregate, the corridor's cobblestone paving and stone-brick arch, and the
+    // door's andesite surround.
+    // ------------------------------------------------------------------------------------
+    {
+      "min_floor_index": 4,
+      // Naming the band is what switches on BOTH of this depth's own files, and each is
+      // silent if absent: rooms/classic/deepslate/normal (DungeonStructure#chooseRoomStartPool)
+      // and dungeons2:classic_deepslate_weathering (PieceProcessors#weatheringList). It also
+      // turns on StratumWeatheringCoverageTest for this band, which is the guard that makes
+      // "named but half-authored" fail the build instead of rendering pristine in game.
+      "name": "deepslate",
+      "palette": {
+        "base": "minecraft:deepslate_bricks",
+        "floor": "minecraft:deepslate_tiles",
+        "shaft": "dungeonblocks:deepslate_bricks_pillar_block",
+        "footing": "dungeonblocks:deepslate_bricks_pillar_base_block",
+        "stair": "minecraft:deepslate_brick_stairs",
+        "corbel": "dungeonblocks:deepslate_bricks_corbel_block",
+        // Tiles, not bricks: this is the bracket under a `joists` beam, and the floor it reads
+        // against is deepslate_tiles. The band's `corbel` stays bricks for the pillar brackets.
+        "joist_bracket": "dungeonblocks:deepslate_tiles_corbel_block",
+        "inlay": "minecraft:polished_deepslate",
+        "inlay_alt": "minecraft:deepslate_tiles",
+        "ornament": "minecraft:chiseled_deepslate",
+        "plinth_left": "dungeonblocks:left_large_deepslate_brick",
+        "plinth_right": "dungeonblocks:right_large_deepslate_brick",
+        // The four roles added to base.json's palette on 2026-09-16. Before they existed these were
+        // literals in schemes.json and this band could not reach them -- a `panels` wall rolled
+        // STONE pilasters against a deepslate wall, full height. Reported from a live floor 5.
+        "pilaster": "dungeonblocks:deepslate_bricks_fluted_block",
+        "rubble": "minecraft:cobbled_deepslate",
+        "rubble_stair": "minecraft:cobbled_deepslate_stairs",
+        "door_block": "dungeonblocks:dark_oak_dungeon_door"
+      },
+
+      // Same shape as base.json's, with the one hardcoded aggregate swapped. Restated rather
+      // than inherited only because of that single id.
+      "floor": {
+        "base": "$floor", "alternate_base": "$floor",
+        "pattern": {
+          "type": "dungeons2:speckle",
+          "config": {
+            "primary_block": "$floor",
+            "secondary_block": "dungeonblocks:square_deepslate_brick",
+            "probability": 0.1
+          }
+        }
+      },
+
+      "door": {
+        "door": "dungeonblocks:dark_oak_dungeon_door", "lintel": "$inlay",
+        "floor": "$inlay", "probability": 0.5
+      },
+
+      // height/narrow_height match base.json deliberately. A band's `height` does NOT set the
+      // corridor's real height -- that is rolled once for the whole dungeon off the UNBANDED
+      // motif and travels on the piece -- so a different number here would move only the
+      // dropped ceiling of 1-cell runs and would read as a bug. Same for the style names:
+      // the planner rolled one of base.json's, and styleFor looks it up in THIS list.
+      "corridor": {
+        "floor": "$floor", "alternate_floor": "$base",
+        "ceiling": "$base",
+        "pattern": {
+          "type": "dungeons2:speckle",
+          "config": {
+            "secondary_block": "dungeonblocks:square_deepslate_brick", "probability": 0.1
+          }
+        },
+        "height": 7, "narrow_height": 6, "profile": "arched",
+        "arch_block": "minecraft:deepslate_brick_stairs",
+        "styles": [
+          {
+            "name": "vaulted", "weight": 3, "height": 7, "narrow_height": 6,
+            "profile": "arched", "arch_block": "minecraft:deepslate_brick_stairs",
+            "courses": [
+              {
+                "block": "$plinth_left", "alternate_block": "$plinth_right",
+                "alternate": "strict", "anchor": "bottom", "offset": 0
+              },
+              { "block": "$inlay", "anchor": "top", "offset": 1 }
+            ]
+          },
+          {
+            "name": "grand", "weight": 1, "height": 8, "narrow_height": 7,
+            "profile": "arched", "arch_block": "minecraft:deepslate_brick_stairs",
+            "courses": [
+              {
+                "block": "$plinth_left", "alternate_block": "$plinth_right",
+                "alternate": "strict", "anchor": "bottom", "offset": 0
+              },
+              { "block": "$inlay", "anchor": "top", "offset": 1 }
+            ]
+          },
+          {
+            "name": "cramped", "weight": 2, "height": 6, "profile": "flat",
+            "courses": [
+              {
+                "block": "$plinth_left", "alternate_block": "$plinth_right",
+                "alternate": "strict"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

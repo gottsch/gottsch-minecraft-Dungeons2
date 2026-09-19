@@ -24,6 +24,7 @@ import mod.gottsch.forge.dungeons2.core.block.entity.DungeonSpawnerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks;
 import mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.config.Codecs;
+import mod.gottsch.forge.dungeons2.core.config.MobRange;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
@@ -81,7 +82,8 @@ import java.util.function.Supplier;
  *
  * <p>As of 2026-09-03 {@code dungeons2:spawner_marker} has one, so every codec field below is a pool
  * <em>default</em> that an individual marker may override: {@code mobSetName}, {@code proximity},
- * {@code minMobs}, {@code maxMobs}, {@code probability} and {@code type}. A marker that states nothing behaves exactly as
+ * {@code probability} and {@code type}. {@code minMobs}/{@code maxMobs} are marker-only &mdash; the
+ * pool has no count; the drawn set's {@code count} is the default (see {@link MobRange}). A marker that states nothing behaves exactly as
  * it did before, which is why no shipped template needed touching. {@code marker_block} stays a
  * codec field &mdash; a second marker block is still legitimate, it is just no longer the only way
  * to get a second set.</p>
@@ -132,28 +134,25 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     private final Optional<ResourceLocation> rangedEscortMobSet;
     private final ResourceLocation markerBlock;
     private final double proximity;
-    private final int minMobs;
-    private final int maxMobs;
     private final float probability;
     private final SpawnerConfig.Kind kind;
 
     /** The proximity form, which is what every marker authored before vanilla spawners meant. */
-    public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity,
-                                  int minMobs, int maxMobs) {
-        this(mobSet, markerBlock, proximity, minMobs, maxMobs, SpawnerConfig.Kind.PROXIMITY);
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity) {
+        this(mobSet, markerBlock, proximity, SpawnerConfig.Kind.PROXIMITY);
     }
 
     public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity,
-                                  int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
+                                  SpawnerConfig.Kind kind) {
         this(mobSet, Optional.empty(), Optional.empty(), Optional.empty(),
-                markerBlock, proximity, minMobs, maxMobs, kind);
+                markerBlock, proximity, kind);
     }
 
     public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
                                   ResourceLocation markerBlock, double proximity,
-                                  int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
+                                  SpawnerConfig.Kind kind) {
         this(mobSet, bossMobSet, Optional.empty(), Optional.empty(),
-                markerBlock, proximity, minMobs, maxMobs, kind);
+                markerBlock, proximity, kind);
     }
 
     /**
@@ -165,19 +164,19 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                                   Optional<ResourceLocation> escortMobSet,
                                   Optional<ResourceLocation> rangedEscortMobSet,
                                   ResourceLocation markerBlock, double proximity,
-                                  int minMobs, int maxMobs, SpawnerConfig.Kind kind) {
+                                  SpawnerConfig.Kind kind) {
         this(mobSet, bossMobSet, escortMobSet, rangedEscortMobSet, markerBlock, proximity,
-                minMobs, maxMobs, DEFAULT_PROBABILITY, kind);
+                DEFAULT_PROBABILITY, kind);
     }
 
     public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
                                   Optional<ResourceLocation> escortMobSet,
                                   Optional<ResourceLocation> rangedEscortMobSet,
                                   ResourceLocation markerBlock, double proximity,
-                                  int minMobs, int maxMobs, float probability,
+                                  float probability,
                                   SpawnerConfig.Kind kind) {
         this(mobSet, bossMobSet, Optional.empty(), escortMobSet, rangedEscortMobSet, markerBlock,
-                proximity, minMobs, maxMobs, probability, kind);
+                proximity, probability, kind);
     }
 
     /** The full form, with a boss already drawn at planning time &mdash; see {@link #bossMob}. */
@@ -186,7 +185,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                                   Optional<ResourceLocation> escortMobSet,
                                   Optional<ResourceLocation> rangedEscortMobSet,
                                   ResourceLocation markerBlock, double proximity,
-                                  int minMobs, int maxMobs, float probability,
+                                  float probability,
                                   SpawnerConfig.Kind kind) {
         this.mobSet = mobSet;
         this.bossMobSet = bossMobSet;
@@ -195,8 +194,6 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         this.rangedEscortMobSet = rangedEscortMobSet;
         this.markerBlock = markerBlock;
         this.proximity = proximity;
-        this.minMobs = minMobs;
-        this.maxMobs = maxMobs;
         this.probability = probability;
         this.kind = kind;
     }
@@ -219,7 +216,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     public SpawnerMarkerProcessor withBossMob(ResourceLocation mob) {
         return new SpawnerMarkerProcessor(this.mobSet, this.bossMobSet, Optional.of(mob),
                 this.escortMobSet, this.rangedEscortMobSet, this.markerBlock, this.proximity,
-                this.minMobs, this.maxMobs, this.probability, this.kind);
+                this.probability, this.kind);
     }
 
     /**
@@ -258,8 +255,9 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 // the value is simply unused there, and a second cross-field rule in a processor
                 // that has no validate() hook would cost more than it saves.
                 Codec.DOUBLE.fieldOf("proximity").forGetter(p -> p.proximity),
-                Codec.INT.optionalFieldOf("min_mobs", 1).forGetter(p -> p.minMobs),
-                Codec.INT.optionalFieldOf("max_mobs", 3).forGetter(p -> p.maxMobs),
+                // No min_mobs/max_mobs, deliberately (removed 2026-09-17): a pool-level count
+                // shadowed the drawn mob set's own count on every marker. The set owns it; a
+                // single marker may still override via NBT. See MobRange.
                 // How often an authored marker produces a spawner at all -- the authored answer to
                 // what `min_count: 0` does for the procedural slot. A pool default like its
                 // neighbours, overridable per marker.
@@ -269,7 +267,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 // be a load error (#31's posture), whereas marker NBT arrives during worldgen where
                 // throwing is not an option.
                 //
-                // And STRICT, unlike the min_mobs/max_mobs above: DFU's own optionalFieldOf(name,
+                // And STRICT, unlike the marker_block above: DFU's own optionalFieldOf(name,
                 // default) SWALLOWS a decode failure and hands back the default, so an out-of-range
                 // value there would silently read as 1.0 and the range check would be decorative.
                 // The neighbours predate #31 and are left alone; a new field does not get to.
@@ -426,8 +424,9 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 break;
             }
         }
-        int min = overrides.minMobs(minMobs);
-        int max = overrides.maxMobs(maxMobs);
+        MobRange range = overrides.mobRange(resolvedSet);
+        int min = range.min();
+        int max = range.max();
         int spawnCount = min + (max > min ? random.nextInt(max - min + 1) : 0);
 
         try {
@@ -589,8 +588,9 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // The block-entity type's registry id, which is what vanilla's placeInWorld loads against.
         tag.putString("id", new ResourceLocation(Dungeons.MOD_ID, "mob_set_spawner").toString());
         tag.putString(MOB_SET_NAME, resolvedSet.toString());
-        tag.putInt(MIN_MOBS, overrides.minMobs(minMobs));
-        tag.putInt(MAX_MOBS, overrides.maxMobs(maxMobs));
+        MobRange range = overrides.mobRange(resolvedSet);
+        tag.putInt(MIN_MOBS, range.min());
+        tag.putInt(MAX_MOBS, range.max());
         // putDouble, matching what the block entity reads. The marker accepts any numeric tag on
         // the way in (see SpawnerMarkerBlockEntity) precisely so this stays the only encoding that
         // ever reaches GottschCore.
@@ -643,12 +643,13 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                     ? nbt.getDouble(SpawnerMarkerBlockEntity.PROXIMITY) : pooled;
         }
 
-        int minMobs(int pooled) {
-            return integer(SpawnerMarkerBlockEntity.MIN_MOBS, pooled);
-        }
-
-        int maxMobs(int pooled) {
-            return integer(SpawnerMarkerBlockEntity.MAX_MOBS, pooled);
+        /**
+         * This marker's count: its own {@code minMobs}/{@code maxMobs} where stated, the set's
+         * {@code count} where not. No depth bonus &mdash; the marker route has never had the band.
+         */
+        MobRange mobRange(ResourceLocation resolvedSet) {
+            return MobRange.resolve(integer(SpawnerMarkerBlockEntity.MIN_MOBS),
+                    integer(SpawnerMarkerBlockEntity.MAX_MOBS), resolvedSet, 0);
         }
 
         /**
@@ -690,9 +691,9 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
             return value.isEmpty() ? null : value;
         }
 
-        private int integer(String key, int pooled) {
+        private Optional<Integer> integer(String key) {
             return nbt != null && nbt.contains(key, Tag.TAG_ANY_NUMERIC)
-                    ? nbt.getInt(key) : pooled;
+                    ? Optional.of(nbt.getInt(key)) : Optional.empty();
         }
     }
 

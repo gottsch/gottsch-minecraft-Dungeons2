@@ -77,6 +77,7 @@ class DecorationSweepParityTest {
     private static final String[] SHIPPED = {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
             // The boss room's list (2026-09-03). It carries NO dungeons2:decoration and therefore
             // no sweep either -- the sweep exists only to repair what decoration placed. Named
@@ -160,6 +161,7 @@ class DecorationSweepParityTest {
     @ValueSource(strings = {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
@@ -187,6 +189,7 @@ class DecorationSweepParityTest {
     @ValueSource(strings = {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
@@ -213,6 +216,7 @@ class DecorationSweepParityTest {
     @ValueSource(strings = {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",

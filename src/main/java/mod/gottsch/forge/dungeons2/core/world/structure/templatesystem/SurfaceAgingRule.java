@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.Block;
 import java.util.List;
 
 /**
- * One decay chain, scoped to a {@link PieceSurface}.
+ * One decay chain, scoped to a {@link PieceSurface} and a {@link PieceElevation} band.
  *
  * <p>Identical to GottschCore's {@code AgingRule} but for the added {@code surface}, and it reuses
  * that class's {@link AgingStage} verbatim &mdash; so a chain reads the same here as it does in a
@@ -37,14 +37,27 @@ import java.util.List;
  *
  * <p><strong>Probabilities are conditional, not absolute</strong>, exactly as in
  * {@code AgingRule}: each stage's chance is <em>given the stage before it was reached</em>.</p>
+ *
+ * <p>{@code elevation} is a SECOND and independent gate (added 2026-09-18 for the entrance ruin).
+ * The two are ANDed: a rule may name a surface, a band, both, or neither. They have to be separate
+ * fields rather than more {@code surface} values because a block has one surface and one band at
+ * the same time &mdash; see {@link PieceElevation} for why that rules out the simpler design.</p>
  */
-public record SurfaceAgingRule(PieceSurface surface, Block block, List<AgingStage> outputBlocks) {
+public record SurfaceAgingRule(PieceSurface surface, PieceElevation elevation, Block block,
+                               List<AgingStage> outputBlocks) {
+
+    /** An ungated-by-height rule, which is nearly all of them. */
+    public SurfaceAgingRule(PieceSurface surface, Block block, List<AgingStage> outputBlocks) {
+        this(surface, PieceElevation.ANY, block, outputBlocks);
+    }
 
     public static final Codec<SurfaceAgingRule> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            // Optional so this record is a strict superset of AgingRule -- an entry that names no
-            // surface decays everything, which is what `dungeons2:aging` already does.
+            // Both optional, so this record stays a strict superset of AgingRule -- an entry that
+            // names neither decays everything, which is what `dungeons2:aging` already does.
             StrictCodecs.strictOptionalFieldOf(PieceSurface.CODEC, "surface", PieceSurface.ANY)
                     .forGetter(SurfaceAgingRule::surface),
+            StrictCodecs.strictOptionalFieldOf(PieceElevation.CODEC, "elevation", PieceElevation.ANY)
+                    .forGetter(SurfaceAgingRule::elevation),
             BlockIds.CODEC.fieldOf("block").forGetter(SurfaceAgingRule::block),
             AgingStage.CODEC.listOf().fieldOf("output_blocks").forGetter(SurfaceAgingRule::outputBlocks)
     ).apply(instance, SurfaceAgingRule::new));

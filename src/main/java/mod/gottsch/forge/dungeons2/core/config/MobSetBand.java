@@ -22,7 +22,6 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * One depth band of the motif's {@code mob_sets_by_floor_index} table: the mob sets a dungeon's spawners
@@ -45,27 +44,26 @@ import java.util.Optional;
  * floor down, every time. (Note that Stronger Mobs Below's own scaling <em>is</em> keyed on world Y;
  * the two axes coexist deliberately and answer different questions.)</p>
  *
- * <h2>The band may also change how MANY mobs a spawner releases</h2>
- * <p>{@code min_mobs}/{@code max_mobs} are optional here and, when present, supply the value for any
- * scheme on those floors that does not state its own. Without them the depth axis could only change
- * <em>what</em> spawns, never <em>how much</em> &mdash; and the only way to make a deeper floor
- * release 3&ndash;5 instead of 1&ndash;3 would have been a near-duplicate scheme per band, which is
- * the exact duplication this table exists to remove.</p>
+ * <h2>The band may also ADD to how many mobs a spawner releases</h2>
+ * <p>{@code bonus_mobs} is added to both ends of the drawn mob set's own {@code count}, so a deeper
+ * floor can release more without taking the count away from the mob set. It used to be an absolute
+ * {@code min_mobs}/{@code max_mobs} that replaced the set's count, which meant a modder editing a
+ * mob set's {@code count} changed nothing on any floor a band covered &mdash; that is, every floor.
+ * Additive keeps the mob set in charge of the base and the depth table in charge of the escalation.</p>
  *
  * <p><strong>Independent of {@code mob_sets}, deliberately.</strong> A scheme that names its own sets
- * still picks up the band's counts, because "which mobs" and "how many" are separate authoring
- * decisions: a scheme pinned to one set at every depth can still get more crowded as it descends.
- * Precedence is the same for both, and is the ordinary one &mdash; the scheme's own value wins,
- * then the band's, then the built-in default.</p>
+ * still picks up the band's bonus, because "which mobs" and "how many more at this depth" are
+ * separate authoring decisions. A scheme that states its own {@code min_mobs}/{@code max_mobs} is an
+ * exact override and takes no bonus &mdash; see {@link MobRange}.</p>
  *
  * @author Mark Gottschling on Aug 17, 2026
  */
 public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets,
-                         Optional<Integer> minMobs, Optional<Integer> maxMobs) {
+                         int bonusMobs) {
 
-    /** The shape before per-band mob counts: a band that changes what spawns, not how many. */
+    /** A band that changes what spawns, not how many. */
     public MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets) {
-        this(minFloorIndex, mobSets, Optional.empty(), Optional.empty());
+        this(minFloorIndex, mobSets, 0);
     }
 
     // Codecs.closed -- see RoomScheme.CODEC.
@@ -73,13 +71,9 @@ public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobS
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "min_floor_index", 0)
                     .forGetter(MobSetBand::minFloorIndex),
             SpawnerConfig.MobSetEntry.CODEC.listOf().fieldOf("mob_sets").forGetter(MobSetBand::mobSets),
-            // Absent means "this band has nothing to say about counts", which is not the same as a
-            // band restating the default -- the first defers to the scheme, the second overrides a
-            // scheme that stated nothing. Same Optional-not-sentinel argument as SpawnerConfig#mobSets.
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "min_mobs")
-                    .forGetter(MobSetBand::minMobs),
-            Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_mobs")
-                    .forGetter(MobSetBand::maxMobs)
+            // Min 0, not 1: a bonus of 0 is the ordinary "this depth adds nothing" band.
+            Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "bonus_mobs", 0)
+                    .forGetter(MobSetBand::bonusMobs)
     ).apply(instance, MobSetBand::new))).flatXmap(MobSetBand::validateBand, MobSetBand::validateBand);
 
     private static DataResult<MobSetBand> validateBand(MobSetBand band) {

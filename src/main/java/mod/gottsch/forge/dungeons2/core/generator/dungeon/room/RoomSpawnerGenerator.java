@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
+import mod.gottsch.forge.dungeons2.core.config.MobRange;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
@@ -170,10 +171,11 @@ public final class RoomSpawnerGenerator {
      * has the type the reader names.</p>
      */
     public static BlockEntityData spawnerData(SpawnerConfig config, String mobSet, int floorIndex) {
+        MobRange range = config.mobRange(ResourceLocation.tryParse(mobSet));
         return new BlockEntityData(SPAWNER_BLOCK)
                 .with(MOB_SET_NAME, mobSet)
-                .with(MIN_MOBS, String.valueOf(config.effectiveMinMobs()))
-                .with(MAX_MOBS, String.valueOf(config.clampedMaxMobs()))
+                .with(MIN_MOBS, String.valueOf(range.min()))
+                .with(MAX_MOBS, String.valueOf(range.max()))
                 .with(PROXIMITY, String.valueOf(config.requiredProximity()))
                 // Stamped at generation and persisted, though nothing reads it yet -- see
                 // DungeonSpawnerBlockEntity for what it is for and why it needed a field rather
@@ -197,9 +199,8 @@ public final class RoomSpawnerGenerator {
      * proximity spawner in an existing world and <strong>no</strong> vanilla one, because the
      * vanilla tags were baked when the chunk generated.</p>
      *
-     * <p>{@code SpawnCount} is drawn from the same {@code minMobs}..{@code maxMobs} range the
-     * proximity spawner uses, so the depth bands reach this kind too &mdash; a floor-2 cage
-     * releases 2-4 exactly as a floor-2 ambush does.</p>
+     * <p>{@code SpawnCount} is drawn from the same {@link MobRange} the proximity spawner uses, so
+     * the set's count and the depth bonus reach this kind too.</p>
      */
     static BlockEntityData vanillaSpawnerData(SpawnerConfig config, String mobSetName,
                                               RandomSource random) {
@@ -217,8 +218,9 @@ public final class RoomSpawnerGenerator {
         // Drawn with the piece's own seeded random, like every other procedural decision here, so
         // the cage shows the same mob on every regeneration of the same seed.
         String shown = drawMob(mobs, random);
-        int min = config.effectiveMinMobs();
-        int max = config.clampedMaxMobs();
+        MobRange range = config.mobRange(id.get());
+        int min = range.min();
+        int max = range.max();
         int spawnCount = min + (max > min ? random.nextInt(max - min + 1) : 0);
 
         BlockEntityData data = new BlockEntityData(VANILLA_SPAWNER_ENTITY)

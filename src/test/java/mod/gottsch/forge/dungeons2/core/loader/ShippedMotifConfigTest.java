@@ -42,7 +42,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -108,8 +107,11 @@ class ShippedMotifConfigTest {
      * id up" from "always returns speckle". Two distinct types decoded out of one shipped file
      * cannot both be a hard-wire.</p>
      *
-     * <p>It asserts <em>distinctness</em>, not which two, so retuning a band's look does not break
-     * it. Dropping to a single paved band would.</p>
+     * <p>It asserts that at least <em>two distinct</em> types are reached, not which two and not
+     * that every paved band differs &mdash; so retuning a band's look does not break it, and nor
+     * does a third band that happens to pave the same way as an existing one (the deepslate band
+     * speckles, as the mud band does). Dropping to a single paved band would, and so would every
+     * paved band converging on one type.</p>
      */
     @Test
     void twoShippedStrataResolveToTwoDifferentPatternProviders() {
@@ -134,9 +136,9 @@ class ShippedMotifConfigTest {
         assertTrue(patterns.size() >= 2,
                 "expected at least two paved strata, found " + patterns.size()
                         + ". One is not enough to prove the registry dispatches on the id.");
-        assertEquals(patterns.size(), Set.copyOf(patterns).size(),
-                "the paved strata must use DIFFERENT pattern types, but all resolved to the same"
-                        + " class: " + patterns);
+        assertTrue(Set.copyOf(patterns).size() >= 2,
+                "the paved strata must reach at least two DIFFERENT pattern types, but all resolved"
+                        + " to the same class: " + patterns);
     }
 
     private static JsonElement read(Path file) {

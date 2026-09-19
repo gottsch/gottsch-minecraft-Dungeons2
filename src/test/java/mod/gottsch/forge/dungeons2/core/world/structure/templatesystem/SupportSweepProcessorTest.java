@@ -83,7 +83,7 @@ class SupportSweepProcessorTest {
     private static final BoundingBox ROOM = new BoundingBox(-32, -32, -32, 32, 32, 32);
 
     private static SupportSweepProcessor sweep() {
-        return new SupportSweepProcessor(NO_TYPE, BlockMatch.NONE);
+        return new SupportSweepProcessor(NO_TYPE, BlockMatch.NONE, BlockMatch.NONE);
     }
 
     /** Runs the sweep over a piece writing {@code pending}, against a level holding {@code world}. */
@@ -280,7 +280,7 @@ class SupportSweepProcessorTest {
     @Test
     void anIgnoredBlockIsNeverDropped() {
         SupportSweepProcessor sweep = new SupportSweepProcessor(
-                NO_TYPE, new BlockMatch(List.of(Blocks.STONE_BRICKS), List.of()));
+                NO_TYPE, new BlockMatch(List.of(Blocks.STONE_BRICKS), List.of()), BlockMatch.NONE);
 
         Map<BlockPos, BlockState> pending = new HashMap<>();
         pending.put(new BlockPos(0, 9, 0), stone());
@@ -307,5 +307,67 @@ class SupportSweepProcessorTest {
         assertSame(processed, sweep().finalizeProcessing(level.level(), BlockPos.ZERO,
                         BlockPos.ZERO, processed, processed, settings),
                 "no allocation when there is nothing to drop");
+    }
+
+    // ---------- `nonstructural`: grounded, but load-bearing for nothing ----------
+
+    /**
+     * The case this field exists for, and it is the entrance ruin in miniature: a ladder column
+     * standing on the ground with masonry bolted to its top. Six-way connectivity alone calls that
+     * masonry grounded, which is how a collapse leaves a stone cap floating in the sky off a
+     * ladder.
+     */
+    @Test
+    void masonryIsNotHeldUpByALadderColumn() {
+        SupportSweepProcessor sweep = new SupportSweepProcessor(
+                NO_TYPE, BlockMatch.NONE, new BlockMatch(List.of(Blocks.LADDER), List.of()));
+
+        Map<BlockPos, BlockState> pending = new HashMap<>();
+        for (int y = 1; y <= 8; y++) {
+            pending.put(new BlockPos(0, y, 0), Blocks.LADDER.defaultBlockState());
+        }
+        BlockPos cap = new BlockPos(1, 8, 0);
+        pending.put(cap, stone());
+
+        Map<BlockPos, BlockState> result =
+                run(sweep, Map.of(new BlockPos(0, 0, 0), stone()), pending, ROOM);
+
+        assertTrue(result.containsKey(new BlockPos(0, 1, 0)),
+                "the ladder itself stands on the ground and must survive");
+        assertFalse(result.containsKey(cap),
+                "the stone cap was grounded through the ladder, which cannot carry it");
+    }
+
+    /** Without the field named, the old behaviour is unchanged -- the cap stays up. */
+    @Test
+    void aLadderStillConductsWhenNothingIsNamedNonstructural() {
+        Map<BlockPos, BlockState> pending = new HashMap<>();
+        for (int y = 1; y <= 8; y++) {
+            pending.put(new BlockPos(0, y, 0), Blocks.LADDER.defaultBlockState());
+        }
+        BlockPos cap = new BlockPos(1, 8, 0);
+        pending.put(cap, stone());
+
+        assertTrue(run(sweep(), Map.of(new BlockPos(0, 0, 0), stone()), pending, ROOM)
+                        .containsKey(cap),
+                "default behaviour changed: an unconfigured sweep must conduct as it always has");
+    }
+
+    /** Masonry resting on masonry is untouched by the field -- only the conductor is special. */
+    @Test
+    void realSupportStillCarriesWithALadderConfigured() {
+        SupportSweepProcessor sweep = new SupportSweepProcessor(
+                NO_TYPE, BlockMatch.NONE, new BlockMatch(List.of(Blocks.LADDER), List.of()));
+
+        Map<BlockPos, BlockState> pending = new HashMap<>();
+        for (int y = 1; y <= 4; y++) {
+            pending.put(new BlockPos(0, y, 0), stone());
+        }
+        BlockPos lintel = new BlockPos(1, 4, 0);
+        pending.put(lintel, stone());
+
+        assertTrue(run(sweep, Map.of(new BlockPos(0, 0, 0), stone()), pending, ROOM)
+                        .containsKey(lintel),
+                "a lintel on a stone column is exactly what six-way connectivity is for");
     }
 }

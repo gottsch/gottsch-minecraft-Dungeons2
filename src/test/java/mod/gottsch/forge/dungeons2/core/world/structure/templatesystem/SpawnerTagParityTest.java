@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure.templatesystem;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.dungeons2.core.config.MobRange;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomSpawnerGenerator;
@@ -69,7 +70,7 @@ class SpawnerTagParityTest {
     /** The processor's tag, for a marker configured exactly as the scheme slot below is. */
     private static CompoundTag authoredTag() {
         return new SpawnerMarkerProcessor(new ResourceLocation(MOB_SET),
-                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D, 1, 3).spawnerTag();
+                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D).spawnerTag();
     }
 
     private static BlockEntityData proceduralData() {
@@ -152,13 +153,12 @@ class SpawnerTagParityTest {
                 })
                 .spawnerTag();
 
-        // effectiveMinMobs(), not minMobs(): the record component answers "what did the author
-        // write" and is deliberately EMPTY here, because a scheme stating no count defers to the
-        // floor's band before it falls back to this default. The resolved value is what the
-        // processor's own default has to agree with.
+        // mobRange(), not minMobs(): the record component answers "what did the author write"
+        // and is deliberately EMPTY here, because a slot stating no count defers to the set.
         SpawnerConfig defaults = new SpawnerConfig(MOB_SET, 12.0D);
-        assertEquals(authored.getInt("minMobs"), defaults.effectiveMinMobs());
-        assertEquals(authored.getInt("maxMobs"), defaults.clampedMaxMobs());
+        MobRange range = defaults.mobRange(new ResourceLocation(MOB_SET));
+        assertEquals(authored.getInt("minMobs"), range.min());
+        assertEquals(authored.getInt("maxMobs"), range.max());
     }
 
     /**

@@ -9,7 +9,30 @@
     "inlay_alt": "minecraft:andesite",
     "ornament": "minecraft:chiseled_stone_bricks",
     "plinth_left": "dungeonblocks:left_large_stone_brick",
-    "plinth_right": "dungeonblocks:right_large_stone_brick"
+    "plinth_right": "dungeonblocks:right_large_stone_brick",
+
+    // Added 2026-09-16. These four were LITERAL block ids inside schemes.json patterns until a
+    // deepslate floor showed what that costs: a literal is unreachable by a band's palette, so the
+    // band repainted the wall behind them and the pilasters stayed stone -- full height, on every
+    // wall that rolled `panels`.
+    //
+    // StratumWeatheringCoverageTest could not have caught it, and it is worth knowing why before
+    // trusting that guard again: it reports blocks the MOTIF'S OWN WEATHERING LIST ages, and
+    // classic_weathering has no fluted-block rule. It catches un-AGED leaks, not un-REPAINTED ones.
+    // Those are different failures and only the first has a test.
+    "pilaster": "dungeonblocks:stone_bricks_fluted_block",
+    // The weathered/worn material, for a `gradient` edge and a `path`. Named for what it reads as
+    // rather than for cobblestone, so a band can answer with whatever its own era crumbles into.
+    "rubble": "minecraft:cobblestone",
+    "rubble_stair": "minecraft:cobblestone_stairs",
+    // The bracket a `joists` ceiling rests its beams on. Added 2026-09-17 for the same reason as
+    // the four above: it was a literal in schemes.json, so a deepslate floor kept SPRUCE corbels
+    // under its beams against a deepslate wall. The beam itself stays a literal spruce log -- a
+    // timber beam on a stone bracket is the intended reading, and the mud band does the same.
+    "joist_bracket": "dungeonblocks:spruce_corbel_block",
+    // The door a `strip` partition leaves its gap as (#74). Distinct from the `door` SECTION, which
+    // is the room's own doorway; this one is a material a wall pattern places.
+    "door_block": "dungeonblocks:spruce_dungeon_door"
   },
   "wall": {
     "wall": "$base",
@@ -254,8 +277,7 @@
           "weight": 2
         }
       ],
-      "min_mobs": 2,
-      "max_mobs": 4
+      "bonus_mobs": 1
     },
     {
       "min_floor_index": 3,
@@ -281,8 +303,7 @@
           "weight": 2
         }
       ],
-      "min_mobs": 3,
-      "max_mobs": 5
+      "bonus_mobs": 2
     }
   ]
 }

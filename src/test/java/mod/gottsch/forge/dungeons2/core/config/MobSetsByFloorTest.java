@@ -21,6 +21,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.gottschcore.mobset.MobSetData;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
+import net.minecraft.resources.ResourceLocation;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -204,123 +208,114 @@ class MobSetsByFloorTest {
         assertEquals(List.of(VERMIN), names(merged.mobSetsFor(0)));
     }
 
-    // ---- Per-band mob counts -------------------------------------------------------------
+    // ---- Mob counts: the set owns them, the band adds to them ------------------------------
     //
-    // Without these a band could change WHAT spawns but never HOW MANY, so "3-5 on the deep
-    // floors" needed a near-duplicate scheme per band -- the duplication the table exists to
-    // remove. Precedence is scheme's own value, then the band's, then the built-in default.
+    // Until 2026-09-17 a band stated absolute counts, which hid the mob set's own `count` on every
+    // floor and left it untunable by a modder. Now: stated slot count (exact), else set count plus
+    // the band's bonus_mobs, else the built-in default plus the bonus. See MobRange.
 
-    private static MobSetBand countingBand(int minFloorIndex, int minMobs, int maxMobs) {
+    private static final ResourceLocation DEEP_ID = new ResourceLocation(DEEP);
+
+    private static MobSetBand bonusBand(int minFloorIndex, int bonus) {
         return new MobSetBand(minFloorIndex,
-                List.of(new SpawnerConfig.MobSetEntry(DEEP, 1)),
-                Optional.of(minMobs), Optional.of(maxMobs));
+                List.of(new SpawnerConfig.MobSetEntry(DEEP, 1)), bonus);
     }
 
-    /** A slot that states no counts takes the band's. */
-    @Test
-    void aBandSuppliesTheMobCountWhenTheSchemeStatesNone() {
-        SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_count\":1,\"max_count\":1,\"proximity\":12}"))
+    private static SpawnerConfig slot(String json) {
+        return SpawnerConfig.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json))
                 .result().orElseThrow();
-        assertTrue(deferring.minMobs().isEmpty(), "the slot should state no count, not a defaulted one");
-
-        SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
-        assertEquals(3, resolved.effectiveMinMobs());
-        assertEquals(5, resolved.clampedMaxMobs());
     }
 
-    /** The scheme's own count wins -- an author who wrote a number meant it at every depth. */
-    @Test
-    void aSchemeThatStatesItsOwnCountOverridesTheBand() {
-        SpawnerConfig owning = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":1,\"max_mobs\":2,\"proximity\":12}"))
-                .result().orElseThrow();
-
-        SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
-        assertEquals(1, resolved.effectiveMinMobs());
-        assertEquals(2, resolved.clampedMaxMobs());
+    private static void registerDeep(int min, int max) {
+        MobSetDataRegistry.register(new MobSetData(DEEP_ID, "classic", min, max, List.of(), false));
     }
 
-    /**
-     * The two axes are independent: a scheme pinned to its own mob SETS still gets the band's
-     * counts. "Which mobs" and "how many" are separate authoring decisions, so overriding one must
-     * not silently opt out of the other.
-     */
-    @Test
-    void aSchemeWithItsOwnSetsStillTakesTheBandsCount() {
-        SpawnerConfig owningSets = new SpawnerConfig(VERMIN, 12.0D);
-        SpawnerConfig resolved = owningSets.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
+    @AfterEach
+    void clearMobSets() {
+        MobSetDataRegistry.clear();
+    }
 
+    /** The whole point: editing a set's count changes what its spawners release. */
+    @Test
+    void theMobSetsCountIsTheBase() {
+        registerDeep(2, 4);
+        MobRange range = slot("{\"proximity\":12}").resolvedAgainst(Optional.of(bonusBand(0, 0)))
+                .mobRange(DEEP_ID);
+        assertEquals(new MobRange(2, 4), range);
+    }
+
+    /** A band adds to both ends of the set's count; it never replaces it. */
+    @Test
+    void aBandsBonusIsAddedToTheSetsCount() {
+        registerDeep(2, 4);
+        MobRange range = slot("{\"proximity\":12}").resolvedAgainst(Optional.of(bonusBand(2, 1)))
+                .mobRange(DEEP_ID);
+        assertEquals(new MobRange(3, 5), range);
+    }
+
+    /** The scheme's own count is an exact override -- no set count, no bonus. */
+    @Test
+    void aSchemeThatStatesItsOwnCountOverridesTheSetAndTheBonus() {
+        registerDeep(2, 4);
+        MobRange range = slot("{\"min_mobs\":1,\"max_mobs\":2,\"proximity\":12}")
+                .resolvedAgainst(Optional.of(bonusBand(2, 3))).mobRange(DEEP_ID);
+        assertEquals(new MobRange(1, 2), range);
+    }
+
+    /** A scheme pinned to its own sets still takes the band's bonus -- the two axes are independent. */
+    @Test
+    void aSchemeWithItsOwnSetsStillTakesTheBandsBonus() {
+        SpawnerConfig resolved = new SpawnerConfig(VERMIN, 12.0D)
+                .resolvedAgainst(Optional.of(bonusBand(2, 2)));
         assertEquals(List.of(VERMIN),
                 resolved.declaredMobSets().stream().map(SpawnerConfig.MobSetEntry::mobSet).toList(),
                 "its own sets must survive");
-        assertEquals(3, resolved.effectiveMinMobs(), "but the band still sets the crowd size");
-        assertEquals(5, resolved.clampedMaxMobs());
+        assertEquals(2, resolved.bonusMobs(), "but the band still adds to the crowd");
     }
 
-    /** Neither speaks -> the built-in default, unchanged from before the band could carry counts. */
+    /** An unregistered set falls back to the built-in default, bonus still applied. */
     @Test
-    void withNeitherASchemeNorABandCountTheDefaultStands() {
-        SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"proximity\":12}"))
+    void anUnregisteredSetFallsBackToTheDefault() {
+        MobRange range = slot("{\"proximity\":12}").resolvedAgainst(Optional.of(bonusBand(0, 1)))
+                .mobRange(DEEP_ID);
+        assertEquals(new MobRange(SpawnerConfig.DEFAULT_MIN_MOBS + 1,
+                SpawnerConfig.DEFAULT_MAX_MOBS + 1), range);
+    }
+
+    /** A set whose count starts at 0 keeps its 0 -- MobCount allows it. */
+    @Test
+    void aSetMayStartAtZero() {
+        registerDeep(0, 3);
+        assertEquals(new MobRange(0, 3), slot("{\"proximity\":12}").mobRange(DEEP_ID));
+    }
+
+    /** An inverted stated range clamps rather than failing -- nonsense, but not ambiguous. */
+    @Test
+    void anInvertedRangeClamps() {
+        assertEquals(new MobRange(5, 5), slot("{\"min_mobs\":5,\"max_mobs\":2,\"proximity\":12}")
+                .mobRange(DEEP_ID));
+    }
+
+    /** bonus_mobs is a real datapack key; the old absolute keys are now a load error. */
+    @Test
+    void aBandRoundTripsItsBonusAndRejectsTheOldCountKeys() {
+        MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"min_floor_index\":2,\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}],\"bonus_mobs\":2}"))
                 .result().orElseThrow();
+        assertEquals(2, decoded.bonusMobs());
 
-        SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(band(0, DEEP)));
-        assertEquals(SpawnerConfig.DEFAULT_MIN_MOBS, resolved.effectiveMinMobs());
-        assertEquals(SpawnerConfig.DEFAULT_MAX_MOBS, resolved.clampedMaxMobs());
+        DataResult<MobSetBand> old = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}],\"min_mobs\":3,\"max_mobs\":5}"));
+        assertTrue(old.error().isPresent(),
+                "a band still stating absolute counts must fail loudly, not silently lose them");
     }
 
-    /**
-     * A band restating the default is NOT the same as a band saying nothing, and this is the whole
-     * reason the field is an Optional. The first overrides a scheme that stated nothing; the second
-     * leaves it alone. Here they happen to agree in value -- what differs is that the band's
-     * presence is observable.
-     */
+    /** A band omitting the bonus adds nothing. */
     @Test
-    void aBandStatingNoCountLeavesTheSchemesOwnAlone() {
-        SpawnerConfig owning = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"min_mobs\":4,\"max_mobs\":6,\"proximity\":12}"))
-                .result().orElseThrow();
-
-        SpawnerConfig resolved = owning.resolvedAgainst(Optional.of(band(0, DEEP)));
-        assertEquals(4, resolved.effectiveMinMobs());
-        assertEquals(6, resolved.clampedMaxMobs());
-    }
-
-    /** An inverted band range clamps rather than failing -- nonsense, but not ambiguous. */
-    @Test
-    void anInvertedBandRangeClamps() {
-        SpawnerConfig deferring = SpawnerConfig.CODEC
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"proximity\":12}"))
-                .result().orElseThrow();
-
-        SpawnerConfig resolved = deferring.resolvedAgainst(Optional.of(countingBand(0, 5, 2)));
-        assertEquals(5, resolved.effectiveMinMobs());
-        assertEquals(5, resolved.clampedMaxMobs(), "max should clamp up to min, as the scheme slot does");
-    }
-
-    /** The counts are real datapack keys, and the band's schema stays closed around them. */
-    @Test
-    void aBandRoundTripsItsCountsAndRejectsAnUnknownKey() {
-        JsonElement json = JsonParser.parseString(
-                "{\"min_floor_index\":2,\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}],"
-                        + "\"min_mobs\":3,\"max_mobs\":5}");
-        MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-        assertEquals(Optional.of(3), decoded.minMobs());
-        assertEquals(Optional.of(5), decoded.maxMobs());
-
-        DataResult<MobSetBand> typo = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
-                "{\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}],\"minMob\":3}"));
-        assertTrue(typo.error().isPresent(), "a misspelled count key must not be silently ignored");
-    }
-
-    /** A band omitting the counts decodes to absent, not to the defaults. */
-    @Test
-    void aBandWithNoCountsDecodesToAbsent() {
+    void aBandWithNoBonusAddsNothing() {
         MobSetBand decoded = MobSetBand.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"mob_sets\":[{\"mob_set\":\"" + DEEP + "\"}]}")).result().orElseThrow();
-        assertTrue(decoded.minMobs().isEmpty());
-        assertTrue(decoded.maxMobs().isEmpty());
+        assertEquals(0, decoded.bonusMobs());
     }
 
     // ---- Spawner kind (proximity vs vanilla) --------------------------------------------
@@ -393,10 +388,9 @@ class MobSetsByFloorTest {
                 .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"type\":\"vanilla\"}"))
                 .result().orElseThrow();
 
-        SpawnerConfig resolved = vanilla.resolvedAgainst(Optional.of(countingBand(2, 3, 5)));
+        SpawnerConfig resolved = vanilla.resolvedAgainst(Optional.of(bonusBand(2, 2)));
         assertEquals(SpawnerConfig.Kind.VANILLA, resolved.kind());
-        assertEquals(3, resolved.effectiveMinMobs(), "and the band still reaches it");
-        assertEquals(5, resolved.clampedMaxMobs());
+        assertEquals(2, resolved.bonusMobs(), "and the band still reaches it");
     }
 
     private static MotifConfigFragment fragment(List<MobSetBand> table) {

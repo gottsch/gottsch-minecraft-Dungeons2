@@ -24,8 +24,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +57,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a block entity host should not claim to be air, and invisibility should come from
  * {@code BaseEntityBlock}'s {@code INVISIBLE} render shape, {@code noCollission} and an empty
  * outline instead. Worth keeping on those grounds; worth not mistaking for evidence.</p>
+ *
+ * <h2>2026-09-16: "this block was working the whole time" was true of that bug and not of this one</h2>
+ * <p>A second, unrelated fault DID live here, and the paragraph above is exactly why it was not
+ * looked for: <strong>water deleted the block.</strong> The {@code noCollission()} this class spent
+ * three paragraphs defending is what made {@code FlowingFluid.canHoldFluid} treat the cell as
+ * free &mdash; it ends in {@code !state.blocksMotion()} &mdash; so in a flooded room the first
+ * fluid spread replaced the spawner with water and the block entity was gone before any player
+ * could trigger it. Every land spawner was unaffected, which is what kept it hidden.
+ * {@link #waterCannotWashTheSpawnerAway} is the regression guard; see
+ * {@code MobSetSpawnerBlock}'s own note for the full history.</p>
  *
  * @author Mark Gottschling on Aug 16, 2026
  */
@@ -125,5 +137,61 @@ class MobSetSpawnerBlockTest {
         assertTrue(block.getShape(state, null, BlockPos.ZERO, null).isEmpty(),
                 "an empty outline stops it being highlighted or broken -- otherwise the room has a"
                         + " phantom block the player can target but not see");
+    }
+    /**
+     * <strong>Water must not be able to destroy the spawner.</strong>
+     *
+     * <p>The regression guard for the sewer bug. {@code FlowingFluid.canSpreadTo} asks
+     * {@code canHoldFluid}, which prefers the {@code LiquidBlockContainer} branch and otherwise
+     * ends in {@code return !state.blocksMotion()}. This block's collision shape is empty by
+     * design, so {@code blocksMotion()} is false and the fallthrough branch of {@code spreadTo}
+     * &mdash; {@code beforeDestroyingBlock} then {@code setBlock(pos, water)} &mdash; was reachable.
+     *
+     * <p>Asserted as the two facts vanilla actually consults, rather than by driving a fluid tick:
+     * being a {@code LiquidBlockContainer} is what diverts {@code canHoldFluid} away from the
+     * {@code blocksMotion} test at all, and {@code canPlaceLiquid} accepting water is what makes
+     * {@code spreadTo} call {@code placeLiquid} instead of destroying the block. Both are on the
+     * block, need no level, and are exactly what broke.
+     */
+    @Test
+    void waterCannotWashTheSpawnerAway() {
+        MobSetSpawnerBlock spawner = block();
+        BlockState state = spawner.defaultBlockState();
+
+        assertFalse(state.blocksMotion(),
+                "the spawner is intentionally intangible -- if this ever becomes true the fix below"
+                        + " is no longer what is protecting it, and this test should be rewritten"
+                        + " rather than deleted");
+        assertInstanceOf(LiquidBlockContainer.class, spawner,
+                "must be a LiquidBlockContainer: it is the ONLY branch of FlowingFluid.canHoldFluid"
+                        + " that does not fall through to !blocksMotion(), and falling through means"
+                        + " spreadTo replaces the spawner (and its block entity) with water");
+        assertTrue(spawner.canPlaceLiquid(null, BlockPos.ZERO, state, Fluids.WATER),
+                "must accept water, so spreadTo calls placeLiquid and flips WATERLOGGED instead of"
+                        + " destroying the block");
+    }
+
+    /**
+     * The default state must be dry.
+     *
+     * <p>{@code stateDefinition.any()} resolves every unnamed boolean to TRUE, so a
+     * {@code registerDefaultState} that forgot to name {@code WATERLOGGED} would ship a spawner
+     * that reports water in every cell it is placed in &mdash; including the dry ones, where
+     * {@code getFluidState} would then hand {@code IN_WATER} mobs a position that is not wet. The
+     * same trap made a dungeonblocks lantern flood its own pit.
+     */
+    @Test
+    void theSpawnerIsDryByDefault() {
+        BlockState state = block().defaultBlockState();
+        assertFalse(state.getValue(MobSetSpawnerBlock.WATERLOGGED),
+                "default state must be waterlogged=false");
+        assertTrue(block().getFluidState(state).isEmpty(),
+                "a dry spawner must report no fluid");
+        assertEquals(Fluids.WATER, block()
+                        .getFluidState(state.setValue(MobSetSpawnerBlock.WATERLOGGED, Boolean.TRUE))
+                        .getType(),
+                "a waterlogged spawner must report water, so the cell still reads as water to"
+                        + " NaturalSpawner's IN_WATER test -- the gate that decides whether a fish"
+                        + " can be placed there");
     }
 }

@@ -388,4 +388,92 @@ class SurfaceAgingProcessorTest {
                 "at p=0.5 over 40 cells, expected a spread rather than " + aged + " -- a constant"
                         + " here would mean the seed is not varying with position");
     }
+
+    // ---------- the elevation gate (2026-09-18) ----------
+
+    /**
+     * Bands are thirds of the piece's OWN height, so the same rule reads the same way on a tall
+     * entrance and a squat one. COLUMN_TOP is 14, giving a span of 14: base 0-4, middle 5-9,
+     * crown 10-14.
+     */
+    @Test
+    void aBandRuleFiresOnlyInsideItsThirdOfThePiece() {
+        SurfaceAgingProcessor processor = processor(new SurfaceAgingRule(
+                PieceSurface.ANY, PieceElevation.CROWN, Blocks.STONE_BRICKS,
+                List.of(new AgingStage(Blocks.AIR, 1.0))));
+
+        for (int relativeY = 0; relativeY <= COLUMN_TOP; relativeY++) {
+            BlockState result = run(processor, Blocks.STONE_BRICKS.defaultBlockState(), relativeY);
+            boolean crown = relativeY >= 10;
+            assertSame(crown ? Blocks.AIR.defaultBlockState()
+                            : Blocks.STONE_BRICKS.defaultBlockState(), result,
+                    "relative Y " + relativeY + " was " + (crown ? "not " : "") + "collapsed by a"
+                            + " crown rule");
+        }
+    }
+
+    /** The three bands partition the piece: every cell matches exactly one of them. */
+    @Test
+    void theThreeBandsCoverThePieceWithoutOverlapping() {
+        SurfaceAgingProcessor processor = processor(
+                new SurfaceAgingRule(PieceSurface.ANY, PieceElevation.BASE, Blocks.STONE_BRICKS,
+                        List.of(new AgingStage(Blocks.COBBLESTONE, 1.0))),
+                new SurfaceAgingRule(PieceSurface.ANY, PieceElevation.MIDDLE, Blocks.STONE_BRICKS,
+                        List.of(new AgingStage(Blocks.GRAVEL, 1.0))),
+                new SurfaceAgingRule(PieceSurface.ANY, PieceElevation.CROWN, Blocks.STONE_BRICKS,
+                        List.of(new AgingStage(Blocks.AIR, 1.0))));
+
+        for (int relativeY = 0; relativeY <= COLUMN_TOP; relativeY++) {
+            BlockState result = run(processor, Blocks.STONE_BRICKS.defaultBlockState(), relativeY);
+            assertTrue(!result.is(Blocks.STONE_BRICKS),
+                    "relative Y " + relativeY + " matched no band, so the partition has a hole");
+        }
+    }
+
+    /**
+     * Surface and elevation are ANDed, which is the case the two-field design exists for: a rule
+     * can say "the floor, but only where the piece is low" and nothing else.
+     */
+    @Test
+    void surfaceAndElevationBothHaveToMatch() {
+        SurfaceAgingProcessor processor = processor(new SurfaceAgingRule(
+                PieceSurface.FLOOR, PieceElevation.CROWN, Blocks.COBBLESTONE,
+                List.of(new AgingStage(Blocks.AIR, 1.0))));
+
+        // Layer 0 IS the floor, but in a 15-high column it is the base band, never the crown.
+        assertSame(Blocks.COBBLESTONE.defaultBlockState(),
+                run(processor, Blocks.COBBLESTONE.defaultBlockState(), 0),
+                "the floor matched a crown rule");
+        assertSame(Blocks.COBBLESTONE.defaultBlockState(),
+                run(processor, Blocks.COBBLESTONE.defaultBlockState(), COLUMN_TOP),
+                "the crown matched a floor rule");
+    }
+
+    /**
+     * Air is not a block for the purposes of the extent. A piece whose top course has already been
+     * knocked out by an earlier pass has not thereby become a shorter building -- if the holes
+     * counted, the bands would creep downward as the ruin deepened and the collapse would eat
+     * itself.
+     */
+    @Test
+    void holesDoNotShortenThePiece() {
+        List<StructureTemplate.StructureBlockInfo> piece = new ArrayList<>();
+        for (int y = 0; y <= COLUMN_TOP; y++) {
+            piece.add(at(ORIGIN.above(y), Blocks.STONE_BRICKS.defaultBlockState()));
+        }
+        // the whole crown, already gone
+        for (int y = 10; y <= COLUMN_TOP; y++) {
+            piece.set(y, at(ORIGIN.above(y), Blocks.AIR.defaultBlockState()));
+        }
+
+        SurfaceAgingProcessor processor = processor(new SurfaceAgingRule(
+                PieceSurface.ANY, PieceElevation.CROWN, Blocks.STONE_BRICKS,
+                List.of(new AgingStage(Blocks.GRAVEL, 1.0))));
+
+        Map<BlockPos, BlockState> result = run(processor, piece);
+        for (int y = 0; y <= 9; y++) {
+            assertSame(Blocks.STONE_BRICKS.defaultBlockState(), result.get(ORIGIN.above(y)),
+                    "relative Y " + y + " was treated as the crown once the real crown was air");
+        }
+    }
 }

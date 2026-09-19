@@ -24,6 +24,12 @@ import mod.gottsch.forge.gottschcore.block.AbstractProximityBlock;
 import mod.gottsch.forge.gottschcore.block.entity.ProximityMobSetSpawnerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -61,7 +67,7 @@ import javax.annotation.Nullable;
  *
  * @author Mark Gottschling on Aug 14, 2026
  */
-public class MobSetSpawnerBlock extends AbstractProximityBlock {
+public class MobSetSpawnerBlock extends AbstractProximityBlock implements SimpleWaterloggedBlock {
 
     /**
      * How far away a player triggers the spawn, in blocks. Matches the room scale Dungeons2 builds
@@ -70,8 +76,64 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock {
      */
     private static final double DEFAULT_PROXIMITY = 12.0D;
 
+    /**
+     * <h2>Why this block is waterloggable, which is not a cosmetic choice</h2>
+     * <p><strong>Without it, water DELETES this block, block entity and all.</strong>
+     * {@code FlowingFluid.canHoldFluid} ends in {@code return !state.blocksMotion()}, and
+     * {@code blocksMotion()} is {@code legacySolid}, which {@code calculateSolid()} derives from
+     * the collision shape &mdash; empty here, because of the {@code noCollission()} in
+     * {@link #properties} and the empty {@link #getShape}. So a spawner in a flooded room passes
+     * {@code canSpreadTo}, and {@code spreadTo} takes the {@code else} branch:
+     * {@code beforeDestroyingBlock} then {@code setBlock(pos, water)}. Implementing
+     * {@link SimpleWaterloggedBlock} sends it down the {@code LiquidBlockContainer} branch instead,
+     * where {@code placeLiquid} flips {@code WATERLOGGED} and <em>leaves the block standing</em>.
+     *
+     * <p>Found 2026-09-16, and it is worth recording how invisible it was. The sewer rooms author
+     * their {@code classic_water} markers inside the channel. Generation was provably correct
+     * &mdash; the marker converted with the right mob set, and {@code newBlockEntity OK} logged
+     * server-side at the exact position &mdash; and then the spawner simply never ticked: no
+     * {@code [D2-PROBE]} line for it while a vermin spawner seven blocks away in dry air probed and
+     * spawned normally. The cell read as plain water afterwards, which is <em>also</em> what
+     * {@code selfDestruct()} leaves behind, so a washed-out spawner and a spawner that had fired
+     * were indistinguishable in the world and in the save. Every land mob set worked, because a
+     * spawner standing in air is never asked to hold a fluid.
+     *
+     * <p>{@code forceSolidOn()} would also stop the destruction and was rejected: it makes an
+     * invisible cell a pathfinding wall and a dry plug in the middle of the channel, so the one mob
+     * the spawner exists to place could not swim through its own spawner.
+     *
+     * <p>A cell water never flows INTO stays {@code waterlogged=false} and is a one-block dry
+     * pocket. That is pre-existing behaviour and harmless &mdash; a spawner in exactly that state
+     * is the one that was observed working &mdash; so no {@code updateShape} hook tries to correct
+     * it. If one is ever added, note that it must schedule through {@code LevelAccessor} and never
+     * cast it to {@code Level}: that cast is what killed chunk generation in dungeonblocks.
+     */
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+
     public MobSetSpawnerBlock(Properties properties) {
         super(properties);
+        // Explicitly false. stateDefinition.any() resolves every unnamed boolean to TRUE, so a
+        // default state that did not name this would ship waterlogged -- the same trap that made a
+        // dungeonblocks lantern flood its own pit.
+        registerDefaultState(this.stateDefinition.any().setValue(WATERLOGGED, Boolean.FALSE));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(WATERLOGGED);
+    }
+
+    /**
+     * The water the cell is holding, so the cell still reads as water to everything that asks
+     * &mdash; which includes {@code NaturalSpawner.canSpawnAtBody}'s {@code IN_WATER} test, the one
+     * that decides whether a fish may be placed here.
+     */
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED)
+                ? Fluids.WATER.getSource(false)
+                : super.getFluidState(state);
     }
 
     /**

@@ -69,7 +69,7 @@ class SpawnerMarkerProcessorTest {
 
     private static SpawnerMarkerProcessor processor() {
         return new SpawnerMarkerProcessor(
-                VERMIN, SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D, 1, 3);
+                VERMIN, SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D);
     }
 
     private static StructureTemplate.StructureBlockInfo block(net.minecraft.world.level.block.Block b) {
@@ -122,7 +122,7 @@ class SpawnerMarkerProcessorTest {
     @Test
     void theMarkerBlockIsConfigurable() {
         SpawnerMarkerProcessor custom = new SpawnerMarkerProcessor(
-                VERMIN, new ResourceLocation("dungeons2:other_marker"), 8.0D, 1, 3);
+                VERMIN, new ResourceLocation("dungeons2:other_marker"), 8.0D);
         assertFalse(custom.isSpawnerMarker(block(Blocks.STONE_BRICKS)));
         assertEquals(VERMIN.toString(), custom.spawnerTag().getString("mobSetName"));
     }
@@ -151,8 +151,8 @@ class SpawnerMarkerProcessorTest {
         CompoundTag tag = processor().spawnerTag(overrides(marker));
         assertEquals("dungeons2:small_dungeon_boss", tag.getString("mobSetName"));
         assertEquals(20.0D, tag.getDouble("proximity"));
-        assertEquals(1, tag.getInt("minMobs"), "an unstated key must still come from the pool");
-        assertEquals(3, tag.getInt("maxMobs"), "an unstated key must still come from the pool");
+        assertEquals(1, tag.getInt("minMobs"), "an unstated count comes from the set, or the default when it is unregistered");
+        assertEquals(3, tag.getInt("maxMobs"), "an unstated count comes from the set, or the default when it is unregistered");
     }
 
     /**
@@ -191,7 +191,7 @@ class SpawnerMarkerProcessorTest {
 
     private static SpawnerMarkerProcessor tiered() {
         return new SpawnerMarkerProcessor(VERMIN, Optional.of(BOSS_SET),
-                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D, 1, 3,
+                SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D,
                 mod.gottsch.forge.dungeons2.core.config.SpawnerConfig.Kind.PROXIMITY);
     }
 
@@ -284,7 +284,7 @@ class SpawnerMarkerProcessorTest {
 
     private static SpawnerMarkerProcessor withProbability(float probability) {
         return new SpawnerMarkerProcessor(VERMIN, Optional.empty(), Optional.empty(),
-                Optional.empty(), SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D, 1, 3,
+                Optional.empty(), SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 8.0D,
                 probability, SpawnerConfig.Kind.PROXIMITY);
     }
 

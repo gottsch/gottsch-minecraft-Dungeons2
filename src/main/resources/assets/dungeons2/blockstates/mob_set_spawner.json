@@ -1,5 +1,6 @@
 {
   "variants": {
-    "": { "model": "dungeons2:block/mob_set_spawner" }
+    "waterlogged=false": { "model": "dungeons2:block/mob_set_spawner" },
+    "waterlogged=true": { "model": "dungeons2:block/mob_set_spawner" }
   }
 }

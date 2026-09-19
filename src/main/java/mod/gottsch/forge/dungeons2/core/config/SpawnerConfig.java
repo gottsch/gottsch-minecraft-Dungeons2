@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 
 import java.util.List;
@@ -58,13 +59,21 @@ import java.util.Optional;
  */
 public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
                             Optional<Integer> maxMobs, Optional<Double> proximity,
-                            Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind) {
+                            Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind,
+                            int bonusMobs) {
+
+    /** The codec's shape: no depth bonus until {@link #resolvedAgainst(Optional)} applies one. */
+    public SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
+                         Optional<Integer> maxMobs, Optional<Double> proximity,
+                         Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind) {
+        this(minCount, maxCount, minMobs, maxMobs, proximity, mobSets, gate, kind, 0);
+    }
 
     /**
      * Which kind of spawner the slot places.
      *
      * <p>{@link #PROXIMITY} is this mod's own invisible block: it fires once when a player comes
-     * within {@code proximity}, releases {@code min_mobs}..{@code max_mobs} at once, and then dies.
+     * within {@code proximity}, releases its {@link MobRange} at once, and then dies.
      * An ambush. {@link #VANILLA} is {@code minecraft:spawner} &mdash; the visible cage that keeps
      * producing mobs until it is broken or lit, which is a completely different thing to walk into
      * and is the one players already know how to deal with.</p>
@@ -94,7 +103,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
         public static final Codec<Kind> CODEC = StringRepresentable.fromEnum(Kind::values);
     }
 
-    /** The tuning defaults, spelled the same as {@code SpawnerMarkerProcessor}'s so the two agree. */
+    /** The fallback when the drawn mob set is not in the registry. See {@link MobRange}. */
     public static final int DEFAULT_MIN_MOBS = 1;
     public static final int DEFAULT_MAX_MOBS = 3;
 
@@ -107,8 +116,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * read and tuned, and a datapack that forgets it is a load error rather than a silent 8.
      *
      * <p>The counts above stay defaulted because they are genuinely three-valued &mdash; scheme,
-     * then the floor's band, then this &mdash; and {@code MobSetBand} needs "absent" to mean
-     * "whatever this depth calls for". Proximity has no band, so it has no such middle case.</p>
+     * then the mob set, then this &mdash; see {@link MobRange}.</p>
      */
 
     /** Ungated spawners with explicit counts -- placed whenever the scheme is rolled. */
@@ -122,8 +130,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * One spawner drawing from one set, stating no counts -- the common authoring case.
      *
      * <p>Counts are left <em>absent</em> rather than set to the defaults, which is the difference
-     * between "whatever this depth calls for" and "one to three, at every depth". The resolved
-     * values are the same until a band says otherwise, and that is exactly the point.</p>
+     * between "whatever the mob set says" and "one to three, whatever the set says".</p>
      */
     public SpawnerConfig(String mobSet, double proximity) {
         this(1, 1, Optional.empty(), Optional.empty(), Optional.of(proximity),
@@ -153,26 +160,23 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             return this;
         }
         MobSetBand b = band.get();
-        return new SpawnerConfig(minCount, maxCount,
-                minMobs.or(b::minMobs),
-                maxMobs.or(b::maxMobs),
-                proximity,
+        return new SpawnerConfig(minCount, maxCount, minMobs, maxMobs, proximity,
                 mobSets.isPresent() ? mobSets : Optional.of(b.mobSets()),
-                gate, kind);
+                gate, kind, b.bonusMobs());
     }
 
     /**
      * The sets-only form, for callers that have a floor's mob sets but no band.
      *
      * <p>Kept because it is what the pre-band tests exercise, and because the two forms genuinely
-     * differ: this one cannot carry counts, so it leaves them to the scheme and the defaults.</p>
+     * differ: this one carries no depth bonus.</p>
      */
     public SpawnerConfig resolvedAgainst(List<MobSetEntry> floorSets) {
         if (mobSets.isPresent()) {
             return this;
         }
         return new SpawnerConfig(minCount, maxCount, minMobs, maxMobs, proximity,
-                Optional.of(floorSets), gate, kind);
+                Optional.of(floorSets), gate, kind, bonusMobs);
     }
 
     /** The sets this config names outright, or empty when it defers to the motif's depth table. */
@@ -206,9 +210,9 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
                     .forGetter(SpawnerConfig::minCount),
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "max_count", 1)
                     .forGetter(SpawnerConfig::maxCount),
-            // Absent, not defaulted: a scheme that states no count defers to the motif's depth
-            // band, and only falls back to DEFAULT_MIN_MOBS/DEFAULT_MAX_MOBS if no band speaks
-            // either. A defaulted int could not tell those two cases apart. See MobSetBand.
+            // Absent, not defaulted: a scheme that states no count defers to the drawn mob set's
+            // count (plus the depth band's bonus). A defaulted int could not tell those two cases
+            // apart, and would shadow every mob set's count. See MobRange.
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "min_mobs")
                     .forGetter(SpawnerConfig::minMobs),
             Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "max_mobs")
@@ -273,19 +277,12 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
     }
 
     /**
-     * The mobs-per-spawn floor actually written to the block entity: this slot's own value, or the
-     * built-in default when neither the scheme nor the floor's band stated one.
-     *
-     * <p>Call this rather than {@link #minMobs()} anywhere a number is needed &mdash; the record
-     * component answers "what did the author write", which is a different question.</p>
+     * The mobs-per-spawn range actually written to the block entity for a spawner drawing
+     * {@code mobSet}. Call this rather than {@link #minMobs()} anywhere a number is needed &mdash;
+     * the record component answers "what did the author write", which is a different question.
      */
-    public int effectiveMinMobs() {
-        return minMobs.orElse(DEFAULT_MIN_MOBS);
-    }
-
-    /** The inclusive mobs-per-spawn range, normalised the same way. */
-    public int clampedMaxMobs() {
-        return Math.max(effectiveMinMobs(), maxMobs.orElse(DEFAULT_MAX_MOBS));
+    public MobRange mobRange(ResourceLocation mobSet) {
+        return MobRange.resolve(minMobs, maxMobs, mobSet, bonusMobs);
     }
 
     /**

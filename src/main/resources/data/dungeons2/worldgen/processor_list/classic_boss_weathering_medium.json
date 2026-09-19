@@ -109,10 +109,10 @@
           ]
         },
         {
-          "block": "dungeonblocks:orc_war_banner",
+          "block": "dungeonblocks:orc_banner",
           "output_blocks": [
             { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_orcr_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.3 }
           ]
         },
 
@@ -488,9 +488,7 @@
       // say what it is into that role, silently.
       "mob_set": "dungeons2:classic_undead",
       "marker_block": "dungeons2:spawner_marker",
-      "proximity": 20.0,
-      "min_mobs": 1,
-      "max_mobs": 1
+      "proximity": 20.0
     }
   ]
 }
