@@ -1,0 +1,890 @@
+// ==================================================================================
+// classic / DEEPSLATE stratum weathering -- the deepest band, floorIndex 4 and below.
+//
+// WHY THIS FILE EXISTS AT ALL. A stratum's list REPLACES its motif's rather than adding
+// to it, because the prefab half can only be a replacement: a pool element names exactly
+// ONE processor_list, so rooms/classic/deepslate/normal.json names this file and
+// classic_weathering never runs for those rooms. Composing the two here would give a
+// procedural room and the prefab beside it different rules from the same pair of files.
+// See PieceProcessors#weatheringList.
+//
+// THE COST OF THAT, and it is deliberate: everything below dungeons2:decoration is NOT
+// weathering and has no business differing by depth, yet it has to be restated -- backlog
+// #61. A stratum that silently inherited a spawner it never named would be worse than one
+// that repeats itself. Those six processors are COPIED VERBATIM from classic_weathering
+// .json, with one exception noted at dungeons2:chest.
+//
+// Written 2026-09-16 with the first four authored deepslate rooms. Naming the band in
+// strata.json is what switches this file on; before that it was unreachable and the band
+// weathered as stone.
+// ==================================================================================
+{
+  "processors": [
+    {
+      "processor_type": "dungeons2:surface_aging",
+      // 3, matching the motif: the deep chain below is three stages deep.
+      "agings": 3,
+      "rules": [
+        // ---------------------------------------------------------------------------
+        // A STRAIGHT MIRROR OF classic_weathering, rung for rung. A deep floor is a WET
+        // floor and its masonry has had the longest to grow something (Mark, 2026-09-16),
+        // so moss leads here exactly as it does up top.
+        //
+        // This became possible on 2026-09-17, when dungeonblocks 3.0.0 was republished with
+        // mossy_deepslate_bricks, mossy_deepslate_tiles, mossy_cobbled_deepslate (each with
+        // its whole architectural family) and mossy_deepslate_brick_stairs. Before that the
+        // four vanilla deepslate shapes had cracked as their only decay, which is the state
+        // this comment used to describe as a gap.
+        //
+        // mossy_cobbled_deepslate is the load-bearing one: it is the SECOND stage of nearly
+        // every chain below, the deepslate answer to classic's mossy_cobblestone.
+        // ---------------------------------------------------------------------------
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cracked_deepslate_bricks", "probability": 0.3 },
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_bricks",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_deepslate_bricks", "probability": 0.43 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_tiles",
+          "output_blocks": [
+            { "block": "minecraft:cracked_deepslate_tiles", "probability": 0.3 },
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_tiles",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_deepslate_tiles", "probability": 0.43 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_deepslate_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_deepslate_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_deepslate_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.43 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:left_large_deepslate_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_left_large_deepslate_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:left_large_deepslate_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.43 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:right_large_deepslate_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_right_large_deepslate_brick", "probability": 0.3 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:right_large_deepslate_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.43 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:chiseled_deepslate",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_chiseled_deepslate_bricks", "probability": 0.3 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_brick_stairs",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_deepslate_brick_stairs", "probability": 0.3 },
+            { "block": "minecraft:cobbled_deepslate_stairs", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate_stairs", "probability": 0.43 },
+            { "block": "minecraft:dirt", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_deepslate_brick_stairs",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_deepslate_brick_stairs", "probability": 0.3 },
+            { "block": "minecraft:cobbled_deepslate_stairs", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_deepslate",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "dungeonblocks:mossy_cobbled_deepslate", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_deepslate_crown_molding_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_cobbled_deepslate_crown_molding_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_deepslate_facade_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_cobbled_deepslate_facade_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+
+        // ---------------------------------------------------------------------------
+        // POLISHED BASALT. One rung of moss, then a hole -- dungeonblocks ships
+        // mossy_polished_basalt (2026-09-18) and nothing between it and air, so this is the
+        // whole chain. Basalt is a pillar, and AgingProcessor carries `axis` across with
+        // every other shared property, so a vertical run stays vertical as it ages.
+        // ---------------------------------------------------------------------------
+        {
+          "surface": "any",
+          "block": "minecraft:polished_basalt",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_polished_basalt", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+
+        // ---------------------------------------------------------------------------
+        // BLACKSTONE. The deepslate rooms trim in polished blackstone -- plain, bricks, and
+        // the crown molding and facade of both -- and that whole family has NO mossy variant
+        // anywhere, vanilla or dungeonblocks. So it does not follow the moss-first pattern
+        // above: its rungs are CRACK, then blackstone, then (for a full cube only) soil and
+        // a hole. Only polished_blackstone_BRICKS has a cracked form, which is why plain
+        // polished_blackstone starts one rung lower.
+        //
+        // Shape is preserved rung for rung -- a stair to blackstone_stairs, a slab to
+        // blackstone_slab. Neither drops to dirt: a full cube where a slab stood GROWS, which
+        // is the same reason classic's stone_brick_slab stops at cobblestone_slab. The two
+        // full cubes get their dirt/air rung in the deep chain below.
+        // ---------------------------------------------------------------------------
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cracked_polished_blackstone_bricks", "probability": 0.3 },
+            { "block": "minecraft:blackstone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone",
+          "output_blocks": [
+            { "block": "minecraft:blackstone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:blackstone_stairs", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_stairs",
+          "output_blocks": [
+            { "block": "minecraft:blackstone_stairs", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_brick_slab",
+          "output_blocks": [
+            { "block": "minecraft:blackstone_slab", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_slab",
+          "output_blocks": [
+            { "block": "minecraft:blackstone_slab", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_brick_wall",
+          "output_blocks": [
+            { "block": "minecraft:blackstone_wall", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_wall",
+          "output_blocks": [
+            { "block": "minecraft:blackstone_wall", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.05 }
+          ]
+        },
+        // The two architectural shapes carry the crack rung, because dungeonblocks cuts the
+        // whole cracked_polished_blackstone_bricks family the same way it cuts the clean one.
+        // Air at the end is the same call as the deepslate molding above: a decayed cornice
+        // leaves a gap in the run rather than a mismatched block.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_blackstone_crown_molding_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_polished_blackstone_bricks_crown_molding_block", "probability": 0.3 },
+            { "block": "dungeonblocks:blackstone_crown_molding_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_blackstone_facade_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_polished_blackstone_bricks_facade_block", "probability": 0.3 },
+            { "block": "dungeonblocks:blackstone_facade_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_blackstone_quarter_facade_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_polished_blackstone_bricks_quarter_facade_block", "probability": 0.3 },
+            { "block": "dungeonblocks:blackstone_quarter_facade_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+
+        // ---------------------------------------------------------------------------
+        // The deep chain -- classic's third rung: rubble, then soil, then spoil. LAST,
+        // because AgingProcessor takes the first chain that TAKES, so everything above gets
+        // its roll first.
+        // ---------------------------------------------------------------------------
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_tiles",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_deepslate_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:left_large_deepslate_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:right_large_deepslate_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        // The blackstone cubes' deep rung. Ends in air rather than rubble: blackstone is the
+        // trim, not the shell, so what is left when it goes is the room behind it.
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:blackstone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_blackstone",
+          "output_blocks": [
+            { "block": "minecraft:blackstone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+
+        // ---------------------------------------------------------------------------
+        // THE MOTIF'S LEFTOVER STONE -- every classic route for it, VERBATIM. One of the six
+        // genuinely fires (the cobblestone_stairs rim on a `centre` feature); the rest are
+        // StratumWeatheringCoverageTest's over-report, kept because an authored prefab in
+        // rooms/classic/deepslate/ weathers from THIS list and a template author may reach for
+        // any block. The spruce corbel joined them on 2026-09-17: a `joists` bracket is now the
+        // `joist_bracket` role, so this band answers it with deepslate_tiles_corbel_block below.
+        // ---------------------------------------------------------------------------
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.43 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:mossy_stone_brick_stairs", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone_stairs", "probability": 0.43 },
+            { "block": "minecraft:dirt", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:polished_andesite_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:cobblestone_stairs",
+          "output_blocks": [
+            { "block": "minecraft:andesite_stairs", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cracked_stone_bricks", "probability": 0.3 },
+            { "block": "minecraft:cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:mossy_stone_bricks", "probability": 0.43 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stone_bricks",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.2 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:spruce_corbel_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:deepslate_tiles_corbel_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+
+        // ---------------------------------------------------------------------------
+        // THE REST OF WHAT THE BAND ACTUALLY PLACES (2026-09-18). Everything below was found by
+        // diffing the block ids inside rooms/classic/deepslate/**.nbt against the rules above --
+        // 14 blocks the authored templates place that nothing in this file touched, so they
+        // stood factory-fresh in a room where the masonry around them had aged three stages.
+        //
+        // The list is grouped by why each one decays, not by which template it came from.
+        // ---------------------------------------------------------------------------
+
+        // LEFTOVER STONE, second batch. The large brick pair joins square_stone_brick further
+        // down: 7x7_junction_4 and _6 place them, so unlike most of that section these are live.
+        // Same three rungs the square brick gets -- mossy, cobble, then the deep chain.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_left_large_stone_brick", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:left_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.43 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_right_large_stone_brick", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:right_large_stone_brick",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.43 },
+            { "block": "minecraft:mossy_cobblestone", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:polished_andesite",
+          "output_blocks": [
+            { "block": "minecraft:andesite", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.05 }
+          ]
+        },
+
+        // MUD BRICK, from 7x7_junction_5 and _6. The mud band's own rule, minus its surface gate:
+        // that file splits floor from wall because a mud floor is the thing it is about, and down
+        // here the block is a handful of accents rather than the fabric of the room.
+        {
+          "surface": "any",
+          "block": "minecraft:mud_bricks",
+          "output_blocks": [
+            { "block": "minecraft:packed_mud", "probability": 0.3 },
+            { "block": "minecraft:dirt", "probability": 0.3 }
+          ]
+        },
+
+        // DEEPSLATE SHAPES the moss mirror above missed. dungeonblocks cuts no mossy form of any
+        // of the three, so each goes straight to its cobbled equivalent -- the deepslate answer
+        // to cobblestone, and the same second rung everything else in this file uses.
+        //
+        // The slab stops there: a slab that decays into a full cube GROWS, which is the rule
+        // classic's stone_brick_slab follows too. The window and the ledge may finish as a hole.
+        {
+          "surface": "any",
+          "block": "minecraft:deepslate_brick_slab",
+          "output_blocks": [
+            { "block": "minecraft:cobbled_deepslate_slab", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:deepslate_bricks_barred_window_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cobbled_deepslate_barred_window_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:deepslate_tiles_ledge_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cobbled_deepslate_ledge_block", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+
+        // TIMBER, at the motif's rates. Same reasoning as the spruce rules in classic_weathering:
+        // one stage, straight to air, and stripped is NOT a stage -- stripped wood reads as a
+        // different material an author chose, not as age. The stripped logs these templates place
+        // are therefore left alone as SOURCES too, deliberately; see that file's timber note.
+        {
+          "surface": "any",
+          "block": "minecraft:oak_log",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:dark_oak_stairs",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:dark_oak_slab",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+
+        // METAL AND FIXTURES. The plate bracket has no aged cut in dungeonblocks -- the rust
+        // ladder below covers the grate and the heavy trapdoor and nothing else in the dark iron
+        // family -- so a bracket can only go, at the corbel's rate, for the corbel's reason: a
+        // bracket is a single cell and reads as missing rather than as broken.
+        {
+          "surface": "any",
+          "block": "minecraft:iron_bars",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.15 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_angle_plate_bracket_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:brazier_block",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+
+        // BANNERS. Cloth is the one material here with a decay ladder authored for it, and the
+        // undead rule is classic_weathering's verbatim. dungeon_banner is the generic one and
+        // takes the generic pair: soiled, then shredded.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dungeon_banner",
+          "output_blocks": [
+            { "block": "dungeonblocks:grimy_banner", "probability": 0.3 },
+            { "block": "dungeonblocks:tattered_banner", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:undead_banner",
+          "output_blocks": [
+            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.3 },
+            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.3 }
+          ]
+        },
+
+        // DELIBERATELY STILL UNAGED, so the next coverage diff does not re-raise them:
+        //   * dungeonblocks:oxidized_copper_heavy_trapdoor -- already the LAST stage of copper.
+        //     There is nothing past it but air, and a trapdoor that vanishes is a hole, which is
+        //     the same call the dark iron ladder makes.
+        //   * dungeonblocks:dungeon_lantern -- dungeons2:hanging_sweep takes it when the chain
+        //     above it goes, and classic_weathering ages no lantern either.
+        //   * dungeonblocks:clay_pot / stone_pot -- ENTITIES, owned by dungeons2:pot.
+        //   * dungeons2:door / pot_marker / pots -- markers, consumed by their own processors.
+        //   * minecraft:stripped_dark_oak_log / stripped_spruce_log -- see the timber note above.
+
+        // ===================================================================================
+        // DARK IRON -- the rust ladder. dungeonblocks cuts three aged stages for the grate and
+        // the heavy trapdoor and for nothing else in the dark iron family, so these two blocks
+        // get a chain and the plate brackets get none: tarnished (a dulled sheen), rusted
+        // (orange bloom), corroded (eaten through and pitted).
+        //
+        // IT NEVER REACHES AIR, unlike the chain rules beside it. Both blocks are things the
+        // player stands on or opens, so a missing one is a hole to fall through rather than a
+        // bit of decay to walk past. Corroded is the end of the ladder on purpose.
+        //
+        // Composed over the three stages: tarnished on ~40% of grates, rusted on ~14%, corroded
+        // on ~3.5%. Retune the first number to move the whole ladder.
+        // ===================================================================================
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_grate",
+          "output_blocks": [
+            { "block": "dungeonblocks:tarnished_dark_iron_grate", "probability": 0.4 },
+            { "block": "dungeonblocks:rusted_dark_iron_grate", "probability": 0.35 },
+            { "block": "dungeonblocks:corroded_dark_iron_grate", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dark_iron_heavy_trapdoor",
+          "output_blocks": [
+            { "block": "dungeonblocks:tarnished_dark_iron_heavy_trapdoor", "probability": 0.4 },
+            { "block": "dungeonblocks:rusted_dark_iron_heavy_trapdoor", "probability": 0.35 },
+            { "block": "dungeonblocks:corroded_dark_iron_heavy_trapdoor", "probability": 0.25 }
+          ]
+        },
+
+        // Chains: ageing these and carrying dungeons2:hanging_sweep are one feature.
+        {
+          "surface": "any",
+          "block": "minecraft:chain",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:swinging_chain",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        }
+      ]
+    },
+
+    // ------------------------------------------------------------------------------
+    // Everything below is classic_weathering.json's, unchanged. See the header.
+    // ------------------------------------------------------------------------------
+    {
+      "processor_type": "dungeons2:decoration",
+      "cobwebs": {
+        "probability": 0.02,
+        "blocks": [
+          "minecraft:cobweb"
+        ]
+      },
+      "corner_cobwebs": {
+        "probability": 0.06,
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+      "wall_growth": {
+        "probability": 0.04,
+        "bonus": 0.22,
+        "max": 0.55,
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+      "dirt": {
+        "tags": [
+          "minecraft:dirt"
+        ]
+      },
+      "floor_growth": {
+        "probability": 0.35,
+        "blocks": [
+          {
+            "block": "minecraft:brown_mushroom",
+            "weight": 10
+          },
+          {
+            "block": "minecraft:red_mushroom",
+            "weight": 10
+          },
+          {
+            "block": "minecraft:moss_carpet",
+            "weight": 10
+          },
+          {
+            "block": "minecraft:grass",
+            "weight": 10
+          },
+          {
+            "block": "minecraft:fern",
+            "weight": 10
+          },
+          {
+            "block": "minecraft:dead_bush",
+            "weight": 10
+          },
+          {
+            "entity": "dungeons2:shrieker",
+            "weight": 1
+          },
+          {
+            "entity": "dungeons2:violet_fungus",
+            "weight": 1
+          }
+        ]
+      },
+      "hanging_growth": {
+        "probability": 0.3,
+        "blocks": [
+          "minecraft:hanging_roots"
+        ]
+      },
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      },
+      "underwater_growth": {
+        "probability": 0.15,
+        "blocks": [
+          "minecraft:seagrass"
+        ]
+      }
+    },
+
+    {
+      "processor_type": "dungeons2:pot"
+    },
+
+    // The ONE exception to "verbatim". The motif's blend leans shallow because most
+    // floors of most dungeons are, and the mud band leans further that way still (9:1) for
+    // the same reason at floor 0. This is the other end of the same axis: floorIndex 4 is
+    // only ever reached by a LARGE dungeon, so a chest here is the deepest a player can
+    // get and the blend says so.
+    {
+      "processor_type": "dungeons2:chest",
+      "loot_tables": [
+        {
+          "loot_table": "dungeons2:chests/classic_shallow",
+          "weight": 1
+        },
+        {
+          "loot_table": "dungeons2:chests/classic_deep",
+          "weight": 6
+        },
+        {
+          "loot_table": "dungeons2:chests/classic_hoard",
+          "weight": 3
+        }
+      ]
+    },
+
+    {
+      "processor_type": "dungeons2:decoration_sweep",
+      "growth": {
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+      "webs": {
+        "blocks": [
+          "minecraft:cobweb"
+        ]
+      },
+      "corner_webs": {
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+      "dirt": {
+        "tags": [
+          "minecraft:dirt"
+        ]
+      },
+      "floor_growth": {
+        "blocks": [
+          "minecraft:brown_mushroom",
+          "minecraft:red_mushroom",
+          "minecraft:moss_carpet",
+          "minecraft:grass",
+          "minecraft:fern",
+          "minecraft:dead_bush"
+        ]
+      },
+      "hanging_growth": {
+        "blocks": [
+          "minecraft:hanging_roots"
+        ]
+      },
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+    },
+
+    {
+      "processor_type": "dungeons2:hanging_sweep",
+      "hanging": {
+        "blocks": [
+          "minecraft:chain",
+          "dungeonblocks:swinging_chain",
+          "dungeonblocks:dungeon_lantern",
+          "minecraft:lantern",
+          "minecraft:soul_lantern"
+        ]
+      }
+    },
+
+    {
+      "processor_type": "dungeons2:spawner",
+      "mob_set": "dungeons2:classic_vermin",
+      "marker_block": "dungeons2:spawner_marker",
+      "proximity": 12.0
+    }
+  ]
+}

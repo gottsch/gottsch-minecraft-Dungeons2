@@ -1,0 +1,168 @@
+{
+  // The "name" field is INERT in 1.20.1 -- the pool is addressed by its PATH, which is what
+  // DungeonStructure#roomStartPool builds: rooms/<motif>/<stratum>/normal. Kept only because
+  // every other pool in this pack carries it.
+  "name": "dungeons2:rooms/classic/deepslate/normal",
+  // minecraft:empty, like every other room pool here. A jigsaw that finds nothing to place
+  // self-converts through its final_state rather than falling back to another pool.
+  "fallback": "minecraft:empty",
+  // Tried AHEAD of rooms/classic/normal for any floor the deepslate band covers, and silently
+  // skipped if this file is absent -- see DungeonStructure#chooseRoomStartPool. Note the tier
+  // is selected on containsKey, so an EMPTY elements list here would win the tier and then
+  // place nothing: a silent structural break. Do not leave this file with no entries.
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/5x5_junction_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/5x5_junction_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/5x5_junction_3",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/5x5_junction_4",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_hall_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_0",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_3",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_4",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_5",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/7x7_junction_6",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/9x9_junction_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/5x11_hallway_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/5x11_hallway_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/5x17_hallway_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/5x17_hallway_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}
