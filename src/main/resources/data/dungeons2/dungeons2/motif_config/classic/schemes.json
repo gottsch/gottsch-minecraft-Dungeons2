@@ -4,6 +4,16 @@
       "name": "plain",
       "weight": 4,
 
+      // Mostly bare -- this is the plain room -- but a worn path is wear, not decoration.
+      "floor": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 2,
+          "type": "dungeons2:path",
+          "config": { "path_block": "$rubble", "width": 3, "routing": "auto" }
+        }
+      ],
+
       "props": [
         {
           "weight": 3,
@@ -47,8 +57,8 @@
       "weight": 12,
       "min_floor_index": 1,
 
-      // Hazard pits live here and not on hall: a pit and a platform cannot share a scheme (the pit
-      // emits first and the dais is dropped silently), and hall carries platforms.
+      // Hazard pits and grated sumps live here and not on hall: a pit and a platform cannot share a
+      // scheme (the pit emits first and the dais is dropped silently), and hall carries platforms.
       "pit": [
         { "weight": 5, "none": true },
         {
@@ -63,6 +73,30 @@
             "spike_properties": { "vertical_direction": "up" },
             "spike_probability": 0.4,
             "rim_block": "$inlay"
+          }
+        },
+        // Grated sumps: dry, flooded, molten. Chamber floors start at index 1, so these never reach
+        // the mud band (floor 0), whose timber shoring and dressing are not meant for iron.
+        {
+          "weight": 1,
+          "min_size": 7,
+          "type": "dungeons2:grate",
+          "config": { "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 2 }
+        },
+        {
+          "weight": 1,
+          "min_size": 7,
+          "type": "dungeons2:grate",
+          "config": {
+            "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 3, "liquid": "water"
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 7,
+          "type": "dungeons2:grate",
+          "config": {
+            "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 2, "liquid": "lava"
           }
         }
       ],
@@ -140,6 +174,73 @@
           ]
         },
         {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 1 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent_alt", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 1 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:checkerboard", "config": { "block": "$accent", "inset": 2 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:checkerboard", "config": { "block": "$accent_alt", "inset": 2 } }
+          ]
+        },
+        // The floor border's large-brick frame, on the ceiling.
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            }
+          ]
+        },
+        {
           "weight": 3,
           "min_height": 7,
           "patterns": [
@@ -182,7 +283,7 @@
       ],
 
       "floor": [
-        { "weight": 5, "none": true },
+        { "weight": 3, "none": true },
         {
           "weight": 3,
           "type": "dungeons2:path",
@@ -200,16 +301,28 @@
           }
         },
         {
-          "weight": 2,
+          "weight": 1,
           "min_size": 9,
           "type": "dungeons2:cross",
-          "config": { "thickness": 1, "block": "$inlay" }
+          "config": { "thickness": 1, "block": "$accent" }
         },
         {
-          "weight": 2,
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:cross",
+          "config": { "thickness": 1, "block": "$accent_alt" }
+        },
+        {
+          "weight": 1,
           "min_size": 11,
           "type": "dungeons2:diagonal",
-          "config": { "primary_block": "$base", "secondary_block": "$inlay", "width": 3 }
+          "config": { "primary_block": "$base", "secondary_block": "$accent", "width": 3 }
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "type": "dungeons2:diagonal",
+          "config": { "primary_block": "$base", "secondary_block": "$accent_alt", "width": 3 }
         },
         {
           "weight": 3,
@@ -223,10 +336,16 @@
           }
         },
         {
-          "weight": 2,
+          "weight": 1,
           "min_size": 9,
           "type": "dungeons2:checkerboard",
-          "config": { "primary_block": "$base", "secondary_block": "$inlay" }
+          "config": { "primary_block": "$base", "secondary_block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent_alt" }
         }
       ],
 
@@ -571,6 +690,80 @@
           ]
         },
         {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            { "type": "dungeons2:spokes", "config": { "block": "$accent", "spokes": 8 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            { "type": "dungeons2:spokes", "config": { "block": "$accent_alt", "spokes": 8 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            {
+              "type": "dungeons2:diagonal",
+              "config": { "block": "$accent", "width": 2, "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            {
+              "type": "dungeons2:diagonal",
+              "config": { "block": "$accent_alt", "width": 2, "inset": 2 }
+            }
+          ]
+        },
+        // Echoes the hall's framed floor: a large-brick frame round an inlaid panel.
+        {
+          "weight": 3,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 2,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:field", "config": { "block": "$inlay", "inset": 3 } }
+          ]
+        },
+        {
           "weight": 2,
           "min_size": 11,
           "patterns": [
@@ -588,7 +781,7 @@
       ],
 
       "floor": [
-        { "weight": 4, "none": true },
+        { "weight": 2, "none": true },
         {
           "weight": 3,
           "type": "dungeons2:path",
@@ -614,15 +807,26 @@
           }
         },
         {
-          "weight": 2,
+          "weight": 1,
           "min_size": 11,
           "type": "dungeons2:chevron",
-          "config": { "block": "$ornament", "spacing": 4 }
+          "config": { "block": "$accent", "spacing": 4 }
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "type": "dungeons2:chevron",
+          "config": { "block": "$accent_alt", "spacing": 4 }
         },
         {
           "weight": 2,
           "type": "dungeons2:spokes",
-          "config": { "spokes": 4, "block": "$inlay" }
+          "config": { "spokes": 8, "block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 8, "block": "$accent_alt" }
         },
         {
           "weight": 3,
@@ -639,6 +843,16 @@
           "weight": 2,
           "type": "dungeons2:checkerboard",
           "config": { "primary_block": "$base", "secondary_block": "$inlay" }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent_alt" }
         }
       ],
 
@@ -901,6 +1115,39 @@
       "ceiling": [
         { "weight": 4, "none": true },
         {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent_alt", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 0,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
           "weight": 3,
           "min_size": 9,
           "patterns": [
@@ -925,7 +1172,7 @@
       ],
 
       "floor": [
-        { "weight": 3, "none": true },
+        { "weight": 2, "none": true },
         {
           "weight": 2,
           "type": "dungeons2:border",
@@ -937,10 +1184,16 @@
           }
         },
         {
-          "weight": 2,
+          "weight": 1,
           "min_size": 9,
           "type": "dungeons2:spokes",
-          "config": { "spokes": 4, "block": "$inlay" }
+          "config": { "spokes": 4, "block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 4, "block": "$accent_alt" }
         }
       ],
 

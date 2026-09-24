@@ -17,11 +17,15 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.RandomSource;
 
 import java.util.List;
+import java.util.OptionalInt;
 
 /**
  * One depth band of the motif's {@code mob_sets_by_floor_index} table: the mob sets a dungeon's spawners
@@ -56,15 +60,79 @@ import java.util.List;
  * separate authoring decisions. A scheme that states its own {@code min_mobs}/{@code max_mobs} is an
  * exact override and takes no bonus &mdash; see {@link MobRange}.</p>
  *
+ * <h2>...and how HARD they are: {@code difficulty}</h2>
+ * <p>The Enemy Echelons difficulty a mob spawned on these floors is set to, read only when the EE
+ * API is installed. Either a number, or a weighted list
+ * {@code [{"difficulty": 2, "weight": 3}, {"difficulty": 3, "weight": 1}]} drawn per mob. What a
+ * step is worth is the motif's {@code echelon} block, not the band's &mdash; see
+ * {@link EchelonConfig}.</p>
+ *
+ * <p><strong>Absent means "Dungeons2 has no opinion", not "difficulty 0".</strong> A mob from a
+ * band with no {@code difficulty} is left alone, so if Stronger Mobs Below is installed it scales
+ * that mob by world Y exactly as it would any other. Writing {@code 0} is the way to say "this depth
+ * is unscaled, and SMB should keep its hands off too".</p>
+ *
+ * <p>Independent of the other two axes, for the same reason they are independent of each other: a
+ * scheme that names its own mob sets still gets its floor's difficulty. It is resolved at SPAWN time
+ * from the spawner's motif and floor, not baked at generation, so a datapack edit reaches spawners
+ * already in the world.</p>
+ *
  * @author Mark Gottschling on Aug 17, 2026
  */
 public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets,
-                         int bonusMobs) {
+                         int bonusMobs, List<DifficultyEntry> difficulty) {
+
+    /** The shape before {@code difficulty}: a band with no opinion on how hard its mobs are. */
+    public MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets, int bonusMobs) {
+        this(minFloorIndex, mobSets, bonusMobs, List.of());
+    }
 
     /** A band that changes what spawns, not how many. */
     public MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobSets) {
         this(minFloorIndex, mobSets, 0);
     }
+
+    /**
+     * One weighted Enemy Echelons difficulty. Min 0 on the difficulty because EE treats 0 as "set,
+     * and unscaled" and -1 as "not set yet", and an author has no business writing the latter.
+     */
+    public record DifficultyEntry(int difficulty, int weight) {
+        public static final Codec<DifficultyEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.intRange(0, Integer.MAX_VALUE).fieldOf("difficulty").forGetter(DifficultyEntry::difficulty),
+                Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
+                        .forGetter(DifficultyEntry::weight)
+        ).apply(instance, DifficultyEntry::new)));
+    }
+
+    /**
+     * A plain number or a weighted list. Written by hand rather than as {@code Codec.either} for
+     * {@code SlotOptions.field}'s reason: {@code either} reports both branches' failures glued
+     * together, so a typo inside a list entry would come back as a complaint about it not being a
+     * number either.
+     */
+    static final Codec<List<DifficultyEntry>> DIFFICULTY_CODEC = new Codec<>() {
+        private final Codec<List<DifficultyEntry>> list = DifficultyEntry.CODEC.listOf();
+
+        @Override
+        public <U> DataResult<Pair<List<DifficultyEntry>, U>> decode(DynamicOps<U> ops, U input) {
+            if (ops.getStream(input).result().isPresent()) {
+                return list.decode(ops, input).flatMap(pair -> pair.getFirst().isEmpty()
+                        ? DataResult.error(() -> "'difficulty' is an empty list; omit the key to leave"
+                                + " these floors' mobs to Stronger Mobs Below, or write 0 for unscaled")
+                        : DataResult.success(pair));
+            }
+            return Codec.intRange(0, Integer.MAX_VALUE).decode(ops, input)
+                    .map(pair -> Pair.of(List.of(new DifficultyEntry(pair.getFirst(), 1)), pair.getSecond()));
+        }
+
+        @Override
+        public <U> DataResult<U> encode(List<DifficultyEntry> input, DynamicOps<U> ops, U prefix) {
+            if (input.size() == 1 && input.get(0).weight() == 1) {
+                return ops.mergeToPrimitive(prefix, ops.createInt(input.get(0).difficulty()));
+            }
+            return list.encode(input, ops, prefix);
+        }
+    };
 
     // Codecs.closed -- see RoomScheme.CODEC.
     public static final Codec<MobSetBand> CODEC = Codecs.closed(RecordCodecBuilder.<MobSetBand>mapCodec(instance -> instance.group(
@@ -73,7 +141,9 @@ public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobS
             SpawnerConfig.MobSetEntry.CODEC.listOf().fieldOf("mob_sets").forGetter(MobSetBand::mobSets),
             // Min 0, not 1: a bonus of 0 is the ordinary "this depth adds nothing" band.
             Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "bonus_mobs", 0)
-                    .forGetter(MobSetBand::bonusMobs)
+                    .forGetter(MobSetBand::bonusMobs),
+            Codecs.strictOptionalFieldOf(DIFFICULTY_CODEC, "difficulty", List.of())
+                    .forGetter(MobSetBand::difficulty)
     ).apply(instance, MobSetBand::new))).flatXmap(MobSetBand::validateBand, MobSetBand::validateBand);
 
     private static DataResult<MobSetBand> validateBand(MobSetBand band) {
@@ -83,6 +153,25 @@ public record MobSetBand(int minFloorIndex, List<SpawnerConfig.MobSetEntry> mobS
                     + " block that spawns nothing");
         }
         return DataResult.success(band);
+    }
+
+    /**
+     * This band's Enemy Echelons difficulty for one mob, or empty when the band declares none.
+     * Drawn per mob, so a weighted band gives a mixed pack rather than a uniform one.
+     */
+    public OptionalInt drawDifficulty(RandomSource random) {
+        if (difficulty.isEmpty()) {
+            return OptionalInt.empty();
+        }
+        int total = difficulty.stream().mapToInt(DifficultyEntry::weight).sum();
+        int roll = random.nextInt(total);
+        for (DifficultyEntry entry : difficulty) {
+            roll -= entry.weight();
+            if (roll < 0) {
+                return OptionalInt.of(entry.difficulty());
+            }
+        }
+        return OptionalInt.of(difficulty.get(difficulty.size() - 1).difficulty());
     }
 
     /**

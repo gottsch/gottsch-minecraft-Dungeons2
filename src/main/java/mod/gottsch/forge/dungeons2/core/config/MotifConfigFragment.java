@@ -64,7 +64,21 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                                   Optional<List<ChestLootBand>> chestLootByFloorIndex,
                                   Map<String, TemplateLimit> templateLimits,
                                   Optional<List<Stratum>> strataByFloorIndex,
-                                  Map<String, String> palette) {
+                                  Map<String, String> palette,
+                                  Optional<EchelonConfig> echelon) {
+
+    /** The shape before {@code echelon}. */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                               Optional<List<ChestLootBand>> chestLootByFloorIndex,
+                               Map<String, TemplateLimit> templateLimits,
+                               Optional<List<Stratum>> strataByFloorIndex,
+                               Map<String, String> palette) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, Optional.empty());
+    }
 
     /** The shape before {@code palette}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
@@ -157,7 +171,12 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             // pack's `shaft`. This is what lets an addon retune one material for a whole motif in a
             // file of its own.
             Codecs.strictOptionalFieldOf(Codecs.PALETTE, "palette", Map.of())
-                    .forGetter(MotifConfigFragment::palette)
+                    .forGetter(MotifConfigFragment::palette),
+            // Enemy Echelons factors. Replaced WHOLESALE, like an element section: the factors are
+            // one tuning of what a difficulty step is worth, and hp from one pack with damage from
+            // another is a balance nobody authored.
+            Codecs.strictOptionalFieldOf(EchelonConfig.CODEC, "echelon")
+                    .forGetter(MotifConfigFragment::echelon)
     ).apply(instance, MotifConfigFragment::new));
 
     /**
@@ -210,6 +229,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         Map<String, TemplateLimit> templateLimits = new LinkedHashMap<>();
         Map<String, RoomScheme> schemes = new LinkedHashMap<>();
         Map<String, String> palette = new LinkedHashMap<>();
+        Optional<EchelonConfig> echelon = Optional.empty();
 
         for (MotifConfigFragment fragment : fragments) {
             wall = fragment.wall().orElse(wall);
@@ -220,6 +240,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             mobSets = fragment.mobSetsByFloorIndex().orElse(mobSets);
             chestLoot = fragment.chestLootByFloorIndex().orElse(chestLoot);
             strata = fragment.strataByFloorIndex().orElse(strata);
+            echelon = fragment.echelon().isPresent() ? fragment.echelon() : echelon;
             // put, not putAll-into-a-fresh-map: a later fragment replaces an entry for the same
             // template and leaves every other pack's entries alone.
             templateLimits.putAll(fragment.templateLimits());
@@ -244,7 +265,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         MotifConfig resolved = new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
                 Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems),
-                Map.copyOf(palette));
+                Map.copyOf(palette), echelon);
         checkRoles(resolved, problem -> {
             if (reported.add(problem)) {
                 problems.accept(problem);

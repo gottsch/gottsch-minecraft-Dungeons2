@@ -272,6 +272,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // can be more crowded as well as nastier. See SpawnerConfig#resolvedAgainst.
         scheme.spawnersFor(width, depth, height).ifPresent(spawners ->
                 taken.addAll(RoomSpawnerGenerator.placeSpawners(room, floorY, floorIndex,
+                        motif == null ? null : motif.getValue(),
                         spawners.resolvedAgainst(motifConfig.bandFor(floorIndex)),
                         taken, random, blocks)));
 

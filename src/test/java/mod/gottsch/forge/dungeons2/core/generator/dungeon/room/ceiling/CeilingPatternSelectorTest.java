@@ -89,7 +89,7 @@ class CeilingPatternSelectorTest {
     /** Flush (projection 0), so {@code plan()} is the layer under test rather than an empty one. */
     private static SurfacePatternEntry ring(SurfaceOrient orient, Map<String, String> properties) {
         return new SurfacePatternEntry(new BorderCeilingPattern(
-                "minecraft:stone_brick_stairs", Optional.empty(), 0, orient, properties));
+                "minecraft:stone_brick_stairs", Optional.empty(), Optional.empty(), 0, orient, properties));
     }
 
     private static SurfacePlan planOf(SurfacePatternEntry pattern, int uSize, int vSize) {

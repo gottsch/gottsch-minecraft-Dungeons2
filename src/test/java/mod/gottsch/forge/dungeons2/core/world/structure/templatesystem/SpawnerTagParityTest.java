@@ -76,7 +76,7 @@ class SpawnerTagParityTest {
     private static BlockEntityData proceduralData() {
         SpawnerConfig config = new SpawnerConfig(1, 1, 1, 3, 8.0D,
                 List.of(new SpawnerConfig.MobSetEntry(MOB_SET, 1)));
-        return RoomSpawnerGenerator.spawnerData(config, MOB_SET, FLOOR_INDEX);
+        return RoomSpawnerGenerator.spawnerData(config, MOB_SET, FLOOR_INDEX, "classic");
     }
 
     @Test
@@ -91,8 +91,9 @@ class SpawnerTagParityTest {
         authoredFields.remove("id"); // carried by BlockEntityData's type, not its data map
 
         Set<String> proceduralFields = new java.util.TreeSet<>(proceduralData().getData().keySet());
-        // floorIndex is the one deliberate asymmetry -- see theAuthoredPathCannotKnowItsFloor.
+        // floorIndex and motif are the deliberate asymmetry -- see theAuthoredPathCannotKnowItsFloor.
         proceduralFields.remove("floorIndex");
+        proceduralFields.remove("motif");
 
         assertEquals(authoredFields, proceduralFields,
                 "the two spawner sources have drifted apart on which fields they set");
@@ -116,14 +117,16 @@ class SpawnerTagParityTest {
      * planner is not involved in placing it. So an authored template's spawner carries no floor
      * index and reads {@code DungeonSpawnerBlockEntity.UNKNOWN_FLOOR}.
      *
-     * <p><strong>Consequence worth knowing before the SMB integration lands:</strong> spawners in
-     * authored rooms will not scale with depth on their own. Either the marker gains an explicit
-     * {@code floor} field an author sets by hand, or the integration treats unknown as "use the
-     * player's Y", which is SMB's own default behaviour anyway.</p>
+     * <p><strong>Consequence for Enemy Echelons scaling:</strong> spawners in authored rooms do not
+     * scale with depth. {@code EchelonSpawnEvent} leaves their mobs alone, so with Stronger Mobs
+     * Below installed they scale by world Y like any other mob. The procedural side carries
+     * {@code motif} beside {@code floorIndex} for the same scaling, and is excluded for the same
+     * reason.</p>
      */
     @Test
     void theAuthoredPathCannotKnowItsFloor() {
         assertEquals(FLOOR_INDEX, Integer.parseInt(proceduralData().getData().get("floorIndex")));
+        assertEquals("classic", proceduralData().getData().get("motif"));
         org.junit.jupiter.api.Assertions.assertFalse(authoredTag().contains("floorIndex"),
                 "the marker processor grew a floorIndex -- if that is deliberate, this test and the"
                         + " field-parity one above both need revisiting");

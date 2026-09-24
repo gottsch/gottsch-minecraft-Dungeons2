@@ -105,3 +105,15 @@ mandatory=false
 versionRange="[4.1.0,5.0.0)"
 ordering="AFTER"
 side="BOTH"
+
+# Enemy Echelons API (eechelonsapi) - OPTIONAL. Mobs from this mod's spawners are scaled by DUNGEON
+# DEPTH (the motif's `echelon` block x the depth band's `difficulty`) through Dungeons2's OWN echelon
+# registry, so it works with EE alone and with or without Stronger Mobs Below. Nothing is called at
+# worldgen -- only as a mob spawns -- so no ordering is needed. compileOnly; every call site is behind
+# ModList.get().isLoaded("eechelonsapi"), in EchelonsIntegration.
+[[dependencies.dungeons2]]
+modId="eechelonsapi"
+mandatory=false
+versionRange="[1.0.1,2.0.0)"
+ordering="NONE"
+side="BOTH"

@@ -6,7 +6,9 @@
         "shaft": "minecraft:spruce_log", "footing": "dungeonblocks:square_stone_brick",
         "stair": "minecraft:mud_brick_stairs", "corbel": "dungeonblocks:stone_corbel_block",
         "wall_capital_left": "dungeonblocks:left_large_mud_brick",
-        "wall_capital_right": "dungeonblocks:right_large_mud_brick"
+        "wall_capital_right": "dungeonblocks:right_large_mud_brick",
+        // Lighter than the mud bricks; base.json's deepslate would read as a stranger here.
+        "accent": "minecraft:packed_mud"
       },
       "wall": {
         "wall": "minecraft:mud_bricks",
@@ -907,7 +909,15 @@
         "pilaster": "dungeonblocks:deepslate_bricks_fluted_block",
         "rubble": "minecraft:cobbled_deepslate",
         "rubble_stair": "minecraft:cobbled_deepslate_stairs",
-        "door_block": "dungeonblocks:dark_oak_dungeon_door"
+        "door_block": "dungeonblocks:dark_oak_dungeon_door",
+        // Calcite was tried first and read stark white; tuff after it had no mossy stage. Basalt
+        // ages to dungeonblocks' mossy_polished_basalt through the rule already in this band's
+        // weathering. Its default state is axis=y, so the swirled end faces up on a floor and
+        // down on a ceiling.
+        "accent": "minecraft:polished_basalt",
+        // Tuff for the broad patterns (checkerboards, stripes): mid grey, where basalt is close
+        // enough to the deepslate that a whole checkerboard of it barely shows.
+        "accent_alt": "minecraft:tuff"
       },
 
       // Same shape as base.json's, with the one hardcoded aggregate swapped. Restated rather

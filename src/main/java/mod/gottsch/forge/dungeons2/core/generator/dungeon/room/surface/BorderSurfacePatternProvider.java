@@ -61,6 +61,7 @@ public class BorderSurfacePatternProvider implements ISurfacePatternProvider {
 
     private final int inset;
     private final BlockState edge;
+    private final BlockState alternate;
     private final BlockState corner;
     private final SurfaceOrient orient;
     private final Direction uDirection;
@@ -87,8 +88,22 @@ public class BorderSurfacePatternProvider implements ISurfacePatternProvider {
     public BorderSurfacePatternProvider(int inset, BlockState edge, BlockState corner,
                                         SurfaceOrient orient,
                                         Direction uDirection, Direction vDirection) {
+        this(inset, edge, edge, corner, orient, uDirection, vDirection);
+    }
+
+    /**
+     * @param alternate every other cell of each side, starting with the SECOND cell after the
+     *                  low corner &mdash; the same left/right alternation {@code
+     *                  FloorBorderPatternProvider} draws, so a left/right block pair (a large brick
+     *                  split in two) joins up the same way on a ceiling as on a floor. Pass
+     *                  {@code edge} for no alternation.
+     */
+    public BorderSurfacePatternProvider(int inset, BlockState edge, BlockState alternate,
+                                        BlockState corner, SurfaceOrient orient,
+                                        Direction uDirection, Direction vDirection) {
         this.inset = inset;
         this.edge = Objects.requireNonNull(edge, "edge");
+        this.alternate = Objects.requireNonNull(alternate, "alternate");
         this.corner = Objects.requireNonNull(corner, "corner");
         this.orient = Objects.requireNonNull(orient, "orient");
         this.uDirection = Objects.requireNonNull(uDirection, "uDirection");
@@ -116,7 +131,9 @@ public class BorderSurfacePatternProvider implements ISurfacePatternProvider {
                 if (!onU && !onV) {
                     continue;
                 }
-                BlockState state = onU && onV ? corner : edge;
+                // Index along the side from the cell after its low corner, as the floor ring does.
+                int along = onU ? v - vLo - 1 : u - uLo - 1;
+                BlockState state = onU && onV ? corner : (along % 2 == 0 ? edge : alternate);
                 plan.set(u, v, oriented(state, outwardFrom(onULo, onUHi, onVLo, onVHi)));
             }
         }

@@ -22,10 +22,12 @@ import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.event.EchelonSpawnEvent;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
 import mod.gottsch.forge.gottschcore.mobset.WeightedMob;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
@@ -88,6 +90,10 @@ public final class RoomSpawnerGenerator {
     static final String MOB_SET_NAME = "mobSetName";
     /** Dungeons2's own field, persisted by {@code DungeonSpawnerBlockEntity}. */
     static final String FLOOR_INDEX = "floorIndex";
+    /** Dungeons2's own field too, persisted beside it. */
+    static final String MOTIF = "motif";
+    /** Forge's persistent-data key on any block entity; how a vanilla cage carries our origin. */
+    static final String FORGE_DATA = "ForgeData";
     static final String MIN_MOBS = "minMobs";
     static final String MAX_MOBS = "maxMobs";
     static final String PROXIMITY = "proximity";
@@ -105,6 +111,17 @@ public final class RoomSpawnerGenerator {
      * happily, but the mobs would then materialise inside the pot and smash it on the way out.</p>
      */
     public static Set<Coords2D> placeSpawners(RoomData room, int floorY, int floorIndex,
+                                              SpawnerConfig config, Set<Coords2D> occupied,
+                                              RandomSource random, List<BlockPlacement> out) {
+        return placeSpawners(room, floorY, floorIndex, null, config, occupied, random, out);
+    }
+
+    /**
+     * As above, stamping each spawner with the dungeon's {@code motif} as well, which Enemy Echelons
+     * scaling needs to find the depth band at spawn time. A null motif writes no stamp and those
+     * spawners' mobs are simply not scaled by Dungeons2.
+     */
+    public static Set<Coords2D> placeSpawners(RoomData room, int floorY, int floorIndex, String motif,
                                               SpawnerConfig config, Set<Coords2D> occupied,
                                               RandomSource random, List<BlockPlacement> out) {
         // declaredMobSets, not the raw Optional: by this point the caller has resolved the slot
@@ -134,7 +151,7 @@ public final class RoomSpawnerGenerator {
             // block and deliberately does read as one.
             BlockPlacement placement;
             if (config.kind() == SpawnerConfig.Kind.VANILLA) {
-                BlockEntityData vanilla = vanillaSpawnerData(config, mobSet, random);
+                BlockEntityData vanilla = vanillaSpawnerData(config, mobSet, random, motif, floorIndex);
                 if (vanilla == null) {
                     // The set could not be resolved to real mobs, so there is nothing to put in the
                     // cage. Skip the cell rather than place an empty spawner: vanilla's own default
@@ -147,7 +164,7 @@ public final class RoomSpawnerGenerator {
                 placement.setBlockEntityNbt(vanilla);
             } else {
                 placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(), SPAWNER_BLOCK);
-                placement.setBlockEntityNbt(spawnerData(config, mobSet, floorIndex));
+                placement.setBlockEntityNbt(spawnerData(config, mobSet, floorIndex, motif));
             }
             out.add(placement);
             used.add(cell);
@@ -171,16 +188,25 @@ public final class RoomSpawnerGenerator {
      * has the type the reader names.</p>
      */
     public static BlockEntityData spawnerData(SpawnerConfig config, String mobSet, int floorIndex) {
+        return spawnerData(config, mobSet, floorIndex, null);
+    }
+
+    /** As above, plus the motif stamp when there is one. */
+    public static BlockEntityData spawnerData(SpawnerConfig config, String mobSet, int floorIndex,
+                                              String motif) {
         MobRange range = config.mobRange(ResourceLocation.tryParse(mobSet));
-        return new BlockEntityData(SPAWNER_BLOCK)
+        BlockEntityData data = new BlockEntityData(SPAWNER_BLOCK)
                 .with(MOB_SET_NAME, mobSet)
                 .with(MIN_MOBS, String.valueOf(range.min()))
                 .with(MAX_MOBS, String.valueOf(range.max()))
                 .with(PROXIMITY, String.valueOf(config.requiredProximity()))
-                // Stamped at generation and persisted, though nothing reads it yet -- see
-                // DungeonSpawnerBlockEntity for what it is for and why it needed a field rather
-                // than just a tag key.
+                // Stamped at generation and persisted -- see DungeonSpawnerBlockEntity for what it
+                // is for and why it needed a field rather than just a tag key.
                 .with(FLOOR_INDEX, String.valueOf(floorIndex));
+        if (motif != null) {
+            data.with(MOTIF, motif);
+        }
+        return data;
     }
 
     /**
@@ -204,6 +230,19 @@ public final class RoomSpawnerGenerator {
      */
     static BlockEntityData vanillaSpawnerData(SpawnerConfig config, String mobSetName,
                                               RandomSource random) {
+        return vanillaSpawnerData(config, mobSetName, random, null, -1);
+    }
+
+    /**
+     * As above, plus the cage's origin in its Forge persistent data when {@code motif} is known.
+     *
+     * <p><strong>Persistent data, not the spawn entry.</strong> The obvious place &mdash; the
+     * entity tag in {@code SpawnData} &mdash; would make vanilla skip {@code finalizeSpawn} for
+     * every mob the cage releases (it only finalizes an entry that is {@code id} alone), so a
+     * skeleton would come out unarmed. {@code EchelonSpawnEvent} reads it off the cage instead.</p>
+     */
+    static BlockEntityData vanillaSpawnerData(SpawnerConfig config, String mobSetName,
+                                              RandomSource random, String motif, int floorIndex) {
         Optional<ResourceLocation> id = Optional.ofNullable(ResourceLocation.tryParse(mobSetName));
         if (id.isEmpty()) {
             return null;
@@ -227,6 +266,11 @@ public final class RoomSpawnerGenerator {
                 .withNbt(VanillaSpawnerNbt.SPAWN_DATA, VanillaSpawnerNbt.spawnData(shown))
                 .withNbt(VanillaSpawnerNbt.SPAWN_POTENTIALS, VanillaSpawnerNbt.spawnPotentials(mobs));
         VanillaSpawnerNbt.tuning(spawnCount).forEach(data::with);
+        if (motif != null && floorIndex >= 0) {
+            CompoundTag forgeData = new CompoundTag();
+            forgeData.put(EchelonSpawnEvent.ORIGIN, EchelonSpawnEvent.originTag(motif, floorIndex));
+            data.withNbt(FORGE_DATA, forgeData.toString());
+        }
         return data;
     }
 

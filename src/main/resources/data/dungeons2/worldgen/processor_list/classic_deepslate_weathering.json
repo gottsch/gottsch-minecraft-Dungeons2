@@ -177,6 +177,18 @@
         },
 
         // ---------------------------------------------------------------------------
+        // TUFF, this band's $accent_alt (2026-09-23). One rung of moss, dungeonblocks'
+        // mossy_tuff, and no air: it is laid in floors, where a hole is a pit.
+        // ---------------------------------------------------------------------------
+        {
+          "surface": "any",
+          "block": "minecraft:tuff",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_tuff", "probability": 0.3 }
+          ]
+        },
+
+        // ---------------------------------------------------------------------------
         // POLISHED BASALT. One rung of moss, then a hole -- dungeonblocks ships
         // mossy_polished_basalt (2026-09-18) and nothing between it and air, so this is the
         // whole chain. Basalt is a pillar, and AgingProcessor carries `axis` across with

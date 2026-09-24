@@ -135,6 +135,16 @@ dependencies {
     // suite has no ServerLevel and never places a marker -- but it does prove no test was leaning
     // on T2 being resolvable.
     //runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
+
+    // Enemy Echelons API - OPTIONAL soft dependency, same shape as Treasure2 above and for the same
+    // reason: every EE reference lives in EchelonsIntegration's nested Delegate, reached only once
+    // ModList says `eechelonsapi` is loaded. Deliberately NOT Stronger Mobs Below -- SMB is a
+    // content pack with no public API; EE is the API. D2 fills its OWN EchelonRegistry from the
+    // motif config's `echelon` block, so it works with EE alone and never uses SMB's numbers.
+    compileOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.0.1")
+    // DEV ONLY, same trade as the Treasure2 line: uncomment to exercise the present case, and put
+    // it back so the checked-in build tests the absent one.
+    runtimeOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.0.1")
 //    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).

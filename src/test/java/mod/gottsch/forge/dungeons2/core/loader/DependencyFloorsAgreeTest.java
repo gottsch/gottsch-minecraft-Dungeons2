@@ -70,7 +70,8 @@ class DependencyFloorsAgreeTest {
             "gottschcore", "gottschcore",
             "dungeonblocks", "dungeonblocks",
             "monster-manual", "gmm",
-            "treasure2", "treasure2");
+            "treasure2", "treasure2",
+            "eechelonsapi", "eechelonsapi");
 
     /** {@code fg.deobf("gottsch:<artifact>:<spec>")} on a line that is not commented out. */
     private static final Pattern GRADLE_DEP = Pattern.compile(

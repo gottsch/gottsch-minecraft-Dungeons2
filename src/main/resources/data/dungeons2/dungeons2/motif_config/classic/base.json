@@ -32,7 +32,16 @@
     "joist_bracket": "dungeonblocks:spruce_corbel_block",
     // The door a `strip` partition leaves its gap as (#74). Distinct from the `door` SECTION, which
     // is the room's own doorway; this one is a material a wall pattern places.
-    "door_block": "dungeonblocks:spruce_dungeon_door"
+    "door_block": "dungeonblocks:spruce_dungeon_door",
+    // The HIGH-CONTRAST inlay, added 2026-09-23. `inlay`/`inlay_alt` are the same mid-grey as the
+    // stone bricks around them, so a pattern drawn in them only shows up close. `accent` is the
+    // block a pattern uses when it is meant to be seen across the room: a different VALUE, not
+    // just a different texture. A band answers with whatever contrasts with ITS base.
+    "accent": "minecraft:deepslate_bricks",
+    // A second accent, so a band can offer two contrasting blocks: the deepslate band splits its
+    // patterns between basalt and tuff. A role holds one block, so two looks need two roles. Up
+    // here it is the same block as `accent`, and a stone room cannot tell them apart.
+    "accent_alt": "minecraft:deepslate_bricks"
   },
   "wall": {
     "wall": "$base",
@@ -222,7 +231,8 @@
           "mob_set": "dungeons2:classic_lesser_ooze",
           "weight": 2
         }
-      ]
+      ],
+      "difficulty": 0
     },
     {
       "min_floor_index": 1,
@@ -247,7 +257,8 @@
           "mob_set": "dungeons2:classic_vanilla",
           "weight": 1
         }
-      ]
+      ],
+      "difficulty": 1
     },
     {
       "min_floor_index": 2,
@@ -277,7 +288,8 @@
           "weight": 2
         }
       ],
-      "bonus_mobs": 1
+      "bonus_mobs": 1,
+      "difficulty": 1
     },
     {
       "min_floor_index": 3,
@@ -303,7 +315,35 @@
           "weight": 2
         }
       ],
-      "bonus_mobs": 2
+      "bonus_mobs": 2,
+      "difficulty": 2
+    },
+    {
+      "min_floor_index": 5,
+      "mob_sets": [
+        {
+          "mob_set": "dungeons2:classic_elemental_bones",
+          "weight": 6
+        },
+        {
+          "mob_set": "dungeons2:classic_guardians",
+          "weight": 4
+        },
+        {
+          "mob_set": "dungeons2:classic_ooze",
+          "weight": 4
+        },
+        {
+          "mob_set": "dungeons2:classic_undead",
+          "weight": 3
+        },
+        {
+          "mob_set": "dungeons2:classic_warband",
+          "weight": 2
+        }
+      ],
+      "bonus_mobs": 2,
+      "difficulty": 3
     }
   ]
 }

@@ -107,7 +107,7 @@ public class RadialSpokesFloorPatternProvider implements IDungeonFloorGenerator,
      * Pure geometry: {@code true} where a spoke runs. Package-visible for direct unit testing.
      * A non-positive count yields an empty grid (all base).
      */
-    static boolean[][] plan(int width, int depth, int spokes) {
+    public static boolean[][] plan(int width, int depth, int spokes) {
         boolean[][] grid = new boolean[width][depth];
         if (spokes <= 0 || width <= 0 || depth <= 0) {
             return grid;

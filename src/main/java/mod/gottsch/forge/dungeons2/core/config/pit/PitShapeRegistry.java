@@ -69,6 +69,7 @@ public final class PitShapeRegistry {
         register(CentrePitShape.NAME, CentrePitShape.CODEC);
         register(InsetPitShape.NAME, InsetPitShape.CODEC);
         register(HazardPitShape.NAME, HazardPitShape.CODEC);
+        register(GratePitShape.NAME, GratePitShape.CODEC);
     }
 
     static {

@@ -81,7 +81,10 @@ class ManualExamplesTest {
             "platforms", PlatformPatternEntry.CODEC,
             "pots", PotConfig.CODEC,
             "props", PropConfig.CODEC,
-            "partition", PartitionPatternEntry.CODEC);
+            "partition", PartitionPatternEntry.CODEC,
+            // Not a scheme slot but a motif block; unambiguous by name, and its closed schema is
+            // exactly what a manual example drifts out of (the max_* keys EE ignores).
+            "echelon", EchelonConfig.CODEC);
 
     /** The motif-level material sections, which carry a block and an optional {@code pattern}. */
     private static final Map<String, com.mojang.serialization.Codec<?>> SECTIONS = Map.of(

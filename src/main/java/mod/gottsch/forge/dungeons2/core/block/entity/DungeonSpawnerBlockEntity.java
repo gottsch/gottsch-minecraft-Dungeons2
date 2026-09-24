@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.block.entity;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.event.EchelonSpawnEvent;
 import mod.gottsch.forge.gottschcore.block.entity.ProximityMobSetSpawnerBlockEntity;
 import mod.gottsch.forge.gottschcore.mobset.MobSetData;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
@@ -70,8 +71,10 @@ import java.util.function.Supplier;
  * field added now, for one consumer, would prejudge that design.</p>
  *
  * <h2>What floorIndex is for</h2>
- * <p>Nothing reads it yet. It is stored from generation so that when the Stronger Mobs Below
- * integration lands, dungeons generated before it still carry the depth their mobs should scale by.
+ * <p>Enemy Echelons scaling. With {@link #MOTIF} beside it, it names the motif's depth band, whose
+ * {@code difficulty} each mob is scaled to as it spawns &mdash; see {@code EchelonSpawnEvent}.
+ * Resolved at spawn time, so a datapack edit reaches spawners already in the world. A spawner
+ * generated before {@link #MOTIF} existed has none, and its mobs are left unscaled by Dungeons2.
  * Note that SMB's own axis is <strong>world Y</strong> ({@code EchelonConfigsHolder.Config
  * .getDifficulty(Integer y)} is an interval tree over Y), which is a different thing: a dungeon
  * under a mountain has its floor 3 higher than a ravine dungeon's floor 0. This field is the
@@ -93,6 +96,8 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
     public static final String FLOOR_INDEX = "floorIndex";
     /** Marker/BE NBT, camelCase like its neighbours. See the class javadoc. */
     public static final String PINNED_MOB = "pinnedMob";
+    /** Marker/BE NBT: the dungeon's motif, so spawn time can find the depth band. */
+    public static final String MOTIF = "motif";
 
     /** Unset. Distinguishable from floor 0, which is a real and common answer. */
     public static final int UNKNOWN_FLOOR = -1;
@@ -100,6 +105,8 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
     private int floorIndex = UNKNOWN_FLOOR;
     /** The planner's boss, or null to draw from the set. */
     private ResourceLocation pinnedMob;
+    /** The dungeon's motif, or null when generated before it was recorded. */
+    private String motif;
 
     public DungeonSpawnerBlockEntity(Supplier<BlockEntityType<?>> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -113,6 +120,9 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
         }
         if (tag.contains(PINNED_MOB, Tag.TAG_STRING)) {
             this.pinnedMob = ResourceLocation.tryParse(tag.getString(PINNED_MOB));
+        }
+        if (tag.contains(MOTIF, Tag.TAG_STRING)) {
+            this.motif = tag.getString(MOTIF);
         }
     }
 
@@ -137,6 +147,9 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
         if (pinnedMob != null) {
             tag.putString(PINNED_MOB, pinnedMob.toString());
         }
+        if (motif != null) {
+            tag.putString(MOTIF, motif);
+        }
     }
 
     /**
@@ -156,7 +169,10 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
         }
         Optional<EntityType<?>> pinned = world.isClientSide() ? Optional.empty() : honouredPin();
         if (pinned.isEmpty()) {
-            super.execute(world, random, blockCoords, playerCoords);
+            // Every mob the parent finalizes inside this call is attributed to this spawner's depth
+            // -- see EchelonSpawnEvent#during for why it has to be announced rather than looked up.
+            EchelonSpawnEvent.during(motif, floorIndex,
+                    () -> super.execute(world, random, blockCoords, playerCoords));
             // AFTER, and on the ordinary route only -- the pinned route below is a boss spawner,
             // which has never been in question. See #censusAfterSpawn.
             if (!world.isClientSide()) {
@@ -169,9 +185,11 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
         int count = RandomHelper.randomInt(random, range.getMin(), range.getMax());
         @SuppressWarnings("unchecked")
         EntityType<? extends LivingEntity> type = (EntityType<? extends LivingEntity>) pinned.get();
-        for (int i = 0; i < count; i++) {
-            SpawnUtil.spawnAndAddMob(level, random, type, blockCoords);
-        }
+        EchelonSpawnEvent.during(motif, floorIndex, () -> {
+            for (int i = 0; i < count; i++) {
+                SpawnUtil.spawnAndAddMob(level, random, type, blockCoords);
+            }
+        });
         setDead(true);
         level.setBlock(getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
         level.removeBlockEntity(getBlockPos());
@@ -419,6 +437,15 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
 
     public void setFloorIndex(int floorIndex) {
         this.floorIndex = floorIndex;
+    }
+
+    /** The dungeon's motif; null on a spawner generated before it was recorded, or authored. */
+    public String getMotif() {
+        return motif;
+    }
+
+    public void setMotif(String motif) {
+        this.motif = motif;
     }
 
     public ResourceLocation getPinnedMob() {

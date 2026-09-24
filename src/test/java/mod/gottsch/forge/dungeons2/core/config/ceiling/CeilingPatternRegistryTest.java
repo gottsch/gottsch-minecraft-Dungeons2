@@ -70,10 +70,24 @@ class CeilingPatternRegistryTest {
 
     @Test
     void theBuiltInPatternsAreRegisteredUnderThisModsNamespace() {
-        for (String path : new String[] {"border", "coffers", "joists", "centre", "center"}) {
+        for (String path : new String[] {"border", "coffers", "joists", "centre", "center",
+                "checkerboard", "cross", "diagonal", "spokes"}) {
             assertTrue(CeilingPatternRegistry.ids().contains(new ResourceLocation("dungeons2", path)),
                     "dungeons2:" + path + " should be registered");
         }
+    }
+
+    /** The floor's shapes, ported to the ceiling: each decodes to its own type, inset included. */
+    @Test
+    void theFloorShapesDecodeAsCeilingPatterns() {
+        assertTrue(decode("{\"type\": \"dungeons2:checkerboard\", \"config\": {\"block\": \"minecraft:andesite\", \"inset\": 1}}")
+                .pattern() instanceof CheckerboardCeilingPattern);
+        assertTrue(decode("{\"type\": \"dungeons2:cross\", \"config\": {\"block\": \"minecraft:andesite\", \"thickness\": 3}}")
+                .pattern() instanceof CrossCeilingPattern);
+        assertTrue(decode("{\"type\": \"dungeons2:diagonal\", \"config\": {\"block\": \"minecraft:andesite\", \"flipped\": true}}")
+                .pattern() instanceof DiagonalCeilingPattern);
+        assertTrue(decode("{\"type\": \"dungeons2:spokes\", \"config\": {\"block\": \"minecraft:andesite\", \"spokes\": 4}}")
+                .pattern() instanceof SpokesCeilingPattern);
     }
 
     /**

@@ -23,6 +23,11 @@ import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
 import mod.gottsch.forge.dungeons2.core.config.PitPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
 import mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape;
+import mod.gottsch.forge.dungeons2.core.config.pit.GratePitShape;
+import mod.gottsch.forge.dungeons2.core.config.pit.GratePitShape.Liquid;
+import mod.gottsch.forge.dungeons2.core.config.pit.PitShapeRegistry;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 import mod.gottsch.forge.dungeons2.core.config.pit.HazardPitShape;
 import mod.gottsch.forge.dungeons2.core.config.pit.InsetPitShape;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
@@ -665,5 +670,91 @@ class RoomPitTest {
                         "offset " + offset + ": cell " + cell + " is against the wall ring");
             }
         }
+    }
+    // ---------- the grated sump ----------
+
+    private static PitPatternEntry grate(int size, int depth, Liquid liquid) {
+        return new PitPatternEntry(new GratePitShape("minecraft:iron_bars", Map.of(), size, depth,
+                liquid, 0, 0));
+    }
+
+    /** The grate is the LID: at the walking plane over every dug cell, with the cavity under it. */
+    @Test
+    void aGrateLiesFlushOverADryCavity() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13), grate(3, 3, Liquid.NONE), 5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        assertEquals(9, dug.size(), "a 3x3 grate");
+        for (Coords2D cell : dug) {
+            Map<Integer, BlockState> column = world.get(cell);
+            BlockState lid = column.get(FLOOR_Y);
+            assertEquals(Blocks.IRON_BARS, lid.getBlock(), "no grate at " + cell);
+            assertFalse(lid.getValue(BlockStateProperties.WATERLOGGED),
+                    "a dry sump's grate must be forced dry");
+            assertTrue(column.get(FLOOR_Y - 1).isAir(), "cavity under " + cell);
+            assertTrue(column.get(FLOOR_Y - 2).isAir(), "cavity under " + cell);
+            assertEquals(Blocks.STONE_BRICKS, column.get(FLOOR_Y - 3).getBlock(),
+                    "the sump floor at the authored depth");
+        }
+    }
+
+    /** Water fills the cavity AND logs the grate, so the surface is level with the floor. */
+    @Test
+    void aFloodedSumpBrimsToTheWalkingPlane() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13), grate(2, 3, Liquid.WATER), 5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        assertEquals(4, dug.size(), "a 2x2 grate");
+        for (Coords2D cell : dug) {
+            Map<Integer, BlockState> column = world.get(cell);
+            assertTrue(column.get(FLOOR_Y).getValue(BlockStateProperties.WATERLOGGED),
+                    "the grate over water should be waterlogged");
+            assertEquals(Blocks.WATER, column.get(FLOOR_Y - 1).getBlock());
+            assertEquals(Blocks.WATER, column.get(FLOOR_Y - 2).getBlock());
+        }
+    }
+
+    /** Lava cannot log a block, so it stops under the grate and the grate stays dry. */
+    @Test
+    void aLavaSumpBurnsUnderADryGrate() {
+        List<BlockPlacement> out = new ArrayList<>();
+        Set<Coords2D> dug = excavate(room(13), grate(3, 2, Liquid.LAVA), 5, out);
+        Map<Coords2D, Map<Integer, BlockState>> world = stamp(out);
+
+        for (Coords2D cell : dug) {
+            Map<Integer, BlockState> column = world.get(cell);
+            assertEquals(Blocks.IRON_BARS, column.get(FLOOR_Y).getBlock());
+            assertFalse(column.get(FLOOR_Y).getValue(BlockStateProperties.WATERLOGGED));
+            assertEquals(Blocks.LAVA, column.get(FLOOR_Y - 1).getBlock());
+            assertEquals(Blocks.STONE_BRICKS, column.get(FLOOR_Y - 2).getBlock());
+        }
+    }
+
+    /** The budget clamp still has the last word: a sump never digs past sinkOffset. */
+    @Test
+    void aGrateSumpIsClampedToTheBudget() {
+        List<BlockPlacement> out = new ArrayList<>();
+        excavate(room(13), grate(3, 8, Liquid.WATER), 2, out);
+        assertTrue(out.stream().allMatch(p -> p.getY() >= FLOOR_Y - 2),
+                "a sump wrote below the floor's own budget");
+    }
+
+    /** The shipped id decodes, and an unknown liquid is a load error rather than a dry sump. */
+    @Test
+    void theGrateShapeDecodesAndRefusesAnUnknownLiquid() {
+        var ok = PitShapeRegistry.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"type\": \"dungeons2:grate\", \"config\": {\"grate_block\":"
+                        + " \"dungeonblocks:dark_iron_grate\", \"size\": 2, \"liquid\": \"lava\"}}"));
+        GratePitShape shape = (GratePitShape) ok.getOrThrow(false, msg -> {});
+        assertEquals(Liquid.LAVA, shape.liquid());
+        assertEquals(2, shape.size());
+        assertEquals(GratePitShape.DEFAULT_DEPTH, shape.depth());
+
+        var bad = PitShapeRegistry.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"type\": \"dungeons2:grate\", \"config\": {\"grate_block\":"
+                        + " \"minecraft:iron_bars\", \"liquid\": \"honey\"}}"));
+        assertTrue(bad.error().isPresent(), "an unknown liquid must not load");
     }
 }

@@ -36,9 +36,16 @@ import java.util.Optional;
  * {@code corner_block}.
  *
  * <p>{@code corner_block} falls back to {@code block} rather than dropping the ring: a typo in the
- * trim should not delete the border it was decorating.</p>
+ * trim should not delete the border it was decorating. {@code alternate_block} falls back the same
+ * way.</p>
+ *
+ * <p>{@code alternate_block} takes every other cell of each side, the floor border's left/right
+ * alternation: {@code block} is the floor's {@code edge_left_block}, {@code alternate_block} its
+ * {@code edge_right_block}. A split large brick needs {@code orient: outward} to join up, as the
+ * floor ring's edges are faced outward.</p>
  */
-public record BorderCeilingPattern(String block, Optional<String> cornerBlock, int inset,
+public record BorderCeilingPattern(String block, Optional<String> alternateBlock,
+                                   Optional<String> cornerBlock, int inset,
                                    SurfaceOrient orient, Map<String, String> properties)
         implements CeilingPattern {
 
@@ -48,24 +55,29 @@ public record BorderCeilingPattern(String block, Optional<String> cornerBlock, i
     @Override
     public CeilingPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
         String resolvedBlock = Codecs.resolveRole(block, resolver);
+        Optional<String> resolvedAlternateBlock = Codecs.resolveRole(alternateBlock, resolver);
         Optional<String> resolvedCornerBlock = Codecs.resolveRole(cornerBlock, resolver);
         if (resolvedBlock.equals(block)
+                && resolvedAlternateBlock.equals(alternateBlock)
                 && resolvedCornerBlock.equals(cornerBlock)) {
             return this;
         }
-        return new BorderCeilingPattern(resolvedBlock, resolvedCornerBlock, inset, orient, properties);
+        return new BorderCeilingPattern(resolvedBlock, resolvedAlternateBlock, resolvedCornerBlock,
+                inset, orient, properties);
     }
 
 
     /** A plain ring of one block, flush and unoriented. */
     public BorderCeilingPattern(String block) {
-        this(block, Optional.empty(), BorderSurfacePatternProvider.DEFAULT_INSET,
+        this(block, Optional.empty(), Optional.empty(), BorderSurfacePatternProvider.DEFAULT_INSET,
                 SurfaceOrient.NONE, Map.of());
     }
 
     public static final MapCodec<BorderCeilingPattern> CODEC = Codecs.closedMap(
             RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(BorderCeilingPattern::block),
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "alternate_block")
+                            .forGetter(BorderCeilingPattern::alternateBlock),
                     Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "corner_block")
                             .forGetter(BorderCeilingPattern::cornerBlock),
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "inset",
@@ -92,8 +104,11 @@ public record BorderCeilingPattern(String block, Optional<String> cornerBlock, i
         BlockState corner = cornerBlock
                 .map(id -> CeilingPattern.state(id, properties))
                 .orElse(state);
+        BlockState alternate = alternateBlock
+                .map(id -> CeilingPattern.state(id, properties))
+                .orElse(state);
         out.add(new Layer(projection, new BorderSurfacePatternProvider(inset, state,
-                corner == null ? state : corner, orient,
+                alternate == null ? state : alternate, corner == null ? state : corner, orient,
                 // The ring's outward direction is per cell, so it needs the surface's axes; this
                 // pattern only ever draws on a ceiling, so it knows them.
                 CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION)));

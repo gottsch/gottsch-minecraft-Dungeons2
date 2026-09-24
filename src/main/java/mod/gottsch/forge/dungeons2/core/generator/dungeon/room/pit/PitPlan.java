@@ -55,12 +55,27 @@ import java.util.Set;
  *               walkable and are NOT excavated: the pit is one block down, and the stair's low half
  *               gives the half-step between the two that makes it read as a step rather than a
  *               ledge.
+ * @param flood  interior-local cell to a block filling every row the excavation OPENED in that
+ *               cell &mdash; water or lava in a grated sump. Written after the terrace and before any
+ *               fill, so a fill still stands in it. Under a {@code cover} it stops one row short of
+ *               the walking plane; the cover owns that row.
+ * @param cover  interior-local cell to a block laid over the pit AT the room's own walking plane
+ *               &mdash; a grate. The cell is still excavated beneath it, and still claimed, so
+ *               nothing is placed standing on it.
  *
  * @author Mark Gottschling on Aug 27, 2026
  */
 public record PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
                       Map<Coords2D, BlockState> rim,
-                      Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData) {
+                      Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData,
+                      Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover) {
+
+    /** The shape this record had before a pit could be flooded or covered. */
+    public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
+                   Map<Coords2D, BlockState> rim,
+                   Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData) {
+        this(depths, fills, rim, fillData, Map.of(), Map.of());
+    }
 
     /** The shape this record had before a fill could carry block-entity data. */
     public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,

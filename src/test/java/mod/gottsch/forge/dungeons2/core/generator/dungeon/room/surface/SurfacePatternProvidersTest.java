@@ -69,6 +69,50 @@ class SurfacePatternProvidersTest {
         assertEquals(4, plan.markedCells());
     }
 
+    /**
+     * The floor ring's left/right alternation: each side starts on {@code edge} at the cell after
+     * its low corner, so a split large brick joins up in pairs.
+     */
+    @Test
+    void anAlternateBlockTakesEveryOtherCellOfEachSide() {
+        BlockState alternate = Blocks.ANDESITE.defaultBlockState();
+        SurfacePlan plan = new BorderSurfacePatternProvider(0, edge, alternate, corner, SurfaceOrient.NONE,
+                CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION).plan(6, 6, DOWN);
+        assertSame(corner, plan.get(0, 0));
+        assertSame(edge, plan.get(1, 0));
+        assertSame(alternate, plan.get(2, 0));
+        assertSame(edge, plan.get(3, 0));
+        assertSame(alternate, plan.get(4, 0));
+        assertSame(corner, plan.get(5, 0));
+        assertSame(edge, plan.get(0, 1));
+        assertSame(alternate, plan.get(5, 2));
+        assertSame(edge, plan.get(3, 5));
+    }
+
+    // ---------- mask ----------
+
+    /** The mask is planned on the inner extent and shifted in, so nothing lands in the inset. */
+    @Test
+    void aMaskIsDrawnInsideItsInset() {
+        SurfacePlan plan = new MaskSurfacePatternProvider(1, edge, (u, v) -> {
+            boolean[][] all = new boolean[u][v];
+            for (boolean[] column : all) {
+                java.util.Arrays.fill(column, true);
+            }
+            return all;
+        }).plan(7, 5, DOWN);
+        assertEquals(5 * 3, plan.markedCells());
+        assertNull(plan.get(0, 0));
+        assertSame(edge, plan.get(1, 1));
+        assertNull(plan.get(6, 2));
+    }
+
+    @Test
+    void anInsetThatEatsTheSurfaceMarksNothing() {
+        assertEquals(0, new MaskSurfacePatternProvider(3, edge, (u, v) -> new boolean[u][v])
+                .plan(5, 5, DOWN).markedCells());
+    }
+
     // ---------- border orientation ----------
 
     private static BorderSurfacePatternProvider orientedRing(int inset, SurfaceOrient orient) {

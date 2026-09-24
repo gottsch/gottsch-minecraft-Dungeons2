@@ -143,8 +143,12 @@ public final class RoomPitGenerator {
 
             int y = floorY - depth;
             out.add(BlockStateCodec.placement(x, y, z, floorState));
-            for (int above = y + 1; above <= floorY; above++) {
-                out.add(BlockStateCodec.placement(x, above, z, air));
+            BlockState cover = plan.cover().get(cell.getKey());
+            BlockState flood = plan.flood().get(cell.getKey());
+            // A covered cell's walking-plane row is the cover's, so the opened column stops under it.
+            int top = cover != null ? floorY - 1 : floorY;
+            for (int above = y + 1; above <= top; above++) {
+                out.add(BlockStateCodec.placement(x, above, z, flood != null ? flood : air));
             }
             BlockState fill = plan.fills().get(cell.getKey());
             if (fill != null) {
@@ -159,6 +163,10 @@ public final class RoomPitGenerator {
                     placement.setBlockEntityNbt(data);
                 }
                 out.add(placement);
+            }
+            if (cover != null) {
+                // Last in the cell, so neither the clearing nor a fill can take the lid off again.
+                out.add(BlockStateCodec.placement(x, floorY, z, cover));
             }
         }
         line(dug, room, originX, originZ, floorY, floorState, out);

@@ -79,7 +79,23 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                           List<ChestLootBand> chestLootByFloorIndex,
                           Map<String, TemplateLimit> templateLimits,
                           List<Stratum> strataByFloorIndex,
-                          Map<String, String> palette) {
+                          Map<String, String> palette,
+                          Optional<EchelonConfig> echelon) {
+
+    /**
+     * The shape before {@code echelon}: a motif that has no opinion on Enemy Echelons scaling, so
+     * its mobs are left to whatever else (Stronger Mobs Below) scales them.
+     */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       List<ChestLootBand> chestLootByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits,
+                       List<Stratum> strataByFloorIndex,
+                       Map<String, String> palette) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, Optional.empty());
+    }
 
     /** The shape before {@code palette}: a motif whose patterns all name literal block ids. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
@@ -255,7 +271,10 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         // (classic to mud is four lines). Whole-replace would make a band restate
                         // the entire vocabulary to change one entry, which is exactly the drift an
                         // overlay exists to prevent.
-                        overlay(palette, stratum.palette())))
+                        overlay(palette, stratum.palette()),
+                        // Carried through, never per band: a stratum is what a floor is MADE of,
+                        // and how hard its mobs are is the depth band's `difficulty`.
+                        echelon))
                 // No band covers this floor -- UNREACHABLE for any pack that loads, since
                 // Stratum.validate already rejects a band table that does not cover floor 0 and
                 // bands run downward from their own floor. Kept resolving roles anyway rather than
@@ -280,7 +299,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         return new MotifConfig(resolvedWall, resolvedCeiling, resolvedDoor, resolvedCorridor,
                 resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
                 motif.chestLootByFloorIndex(), motif.templateLimits(),
-                motif.strataByFloorIndex(), palette);
+                motif.strataByFloorIndex(), palette, motif.echelon());
     }
 
     /**

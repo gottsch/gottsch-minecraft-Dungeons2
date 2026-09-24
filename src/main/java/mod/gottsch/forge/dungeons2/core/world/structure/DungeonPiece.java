@@ -41,10 +41,12 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraftforge.common.world.PieceBeardifierModifier;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
@@ -86,7 +88,60 @@ import java.util.regex.Pattern;
  *
  * @author Mark Gottschling on Jun 16, 2026
  */
-public abstract class DungeonPiece extends StructurePiece {
+public abstract class DungeonPiece extends StructurePiece implements PieceBeardifierModifier {
+
+    /**
+     * <strong>No bearding, ever, for a procedural piece.</strong>
+     *
+     * <p>The structure declares {@code "terrain_adaptation": "beard_thin"} so that the SURFACE
+     * ENTRANCE stops hanging in the air on a slope &mdash; {@code findGenerationPoint} samples
+     * {@code WORLD_SURFACE_WG} at the chunk centre column only, so on a hillside the far half of
+     * the entrance building has nothing under it. Bearding is the vanilla answer to exactly that.</p>
+     *
+     * <p>But {@code terrain_adaptation} is declared on the STRUCTURE and vanilla then beards
+     * <em>every piece of the start</em>. A D2 dungeon is hundreds of rooms and corridors sprawling
+     * underground, so switching it on unscoped would bias the noise around all of them &mdash; the
+     * fix for one building at the surface, paid for by deforming terrain across the whole dungeon's
+     * footprint.</p>
+     *
+     * <p>Forge patches {@code Beardifier} to check this interface <em>before</em> the
+     * {@code PoolElementStructurePiece} branch, so a piece that returns {@link TerrainAdjustment#NONE}
+     * is skipped entirely. Everything built here opts out; the JIGSAW pieces are plain vanilla
+     * {@code PoolElementStructurePiece}s and still fall through to the vanilla RIGID branch.</p>
+     *
+     * <p><strong>That is not the same as "only the entrance building beards", and the difference is
+     * worth knowing.</strong> Three sites run {@code JigsawPlacement.addPieces} &mdash; the entrance,
+     * the inter-floor transitions and the Phase 8 prefab rooms &mdash; and the entrance assembly
+     * itself chains down into the descent. So the bearded set is "every pool piece", most of which is
+     * underground, rather than "the one building at the surface". Vanilla offers no finer handle:
+     * the adjustment is declared on the STRUCTURE, and the only per-piece override is this interface,
+     * which cannot be implemented on a vanilla {@code PoolElementStructurePiece} instance.
+     * Narrowing it further means a registered D2 subclass of that piece to wrap the underground
+     * assemblies in &mdash; deliberately not done up front, because BEARD_THIN's contribution below a
+     * piece is ADDED SOLID, and adding solid to rock that is already solid is expected to be
+     * invisible. <strong>That expectation is unverified in world.</strong> If screenshots show
+     * pockets or bulges underground, the subclass is the fix, not reverting this.</p>
+     *
+     * <p><strong>This is the only reason the structure can carry a terrain adaptation at all.</strong>
+     * Do not remove it without also reverting {@code dungeon.json}.</p>
+     */
+    @Override
+    public TerrainAdjustment getTerrainAdjustment() {
+        return TerrainAdjustment.NONE;
+    }
+
+    /** Never read &mdash; {@link #getTerrainAdjustment()} is {@code NONE}, so Beardifier skips the piece. */
+    @Override
+    public BoundingBox getBeardifierBox() {
+        return getBoundingBox();
+    }
+
+    /** Never read &mdash; see {@link #getBeardifierBox()}. */
+    @Override
+    public int getGroundLevelDelta() {
+        return 0;
+    }
+
 
     protected String motifValue;
     protected int floorY;

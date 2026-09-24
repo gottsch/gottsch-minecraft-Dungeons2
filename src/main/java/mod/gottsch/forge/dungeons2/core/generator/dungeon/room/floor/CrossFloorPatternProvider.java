@@ -110,7 +110,7 @@ public class CrossFloorPatternProvider implements IDungeonFloorGenerator, IFloor
      * A non-positive thickness yields an empty grid (all base), the same graceful degradation an
      * empty pattern always has elsewhere in this codebase.
      */
-    static boolean[][] plan(int width, int depth, int thickness) {
+    public static boolean[][] plan(int width, int depth, int thickness) {
         boolean[][] grid = new boolean[width][depth];
         if (thickness <= 0) {
             return grid;

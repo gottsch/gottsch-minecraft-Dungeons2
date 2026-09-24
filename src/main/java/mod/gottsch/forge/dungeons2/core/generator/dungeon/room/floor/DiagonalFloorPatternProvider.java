@@ -108,7 +108,7 @@ public class DiagonalFloorPatternProvider implements IDungeonFloorGenerator {
      * {@code %} &mdash; truncating toward zero would double the width of the band that straddles
      * zero and leave a seam down the room's own diagonal.</p>
      */
-    static boolean[][] plan(int width, int depth, int bandWidth, boolean flipped) {
+    public static boolean[][] plan(int width, int depth, int bandWidth, boolean flipped) {
         boolean[][] grid = new boolean[width][depth];
         // A non-positive width has no meaning and cannot be authored (the codec starts at 1); it is
         // clamped rather than returning an empty grid, which here would read as "all secondary".

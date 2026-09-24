@@ -279,7 +279,7 @@
         // COMPOSED RATES. Single stage now, so the rate IS the outcome -- no compounding, and
         // these chains are each block's only rule so no conditional discount applies either:
         //
-        //     spruce_log     ->  15% gone   (85% untouched)
+        //     spruce_log     ->  40% gone   (see ENTRANCE below)
         //     spruce corbel  ->  10% gone   (90% untouched)
         //
         // The rates were RAISED from the old chain's 5.3% / 3.5% break-through, deliberately.
@@ -302,11 +302,21 @@
         //     keeping: the processor looks a rule up by the input block once and never
         //     re-resolves what it just produced, so producing a block never ages it.)
         // ===================================================================================
+        // ENTRANCE: both logs 40% to air (Mark, 2026-09-23). The entrance is the surface ruin, so
+        // its timber has rotted furthest. Stripped spruce IS a source here, unlike below: in this
+        // file it is the entrance's authored timber, and it rots like the rest.
         {
           "surface": "any",
           "block": "minecraft:spruce_log",
           "output_blocks": [
-            { "block": "minecraft:air", "probability": 0.8 }
+            { "block": "minecraft:air", "probability": 0.4 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:stripped_spruce_log",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.4 }
           ]
         },
         {
