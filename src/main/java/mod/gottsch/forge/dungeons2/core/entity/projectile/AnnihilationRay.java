@@ -19,6 +19,8 @@ package mod.gottsch.forge.dungeons2.core.entity.projectile;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
+import mod.gottsch.forge.dungeons2.core.event.MirrorShieldEvent;
+import mod.gottsch.forge.dungeons2.core.item.MirrorShield;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -432,7 +434,17 @@ public class AnnihilationRay extends Entity {
             this.burning = null;
             this.burnTicks = 0;
             if (this.damageCooldown == 0) {
-                entityHit.getEntity().hurt(damageSource(caster), DAMAGE);
+                // #97: a Mirror Shield raised toward the caster turns the pulse back on it, credited
+                // to the player. The beam still stops on the shield -- it is a mirror, not a window.
+                if (entityHit.getEntity() instanceof LivingEntity shieldBearer
+                        && MirrorShield.isReflecting(shieldBearer, origin)) {
+                    caster.hurt(new DamageSource(this.level().registryAccess()
+                            .registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DAMAGE_TYPE),
+                            this, shieldBearer), DAMAGE);
+                    MirrorShieldEvent.wear(shieldBearer);
+                } else {
+                    entityHit.getEntity().hurt(damageSource(caster), DAMAGE);
+                }
                 this.damageCooldown = DAMAGE_INTERVAL_TICKS;
             }
         } else if (ahead != null) {

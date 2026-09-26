@@ -110,6 +110,19 @@ import net.minecraftforge.fml.common.Mod;
 public class ClientSetup {
 
     /**
+     * #97: vanilla registers the {@code blocking} item property for {@code minecraft:shield} only,
+     * so the Mirror Shield's model override would never fire without this.
+     */
+    @SubscribeEvent
+    public static void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
+        event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(
+                mod.gottsch.forge.dungeons2.core.item.DungeonsItems.MIRROR_SHIELD.get(),
+                new net.minecraft.resources.ResourceLocation("blocking"),
+                (stack, level, entity, seed) ->
+                        entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F));
+    }
+
+    /**
      * Registers GMM's <em>own</em> layer location, which is what every GMM consumer does.
      *
      * <p><strong>This is safe when another GMM consumer is installed alongside us</strong> (Dungeon

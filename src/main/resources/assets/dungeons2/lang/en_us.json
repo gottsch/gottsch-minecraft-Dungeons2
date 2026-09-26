@@ -108,5 +108,9 @@
   "item.dungeons2.barrel_mimic_egg": "Barrel Mimic Spawn Egg",
   "item.dungeons2.boots_of_shock_absorption": "Boots of Shock Absorption",
   "tooltip.dungeons2.boots_of_shock_absorption": "The ground's shock passes through you, not into you.",
-  "tooltip.dungeons2.boots_of_shock_absorption.fall": "Blunts a slammed floor, and the fall when it gives way."
+  "tooltip.dungeons2.boots_of_shock_absorption.fall": "Blunts a slammed floor, and the fall when it gives way.",
+  "item.dungeons2.mirror_shield": "Mirror Shield",
+  "tooltip.dungeons2.mirror_shield": "Turns back eye-rays and gazes that pass through ordinary shields.",
+  "tooltip.dungeons2.mirror_shield.raise": "Raise it toward the eye. Lowered, it can still be torn away.",
+  "message.dungeons2.shield_pierced": "The spell passes through your shield."
 }

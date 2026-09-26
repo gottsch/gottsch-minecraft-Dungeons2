@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/counter_beholder",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "dungeons2:mirror_shield" }
+      ]
+    },
+    {
+      "rolls": 1.0,
+      "entries": [
+        { "type": "minecraft:loot_table", "name": "dungeons2:chests/classic_deep" }
+      ]
+    }
+  ]
+}

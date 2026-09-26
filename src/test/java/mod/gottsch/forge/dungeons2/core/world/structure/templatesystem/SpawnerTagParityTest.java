@@ -117,11 +117,12 @@ class SpawnerTagParityTest {
      * planner is not involved in placing it. So an authored template's spawner carries no floor
      * index and reads {@code DungeonSpawnerBlockEntity.UNKNOWN_FLOOR}.
      *
-     * <p><strong>Consequence for Enemy Echelons scaling:</strong> spawners in authored rooms do not
-     * scale with depth. {@code EchelonSpawnEvent} leaves their mobs alone, so with Stronger Mobs
-     * Below installed they scale by world Y like any other mob. The procedural side carries
-     * {@code motif} beside {@code floorIndex} for the same scaling, and is excluded for the same
-     * reason.</p>
+     * <p><strong>Consequence for Enemy Echelons scaling:</strong> an authored spawner scales with
+     * depth only when its marker STATES {@code floorIndex} and {@code motif} (2026-09-24, see
+     * {@code SpawnerMarkerProcessorTest}). That is a fixed number chosen by the author, not the floor
+     * the room lands on. A marker that states nothing still produces no floor, which is what this
+     * test pins. The procedural side carries {@code motif} beside {@code floorIndex} and is excluded
+     * for the same reason.</p>
      */
     @Test
     void theAuthoredPathCannotKnowItsFloor() {

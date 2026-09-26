@@ -205,6 +205,38 @@ public final class RoomChestGenerator {
     public record ChestDraw(String block, BlockEntityData data) {}
 
     /**
+     * Emits the one counter-item chest (#97) {@code CounterItemPlanner} gave this room, returning
+     * the cell it took &mdash; empty when there is no table or no free wall-adjacent cell.
+     *
+     * <p>A plain vanilla chest, never a mimic: the chest exists to hand over the item that answers
+     * the boss, and eating the player who came for it would be a joke at the player's expense.</p>
+     */
+    public static Set<Coords2D> placeCounterChest(RoomData room, int floorY, String lootTable,
+                                                  Set<Coords2D> occupied, RandomSource random,
+                                                  List<BlockPlacement> out) {
+        if (lootTable == null) {
+            return Set.of();
+        }
+        List<Coords2D> candidates = RoomPropGenerator.eligibleCells(room, occupied);
+        if (candidates.isEmpty()) {
+            mod.gottsch.forge.dungeons2.Dungeons.LOGGER.warn("[D2-COUNTER] room {} had no free"
+                    + " wall-adjacent cell for the counter-item chest {}", room.getId(), lootTable);
+            return Set.of();
+        }
+        Coords2D cell = candidates.get(random.nextInt(candidates.size()));
+        Map<String, String> properties = new LinkedHashMap<>();
+        properties.put(FACING, facingAwayFromWall(room, cell));
+        BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
+                CHEST_ENTITY, properties);
+        placement.setBlockEntityNbt(chestData(lootTable, random));
+        out.add(placement);
+        mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info("[D2-COUNTER] chest at {} from {}",
+                new net.minecraft.core.BlockPos(placement.getX(), placement.getY(), placement.getZ())
+                        .toShortString(), lootTable);
+        return Set.of(cell);
+    }
+
+    /**
      * A horizontal facing chosen at random &mdash; for a chest with no wall behind it.
      *
      * <p>A centrepiece stands in the middle of a dais or a court and is approached from every side,

@@ -26,6 +26,8 @@ import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MiningConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner.CounterChestPlan;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.ExcavationLedger;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner.MiningChestPlan;
@@ -1093,10 +1095,17 @@ public class DungeonStructure extends Structure {
                         plan.floorIndex(), plan.roomId(), plan.haul(),
                         ExcavationLedger.totalVolume(ExcavationLedger.of(layout))));
 
+                // #97: the boss's counter-item, planned here for the Mining Chest's reason -- only the
+                // layout knows who the boss is.
+                Optional<CounterChestPlan> counterChest = CounterItemPlanner.plan(layout);
+                counterChest.ifPresent(plan -> Dungeons.LOGGER.info(
+                        "[D2-COUNTER] boss {} -> floor {} room {} holds {}",
+                        layout.getBoss(), plan.floorIndex(), plan.roomId(), plan.lootTable()));
+
                 List<StructurePiece> allPieces =
                         new ArrayList<>(DungeonPieceEmitter.emitTerrain(layout, emitAnchorX, emitAnchorZ,
                                 generationConfig.sinkOffset(), generationConfig.ceilingBudget(),
-                                miningChest.orElse(null)));
+                                miningChest.orElse(null), counterChest.orElse(null)));
                 allPieces.addAll(entrancePieces);
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));

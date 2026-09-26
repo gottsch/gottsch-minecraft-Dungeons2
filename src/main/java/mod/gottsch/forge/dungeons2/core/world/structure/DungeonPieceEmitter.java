@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner.CounterChestPlan;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner.MiningChestPlan;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 
@@ -129,6 +130,17 @@ public final class DungeonPieceEmitter {
     public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
                                                    int sinkOffset, int ceilingBudget,
                                                    MiningChestPlan miningChest) {
+        return emitTerrain(layout, anchorX, anchorZ, sinkOffset, ceilingBudget, miningChest, null);
+    }
+
+    /**
+     * As above, additionally handing the boss's counter-item chest (#97) to the one room
+     * {@code CounterItemPlanner} named. Planned outside for the Mining Chest's reason; null means none.
+     */
+    public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
+                                                   int sinkOffset, int ceilingBudget,
+                                                   MiningChestPlan miningChest,
+                                                   CounterChestPlan counterChest) {
         List<StructurePiece> pieces = new ArrayList<>();
         String motif = layout.getMotifValue();
 
@@ -173,6 +185,10 @@ public final class DungeonPieceEmitter {
                     if (miningChest != null && miningChest.floorIndex() == floorIndex
                             && miningChest.roomId() == room.getId()) {
                         piece.withMiningHaul(miningChest.haul());
+                    }
+                    if (counterChest != null && counterChest.floorIndex() == floorIndex
+                            && counterChest.roomId() == room.getId()) {
+                        piece.withCounterLootTable(counterChest.lootTable());
                     }
                     pieces.add(piece);
                 }

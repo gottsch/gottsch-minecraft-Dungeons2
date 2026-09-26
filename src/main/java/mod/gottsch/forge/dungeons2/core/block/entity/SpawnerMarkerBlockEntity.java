@@ -129,6 +129,17 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
      */
     public static final String RANGED_ESCORT = "ranged_escort";
 
+    /**
+     * The dungeon floor this spawner's mobs are scaled for, 0 at the entrance &mdash; Enemy Echelons
+     * depth scaling (Backlog #103). A jigsaw placement cannot know which floor it lands on, so an
+     * authored spawner has none unless the author states it here. <strong>It is a fixed number, not
+     * the floor the room actually lands on</strong>: a template used on floors 1 and 4 scales
+     * identically on both. Needs {@link #MOTIF} beside it; the pair names the depth band.
+     */
+    public static final String FLOOR_INDEX = "floorIndex";
+    /** The motif whose depth band {@link #FLOOR_INDEX} is read against, e.g. {@code "classic"}. */
+    public static final String MOTIF = "motif";
+
     private String mobSetName;
     private Double proximity;
     private Integer minMobs;
@@ -138,6 +149,8 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
     private boolean boss;
     private boolean escort;
     private boolean rangedEscort;
+    private Integer floorIndex;
+    private String motif;
 
     public SpawnerMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(DungeonsBlockEntities.SPAWNER_MARKER.get(), pos, state);
@@ -180,6 +193,15 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
         if (tag.contains(RANGED_ESCORT)) {
             this.rangedEscort = tag.getBoolean(RANGED_ESCORT);
         }
+        // Fields, not pass-through keys: a key this entity has no field for is dropped at its next
+        // save, which here means BEFORE the structure block writes the template -- the /data merge
+        // would look applied and never reach the .nbt.
+        if (tag.contains(FLOOR_INDEX, Tag.TAG_ANY_NUMERIC)) {
+            this.floorIndex = tag.getInt(FLOOR_INDEX);
+        }
+        if (tag.contains(MOTIF, Tag.TAG_STRING)) {
+            this.motif = tag.getString(MOTIF);
+        }
     }
 
     @Override
@@ -215,6 +237,28 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
         if (rangedEscort) {
             tag.putBoolean(RANGED_ESCORT, true);
         }
+        if (floorIndex != null) {
+            tag.putInt(FLOOR_INDEX, floorIndex);
+        }
+        if (motif != null && !motif.isEmpty()) {
+            tag.putString(MOTIF, motif);
+        }
+    }
+
+    public Integer getFloorIndex() {
+        return floorIndex;
+    }
+
+    public void setFloorIndex(Integer floorIndex) {
+        this.floorIndex = floorIndex;
+    }
+
+    public String getMotif() {
+        return motif;
+    }
+
+    public void setMotif(String motif) {
+        this.motif = motif;
     }
 
     public String getMobSetName() {

@@ -73,10 +73,12 @@ import java.util.OptionalInt;
  * what beats SMB's own join handler, which would otherwise scale a boss by its (deep) world Y. The
  * pin is a no-op on a mob that already has a difficulty, so a chunk reload changes nothing.</p>
  *
- * <h2>Authored spawners carry no floor</h2>
- * <p>A spawner placed by a template marker (every prefab room, every boss room) reads
- * {@code UNKNOWN_FLOOR}, because nothing in a jigsaw placement knows its dungeon floor (see
- * {@code SpawnerTagParityTest#theAuthoredPathCannotKnowItsFloor}). Those mobs are left to SMB.</p>
+ * <h2>Authored spawners carry a floor only if the marker states one</h2>
+ * <p>Nothing in a jigsaw placement knows its dungeon floor (see
+ * {@code SpawnerTagParityTest#theAuthoredPathCannotKnowItsFloor}). So a spawner placed by a template
+ * marker reads {@code UNKNOWN_FLOOR} and its mobs are left to SMB, <em>unless</em> the marker states
+ * {@code floorIndex} and {@code motif}, which {@code SpawnerMarkerProcessor} carries onto either
+ * spawner kind. That is a fixed, authored depth, not the floor the room happens to land on.</p>
  *
  * @author Mark Gottschling on Sep 23, 2026
  */

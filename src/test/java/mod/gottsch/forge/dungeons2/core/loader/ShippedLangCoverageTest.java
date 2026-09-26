@@ -64,8 +64,14 @@ class ShippedLangCoverageTest {
     void everyItemModelHasADisplayName() {
         JsonObject lang = lang();
         List<String> missing = new ArrayList<>();
+        java.util.Set<String> overrideTargets = overrideTargets();
         for (Path model : itemModels()) {
             String name = model.getFileName().toString().replace(".json", "");
+            // An override target (a shield's blocking pose) is a second MODEL of an item that is
+            // named elsewhere, not an item of its own. Found 2026-09-24 with mirror_shield_blocking.
+            if (overrideTargets.contains(name)) {
+                continue;
+            }
             // A BlockItem takes its name from its BLOCK -- BlockItem.getDescriptionId delegates to
             // the block's -- so it is spelled block.dungeons2.<name> and never gets an item.* key.
             // Accepting either is the fix; adding the item.* key would ship a translation nothing
@@ -127,6 +133,25 @@ class ShippedLangCoverageTest {
         } catch (IOException unreadable) {
             throw new UncheckedIOException("could not read " + LANG, unreadable);
         }
+    }
+
+    /** Names of every model some item model's {@code overrides} point at. */
+    private static java.util.Set<String> overrideTargets() {
+        java.util.Set<String> targets = new java.util.HashSet<>();
+        for (Path model : itemModels()) {
+            try (Reader reader = Files.newBufferedReader(model, StandardCharsets.UTF_8)) {
+                JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                if (json.has("overrides")) {
+                    json.getAsJsonArray("overrides").forEach(o -> {
+                        String id = o.getAsJsonObject().get("model").getAsString();
+                        targets.add(id.substring(id.lastIndexOf('/') + 1));
+                    });
+                }
+            } catch (IOException unreadable) {
+                throw new UncheckedIOException(unreadable);
+            }
+        }
+        return targets;
     }
 
     private static List<Path> itemModels() {

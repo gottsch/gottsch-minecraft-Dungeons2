@@ -60,6 +60,8 @@ public class DungeonRoomPiece extends DungeonPiece {
      * {@link #withMiningHaul}.
      */
     private MiningHaul miningHaul;
+    /** The counter-item chest's loot table (#97), or null for every room but at most one. */
+    private String counterLootTable;
 
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
                             int anchorX, int anchorZ) {
@@ -93,6 +95,9 @@ public class DungeonRoomPiece extends DungeonPiece {
         if (tag.contains("MiningHaul")) {
             this.miningHaul = PieceNbt.readMiningHaul(tag.getCompound("MiningHaul"));
         }
+        if (tag.contains("CounterLootTable")) {
+            this.counterLootTable = tag.getString("CounterLootTable");
+        }
     }
 
     /**
@@ -107,6 +112,20 @@ public class DungeonRoomPiece extends DungeonPiece {
     public DungeonRoomPiece withMiningHaul(MiningHaul miningHaul) {
         this.miningHaul = miningHaul;
         return this;
+    }
+
+    /**
+     * Hands this room the dungeon's counter-item chest (#97), from {@code CounterItemPlanner}'s
+     * plan &mdash; the same one-piece-singled-out shape as {@link #withMiningHaul}.
+     */
+    public DungeonRoomPiece withCounterLootTable(String counterLootTable) {
+        this.counterLootTable = counterLootTable;
+        return this;
+    }
+
+    /** The counter-item chest's loot table, or null when this is not the room carrying it. */
+    public String getCounterLootTable() {
+        return counterLootTable;
     }
 
     /** The Mining Chest's contents, or null when this is not the room carrying it. */
@@ -157,6 +176,10 @@ public class DungeonRoomPiece extends DungeonPiece {
         // every dungeon is a lot of save file to say nothing.
         if (miningHaul != null && !miningHaul.isEmpty()) {
             tag.put("MiningHaul", PieceNbt.writeMiningHaul(miningHaul));
+        }
+        // Absent for the same reason: the key's presence is the flag.
+        if (counterLootTable != null) {
+            tag.putString("CounterLootTable", counterLootTable);
         }
     }
 
@@ -225,6 +248,7 @@ public class DungeonRoomPiece extends DungeonPiece {
         new BasicRoomGenerator().withMotifConfig(motifConfig).withSinkOffset(sinkOffset)
                 .withCeilingBudget(ceilingBudget)
                 .withMiningHaul(miningHaul)
+                .withCounterLootTable(counterLootTable)
                 .build(room, floorY, floorIndex, motif(), deterministicRandom(room.getId()), out);
         return out;
     }

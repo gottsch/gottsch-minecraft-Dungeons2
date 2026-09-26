@@ -26,6 +26,7 @@ import mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity;
 import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.config.MobRange;
 import mod.gottsch.forge.dungeons2.core.config.SpawnerConfig;
+import mod.gottsch.forge.dungeons2.core.event.EchelonSpawnEvent;
 import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
 import mod.gottsch.forge.gottschcore.mobset.WeightedMob;
@@ -300,6 +301,14 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // would come off the same stream position as the mob draw -- correlated, not independent.
         RandomSource random = settings.getRandom(current.pos());
 
+        // Half a depth stamp scales nothing -- the motif is how the band is found -- and it would
+        // otherwise fail silently in game. Said here, where the template's author will see it.
+        if (overrides.floorIndex().isPresent() != overrides.motif().isPresent()) {
+            Dungeons.LOGGER.warn("[D2-SPAWNER] marker at {} states only one of floorIndex/motif;"
+                    + " both are needed for Enemy Echelons scaling, so its mobs will not be scaled",
+                    current.pos().toShortString());
+        }
+
         if (rollsOut(overrides, random)) {
             Dungeons.LOGGER.debug("[D2-SPAWNER] {} rolled out at {} (probability {})",
                     markerBlock, current.pos().toShortString(),
@@ -383,6 +392,9 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         return probability < 1.0F && random.nextFloat() >= probability;
     }
 
+    /** Forge's persistent-data key on any block entity. */
+    static final String FORGE_DATA = "ForgeData";
+
     /** Matches {@code RoomSpawnerGenerator}, so both routes name the same block entity. */
     static final String VANILLA_SPAWNER_ENTITY = "minecraft:mob_spawner";
 
@@ -439,6 +451,15 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
             tag.put(VanillaSpawnerNbt.SPAWN_POTENTIALS,
                     TagParser.parseTag("{v:" + VanillaSpawnerNbt.spawnPotentials(mobs) + "}").get("v"));
             VanillaSpawnerNbt.tuning(spawnCount).forEach((k, v) -> tag.putInt(k, Integer.parseInt(v)));
+            // A cage has no field for depth, so it goes in Forge's persistent data -- the same place
+            // RoomSpawnerGenerator puts it, and where EchelonSpawnEvent reads it. Both keys or
+            // neither: one alone names no depth band.
+            if (overrides.floorIndex().isPresent() && overrides.motif().isPresent()) {
+                CompoundTag forgeData = new CompoundTag();
+                forgeData.put(EchelonSpawnEvent.ORIGIN, EchelonSpawnEvent.originTag(
+                        overrides.motif().get(), overrides.floorIndex().get()));
+                tag.put(FORGE_DATA, forgeData);
+            }
             return tag;
         } catch (Exception malformed) {
             Dungeons.LOGGER.error("[D2-SPAWNER] could not build vanilla spawner tag for set {}: {}",
@@ -595,6 +616,10 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // the way in (see SpawnerMarkerBlockEntity) precisely so this stays the only encoding that
         // ever reaches GottschCore.
         tag.putDouble(PROXIMITY, overrides.proximity(proximity));
+        // Enemy Echelons depth, when the author stated it. Absent stays absent: the block entity
+        // then reads UNKNOWN_FLOOR and its mobs are left to Stronger Mobs Below, as before.
+        overrides.floorIndex().ifPresent(floor -> tag.putInt(DungeonSpawnerBlockEntity.FLOOR_INDEX, floor));
+        overrides.motif().ifPresent(motif -> tag.putString(DungeonSpawnerBlockEntity.MOTIF, motif));
         return tag;
     }
 
@@ -681,6 +706,19 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
             Dungeons.LOGGER.warn("[D2-SPAWNER] marker names an unknown spawner type '{}';"
                     + " using the pool's {} instead", stated, pooled.getSerializedName());
             return pooled;
+        }
+
+        /**
+         * The Enemy Echelons floor the author stated, if any. Negative is ignored: it is
+         * {@code UNKNOWN_FLOOR}, and writing it would only say "no floor" more loudly.
+         */
+        Optional<Integer> floorIndex() {
+            return integer(SpawnerMarkerBlockEntity.FLOOR_INDEX).filter(floor -> floor >= 0);
+        }
+
+        /** The motif the author stated, if any. */
+        Optional<String> motif() {
+            return Optional.ofNullable(string(SpawnerMarkerBlockEntity.MOTIF));
         }
 
         private String string(String key) {

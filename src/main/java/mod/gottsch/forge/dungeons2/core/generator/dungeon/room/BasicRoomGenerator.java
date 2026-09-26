@@ -79,6 +79,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
     private int sinkOffset = 0;
     private int ceilingBudget = 0;
     private MiningHaul miningHaul;
+    private String counterLootTable;
 
     public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
         this.motifConfig = motifConfig;
@@ -122,6 +123,16 @@ public class BasicRoomGenerator implements IRoomGenerator {
      */
     public BasicRoomGenerator withMiningHaul(MiningHaul miningHaul) {
         this.miningHaul = miningHaul;
+        return this;
+    }
+
+    /**
+     * The counter-item chest's loot table (#97), when this is the one room carrying it. Injected
+     * for the Mining Chest's reason: which boss the dungeon has is only visible to the emitter.
+     * Null -- nearly every room -- means no counter chest here.
+     */
+    public BasicRoomGenerator withCounterLootTable(String counterLootTable) {
+        this.counterLootTable = counterLootTable;
         return this;
     }
 
@@ -291,6 +302,10 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // the scheme's are not, so it is this one that should give way if the floor runs out.
         taken.addAll(RoomMiningChestGenerator.placeChest(room, floorY, miningHaul, taken, random,
                 blocks));
+        // #97: the boss's counter-item, on the same terms as the Mining Chest -- planned against the
+        // whole dungeon and injected into one room.
+        taken.addAll(RoomChestGenerator.placeCounterChest(room, floorY, counterLootTable, taken,
+                random, blocks));
 
         // Furniture (#73) after every guaranteed thing and before the pots, claiming its cells.
         // The ordering is the chests' argument one step on: a prop is a SOLID block, so a pot

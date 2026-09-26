@@ -403,14 +403,22 @@ public class DungeonsItems {
      * Backlog #97: the Stone Colossus's counter-item, and the first ARMOUR this mod registers.
      *
      * <p>The behaviour is entirely {@code ShockAbsorptionEvent}'s; see {@link
-     * BootsOfShockAbsorption} for why it is not in the item. Not craftable and, for now, not in a
-     * loot table either &mdash; #97's boss&rarr;counter-item routing is built once for these and
-     * the Mirror Shield together, so until the shield exists the boots are reachable by
-     * {@code /give} and the creative tab only.</p>
+     * BootsOfShockAbsorption} for why it is not in the item. Not craftable: found only in the
+     * counter-item chest {@code CounterItemPlanner} hides in about one Stone Colossus dungeon in
+     * four, before the boss.</p>
      */
     public static final RegistryObject<Item> BOOTS_OF_SHOCK_ABSORPTION = Registration.ITEMS.register(
             "boots_of_shock_absorption",
             () -> new BootsOfShockAbsorption(new Item.Properties()));
+
+    /**
+     * Backlog #97: the Beholder-kin's counter-item. Reflects eye-magic when raised; see {@link
+     * MirrorShield} and {@code MirrorShieldEvent}. Vanilla shield durability. Not craftable: found
+     * only in the counter-item chest of about one Beholder or Death Tyrant dungeon in four.
+     */
+    public static final RegistryObject<Item> MIRROR_SHIELD = Registration.ITEMS.register(
+            "mirror_shield",
+            () -> new MirrorShield(new Item.Properties().durability(336)));
 
     /**
      * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
@@ -479,6 +487,7 @@ public class DungeonsItems {
             event.accept(SPIKED_CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             // Armour lives in COMBAT in 1.20.1 -- there is no separate armour tab to put it in.
             event.accept(BOOTS_OF_SHOCK_ABSORPTION.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(MIRROR_SHIELD.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);

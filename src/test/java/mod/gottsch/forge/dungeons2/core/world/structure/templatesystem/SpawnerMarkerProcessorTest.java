@@ -418,4 +418,62 @@ class SpawnerMarkerProcessorTest {
                         + "\"probability\":-0.5}").error().isPresent(),
                 "probability below 0 must fail the load rather than clamp");
     }
+
+    // ---- Enemy Echelons depth stamp (Backlog #103) ----------------------------------------------
+
+    private static CompoundTag stamped(Integer floorIndex, String motif) {
+        CompoundTag marker = new CompoundTag();
+        if (floorIndex != null) {
+            marker.putInt("floorIndex", floorIndex);
+        }
+        if (motif != null) {
+            marker.putString("motif", motif);
+        }
+        return marker;
+    }
+
+    /** The whole point: an authored spawner can carry a depth, which a jigsaw placement cannot know. */
+    @Test
+    void aMarkersDepthStampReachesTheProximitySpawner() {
+        CompoundTag tag = processor().spawnerTag(overrides(stamped(3, "classic")));
+        assertEquals(3, tag.getInt("floorIndex"));
+        assertEquals("classic", tag.getString("motif"));
+    }
+
+    /** Unstated stays ABSENT -- the block entity then reads UNKNOWN_FLOOR, as it always has. */
+    @Test
+    void anUnstampedMarkerWritesNoDepth() {
+        CompoundTag tag = processor().spawnerTag(overrides(stamped(null, null)));
+        org.junit.jupiter.api.Assertions.assertFalse(tag.contains("floorIndex"));
+        org.junit.jupiter.api.Assertions.assertFalse(tag.contains("motif"));
+    }
+
+    @Test
+    void aNegativeFloorIsNoFloor() {
+        org.junit.jupiter.api.Assertions.assertFalse(processor()
+                .spawnerTag(overrides(stamped(-1, "classic"))).contains("floorIndex"));
+    }
+
+    /** A cage has no depth field, so the stamp rides in ForgeData, where EchelonSpawnEvent reads it. */
+    @Test
+    void aMarkersDepthStampReachesTheVanillaCage() {
+        mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry.register(
+                new mod.gottsch.forge.gottschcore.mobset.MobSetData(VERMIN, "classic", 1, 2,
+                        java.util.List.of(new mod.gottsch.forge.gottschcore.mobset.WeightedMob(
+                                new ResourceLocation("minecraft:zombie"), 1)), false));
+        try {
+            CompoundTag cage = processor().vanillaSpawnerTag(
+                    net.minecraft.util.RandomSource.create(1L), overrides(stamped(4, "classic")));
+            CompoundTag origin = cage.getCompound("ForgeData").getCompound("dungeons2");
+            assertEquals("classic", origin.getString("motif"));
+            assertEquals(4, origin.getInt("floorIndex"));
+
+            CompoundTag half = processor().vanillaSpawnerTag(
+                    net.minecraft.util.RandomSource.create(1L), overrides(stamped(4, null)));
+            org.junit.jupiter.api.Assertions.assertFalse(half.contains("ForgeData"),
+                    "one key alone names no depth band, so the cage gets no stamp");
+        } finally {
+            mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry.clear();
+        }
+    }
 }
