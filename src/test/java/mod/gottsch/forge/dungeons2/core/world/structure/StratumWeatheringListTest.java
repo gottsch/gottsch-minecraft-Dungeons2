@@ -101,6 +101,8 @@ class StratumWeatheringListTest {
     private static final String POT_TYPE = "dungeons2:pot";
     private static final String SUPPORT_TYPE = "dungeons2:support_sweep";
     private static final String CHEST_TYPE = "dungeons2:chest";
+    /** #104; vetted as chunk-safe in {@code WeatheringProcessorListTest}. */
+    private static final String SARCOPHAGUS_TYPE = "dungeons2:sarcophagus";
     private static final String HANGING_TYPE = "dungeons2:hanging_sweep";
 
     /**
@@ -114,7 +116,7 @@ class StratumWeatheringListTest {
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
             Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE);
+                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE);
 
     private static final double EPSILON = 1.0e-6;
 

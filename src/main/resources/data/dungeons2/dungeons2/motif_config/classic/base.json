@@ -41,7 +41,11 @@
     // A second accent, so a band can offer two contrasting blocks: the deepslate band splits its
     // patterns between basalt and tuff. A role holds one block, so two looks need two roles. Up
     // here it is the same block as `accent`, and a stone room cannot tell them apart.
-    "accent_alt": "minecraft:deepslate_bricks"
+    "accent_alt": "minecraft:deepslate_bricks",
+    // #104: the tomb a `tombs` slot places. A role rather than a literal for the pilasters' reason
+    // above: the deepslate band answers with deepslate_sarcophagus, and a literal here would lay
+    // stone tombs on a deepslate floor.
+    "sarcophagus": "dungeonblocks:stone_sarcophagus"
   },
   "wall": {
     "wall": "$base",
@@ -205,6 +209,53 @@
           "weight": 3
         }
       ]
+    }
+  ],
+  // #104. What a sealed tomb holds, by depth -- chest_loot_by_floor_index's shape, carrying the
+  // whole of a tomb's contents. DungeonBlocks rolls ONCE, on the first opening, between the loot,
+  // the guardian and nothing, in proportion to the three weights; the table and the mob are drawn
+  // per tomb at generation. A scheme's `tombs` slot overrides any key on its own.
+  //
+  // Grave goods, not a storeroom (classic_tomb_*), and only the undead rise. Deeper = more
+  // guardians and fewer empty tombs: 30/20/50 at the entrance, 30/30/40, then 30/40/30. The wight
+  // is left out on purpose -- it is a mini-boss, anchored and never scaled, and a tomb guardian is
+  // an ordinary mob scaled by this floor's echelon difficulty like any spawner's.
+  "tomb_contents_by_floor_index": [
+    {
+      "min_floor_index": 0,
+      "loot_tables": [ { "loot_table": "dungeons2:chests/classic_tomb_shallow" } ],
+      "guardians": [
+        { "entity": "minecraft:zombie", "weight": 4 },
+        { "entity": "minecraft:skeleton", "weight": 4 },
+        { "entity": "dungeons2:grave_zombie", "weight": 3 },
+        { "entity": "dungeons2:skeleton_warrior", "weight": 2 }
+      ],
+      "loot_weight": 3, "guardian_weight": 2, "empty_weight": 5
+    },
+    {
+      "min_floor_index": 2,
+      "loot_tables": [ { "loot_table": "dungeons2:chests/classic_tomb_deep" } ],
+      "guardians": [
+        { "entity": "dungeons2:grave_zombie", "weight": 4 },
+        { "entity": "dungeons2:skeleton_warrior", "weight": 4 },
+        { "entity": "dungeons2:ghoul", "weight": 3 },
+        { "entity": "dungeons2:bloody_bones", "weight": 2 }
+      ],
+      "loot_weight": 3, "guardian_weight": 3, "empty_weight": 4
+    },
+    {
+      "min_floor_index": 4,
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_tomb_deep", "weight": 7 },
+        { "loot_table": "dungeons2:chests/classic_hoard", "weight": 3 }
+      ],
+      "guardians": [
+        { "entity": "dungeons2:ghoul", "weight": 4 },
+        { "entity": "dungeons2:bloody_bones", "weight": 3 },
+        { "entity": "dungeons2:tainted_skeleton", "weight": 3 },
+        { "entity": "dungeons2:iron_skeleton", "weight": 2 }
+      ],
+      "loot_weight": 3, "guardian_weight": 4, "empty_weight": 3
     }
   ],
   "mob_sets_by_floor_index": [

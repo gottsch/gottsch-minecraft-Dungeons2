@@ -126,13 +126,21 @@ class ShippedGrowthEntitiesTest {
         assertTrue(checked > 0, "no palette mixing mobs and plants was found, so this asserted nothing");
     }
 
-    /** Every {@code "entity"} id named anywhere in the shipped processor lists. */
+    /**
+     * Every {@code "entity"} id named in a growth palette of the shipped processor lists.
+     *
+     * <p>Inside the {@code "blocks"} palettes only, since 2026-09-26: the tomb processor's
+     * {@code guardians} (#104) are the second {@code entity} key these files carry, and they name
+     * vanilla mobs on purpose. A guardian is not grown; {@code ShippedTombsTest} sweeps those.</p>
+     */
     private static Set<String> grownEntities() throws IOException {
         Set<String> found = new LinkedHashSet<>();
         for (Path file : processorLists()) {
-            Matcher matcher = ENTITY_ENTRY.matcher(Files.readString(file, StandardCharsets.UTF_8));
-            while (matcher.find()) {
-                found.add(matcher.group(1));
+            for (String palette : palettes(Files.readString(file, StandardCharsets.UTF_8))) {
+                Matcher matcher = ENTITY_ENTRY.matcher(palette);
+                while (matcher.find()) {
+                    found.add(matcher.group(1));
+                }
             }
         }
         return found;

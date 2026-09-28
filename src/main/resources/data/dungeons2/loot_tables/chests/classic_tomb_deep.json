@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_tomb_deep",
+  "pools": [
+    {
+      "//": "GRAVE GOODS, floors 2 and below (#104). The deeper dead were buried richer: gold by the ingot, gems, and burial arms that were enchanted when they went into the ground. Still grave goods rather than a hoard -- the floor-4 band mixes classic_hoard in beside this for the prize.",
+      "rolls": { "min": 3.0, "max": 5.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 16,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:bone", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_nugget", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 4.0, "max": 12.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 6 },
+        { "type": "minecraft:item", "name": "minecraft:experience_bottle", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 6,
+          "functions": [ { "function": "minecraft:enchant_randomly" } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_sword", "weight": 5,
+          "functions": [ { "function": "minecraft:set_damage", "damage": { "min": 0.2, "max": 0.7 } },
+                         { "function": "minecraft:enchant_with_levels", "levels": { "min": 10.0, "max": 20.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_chestplate", "weight": 4,
+          "functions": [ { "function": "minecraft:set_damage", "damage": { "min": 0.2, "max": 0.7 } },
+                         { "function": "minecraft:enchant_with_levels", "levels": { "min": 10.0, "max": 20.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_helmet", "weight": 4,
+          "functions": [ { "function": "minecraft:set_damage", "damage": { "min": 0.2, "max": 0.7 } },
+                         { "function": "minecraft:enchant_with_levels", "levels": { "min": 5.0, "max": 15.0 } } ] }
+      ]
+    }
+  ]
+}

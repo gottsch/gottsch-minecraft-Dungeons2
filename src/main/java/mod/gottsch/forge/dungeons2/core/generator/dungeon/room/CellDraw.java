@@ -113,6 +113,36 @@ public final class CellDraw {
         if (!hasNext()) {
             throw new NoSuchElementException("cell draw exhausted after " + count + " cells");
         }
+        return draw();
+    }
+
+    /** Whether any candidate is still undrawn, whatever {@link #count()} says. */
+    public boolean hasUndrawn() {
+        return drawn < candidates.size();
+    }
+
+    /**
+     * The next distinct cell, drawn past {@link #count()} if need be &mdash; for a caller that
+     * REJECTS some cells and wants the count met from the rest. The tombs (#104) are that caller: a
+     * tomb is two cells long and keeps a cell clear of its neighbours, so whether a cell can take one
+     * depends on the tombs already placed, which no up-front filter can know. The spawners' "consume
+     * a draw, claim nothing" is the other answer to a rejected cell, and the right one where the
+     * count is a ceiling rather than a target.
+     *
+     * <p>Same draw as {@link #next}, so the two may not be mixed in one sequence without meaning to:
+     * {@link #hasNext} counts rejected cells as drawn.</p>
+     *
+     * @throws NoSuchElementException if every candidate has been drawn
+     */
+    public Coords2D nextUndrawn() {
+        if (!hasUndrawn()) {
+            throw new NoSuchElementException("cell draw exhausted all " + candidates.size()
+                    + " candidates");
+        }
+        return draw();
+    }
+
+    private Coords2D draw() {
         int live = candidates.size() - drawn;
         int pick = random.nextInt(live);
         Coords2D cell = candidates.get(pick);

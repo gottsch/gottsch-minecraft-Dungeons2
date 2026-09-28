@@ -34,6 +34,7 @@ import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMark
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.DecorationSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.HangingSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SupportSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
@@ -232,6 +233,17 @@ public final class TestRegistries {
         potSelf[0] = potType;
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.POT_PROCESSOR_NAME), potType);
+
+        // #104's tomb marker, which every shipped list names beside the chest's. Same reason as
+        // every type above.
+        StructureProcessorType<?>[] tombSelf = new StructureProcessorType<?>[1];
+        Codec<SarcophagusMarkerProcessor> tombCodec =
+                SarcophagusMarkerProcessor.codec(() -> tombSelf[0]);
+        StructureProcessorType<SarcophagusMarkerProcessor> tombType = () -> tombCodec;
+        tombSelf[0] = tombType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.SARCOPHAGUS_PROCESSOR_NAME),
+                tombType);
 
         // The support sweep, which classic_entrance_weathering.json names last. Same reason as every
         // type above, and it collected the same toll on the way in: adding it to the JSON without

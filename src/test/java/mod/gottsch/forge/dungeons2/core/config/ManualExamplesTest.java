@@ -82,6 +82,7 @@ class ManualExamplesTest {
             "pots", PotConfig.CODEC,
             "props", PropConfig.CODEC,
             "partition", PartitionPatternEntry.CODEC,
+            "tombs", TombConfig.CODEC,
             // Not a scheme slot but a motif block; unambiguous by name, and its closed schema is
             // exactly what a manual example drifts out of (the max_* keys EE ignores).
             "echelon", EchelonConfig.CODEC);

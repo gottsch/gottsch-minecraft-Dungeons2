@@ -62,6 +62,16 @@ public final class CounterItemPlanner {
             "dungeons2:beholder", "dungeons2:chests/counter_beholder",
             "dungeons2:death_tyrant", "dungeons2:chests/counter_beholder");
 
+    /**
+     * Boss entity id &rarr; the counter-item itself, for when it goes on a secret room's pedestal
+     * rather than in a chest. A pedestal shows ONE stack, and the counter tables roll the item plus a
+     * filler, so the pedestal takes the item by id. Same keys as {@link #COUNTER_TABLES}.
+     */
+    static final Map<String, String> COUNTER_ITEMS = Map.of(
+            "dungeons2:stone_colossus", "dungeons2:boots_of_shock_absorption",
+            "dungeons2:beholder", "dungeons2:mirror_shield",
+            "dungeons2:death_tyrant", "dungeons2:mirror_shield");
+
     /** Mark, 2026-09-24: about one qualifying dungeon in four. */
     static final double CHANCE = 0.25D;
 
@@ -87,13 +97,44 @@ public final class CounterItemPlanner {
      * @param roomId     {@link RoomData#getId()} of the room that places the chest
      * @param lootTable  the counter chest's loot table
      */
-    public record CounterChestPlan(int floorIndex, int roomId, String lootTable) {}
+    public record CounterChestPlan(int floorIndex, int roomId, String lootTable, String item,
+                                   boolean secret) {
+
+        public CounterChestPlan(int floorIndex, int roomId, String lootTable) {
+            this(floorIndex, roomId, lootTable, null, false);
+        }
+
+        /** This plan moved into a secret room: the item on its pedestal, and no chest. */
+        CounterChestPlan asSecret(String item) {
+            return new CounterChestPlan(floorIndex, roomId, lootTable, item, true);
+        }
+    }
+
+    /** Which rooms could be a secret room; see {@link #plan(DungeonLayout, Hideable)}. */
+    @FunctionalInterface
+    public interface Hideable {
+        boolean test(int floorIndex, RoomData room);
+    }
 
     /**
      * Plans this dungeon's counter-item chest, or empty: no boss, a boss with no counter-item, the
      * {@link #CHANCE} roll failing, or no procedural room to put it in.
      */
     public static Optional<CounterChestPlan> plan(DungeonLayout layout) {
+        return plan(layout, (floorIndex, room) -> false);
+    }
+
+    /**
+     * As above, preferring a room {@code hideable} accepts: a dead end that can take a hidden door
+     * and a secret scheme. Mark, 2026-09-28: the counter-item is what a secret room is FOR. The
+     * plan then carries the item for the pedestal and {@code secret}, and the room is forced
+     * secret; with no hideable room it falls back to a chest in any NORMAL room, as before.
+     *
+     * <p>The same one draw picks the room either way, so a dungeon with no hideable room plans the
+     * chest it always did. One that has one plans a different room &mdash; accepted when the rule
+     * was made.</p>
+     */
+    public static Optional<CounterChestPlan> plan(DungeonLayout layout, Hideable hideable) {
         if (layout == null || layout.getBoss() == null) {
             return Optional.empty();
         }
@@ -111,12 +152,22 @@ public final class CounterItemPlanner {
         // NORMAL only. TERMINAL is procedural too, but it is the bottom floor's end room -- the
         // place a boss room would have gone -- and the counter must be found before the boss.
         List<CounterChestPlan> eligible = new ArrayList<>();
+        List<CounterChestPlan> hidden = new ArrayList<>();
         for (FloorLayout floor : layout.getFloors()) {
             for (RoomData room : floor.getRooms()) {
                 if (room.getRole() == RoomRole.NORMAL && room.getTemplateId() == null) {
-                    eligible.add(new CounterChestPlan(floor.getFloorIndex(), room.getId(), table));
+                    CounterChestPlan plan =
+                            new CounterChestPlan(floor.getFloorIndex(), room.getId(), table);
+                    eligible.add(plan);
+                    if (hideable.test(floor.getFloorIndex(), room)) {
+                        hidden.add(plan);
+                    }
                 }
             }
+        }
+        String item = COUNTER_ITEMS.get(layout.getBoss());
+        if (item != null && !hidden.isEmpty()) {
+            return Optional.of(hidden.get(random.nextInt(hidden.size())).asSecret(item));
         }
         if (eligible.isEmpty()) {
             return Optional.empty();

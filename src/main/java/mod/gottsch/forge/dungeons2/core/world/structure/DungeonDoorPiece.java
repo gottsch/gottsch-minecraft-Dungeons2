@@ -21,6 +21,10 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
+import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.HiddenDoors;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.BasicDoorGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -35,6 +39,7 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Procedural piece wrapping one {@link DoorData} doorway. Renders the 4-block
@@ -48,6 +53,8 @@ public class DungeonDoorPiece extends DungeonPiece {
     private static final int DOOR_COLUMN_HEIGHT = 4;
 
     private DoorData door;
+    /** Non-null when this is a secret room's doorway; see {@link #withSecret}. */
+    private SecretDoorway secret;
 
     public DungeonDoorPiece(DoorData door, String motifValue, int floorY, int floorIndex,
                             int anchorX, int anchorZ) {
@@ -59,6 +66,47 @@ public class DungeonDoorPiece extends DungeonPiece {
     public DungeonDoorPiece(StructurePieceSerializationContext context, CompoundTag tag) {
         super(StructurePieces.DOOR, tag);
         this.door = PieceNbt.readDoor(tag.getCompound("Door"));
+        if (tag.contains("Secret")) {
+            this.secret = PieceNbt.readSecretDoorway(tag.getCompound("Secret"));
+        }
+    }
+
+    /**
+     * Makes this a secret room's doorway: a hidden door, a wall-block lintel and a lever sconce on
+     * the corridor wall beside it. Set by {@code SecretRoomPlanner} at generation, once the room's
+     * scheme has been rolled secret.
+     *
+     * <p><strong>Widens the bounding box</strong> to the lever's and decoy's cells beside the door,
+     * and that is load-bearing rather than tidy: {@code postProcess} is only called for the chunks
+     * a piece's box overlaps, so a lever one cell across a chunk border from its door would never be
+     * written at all.</p>
+     */
+    public DungeonDoorPiece withSecret(SecretDoorway secret) {
+        this.secret = secret;
+        if (secret != null) {
+            this.boundingBox = computeSecretBox(secret, floorY, anchorX, anchorZ);
+        }
+        return this;
+    }
+
+    public SecretDoorway getSecret() {
+        return secret;
+    }
+
+    /** The door column, the two wall cells beside it and the two corridor cells in front of those. */
+    private static BoundingBox computeSecretBox(SecretDoorway secret, int floorY, int anchorX,
+                                                int anchorZ) {
+        int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (Coords2D cell : List.of(secret.door(), secret.leverWall(), secret.lever(),
+                secret.decoyWall(), secret.decoyCell())) {
+            minX = Math.min(minX, cell.getX());
+            maxX = Math.max(maxX, cell.getX());
+            minZ = Math.min(minZ, cell.getY());
+            maxZ = Math.max(maxZ, cell.getY());
+        }
+        return new BoundingBox(anchorX + minX, floorY, anchorZ + minZ,
+                anchorX + maxX, floorY + DOOR_COLUMN_HEIGHT - 1, anchorZ + maxZ);
     }
 
     /** World bounding box: the single door cell column. */
@@ -72,6 +120,9 @@ public class DungeonDoorPiece extends DungeonPiece {
     protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
         super.addAdditionalSaveData(context, tag);
         tag.put("Door", PieceNbt.writeDoor(door));
+        if (secret != null) {
+            tag.put("Secret", PieceNbt.writeSecretDoorway(secret));
+        }
     }
 
     @Override
@@ -96,10 +147,38 @@ public class DungeonDoorPiece extends DungeonPiece {
 
     /** Builds this door's placements deterministically (no external RNG). */
     public List<BlockPlacement> renderPlacements(MotifConfig motifConfig) {
+        return renderPlacements(motifConfig, HiddenDoors::isRegistered);
+    }
+
+    /**
+     * As above, asking {@code registered} whether a hidden door block exists. The seam is for
+     * tests, which run without DungeonBlocks' registry.
+     */
+    public List<BlockPlacement> renderPlacements(MotifConfig motifConfig, Predicate<String> registered) {
         List<BlockPlacement> out = new ArrayList<>();
-        new BasicDoorGenerator().withMotifConfig(motifConfig)
-                .build(door, floorY, motif(), deterministicRandom(doorDiscriminator()), out);
+        BasicDoorGenerator generator = new BasicDoorGenerator().withMotifConfig(motifConfig);
+        if (secret != null) {
+            // Resolved against THIS floor's wall, as the room's wall is. The planner only made the
+            // room secret where this resolved, so empty here means the pack changed under a saved
+            // structure; an ordinary door is the degrade, because a hidden door that is missing is a
+            // room sealed for good.
+            Optional<String> hiddenDoor = hiddenDoorFor(motifConfig, registered);
+            if (hiddenDoor.isPresent()) {
+                generator.withSecret(secret, hiddenDoor.get());
+            }
+        }
+        generator.build(door, floorY, motif(), deterministicRandom(doorDiscriminator()), out);
         return out;
+    }
+
+    /**
+     * The hidden door matching this floor's wall stone, when DungeonBlocks has one registered. The
+     * one check {@code SecretRoomPlanner} makes before calling a room hideable, so the two cannot
+     * disagree about which rooms may be secret.
+     */
+    public static Optional<String> hiddenDoorFor(MotifConfig motifConfig, Predicate<String> registered) {
+        String wallId = BlockStateCodec.placement(0, 0, 0, motifConfig.wall().wallState()).getBlockId();
+        return HiddenDoors.forWall(wallId).filter(registered);
     }
 
     /** Packs the door's floor-local XZ into a stable per-piece seed discriminator. */

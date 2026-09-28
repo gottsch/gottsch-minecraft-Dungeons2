@@ -79,7 +79,9 @@ class MarkerProcessorWiringTest {
     private static final List<String> MARKER_TYPES = List.of(
             "dungeons2:spawner",
             "dungeons2:pot",
-            "dungeons2:chest");
+            "dungeons2:chest",
+            // #104. Its marker left standing is a tomb's foot with no tomb.
+            "dungeons2:sarcophagus");
 
     /** Every shipped list, checked against the directory by {@link #everyShippedListIsChecked}. */
     private static final Set<String> SHIPPED = Set.of(
@@ -142,7 +144,8 @@ class MarkerProcessorWiringTest {
      */
     @Test
     void thereAreMarkerProcessorsToCheck() {
-        assertTrue(MARKER_TYPES.size() >= 3, "expected the spawner, pot and chest markers");
+        assertTrue(MARKER_TYPES.size() >= 4,
+                "expected the spawner, pot, chest and sarcophagus markers");
     }
 
     // ---------- reading ----------

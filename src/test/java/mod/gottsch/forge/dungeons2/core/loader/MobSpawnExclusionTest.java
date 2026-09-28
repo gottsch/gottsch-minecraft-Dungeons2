@@ -127,6 +127,23 @@ class MobSpawnExclusionTest {
     }
 
     /**
+     * Nor may a tomb raise one (#104) -- the third route, and the one with no category to opt in
+     * by. A tomb guardian is an ordinary mob scaled by its floor's echelon difficulty, where a boss
+     * is anchored, pinned unscaled and tuned for the one fight a dungeon builds toward.
+     */
+    @Test
+    void noTombRaisesAMiniBoss() {
+        List<String> found = new ArrayList<>();
+        for (String[] guardian : ShippedTombsTest.guardians()) {
+            if (isMiniBoss(guardian[1])) {
+                found.add(guardian[0] + " -> " + guardian[1]);
+            }
+        }
+        assertTrue(found.isEmpty(), "a tomb can raise a mini-boss: " + found);
+        assertTrue(!ShippedTombsTest.guardians().isEmpty(), "no tomb guardians were found to check");
+    }
+
+    /**
      * This test's list and the mod's own are the same list.
      *
      * <p>Without this the exclusion could be silently narrowed from the other end: someone adds a

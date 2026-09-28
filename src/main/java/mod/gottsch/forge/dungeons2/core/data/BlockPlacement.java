@@ -60,6 +60,13 @@ public class BlockPlacement {
     private Map<String, String> properties = new LinkedHashMap<>();
     /** Non-null when this placement carries block-entity data (spawners, chests, signs). */
     private BlockEntityData blockEntityNbt;
+    /**
+     * True when the weathering and decoration passes must not touch this block: it is written
+     * exactly as placed, after them, the way a block-entity placement always has been. A secret
+     * door's column and its lever's wall cell are the users &mdash; a crumbled lintel over an intact
+     * "wall" gives the door away, and a lever whose wall weathers to air pops off it.
+     */
+    private boolean undecorated;
 
     public BlockPlacement() {}
 
@@ -105,6 +112,14 @@ public class BlockPlacement {
 
     public BlockEntityData getBlockEntityNbt() { return blockEntityNbt; }
     public void setBlockEntityNbt(BlockEntityData blockEntityNbt) { this.blockEntityNbt = blockEntityNbt; }
+
+    public boolean isUndecorated() { return undecorated; }
+
+    /** Marks this placement as exempt from the processor pass; see {@link #undecorated}. */
+    public BlockPlacement undecorated() {
+        this.undecorated = true;
+        return this;
+    }
 
     /** Convenience: read-only view of the properties map. */
     public Map<String, String> propertiesView() {

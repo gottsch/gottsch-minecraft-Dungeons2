@@ -2044,3 +2044,28 @@ so a datapack can add or replace them without touching the mod:
 > a set exists — `MobSetDataRegistry` fills at datapack reload while a processor runs during
 > worldgen, so "not loaded yet" and "does not exist" are indistinguishable there. A misspelled set
 > is a build failure instead of a silent no-op spawner.
+
+## The sarcophagus marker (backlog #104, 2026-09-26)
+
+**Place a `dungeons2:sarcophagus_marker` where a sealed tomb's FOOT goes**, facing its head — place
+it by hand like a bed, looking the way the tomb should lie (`/give @s dungeons2:sarcophagus_marker`,
+or the Functional Blocks tab). The bone face is the head end. **Leave the head's cell AIR.** At
+placement the `dungeons2:sarcophagus` processor writes a two-block `dungeonblocks` sarcophagus: the
+foot in the marker's cell, the head in the cell ahead, both closed. A head cell that is not authored
+air — a wall, another marker, `structure_void`, or outside the template — leaves the marker standing
+with a `[D2-TOMB]` WARN rather than eating whatever is there.
+
+What the tomb holds is the processor entry's, per list, so a template tomb takes the contents and
+the block of the pool that placed it: the deepslate list builds `deepslate_sarcophagus` with the
+floor-4 dead, the mud list the floor-0 ones. One marker may override any of it:
+
+```
+/data merge block <x> <y> <z> {guardian:"dungeons2:ghoul",lootTable:"dungeons2:chests/classic_tomb_deep",lootWeight:1,guardianWeight:3,emptyWeight:0}
+```
+
+`floorIndex` + `motif` give the guardian an Enemy Echelons depth, exactly as on the spawner marker.
+DungeonBlocks makes the one roll between loot, guardian and nothing when the tomb is first opened.
+
+> A procedurally-built room reaches the same tomb through the **`tombs` scheme slot** — §11g of the
+> Room Schemes manual — and the two routes write the tomb's NBT from one record
+> (`TombContents.Drawn`), so they cannot drift.

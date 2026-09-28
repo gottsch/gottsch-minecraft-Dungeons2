@@ -456,6 +456,14 @@ public class DungeonsItems {
             "pot_marker",
             () -> new BlockItem(DungeonsBlocks.POT_MARKER.get(), new Item.Properties()));
 
+    /**
+     * #104: the item form of the tomb marker. Placed like a bed: the head goes one block further in
+     * the direction the author looks, which is the only way to set its facing by hand.
+     */
+    public static final RegistryObject<Item> SARCOPHAGUS_MARKER = Registration.ITEMS.register(
+            "sarcophagus_marker",
+            () -> new BlockItem(DungeonsBlocks.SARCOPHAGUS_MARKER.get(), new Item.Properties()));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -493,6 +501,7 @@ public class DungeonsItems {
             event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(CHEST_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(POT_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(SARCOPHAGUS_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 

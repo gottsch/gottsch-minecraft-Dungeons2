@@ -26,7 +26,9 @@ import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MiningConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
+import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.secret.SecretRoomPlanner;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner.CounterChestPlan;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.ExcavationLedger;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner;
@@ -1097,7 +1099,13 @@ public class DungeonStructure extends Structure {
 
                 // #97: the boss's counter-item, planned here for the Mining Chest's reason -- only the
                 // layout knows who the boss is.
-                Optional<CounterChestPlan> counterChest = CounterItemPlanner.plan(layout);
+                // Secret rooms: which dead ends can take a hidden door. Worked out before the
+                // counter-item so it can prefer one of them (Mark, 2026-09-28).
+                Map<SecretRoomPlanner.RoomKey, SecretDoorway> hideable =
+                        SecretRooms.hideable(layout, motifConfig);
+                Optional<CounterChestPlan> counterChest = CounterItemPlanner.plan(layout,
+                        (floorIndex, room) -> hideable.containsKey(
+                                new SecretRoomPlanner.RoomKey(floorIndex, room.getId())));
                 counterChest.ifPresent(plan -> Dungeons.LOGGER.info(
                         "[D2-COUNTER] boss {} -> floor {} room {} holds {}",
                         layout.getBoss(), plan.floorIndex(), plan.roomId(), plan.lootTable()));
@@ -1110,6 +1118,7 @@ public class DungeonStructure extends Structure {
                 allPieces.addAll(commitStagedTransitions(stagedTransitions, layout));
                 allPieces.addAll(commitStagedRooms(stagedRooms, layout));
                 allPieces.addAll(DungeonPieceEmitter.emitDoors(layout, emitAnchorX, emitAnchorZ));
+                SecretRooms.apply(allPieces, hideable, counterChest, motifConfig);
 
                 // Which scheme each procedural room rolled, and where to stand to see it. The
                 // sibling of [D2-PREFAB], and it exists for the same reason that one does: a

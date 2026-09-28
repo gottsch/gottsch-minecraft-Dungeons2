@@ -65,7 +65,23 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                                   Map<String, TemplateLimit> templateLimits,
                                   Optional<List<Stratum>> strataByFloorIndex,
                                   Map<String, String> palette,
-                                  Optional<EchelonConfig> echelon) {
+                                  Optional<EchelonConfig> echelon,
+                                  Optional<List<TombBand>> tombContentsByFloorIndex) {
+
+    /** The shape before {@code tomb_contents_by_floor_index} (#104). */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                               Optional<List<ChestLootBand>> chestLootByFloorIndex,
+                               Map<String, TemplateLimit> templateLimits,
+                               Optional<List<Stratum>> strataByFloorIndex,
+                               Map<String, String> palette,
+                               Optional<EchelonConfig> echelon) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, echelon,
+                Optional.empty());
+    }
 
     /** The shape before {@code echelon}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
@@ -176,7 +192,13 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             // one tuning of what a difficulty step is worth, and hp from one pack with damage from
             // another is a balance nobody authored.
             Codecs.strictOptionalFieldOf(EchelonConfig.CODEC, "echelon")
-                    .forGetter(MotifConfigFragment::echelon)
+                    .forGetter(MotifConfigFragment::echelon),
+            // #104. Replaced wholesale, like the other depth tables: what the dead hold from the
+            // entrance down is one progression, and two packs' halves spliced together are not.
+            Codecs.strictOptionalFieldOf(
+                            TombBand.CODEC.listOf().flatXmap(TombBand::validate, TombBand::validate),
+                            "tomb_contents_by_floor_index")
+                    .forGetter(MotifConfigFragment::tombContentsByFloorIndex)
     ).apply(instance, MotifConfigFragment::new));
 
     /**
@@ -225,6 +247,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         FloorConfig floor = FloorConfig.DEFAULT;
         List<MobSetBand> mobSets = List.of();
         List<ChestLootBand> chestLoot = List.of();
+        List<TombBand> tombs = List.of();
         List<Stratum> strata = List.of();
         Map<String, TemplateLimit> templateLimits = new LinkedHashMap<>();
         Map<String, RoomScheme> schemes = new LinkedHashMap<>();
@@ -239,6 +262,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             floor = fragment.floor().orElse(floor);
             mobSets = fragment.mobSetsByFloorIndex().orElse(mobSets);
             chestLoot = fragment.chestLootByFloorIndex().orElse(chestLoot);
+            tombs = fragment.tombContentsByFloorIndex().orElse(tombs);
             strata = fragment.strataByFloorIndex().orElse(strata);
             echelon = fragment.echelon().isPresent() ? fragment.echelon() : echelon;
             // put, not putAll-into-a-fresh-map: a later fragment replaces an entry for the same
@@ -265,7 +289,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         MotifConfig resolved = new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
                 Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems),
-                Map.copyOf(palette), echelon);
+                Map.copyOf(palette), echelon, tombs);
         checkRoles(resolved, problem -> {
             if (reported.add(problem)) {
                 problems.accept(problem);

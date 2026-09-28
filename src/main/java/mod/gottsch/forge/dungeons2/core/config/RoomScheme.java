@@ -88,6 +88,10 @@ import java.util.stream.Stream;
  * first to make a room non-convex. It runs before the volume slots so nothing grows through it, and
  * after the chests so nothing a player needs is sealed behind it.</p>
  *
+ * <p>{@code tombs} holds a {@link TombConfig} &mdash; sealed two-block sarcophagi, head to the wall,
+ * each holding a loot table and a guardian for its first opening to choose between (#104). Placed
+ * after the chests and before the furniture: a tomb is an encounter, a barrel is scenery.</p>
+ *
  * <p>{@code spawners} holds a {@link SpawnerConfig} &mdash; invisible proximity mob-set spawners
  * standing in the room's interior. The only slot whose output is neither seen nor collided with, and
  * the only one that reaches the world through {@code BlockEntityData}; it is what lets a
@@ -150,8 +154,17 @@ import java.util.stream.Stream;
  * @author Mark Gottschling on Jul 31, 2026
  */
 public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots,
-                         FloorRange floors,
+                         FloorRange floors, DoorRange doors, Optional<SecretConfig> secret,
                          Optional<String> parent, boolean isAbstract) {
+
+    /**
+     * The shape before the door-count gate and {@code secret}: a scheme for any number of doors
+     * that is not a secret room. Every caller that predates them goes through here unchanged.
+     */
+    public RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots, FloorRange floors,
+                      Optional<String> parent, boolean isAbstract) {
+        this(name, weight, gate, slots, floors, DoorRange.ANY, Optional.empty(), parent, isAbstract);
+    }
 
     /**
      * The flat shape: every element slot as its own argument. Kept as a constructor -- and there
@@ -243,6 +256,11 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
     /** See {@link #floor}. */
     public SlotOptions<PartitionPatternEntry> partition() {
         return slots.partition();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<TombConfig> tombs() {
+        return slots.tombs();
     }
 
     /** The shape before the {@code pit} slot (#3): a scheme whose floor is flat everywhere. */
@@ -394,6 +412,9 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
             // meaning the floor SURFACE pattern, and two unrelated senses of "floor" one line apart
             // is how an author misreads a file. See FloorRange.
             FloorRange.MAP_CODEC.forGetter(RoomScheme::floors),
+            // The door-count gate, flat as min_doors/max_doors. A MapCodec for FloorRange's reason.
+            DoorRange.MAP_CODEC.forGetter(RoomScheme::doors),
+            Codecs.strictOptionalFieldOf(SecretConfig.CODEC, "secret").forGetter(RoomScheme::secret),
             Codecs.strictOptionalFieldOf(Codec.STRING, "extends").forGetter(RoomScheme::parent),
             Codecs.strictOptionalFieldOf(Codec.BOOL, "abstract", false).forGetter(RoomScheme::isAbstract)
     ).apply(instance, RoomScheme::new))).flatXmap(RoomScheme::validate, RoomScheme::validate);
@@ -427,8 +448,10 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
      * the only thing a dumped scheme carries to say where half of it came from.</p>
      */
     public RoomScheme inheritFrom(RoomScheme parentScheme) {
+        // doors and secret stay the child's own, with the size and floor bounds: both say which
+        // rooms a scheme is FOR, which is eligibility, not content.
         return new RoomScheme(name, weight, gate, slots.inheritFrom(parentScheme.slots()),
-                floors, parent, isAbstract);
+                floors, doors, secret, parent, isAbstract);
     }
 
     /**
@@ -463,6 +486,16 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
         DataResult<FloorRange> floorRange = scheme.floors.validate("scheme '" + scheme.name + "'");
         if (floorRange.error().isPresent()) {
             return DataResult.error(() -> floorRange.error().get().message());
+        }
+        DataResult<DoorRange> doorRange = scheme.doors.validate("scheme '" + scheme.name + "'");
+        if (doorRange.error().isPresent()) {
+            return DataResult.error(() -> doorRange.error().get().message());
+        }
+        // A secret room has exactly one doorway by construction -- that is what makes it hideable
+        // -- so a floor above one fits no room it could ever be rolled in.
+        if (scheme.isSecret() && scheme.doors.min() > 1) {
+            return DataResult.error(() -> "scheme '" + scheme.name + "': a secret room has one door,"
+                    + " so min_doors " + scheme.doors.min() + " fits no room it could be rolled in");
         }
         return scheme.slots.validate(scheme.name).map(ignored -> scheme);
     }
@@ -547,6 +580,11 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
         return spawners().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
+    /** See {@link #floorFor}. */
+    public Optional<TombConfig> tombsFor(int width, int depth, int height) {
+        return tombs().value().filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
     /**
      * Whether this scheme fills any element slot at all. False for the deliberately undecorated
      * room, which is a legitimate authored outcome rather than a mistake &mdash; the distinction
@@ -605,7 +643,7 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
     public RoomScheme withRoles(Function<String, String> resolver) {
         RoomSlots resolved = slots.withRoles(resolver::apply);
         return resolved == slots ? this
-                : new RoomScheme(name, weight, gate, resolved, floors, parent, isAbstract);
+                : new RoomScheme(name, weight, gate, resolved, floors, doors, secret, parent, isAbstract);
     }
 
     /**
@@ -621,7 +659,7 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
      */
     public RoomScheme resolve(int width, int depth, int height, RandomSource random) {
         return new RoomScheme(name, weight, gate, slots.resolve(width, depth, height, random),
-                floors, parent, isAbstract);
+                floors, doors, secret, parent, isAbstract);
     }
 
     /**
@@ -648,6 +686,19 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
      */
     public boolean fitsFloor(int floorIndex) {
         return floors.contains(floorIndex);
+    }
+
+    /**
+     * Whether this scheme may be rolled in a room with this many doorways (runs of adjacent doorway
+     * cells, see {@code RoomDoorways#count}). A negative count is "not known" and passes.
+     */
+    public boolean fitsDoors(int doorCount) {
+        return doors.contains(doorCount);
+    }
+
+    /** Whether this is a secret room (a {@code secret} object was authored). */
+    public boolean isSecret() {
+        return secret.isPresent();
     }
 
     /**

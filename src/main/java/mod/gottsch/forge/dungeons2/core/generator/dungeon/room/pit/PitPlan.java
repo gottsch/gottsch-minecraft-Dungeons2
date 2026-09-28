@@ -62,13 +62,26 @@ import java.util.Set;
  * @param cover  interior-local cell to a block laid over the pit AT the room's own walking plane
  *               &mdash; a grate. The cell is still excavated beneath it, and still claimed, so
  *               nothing is placed standing on it.
+ * @param falseFloor interior-local cells lidded with the CRUMBLING version of whatever floor block
+ *               the room laid there &mdash; a false floor. Not a {@code cover} entry, because the
+ *               provider cannot know the block: the floor pattern chose it, and only
+ *               {@code RoomPitGenerator}, which sees the placements, can look it up.
  *
  * @author Mark Gottschling on Aug 27, 2026
  */
 public record PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
                       Map<Coords2D, BlockState> rim,
                       Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData,
-                      Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover) {
+                      Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover,
+                      Set<Coords2D> falseFloor) {
+
+    /** The shape this record had before a pit could be lidded with a false floor. */
+    public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
+                   Map<Coords2D, BlockState> rim,
+                   Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData,
+                   Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover) {
+        this(depths, fills, rim, fillData, flood, cover, Set.of());
+    }
 
     /** The shape this record had before a pit could be flooded or covered. */
     public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,

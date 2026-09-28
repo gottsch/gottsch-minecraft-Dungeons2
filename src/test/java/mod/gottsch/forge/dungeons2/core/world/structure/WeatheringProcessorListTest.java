@@ -28,6 +28,7 @@ import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.Decoratio
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.HangingSweepProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor;
+import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor;
 import mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SpawnerMarkerProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.DecorationProcessor;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
@@ -98,6 +99,7 @@ class WeatheringProcessorListTest {
     private static final String HANGING_TYPE = "dungeons2:hanging_sweep";
     private static final String POT_TYPE = "dungeons2:pot";
     private static final String CHEST_TYPE = "dungeons2:chest";
+    private static final String SARCOPHAGUS_TYPE = "dungeons2:sarcophagus";
 
     /**
      * Tolerance on the derived rates. The JSON's per-rule probabilities are rounded
@@ -133,12 +135,12 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(9, processors.size(),
+        assertEquals(10, processors.size(),
                 "Expected the vanilla rule processor, the two aging processors (the main one and"
                         + " the joist-gated timber chain, which is separate because a geometric"
                         + " rule moves its whole processor into finalizeProcessing), decoration,"
                         + " the decoration sweep, the hanging sweep, the #10 spawner marker, the"
-                        + " #56 pot marker and the #61 chest marker");
+                        + " #56 pot marker, the #61 chest marker and the #104 sarcophagus marker");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -152,6 +154,7 @@ class WeatheringProcessorListTest {
                 case POT_TYPE -> PotMarkerProcessor.codec(NO_TYPE);
                 case CHEST_TYPE -> ChestMarkerProcessor.codec(NO_TYPE);
                 case HANGING_TYPE -> HangingSweepProcessor.codec(NO_TYPE);
+                case SARCOPHAGUS_TYPE -> SarcophagusMarkerProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -243,8 +246,15 @@ class WeatheringProcessorListTest {
         //
         // It cannot fire on a procedural piece at all today: nothing procedural places a chain. The
         // day a scheme slot does, the above is what makes that safe rather than a new question.
+        //
+        // dungeons2:sarcophagus (#104) is marked LevelIndependentProcessor, so it gets the whole
+        // piece unclipped -- which it needs, because a tomb is two cells and the head may sit across
+        // a seam from the marker. It reads nothing from the level: the head cell is found in the
+        // same block list, the contents come from the marker's NBT and a draw seeded from its
+        // position, so every pass builds the identical pair. Like the other markers it cannot fire
+        // on a procedural piece at all; the `tombs` slot is that route, and it bypasses the list.
         Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE);
+                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE);
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),

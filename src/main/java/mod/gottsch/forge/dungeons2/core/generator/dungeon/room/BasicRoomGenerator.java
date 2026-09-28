@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
@@ -80,6 +81,10 @@ public class BasicRoomGenerator implements IRoomGenerator {
     private int ceilingBudget = 0;
     private MiningHaul miningHaul;
     private String counterLootTable;
+    /** Non-null when this room can take a hidden door; see {@link #withSecret}. */
+    private SecretDoorway secretDoorway;
+    /** The counter-item on this room's pedestal (#97), which also FORCES a secret scheme. */
+    private String counterItem;
 
     public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
         this.motifConfig = motifConfig;
@@ -136,10 +141,28 @@ public class BasicRoomGenerator implements IRoomGenerator {
         return this;
     }
 
+    /**
+     * Tells this room it can be a secret room, and where its hidden door would go.
+     *
+     * <p>Injected for the Mining Chest's reason: whether the one doorway opens onto a corridor with
+     * wall beside it for a lever is a question about the corridors, which only the planner at
+     * generation can see. Null &mdash; every room but a hideable dead end &mdash; drops every secret
+     * scheme from the roll.</p>
+     *
+     * @param counterItem the dungeon's counter-item (#97) when {@code CounterItemPlanner} put it
+     *                    here: it goes on this room's pedestal, and the room is FORCED secret
+     */
+    public BasicRoomGenerator withSecret(SecretDoorway secretDoorway, String counterItem) {
+        this.secretDoorway = secretDoorway;
+        this.counterItem = secretDoorway == null ? null : counterItem;
+        return this;
+    }
+
     @Override
     public void build(RoomData room, int floorY, int floorIndex, IDungeonMotif motif,
                       RandomSource random, RoomPlacements out) {
         RoomScheme scheme = selectScheme(room, floorIndex, random);
+        boolean secret = scheme.isSecret() && secretDoorway != null;
         List<BlockPlacement> blocks = out.getBlocks();
 
         // Room dims are passed to the selectors because a scheme's element slots carry their own
@@ -149,6 +172,9 @@ public class BasicRoomGenerator implements IRoomGenerator {
         int height = room.getHeight();
 
         IDungeonWallGenerator wallGen = selectWallGenerator(motif, scheme, width, depth, height);
+        if (secret && wallGen instanceof BasicWallGenerator basicWall) {
+            basicWall.withHiddenDoorways(Set.of(secretDoorway.door()));
+        }
         IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme, width, depth, height);
         IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif, scheme, width, depth, height);
 
@@ -268,6 +294,13 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // is a chest whose lid cannot open.
         taken.addAll(partition);
 
+        // The secret room's prize, first of everything that stands on the floor: it is the reason
+        // the room exists, so it takes the centre and the rest works round it.
+        if (secret) {
+            taken.addAll(RoomPedestalGenerator.place(room, floorY, scheme.secret().orElse(null),
+                    counterItem, taken, random, blocks));
+        }
+
         // Spawners before pots, and they claim their cells against them. Not because the two
         // collide -- the spawner block is invisible and has no collision, so a pot would sit in one
         // without complaint -- but because the mobs materialise at that cell and would break the pot
@@ -307,6 +340,16 @@ public class BasicRoomGenerator implements IRoomGenerator {
         taken.addAll(RoomChestGenerator.placeCounterChest(room, floorY, counterLootTable, taken,
                 random, blocks));
 
+        // #104: the tombs, after every chest and before the furniture, claiming both halves. A tomb
+        // is an encounter and a barrel is scenery, so if the floor runs short it is the barrel that
+        // gives way -- the chests' argument one step on. What the dead hold is the FLOOR's by
+        // default, exactly as the chests' loot is: resolved against this depth's tomb band here.
+        scheme.tombsFor(width, depth, height).ifPresent(tombs ->
+                taken.addAll(RoomTombGenerator.placeTombs(room, floorY, floorIndex,
+                        motif == null ? null : motif.getValue(),
+                        tombs.resolvedAgainst(motifConfig.tombBandFor(floorIndex)),
+                        taken, random, blocks)));
+
         // Furniture (#73) after every guaranteed thing and before the pots, claiming its cells.
         // The ordering is the chests' argument one step on: a prop is a SOLID block, so a pot
         // spawned in the same cell stands inside it and, having gravity, falls and shatters as soon
@@ -336,8 +379,13 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */
     public RoomScheme selectScheme(RoomData room, int floorIndex, RandomSource random) {
+        RoomSchemeSelector.SecretEligibility secret = secretDoorway == null
+                ? RoomSchemeSelector.SecretEligibility.NONE
+                : counterItem != null ? RoomSchemeSelector.SecretEligibility.FORCED
+                : RoomSchemeSelector.SecretEligibility.ALLOWED;
         return RoomSchemeSelector.select(motifConfig.schemes(),
-                room.getWidth(), room.getDepth(), room.getHeight(), floorIndex, random);
+                room.getWidth(), room.getDepth(), room.getHeight(), floorIndex,
+                RoomDoorways.count(room), secret, random);
     }
 
     public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme,

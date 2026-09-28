@@ -85,6 +85,15 @@ public class DungeonsBlockEntities {
 							DungeonsBlocks.POT_MARKER.get()).build(null));
 
 	/**
+	 * #104. Like the other three it carries no behaviour: it exists so a template can store a
+	 * tomb's contents per marker and {@code SarcophagusMarkerProcessor} can read them back.
+	 */
+	public static final RegistryObject<BlockEntityType<SarcophagusMarkerBlockEntity>> SARCOPHAGUS_MARKER =
+			Registration.BLOCK_ENTITIES.register("sarcophagus_marker",
+					() -> BlockEntityType.Builder.of(SarcophagusMarkerBlockEntity::new,
+							DungeonsBlocks.SARCOPHAGUS_MARKER.get()).build(null));
+
+	/**
 	 * Forces this class to load so the fields above actually register. Called from
 	 * {@link Registration#init()}.
 	 */

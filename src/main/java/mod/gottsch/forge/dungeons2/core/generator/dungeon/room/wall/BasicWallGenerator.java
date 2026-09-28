@@ -64,6 +64,22 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
     private ISurfacePatternProvider wallPattern;
     /** Filled by {@link #build}; see {@link #occupiedFloorCells()}. */
     private Set<Coords2D> occupiedFloorCells = Set.of();
+    /** Doorways the wall PATTERNS must not see; see {@link #withHiddenDoorways}. */
+    private Set<Coords2D> hiddenDoorways = Set.of();
+
+    /**
+     * Doorways to keep from the door-aware patterns: a secret room's one door. {@code door_jambs}
+     * frames an opening so a player sees it from across the room, which is the one thing a secret
+     * door must not have &mdash; from the corridor, a jamb is a picture frame round "more wall".
+     *
+     * <p>Only the PATTERNS lose it. The two door rows are still left open for the door piece to
+     * hang its hidden door in, and a projecting cornice is still kept out of the column, so the
+     * door can swing into the room.</p>
+     */
+    public BasicWallGenerator withHiddenDoorways(Set<Coords2D> hiddenDoorways) {
+        this.hiddenDoorways = hiddenDoorways == null ? Set.of() : hiddenDoorways;
+        return this;
+    }
 
     /**
      * Injects the resolved motif config. Same "resolve once where {@code RegistryAccess} is
@@ -94,10 +110,12 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
 
         // Doorway cells are floor-local grid coords, the same space as the surfaces' xAt/zAt.
         Set<Coords2D> doorways = new HashSet<>(room.getDoorways());
+        Set<Coords2D> patternDoorways = new HashSet<>(doorways);
+        patternDoorways.removeAll(hiddenDoorways);
 
         occupiedFloorCells = new HashSet<>();
         for (WallSurface surface : WallSurface.forRoom(room)) {
-            SurfacePlan plan = planFor(surface, wallHeight, doorways, random);
+            SurfacePlan plan = planFor(surface, wallHeight, patternDoorways, random);
             surface.emit(plan, floorY, doorways, wallState, out);
 
             // Trim that stands out from the wall (a cornice, a moulding) lands in the room's

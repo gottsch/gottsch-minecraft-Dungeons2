@@ -763,6 +763,33 @@
     },
 
     // =========================================================================================
+    // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
+    // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
+    // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
+    // head cell must be authored AIR, or the marker is left standing with a [D2-TOMB] WARN.
+    //
+    // Beside the chest entry, before the sweep, for the chest entry's reason.
+    //
+    // The contents are this LIST's, because a processor is handed no floorIndex: pools are per
+    // stratum, so this is how an authored tomb gets its depth's dead.
+    // This is floor 0's list, so it holds floor 0's
+    // band from base.json's tomb_contents_by_floor_index.
+    // A marker's own lootTable / guardian / weights win over these, key by key.
+    // DungeonBlocks rolls loot vs guardian vs nothing once, on the first opening.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:sarcophagus",
+      "loot_tables": [ { "loot_table": "dungeons2:chests/classic_tomb_shallow" } ],
+      "guardians": [
+        { "entity": "minecraft:zombie", "weight": 4 },
+        { "entity": "minecraft:skeleton", "weight": 4 },
+        { "entity": "dungeons2:grave_zombie", "weight": 3 },
+        { "entity": "dungeons2:skeleton_warrior", "weight": 2 }
+      ],
+      "loot_weight": 3, "guardian_weight": 2, "empty_weight": 5
+    },
+
+    // =========================================================================================
     // dungeons2:decoration_sweep (added 2026-08-26) -- undoes the decoration above in cells a
     // LATER piece is about to invalidate. It must come after dungeons2:decoration: it inspects
     // what that pass decided, and finalizeProcessing runs the list in order.

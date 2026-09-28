@@ -22,12 +22,17 @@ import mod.gottsch.forge.dungeons2.core.config.EchelonConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.integration.EchelonsIntegration;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.BaseSpawner;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
@@ -35,6 +40,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -61,6 +67,12 @@ import java.util.OptionalInt;
  *       entity tag in {@code SpawnData}: a spawn entry with anything besides {@code id} makes
  *       vanilla skip {@code finalizeSpawn}, and a skeleton would come out of the cage without its
  *       bow.</li>
+ *   <li><strong>Tomb guardian</strong> (#104): DungeonBlocks raises it with
+ *       {@code MobSpawnType.TRIGGERED} and no spawner, from code Dungeons2 does not run, so there is
+ *       no call to wrap in {@link #during}. What there IS is the tomb itself: the guardian is
+ *       finalized standing on it or beside it, while it is open and before it is emptied, and
+ *       generation stamped both halves with the cage's {@link #ORIGIN} compound. See
+ *       {@link #tombOrigin}.</li>
  * </ul>
  * <p>A spawn with neither &mdash; natural spawns, other mods' spawners, vanilla dungeons' cages
  * &mdash; is not ours and is left alone.</p>
@@ -143,6 +155,10 @@ public class EchelonSpawnEvent {
             return;
         }
         Optional<Origin> origin = originOf(event.getSpawner());
+        if (origin.isEmpty() && event.getSpawnType() == MobSpawnType.TRIGGERED) {
+            origin = tombOrigin(event.getLevel(),
+                    BlockPos.containing(event.getX(), event.getY(), event.getZ()));
+        }
         if (origin.isEmpty()) {
             return;
         }
@@ -196,14 +212,50 @@ public class EchelonSpawnEvent {
                         echelon.scaleXp(event.getOriginalExperience(), difficulty.getAsInt())));
     }
 
+    /**
+     * The origin stamped on the open tomb a mob is being raised from, when there is one.
+     *
+     * <p>DungeonBlocks puts its guardian on the tomb's lid, or beside the tomb when the lid has no
+     * headroom, before finalizing it &mdash; so the tomb is the mob's own cell or one of its four
+     * neighbours. Three things must all hold, so that an unrelated TRIGGERED spawn (a warden, say)
+     * standing near a tomb is not claimed: the block is bed-shaped ({@code part}), it is
+     * {@code open} &mdash; the lid was lifted this very tick &mdash; and its block entity carries our
+     * {@link #ORIGIN}, which only Dungeons2 writes. Keyed on properties rather than on a
+     * {@code dungeonblocks} class, which Dungeons2 does not compile against.</p>
+     */
+    static Optional<Origin> tombOrigin(BlockGetter level, BlockPos at) {
+        for (BlockPos pos : List.of(at, at.north(), at.south(), at.east(), at.west())) {
+            if (!isOpenTomb(level.getBlockState(pos))) {
+                continue;
+            }
+            Optional<Origin> origin = stampedOrigin(level.getBlockEntity(pos));
+            if (origin.isPresent()) {
+                return origin;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** The {@link #ORIGIN} a generated block entity carries, a cage's or a tomb's. */
+    static Optional<Origin> stampedOrigin(BlockEntity blockEntity) {
+        if (blockEntity == null
+                || !blockEntity.getPersistentData().contains(ORIGIN, Tag.TAG_COMPOUND)) {
+            return Optional.empty();
+        }
+        CompoundTag tag = blockEntity.getPersistentData().getCompound(ORIGIN);
+        return Optional.of(new Origin(tag.getString(MOTIF), tag.getInt(FLOOR_INDEX)));
+    }
+
+    /** Bed-shaped and open: a sarcophagus whose lid is off. See {@link #tombOrigin}. */
+    static boolean isOpenTomb(BlockState state) {
+        return state.hasProperty(BlockStateProperties.BED_PART)
+                && state.hasProperty(BlockStateProperties.OPEN)
+                && state.getValue(BlockStateProperties.OPEN);
+    }
+
     private static Optional<Origin> originOf(BaseSpawner spawner) {
         if (spawner != null) {
-            BlockEntity cage = spawner.getSpawnerBlockEntity();
-            if (cage == null || !cage.getPersistentData().contains(ORIGIN, Tag.TAG_COMPOUND)) {
-                return Optional.empty();
-            }
-            CompoundTag tag = cage.getPersistentData().getCompound(ORIGIN);
-            return Optional.of(new Origin(tag.getString(MOTIF), tag.getInt(FLOOR_INDEX)));
+            return stampedOrigin(spawner.getSpawnerBlockEntity());
         }
         return Optional.ofNullable(CURRENT.get());
     }

@@ -121,6 +121,17 @@ public class DungeonsBlocks {
                     .sound(SoundType.STONE).noLootTable()));
 
     /**
+     * #104: the tomb authoring marker. One block standing at the tomb's FOOT, facing its head; the
+     * processor writes both halves. Carries a block entity for the other markers' reason &mdash;
+     * what a tomb holds is a per-tomb decision &mdash; and is solid and visible for theirs.
+     */
+    public static final RegistryObject<Block> SARCOPHAGUS_MARKER = Registration.BLOCKS.register(
+            "sarcophagus_marker",
+            () -> new SarcophagusMarkerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE).strength(2.5F)
+                    .sound(SoundType.STONE).noLootTable()));
+
+    /**
      * Forces this class to load so the fields above actually register. Called from
      * {@link Registration#init()}; see that method's comment for why a holder nothing references
      * registers nothing at all.

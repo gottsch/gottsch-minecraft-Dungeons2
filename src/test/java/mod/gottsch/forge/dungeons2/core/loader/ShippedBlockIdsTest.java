@@ -134,7 +134,10 @@ class ShippedBlockIdsTest {
             // not in the exempt list -- the sweep verifies dungeons2: ids through our own
             // blockstate files exactly as it does dungeonblocks:, which is what makes a typo in it
             // a build failure rather than a marker that silently never matches.
-            "marker_block");
+            "marker_block",
+            // #104: the tomb the sarcophagus processor builds. A real dungeonblocks block; a typo
+            // leaves every marker in the pool standing, with a WARN per piece.
+            "sarcophagus_block");
 
     /**
      * Keys whose values are namespaced ids of something that is <em>not</em> a block. Listed rather

@@ -70,6 +70,7 @@ public final class PitShapeRegistry {
         register(InsetPitShape.NAME, InsetPitShape.CODEC);
         register(HazardPitShape.NAME, HazardPitShape.CODEC);
         register(GratePitShape.NAME, GratePitShape.CODEC);
+        register(FalseFloorPitShape.NAME, FalseFloorPitShape.CODEC);
     }
 
     static {

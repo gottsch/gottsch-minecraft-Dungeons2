@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
 import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
 import net.minecraft.core.BlockPos;
@@ -62,6 +63,10 @@ public class DungeonRoomPiece extends DungeonPiece {
     private MiningHaul miningHaul;
     /** The counter-item chest's loot table (#97), or null for every room but at most one. */
     private String counterLootTable;
+    /** Where this room's hidden door would go, when it can be a secret room; else null. */
+    private SecretDoorway secretDoorway;
+    /** The counter-item on this room's pedestal (#97), which forces it secret; else null. */
+    private String counterItem;
 
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
                             int anchorX, int anchorZ) {
@@ -98,6 +103,40 @@ public class DungeonRoomPiece extends DungeonPiece {
         if (tag.contains("CounterLootTable")) {
             this.counterLootTable = tag.getString("CounterLootTable");
         }
+        if (tag.contains("SecretDoorway")) {
+            this.secretDoorway = PieceNbt.readSecretDoorway(tag.getCompound("SecretDoorway"));
+        }
+        if (tag.contains("CounterItem")) {
+            this.counterItem = tag.getString("CounterItem");
+        }
+    }
+
+    /**
+     * Tells this room it can be a secret room: its one doorway can take a hidden door, and here is
+     * where. From {@code SecretRoomPlanner} at generation. Carried in NBT, because whether a room is
+     * hideable depends on the corridors outside it, which a loaded piece has never seen &mdash; and
+     * the answer changes which scheme it rolls.
+     */
+    public DungeonRoomPiece withSecretDoorway(SecretDoorway secretDoorway) {
+        this.secretDoorway = secretDoorway;
+        return this;
+    }
+
+    /**
+     * Puts the dungeon's counter-item (#97) on this room's pedestal and forces the room secret. Only
+     * ever set alongside {@link #withSecretDoorway}.
+     */
+    public DungeonRoomPiece withCounterItem(String counterItem) {
+        this.counterItem = counterItem;
+        return this;
+    }
+
+    public SecretDoorway getSecretDoorway() {
+        return secretDoorway;
+    }
+
+    public String getCounterItem() {
+        return counterItem;
     }
 
     /**
@@ -181,6 +220,12 @@ public class DungeonRoomPiece extends DungeonPiece {
         if (counterLootTable != null) {
             tag.putString("CounterLootTable", counterLootTable);
         }
+        if (secretDoorway != null) {
+            tag.put("SecretDoorway", PieceNbt.writeSecretDoorway(secretDoorway));
+        }
+        if (counterItem != null) {
+            tag.putString("CounterItem", counterItem);
+        }
     }
 
     @Override
@@ -249,6 +294,7 @@ public class DungeonRoomPiece extends DungeonPiece {
                 .withCeilingBudget(ceilingBudget)
                 .withMiningHaul(miningHaul)
                 .withCounterLootTable(counterLootTable)
+                .withSecret(secretDoorway, counterItem)
                 .build(room, floorY, floorIndex, motif(), deterministicRandom(room.getId()), out);
         return out;
     }
@@ -257,11 +303,14 @@ public class DungeonRoomPiece extends DungeonPiece {
      * The scheme this room rolls &mdash; the very same roll {@link #renderRoom} makes, off the same
      * piece-stable seed, so it is exact rather than an estimate.
      *
-     * <p>Diagnostics only (the floor-plan viewer labels rooms with it). Nothing in the render path
-     * calls this; {@code BasicRoomGenerator} rolls its own from the random it is handed.</p>
+     * <p>Nothing in the render path calls this; {@code BasicRoomGenerator} rolls its own from the
+     * random it is handed. The floor-plan viewer labels rooms with it, and {@code SecretRoomPlanner}
+     * asks it whether this room came out secret &mdash; which is only sound because it is the same
+     * roll, secret eligibility included.</p>
      */
     public RoomScheme rolledScheme(MotifConfig motifConfig) {
         return new BasicRoomGenerator().withMotifConfig(motifConfig)
+                .withSecret(secretDoorway, counterItem)
                 .selectScheme(room, floorIndex, deterministicRandom(room.getId()));
     }
 

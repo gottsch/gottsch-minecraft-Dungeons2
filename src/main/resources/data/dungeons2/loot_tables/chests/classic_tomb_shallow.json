@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_tomb_shallow",
+  "pools": [
+    {
+      "//": "GRAVE GOODS, floors 0-1 (#104). What was buried with the dead, not what a storeroom holds: no bread, torches or wheat. Bones and offerings, a little coin, and now and then the arms of whoever lies here -- old, worn, lightly enchanted. Rolled as CHEST loot and spilled over the lid when the tomb's one roll comes up loot.",
+      "rolls": { "min": 2.0, "max": 4.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:bone", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_nugget", "weight": 18,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 9.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:candle", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_nugget", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_sword", "weight": 4,
+          "functions": [ { "function": "minecraft:set_damage", "damage": { "min": 0.15, "max": 0.6 } },
+                         { "function": "minecraft:enchant_randomly" } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_sword", "weight": 4,
+          "functions": [ { "function": "minecraft:set_damage", "damage": { "min": 0.1, "max": 0.5 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_helmet", "weight": 3,
+          "functions": [ { "function": "minecraft:set_damage", "damage": { "min": 0.2, "max": 0.7 } },
+                         { "function": "minecraft:enchant_randomly" } ] },
+        { "type": "minecraft:item", "name": "minecraft:name_tag", "weight": 2 },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 1 }
+      ]
+    }
+  ]
+}

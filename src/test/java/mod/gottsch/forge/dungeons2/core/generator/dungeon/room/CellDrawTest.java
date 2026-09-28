@@ -159,4 +159,26 @@ class CellDrawTest {
         draw.next();
         assertThrows(NoSuchElementException.class, draw::next);
     }
+
+    /**
+     * #104's replacement draw: past the count, still distinct, until every candidate is gone -- and
+     * the same draw as {@link CellDraw#next}, so a caller that rejects nothing gets the cells it
+     * always would have.
+     */
+    @Test
+    void drawsReplacementsPastTheCountUntilTheCandidatesRunOut() {
+        CellDraw draw = CellDraw.of(cells(6), 2, 2, RandomSource.create(9L));
+        CellDraw reference = CellDraw.of(cells(6), 2, 2, RandomSource.create(9L));
+        Set<Coords2D> seen = new HashSet<>();
+        for (int i = 0; i < 6; i++) {
+            assertTrue(draw.hasUndrawn());
+            Coords2D cell = draw.nextUndrawn();
+            assertTrue(seen.add(cell), "handed out twice: " + cell);
+            if (i < 2) {
+                assertEquals(reference.next(), cell);
+            }
+        }
+        assertFalse(draw.hasUndrawn());
+        assertThrows(NoSuchElementException.class, draw::nextUndrawn);
+    }
 }

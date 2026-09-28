@@ -18,12 +18,14 @@
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.config.TombContents;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomTombGenerator;
 import net.minecraft.core.BlockPos;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.nbt.CompoundTag;
@@ -275,7 +277,10 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
 
             BlockState state = BlockStateCodec.resolve(p);
             BlockEntityData be = p.getBlockEntityNbt();
-            if (be != null) {
+            // An undecorated placement (a secret door, its lever's wall) takes the block entities'
+            // route for the block entities' reason: written as placed, after the decoration pass,
+            // so no processor can age it and no plain placement can land on top of it.
+            if (be != null || p.isUndecorated()) {
                 // Block-entity placements (chests / spawners / signs) bypass the
                 // processor pass entirely, preserving the guarantee the procedural
                 // decorator pass always had: authored container content is never
@@ -331,6 +336,9 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             BlockPos worldPos = new BlockPos(worldX, worldY, worldZ);
             placeBlock(level, BlockStateCodec.resolve(p), worldX - pieceBox.minX(),
                     worldY - pieceBox.minY(), pieceBox.maxZ() - worldZ, box);
+            if (p.getBlockEntityNbt() == null) {
+                continue; // an undecorated plain block: nothing to apply, nothing to probe
+            }
             applyBlockEntity(level, worldPos, p.getBlockEntityNbt());
             // The same probe the marker processor keeps, for the same reason: a procedural spawner
             // that works and one that was never planned look identical in game, so this is the only
@@ -346,11 +354,39 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             // writes an order of magnitude more than that at WARN. The per-tick and block-entity-
             // creation lines stay at debug, because those fire on chunk load rather than on
             // generation and would turn a walk through a finished dungeon into a log flood.
-            Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
-                    p.getBlockEntityNbt());
+            //
+            // A tomb (#104) takes its own line instead -- see probeTomb.
+            if (!probeTomb(p, worldPos)) {
+                Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
+                        p.getBlockEntityNbt());
+            }
         }
 
         settleJoinShapes(level, box, jointed);
+    }
+
+    /**
+     * The tomb's probe, in WORLD coordinates; true when {@code p} is a tomb half, logged or not.
+     *
+     * <p>Here rather than in {@code RoomTombGenerator}, which plans in floor-local coordinates and
+     * re-plans on every chunk pass the room spans: it can say neither where a tomb is nor that it was
+     * placed once. This loop knows both &mdash; it sees only the placements inside this chunk's box,
+     * so each half is written, and logged, exactly once.</p>
+     *
+     * <p>One line per tomb, on the HEAD, which is the half carrying the contents.</p>
+     */
+    private boolean probeTomb(BlockPlacement p, BlockPos worldPos) {
+        BlockEntityData data = p.getBlockEntityNbt();
+        if (!RoomTombGenerator.SARCOPHAGUS_ENTITY.equals(data.getType())) {
+            return false;
+        }
+        if (RoomTombGenerator.HEAD.equals(p.getProperties().get(RoomTombGenerator.PART))) {
+            //   grep "D2-TOMB" run/logs/dungeons2.log
+            Dungeons.LOGGER.info("[D2-TOMB] {} at {} facing {} (floor {}, {})", p.getBlockId(),
+                    worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING),
+                    floorIndex, TombContents.Drawn.describe(data.getData()));
+        }
+        return true;
     }
 
     /**

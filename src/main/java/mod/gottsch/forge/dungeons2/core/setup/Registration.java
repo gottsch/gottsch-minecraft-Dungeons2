@@ -147,6 +147,18 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@link mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor}. */
+	public static final String SARCOPHAGUS_PROCESSOR_NAME = "sarcophagus";
+
+	/** #104: turns an authored {@code dungeons2:sarcophagus_marker} into a sealed two-block tomb. */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor>> SARCOPHAGUS_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(SARCOPHAGUS_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor
+								.codec(() -> Registration.SARCOPHAGUS_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
 	public static final RegistryObject<StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {

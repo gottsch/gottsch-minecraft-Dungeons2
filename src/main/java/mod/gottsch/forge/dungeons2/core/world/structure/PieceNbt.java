@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.world.structure;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Direction2D;
@@ -140,6 +141,29 @@ public final class PieceNbt {
                 tag.getInt("A"),
                 tag.getInt("B"),
                 readFacing(tag.getString("Facing")));
+    }
+
+    // -------- SecretDoorway --------
+
+    /**
+     * A secret room's doorway and lever, on the room and door pieces that carry one. Serialized for
+     * the Mining Chest's reason: it is worked out against the corridors, which a loaded piece has
+     * never seen.
+     */
+    public static CompoundTag writeSecretDoorway(SecretDoorway secret) {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("X", secret.x());
+        tag.putInt("Z", secret.z());
+        tag.putString("Inward", secret.inward().name());
+        tag.putInt("LeverSide", secret.leverSide());
+        tag.putBoolean("Decoy", secret.decoy());
+        return tag;
+    }
+
+    public static SecretDoorway readSecretDoorway(CompoundTag tag) {
+        return new SecretDoorway(tag.getInt("X"), tag.getInt("Z"),
+                readFacing(tag.getString("Inward")), tag.getInt("LeverSide"),
+                tag.getBoolean("Decoy"));
     }
 
     // -------- MiningHaul (#7) --------

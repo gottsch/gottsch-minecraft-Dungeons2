@@ -80,7 +80,22 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                           Map<String, TemplateLimit> templateLimits,
                           List<Stratum> strataByFloorIndex,
                           Map<String, String> palette,
-                          Optional<EchelonConfig> echelon) {
+                          Optional<EchelonConfig> echelon,
+                          List<TombBand> tombContentsByFloorIndex) {
+
+    /** The shape before {@code tomb_contents_by_floor_index} (#104): a motif with no tombs to fill. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       List<ChestLootBand> chestLootByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits,
+                       List<Stratum> strataByFloorIndex,
+                       Map<String, String> palette,
+                       Optional<EchelonConfig> echelon) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, echelon,
+                List.of());
+    }
 
     /**
      * The shape before {@code echelon}: a motif that has no opinion on Enemy Echelons scaling, so
@@ -135,6 +150,16 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
      */
     public Optional<ChestLootBand> chestBandFor(int floorIndex) {
         return ChestLootBand.forFloor(chestLootByFloorIndex, floorIndex);
+    }
+
+    /**
+     * What a tomb holds on {@code floorIndex} (#104). Pair with {@code TombConfig#resolvedAgainst};
+     * a scheme's own keys win one by one.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    public Optional<TombBand> tombBandFor(int floorIndex) {
+        return TombBand.forFloor(tombContentsByFloorIndex, floorIndex);
     }
 
     /** The shape before {@code mob_sets_by_floor_index}: a motif whose schemes must name their own sets. */
@@ -274,7 +299,9 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         overlay(palette, stratum.palette()),
                         // Carried through, never per band: a stratum is what a floor is MADE of,
                         // and how hard its mobs are is the depth band's `difficulty`.
-                        echelon))
+                        echelon,
+                        // A depth table like the two above, so carried through for their reason.
+                        tombContentsByFloorIndex))
                 // No band covers this floor -- UNREACHABLE for any pack that loads, since
                 // Stratum.validate already rejects a band table that does not cover floor 0 and
                 // bands run downward from their own floor. Kept resolving roles anyway rather than
@@ -299,7 +326,8 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
         return new MotifConfig(resolvedWall, resolvedCeiling, resolvedDoor, resolvedCorridor,
                 resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
                 motif.chestLootByFloorIndex(), motif.templateLimits(),
-                motif.strataByFloorIndex(), palette, motif.echelon());
+                motif.strataByFloorIndex(), palette, motif.echelon(),
+                motif.tombContentsByFloorIndex());
     }
 
     /**

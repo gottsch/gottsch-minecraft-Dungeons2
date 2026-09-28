@@ -75,6 +75,33 @@
             "rim_block": "$inlay"
           }
         },
+        // False floors: the same shaft with no rim, lidded with a crumbling copy of whatever the
+        // floor laid there. Centred, so the lid is where a player crosses the room. One over
+        // dripstone, one over iron spikes.
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:false_floor",
+          "config": {
+            "width": 3,
+            "depth": 4,
+            "spike_block": "minecraft:pointed_dripstone",
+            "spike_properties": { "vertical_direction": "up" },
+            "spike_probability": 0.4
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:false_floor",
+          "config": {
+            "width": 3,
+            "depth": 4,
+            "spike_block": "dungeonblocks:iron_spikes",
+            "spike_properties": { "facing": "up" },
+            "spike_probability": 0.6
+          }
+        },
         // Grated sumps: dry, flooded, molten. Chamber floors start at index 1, so these never reach
         // the mud band (floor 0), whose timber shoring and dressing are not meant for iron.
         {
@@ -1216,7 +1243,152 @@
         { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 10 },
         { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
         { "weight": 3, "none": true }
+      ],
+
+      // #104: now and then one of the shrine's dead, head to the wall. min 0 / max 1 is "a tomb
+      // here sometimes" -- half the rooms. Its contents are the floor's tomb band.
+      "tombs": {
+        "min_count": 0,
+        "max_count": 1,
+        "variants": [ { "block": "$sarcophagus" } ]
+      }
+    },
+
+    // ---------------------------------------------------------------------------------------------
+    // #104. The dead's own room: sealed sarcophagi in rows along the walls, heads to the wall, feet
+    // to the aisle -- `tombs` keeps a cell clear round each one. No spawners and no chests, on
+    // purpose: the tombs ARE the encounter. Each holds the floor's grave goods or one of its dead,
+    // and DungeonBlocks decides which when the lid first moves, so a crypt of four is a gamble four
+    // times over. $sarcophagus is stone above and deepslate in the deepslate band.
+    //
+    // min_floor_index 1 is a DESIGN gate, not #62's scaffolding: the entrance floor gets its odd
+    // tomb from mud_shrine instead. min_size 9 leaves an aisle between two rows of tombs.
+    // ---------------------------------------------------------------------------------------------
+    {
+      "name": "crypt",
+      "weight": 3,
+      "min_floor_index": 1,
+      "min_size": 9,
+
+      "tombs": {
+        "min_count": 2,
+        "max_count": 4,
+        "variants": [ { "block": "$sarcophagus" } ]
+      },
+
+      "wall": [
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:door_jambs",
+              "config": {
+                "block": "$inlay",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "lintel_block": "$inlay_alt"
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top", "offset": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "ceiling": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 2,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "type": "dungeons2:border",
+          "config": {
+            "inset": 0,
+            "corner_block": "$ornament",
+            "edge_left_block": "$base",
+            "edge_right_block": "$base"
+          }
+        }
+      ],
+
+      // Urns, not the storeroom's clay pots: the stone ones, and not many.
+      "pots": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        { "weight": 2, "none": true }
       ]
+    },
+
+    {
+      // A SECRET room: its one doorway is hung with a hidden door in the wall's own stone, and a
+      // lever sconce on the corridor wall beside it opens it (a plain torch sconce on the other
+      // side is the decoy, and the clue). Only ever rolled in a dead end that can take one -- one
+      // doorway, one block wide, onto a corridor, in a wall stone DungeonBlocks makes a hidden door
+      // for -- so its weight competes only with what else fits a small dead end.
+      //
+      // max_size 9: a vault, not a hall. No wall slot, and it must stay that way: door_jambs would
+      // frame "more wall" from the corridor, and a flush course crossing the door's rows would stop
+      // at the door. The motif's own wall pattern still runs, as it does round every door.
+      //
+      // The dungeon's counter-item (#97), when there is one to hide, is put on THIS room's pedestal
+      // in place of the table below.
+      "name": "secret_vault",
+      "weight": 4,
+      "max_size": 9,
+
+      "secret": {
+        "pedestal_loot_tables": [ { "loot_table": "dungeons2:pedestals/secret" } ]
+      },
+
+      // One chest, always, and never a mimic: finding the lever was the test.
+      "chests": {
+        "min_count": 1,
+        "max_count": 1,
+        "mimic_chance": 0.0,
+        "variants": [ { "block": "minecraft:chest" } ],
+        "loot_tables": [ { "loot_table": "dungeons2:chests/secret" } ]
+      },
+
+      "pots": {
+        "min_count": 0,
+        "max_count": 2,
+        "loot_table": "dungeons2:pots/classic",
+        "variants": [
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+        ]
+      }
     }
   ]
 }

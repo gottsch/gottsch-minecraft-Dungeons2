@@ -186,7 +186,10 @@ public final class DungeonPieceEmitter {
                             && miningChest.roomId() == room.getId()) {
                         piece.withMiningHaul(miningChest.haul());
                     }
-                    if (counterChest != null && counterChest.floorIndex() == floorIndex
+                    // A counter-item planned into a secret room goes on its pedestal instead, which
+                    // SecretRooms hands over once the room is known to have rolled secret.
+                    if (counterChest != null && !counterChest.secret()
+                            && counterChest.floorIndex() == floorIndex
                             && counterChest.roomId() == room.getId()) {
                         piece.withCounterLootTable(counterChest.lootTable());
                     }

@@ -119,6 +119,12 @@ public final class RoomPitGenerator {
         int originX = room.getOriginX();
         int originZ = room.getOriginZ();
 
+        // A false floor's lid, read off the floor BEFORE this pit overwrites it: each cell is the
+        // crumbling version of the block the floor pattern laid there. All or nothing -- a lid with
+        // one cell in the wrong stone is a lid anyone can see, so if any cell has no crumbling
+        // version the pit is left open, which is still an honest trap.
+        Map<Coords2D, String> falseFloor = falseFloorLid(plan, originX, originZ, floorY, out);
+
         // Interior-local cell -> the depth actually dug, which is the AUTHORED depth after the
         // clamp. The lining pass reads this rather than plan.depths(), or a neighbour clamped to a
         // shallower floor than it asked for would be lined to a face that was never cut.
@@ -145,8 +151,9 @@ public final class RoomPitGenerator {
             out.add(BlockStateCodec.placement(x, y, z, floorState));
             BlockState cover = plan.cover().get(cell.getKey());
             BlockState flood = plan.flood().get(cell.getKey());
+            String lid = falseFloor.get(cell.getKey());
             // A covered cell's walking-plane row is the cover's, so the opened column stops under it.
-            int top = cover != null ? floorY - 1 : floorY;
+            int top = cover != null || lid != null ? floorY - 1 : floorY;
             for (int above = y + 1; above <= top; above++) {
                 out.add(BlockStateCodec.placement(x, above, z, flood != null ? flood : air));
             }
@@ -167,6 +174,10 @@ public final class RoomPitGenerator {
             if (cover != null) {
                 // Last in the cell, so neither the clearing nor a fill can take the lid off again.
                 out.add(BlockStateCodec.placement(x, floorY, z, cover));
+            } else if (lid != null) {
+                // By id, not BlockState: a missing DungeonBlocks resolves it to air at placement,
+                // which opens the pit rather than failing the room.
+                out.add(new BlockPlacement(x, floorY, z, lid));
             }
         }
         line(dug, room, originX, originZ, floorY, floorState, out);
@@ -178,6 +189,38 @@ public final class RoomPitGenerator {
                     originZ + 1 + step.getKey().getY(), step.getValue()));
         }
         return excavated;
+    }
+
+    /**
+     * The crumbling block for each false-floor cell, keyed interior-local, or empty when the plan
+     * has no false floor or any cell's floor block has no crumbling version.
+     *
+     * <p>The floor block is the LAST placement at the cell's walking plane, because the placement
+     * list is a layering order: the base floor, then every pattern that painted over it.</p>
+     */
+    static Map<Coords2D, String> falseFloorLid(PitPlan plan, int originX, int originZ, int floorY,
+                                               List<BlockPlacement> out) {
+        if (plan.falseFloor().isEmpty()) {
+            return Map.of();
+        }
+        Map<Coords2D, String> floorIds = new HashMap<>();
+        for (BlockPlacement placement : out) {
+            if (placement.getY() == floorY) {
+                floorIds.put(new Coords2D(placement.getX(), placement.getZ()), placement.getBlockId());
+            }
+        }
+        Map<Coords2D, String> lid = new HashMap<>();
+        for (Coords2D cell : plan.falseFloor()) {
+            String floorId = floorIds.get(new Coords2D(originX + 1 + cell.getX(),
+                    originZ + 1 + cell.getY()));
+            java.util.Optional<String> crumbling = floorId == null
+                    ? java.util.Optional.empty() : CrumblingFloors.forFloor(floorId);
+            if (crumbling.isEmpty()) {
+                return Map.of();
+            }
+            lid.put(cell, crumbling.get());
+        }
+        return lid;
     }
 
     /**
