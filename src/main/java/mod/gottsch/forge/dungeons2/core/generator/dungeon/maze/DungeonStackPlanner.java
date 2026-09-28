@@ -21,7 +21,9 @@ import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.data.CorridorDescent;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
+import mod.gottsch.forge.dungeons2.core.data.CorridorTrap;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor.CorridorDescentField;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor.CorridorTrapPlacer;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -1586,6 +1588,59 @@ public class DungeonStackPlanner {
                 descent.run(), descent.landing(), corridorCells));
     }
 
+    /** As {@link #CORRIDOR_STYLE_SALT}, for #108 stage 3's per-corridor trap roll. */
+    private static final long CORRIDOR_TRAP_SALT = 0x7A9C0DD02A7L;
+
+    /**
+     * #108 stage 3: at most one trap per corridor &mdash; a trench across a straight, level, plain
+     * stretch (see {@link CorridorTrapPlacer}). Planned here, AFTER the descent, for the same two
+     * reasons: the trench reaches below the floor so the box must know, and only here can the cells
+     * beside a premade connector be seen and kept clear.
+     *
+     * <p>Its own Random, so a style with no traps draws nothing and nothing else moves.</p>
+     */
+    private void planTrap(CorridorData cd, Grid2D grid, Set<Coords2D> premadeCells,
+                          CorridorTrap.Options traps, int floorIndex) {
+        if (traps == null || traps.options().isEmpty() || sinkOffset < CorridorTrapPlacer.MIN_FALL) {
+            return;
+        }
+        Random roll = new Random(CORRIDOR_TRAP_SALT ^ mixSeed(mixSeed(seed, floorIndex), cd.getId()));
+        if (roll.nextDouble() >= traps.chance()) {
+            return;
+        }
+        int total = 0;
+        for (CorridorTrap option : traps.options()) {
+            total += option.weight();
+        }
+        int pick = roll.nextInt(total);
+        int index = 0;
+        for (; index < traps.options().size() - 1; index++) {
+            pick -= traps.options().get(index).weight();
+            if (pick < 0) break;
+        }
+        CorridorTrap option = traps.options().get(index);
+
+        // Nothing within a cell of a door or connector: the door's own landing, and the secret
+        // room's lever sconce beside it, stay on solid ground.
+        Set<Coords2D> blocked = new HashSet<>();
+        for (Coords2D cell : cd.getCells()) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    int nx = cell.getX() + dx;
+                    int nz = cell.getY() + dz;
+                    if (isCorridorDoorCell(grid, nx, nz) || premadeCells.contains(new Coords2D(nx, nz))) {
+                        blocked.add(cell);
+                    }
+                }
+            }
+        }
+        CorridorTrapPlacer.Trench trench = CorridorTrapPlacer.place(cd.getCells(), cd::depthAt, blocked,
+                corridorCells, option.length(), option.depth(), sinkOffset, roll);
+        if (trench != null) {
+            cd.setTrap(trench.cells(), trench.floorDepth(), option.kind(), index);
+        }
+    }
+
     /** As {@link #CORRIDOR_STYLE_SALT}, for the entrance offset. See {@link #entranceStart}. */
     private static final long ENTRANCE_OFFSET_SALT = 0xE27A9CE0FF5E7L;
 
@@ -2009,6 +2064,7 @@ public class DungeonStackPlanner {
             cd.getWallCells().addAll(walls);
             cd.getDoorCells().addAll(doors);
             planDescent(cd, grid, premadeCells, corridorStyle.descent(), floorIndex);
+            planTrap(cd, grid, premadeCells, corridorStyle.traps(), floorIndex);
         }
         floor.getCorridors().addAll(corridorMap.values());
 

@@ -44,6 +44,9 @@ public final class CrumblingFloors {
             "minecraft:deepslate_tiles", "dungeonblocks:crumbling_deepslate_tiles",
             "minecraft:mud_bricks", "dungeonblocks:crumbling_mud_bricks");
 
+    /** The lid for a stone with no crumbling version of its own, when a trap must lid regardless. */
+    public static final String FALLBACK = "dungeonblocks:crumbling_stone_bricks";
+
     private CrumblingFloors() {}
 
     /** The crumbling version of {@code floorId}, or empty when DungeonBlocks has none. */

@@ -24,6 +24,8 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
+import mod.gottsch.forge.dungeons2.core.data.CorridorTrap;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.CrumblingFloors;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.CellType;
@@ -36,6 +38,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +114,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         CellTest isWall = (cx, cz) -> isWallElement(grid, cx, cz);
         CellTest isOpen = (cx, cz) -> corridorCells.contains(new Coords2D(cx, cz));
         CellDepth depthOf = (cx, cz) -> corridor.depthAt(new Coords2D(cx, cz));
+        CellDepth reachOf = reach(corridor, depthOf);
 
         Set<Coords2D> wallsEmitted = new HashSet<>();
         for (Coords2D cell : corridor.getCells()) {
@@ -130,12 +134,14 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                         emitDoorwayColumn(nx, nz, floorY, height, palette, courses, isOpen, random, out);
                         wallsEmitted.add(neighbor);
                     } else if (isWallElement(grid, nx, nz)) {
-                        emitWallColumn(nx, nz, floorY, height, palette, courses, isOpen, depthOf, random, out);
+                        emitWallColumn(nx, nz, floorY, height, palette, courses, isOpen, depthOf, reachOf,
+                                random, out);
                         wallsEmitted.add(neighbor);
                     }
                 }
             }
         }
+        emitTrap(corridor, floorY, style, palette, depthOf, isOpen, random, out);
     }
 
     @Override
@@ -159,6 +165,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         CellTest isWall = (cx, cz) -> wallCells.contains(new Coords2D(cx, cz));
         CellTest isOpen = (cx, cz) -> corridorCells.contains(new Coords2D(cx, cz));
         CellDepth depthOf = (cx, cz) -> corridor.depthAt(new Coords2D(cx, cz));
+        CellDepth reachOf = reach(corridor, depthOf);
 
         // Corridor columns first, then the pre-computed wall cells. The two sets
         // are disjoint within a single corridor, so order is immaterial; the
@@ -170,11 +177,12 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         }
         for (Coords2D wall : corridor.getWallCells()) {
             emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, courses, isOpen, depthOf,
-                    random, out);
+                    reachOf, random, out);
         }
         for (Coords2D door : corridor.getDoorCells()) {
             emitDoorwayColumn(door.getX(), door.getY(), floorY, height, palette, courses, isOpen, random, out);
         }
+        emitTrap(corridor, floorY, style, palette, depthOf, isOpen, random, out);
     }
 
     /**
@@ -485,13 +493,14 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      */
     private static void emitWallColumn(int x, int z, int floorY, int height, Palette palette,
                                        List<Course> courses, CellTest isOpen, CellDepth depthOf,
-                                       RandomSource random, List<BlockPlacement> out) {
+                                       CellDepth reachOf, RandomSource random, List<BlockPlacement> out) {
         Direction face = courseFacing(x, z, isOpen);
+        // reachOf, not depthOf: beside a trap's trench the wall is the trench's side too.
         int deepest = 0;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 if ((dx != 0 || dz != 0) && isOpen.test(x + dx, z + dz)) {
-                    deepest = Math.max(deepest, depthOf.at(x + dx, z + dz));
+                    deepest = Math.max(deepest, reachOf.at(x + dx, z + dz));
                 }
             }
         }
@@ -500,6 +509,150 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z,
                     courseState(courses, yOffset + faceDepth, x, z, face, random, palette.wall)));
         }
+    }
+
+    /** How far below the walking plane each cell's column reaches: its trench floor, else its own. */
+    private static CellDepth reach(CorridorData corridor, CellDepth depthOf) {
+        if (!corridor.hasTrap()) {
+            return depthOf;
+        }
+        Set<Coords2D> trench = new HashSet<>(corridor.getTrapCells());
+        int floorDepth = corridor.getTrapFloorDepth();
+        return (cx, cz) -> trench.contains(new Coords2D(cx, cz)) ? floorDepth : depthOf.at(cx, cz);
+    }
+
+    /**
+     * #108 stage 3: the corridor's trap, dug LAST so it overwrites the floor it cuts through.
+     *
+     * <p>Each trench cell is emptied from its floor down to the trench floor, which is laid in the
+     * corridor's floor block. A {@code false_floor} is lidded at the walking plane with the crumbling
+     * version of whatever this corridor laid in that cell; a {@code hazard} is left open, with its rim
+     * on the approach cells either side. Spikes stand on the trench floor.</p>
+     *
+     * <p>Every face is LINED, the room pit's rule and for its reason (a cave behind the face pours in).
+     * The side faces are the wall columns, which already reach down to the trench floor through
+     * {@link #reach}; the approach faces are lined here, under each approach cell's floor.</p>
+     *
+     * <p>Materials come from the style drawn at plan time, by option index; a stratum band that
+     * authors no traps of its own falls back to the corridor section's, and failing both the trench is
+     * still dug, bare (no spikes, no rim), because its geometry is already in the box.</p>
+     *
+     * <p>Random is drawn only here, after every column, and only for spiked cells, so a corridor with
+     * no trap consumes exactly what it did before.</p>
+     */
+    private void emitTrap(CorridorData corridor, int floorY, CorridorStyle style, Palette palette,
+                          CellDepth depthOf, CellTest isOpen, RandomSource random, List<BlockPlacement> out) {
+        if (!corridor.hasTrap()) {
+            return;
+        }
+        CorridorTrap option = trapOption(style, corridor);
+        boolean falseFloor = CorridorTrap.FALSE_FLOOR.equals(corridor.getTrapKind());
+        List<Coords2D> cells = corridor.getTrapCells();
+        Set<Coords2D> trench = new HashSet<>(cells);
+        int bottom = floorY - corridor.getTrapFloorDepth();
+
+        Map<Coords2D, String> lid = falseFloor ? lid(cells, floorY, depthOf, out) : Map.of();
+        BlockState spike = option == null || option.spikeBlock().isEmpty() || option.spikeProbability() <= 0
+                ? null
+                : BlockStateCodec.withProperties(BlockStateCodec.block(option.spikeBlock().get(),
+                        Blocks.POINTED_DRIPSTONE), option.spikeProperties());
+
+        for (Coords2D c : cells) {
+            int base = floorY - depthOf.at(c.getX(), c.getY());
+            out.add(BlockStateCodec.placement(c.getX(), bottom, c.getY(), palette.floor));
+            for (int y = bottom + 1; y <= base; y++) {
+                out.add(BlockStateCodec.placement(c.getX(), y, c.getY(), palette.air));
+            }
+            if (spike != null && random.nextDouble() < option.spikeProbability()) {
+                out.add(BlockStateCodec.placement(c.getX(), bottom + 1, c.getY(), spike));
+            }
+            String lidId = lid.get(c);
+            if (lidId != null) {
+                // By id: a missing DungeonBlocks resolves it to air, which opens the trap, not the game.
+                out.add(new BlockPlacement(c.getX(), base, c.getY(), lidId));
+            }
+        }
+
+        BlockState rim = option == null || falseFloor || option.rimBlock().isEmpty() ? null
+                : BlockStateCodec.block(option.rimBlock().get(), Blocks.PACKED_MUD);
+        Set<Coords2D> lined = new HashSet<>();
+        for (Coords2D c : cells) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    int nx = c.getX() + dx;
+                    int nz = c.getY() + dz;
+                    Coords2D n = new Coords2D(nx, nz);
+                    if ((dx == 0 && dz == 0) || trench.contains(n) || !isOpen.test(nx, nz)) {
+                        continue;
+                    }
+                    int nBase = floorY - depthOf.at(nx, nz);
+                    if (lined.add(n)) {
+                        for (int y = bottom; y < nBase; y++) {
+                            out.add(BlockStateCodec.placement(nx, y, nz, palette.wall));
+                        }
+                    }
+                    if (rim != null && (dx == 0 || dz == 0)) {
+                        out.add(BlockStateCodec.placement(nx, nBase, nz, rim));
+                    }
+                }
+            }
+        }
+    }
+
+    /** The trap option drawn at plan time, from the band's style, then the section; null for none. */
+    private CorridorTrap trapOption(CorridorStyle style, CorridorData corridor) {
+        java.util.Optional<CorridorTrap.Options> traps = style.traps().isPresent()
+                ? style.traps() : motifConfig.corridor().traps();
+        int index = corridor.getTrapOption();
+        if (traps.isEmpty() || index < 0 || index >= traps.get().options().size()) {
+            return null;
+        }
+        CorridorTrap option = traps.get().options().get(index);
+        return option.kind().equals(corridor.getTrapKind()) ? option : null;
+    }
+
+    /**
+     * The false floor's lid: per cell, the crumbling version of the block this corridor LAST laid at
+     * that cell's walking plane (the placement list is a layering order).
+     *
+     * <p>Unlike a room's false floor, a cell whose stone has no crumbling version does not leave the
+     * whole trap open: a corridor floor is speckled, and nearly every trench would fail. It takes the
+     * trench's commonest crumbling block instead, the hidden moat's rule (#107): a slightly
+     * different stone in a corridor that is already a patchwork.</p>
+     */
+    private static Map<Coords2D, String> lid(List<Coords2D> cells, int floorY, CellDepth depthOf,
+                                             List<BlockPlacement> out) {
+        Map<Coords2D, String> laid = new HashMap<>();
+        Set<Coords2D> trench = new HashSet<>(cells);
+        for (BlockPlacement p : out) {
+            Coords2D c = new Coords2D(p.getX(), p.getZ());
+            if (trench.contains(c) && p.getY() == floorY - depthOf.at(c.getX(), c.getY())) {
+                laid.put(c, p.getBlockId());
+            }
+        }
+        Map<Coords2D, String> lid = new HashMap<>();
+        Map<String, Integer> tally = new java.util.TreeMap<>();
+        for (Coords2D c : cells) {
+            java.util.Optional<String> crumbling = laid.containsKey(c)
+                    ? CrumblingFloors.forFloor(laid.get(c)) : java.util.Optional.empty();
+            crumbling.ifPresent(id -> {
+                lid.put(c, id);
+                tally.merge(id, 1, Integer::sum);
+            });
+        }
+        // TreeMap + strict greater-than: ties break alphabetically, never by hash order.
+        String fallback = CrumblingFloors.FALLBACK;
+        int best = 0;
+        for (Map.Entry<String, Integer> e : tally.entrySet()) {
+            if (e.getValue() > best) {
+                best = e.getValue();
+                fallback = e.getKey();
+            }
+        }
+        for (Coords2D c : cells) {
+            lid.putIfAbsent(c, fallback);
+        }
+        return lid;
     }
 
     /**

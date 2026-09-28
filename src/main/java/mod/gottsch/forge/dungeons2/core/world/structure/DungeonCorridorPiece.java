@@ -67,6 +67,15 @@ public class DungeonCorridorPiece extends DungeonPiece {
             Dungeons.LOGGER.info("[D2-DESCENT] floor {} corridor {} ({}) sinks {} at {}", floorIndex,
                     corridor.getId(), corridor.getStyleName(), corridor.maxDepth(), pos.toShortString());
         }
+        if (corridor.hasTrap()) {
+            // #108 stage 3: the first trench cell, standing height at the walking plane over it.
+            Coords2D cell = corridor.getTrapCells().get(0);
+            BlockPos pos = new BlockPos(anchorX + cell.getX(), floorY - corridor.depthAt(cell) + 1,
+                    anchorZ + cell.getY());
+            Dungeons.LOGGER.info("[D2-CORRIDOR-TRAP] floor {} corridor {} {} ({} cells, floor {} below) at {}",
+                    floorIndex, corridor.getId(), corridor.getTrapKind(), corridor.getTrapCells().size(),
+                    corridor.getTrapFloorDepth(), pos.toShortString());
+        }
     }
 
     public DungeonCorridorPiece(StructurePieceSerializationContext context, CompoundTag tag) {
@@ -89,7 +98,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
      */
     private static BoundingBox computeBox(CorridorData corridor, int floorY, int anchorX, int anchorZ) {
         int top = floorY + corridor.getWallHeight() - 1;
-        int bottom = floorY - corridor.maxDepth();
+        int bottom = floorY - corridor.reachBelow();
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
         for (Coords2D c : allCells(corridor)) {

@@ -64,6 +64,11 @@
         "floor": "minecraft:cobblestone", "alternate_floor": "minecraft:cobblestone",
         "ceiling": "minecraft:mud_bricks", "height": 7, "narrow_height": 6, "profile": "arched",
         "arch_block": "minecraft:mud_brick_stairs",
+        "traps": { "chance": 0.25, "options": [
+          { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
+          { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
+          { "kind": "hazard", "weight": 1, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4, "rim_block": "minecraft:packed_mud" }
+        ] },
         "courses": [
           {
             "block": "dungeonblocks:left_large_stone_brick",
@@ -979,6 +984,11 @@
         },
         "height": 7, "narrow_height": 6, "profile": "arched",
         "arch_block": "minecraft:deepslate_brick_stairs",
+        "traps": { "chance": 0.25, "options": [
+          { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
+          { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
+          { "kind": "hazard", "weight": 1, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4, "rim_block": "$inlay" }
+        ] },
         "styles": [
           {
             "name": "vaulted", "weight": 3, "height": 7, "narrow_height": 6,

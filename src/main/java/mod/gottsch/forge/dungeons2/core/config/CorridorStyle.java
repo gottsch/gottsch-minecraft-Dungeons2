@@ -22,6 +22,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig.Profile;
 import mod.gottsch.forge.dungeons2.core.data.CorridorDescent;
+import mod.gottsch.forge.dungeons2.core.data.CorridorTrap;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,7 +60,17 @@ import java.util.Optional;
 public record CorridorStyle(String name, int weight, int height, Profile profile,
                             Optional<String> archBlock, Optional<Integer> narrowHeight,
                             List<WallPatternEntry.CourseEntry> courses,
-                            Optional<CorridorDescent> descent, Optional<String> stepBlock) {
+                            Optional<CorridorDescent> descent, Optional<String> stepBlock,
+                            Optional<CorridorTrap.Options> traps) {
+
+    /** The pre-traps form (#108 stage 3). */
+    public CorridorStyle(String name, int weight, int height, Profile profile,
+                         Optional<String> archBlock, Optional<Integer> narrowHeight,
+                         List<WallPatternEntry.CourseEntry> courses,
+                         Optional<CorridorDescent> descent, Optional<String> stepBlock) {
+        this(name, weight, height, profile, archBlock, narrowHeight, courses, descent, stepBlock,
+                Optional.empty());
+    }
 
     /** The pre-descent form (#108): a style that never sinks. */
     public CorridorStyle(String name, int weight, int height, Profile profile,
@@ -111,10 +122,12 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                 WallPatternEntry.CourseEntry.withRoles(courses, resolver);
         Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
         Optional<String> resolvedStep = Codecs.resolveRole(stepBlock, resolver);
+        Optional<CorridorTrap.Options> resolvedTraps = CorridorTrapCodec.withRoles(traps, resolver);
         return resolved == courses && resolvedArch.equals(archBlock) && resolvedStep.equals(stepBlock)
+                && resolvedTraps == traps
                 ? this
                 : new CorridorStyle(name, weight, height, profile, resolvedArch, narrowHeight,
-                        resolved, descent, resolvedStep);
+                        resolved, descent, resolvedStep, resolvedTraps);
     }
 
     public static final Codec<CorridorStyle> CODEC = RecordCodecBuilder.<CorridorStyle>create(instance ->
@@ -140,7 +153,9 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                     Codecs.strictOptionalFieldOf(CorridorDescentCodec.CODEC, "descent")
                             .forGetter(CorridorStyle::descent),
                     Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "step_block")
-                            .forGetter(CorridorStyle::stepBlock)
+                            .forGetter(CorridorStyle::stepBlock),
+                    Codecs.strictOptionalFieldOf(CorridorTrapCodec.CODEC, "traps")
+                            .forGetter(CorridorStyle::traps)
             ).apply(instance, CorridorStyle::new)).flatXmap(CorridorStyle::validate, CorridorStyle::validate);
 
     private static DataResult<CorridorStyle> validate(CorridorStyle style) {

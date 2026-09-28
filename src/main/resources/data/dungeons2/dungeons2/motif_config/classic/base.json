@@ -106,6 +106,13 @@
     "narrow_height": 6,
     "profile": "arched",
     "arch_block": "minecraft:stone_brick_stairs",
+    // #108 stage 3: at most one trench trap per corridor, across a straight level run. Shared by
+    // every style below (a style may author its own). The bands in strata.json carry their own.
+    "traps": { "chance": 0.25, "options": [
+      { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
+      { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
+      { "kind": "hazard", "weight": 1, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4, "rim_block": "$inlay" }
+    ] },
     "styles": [
       {
         "name": "vaulted",

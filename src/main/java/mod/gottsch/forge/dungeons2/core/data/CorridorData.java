@@ -117,6 +117,17 @@ public class CorridorData {
     private int[] cellDepths = new int[0];
     /** Lazily built from {@link #cellDepths}; transient. */
     private Map<Coords2D, Integer> depthIndex;
+    /**
+     * #108 stage 3: the trench cells of this corridor's trap, empty for none. Planned, for the
+     * {@link #cellDepths} reason: the trench reaches below the floor and the box has to cover it.
+     */
+    private List<Coords2D> trapCells = new ArrayList<>();
+    /** How far below the WALKING PLANE (not the local floor) the trench's floor sits. */
+    private int trapFloorDepth;
+    /** {@code CorridorTrap.HAZARD} or {@code FALSE_FLOOR}; the kind survives a datapack edit. */
+    private String trapKind = "";
+    /** Which of the style's trap options was drawn, for its materials at render; -1 for none. */
+    private int trapOption = -1;
     /** Phase 8 hook: non-null when this corridor is rendered from a template prefab. */
     private String templateId;
 
@@ -203,6 +214,31 @@ public class CorridorData {
             depthIndex = index;
         }
         return depthIndex.getOrDefault(cell, 0);
+    }
+
+    public List<Coords2D> getTrapCells() {
+        if (trapCells == null) trapCells = new ArrayList<>();
+        return trapCells;
+    }
+
+    public int getTrapFloorDepth() { return trapFloorDepth; }
+    public String getTrapKind() { return trapKind == null ? "" : trapKind; }
+    public int getTrapOption() { return trapOption; }
+
+    public boolean hasTrap() {
+        return !getTrapCells().isEmpty();
+    }
+
+    public void setTrap(List<Coords2D> cells, int floorDepth, String kind, int option) {
+        this.trapCells = cells == null ? new ArrayList<>() : new ArrayList<>(cells);
+        this.trapFloorDepth = floorDepth;
+        this.trapKind = kind;
+        this.trapOption = option;
+    }
+
+    /** How far below the walking plane this piece reaches: its deepest cell, or its trench. */
+    public int reachBelow() {
+        return Math.max(maxDepth(), hasTrap() ? trapFloorDepth : 0);
     }
 
     public String getTemplateId() { return templateId; }

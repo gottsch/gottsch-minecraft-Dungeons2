@@ -1200,7 +1200,9 @@ public class DungeonStructure extends Structure {
         List<CorridorStyleWeight> weights = new ArrayList<>();
         for (CorridorStyle style : corridor.rollableStyles()) {
             weights.add(new CorridorStyleWeight(style.name(), style.weight(), style.height(),
-                    style.descent().orElse(null)));
+                    style.descent().orElse(null),
+                    // A style with no traps of its own takes the section's, as rendering does.
+                    style.traps().or(corridor::traps).orElse(null)));
         }
         return weights;
     }

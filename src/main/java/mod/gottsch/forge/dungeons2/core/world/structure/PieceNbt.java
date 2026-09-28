@@ -100,6 +100,15 @@ public final class PieceNbt {
         if (corridor.isSunk()) {
             tag.putIntArray("Depths", corridor.getCellDepths());
         }
+        // #108 stage 3: likewise only a corridor with a trap.
+        if (corridor.hasTrap()) {
+            CompoundTag trap = new CompoundTag();
+            trap.putIntArray("Cells", flatten(corridor.getTrapCells()));
+            trap.putInt("FloorDepth", corridor.getTrapFloorDepth());
+            trap.putString("Kind", corridor.getTrapKind());
+            trap.putInt("Option", corridor.getTrapOption());
+            tag.put("Trap", trap);
+        }
         if (corridor.getTemplateId() != null) {
             tag.putString("Template", corridor.getTemplateId());
         }
@@ -124,6 +133,11 @@ public final class PieceNbt {
         // Absent = level, which is every pre-#108 save and every corridor that did not sink.
         if (tag.contains("Depths")) {
             corridor.setCellDepths(tag.getIntArray("Depths"));
+        }
+        if (tag.contains("Trap")) {
+            CompoundTag trap = tag.getCompound("Trap");
+            corridor.setTrap(unflatten(trap.getIntArray("Cells")), trap.getInt("FloorDepth"),
+                    trap.getString("Kind"), trap.getInt("Option"));
         }
         if (tag.contains("Template")) {
             corridor.setTemplateId(tag.getString("Template"));

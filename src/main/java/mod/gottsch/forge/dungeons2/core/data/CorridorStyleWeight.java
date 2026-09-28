@@ -29,16 +29,23 @@ package mod.gottsch.forge.dungeons2.core.data;
  * {@code DungeonStackPlanner#withCorridorWidth}, one step wider.</p>
  *
  * <p>{@code descent} (#108) is geometry for the same reason {@code height} is: it decides how far
- * below the walking plane the piece's box reaches. {@code null} when the style does not sink.</p>
+ * below the walking plane the piece's box reaches. {@code null} when the style does not sink.
+ * {@code traps} (stage 3) likewise: a trench is dug below the floor. {@code null} for none.</p>
  *
  * <p>Pure POJO &mdash; no Minecraft imports.</p>
  *
  * @author Mark Gottschling on Aug 04, 2026
  */
-public record CorridorStyleWeight(String name, int weight, int height, CorridorDescent descent) {
+public record CorridorStyleWeight(String name, int weight, int height, CorridorDescent descent,
+                                  CorridorTrap.Options traps) {
 
     /** A style that never sinks: every style before #108. */
     public CorridorStyleWeight(String name, int weight, int height) {
-        this(name, weight, height, null);
+        this(name, weight, height, null, null);
+    }
+
+    /** A style with no traps (#108 stage 3). */
+    public CorridorStyleWeight(String name, int weight, int height, CorridorDescent descent) {
+        this(name, weight, height, descent, null);
     }
 }
