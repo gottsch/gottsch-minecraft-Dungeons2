@@ -95,6 +95,11 @@ public final class PieceNbt {
         if (!corridor.getStyleName().isEmpty()) {
             tag.putString("CorridorStyle", corridor.getStyleName());
         }
+        // #108: only a corridor that actually sinks writes this, so every other one keeps the tag
+        // it always had.
+        if (corridor.isSunk()) {
+            tag.putIntArray("Depths", corridor.getCellDepths());
+        }
         if (corridor.getTemplateId() != null) {
             tag.putString("Template", corridor.getTemplateId());
         }
@@ -115,6 +120,10 @@ public final class PieceNbt {
         // Both mean the same thing -- the motif's baseline geometry -- which is the field's default.
         if (tag.contains("CorridorStyle")) {
             corridor.setStyleName(tag.getString("CorridorStyle"));
+        }
+        // Absent = level, which is every pre-#108 save and every corridor that did not sink.
+        if (tag.contains("Depths")) {
+            corridor.setCellDepths(tag.getIntArray("Depths"));
         }
         if (tag.contains("Template")) {
             corridor.setTemplateId(tag.getString("Template"));

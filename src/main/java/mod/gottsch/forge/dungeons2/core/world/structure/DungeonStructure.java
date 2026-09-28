@@ -1199,7 +1199,8 @@ public class DungeonStructure extends Structure {
     public static List<CorridorStyleWeight> corridorStyleWeights(CorridorConfig corridor) {
         List<CorridorStyleWeight> weights = new ArrayList<>();
         for (CorridorStyle style : corridor.rollableStyles()) {
-            weights.add(new CorridorStyleWeight(style.name(), style.weight(), style.height()));
+            weights.add(new CorridorStyleWeight(style.name(), style.weight(), style.height(),
+                    style.descent().orElse(null)));
         }
         return weights;
     }

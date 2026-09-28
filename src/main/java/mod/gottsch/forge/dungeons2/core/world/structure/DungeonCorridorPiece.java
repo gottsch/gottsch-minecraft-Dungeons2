@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
@@ -54,6 +55,18 @@ public class DungeonCorridorPiece extends DungeonPiece {
         super(StructurePieces.CORRIDOR, motifValue, floorY, floorIndex, anchorX, anchorZ,
                 computeBox(corridor, floorY, anchorX, anchorZ));
         this.corridor = corridor;
+        if (corridor.isSunk()) {
+            // #108: where to /tp to see it -- the deepest cell, in world coords, standing height.
+            int[] depths = corridor.getCellDepths();
+            int deepest = 0;
+            for (int i = 1; i < depths.length; i++) {
+                if (depths[i] > depths[deepest]) deepest = i;
+            }
+            Coords2D low = corridor.getCells().get(deepest);
+            BlockPos pos = new BlockPos(anchorX + low.getX(), floorY - depths[deepest] + 1, anchorZ + low.getY());
+            Dungeons.LOGGER.info("[D2-DESCENT] floor {} corridor {} ({}) sinks {} at {}", floorIndex,
+                    corridor.getId(), corridor.getStyleName(), corridor.maxDepth(), pos.toShortString());
+        }
     }
 
     public DungeonCorridorPiece(StructurePieceSerializationContext context, CompoundTag tag) {
@@ -63,14 +76,20 @@ public class DungeonCorridorPiece extends DungeonPiece {
 
     /**
      * World bounding box: covers every corridor, wall and door cell;
-     * Y = {@code floorY .. floorY + wallHeight - 1}.
+     * Y = {@code floorY - maxDepth .. floorY + wallHeight - 1}.
      *
      * <p>The box and what {@link BasicCorridorGenerator} emits must agree exactly &mdash; a block
      * outside the piece's box is silently clipped by vanilla &mdash; so both read the height off
      * the same {@link CorridorData#getWallHeight()}, which the planner resolved from the motif.</p>
+     *
+     * <p>#108: the box reaches down by the corridor's OWN deepest cell, not the floor's whole
+     * {@code sinkOffset} as a room's does. A room cannot size to its pit because the pit is rolled
+     * at render time; a corridor's depths are planned, so it can, and a corridor that does not sink
+     * keeps exactly the box it always had.</p>
      */
     private static BoundingBox computeBox(CorridorData corridor, int floorY, int anchorX, int anchorZ) {
         int top = floorY + corridor.getWallHeight() - 1;
+        int bottom = floorY - corridor.maxDepth();
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
         for (Coords2D c : allCells(corridor)) {
@@ -84,7 +103,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
             return new BoundingBox(anchorX, floorY, anchorZ, anchorX, top, anchorZ);
         }
         return new BoundingBox(
-                anchorX + minX, floorY, anchorZ + minZ,
+                anchorX + minX, bottom, anchorZ + minZ,
                 anchorX + maxX, top, anchorZ + maxZ);
     }
 

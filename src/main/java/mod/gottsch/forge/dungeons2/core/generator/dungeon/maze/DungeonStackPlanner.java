@@ -19,7 +19,9 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.maze;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.data.CorridorData;
+import mod.gottsch.forge.dungeons2.core.data.CorridorDescent;
 import mod.gottsch.forge.dungeons2.core.data.CorridorStyleWeight;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.corridor.CorridorDescentField;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
@@ -1535,6 +1537,55 @@ public class DungeonStackPlanner {
     /** Keeps the style roll uncorrelated with the maze roll that shares {@link #mixSeed}. */
     private static final long CORRIDOR_STYLE_SALT = 0x5CB1D025791E5L;
 
+    private static final int[][] ORTHOGONAL_STEPS = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+
+    /** As {@link #CORRIDOR_STYLE_SALT}, for #108's per-corridor descent roll. */
+    private static final long CORRIDOR_DESCENT_SALT = 0xDE5CE27C0DD0L;
+
+    /**
+     * #108: whether this corridor sinks into the floor's {@code sinkOffset} band, and if so every
+     * cell's depth.
+     *
+     * <p>Decided HERE, at plan time, for two reasons. The depth reaches the piece's bounding box,
+     * which is sized at construction (the {@code wallHeight} reason). And only this method can see
+     * the corridor's premade ({@code dungeons2:connector}) neighbours: they are deliberately left
+     * out of {@code wallCells}/{@code doorCells}, so after conversion nothing records that a cell
+     * faces a template's built-in door &mdash; and that door has to be met level.</p>
+     *
+     * <p>Its own Random, for the reason {@link #rollCorridorStyle} documents: a style with no
+     * {@code descent} draws nothing, and one that has it draws only from this, so no other roll in
+     * the dungeon moves.</p>
+     */
+    private void planDescent(CorridorData cd, Grid2D grid, Set<Coords2D> premadeCells,
+                             CorridorDescent descent, int floorIndex) {
+        if (descent == null || sinkOffset <= 0) {
+            return;
+        }
+        Random roll = new Random(CORRIDOR_DESCENT_SALT ^ mixSeed(mixSeed(seed, floorIndex), cd.getId()));
+        if (roll.nextDouble() >= descent.chance()) {
+            return;
+        }
+        int lo = Math.min(descent.minDepth(), descent.maxDepth());
+        int hi = Math.max(descent.minDepth(), descent.maxDepth());
+        int depth = Math.min(sinkOffset, lo + roll.nextInt(hi - lo + 1));
+
+        Set<Coords2D> anchors = new HashSet<>();
+        for (Coords2D cell : cd.getCells()) {
+            for (int[] d : ORTHOGONAL_STEPS) {
+                int nx = cell.getX() + d[0];
+                int nz = cell.getY() + d[1];
+                if (isCorridorDoorCell(grid, nx, nz) || premadeCells.contains(new Coords2D(nx, nz))) {
+                    anchors.add(cell);
+                    break;
+                }
+            }
+        }
+        // Junctions, turns and dilation-widened stretches stay level: only cells no wider than the
+        // carved width may sink (Mark, 2026-09-28).
+        cd.setCellDepths(CorridorDescentField.compute(cd.getCells(), anchors, depth,
+                descent.run(), descent.landing(), corridorCells));
+    }
+
     /** As {@link #CORRIDOR_STYLE_SALT}, for the entrance offset. See {@link #entranceStart}. */
     private static final long ENTRANCE_OFFSET_SALT = 0xE27A9CE0FF5E7L;
 
@@ -1957,6 +2008,7 @@ public class DungeonStackPlanner {
             }
             cd.getWallCells().addAll(walls);
             cd.getDoorCells().addAll(doors);
+            planDescent(cd, grid, premadeCells, corridorStyle.descent(), floorIndex);
         }
         floor.getCorridors().addAll(corridorMap.values());
 

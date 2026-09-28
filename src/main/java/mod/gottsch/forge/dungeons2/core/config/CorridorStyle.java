@@ -21,6 +21,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig.Profile;
+import mod.gottsch.forge.dungeons2.core.data.CorridorDescent;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +58,16 @@ import java.util.Optional;
  */
 public record CorridorStyle(String name, int weight, int height, Profile profile,
                             Optional<String> archBlock, Optional<Integer> narrowHeight,
-                            List<WallPatternEntry.CourseEntry> courses) {
+                            List<WallPatternEntry.CourseEntry> courses,
+                            Optional<CorridorDescent> descent, Optional<String> stepBlock) {
+
+    /** The pre-descent form (#108): a style that never sinks. */
+    public CorridorStyle(String name, int weight, int height, Profile profile,
+                         Optional<String> archBlock, Optional<Integer> narrowHeight,
+                         List<WallPatternEntry.CourseEntry> courses) {
+        this(name, weight, height, profile, archBlock, narrowHeight, courses, Optional.empty(),
+                Optional.empty());
+    }
 
     /** The pre-courses form. */
     public CorridorStyle(String name, int weight, int height, Profile profile,
@@ -100,9 +110,11 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
         List<WallPatternEntry.CourseEntry> resolved =
                 WallPatternEntry.CourseEntry.withRoles(courses, resolver);
         Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
-        return resolved == courses && resolvedArch.equals(archBlock) ? this
+        Optional<String> resolvedStep = Codecs.resolveRole(stepBlock, resolver);
+        return resolved == courses && resolvedArch.equals(archBlock) && resolvedStep.equals(stepBlock)
+                ? this
                 : new CorridorStyle(name, weight, height, profile, resolvedArch, narrowHeight,
-                        resolved);
+                        resolved, descent, resolvedStep);
     }
 
     public static final Codec<CorridorStyle> CODEC = RecordCodecBuilder.<CorridorStyle>create(instance ->
@@ -124,7 +136,11 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                             .forGetter(CorridorStyle::narrowHeight),
                     Codecs.strictOptionalFieldOf(WallPatternEntry.CourseEntry.CODEC.listOf(), "courses",
                                     List.of())
-                            .forGetter(CorridorStyle::courses)
+                            .forGetter(CorridorStyle::courses),
+                    Codecs.strictOptionalFieldOf(CorridorDescentCodec.CODEC, "descent")
+                            .forGetter(CorridorStyle::descent),
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "step_block")
+                            .forGetter(CorridorStyle::stepBlock)
             ).apply(instance, CorridorStyle::new)).flatXmap(CorridorStyle::validate, CorridorStyle::validate);
 
     private static DataResult<CorridorStyle> validate(CorridorStyle style) {

@@ -20,7 +20,9 @@ package mod.gottsch.forge.dungeons2.core.data;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Plain data describing one corridor region within a {@link FloorLayout}.
@@ -106,6 +108,15 @@ public class CorridorData {
      * edit makes the two disagree, the height wins and the shape of the excavation is unchanged.
      */
     private String styleName = BASELINE_STYLE;
+    /**
+     * #108: how far each cell's walking plane sits BELOW the floor's, parallel to {@link #cells}.
+     * Empty means every cell is at depth 0, which is every corridor that does not sink and every save
+     * from before it could. Decided by the planner, for the reason {@link #wallHeight} is: it sizes
+     * the piece's box downward at construction.
+     */
+    private int[] cellDepths = new int[0];
+    /** Lazily built from {@link #cellDepths}; transient. */
+    private Map<Coords2D, Integer> depthIndex;
     /** Phase 8 hook: non-null when this corridor is rendered from a template prefab. */
     private String templateId;
 
@@ -127,7 +138,10 @@ public class CorridorData {
         if (cells == null) cells = new ArrayList<>();
         return cells;
     }
-    public void setCells(List<Coords2D> cells) { this.cells = cells; }
+    public void setCells(List<Coords2D> cells) {
+        this.cells = cells;
+        this.depthIndex = null;
+    }
 
     public List<Coords2D> getWallCells() {
         if (wallCells == null) wallCells = new ArrayList<>();
@@ -146,6 +160,50 @@ public class CorridorData {
 
     public String getStyleName() { return styleName == null ? BASELINE_STYLE : styleName; }
     public void setStyleName(String styleName) { this.styleName = styleName; }
+
+    /** Parallel to {@link #getCells()}; empty when nothing sinks. */
+    public int[] getCellDepths() {
+        return cellDepths == null ? new int[0] : cellDepths;
+    }
+
+    public void setCellDepths(int[] cellDepths) {
+        this.cellDepths = cellDepths == null ? new int[0] : cellDepths;
+        this.depthIndex = null;
+    }
+
+    /** True when any cell sits below the walking plane. */
+    public boolean isSunk() {
+        return maxDepth() > 0;
+    }
+
+    /** The deepest cell, or 0. What the piece's box reaches down by. */
+    public int maxDepth() {
+        int max = 0;
+        for (int d : getCellDepths()) {
+            max = Math.max(max, d);
+        }
+        return max;
+    }
+
+    /**
+     * A cell's depth below the walking plane; 0 for a cell that does not sink and for any cell that
+     * is not this corridor's (a wall, a door, a neighbour).
+     */
+    public int depthAt(Coords2D cell) {
+        int[] depths = getCellDepths();
+        if (depths.length == 0) {
+            return 0;
+        }
+        if (depthIndex == null) {
+            Map<Coords2D, Integer> index = new HashMap<>();
+            List<Coords2D> all = getCells();
+            for (int i = 0; i < all.size() && i < depths.length; i++) {
+                index.put(all.get(i), depths[i]);
+            }
+            depthIndex = index;
+        }
+        return depthIndex.getOrDefault(cell, 0);
+    }
 
     public String getTemplateId() { return templateId; }
     public void setTemplateId(String templateId) { this.templateId = templateId; }

@@ -112,6 +112,7 @@
         "weight": 3, "height": 7, "narrow_height": 6,
         "profile": "arched",
         "arch_block": "minecraft:stone_brick_stairs",
+        "descent": { "chance": 0.5, "min_depth": 2, "max_depth": 4, "run": 2, "landing": 1 },
         "courses": [
           {
             "block": "$plinth_left",
@@ -132,6 +133,7 @@
         "weight": 1, "height": 8, "narrow_height": 7,
         "profile": "arched",
         "arch_block": "minecraft:stone_brick_stairs",
+        "descent": { "chance": 0.5, "min_depth": 2, "max_depth": 4, "run": 2, "landing": 1 },
         "courses": [
           {
             "block": "$plinth_left",

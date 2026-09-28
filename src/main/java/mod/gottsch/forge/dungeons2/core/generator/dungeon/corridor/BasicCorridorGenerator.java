@@ -110,12 +110,13 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         Set<Coords2D> corridorCells = new HashSet<>(corridor.getCells());
         CellTest isWall = (cx, cz) -> isWallElement(grid, cx, cz);
         CellTest isOpen = (cx, cz) -> corridorCells.contains(new Coords2D(cx, cz));
+        CellDepth depthOf = (cx, cz) -> corridor.depthAt(new Coords2D(cx, cz));
 
         Set<Coords2D> wallsEmitted = new HashSet<>();
         for (Coords2D cell : corridor.getCells()) {
             int x = cell.getX();
             int z = cell.getY();
-            emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, random, out);
+            emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, depthOf, random, out);
 
             // 8-neighbor wall columns, sourced live from the grid.
             for (int dx = -1; dx <= 1; dx++) {
@@ -129,7 +130,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                         emitDoorwayColumn(nx, nz, floorY, height, palette, courses, isOpen, random, out);
                         wallsEmitted.add(neighbor);
                     } else if (isWallElement(grid, nx, nz)) {
-                        emitWallColumn(nx, nz, floorY, height, palette, courses, isOpen, random, out);
+                        emitWallColumn(nx, nz, floorY, height, palette, courses, isOpen, depthOf, random, out);
                         wallsEmitted.add(neighbor);
                     }
                 }
@@ -157,6 +158,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         wallCells.addAll(corridor.getDoorCells());
         CellTest isWall = (cx, cz) -> wallCells.contains(new Coords2D(cx, cz));
         CellTest isOpen = (cx, cz) -> corridorCells.contains(new Coords2D(cx, cz));
+        CellDepth depthOf = (cx, cz) -> corridor.depthAt(new Coords2D(cx, cz));
 
         // Corridor columns first, then the pre-computed wall cells. The two sets
         // are disjoint within a single corridor, so order is immaterial; the
@@ -164,10 +166,11 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         for (Coords2D cell : corridor.getCells()) {
             int x = cell.getX();
             int z = cell.getY();
-            emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, random, out);
+            emitCellColumn(x, z, floorY, height, narrowCeiling, palette, isWall, isOpen, depthOf, random, out);
         }
         for (Coords2D wall : corridor.getWallCells()) {
-            emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, courses, isOpen, random, out);
+            emitWallColumn(wall.getX(), wall.getY(), floorY, height, palette, courses, isOpen, depthOf,
+                    random, out);
         }
         for (Coords2D door : corridor.getDoorCells()) {
             emitDoorwayColumn(door.getX(), door.getY(), floorY, height, palette, courses, isOpen, random, out);
@@ -182,26 +185,84 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      */
     private static void emitCellColumn(int x, int z, int floorY, int height, int narrowCeiling,
                                        Palette palette, CellTest isWall, CellTest isOpen,
-                                       RandomSource random, List<BlockPlacement> out) {
+                                       CellDepth depthOf, RandomSource random, List<BlockPlacement> out) {
         int ceilingHeight = isNarrow(x, z, isWall) ? narrowCeiling : height;
         // Re-checked per cell, not just per motif: a dropped ceiling can take a cell below the
         // height an arch needs even when the corridor as a whole cleared it at load time.
         Haunch haunch = ceilingHeight >= CorridorConfig.MIN_ARCHED_HEIGHT
                 ? haunchFor(palette, x, z, isWall, isOpen) : null;
-        emitCorridorColumn(x, z, floorY, height, ceilingHeight,
+        int depth = depthOf.at(x, z);
+        emitCorridorColumn(x, z, floorY, depth, height, ceilingHeight,
                 haunch == null ? null : haunch.facing(),
                 haunch == null ? "straight" : haunch.shape(),
+                riserFor(palette, x, z, depth, isOpen, depthOf),
                 palette, random, out);
+    }
+
+    /**
+     * #108: the stair that makes a one-block rise walkable, or {@code null} for none.
+     *
+     * <p>It goes in the LOWER cell, one row above that cell's floor, facing the higher neighbour
+     * &mdash; so its top is level with the higher cell's floor and nobody has to jump. The depth
+     * field guarantees every rise is exactly one block and that no cell is higher on both sides of
+     * an axis ({@link CorridorDescentField}), so a stair always has one way to face.</p>
+     *
+     * <p>Two higher neighbours at a corner take an {@code inner_*} stair, so both are walkable. The
+     * shape is decided here rather than left to vanilla, for the reason {@link #haunchShape} gives:
+     * corridor pieces opt out of the settle pass, and vanilla's answer is not chunk-stable anyway.
+     * Tie-break is {@link Direction.Plane#HORIZONTAL} order, deterministic like the haunch's.</p>
+     *
+     * <p>{@code null} too when nothing names a stair ({@code CorridorConfig#stepStateFor}): the rise
+     * is left as a plain block, which is walkable by jumping and invents no material.</p>
+     */
+    private static BlockState riserFor(Palette palette, int x, int z, int depth, CellTest isOpen,
+                                       CellDepth depthOf) {
+        if (depth == 0 || palette.step == null) {
+            return null;
+        }
+        Direction first = null;
+        Direction second = null;
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            int nx = x + d.getStepX();
+            int nz = z + d.getStepZ();
+            if (isOpen.test(nx, nz) && depthOf.at(nx, nz) < depth) {
+                if (first == null) {
+                    first = d;
+                } else if (second == null) {
+                    second = d;
+                }
+            }
+        }
+        if (first == null) {
+            return null;
+        }
+        // inner_left is the stair's own half plus the quarter on its counter-clockwise side --
+        // read off vanilla's SHAPE_BY_STATE, the same convention haunchShape uses.
+        String shape = "straight";
+        if (second == first.getCounterClockWise()) {
+            shape = "inner_left";
+        } else if (second == first.getClockWise()) {
+            shape = "inner_right";
+        }
+        return BlockStateCodec.withProperties(palette.step,
+                Map.of("half", "bottom", "facing", first.getSerializedName(), "shape", shape));
     }
 
     /**
      * A floor block at {@code floorY} (45% {@code floor}, 55% {@code alternateFloor}, matching
      * {@code BasicFloorGenerator}'s room-floor split), {@code height-2} air blocks above, and a
      * ceiling block at {@code floorY+height-1} (the top of the corridor walls), closing the corridor.
+     *
+     * <p>#108: the whole column drops by {@code depth} &mdash; floor, air, haunch and ceiling
+     * together, so a sinking run reads as a tunnel going down rather than a trench with a tall roof
+     * &mdash; and the rows between the lowered ceiling and the corridor's full top are filled solid,
+     * the same fill a narrow cell's dropped ceiling gets. {@code riser} replaces the first air row.</p>
      */
-    private static void emitCorridorColumn(int x, int z, int floorY, int height, int ceilingHeight,
-                                            Direction haunch, String haunchShape, Palette palette,
-                                            RandomSource random, List<BlockPlacement> out) {
+    private static void emitCorridorColumn(int x, int z, int floorY, int depth, int height, int ceilingHeight,
+                                            Direction haunch, String haunchShape, BlockState riser,
+                                            Palette palette, RandomSource random, List<BlockPlacement> out) {
+        int top = floorY + height - 1;
+        floorY -= depth;
         // The pair is rolled FIRST and unconditionally, so `alternate_floor` still means something
         // under a pattern: an overlay speckle accents a cell or leaves this standing. Draw counts
         // are constant per cell -- 1 with no pattern, 2 with one -- which is what keeps the run
@@ -217,15 +278,16 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         int haunchRow = ceilingHeight - 2;
         for (int yOffset = 1; yOffset < ceilingHeight - 1; yOffset++) {
             BlockState state = (haunch != null && yOffset == haunchRow)
-                    ? haunchState(palette.arch, haunch, haunchShape) : palette.air;
+                    ? haunchState(palette.arch, haunch, haunchShape)
+                    : (riser != null && yOffset == 1 ? riser : palette.air);
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z, state));
         }
         out.add(BlockStateCodec.placement(x, floorY + ceilingHeight - 1, z, palette.ceiling));
         // A dropped ceiling leaves rows between it and the corridor's full height. Fill them solid
         // rather than leaving them unwritten: the piece's bounding box covers them either way, and
         // whatever the terrain happened to put there could be a cave, i.e. a hole in the ceiling.
-        for (int yOffset = ceilingHeight; yOffset < height; yOffset++) {
-            out.add(BlockStateCodec.placement(x, floorY + yOffset, z, palette.wall));
+        for (int y = floorY + ceilingHeight; y <= top; y++) {
+            out.add(BlockStateCodec.placement(x, y, z, palette.wall));
         }
     }
 
@@ -407,14 +469,36 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         boolean test(int x, int z);
     }
 
-    /** A wall column {@code height} blocks tall (Y = floorY .. floorY+height-1). */
+    /** #108: a cell's depth below the walking plane; 0 for anything that is not a sunk corridor cell. */
+    @FunctionalInterface
+    private interface CellDepth {
+        int at(int x, int z);
+    }
+
+    /**
+     * A wall column {@code height} blocks tall (Y = floorY .. floorY+height-1).
+     *
+     * <p>#108: it reaches DOWN to the deepest corridor cell among its eight neighbours, so a sunk
+     * run is walled all the way to its floor, and its top stays put, since the shallowest neighbour
+     * still needs it. Courses anchor to the floor of the cell the wall FACES, so a band steps down
+     * with the passage it runs along rather than disappearing into the floor.</p>
+     */
     private static void emitWallColumn(int x, int z, int floorY, int height, Palette palette,
-                                       List<Course> courses, CellTest isOpen, RandomSource random,
-                                       List<BlockPlacement> out) {
+                                       List<Course> courses, CellTest isOpen, CellDepth depthOf,
+                                       RandomSource random, List<BlockPlacement> out) {
         Direction face = courseFacing(x, z, isOpen);
-        for (int yOffset = 0; yOffset < height; yOffset++) {
+        int deepest = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if ((dx != 0 || dz != 0) && isOpen.test(x + dx, z + dz)) {
+                    deepest = Math.max(deepest, depthOf.at(x + dx, z + dz));
+                }
+            }
+        }
+        int faceDepth = face == null ? deepest : depthOf.at(x + face.getStepX(), z + face.getStepZ());
+        for (int yOffset = -deepest; yOffset < height; yOffset++) {
             out.add(BlockStateCodec.placement(x, floorY + yOffset, z,
-                    courseState(courses, yOffset, x, z, face, random, palette.wall)));
+                    courseState(courses, yOffset + faceDepth, x, z, face, random, palette.wall)));
         }
     }
 
@@ -597,7 +681,10 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                 motifConfig.corridor().archStateFor(style),
                 // Null unless the corridor authors a cell-local floor pattern; resolved once per
                 // render pass, like every other state here, rather than per cell.
-                motifConfig.corridor().cellFloor());
+                motifConfig.corridor().cellFloor(),
+                // #108: the riser stair. Resolved from the floor's own (banded) motif, so a mud or
+                // deepslate band steps in its own material.
+                motifConfig.corridor().stepStateFor(style));
     }
 
     /** True if the cell at (x,z) is a wall-equivalent for corridor-wall placement. */
@@ -622,7 +709,11 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         return grid.get(x, z).getType() == CellType.DOOR;
     }
 
-    /** Resolved block states for one corridor render pass. {@code arch} is null on a flat profile. */
+    /**
+     * Resolved block states for one corridor render pass. {@code arch} is null on a flat profile;
+     * {@code step} is null when nothing names a riser stair.
+     */
     private record Palette(BlockState floor, BlockState alternateFloor, BlockState wall, BlockState air,
-                            BlockState ceiling, BlockState arch, CellLocalFloorPattern.CellFloor cellFloor) {}
+                            BlockState ceiling, BlockState arch, CellLocalFloorPattern.CellFloor cellFloor,
+                            BlockState step) {}
 }

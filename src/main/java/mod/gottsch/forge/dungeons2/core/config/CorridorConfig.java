@@ -23,6 +23,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.config.floor.CellLocalFloorPattern;
 import mod.gottsch.forge.dungeons2.core.config.floor.FloorPattern;
 import mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry;
+import mod.gottsch.forge.dungeons2.core.data.CorridorDescent;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Blocks;
@@ -63,7 +64,17 @@ import java.util.Set;
 public record CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
                              Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
                              List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
-                             Optional<FloorPattern> pattern) {
+                             Optional<FloorPattern> pattern, Optional<CorridorDescent> descent,
+                             Optional<String> stepBlock) {
+
+    /** The pre-descent form (#108): a corridor that never sinks. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                          Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
+                          List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
+                          Optional<FloorPattern> pattern) {
+        this(floor, alternateFloor, ceiling, height, profile, archBlock, narrowHeight, styles,
+                courses, pattern, Optional.empty(), Optional.empty());
+    }
 
     /** The pre-pattern form: a corridor paved only by its floor/alternate_floor pair. */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
@@ -180,7 +191,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
      */
     public CorridorStyle baseline() {
         return new CorridorStyle(CorridorStyle.BASELINE, CorridorStyle.DEFAULT_WEIGHT,
-                height, profile, archBlock, narrowHeight, courses);
+                height, profile, archBlock, narrowHeight, courses, descent, stepBlock);
     }
 
     /**
@@ -242,10 +253,11 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
         String resolvedAlternate = Codecs.resolveRole(alternateFloor, resolver);
         String resolvedCeiling = Codecs.resolveRole(ceiling, resolver);
         Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
+        Optional<String> resolvedStep = Codecs.resolveRole(stepBlock, resolver);
         Optional<FloorPattern> resolvedPattern = pattern.map(p -> p.withRoles(resolver));
         if (resolvedCourses == courses && resolvedStyles == null && resolvedFloor.equals(floor)
                 && resolvedAlternate.equals(alternateFloor) && resolvedCeiling.equals(ceiling)
-                && resolvedArch.equals(archBlock)
+                && resolvedArch.equals(archBlock) && resolvedStep.equals(stepBlock)
                 // Identity, not equals: FloorPattern#withRoles contracts to return `this` when
                 // nothing changed, and this runs on the per-piece path.
                 && resolvedPattern.orElse(null) == pattern.orElse(null)) {
@@ -254,7 +266,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
         return new CorridorConfig(resolvedFloor, resolvedAlternate, resolvedCeiling, height,
                 profile, resolvedArch, narrowHeight,
                 resolvedStyles == null ? styles : List.copyOf(resolvedStyles), resolvedCourses,
-                resolvedPattern);
+                resolvedPattern, descent, resolvedStep);
     }
 
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
@@ -279,7 +291,14 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     // a corridor has no width/depth/height for one to be about. Restricted to
                     // CellLocalFloorPattern by validate() below.
                     Codecs.strictOptionalFieldOf(FloorPatternRegistry.CODEC, "pattern")
-                            .forGetter(CorridorConfig::pattern)
+                            .forGetter(CorridorConfig::pattern),
+                    // #108: the BASELINE style's descent -- used only when the motif authors no
+                    // styles, exactly like height/profile above.
+                    Codecs.strictOptionalFieldOf(CorridorDescentCodec.CODEC, "descent")
+                            .forGetter(CorridorConfig::descent),
+                    // The section-wide riser stair, and the fallback for any style that names none.
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "step_block")
+                            .forGetter(CorridorConfig::stepBlock)
             ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);
 
     /**
@@ -329,7 +348,41 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     + " -- a corridor stores only its style's name, so a duplicate makes its geometry "
                     + "depend on the order of the styles list");
         }
+        // #108: a sinking style has to be able to name its riser stair. Never invent one -- the
+        // archBlock rule -- because stone brick stairs in a deepslate corridor is the silent
+        // fallthrough this config exists to prevent.
+        for (CorridorStyle style : config.rollableStyles()) {
+            if (style.descent().isPresent() && config.stepBlockFor(style).isEmpty()) {
+                String label = style.name().isEmpty() ? "corridor" : "corridor style '" + style.name() + "'";
+                return DataResult.error(() -> label + ": 'descent' needs a riser stair -- author "
+                        + "'step_block' (on the style or the corridor section), or an 'arch_block' "
+                        + "for it to fall back to");
+            }
+        }
         return DataResult.success(config);
+    }
+
+    /**
+     * The riser stair's block id for one style (#108), first found of: the style's
+     * {@code step_block}, its {@code arch_block}, the section's {@code step_block}, the section's
+     * {@code arch_block}. Arch before section so a stratum band's own arch (mud brick, deepslate)
+     * builds its risers without re-authoring them.
+     */
+    public Optional<String> stepBlockFor(CorridorStyle style) {
+        if (style.stepBlock().isPresent()) return style.stepBlock();
+        if (style.archBlock().isPresent()) return style.archBlock();
+        if (stepBlock.isPresent()) return stepBlock;
+        return archBlock;
+    }
+
+    /**
+     * The riser stair's base state, or {@code null} when nothing names one &mdash; possible only at
+     * render time, when a stratum band's style has no descent of its own but the corridor was planned
+     * to sink from the motif's. The generator then leaves a plain one-block step rather than invent
+     * a material.
+     */
+    public BlockState stepStateFor(CorridorStyle style) {
+        return stepBlockFor(style).map(id -> BlockStateCodec.block(id, floorState().getBlock())).orElse(null);
     }
 
     /**

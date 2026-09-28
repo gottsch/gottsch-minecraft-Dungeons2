@@ -28,9 +28,17 @@ package mod.gottsch.forge.dungeons2.core.data;
  * "resolve where RegistryAccess is available, inject the value" shape as
  * {@code DungeonStackPlanner#withCorridorWidth}, one step wider.</p>
  *
+ * <p>{@code descent} (#108) is geometry for the same reason {@code height} is: it decides how far
+ * below the walking plane the piece's box reaches. {@code null} when the style does not sink.</p>
+ *
  * <p>Pure POJO &mdash; no Minecraft imports.</p>
  *
  * @author Mark Gottschling on Aug 04, 2026
  */
-public record CorridorStyleWeight(String name, int weight, int height) {
+public record CorridorStyleWeight(String name, int weight, int height, CorridorDescent descent) {
+
+    /** A style that never sinks: every style before #108. */
+    public CorridorStyleWeight(String name, int weight, int height) {
+        this(name, weight, height, null);
+    }
 }
