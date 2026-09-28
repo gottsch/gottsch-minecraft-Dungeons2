@@ -21,6 +21,7 @@ import net.minecraft.util.RandomSource;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * {@code hazard}'s spiked shaft, lidded with a crumbling copy of the floor: the pit you do not see
@@ -54,6 +55,6 @@ public class FalseFloorPitShapeProvider implements IPitShapeProvider {
             return plan;
         }
         return new PitPlan(plan.depths(), plan.fills(), plan.rim(), plan.fillData(), plan.flood(),
-                plan.cover(), new HashSet<>(plan.depths().keySet()));
+                plan.cover(), new HashSet<>(plan.depths().keySet()), Set.of());
     }
 }

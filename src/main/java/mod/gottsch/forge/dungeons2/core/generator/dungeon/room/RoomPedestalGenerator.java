@@ -55,6 +55,10 @@ import java.util.Set;
 public final class RoomPedestalGenerator {
 
     static final String PEDESTAL_ENTITY = HiddenDoors.PEDESTAL;
+    static final String FORGE_DATA = "ForgeData";
+    /** Where the trap lives inside {@code ForgeData}; read back by {@code PedestalTrapEvent}. */
+    public static final String TRAP_NAMESPACE = "dungeons2";
+    public static final String TRAP_RADIUS = "trap_radius";
 
     private RoomPedestalGenerator() {}
 
@@ -67,6 +71,20 @@ public final class RoomPedestalGenerator {
     public static Set<Coords2D> place(RoomData room, int floorY, SecretConfig secret,
                                       String counterItem, Set<Coords2D> taken, RandomSource random,
                                       List<BlockPlacement> out) {
+        return place(room, floorY, secret, counterItem, 0, taken, random, out);
+    }
+
+    /**
+     * As above, arming the pedestal over a hidden moat {@code trapRadius} cells wide (0 for none).
+     *
+     * <p>The trap is carried as {@code ForgeData:{dungeons2:{trap_radius:N}}} on the pedestal's
+     * block entity, which DungeonBlocks' entity saves and loads through {@code super}. It is only
+     * armed when the pedestal landed on the room's CENTRE, which is the undug cell the moat is
+     * centred on; anywhere else the ring it would drop is not the ring that was dug.</p>
+     */
+    public static Set<Coords2D> place(RoomData room, int floorY, SecretConfig secret,
+                                      String counterItem, int trapRadius, Set<Coords2D> taken,
+                                      RandomSource random, List<BlockPlacement> out) {
         List<ChestConfig.LootTableEntry> tables = secret == null ? List.of() : secret.pedestalTables();
         if (counterItem == null && tables.isEmpty()) {
             return Set.of();
@@ -83,6 +101,16 @@ public final class RoomPedestalGenerator {
             data.with(RoomChestGenerator.LOOT_TABLE, ChestConfig.LootTableEntry.pick(tables, random))
                     .with(RoomChestGenerator.LOOT_TABLE_SEED,
                             Long.toString(RoomChestGenerator.lootSeed(random)));
+        }
+        if (trapRadius > 0) {
+            Coords2D centre = new Coords2D(room.getOriginX() + room.getWidth() / 2,
+                    room.getOriginZ() + room.getDepth() / 2);
+            if (cell.equals(centre)) {
+                data.withNbt(FORGE_DATA, "{" + TRAP_NAMESPACE + ":{" + TRAP_RADIUS + ":" + trapRadius + "}}");
+            } else {
+                Dungeons.LOGGER.warn("[D2-TRAP] room {}: the pedestal stood off the moat's centre;"
+                        + " left unarmed", room.getId());
+            }
         }
         BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
                 PEDESTAL_ENTITY);

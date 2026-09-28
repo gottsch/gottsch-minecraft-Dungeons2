@@ -153,7 +153,9 @@ public final class RoomPitGenerator {
             BlockState flood = plan.flood().get(cell.getKey());
             String lid = falseFloor.get(cell.getKey());
             // A covered cell's walking-plane row is the cover's, so the opened column stops under it.
-            int top = cover != null || lid != null ? floorY - 1 : floorY;
+            // A hidden moat keeps the floor the room laid: it is dug out beneath and not touched.
+            boolean kept = plan.keepFloor().contains(cell.getKey());
+            int top = cover != null || lid != null || kept ? floorY - 1 : floorY;
             for (int above = y + 1; above <= top; above++) {
                 out.add(BlockStateCodec.placement(x, above, z, flood != null ? flood : air));
             }

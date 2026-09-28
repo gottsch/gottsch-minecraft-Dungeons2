@@ -66,6 +66,9 @@ import java.util.Set;
  *               the room laid there &mdash; a false floor. Not a {@code cover} entry, because the
  *               provider cannot know the block: the floor pattern chose it, and only
  *               {@code RoomPitGenerator}, which sees the placements, can look it up.
+ * @param keepFloor interior-local cells dug out UNDER an untouched walking plane: the floor the
+ *               room laid stays exactly as it was, over a void. A hidden moat &mdash; nothing about
+ *               it is visible until something takes the floor away.
  *
  * @author Mark Gottschling on Aug 27, 2026
  */
@@ -73,14 +76,23 @@ public record PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> f
                       Map<Coords2D, BlockState> rim,
                       Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData,
                       Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover,
-                      Set<Coords2D> falseFloor) {
+                      Set<Coords2D> falseFloor, Set<Coords2D> keepFloor) {
+
+    /** The shape this record had before a pit could be hidden under the floor as laid. */
+    public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
+                   Map<Coords2D, BlockState> rim,
+                   Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData,
+                   Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover,
+                   Set<Coords2D> falseFloor) {
+        this(depths, fills, rim, fillData, flood, cover, falseFloor, Set.of());
+    }
 
     /** The shape this record had before a pit could be lidded with a false floor. */
     public PitPlan(Map<Coords2D, Integer> depths, Map<Coords2D, BlockState> fills,
                    Map<Coords2D, BlockState> rim,
                    Map<Coords2D, mod.gottsch.forge.dungeons2.core.data.BlockEntityData> fillData,
                    Map<Coords2D, BlockState> flood, Map<Coords2D, BlockState> cover) {
-        this(depths, fills, rim, fillData, flood, cover, Set.of());
+        this(depths, fills, rim, fillData, flood, cover, Set.of(), Set.of());
     }
 
     /** The shape this record had before a pit could be flooded or covered. */

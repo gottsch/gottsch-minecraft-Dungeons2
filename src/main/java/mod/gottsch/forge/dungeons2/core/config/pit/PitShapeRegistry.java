@@ -71,6 +71,7 @@ public final class PitShapeRegistry {
         register(HazardPitShape.NAME, HazardPitShape.CODEC);
         register(GratePitShape.NAME, GratePitShape.CODEC);
         register(FalseFloorPitShape.NAME, FalseFloorPitShape.CODEC);
+        register(HiddenMoatPitShape.NAME, HiddenMoatPitShape.CODEC);
     }
 
     static {

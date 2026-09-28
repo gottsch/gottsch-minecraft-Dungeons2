@@ -26,6 +26,7 @@ import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomTombGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.HiddenDoors;
 import net.minecraft.core.BlockPos;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.nbt.CompoundTag;
@@ -640,9 +641,30 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             }
             blockEntity.load(tag);
             blockEntity.setChanged();
+            scheduleLootRoll(level, pos, data);
         } catch (Exception e) {
             Dungeons.LOGGER.warn("Failed to apply block-entity data {} at {}: {}",
                     data, pos, e.getMessage());
+        }
+    }
+
+    /**
+     * Asks a DungeonBlocks pedestal to roll the loot table just written to it.
+     *
+     * <p>The pedestal rolls from a block tick that its block entity schedules in {@code onLoad}.
+     * Placed into a chunk that is ALREADY LOADED &mdash; {@code /d2-generate}, which builds through
+     * the real placement path into live chunks &mdash; the entity is created and loaded by the
+     * {@code setBlock}, before this method has given it a table, so it scheduled nothing and never
+     * would until the chunk reloaded. Seen in game 2026-09-28: an empty pedestal. Scheduling the
+     * tick here covers that case and costs nothing in ordinary generation, where the chunk's own
+     * {@code onLoad} tick lands on the same position and block and the two collapse into one.</p>
+     *
+     * <p>Pedestals only: a scheduled tick means something different to every block, and to
+     * DungeonBlocks' crumbling floor it means "fall".</p>
+     */
+    private static void scheduleLootRoll(WorldGenLevel level, BlockPos pos, BlockEntityData data) {
+        if (HiddenDoors.PEDESTAL.equals(data.getType()) && data.getData().containsKey("LootTable")) {
+            level.scheduleTick(pos, level.getBlockState(pos).getBlock(), 1);
         }
     }
 

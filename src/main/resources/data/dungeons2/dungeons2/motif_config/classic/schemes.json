@@ -1371,6 +1371,35 @@
         "pedestal_loot_tables": [ { "loot_table": "dungeons2:pedestals/secret" } ]
       },
 
+      // Take the prize, lose the floor: a spiked moat dug under the untouched floor round the
+      // pedestal, sprung when the pedestal is emptied. The floor holds until then, so nothing
+      // about it shows, and the chest and pots stay on the walkable ring against the walls.
+      "pit": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 1,
+          "type": "dungeons2:hidden_moat",
+          "config": {
+            "radius": 2,
+            "depth": 4,
+            "spike_block": "dungeonblocks:iron_spikes",
+            "spike_properties": { "facing": "up" },
+            "spike_probability": 0.6
+          }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:hidden_moat",
+          "config": {
+            "radius": 2,
+            "depth": 4,
+            "spike_block": "minecraft:pointed_dripstone",
+            "spike_properties": { "vertical_direction": "up" },
+            "spike_probability": 0.4
+          }
+        }
+      ],
+
       // One chest, always, and never a mimic: finding the lever was the test.
       "chests": {
         "min_count": 1,

@@ -410,6 +410,55 @@ class SecretRoomsTest {
                 secret.lever().getX(), floorY + 2, secret.lever().getY())), where + ": lever outside the door piece's box");
     }
 
+    /**
+     * Take the prize, lose the floor: across real dungeons some secret vaults roll the hidden moat,
+     * and every armed pedestal stands on the centre of a ring of kept floor over a void.
+     */
+    @Test
+    void someVaultsArmTheirPedestalOverAHiddenMoat() {
+        MotifConfig motif = MotifConfigs.load(MOTIF);
+        int armed = 0;
+        for (long seed = 0; seed < 80; seed++) {
+            DungeonLayout layout = plan(seed, DungeonSize.MEDIUM, null);
+            Map<RoomKey, SecretDoorway> hideable = SecretRooms.hideable(layout, motif, REGISTERED);
+            List<StructurePiece> pieces = pieces(layout, Optional.empty());
+            SecretRooms.apply(pieces, hideable, Optional.empty(), motif);
+            for (StructurePiece piece : pieces) {
+                if (!(piece instanceof DungeonRoomPiece room) || room.getSecretDoorway() == null) {
+                    continue;
+                }
+                MotifConfig floorMotif = motif.forFloor(room.getFloorIndex());
+                if (!room.rolledScheme(floorMotif).isSecret()) {
+                    continue;
+                }
+                // The shipped sink budget: without it no pit is dug and no pedestal is armed.
+                List<BlockPlacement> blocks = room.renderRoom(floorMotif, 5, 0).getBlocks();
+                BlockPlacement pedestal = blocks.stream()
+                        .filter(p -> HiddenDoors.PEDESTAL.equals(p.getBlockId())).findFirst().orElseThrow();
+                String forgeData = pedestal.getBlockEntityNbt().getNbtValues().get("ForgeData");
+                if (forgeData == null) {
+                    continue;
+                }
+                armed++;
+                int floorY = pedestal.getY() - 1;
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dz == 0) {
+                            continue;
+                        }
+                        int x = pedestal.getX() + dx;
+                        int z = pedestal.getZ() + dz;
+                        assertFalse(at(blocks, x, floorY, z).getBlockId().endsWith(":air"),
+                                "seed " + seed + ": the ring must be solid floor until sprung");
+                        assertEquals("minecraft:air", at(blocks, x, floorY - 1, z).getBlockId(),
+                                "seed " + seed + ": the ring must stand over the moat");
+                    }
+                }
+            }
+        }
+        assertTrue(armed > 0, "no secret vault in 80 dungeons armed its pedestal");
+    }
+
     /** Mark, 2026-09-28: the counter-item goes on a secret room's pedestal when one can be had. */
     @Test
     void theCounterItemForcesASecretRoomAndSitsOnItsPedestal() {

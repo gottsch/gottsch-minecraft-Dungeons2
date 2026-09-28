@@ -6,13 +6,13 @@
       "element": {
         "element_type": "minecraft:empty_pool_element"
       },
-      "weight": 10
+      "weight": 5
     },
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:decorations/classic/deepslate/5x5_well_1",
-        "processors": "dungeons2:classic_weathering",
+        "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
       },
       "weight": 1
@@ -21,7 +21,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:decorations/classic/deepslate/5x5_tree_1",
-        "processors": "dungeons2:classic_weathering",
+        "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
       },
       "weight": 1
@@ -30,7 +30,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:decorations/classic/deepslate/statue_3",
-        "processors": "dungeons2:classic_weathering",
+        "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
       },
       "weight": 1
@@ -39,7 +39,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:decorations/classic/deepslate/5x5_cell_1",
-        "processors": "dungeons2:classic_weathering",
+        "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
       },
       "weight": 1

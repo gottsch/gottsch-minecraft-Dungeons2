@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.pit.HiddenMoatPitShape;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
@@ -298,7 +299,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // the room exists, so it takes the centre and the rest works round it.
         if (secret) {
             taken.addAll(RoomPedestalGenerator.place(room, floorY, scheme.secret().orElse(null),
-                    counterItem, taken, random, blocks));
+                    counterItem, moatRadius(scheme, room, pit), taken, random, blocks));
         }
 
         // Spawners before pots, and they claim their cells against them. Not because the two
@@ -375,6 +376,21 @@ public class BasicRoomGenerator implements IRoomGenerator {
                                                         int width, int depth, int height) {
         return new BasicPillarGenerator().withPillarLayouts(PillarPatternSelector.layoutsFor(
                 scheme.pillarsFor(width, depth, height), width, depth, height));
+    }
+
+    /**
+     * How far the hidden moat under this room reaches from its centre, when the room's pit is one
+     * and was dug; 0 otherwise. The pedestal standing on the centre carries it as its trap.
+     */
+    private static int moatRadius(RoomScheme scheme, RoomData room, Set<Coords2D> pit) {
+        if (pit.isEmpty()) {
+            return 0;
+        }
+        return scheme.pitFor(room.getWidth(), room.getDepth(), room.getHeight())
+                .filter(entry -> entry.shape() instanceof HiddenMoatPitShape)
+                .map(entry -> ((HiddenMoatPitShape) entry.shape()).provider()
+                        .fittedRadius(room.getWidth() - 2, room.getDepth() - 2))
+                .orElse(0);
     }
 
     /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */
