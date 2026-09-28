@@ -116,7 +116,8 @@ class StratumWeatheringListTest {
     /** See {@code WeatheringProcessorListTest#onlyChunkSafeProcessorsAreUsed} for the reasoning. */
     private static final Set<String> CHUNK_SAFE =
             Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE);
+                    SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE,
+                    "dungeons2:rubble_scatter");
 
     private static final double EPSILON = 1.0e-6;
 
@@ -256,6 +257,33 @@ class StratumWeatheringListTest {
                                 + " -- the break it cascades from is what they leave behind. Got "
                                 + types);
             }
+
+            // The rubble scatter reads what aging broke, so it must follow EVERY aging entry; and it
+            // must precede decoration, or growth may already have taken the foot cells.
+            if (types.contains(RUBBLE_TYPE)) {
+                int lastAging = -1;
+                for (int i = 0; i < types.size(); i++) {
+                    if (AGING_TYPES.contains(types.get(i))) {
+                        lastAging = i;
+                    }
+                }
+                assertTrue(lastAging < types.indexOf(RUBBLE_TYPE),
+                        file + ": dungeons2:rubble_scatter must follow every aging entry. Got " + types);
+                assertTrue(!types.contains(DECORATION_TYPE)
+                                || types.indexOf(RUBBLE_TYPE) < types.indexOf(DECORATION_TYPE),
+                        file + ": dungeons2:rubble_scatter must precede dungeons2:decoration. Got " + types);
+            }
+        }
+    }
+
+    private static final String RUBBLE_TYPE = "dungeons2:rubble_scatter";
+
+    /** Every shipped list scatters rubble; a stratum list REPLACES the motif's, so each must say so. */
+    @Test
+    void everyWeatheringListScattersRubble() {
+        for (String file : weatheringFiles()) {
+            assertTrue(processorTypes(readList(file)).contains(RUBBLE_TYPE),
+                    file + " has no " + RUBBLE_TYPE + " processor");
         }
     }
 

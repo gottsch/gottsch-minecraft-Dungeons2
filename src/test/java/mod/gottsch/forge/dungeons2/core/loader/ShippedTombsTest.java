@@ -166,7 +166,9 @@ class ShippedTombsTest {
                 String block = entry.has("sarcophagus_block")
                         ? entry.get("sarcophagus_block").getAsString()
                         : "dungeonblocks:stone_sarcophagus";
-                assertTrue(block.endsWith("_sarcophagus"), file.getFileName() + " builds " + block
+                // A DungeonBlocks coffin extends its sarcophagus: same two parts, block entity, seal.
+                assertTrue(block.endsWith("_sarcophagus") || block.endsWith("_coffin"),
+                        file.getFileName() + " builds " + block
                         + ", which is not a two-block tomb");
                 assertTrue(entry.has("loot_tables") || entry.has("guardians"),
                         file.getFileName() + ": an entry naming nothing leaves every marker that"

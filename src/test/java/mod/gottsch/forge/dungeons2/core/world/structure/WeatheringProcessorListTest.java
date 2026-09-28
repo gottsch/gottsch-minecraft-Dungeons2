@@ -135,12 +135,13 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(10, processors.size(),
+        assertEquals(11, processors.size(),
                 "Expected the vanilla rule processor, the two aging processors (the main one and"
                         + " the joist-gated timber chain, which is separate because a geometric"
                         + " rule moves its whole processor into finalizeProcessing), decoration,"
                         + " the decoration sweep, the hanging sweep, the #10 spawner marker, the"
-                        + " #56 pot marker, the #61 chest marker and the #104 sarcophagus marker");
+                        + " #56 pot marker, the #61 chest marker, the #104 sarcophagus marker and"
+                        + " the rubble scatter");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -155,6 +156,9 @@ class WeatheringProcessorListTest {
                 case CHEST_TYPE -> ChestMarkerProcessor.codec(NO_TYPE);
                 case HANGING_TYPE -> HangingSweepProcessor.codec(NO_TYPE);
                 case SARCOPHAGUS_TYPE -> SarcophagusMarkerProcessor.codec(NO_TYPE);
+                case "dungeons2:rubble_scatter" ->
+                        mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor
+                                .codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -253,8 +257,12 @@ class WeatheringProcessorListTest {
         // same block list, the contents come from the marker's NBT and a draw seeded from its
         // position, so every pass builds the identical pair. Like the other markers it cannot fire
         // on a procedural piece at all; the `tombs` slot is that route, and it bypasses the list.
+        //
+        // dungeons2:rubble_scatter is marked LevelIndependentProcessor: it reads only the piece's two
+        // lists, whole, and seeds every roll from the foot cell's world position.
         Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
-                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE);
+                SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE,
+                "dungeons2:rubble_scatter");
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),
@@ -295,6 +303,10 @@ class WeatheringProcessorListTest {
                 "SurfaceAgingProcessor reads nothing from the level; unmarked it would be handed"
                         + " one chunk's slice of the piece, and a surface is decided from the"
                         + " whole one");
+        assertTrue(LevelIndependentProcessor.class.isAssignableFrom(
+                        mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor.class),
+                "RubbleScatterProcessor finds a hole's foot across the piece; clipped, a wall on a"
+                        + " seam would shed onto nothing");
     }
 
     @Test

@@ -8,7 +8,11 @@
         "wall_capital_left": "dungeonblocks:left_large_mud_brick",
         "wall_capital_right": "dungeonblocks:right_large_mud_brick",
         // Lighter than the mud bricks; base.json's deepslate would read as a stranger here.
-        "accent": "minecraft:packed_mud"
+        "accent": "minecraft:packed_mud",
+        // The shallow dead are buried in wood, not cut stone: a spruce coffin, the same timber
+        // as the band's shoring. Every tomb on these floors (crypt, mud_shrine) is one. A coffin
+        // is a sarcophagus to DungeonBlocks -- same block entity, seal, loot and guardian.
+        "sarcophagus": "dungeonblocks:spruce_coffin"
       },
       "wall": {
         "wall": "minecraft:mud_bricks",

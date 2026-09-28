@@ -109,6 +109,9 @@ class ShippedBlockIdsTest {
             // through BlockStateCodec, so a typo in one becomes AIR -- which for the vault means a
             // hole in the dome and for the path means a trench through the floor.
             "crown_block", "springing_block", "path_block", "edge_block",
+            // dungeons2:rubble_scatter's scatter (2026-09-28). Resolved through BlockStateCodec; an
+            // unresolved id makes the processor write nothing, so a typo is silent -- check it here.
+            "scatter_block",
             // #74: the partition slot. Its "block" key -- the run itself -- is already listed
             // above; this is what hangs in the way through.
             "gap_block",

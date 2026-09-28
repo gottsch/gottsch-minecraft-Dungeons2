@@ -220,6 +220,18 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@code RubbleScatterProcessor} under this mod's namespace. */
+	public static final String RUBBLE_SCATTER_PROCESSOR_NAME = "rubble_scatter";
+
+	/** Rubble at the foot of a wall weathering broke. See {@code RubbleScatterProcessor}. */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor>> RUBBLE_SCATTER_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(RUBBLE_SCATTER_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor
+								.codec(() -> Registration.RUBBLE_SCATTER_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Registry name of {@link HangingSweepProcessor} under this mod's namespace. */
 	public static final String HANGING_SWEEP_PROCESSOR_NAME = "hanging_sweep";
 

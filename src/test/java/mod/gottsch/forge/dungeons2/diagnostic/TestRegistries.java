@@ -271,6 +271,18 @@ public final class TestRegistries {
                 new ResourceLocation(Dungeons.MOD_ID, Registration.HANGING_SWEEP_PROCESSOR_NAME),
                 hangingType);
 
+        // The rubble scatter, which every shipped list names right after its aging. Same reason.
+        StructureProcessorType<?>[] rubbleSelf = new StructureProcessorType<?>[1];
+        Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> rubbleCodec =
+                mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor
+                        .codec(() -> rubbleSelf[0]);
+        StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> rubbleType =
+                () -> rubbleCodec;
+        rubbleSelf[0] = rubbleType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.RUBBLE_SCATTER_PROCESSOR_NAME),
+                rubbleType);
+
         registry.freeze();
     }
 

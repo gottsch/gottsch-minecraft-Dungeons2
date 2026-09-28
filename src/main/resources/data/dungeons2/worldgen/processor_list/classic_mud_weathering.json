@@ -587,6 +587,17 @@
       ]
     },
     {
+      // Rubble at the foot of a broken wall: where aging above knocked a hole in the masonry
+      // (the cell aged into one of `broken`, with masonry still above and below it), a scatter
+      // lands on the floor at the wall's foot on either side, thicker the more of the column
+      // came down. Must follow EVERY aging entry -- it compares the authored list with theirs.
+      // Only ever writes into a cell the piece itself places as AIR. See the Processor Manual.
+      "processor_type": "dungeons2:rubble_scatter",
+      "broken": { "blocks": [ "minecraft:air", "dungeonblocks:rubble", "dungeonblocks:mossy_rubble" ] },
+      "scatter_block": "dungeonblocks:rubble_scatter",
+      "probability": 0.5
+    },
+    {
       // dungeons2:decoration -- the NEIGHBOUR-aware pass. Everything above decides one
       // block at a time; this one decides from a block's surroundings, which is what
       // cobwebs (air with a wall beside it) and creeping growth need.
@@ -779,6 +790,8 @@
     // =========================================================================================
     {
       "processor_type": "dungeons2:sarcophagus",
+      // The mud band's dead lie in wood; see strata.json's `sarcophagus` role.
+      "sarcophagus_block": "dungeonblocks:spruce_coffin",
       "loot_tables": [ { "loot_table": "dungeons2:chests/classic_tomb_shallow" } ],
       "guardians": [
         { "entity": "minecraft:zombie", "weight": 4 },
