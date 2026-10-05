@@ -280,6 +280,8 @@ class SlotOptionsTest {
                 "{\"variants\": [{\"block\": \"minecraft:barrel\", \"weight\": 1}]}");
         assertSlotTakesOptions("partition",
                 "{\"type\": \"dungeons2:corner\", \"block\": \"minecraft:iron_bars\"}");
+        assertSlotTakesOptions("hangings",
+                "{\"variants\": [{\"block\": \"dungeonblocks:chandelier\"}]}");
     }
 
     private static void assertSlotTakesOptions(String slot, String treatment) {

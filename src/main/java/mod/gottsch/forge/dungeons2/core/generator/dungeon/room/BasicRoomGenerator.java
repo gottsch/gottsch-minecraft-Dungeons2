@@ -362,6 +362,13 @@ public class BasicRoomGenerator implements IRoomGenerator {
                         blocks, out.getEntities()))
                 .orElseGet(java.util.Set::of));
 
+        // Hangings last of the blocks: each one reads its column out of `blocks` -- the vault's
+        // rise, a rib, a column, a dais, a barrel -- to find the air it can hang in and the ceiling
+        // it hangs from. Anything emitted after this would be invisible to that read. They claim
+        // no floor cells (CLEARANCE rows of air under each), so the pots do not need to know.
+        scheme.hangingsFor(width, depth, height).ifPresent(hangings ->
+                RoomHangingGenerator.placeHangings(room, floorY, hangings, random, blocks));
+
         scheme.potsFor(width, depth, height).ifPresent(pots ->
                 RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
     }

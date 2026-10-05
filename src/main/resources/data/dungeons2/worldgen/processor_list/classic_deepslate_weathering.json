@@ -930,7 +930,12 @@
           "dungeonblocks:swinging_chain",
           "dungeonblocks:dungeon_lantern",
           "minecraft:lantern",
-          "minecraft:soul_lantern"
+          "minecraft:soul_lantern",
+          "dungeonblocks:chandelier",
+          "dungeonblocks:gibbet",
+          "dungeonblocks:meat_hook",
+          "dungeonblocks:censer",
+          "dungeonblocks:manacles"
         ]
       }
     },

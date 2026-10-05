@@ -41,8 +41,8 @@ import java.util.stream.Stream;
  * sixteen arguments were element slots</strong>, and they are one thing. {@code RoomScheme} keeps
  * {@code name}, {@code weight}, its {@code gate}, its {@code floors}, {@code extends} and
  * {@code abstract} &mdash; six group arguments plus this one, which is seven. A new slot now costs a
- * field <em>here</em>, and this group is at twelve since {@code tombs} (#104), so there is room for
- * four more before the same wall is reached again.</p>
+ * field <em>here</em>, and this group is at thirteen since {@code hangings}, so there is room for
+ * three more before the same wall is reached again.</p>
  *
  * <h2>The JSON did not move</h2>
  * <p>{@link #MAP_CODEC} is a {@code MapCodec}, so every key stays <strong>flat on the scheme
@@ -73,13 +73,27 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                         SlotOptions<PitPatternEntry> pit,
                         SlotOptions<PropConfig> props,
                         SlotOptions<PartitionPatternEntry> partition,
-                        SlotOptions<TombConfig> tombs) {
+                        SlotOptions<TombConfig> tombs,
+                        SlotOptions<HangingConfig> hangings) {
 
     /** Every slot empty: the deliberately undecorated room. */
     public static final RoomSlots EMPTY = new RoomSlots(
             SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(),
             SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(),
-            SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty());
+            SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(), SlotOptions.empty(),
+            SlotOptions.empty());
+
+    /** The shape before the {@code hangings} slot: nothing hung from the ceiling. */
+    public RoomSlots(SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
+                     SlotOptions<CeilingPatternEntry> ceiling, SlotOptions<PotConfig> pots,
+                     SlotOptions<PillarPatternEntry> pillars,
+                     SlotOptions<PlatformPatternEntry> platforms,
+                     SlotOptions<SpawnerConfig> spawners, SlotOptions<ChestConfig> chests,
+                     SlotOptions<PitPatternEntry> pit, SlotOptions<PropConfig> props,
+                     SlotOptions<PartitionPatternEntry> partition, SlotOptions<TombConfig> tombs) {
+        this(floor, wall, ceiling, pots, pillars, platforms, spawners, chests, pit, props,
+                partition, tombs, SlotOptions.empty());
+    }
 
     /** The shape before the {@code tombs} slot (#104): a room with nobody buried in it. */
     public RoomSlots(SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
@@ -94,7 +108,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
     }
 
     /**
-     * All twelve slot keys, flat on the enclosing object. See the class javadoc on why the order of
+     * All thirteen slot keys, flat on the enclosing object. See the class javadoc on why the order of
      * these lines matters and why a new slot is appended rather than inserted.
      */
     public static final MapCodec<RoomSlots> MAP_CODEC =
@@ -119,7 +133,9 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                     .forGetter(RoomSlots::partition),
             // #104. LAST, per the class note: appended, never inserted, so no existing scheme's
             // option draws move.
-            SlotOptions.field(TombConfig.MAP_CODEC, "tombs").forGetter(RoomSlots::tombs)
+            SlotOptions.field(TombConfig.MAP_CODEC, "tombs").forGetter(RoomSlots::tombs),
+            // LAST, for the same reason.
+            SlotOptions.field(HangingConfig.MAP_CODEC, "hangings").forGetter(RoomSlots::hangings)
     ).apply(instance, RoomSlots::new));
 
     /**
@@ -140,7 +156,8 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                 pit.orElse(parent.pit()),
                 props.orElse(parent.props()),
                 partition.orElse(parent.partition()),
-                tombs.orElse(parent.tombs()));
+                tombs.orElse(parent.tombs()),
+                hangings.orElse(parent.hangings()));
     }
 
     /**
@@ -165,14 +182,15 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
         SlotOptions<PartitionPatternEntry> newPartition =
                 partition.map(entry -> entry.withRoles(resolver));
         SlotOptions<TombConfig> newTombs = tombs.map(entry -> entry.withRoles(resolver));
+        SlotOptions<HangingConfig> newHangings = hangings.map(entry -> entry.withRoles(resolver));
         if (newPillars == pillars && newFloor == floor && newCeiling == ceiling
                 && newPlatforms == platforms && newWall == wall && newPit == pit
                 && newChests == chests && newProps == props && newPartition == partition
-                && newTombs == tombs) {
+                && newTombs == tombs && newHangings == hangings) {
             return this;
         }
         return new RoomSlots(newFloor, newWall, newCeiling, pots, newPillars, newPlatforms,
-                spawners, newChests, newPit, newProps, newPartition, newTombs);
+                spawners, newChests, newPit, newProps, newPartition, newTombs, newHangings);
     }
 
     /**
@@ -196,7 +214,8 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                 pit.resolve(random, entry -> entry.gate().fits(width, depth, height)),
                 props.resolve(random, entry -> entry.gate().fits(width, depth, height)),
                 partition.resolve(random, entry -> entry.gate().fits(width, depth, height)),
-                tombs.resolve(random, entry -> entry.gate().fits(width, depth, height)));
+                tombs.resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                hangings.resolve(random, entry -> entry.gate().fits(width, depth, height)));
     }
 
     /**
@@ -207,7 +226,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
         return !floor.isEmpty() || !wall.isEmpty() || !ceiling.isEmpty() || !pots.isEmpty()
                 || !pillars.isEmpty() || !platforms.isEmpty() || !spawners.isEmpty()
                 || !chests.isEmpty() || !pit.isEmpty() || !props.isEmpty()
-                || !partition.isEmpty() || !tombs.isEmpty();
+                || !partition.isEmpty() || !tombs.isEmpty() || !hangings.isEmpty();
     }
 
     /** Whether any slot draws in a room of these dimensions. See {@link RoomScheme#drawsAnything}. */
@@ -222,7 +241,8 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                 || anyOptionFits(pit, PitPatternEntry::gate, width, depth, height)
                 || anyOptionFits(props, PropConfig::gate, width, depth, height)
                 || anyOptionFits(partition, PartitionPatternEntry::gate, width, depth, height)
-                || anyOptionFits(tombs, TombConfig::gate, width, depth, height);
+                || anyOptionFits(tombs, TombConfig::gate, width, depth, height)
+                || anyOptionFits(hangings, HangingConfig::gate, width, depth, height);
     }
 
     private static <T> boolean anyOptionFits(SlotOptions<T> slot, Function<T, SizeGate> gate,
@@ -254,6 +274,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
         result = chain(result, partition.all().map(PartitionPatternEntry::gate), schemeName,
                 "partition");
         result = chain(result, tombs.all().map(TombConfig::gate), schemeName, "tombs");
+        result = chain(result, hangings.all().map(HangingConfig::gate), schemeName, "hangings");
         return result;
     }
 

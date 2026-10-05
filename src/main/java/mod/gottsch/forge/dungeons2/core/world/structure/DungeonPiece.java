@@ -25,6 +25,7 @@ import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomMiningChestGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomTombGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.HiddenDoors;
 import net.minecraft.core.BlockPos;
@@ -357,7 +358,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             // generation and would turn a walk through a finished dungeon into a log flood.
             //
             // A tomb (#104) takes its own line instead -- see probeTomb.
-            if (!probeTomb(p, worldPos)) {
+            if (!probeTomb(p, worldPos) && !probeMiningChest(p, worldPos)) {
                 Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
                         p.getBlockEntityNbt());
             }
@@ -387,6 +388,22 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
                     worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING),
                     floorIndex, TombContents.Drawn.describe(data.getData()));
         }
+        return true;
+    }
+
+    /**
+     * The Mining Chest's probe (#7), in WORLD coordinates, for the tomb probe's reason: the generator
+     * plans in floor-local coordinates, so only this loop can say where the chest landed. True when
+     * {@code p} is the Mining Chest.
+     */
+    private boolean probeMiningChest(BlockPlacement p, BlockPos worldPos) {
+        if (!RoomMiningChestGenerator.CHEST_ENTITY.equals(p.getBlockEntityNbt().getType())) {
+            return false;
+        }
+        //   grep "D2-MINING" run/logs/dungeons2.log
+        Dungeons.LOGGER.info("[D2-MINING] chest at {} facing {} (floor {}) holding {}",
+                worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING), floorIndex,
+                p.getBlockEntityNbt().getNbtValues().get(RoomMiningChestGenerator.ITEMS));
         return true;
     }
 

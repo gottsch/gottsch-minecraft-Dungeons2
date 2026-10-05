@@ -132,6 +132,16 @@ public class DungeonsBlocks {
                     .sound(SoundType.STONE).noLootTable()));
 
     /**
+     * Backlog #7: the Mining Chest, the one chest per dungeon that holds the estimated mining haul.
+     * Iron in feel as well as look -- metal sound, pickaxe-mined -- but it does not require the
+     * correct tool, so like a wooden chest it always drops itself.
+     */
+    public static final RegistryObject<Block> MINING_CHEST = Registration.BLOCKS.register(
+            "mining_chest",
+            () -> new MiningChestBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL).strength(3.0F).sound(SoundType.METAL)));
+
+    /**
      * Forces this class to load so the fields above actually register. Called from
      * {@link Registration#init()}; see that method's comment for why a holder nothing references
      * registers nothing at all.

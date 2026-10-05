@@ -73,19 +73,20 @@ class ManualExamplesTest {
      * MATERIAL section shares each one. They are told apart by shape in {@link #codecFor} rather
      * than by position, because the manual shows both, sometimes in the same block.</p>
      */
-    private static final Map<String, com.mojang.serialization.Codec<?>> SLOTS = Map.of(
-            "floor", FloorPatternEntry.CODEC,
-            "wall", WallPatternEntry.CODEC,
-            "ceiling", CeilingPatternEntry.CODEC,
-            "pillars", PillarPatternEntry.CODEC,
-            "platforms", PlatformPatternEntry.CODEC,
-            "pots", PotConfig.CODEC,
-            "props", PropConfig.CODEC,
-            "partition", PartitionPatternEntry.CODEC,
-            "tombs", TombConfig.CODEC,
+    private static final Map<String, com.mojang.serialization.Codec<?>> SLOTS = Map.ofEntries(
+            Map.entry("floor", FloorPatternEntry.CODEC),
+            Map.entry("wall", WallPatternEntry.CODEC),
+            Map.entry("ceiling", CeilingPatternEntry.CODEC),
+            Map.entry("pillars", PillarPatternEntry.CODEC),
+            Map.entry("platforms", PlatformPatternEntry.CODEC),
+            Map.entry("pots", PotConfig.CODEC),
+            Map.entry("props", PropConfig.CODEC),
+            Map.entry("partition", PartitionPatternEntry.CODEC),
+            Map.entry("tombs", TombConfig.CODEC),
+            Map.entry("hangings", HangingConfig.CODEC),
             // Not a scheme slot but a motif block; unambiguous by name, and its closed schema is
             // exactly what a manual example drifts out of (the max_* keys EE ignores).
-            "echelon", EchelonConfig.CODEC);
+            Map.entry("echelon", EchelonConfig.CODEC));
 
     /** The motif-level material sections, which carry a block and an optional {@code pattern}. */
     private static final Map<String, com.mojang.serialization.Codec<?>> SECTIONS = Map.of(

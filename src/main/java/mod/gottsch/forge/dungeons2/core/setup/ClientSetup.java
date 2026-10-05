@@ -18,6 +18,9 @@
 package mod.gottsch.forge.dungeons2.core.setup;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities;
+import mod.gottsch.forge.dungeons2.core.client.model.MiningChestModel;
+import mod.gottsch.forge.dungeons2.core.client.renderer.blockentity.MiningChestRenderer;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.gmm.core.client.model.BarrelMimicModel;
 import mod.gottsch.forge.gmm.core.client.model.VanillaChestMimicModel;
@@ -186,6 +189,7 @@ public class ClientSetup {
                     () -> BoneShardModel.createBodyLayer(variant));
         }
         event.registerLayerDefinition(BloaterArmModel.LAYER_LOCATION, BloaterArmModel::createBodyLayer);
+        event.registerLayerDefinition(MiningChestModel.LAYER_LOCATION, MiningChestModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -276,6 +280,10 @@ public class ClientSetup {
         // No layer to register: the beam is raw additive quads, not a model.
         event.registerEntityRenderer(DungeonsEntities.ANNIHILATION_RAY_ENTITY.get(),
                 AnnihilationRayRenderer::new);
+
+        // Backlog #7. ChestBlock renders as ENTITYBLOCK_ANIMATED, so without this the Mining Chest
+        // is invisible in the world.
+        event.registerBlockEntityRenderer(DungeonsBlockEntities.MINING_CHEST.get(), MiningChestRenderer::new);
     }
 
     private ClientSetup() {}

@@ -1582,11 +1582,21 @@ public class DungeonStackPlanner {
                 }
             }
         }
-        // Junctions, turns and dilation-widened stretches stay level: only cells no wider than the
-        // carved width may sink (Mark, 2026-09-28).
+        // Junctions, turns and widened stretches stay level (Mark, 2026-09-28); only cells at most
+        // DESCENT_MAX_WIDTH across may sink (Mark, 2026-09-30).
         cd.setCellDepths(CorridorDescentField.compute(cd.getCells(), anchors, depth,
-                descent.run(), descent.landing(), corridorCells));
+                descent.run(), descent.landing(), DESCENT_MAX_WIDTH));
     }
+
+    /**
+     * The widest a corridor may be, across, where it sinks (#108). A plain run comes out of the
+     * maze's dilation 2 cells wide, not {@link #corridorCells}: with {@code corridor_width} 3 the
+     * cross-sections measure 1, 2 and 3 in roughly equal numbers, and the 3s are the stretches
+     * dilation widened. The first cut passed {@code corridorCells} here and so let every 3-wide
+     * stretch step (Mark, 2026-09-30: "stepped corridors are still happening in 2+ wide"). His
+     * rule is a width a player sees, so it is a constant rather than derived from the dilation.
+     */
+    static final int DESCENT_MAX_WIDTH = 2;
 
     /** As {@link #CORRIDOR_STYLE_SALT}, for #108 stage 3's per-corridor trap roll. */
     private static final long CORRIDOR_TRAP_SALT = 0x7A9C0DD02A7L;

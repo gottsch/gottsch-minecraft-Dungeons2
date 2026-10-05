@@ -12,6 +12,8 @@
   "block.dungeons2.chest_marker": "Chest Marker",
   "block.dungeons2.pot_marker": "Pot Marker",
   "block.dungeons2.sarcophagus_marker": "Sarcophagus Marker",
+  "block.dungeons2.mining_chest": "Mining Chest",
+  "container.dungeons2.mining_chest": "Mining Chest",
   "entity.dungeons2.skeleton_warrior": "Skeleton Warrior",
   "item.dungeons2.skeleton_warrior_egg": "Skeleton Warrior Spawn Egg",
   "entity.dungeons2.winged_skeleton": "Winged Skeleton",

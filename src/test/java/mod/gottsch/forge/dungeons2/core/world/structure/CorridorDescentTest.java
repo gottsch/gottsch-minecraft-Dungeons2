@@ -220,12 +220,13 @@ class CorridorDescentTest {
                     }
                 }
                 assertInvariants(corridor.getCells(), depths, anchors, 5);
-                // No sunk cell sits in a junction or a widened stretch: the planner carves 3 wide.
+                // No sunk cell sits in a junction or a widened stretch: plain runs are 2 wide, and
+                // nothing 3+ across steps (Mark, 2026-09-30).
                 Set<Coords2D> own = new HashSet<>(corridor.getCells());
                 for (Coords2D c : corridor.getCells()) {
                     if (corridor.depthAt(c) == 0) continue;
                     int across = Math.min(extent(own, c, 1, 0), extent(own, c, 0, 1));
-                    assertTrue(across <= 3, "seed " + seed + ": sunk cell " + c + " is " + across + " wide");
+                    assertTrue(across <= 2, "seed " + seed + ": sunk cell " + c + " is " + across + " wide");
                 }
                 // Every doorway column rests on level ground on all eight sides.
                 for (Coords2D door : corridor.getDoorCells()) {

@@ -92,6 +92,10 @@ import java.util.stream.Stream;
  * each holding a loot table and a guardian for its first opening to choose between (#104). Placed
  * after the chests and before the furniture: a tomb is an encounter, a barrel is scenery.</p>
  *
+ * <p>{@code hangings} holds a {@link HangingConfig} &mdash; a chandelier, a gibbet, meat hooks, a
+ * censer, hung on chain from the ceiling with a player's height of air beneath. The last block
+ * step, because it reads every column the others emitted to find where the ceiling actually is.</p>
+ *
  * <p>{@code spawners} holds a {@link SpawnerConfig} &mdash; invisible proximity mob-set spawners
  * standing in the room's interior. The only slot whose output is neither seen nor collided with, and
  * the only one that reaches the world through {@code BlockEntityData}; it is what lets a
@@ -261,6 +265,11 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
     /** See {@link #floor}. */
     public SlotOptions<TombConfig> tombs() {
         return slots.tombs();
+    }
+
+    /** See {@link #floor}. */
+    public SlotOptions<HangingConfig> hangings() {
+        return slots.hangings();
     }
 
     /** The shape before the {@code pit} slot (#3): a scheme whose floor is flat everywhere. */
@@ -583,6 +592,14 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
     /** See {@link #floorFor}. */
     public Optional<TombConfig> tombsFor(int width, int depth, int height) {
         return tombs().value().filter(entry -> entry.gate().fits(width, depth, height));
+    }
+
+    /**
+     * See {@link #floorFor}. Whether a cell can take a hanging is its column's question, asked by
+     * {@code RoomHangingGenerator} once everything else in the room has been emitted.
+     */
+    public Optional<HangingConfig> hangingsFor(int width, int depth, int height) {
+        return hangings().value().filter(entry -> entry.gate().fits(width, depth, height));
     }
 
     /**

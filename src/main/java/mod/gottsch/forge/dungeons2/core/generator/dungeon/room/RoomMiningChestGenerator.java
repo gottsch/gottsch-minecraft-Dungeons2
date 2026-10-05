@@ -23,7 +23,6 @@ import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 
 import java.util.LinkedHashMap;
@@ -39,10 +38,10 @@ import java.util.Set;
  * count roll (there is exactly one) and the loot table (the contents are already decided). Added:
  * the {@code Items} list itself, written straight into the block entity.</p>
  *
- * <h2>A vanilla chest, for now</h2>
- * <p>{@code minecraft:chest}. Mark intends a dedicated model eventually; nothing here needs to
- * change when it arrives beyond the block id, because the contents travel as NBT on the placement
- * rather than as anything chest-specific.</p>
+ * <h2>Its own block since Oct 4, 2026</h2>
+ * <p>{@code dungeons2:mining_chest}, which replaced {@code minecraft:chest} with only the block id
+ * changing here, because the contents travel as NBT on the placement rather than as anything
+ * chest-specific.</p>
  *
  * <h2>It claims its cell, for the same blunt reason an ordinary chest does</h2>
  * <p>A chest is a solid block, so a pot entity rolled into the same cell would stand inside it and,
@@ -53,7 +52,7 @@ import java.util.Set;
 public final class RoomMiningChestGenerator {
 
     /** Vanilla's key for a container's contents. */
-    static final String ITEMS = "Items";
+    public static final String ITEMS = "Items";
 
     private RoomMiningChestGenerator() {}
 
@@ -91,7 +90,7 @@ public final class RoomMiningChestGenerator {
         // chests use.
         BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
                 CHEST_BLOCK, properties);
-        placement.setBlockEntityNbt(new BlockEntityData(RoomChestGenerator.CHEST_ENTITY)
+        placement.setBlockEntityNbt(new BlockEntityData(CHEST_ENTITY)
                 .withNbt(ITEMS, haul.itemsSnbt()));
         out.add(placement);
 
@@ -101,18 +100,20 @@ public final class RoomMiningChestGenerator {
                     + " has grown past what one chest can hold: {}",
                     haul.slotsNeeded(), MiningHaul.CHEST_SLOTS, haul);
         }
-        // INFO, matching both chest routes: at the shipped "info" level a debug line is invisible to
-        // whoever is verifying the feature, and this is the line that says the dungeon paid back at
-        // all. toShortString so the position survives a copy-paste into a command.
-        Dungeons.LOGGER.info("[D2-MINING] chest at {} holding {}",
-                new BlockPos(placement.getX(), placement.getY(), placement.getZ()).toShortString(),
-                haul);
+        // DEBUG, and no position: this runs in floor-local coordinates and once per chunk pass the
+        // room spans, so a position here is useless for finding the chest. The INFO line that says
+        // where it landed, in world coordinates and once, is DungeonPiece#probeMiningChest.
+        Dungeons.LOGGER.debug("[D2-MINING] room {} planned its chest holding {}", room.getId(), haul);
         return Set.of(cell);
     }
 
     /**
-     * The block the haul goes in. Vanilla for now &mdash; a dedicated Mining Chest model is
-     * intended, and swapping this constant is the whole of that change on this side.
+     * The block the haul goes in: the dedicated Mining Chest, a vanilla chest on Treasure2's
+     * ironbound model. Its block entity is a {@code ChestBlockEntity}, so {@link #ITEMS} loads into
+     * it exactly as it did into {@code minecraft:chest}.
      */
-    static final String CHEST_BLOCK = "minecraft:chest";
+    static final String CHEST_BLOCK = "dungeons2:mining_chest";
+
+    /** The block entity type written with the haul. */
+    public static final String CHEST_ENTITY = "dungeons2:mining_chest";
 }

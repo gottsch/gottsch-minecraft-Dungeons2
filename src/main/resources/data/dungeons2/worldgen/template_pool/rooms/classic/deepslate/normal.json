@@ -172,6 +172,33 @@
         "projection": "rigid"
       },
       "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/7x15_timber_hallway_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/7x17_hallway_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/hallway/7x17_hallway_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
     }
   ]
 }

@@ -464,6 +464,14 @@ public class DungeonsItems {
             "sarcophagus_marker",
             () -> new BlockItem(DungeonsBlocks.SARCOPHAGUS_MARKER.get(), new Item.Properties()));
 
+    /**
+     * Backlog #7: the Mining Chest's item. Drawn from the static JSON copy of the banded model, so
+     * it needs no item renderer; in the world the block entity renderer draws it, lid and all.
+     */
+    public static final RegistryObject<Item> MINING_CHEST = Registration.ITEMS.register(
+            "mining_chest",
+            () -> new BlockItem(DungeonsBlocks.MINING_CHEST.get(), new Item.Properties()));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -502,6 +510,7 @@ public class DungeonsItems {
             event.accept(CHEST_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(POT_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(SARCOPHAGUS_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(MINING_CHEST.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 

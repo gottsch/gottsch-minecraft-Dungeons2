@@ -1012,7 +1012,36 @@
         "variants": [
           { "block": "minecraft:chest", "weight": 1 }
         ]
-      }
+      },
+
+      // The hall's chandelier, long out, over the middle of the floor; or a butcher's row of meat
+      // hooks; or, rarely, a gibbet with its occupant still in it. A gibbet is three blocks tall and
+      // needs two rows of headroom under it, so it hangs only where the ceiling is 5+ rows up --
+      // elsewhere its cell is refused and another is tried.
+      "hangings": [
+        {
+          "weight": 4,
+          "placement": "centre",
+          "min_count": 1,
+          "max_count": 1,
+          "max_drop": 2,
+          "variants": [ { "block": "dungeonblocks:chandelier" } ]
+        },
+        {
+          "weight": 2,
+          "min_count": 2,
+          "max_count": 4,
+          "max_drop": 2,
+          "variants": [ { "block": "dungeonblocks:meat_hook" } ]
+        },
+        {
+          "weight": 1,
+          "min_count": 1,
+          "max_count": 1,
+          "variants": [ { "block": "dungeonblocks:gibbet" } ]
+        },
+        { "weight": 4, "none": true }
+      ]
     },
 
     {
@@ -1251,7 +1280,20 @@
         "min_count": 0,
         "max_count": 1,
         "variants": [ { "block": "$sarcophagus" } ]
-      }
+      },
+
+      // A censer over the sunken pit, when the room is tall enough to hang one with headroom.
+      "hangings": [
+        {
+          "weight": 2,
+          "placement": "centre",
+          "min_count": 1,
+          "max_count": 1,
+          "max_drop": 2,
+          "variants": [ { "block": "dungeonblocks:censer" } ]
+        },
+        { "weight": 1, "none": true }
+      ]
     },
 
     // ---------------------------------------------------------------------------------------------
@@ -1347,7 +1389,16 @@
           ]
         },
         { "weight": 2, "none": true }
-      ]
+      ],
+
+      // Incense for the dead, unlit: whoever lit it is long gone. Flush to the ceiling or one link
+      // down; a crypt is rarely tall enough for more.
+      "hangings": {
+        "min_count": 1,
+        "max_count": 2,
+        "max_drop": 1,
+        "variants": [ { "block": "dungeonblocks:censer" } ]
+      }
     },
 
     {

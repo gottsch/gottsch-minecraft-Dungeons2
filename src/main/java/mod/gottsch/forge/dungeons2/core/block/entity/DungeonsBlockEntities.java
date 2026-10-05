@@ -93,6 +93,17 @@ public class DungeonsBlockEntities {
 					() -> BlockEntityType.Builder.of(SarcophagusMarkerBlockEntity::new,
 							DungeonsBlocks.SARCOPHAGUS_MARKER.get()).build(null));
 
+	/** Backlog #7: the Mining Chest. A vanilla chest entity under its own type, for its own renderer. */
+	public static final RegistryObject<BlockEntityType<MiningChestBlockEntity>> MINING_CHEST =
+			Registration.BLOCK_ENTITIES.register("mining_chest",
+					() -> BlockEntityType.Builder.of(MiningChestBlockEntity::new,
+							DungeonsBlocks.MINING_CHEST.get()).build(null));
+
+	/** Same indirection as {@link #mobSetSpawnerType()}: {@code ChestBlock} takes a supplier. */
+	public static BlockEntityType<MiningChestBlockEntity> miningChestType() {
+		return MINING_CHEST.get();
+	}
+
 	/**
 	 * Forces this class to load so the fields above actually register. Called from
 	 * {@link Registration#init()}.
