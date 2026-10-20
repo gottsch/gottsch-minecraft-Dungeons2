@@ -18,6 +18,7 @@ import com.someguyssoftware.dungeons2.model.Level;
 import com.someguyssoftware.dungeons2.model.Room;
 import com.someguyssoftware.dungeons2.model.Room.Type;
 import com.someguyssoftware.dungeons2.model.Shaft;
+import com.someguyssoftware.dungeons2.world.ChunkUtil;
 import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.dungeonsengine.config.IDungeonConfig;
 import com.someguyssoftware.dungeonsengine.config.ILevelConfig;
@@ -160,8 +161,8 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			startPoint = getLevelBuilder().randomizeCoords(rand, roomBoundary);
 			// check if the start point is in a loaded chunk
 			ChunkPos startChunk = startPoint.toChunkPos();
-			if (!world.getChunkFromBlockCoords(startPoint.toPos() ).isLoaded()) {
-//			if (!world.isChunkGeneratedAt(startChunk.x, startChunk.z)) {
+			// NOTE getChunkFromBlockCoords().isLoaded() loads/generates the chunk, so it always passed
+			if (!ChunkUtil.isChunkReady(world, startChunk.x, startChunk.z)) {
 				Dungeons2.log.debug("startPoint is not in a loaded chunk -> {}", startChunk);
 				return EMPTY_DUNGEON;
 			}
@@ -227,6 +228,7 @@ public class DungeonBuilderTopDown implements IDungeonBuilder {
 			Dungeons2.log.debug("entrance room is NOT in valid chunks -> {} {}", surfaceCoords, surfaceCoords.toChunkPos());
 			return EMPTY_DUNGEON;
 		}
+		
 	
 		// 6. ensure that the entrance has a valid base
 		if (config.isMinecraftConstraints() &&

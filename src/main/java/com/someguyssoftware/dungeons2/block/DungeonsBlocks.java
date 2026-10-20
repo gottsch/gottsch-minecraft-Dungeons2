@@ -656,7 +656,7 @@ public class DungeonsBlocks extends AbstractModObjectHolder {
 			
 			// register tile entities
 			GameRegistry.registerTileEntity(DeferredDungeonGeneratorTileEntity.class,
-					new ResourceLocation(Treasure.MODID + ":" + "deferred_dungeon_generator_te"));
+					new ResourceLocation(Dungeons2.MODID, "deferred_dungeon_generator_te"));
 		}
 
 		/**

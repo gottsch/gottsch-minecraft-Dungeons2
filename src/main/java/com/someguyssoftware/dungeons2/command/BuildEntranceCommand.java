@@ -3,10 +3,14 @@
  */
 package com.someguyssoftware.dungeons2.command;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.someguyssoftware.dungeons2.generator.RuinProcessor;
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.builder.DungeonBuilderTopDown;
 import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
@@ -34,9 +38,12 @@ import com.someguyssoftware.gottschcore.positional.Coords;
 import com.someguyssoftware.gottschcore.positional.ICoords;
 
 import net.minecraft.command.CommandBase;
+import net.minecraft.command.CommandException;
+import net.minecraft.command.WrongUsageException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
@@ -54,69 +61,71 @@ public class BuildEntranceCommand extends CommandBase {
 
 	@Override
 	public String getUsage(ICommandSender var1) {
-		return "/dgn2entrance <x> <y> <z> [terrianCheck] : generates the dungeon entrance at location (x,y,z)";
+		return "/dgn2entrance [<x> <y> <z>] : generates a dungeon entrance at location (x,y,z), or where you stand. ~ coordinates are allowed.";
 	}
 
 	@Override
-	public void execute(MinecraftServer server, ICommandSender commandSender, String[] args) {
-		EntityPlayer player = (EntityPlayer) commandSender.getCommandSenderEntity();
+	public int getRequiredPermissionLevel() {
+		return 2;
+	}
+
+	@Override
+	public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos) {
+		return args.length > 0 && args.length <= 3 ? getTabCompletionCoordinate(args, 0, targetPos) : Collections.emptyList();
+	}
+
+	@Override
+	public void execute(MinecraftServer server, ICommandSender commandSender, String[] args) throws CommandException {
+		// no coordinates = where the sender stands. ~ (relative) coordinates are supported.
+		BlockPos pos = args.length >= 3 ? parseBlockPos(commandSender, args, 0, false) : commandSender.getPosition();
+		if (args.length > 0 && args.length < 3) {
+			throw new WrongUsageException(getUsage(commandSender));
+		}
+
 		try {
+			World world = commandSender.getEntityWorld();
+			Dungeons2.log.info(String.format("Building Dungeons2! entrance @ %d %d %d...", pos.getX(), pos.getY(), pos.getZ()));
 
-			// get the location to build
-			int x, y, z = 0;
-			x = Integer.parseInt(args[0]);
-			y = Integer.parseInt(args[1]);
-			z = Integer.parseInt(args[2]);
-			
-			// get the terrian arg
-			String terrainCheck = "0";
-			if (args.length > 3) {
-				terrainCheck = args[3];
+			// initialize a dungeons builder
+			IDungeonBuilder builder = new DungeonBuilderTopDown(null);	
+
+			// get the start point
+			ICoords startPoint = new Coords(pos);
+			Random random = new Random();
+
+			Room entranceRoom = builder.buildEntranceRoom(world, random, startPoint);
+
+			// use the loaded style sheet (the one world generation uses), else the built-in one
+			DungeonGenerator gen = new DungeonGenerator();
+			StyleSheet styleSheet = Dungeons2.dungeonsWorldGen != null ? Dungeons2.dungeonsWorldGen.getStyleSheet() : null;
+			if (styleSheet == null || styleSheet.getThemes() == null || styleSheet.getThemes().isEmpty()) {
+				styleSheet = DungeonGenerator.getDefaultStyleSheet();
 			}
-			
-			if (player != null) {
-    			World world = commandSender.getEntityWorld();
-    			Dungeons2.log.info(String.format("Buidling Dungeons2! entrance @ %d %d %d...", x, y, z));
-    			
-    			// initialize a dungeons builder
-    			IDungeonBuilder builder = new DungeonBuilderTopDown(null);	
-    			
-	    		// get the start point
-    			ICoords startPoint = new Coords(x, y, z);
-    			Random random = new Random();
-    			
-    			Room entranceRoom =builder.buildEntranceRoom(world, random, startPoint);
-    			
-    			DungeonGenerator gen = new DungeonGenerator();    
-    			Multimap<String, IRoomGenerator> roomGenerators = ArrayListMultimap.create();
-    			LayoutAssigner layoutAssigner = new LayoutAssigner(gen.getDefaultStyleSheet());
-    			IRoomDecorator roomDecorator = new RoomDecorator(gen.getDefaultChestSheet(), gen.getDefaultSpawnSheet());
-    			RoomGeneratorFactory factory = new RoomGeneratorFactory(roomGenerators);
-    			////////////// from buildEntrance ///////////////////
-    			LevelConfig entranceLevelConfig = new LevelConfig();
-    			entranceLevelConfig.setDecayMultiplier(Math.min(1, entranceLevelConfig.getDecayMultiplier())); // increase the decay multiplier to a minimum of 5
-    			// assign a layout to the entrance room
-    			layoutAssigner.assign(random, entranceRoom);
-    			IRoomGenerator roomGen = factory.createRoomGenerator(random, entranceRoom, false); // support
-    			// TODO need to provide the entrance room generator with a different level config that uses a higher decay multiplier
-    			// to create a much more decayed surface structure.
-    			roomGen.generate(world, random, entranceRoom, gen.getDefaultStyleSheet().getThemes().get(0), gen.getDefaultStyleSheet(), entranceLevelConfig);
-    			roomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), entranceRoom, entranceLevelConfig);
+			// NOTE themes are keyed by name. pick one at random
+			List<Theme> themes = new ArrayList<>(styleSheet.getThemes().values());
+			Theme theme = themes.get(random.nextInt(themes.size()));
 
-    			RoomPrettyPrinter printer = new RoomPrettyPrinter();
-    			if (entranceRoom != null) {
-    				String s = printer.print(entranceRoom);
-    				Dungeons2.log.info(s);
-    			}
-    			else {
-    				Dungeons2.log.debug("Exit was null ?");
-    			}
-    		}
+			Multimap<String, IRoomGenerator> roomGenerators = ArrayListMultimap.create();
+			LayoutAssigner layoutAssigner = new LayoutAssigner(styleSheet);
+			IRoomDecorator roomDecorator = new RoomDecorator(gen.getDefaultChestSheet(), gen.getDefaultSpawnSheet());
+			RoomGeneratorFactory factory = new RoomGeneratorFactory(roomGenerators);
+			////////////// from buildEntrance ///////////////////
+			LevelConfig entranceLevelConfig = new LevelConfig();
+			entranceLevelConfig.setDecayMultiplier(Math.min(1, entranceLevelConfig.getDecayMultiplier())); // increase the decay multiplier to a minimum of 5
+			// assign a layout to the entrance room
+			layoutAssigner.assign(random, entranceRoom);
+			IRoomGenerator roomGen = factory.createRoomGenerator(random, entranceRoom, false); // support
+			roomGen.generate(world, random, entranceRoom, theme, styleSheet, entranceLevelConfig);
+			roomDecorator.decorate(world, random, roomGen.getGenerationStrategy().getBlockProvider(), entranceRoom, entranceLevelConfig);
+			// weather it into a ruin, same as a generated dungeon's entrance
+			RuinProcessor.ruin(world, random, entranceRoom);
+
+			commandSender.sendMessage(new TextComponentString(String.format("Built a %s entrance at %d %d %d.", theme.getName(), pos.getX(), pos.getY(), pos.getZ())));
+			Dungeons2.log.info(new RoomPrettyPrinter().print(entranceRoom));
 		}
 		catch(Exception e) {
-			player.sendMessage(new TextComponentString("Error:  " + e.getMessage()));
-			Dungeons2.log.error("Error generating Dungeons2! dungeon:", e);
-			e.printStackTrace();
+			commandSender.sendMessage(new TextComponentString("Error building the entrance: " + e + " (see the Dungeons2 log)"));
+			Dungeons2.log.error("Error generating Dungeons2! entrance:", e);
 		}
 	}
 }
