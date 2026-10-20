@@ -379,7 +379,9 @@
       "difficulty": 2
     },
     {
-      "min_floor_index": 5,
+      // 4, not 5: LARGE tops out at 5 floors and floorIndex counts from 0, so index 4 is the
+      // deepest floor any dungeon has. At 5 this band (the only difficulty 3) was unreachable.
+      "min_floor_index": 4,
       "mob_sets": [
         {
           "mob_set": "dungeons2:classic_elemental_bones",

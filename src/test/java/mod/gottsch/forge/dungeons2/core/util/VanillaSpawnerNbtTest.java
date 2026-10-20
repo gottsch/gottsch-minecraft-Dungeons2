@@ -22,7 +22,9 @@ import mod.gottsch.forge.gottschcore.mobset.WeightedMob;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.world.level.SpawnData;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -139,6 +141,45 @@ class VanillaSpawnerNbtTest {
             Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new AssertionError("tuning value '" + key + "' is not an int: " + value, e);
+        }
+    }
+
+    /**
+     * Checked against vanilla's own {@code SpawnData.CODEC}, not against the key name: the rule only
+     * works if vanilla decodes a {@code CustomSpawnRules} out of it, and its ranges must cover 0..15.
+     */
+    @Test
+    void ignoreLightDecodesToVanillaCustomRulesCoveringEveryLightLevel() throws Exception {
+        SpawnData lit = SpawnData.CODEC.parse(NbtOps.INSTANCE,
+                TagParser.parseTag(VanillaSpawnerNbt.spawnData("dungeons2:rat", true)))
+                .result().orElseThrow();
+        SpawnData.CustomSpawnRules rules = lit.getCustomSpawnRules().orElseThrow();
+        for (int light = 0; light <= 15; light++) {
+            assertTrue(rules.blockLightLimit().isValueInRange(light), "block light " + light);
+            assertTrue(rules.skyLightLimit().isValueInRange(light), "sky light " + light);
+        }
+        assertEquals(1, lit.getEntityToSpawn().size(),
+                "the entity tag must stay `id` alone, or vanilla skips finalizeSpawn");
+    }
+
+    @Test
+    void withoutIgnoreLightThereAreNoCustomRules() throws Exception {
+        SpawnData plain = SpawnData.CODEC.parse(NbtOps.INSTANCE,
+                TagParser.parseTag(VanillaSpawnerNbt.spawnData("dungeons2:rat")))
+                .result().orElseThrow();
+        assertTrue(plain.getCustomSpawnRules().isEmpty(),
+                "absent rules is what sends vanilla to the mob's own spawn predicate");
+    }
+
+    /** Every potential, not just the shown mob -- otherwise the cage ignores light exactly once. */
+    @Test
+    void ignoreLightReachesEveryPotential() {
+        ListTag potentials = (ListTag) assertDoesNotThrowValue(VanillaSpawnerNbt.spawnPotentials(
+                List.of(mob("dungeons2:rat", 10), mob("dungeons2:giant_rat", 3)), true));
+        for (int i = 0; i < potentials.size(); i++) {
+            CompoundTag data = potentials.getCompound(i).getCompound("data");
+            assertTrue(data.contains("custom_spawn_rules", Tag.TAG_COMPOUND), "potential " + i);
+            assertEquals(1, data.getCompound("entity").size());
         }
     }
 

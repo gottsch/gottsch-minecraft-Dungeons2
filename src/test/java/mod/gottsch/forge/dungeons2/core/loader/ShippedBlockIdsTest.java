@@ -191,7 +191,11 @@ class ShippedBlockIdsTest {
             "item",
             // The boss tier's loot table, 2026-09-04 -- see boss_mob_set above for why it is a
             // key of its own and not another loot_table. Same registry, same missing sweep.
-            "boss_loot_table");
+            "boss_loot_table",
+            // Treasure2 rarity ids for the boss chest, 2026-10-05. Treasure2's own registry, which
+            // does not exist without Treasure2; an unknown id is logged and Treasure2 draws.
+            // BossTierWiringTest pins the shipped values.
+            "treasure_rarities");
 
     /** Where a modded block proves it exists, absent a running game. See the class notes. */
     private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";

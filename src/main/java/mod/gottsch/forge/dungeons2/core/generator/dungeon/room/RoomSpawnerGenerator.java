@@ -263,8 +263,10 @@ public final class RoomSpawnerGenerator {
         int spawnCount = min + (max > min ? random.nextInt(max - min + 1) : 0);
 
         BlockEntityData data = new BlockEntityData(VANILLA_SPAWNER_ENTITY)
-                .withNbt(VanillaSpawnerNbt.SPAWN_DATA, VanillaSpawnerNbt.spawnData(shown))
-                .withNbt(VanillaSpawnerNbt.SPAWN_POTENTIALS, VanillaSpawnerNbt.spawnPotentials(mobs));
+                .withNbt(VanillaSpawnerNbt.SPAWN_DATA,
+                        VanillaSpawnerNbt.spawnData(shown, config.ignoreLight()))
+                .withNbt(VanillaSpawnerNbt.SPAWN_POTENTIALS,
+                        VanillaSpawnerNbt.spawnPotentials(mobs, config.ignoreLight()));
         VanillaSpawnerNbt.tuning(spawnCount).forEach(data::with);
         if (motif != null && floorIndex >= 0) {
             CompoundTag forgeData = new CompoundTag();

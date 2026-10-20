@@ -979,7 +979,7 @@
 
       "spawners": [
         { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
-        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1, "ignore_light": true },
         { "weight": 2, "min_size": 11, "min_count": 2, "max_count": 2, "proximity": 12 },
         { "weight": 4, "none": true }
       ],

@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.integration;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -75,14 +76,21 @@ public final class TreasureIntegration {
      * A real Treasure2 chest for {@code pos}, or empty when Treasure2 is absent.
      *
      * <p>Empty means the caller should fall back to its own chest &mdash; it is not an error.</p>
+     *
+     * @param rarity                a Treasure2 rarity id to force (e.g. {@code treasure2:epic}), or
+     *                              null to let Treasure2 draw one. An id Treasure2 does not know is
+     *                              logged and drawn instead
+     * @param supplementalLootTable D2's own table, rolled by Treasure2 into the slots its loot leaves
+     *                              empty when the chest first fills
      */
     public static Optional<StructureTemplate.StructureBlockInfo> generateChest(
-            LevelReader level, BlockPos pos, Direction facing, RandomSource random) {
+            LevelReader level, BlockPos pos, Direction facing, RandomSource random,
+            ResourceLocation rarity, ResourceLocation supplementalLootTable) {
 
         if (!isLoaded() || level == null) {
             return Optional.empty();
         }
-        return Delegate.generate(level, pos, facing, random);
+        return Delegate.generate(level, pos, facing, random, rarity, supplementalLootTable);
     }
 
     /**
@@ -110,16 +118,30 @@ public final class TreasureIntegration {
         private Delegate() {}
 
         static Optional<StructureTemplate.StructureBlockInfo> generate(
-                LevelReader level, BlockPos pos, Direction facing, RandomSource random) {
+                LevelReader level, BlockPos pos, Direction facing, RandomSource random,
+                ResourceLocation rarityId, ResourceLocation supplementalLootTable) {
 
-            // Rarity and loot table are both left to Treasure2. Forcing either would produce a
+            // The rarity is forced only when the pool names one (the boss chest's size tier, Mark
+            // 2026-10-05); otherwise Treasure2 draws. A forced rarity does not feed T2's adaptive
+            // weights -- see ChestGeneration.
+            Optional<mod.gottsch.forge.treasure2.core.rarity.IRarity> rarity = Optional.empty();
+            if (rarityId != null) {
+                rarity = mod.gottsch.forge.treasure2.core.rarity.TreasureRarities.getRarityByName(rarityId);
+                if (rarity.isEmpty()) {
+                    mod.gottsch.forge.dungeons2.Dungeons.LOGGER.warn("[D2-CHEST] treasure2 has no"
+                            + " rarity {}; letting it draw one", rarityId);
+                }
+            }
+            // The loot table is left to Treasure2. Forcing it would produce a
             // Treasure2-branded chest holding Dungeons2's idea of loot, which is the imitation this
             // whole route exists to avoid -- the point of asking Treasure2 is to get ITS chest, with
-            // its rarity draw, its locks and its table. The marker's own lootTable stays the
-            // fallback chest's, and is deliberately not forwarded.
+            // its chest block, its locks and its table. D2's table goes in as the SUPPLEMENTAL one
+            // (Mark, 2026-10-05): rolled only into the slots Treasure2's loot leaves empty, so it can
+            // add to the chest but never displace what Treasure2 put there. Needs Treasure2 4.1.0.
             return Optional.ofNullable(mod.gottsch.forge.treasure2.api.TreasureApi.generateChest(
                     level, pos, random, facing,
-                    mod.gottsch.forge.treasure2.core.world.feature.FeatureType.TERRANEAN));
+                    mod.gottsch.forge.treasure2.core.world.feature.FeatureType.TERRANEAN,
+                    rarity, Optional.empty(), Optional.ofNullable(supplementalLootTable)));
         }
 
         static void finalize(ServerLevelAccessor level, BlockPos pos) {

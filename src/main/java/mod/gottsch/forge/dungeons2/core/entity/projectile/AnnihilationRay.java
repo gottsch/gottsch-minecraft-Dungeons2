@@ -192,6 +192,13 @@ public class AnnihilationRay extends Entity {
             SynchedEntityData.defineId(AnnihilationRay.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Vector3f> DATA_END =
             SynchedEntityData.defineId(AnnihilationRay.class, EntityDataSerializers.VECTOR3);
+    /**
+     * #97: a Mirror Shield is turning the beam back on its caster. Synced because the reflection is
+     * otherwise invisible -- the beam already stopped on the shield, and the damage lands on the
+     * caster server-side -- so the renderer recolours the beam and the client bursts sparks.
+     */
+    private static final EntityDataAccessor<Boolean> DATA_REFLECTING =
+            SynchedEntityData.defineId(AnnihilationRay.class, EntityDataSerializers.BOOLEAN);
 
     // server-side state; the beam is never saved (see shouldBeSaved), so none of it is persisted
     private Mode mode = Mode.STRIKE;
@@ -427,6 +434,11 @@ public class AnnihilationRay extends Entity {
 
         EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(this.level(), this, origin, end,
                 new AABB(origin, end).inflate(1.0D), entity -> canHurt(caster, entity));
+        // #97: judged every tick, not only on a damage tick, so the beam's colour tracks the shield
+        // being raised and lowered rather than lagging a pulse behind it.
+        LivingEntity shieldBearer = entityHit != null && entityHit.getEntity() instanceof LivingEntity bearer
+                && MirrorShield.isReflecting(bearer, origin) ? bearer : null;
+        setReflecting(shieldBearer != null);
         if (entityHit != null) {
             // Something it may hurt is in front of the wall: the beam stops on it, and the wall
             // behind it is not burning.
@@ -436,12 +448,15 @@ public class AnnihilationRay extends Entity {
             if (this.damageCooldown == 0) {
                 // #97: a Mirror Shield raised toward the caster turns the pulse back on it, credited
                 // to the player. The beam still stops on the shield -- it is a mirror, not a window.
-                if (entityHit.getEntity() instanceof LivingEntity shieldBearer
-                        && MirrorShield.isReflecting(shieldBearer, origin)) {
+                if (shieldBearer != null) {
                     caster.hurt(new DamageSource(this.level().registryAccess()
                             .registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DAMAGE_TYPE),
                             this, shieldBearer), DAMAGE);
                     MirrorShieldEvent.wear(shieldBearer);
+                    // The audible half of the cue: a shield block, pitched up so it rings rather
+                    // than thuds, once per pulse turned back.
+                    this.level().playSound(null, end.x, end.y, end.z, SoundEvents.SHIELD_BLOCK,
+                            this.getSoundSource(), 1.0F, 1.6F);
                 } else {
                     entityHit.getEntity().hurt(damageSource(caster), DAMAGE);
                 }
@@ -544,6 +559,10 @@ public class AnnihilationRay extends Entity {
     /** Client only: the burn point spits sparks and smoke. Nothing is sent for this. */
     private void sparkAtEnd() {
         Vec3 end = getEnd();
+        if (isReflecting()) {
+            reflectBurst(end);
+            return;
+        }
         if (this.random.nextInt(2) == 0) {
             this.level().addParticle(ParticleTypes.ELECTRIC_SPARK, end.x, end.y, end.z,
                     this.random.nextGaussian() * 0.08D, this.random.nextGaussian() * 0.08D,
@@ -551,6 +570,39 @@ public class AnnihilationRay extends Entity {
         }
         if (this.random.nextInt(3) == 0) {
             this.level().addParticle(ParticleTypes.SMOKE, end.x, end.y, end.z, 0.0D, 0.03D, 0.0D);
+        }
+    }
+
+    /**
+     * #97: where the shield meets the beam, a spray of bright sparks thrown back toward the caster
+     * -- the visible half of the reflection, every tick it holds.
+     */
+    private void reflectBurst(Vec3 end) {
+        Entity owner = getOwner();
+        Vec3 back = owner == null ? Vec3.ZERO
+                : owner.position().add(0.0D, owner.getBbHeight() * 0.5D, 0.0D).subtract(end).normalize();
+        for (int i = 0; i < 4; i++) {
+            this.level().addParticle(ParticleTypes.ELECTRIC_SPARK, end.x, end.y, end.z,
+                    back.x * 0.3D + this.random.nextGaussian() * 0.12D,
+                    back.y * 0.3D + this.random.nextGaussian() * 0.12D,
+                    back.z * 0.3D + this.random.nextGaussian() * 0.12D);
+        }
+        if (this.random.nextInt(2) == 0) {
+            this.level().addParticle(ParticleTypes.END_ROD, end.x, end.y, end.z,
+                    back.x * 0.15D + this.random.nextGaussian() * 0.05D,
+                    back.y * 0.15D + this.random.nextGaussian() * 0.05D,
+                    back.z * 0.15D + this.random.nextGaussian() * 0.05D);
+        }
+    }
+
+    /** #97: true while a Mirror Shield is turning this beam back on its caster. */
+    public boolean isReflecting() {
+        return this.entityData.get(DATA_REFLECTING);
+    }
+
+    private void setReflecting(boolean reflecting) {
+        if (reflecting != isReflecting()) {
+            this.entityData.set(DATA_REFLECTING, reflecting);
         }
     }
 
@@ -588,6 +640,7 @@ public class AnnihilationRay extends Entity {
     protected void defineSynchedData() {
         this.entityData.define(DATA_OWNER, -1);
         this.entityData.define(DATA_END, new Vector3f());
+        this.entityData.define(DATA_REFLECTING, false);
     }
 
     /** A beam is a moment, not a thing: a chunk unloading mid-burn ends it. */

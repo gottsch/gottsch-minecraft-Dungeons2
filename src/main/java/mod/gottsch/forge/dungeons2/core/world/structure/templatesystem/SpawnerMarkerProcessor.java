@@ -137,6 +137,8 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     private final double proximity;
     private final float probability;
     private final SpawnerConfig.Kind kind;
+    /** Pool default for {@code ignore_light}; a marker's own {@code ignoreLight} wins. Vanilla only. */
+    private final boolean ignoreLight;
 
     /** The proximity form, which is what every marker authored before vanilla spawners meant. */
     public SpawnerMarkerProcessor(ResourceLocation mobSet, ResourceLocation markerBlock, double proximity) {
@@ -180,7 +182,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 proximity, probability, kind);
     }
 
-    /** The full form, with a boss already drawn at planning time &mdash; see {@link #bossMob}. */
+    /** With a boss already drawn at planning time &mdash; see {@link #bossMob}. Honours light. */
     public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
                                   Optional<ResourceLocation> bossMob,
                                   Optional<ResourceLocation> escortMobSet,
@@ -188,6 +190,18 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                                   ResourceLocation markerBlock, double proximity,
                                   float probability,
                                   SpawnerConfig.Kind kind) {
+        this(mobSet, bossMobSet, bossMob, escortMobSet, rangedEscortMobSet, markerBlock, proximity,
+                probability, kind, false);
+    }
+
+    /** The full form, which is what the codec builds. */
+    public SpawnerMarkerProcessor(ResourceLocation mobSet, Optional<ResourceLocation> bossMobSet,
+                                  Optional<ResourceLocation> bossMob,
+                                  Optional<ResourceLocation> escortMobSet,
+                                  Optional<ResourceLocation> rangedEscortMobSet,
+                                  ResourceLocation markerBlock, double proximity,
+                                  float probability,
+                                  SpawnerConfig.Kind kind, boolean ignoreLight) {
         this.mobSet = mobSet;
         this.bossMobSet = bossMobSet;
         this.bossMob = bossMob;
@@ -197,6 +211,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         this.proximity = proximity;
         this.probability = probability;
         this.kind = kind;
+        this.ignoreLight = ignoreLight;
     }
 
     /** The tier's boss set, if this list names one. Read at planning time to draw the boss. */
@@ -217,7 +232,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
     public SpawnerMarkerProcessor withBossMob(ResourceLocation mob) {
         return new SpawnerMarkerProcessor(this.mobSet, this.bossMobSet, Optional.of(mob),
                 this.escortMobSet, this.rangedEscortMobSet, this.markerBlock, this.proximity,
-                this.probability, this.kind);
+                this.probability, this.kind, this.ignoreLight);
     }
 
     /**
@@ -277,7 +292,12 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 // Same default and the same reason as the scheme slot's: every marker authored
                 // before vanilla spawners existed means the ambush block.
                 SpawnerConfig.Kind.CODEC.optionalFieldOf("type", SpawnerConfig.Kind.PROXIMITY)
-                        .forGetter(p -> p.kind)
+                        .forGetter(p -> p.kind),
+                // A pool default like its neighbours. Unlike the scheme slot it is not rejected on a
+                // proximity entry -- this processor has no validate() hook (see proximity above) --
+                // so there it is simply unused. Strict, as a new field. See VanillaSpawnerNbt.ANY_LIGHT.
+                Codecs.strictOptionalFieldOf(Codec.BOOL, "ignore_light", false)
+                        .forGetter(p -> p.ignoreLight)
         ).apply(instance, SpawnerMarkerProcessor::new));
         return codec;
     }
@@ -441,15 +461,16 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         int max = range.max();
         int spawnCount = min + (max > min ? random.nextInt(max - min + 1) : 0);
 
+        boolean anyLight = overrides.ignoreLight(ignoreLight);
         try {
             CompoundTag tag = new CompoundTag();
             tag.putString("id", VANILLA_SPAWNER_ENTITY);
             tag.put(VanillaSpawnerNbt.SPAWN_DATA,
-                    TagParser.parseTag(VanillaSpawnerNbt.spawnData(shown)));
+                    TagParser.parseTag(VanillaSpawnerNbt.spawnData(shown, anyLight)));
             // SpawnPotentials is a LIST, and TagParser only parses a compound -- so it is wrapped
             // and unwrapped, the same trick DungeonPiece#parseNbtValue uses for the other route.
             tag.put(VanillaSpawnerNbt.SPAWN_POTENTIALS,
-                    TagParser.parseTag("{v:" + VanillaSpawnerNbt.spawnPotentials(mobs) + "}").get("v"));
+                    TagParser.parseTag("{v:" + VanillaSpawnerNbt.spawnPotentials(mobs, anyLight) + "}").get("v"));
             VanillaSpawnerNbt.tuning(spawnCount).forEach((k, v) -> tag.putInt(k, Integer.parseInt(v)));
             // A cage has no field for depth, so it goes in Forge's persistent data -- the same place
             // RoomSpawnerGenerator puts it, and where EchelonSpawnEvent reads it. Both keys or
@@ -714,6 +735,12 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
          */
         Optional<Integer> floorIndex() {
             return integer(SpawnerMarkerBlockEntity.FLOOR_INDEX).filter(floor -> floor >= 0);
+        }
+
+        /** This marker's {@code ignoreLight} where stated, the pool's where not. */
+        boolean ignoreLight(boolean pooled) {
+            return nbt != null && nbt.contains(SpawnerMarkerBlockEntity.IGNORE_LIGHT, Tag.TAG_ANY_NUMERIC)
+                    ? nbt.getBoolean(SpawnerMarkerBlockEntity.IGNORE_LIGHT) : pooled;
         }
 
         /** The motif the author stated, if any. */

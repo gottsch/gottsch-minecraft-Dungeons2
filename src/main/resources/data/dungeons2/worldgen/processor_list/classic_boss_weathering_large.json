@@ -372,6 +372,11 @@
       // marker rather than the table id itself.
       "boss_loot_table": "dungeons2:chests/classic_boss_large",
 
+      // The Treasure2 rarity of the boss chest, when Treasure2 is installed and the marker set
+      // `treasure: true`. One of these, evenly. Set per size tier here because only the pool
+      // knows the dungeon's size. D2's boss_loot_table above then tops up the empty slots.
+      "treasure_rarities": ["treasure2:legendary", "treasure2:mythical"],
+
       // Every OTHER chest marker in a boss room that names no table of its own. Unrelated to the
       // tier: the ordinary chests in a boss room are ordinary chests.
       "loot_tables": [

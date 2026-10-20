@@ -29,6 +29,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -116,6 +117,8 @@ public class ChestMarkerProcessor extends StructureProcessor {
     private final Optional<ResourceLocation> bossLootTable;
     private final ResourceLocation markerBlock;
     private final ResourceLocation chestBlock;
+    /** Treasure2 rarities a {@code treasure} marker draws from, uniformly. Empty = Treasure2 draws. */
+    private final List<ResourceLocation> treasureRarities;
 
     public ChestMarkerProcessor(List<ChestConfig.LootTableEntry> lootTables,
                                 ResourceLocation markerBlock, ResourceLocation chestBlock) {
@@ -125,10 +128,18 @@ public class ChestMarkerProcessor extends StructureProcessor {
     public ChestMarkerProcessor(List<ChestConfig.LootTableEntry> lootTables,
                                 Optional<ResourceLocation> bossLootTable,
                                 ResourceLocation markerBlock, ResourceLocation chestBlock) {
+        this(lootTables, bossLootTable, markerBlock, chestBlock, List.of());
+    }
+
+    public ChestMarkerProcessor(List<ChestConfig.LootTableEntry> lootTables,
+                                Optional<ResourceLocation> bossLootTable,
+                                ResourceLocation markerBlock, ResourceLocation chestBlock,
+                                List<ResourceLocation> treasureRarities) {
         this.lootTables = lootTables;
         this.bossLootTable = bossLootTable;
         this.markerBlock = markerBlock;
         this.chestBlock = chestBlock;
+        this.treasureRarities = treasureRarities;
     }
 
     /**
@@ -167,6 +178,11 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * there is no defensible value to default it to: "no boss table declared" is a real and normal
      * configuration -- every pool in the mod outside {@code end_rooms} is in it -- and any id
      * invented here would be one that fired on a template the author never meant as a boss room.</p>
+     *
+     * <p>{@code treasure_rarities} (2026-10-05) is the Treasure2 counterpart of
+     * {@code boss_loot_table}: the rarities a {@code treasure} marker's chest is drawn from, set per
+     * size tier because only the pool knows the dungeon's size. Empty lets Treasure2 draw its own,
+     * which is what a pool outside {@code end_rooms} gets.</p>
      */
     public static Codec<ChestMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
@@ -177,7 +193,9 @@ public class ChestMarkerProcessor extends StructureProcessor {
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "marker_block",
                         DEFAULT_MARKER_BLOCK).forGetter(p -> p.markerBlock),
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "chest_block",
-                        new ResourceLocation("minecraft:chest")).forGetter(p -> p.chestBlock)
+                        new ResourceLocation("minecraft:chest")).forGetter(p -> p.chestBlock),
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC.listOf(), "treasure_rarities",
+                        List.of()).forGetter(p -> p.treasureRarities)
         ).apply(instance, ChestMarkerProcessor::new));
     }
 
@@ -214,14 +232,20 @@ public class ChestMarkerProcessor extends StructureProcessor {
         // Treasure2 first, when this individual marker asked for it. Empty means the mod is absent
         // (or could not build one), and the fall-through below is then the whole point rather than a
         // failure -- the dungeon has to generate the same shape either way.
+        //
+        // The D2 table resolved above rides along as Treasure2's SUPPLEMENTAL table: Treasure2 fills
+        // the chest from its own loot first, then rolls this one into the slots left empty.
         if (wantsTreasureChest(current)) {
             Direction facing = markerFacing(current, settings);
+            RandomSource random = settings.getRandom(current.pos());
+            ResourceLocation rarity = pickTreasureRarity(random);
             Optional<StructureTemplate.StructureBlockInfo> treasure =
-                    TreasureIntegration.generateChest(level, current.pos(), facing,
-                            settings.getRandom(current.pos()));
+                    TreasureIntegration.generateChest(level, current.pos(), facing, random,
+                            rarity, ResourceLocation.tryParse(table));
             if (treasure.isPresent()) {
-                Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {} (facing {})",
-                        markerBlock, current.pos().toShortString(), facing);
+                Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {} (facing {}, rarity {},"
+                                + " topped up from {})", markerBlock, current.pos().toShortString(),
+                        facing, rarity == null ? "drawn by treasure2" : rarity, table);
                 return treasure.get();
             }
         }
@@ -281,6 +305,15 @@ public class ChestMarkerProcessor extends StructureProcessor {
             return null;
         }
         return bossLootTable.get().toString();
+    }
+
+    /**
+     * One of {@code treasure_rarities}, uniformly, or null to let Treasure2 draw. Drawn from the
+     * cell-seeded random, so every chunk pass over the marker picks the same rarity.
+     */
+    ResourceLocation pickTreasureRarity(RandomSource random) {
+        return treasureRarities.isEmpty() ? null
+                : treasureRarities.get(random.nextInt(treasureRarities.size()));
     }
 
     /** Whether this individual marker declared itself the dungeon's boss chest. */

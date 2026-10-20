@@ -476,4 +476,40 @@ class SpawnerMarkerProcessorTest {
             mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry.clear();
         }
     }
+
+    /** The pool's ignore_light is the default; a marker's own ignoreLight wins either way. */
+    @Test
+    void ignoreLightIsAPoolDefaultAMarkerMayOverride() {
+        mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry.register(
+                new mod.gottsch.forge.gottschcore.mobset.MobSetData(VERMIN, "classic", 1, 2,
+                        java.util.List.of(new mod.gottsch.forge.gottschcore.mobset.WeightedMob(
+                                new ResourceLocation("minecraft:zombie"), 1)), false));
+        try {
+            SpawnerMarkerProcessor dark = processor();
+            SpawnerMarkerProcessor lit = new SpawnerMarkerProcessor(VERMIN, Optional.empty(),
+                    Optional.empty(), Optional.empty(), Optional.empty(),
+                    SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 12.0D, 1.0F,
+                    SpawnerConfig.Kind.VANILLA, true);
+            CompoundTag on = new CompoundTag();
+            on.putBoolean(mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity.IGNORE_LIGHT, true);
+            CompoundTag off = new CompoundTag();
+            off.putBoolean(mod.gottsch.forge.dungeons2.core.block.entity.SpawnerMarkerBlockEntity.IGNORE_LIGHT, false);
+
+            org.junit.jupiter.api.Assertions.assertFalse(ignoresLight(dark, overrides(null)),
+                    "a pool that says nothing keeps the cage light-gated");
+            assertTrue(ignoresLight(lit, overrides(null)));
+            assertTrue(ignoresLight(dark, overrides(on)));
+            org.junit.jupiter.api.Assertions.assertFalse(ignoresLight(lit, overrides(off)),
+                    "a stated false is an opinion, not an absence");
+        } finally {
+            mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry.clear();
+        }
+    }
+
+    private static boolean ignoresLight(SpawnerMarkerProcessor processor,
+                                        SpawnerMarkerProcessor.Overrides overrides) {
+        CompoundTag cage = processor.vanillaSpawnerTag(
+                net.minecraft.util.RandomSource.create(1L), overrides);
+        return cage.getCompound("SpawnData").contains("custom_spawn_rules");
+    }
 }

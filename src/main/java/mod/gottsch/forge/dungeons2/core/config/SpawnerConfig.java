@@ -60,13 +60,21 @@ import java.util.Optional;
 public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
                             Optional<Integer> maxMobs, Optional<Double> proximity,
                             Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind,
-                            int bonusMobs) {
+                            boolean ignoreLight, int bonusMobs) {
 
     /** The codec's shape: no depth bonus until {@link #resolvedAgainst(Optional)} applies one. */
     public SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
                          Optional<Integer> maxMobs, Optional<Double> proximity,
+                         Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind,
+                         boolean ignoreLight) {
+        this(minCount, maxCount, minMobs, maxMobs, proximity, mobSets, gate, kind, ignoreLight, 0);
+    }
+
+    /** As above, honouring light -- every caller that predates {@code ignore_light}. */
+    public SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMobs,
+                         Optional<Integer> maxMobs, Optional<Double> proximity,
                          Optional<List<MobSetEntry>> mobSets, SizeGate gate, Kind kind) {
-        this(minCount, maxCount, minMobs, maxMobs, proximity, mobSets, gate, kind, 0);
+        this(minCount, maxCount, minMobs, maxMobs, proximity, mobSets, gate, kind, false);
     }
 
     /**
@@ -162,7 +170,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
         MobSetBand b = band.get();
         return new SpawnerConfig(minCount, maxCount, minMobs, maxMobs, proximity,
                 mobSets.isPresent() ? mobSets : Optional.of(b.mobSets()),
-                gate, kind, b.bonusMobs());
+                gate, kind, ignoreLight, b.bonusMobs());
     }
 
     /**
@@ -176,7 +184,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             return this;
         }
         return new SpawnerConfig(minCount, maxCount, minMobs, maxMobs, proximity,
-                Optional.of(floorSets), gate, kind, bonusMobs);
+                Optional.of(floorSets), gate, kind, ignoreLight, bonusMobs);
     }
 
     /** The sets this config names outright, or empty when it defers to the motif's depth table. */
@@ -237,7 +245,12 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             // the ambush block, and silently switching those to visible cages would change what
             // every shipped hall does.
             Codecs.strictOptionalFieldOf(Kind.CODEC, "type", Kind.PROXIMITY)
-                    .forGetter(SpawnerConfig::kind)
+                    .forGetter(SpawnerConfig::kind),
+            // Vanilla cages only (validate rejects it on a proximity spawner, which never tested
+            // light). Opt-in because it takes away the player's counter of lighting the cage up;
+            // it is for rooms DECORATED with light, not a difficulty knob. See VanillaSpawnerNbt.ANY_LIGHT.
+            Codecs.strictOptionalFieldOf(Codec.BOOL, "ignore_light", false)
+                    .forGetter(SpawnerConfig::ignoreLight)
     ).apply(instance, SpawnerConfig::new)).flatXmap(SpawnerConfig::validate, SpawnerConfig::validate);
 
     public static final Codec<SpawnerConfig> CODEC = Codecs.closed(MAP_CODEC);
@@ -262,6 +275,11 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
             return DataResult.error(() -> "spawners slot: 'proximity' was stated on a vanilla"
                     + " spawner, which has none -- a vanilla cage uses its own activation range."
                     + " Drop the key, or drop \"type\": \"vanilla\"");
+        }
+        if (config.kind == Kind.PROXIMITY && config.ignoreLight) {
+            return DataResult.error(() -> "spawners slot: 'ignore_light' was stated on a proximity"
+                    + " spawner, which never tests light -- it already fires in a lit room. The key"
+                    + " is for \"type\": \"vanilla\" cages only");
         }
         if (config.mobSets.isPresent() && config.mobSets.get().isEmpty()) {
             return DataResult.error(() -> "spawners slot: 'mob_sets' is present but empty. Omit the"

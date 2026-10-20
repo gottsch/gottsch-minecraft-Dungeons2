@@ -134,7 +134,10 @@ dependencies {
     // the first with it absent, and it is green. That is not the same as the in-game check -- the
     // suite has no ServerLevel and never places a marker -- but it does prove no test was leaning
     // on T2 being resolvable.
-    //runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
+    //
+    // UNCOMMENTED 2026-10-05 for Mark's Treasure2 integration testing. Comment it out again when
+    // that is done, so the checked-in build goes back to testing the ABSENT case.
+    runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
 
     // Enemy Echelons API - OPTIONAL soft dependency, same shape as Treasure2 above and for the same
     // reason: every EE reference lives in EchelonsIntegration's nested Delegate, reached only once

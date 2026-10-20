@@ -271,6 +271,44 @@ class ChestMarkerProcessorTest {
         assertNull(ChestConfig.LootTableEntry.pick(List.of(), RandomSource.create(1L)));
     }
 
+    // ---- Treasure2 rarity tiers (2026-10-05) ----------------------------------------------------
+
+    private static ChestMarkerProcessor withRarities(List<ResourceLocation> rarities) {
+        return new ChestMarkerProcessor(List.of(), Optional.empty(),
+                new ResourceLocation("dungeons2:chest_marker"), new ResourceLocation("minecraft:chest"),
+                rarities);
+    }
+
+    /** No rarities named means Treasure2 draws its own: null, not an invented default. */
+    @Test
+    void noTreasureRaritiesLetsTreasure2Draw() {
+        assertNull(withRarities(List.of()).pickTreasureRarity(RandomSource.create(1L)));
+    }
+
+    /** Both of a tier's rarities come up, and nothing else does. */
+    @Test
+    void theRarityDrawCoversTheTierAndOnlyTheTier() {
+        List<ResourceLocation> tier = List.of(new ResourceLocation("treasure2:legendary"),
+                new ResourceLocation("treasure2:mythical"));
+        ChestMarkerProcessor processor = withRarities(tier);
+        java.util.Set<ResourceLocation> seen = new java.util.HashSet<>();
+        RandomSource random = RandomSource.create(7L);
+        for (int i = 0; i < 100; i++) {
+            seen.add(processor.pickTreasureRarity(random));
+        }
+        assertEquals(java.util.Set.copyOf(tier), seen);
+    }
+
+    /** The field decodes from JSON, and is optional. */
+    @Test
+    void treasureRaritiesDecode() {
+        var codec = ChestMarkerProcessor.codec(() -> null);
+        DataResult<ChestMarkerProcessor> withField = codec.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"treasure_rarities\": [\"treasure2:rare\", \"treasure2:epic\"]}"));
+        assertTrue(withField.result().isPresent(), withField.error().map(Object::toString).orElse(""));
+        assertTrue(codec.parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).result().isPresent());
+    }
+
     /** The opt-in #48 step 4 will read. Present in the shape now so a template can carry it early. */
     @Test
     void theTreasureFlagRoundTripsThroughTheBlockEntityTag() {

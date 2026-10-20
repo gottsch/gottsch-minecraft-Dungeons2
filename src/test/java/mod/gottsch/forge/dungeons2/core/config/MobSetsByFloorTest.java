@@ -393,6 +393,32 @@ class MobSetsByFloorTest {
         assertEquals(2, resolved.bonusMobs(), "and the band still reaches it");
     }
 
+    /** Opt-in: a cage that ignores light takes away the player's counter of lighting it up. */
+    @Test
+    void ignoreLightDefaultsOffAndAVanillaSlotMayTurnItOn() {
+        SpawnerConfig plain = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"type\":\"vanilla\"}"))
+                .result().orElseThrow();
+        assertFalse(plain.ignoreLight(), "every cage authored before the key must stay light-gated");
+
+        SpawnerConfig lit = SpawnerConfig.CODEC
+                .parse(JsonOps.INSTANCE,
+                        JsonParser.parseString("{\"type\":\"vanilla\",\"ignore_light\":true}"))
+                .result().orElseThrow();
+        assertTrue(lit.ignoreLight());
+        assertTrue(lit.resolvedAgainst(Optional.of(bonusBand(2, 2))).ignoreLight(),
+                "band resolution must carry it, like the kind");
+    }
+
+    /** A proximity spawner never tested light, so the key there would tune nothing. */
+    @Test
+    void aProximitySpawnerMayNotStateIgnoreLight() {
+        DataResult<SpawnerConfig> result = SpawnerConfig.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"proximity\":12,\"ignore_light\":true}"));
+        assertTrue(result.error().isPresent());
+        assertTrue(result.error().get().message().contains("ignore_light"));
+    }
+
     private static MotifConfigFragment fragment(List<MobSetBand> table) {
         return new MotifConfigFragment(Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), List.of(), Optional.of(table));

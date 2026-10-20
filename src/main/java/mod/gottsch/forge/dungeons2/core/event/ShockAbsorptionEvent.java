@@ -24,6 +24,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
@@ -100,22 +101,43 @@ public class ShockAbsorptionEvent {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onHurt(LivingHurtEvent event) {
         LivingEntity victim = event.getEntity();
+        boolean slam = event.getSource().is(CommonSetup.GROUND_SLAM_DAMAGE_TYPE);
         if (!isWearingBoots(victim)) {
+            // The comparison half of the probe below: what a slam does to someone NOT wearing them.
+            if (slam && victim instanceof Player) {
+                Dungeons.LOGGER.info("[D2-BOOTS] slam hit {} WITHOUT boots: {} damage",
+                        victim.getName().getString(), String.format("%.1f", event.getAmount()));
+            }
             return;
         }
-        if (event.getSource().is(CommonSetup.GROUND_SLAM_DAMAGE_TYPE)) {
+        if (slam) {
             LAST_SLAM_TICK.put(victim, victim.tickCount);
-            event.setAmount(event.getAmount() * SLAM_DAMAGE_MULTIPLIER);
+            float raw = event.getAmount();
+            event.setAmount(raw * SLAM_DAMAGE_MULTIPLIER);
             wear(victim);
+            // INFO: the effect is hard to judge by eye mid-fight (Mark, 2026-10-05), so the probe
+            // says what the boots took off. One line per slam that lands on a wearer.
+            //   grep "D2-BOOTS" run/logs/dungeons2.log
+            Dungeons.LOGGER.info("[D2-BOOTS] slam hit {} WITH boots: {} -> {} damage",
+                    victim.getName().getString(), String.format("%.1f", raw),
+                    String.format("%.1f", event.getAmount()));
         } else if (event.getSource().is(DamageTypes.FALL)) {
-            event.setAmount(event.getAmount() * FALL_DAMAGE_MULTIPLIER);
+            float raw = event.getAmount();
+            event.setAmount(raw * FALL_DAMAGE_MULTIPLIER);
+            Dungeons.LOGGER.info("[D2-BOOTS] fall on {} WITH boots: {} -> {} damage",
+                    victim.getName().getString(), String.format("%.1f", raw),
+                    String.format("%.1f", event.getAmount()));
         }
     }
 
     @SubscribeEvent
     public static void onKnockBack(LivingKnockBackEvent event) {
         if (wasSlammedThisTick(event.getEntity())) {
-            event.setStrength((float) (event.getStrength() * SLAM_KNOCKBACK_MULTIPLIER));
+            float raw = event.getStrength();
+            event.setStrength((float) (raw * SLAM_KNOCKBACK_MULTIPLIER));
+            Dungeons.LOGGER.info("[D2-BOOTS] slam knockback on {}: {} -> {}",
+                    event.getEntity().getName().getString(), String.format("%.2f", raw),
+                    String.format("%.2f", event.getStrength()));
         }
     }
 
@@ -124,6 +146,8 @@ public class ShockAbsorptionEvent {
         if (event.getEffectInstance().getEffect() == MobEffects.MOVEMENT_SLOWDOWN
                 && wasSlammedThisTick(event.getEntity())) {
             event.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY);
+            Dungeons.LOGGER.info("[D2-BOOTS] slam slowness on {}: BLOCKED",
+                    event.getEntity().getName().getString());
         }
     }
 

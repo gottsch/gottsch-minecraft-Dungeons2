@@ -60,6 +60,12 @@ public class AnnihilationRayRenderer extends EntityRenderer<AnnihilationRay> {
     /** Green, as a beholder's disintegration ray traditionally is. */
     private static final float GLOW_R = 0.35F, GLOW_G = 1.0F, GLOW_B = 0.25F;
     private static final float CORE_R = 0.85F, CORE_G = 1.0F, CORE_B = 0.8F;
+    /**
+     * #97: silver-white while a Mirror Shield is turning the beam back -- the beam is now the
+     * player's, and nothing else changes colour when the reflection happens.
+     */
+    private static final float MIRROR_GLOW_R = 0.75F, MIRROR_GLOW_G = 0.85F, MIRROR_GLOW_B = 1.0F;
+    private static final float MIRROR_CORE_R = 1.0F, MIRROR_CORE_G = 1.0F, MIRROR_CORE_B = 1.0F;
 
     /** Half-widths, in blocks. */
     private static final float GLOW_WIDTH = 0.38F;
@@ -112,15 +118,23 @@ public class AnnihilationRayRenderer extends EntityRenderer<AnnihilationRay> {
         float flicker = 0.85F + 0.15F * Mth.sin(age * 1.7F);
         float a = fade * flicker;
 
+        boolean mirrored = beam.isReflecting();
+        float gr = mirrored ? MIRROR_GLOW_R : GLOW_R, gg = mirrored ? MIRROR_GLOW_G : GLOW_G,
+                gb = mirrored ? MIRROR_GLOW_B : GLOW_B;
+        float cr = mirrored ? MIRROR_CORE_R : CORE_R, cg = mirrored ? MIRROR_CORE_G : CORE_G,
+                cb = mirrored ? MIRROR_CORE_B : CORE_B;
+
         VertexConsumer consumer = buffer.getBuffer(DungeonsRenderTypes.BEAM);
         Matrix4f pose = poseStack.last().pose();
-        ribbon(consumer, pose, from, to, side, GLOW_WIDTH * flicker, GLOW_R, GLOW_G, GLOW_B, 0.28F * a);
-        ribbon(consumer, pose, from, to, otherSide, GLOW_WIDTH * flicker, GLOW_R, GLOW_G, GLOW_B, 0.28F * a);
-        ribbon(consumer, pose, from, to, facing, INNER_WIDTH, GLOW_R, GLOW_G, GLOW_B, 0.7F * a);
-        ribbon(consumer, pose, from, to, facing, CORE_WIDTH, CORE_R, CORE_G, CORE_B, a);
+        ribbon(consumer, pose, from, to, side, GLOW_WIDTH * flicker, gr, gg, gb, 0.28F * a);
+        ribbon(consumer, pose, from, to, otherSide, GLOW_WIDTH * flicker, gr, gg, gb, 0.28F * a);
+        ribbon(consumer, pose, from, to, facing, INNER_WIDTH, gr, gg, gb, 0.7F * a);
+        ribbon(consumer, pose, from, to, facing, CORE_WIDTH, cr, cg, cb, a);
 
+        // The flare at the shield swells while it reflects, so the point of contact reads too.
         Vec3 up = toCamera.lengthSqr() < 1.0E-6D ? otherSide : facing.cross(toCamera.normalize());
-        flare(consumer, pose, to, facing, up, FLARE_SIZE * flicker, GLOW_R, GLOW_G, GLOW_B, 0.6F * a);
+        flare(consumer, pose, to, facing, up, FLARE_SIZE * flicker * (mirrored ? 1.6F : 1.0F),
+                gr, gg, gb, (mirrored ? 0.9F : 0.6F) * a);
 
         super.render(beam, yaw, partialTick, poseStack, buffer, packedLight);
     }

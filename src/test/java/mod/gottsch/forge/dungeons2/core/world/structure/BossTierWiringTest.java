@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -146,6 +147,31 @@ class BossTierWiringTest {
     }
 
     /**
+     * Each tier's Treasure2 rarities, as Mark set them on 2026-10-05: the boss chest climbs with
+     * the dungeon's size, and only the pool knows the size.
+     */
+    @Test
+    void eachTierNamesItsOwnTreasureRarities() {
+        Map<String, List<String>> expected = Map.of(
+                "small", List.of("treasure2:rare", "treasure2:epic"),
+                "medium", List.of("treasure2:epic", "treasure2:legendary"),
+                "large", List.of("treasure2:legendary", "treasure2:mythical"));
+        for (Map.Entry<String, List<String>> tier : expected.entrySet()) {
+            JsonObject list = json(LIST_DIR + "/classic_boss_weathering_" + tier.getKey() + ".json");
+            List<String> actual = new ArrayList<>();
+            for (JsonElement entry : list.getAsJsonArray("processors")) {
+                JsonObject processor = entry.getAsJsonObject();
+                if ("dungeons2:chest".equals(processor.get("processor_type").getAsString())
+                        && processor.has("treasure_rarities")) {
+                    processor.getAsJsonArray("treasure_rarities")
+                            .forEach(r -> actual.add(r.getAsString()));
+                }
+            }
+            assertEquals(tier.getValue(), actual, tier.getKey() + " boss chest's treasure_rarities");
+        }
+    }
+
+    /**
      * A tier's ordinary {@code mob_set} default must NOT be a boss set.
      *
      * <p>The alternative design considered for this feature was "an unnamed spawner marker inherits
@@ -214,7 +240,7 @@ class BossTierWiringTest {
         for (JsonElement entry : list.getAsJsonArray("processors")) {
             JsonObject processor = entry.getAsJsonObject();
             for (String field : List.of("boss_loot_table", "boss_mob_set",
-                    "escort_mob_set", "ranged_escort_mob_set")) {
+                    "escort_mob_set", "ranged_escort_mob_set", "treasure_rarities")) {
                 if (processor.has(field)) {
                     processor.addProperty(field, "<tier>");
                 }

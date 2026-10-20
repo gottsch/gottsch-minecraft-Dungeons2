@@ -139,6 +139,12 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
     public static final String FLOOR_INDEX = "floorIndex";
     /** The motif whose depth band {@link #FLOOR_INDEX} is read against, e.g. {@code "classic"}. */
     public static final String MOTIF = "motif";
+    /**
+     * A vanilla cage that spawns at any light level, for a room authored with light sources around
+     * it. Absent means the pool's {@code ignore_light}; inert on a proximity spawner, which never
+     * tested light. See {@code VanillaSpawnerNbt.ANY_LIGHT}.
+     */
+    public static final String IGNORE_LIGHT = "ignoreLight";
 
     private String mobSetName;
     private Double proximity;
@@ -151,6 +157,8 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
     private boolean rangedEscort;
     private Integer floorIndex;
     private String motif;
+    /** Boxed: absent ("the pool's") and false ("honour light here") are different statements. */
+    private Boolean ignoreLight;
 
     public SpawnerMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(DungeonsBlockEntities.SPAWNER_MARKER.get(), pos, state);
@@ -202,6 +210,9 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
         if (tag.contains(MOTIF, Tag.TAG_STRING)) {
             this.motif = tag.getString(MOTIF);
         }
+        if (tag.contains(IGNORE_LIGHT, Tag.TAG_ANY_NUMERIC)) {
+            this.ignoreLight = tag.getBoolean(IGNORE_LIGHT);
+        }
     }
 
     @Override
@@ -242,6 +253,9 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
         }
         if (motif != null && !motif.isEmpty()) {
             tag.putString(MOTIF, motif);
+        }
+        if (ignoreLight != null) {
+            tag.putBoolean(IGNORE_LIGHT, ignoreLight);
         }
     }
 
@@ -334,6 +348,14 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
 
     public void setEscort(boolean escort) {
         this.escort = escort;
+    }
+
+    public Boolean getIgnoreLight() {
+        return ignoreLight;
+    }
+
+    public void setIgnoreLight(Boolean ignoreLight) {
+        this.ignoreLight = ignoreLight;
     }
 
     public boolean isRangedEscort() {

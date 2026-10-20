@@ -111,8 +111,39 @@ public final class VanillaSpawnerNbt {
      * together are what make the cage look like what it will produce.</p>
      */
     public static String spawnData(String mobId) {
-        return "{entity:{id:\"" + mobId + "\"}}";
+        return spawnData(mobId, false);
     }
+
+    /**
+     * As above, optionally ignoring light &mdash; see {@link #ANY_LIGHT}.
+     *
+     * <p>Must agree with every {@link #spawnPotentials} entry: the cage spawns its first mob from
+     * this one and every later mob from the potentials, so a mismatch is a cage that ignores light
+     * exactly once.</p>
+     */
+    public static String spawnData(String mobId, boolean ignoreLight) {
+        return "{entity:{id:\"" + mobId + "\"}" + (ignoreLight ? "," + ANY_LIGHT : "") + "}";
+    }
+
+    /**
+     * The {@code SpawnData} key that makes a cage spawn at any light level.
+     *
+     * <p>Vanilla's own mechanism, not a custom spawner. When an entry carries
+     * {@code custom_spawn_rules}, {@code BaseSpawner} tests only its block- and sky-light ranges
+     * (and Peaceful for hostiles) <em>instead of</em> {@code SpawnPlacements.checkSpawnRules} &mdash;
+     * which is where a monster's darkness test lives. Both ranges default to 0..15, so an empty
+     * compound means "any light".</p>
+     *
+     * <p><strong>It replaces the mob's whole spawn predicate, not just the light half.</strong> The
+     * collision test and {@code checkSpawnObstruction} still run, so nothing spawns in a wall; any
+     * other rule a mob registered in {@code CommonSetup.onRegisterSpawnPlacements} does not. And it
+     * removes the vanilla counter of lighting a cage up, leaving only breaking it &mdash; which is
+     * why it is opt-in ({@code ignore_light}) rather than how every cage is written.</p>
+     *
+     * <p>A sibling of {@code entity}, never inside it: vanilla only runs {@code finalizeSpawn} for an
+     * entity tag that is {@code id} alone, so putting anything there would unarm every skeleton.</p>
+     */
+    public static final String ANY_LIGHT = "custom_spawn_rules:{}";
 
     /**
      * SNBT for the {@code SpawnPotentials} key: the whole mob set as vanilla's own weighted list.
@@ -127,13 +158,19 @@ public final class VanillaSpawnerNbt {
      * {@code DungeonPiece#parseNbtValue}.</p>
      */
     public static String spawnPotentials(List<WeightedMob> mobs) {
+        return spawnPotentials(mobs, false);
+    }
+
+    /** As above, optionally ignoring light on every entry &mdash; see {@link #ANY_LIGHT}. */
+    public static String spawnPotentials(List<WeightedMob> mobs, boolean ignoreLight) {
         StringBuilder out = new StringBuilder("[");
         for (int i = 0; i < mobs.size(); i++) {
             if (i > 0) {
                 out.append(',');
             }
             out.append("{weight:").append(mobs.get(i).weight())
-                    .append(",data:{entity:{id:\"").append(mobs.get(i).id()).append("\"}}}");
+                    .append(",data:").append(spawnData(mobs.get(i).id().toString(), ignoreLight))
+                    .append('}');
         }
         return out.append(']').toString();
     }
