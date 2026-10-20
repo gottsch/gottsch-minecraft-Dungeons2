@@ -314,7 +314,7 @@ public class ModConfig extends AbstractConfig {
         minChunksPerDungeon = config.getInt("minChunksPerDungeon", "04-dungeon-gen", 300, 25, 32000, "");
         minDistancePerDungeon = config.getInt("minDistancePerDungeon", "04-dungeon-gen", 600, 300, 32000, "Minimum block distance between 2 consecutive dungeon spawns.");
         dungeonGenProbability = config.getInt("dungeonGenProbability", "04-dungeon-gen", 75, 0, 100, "");
-        waitChunks = config.getInt("dungeonGenProbability", "04-dungeon-gen", 50, 10, 32000, "");
+        waitChunks = config.getInt("waitChunks", "04-dungeon-gen", 50, 10, 32000, "Number of chunks to generate before the first dungeon can spawn.");
         
         // white/black lists
         generalDungeonBiomeWhiteList = config.getStringList("generalDungeonBiomeWhiteList", "04-dungeon-gen", new String[]{}, "Allowable Biome Types for general Dungeons. Must match the Type identifer(s).");

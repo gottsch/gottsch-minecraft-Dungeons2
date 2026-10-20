@@ -66,8 +66,6 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	// the number of blocks of half a chunk (radius) (a chunk is 16x16)
 	public static final int CHUNK_RADIUS = 8;
 
-	private int waitChunksCount = 0;
-	
 	// biome white/black lists
 	private List<BiomeTypeHolder> biomeWhiteList;
 	private List<BiomeTypeHolder> biomeBlackList;
@@ -181,10 +179,12 @@ public class DungeonsWorldGen implements IWorldGenerator {
 		}
 		
 		if (!meetsWorldAgeCriteria(world, cache)) {
-			// increment the local feature wait count
-			this.waitChunksCount++;
-			// update the cache's delay count
-			cache.setDelayCount(waitChunksCount);
+			// increment the cache's delay count (it is saved with the world, unlike a local field)
+			cache.setDelayCount(cache.getDelayCount() + 1);
+			DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
+			if (savedData != null) {
+				savedData.markDirty();
+			}
 			return;
 		}
 		
@@ -211,8 +211,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 		ICoords spawnCoords = coords;
 		
-		// place deferred block
-		world.setBlockState(spawnCoords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 3);
+		// place deferred block. flag 2 (no neighbor updates) - nothing during population should notify neighbors.
+		world.setBlockState(spawnCoords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 2);
 		
 		// cache placeholder
 		DungeonInfo info = new DungeonInfo();
@@ -316,9 +316,8 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	 */
 	private boolean meetsWorldAgeCriteria(World world, DelayedFeatureSimpleDistanceCache<DungeonInfo> cache) {
 		// wait count check		
-		// TODO since wells are very rare, a well may not generated before the world is save and player exits
-		// in this case the waitChunksCount would be reset when the world restarts. this value needs to be saved.
-		if (cache.getValues().isEmpty() && waitChunksCount < ModConfig.waitChunks) {
+		// the wait count is kept in the cache's delay count, which is saved with the world
+		if (cache.getValues().isEmpty() && cache.getDelayCount() < ModConfig.waitChunks) {
 			Dungeons2.log.debug("world is too young");
 			return false;
 		}

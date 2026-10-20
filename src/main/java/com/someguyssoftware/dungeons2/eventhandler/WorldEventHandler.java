@@ -4,6 +4,7 @@
 package com.someguyssoftware.dungeons2.eventhandler;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
+import com.someguyssoftware.dungeons2.cache.FeatureCaches;
 import com.someguyssoftware.dungeons2.persistence.DungeonsGenSavedData;
 import com.someguyssoftware.gottschcore.loot.LootTableMaster;
 import com.someguyssoftware.gottschcore.mod.IMod;
@@ -36,6 +37,10 @@ public class WorldEventHandler {
 			
 			// only fire for overworld since dungeons only exist there (for now :))
 			if (event.getWorld().provider.getDimension() == 0) {
+				// the cache is static, so clear the previous world's entries (single player) before loading.
+				// readFromNBT is not called for a new world, which would otherwise inherit them.
+				FeatureCaches.clear();
+				FeatureCaches.CACHE.setDelayCount(0);
 				// load world gen data
 				DungeonsGenSavedData genData = DungeonsGenSavedData.get(event.getWorld());
 				WorldServer world = (WorldServer) event.getWorld();

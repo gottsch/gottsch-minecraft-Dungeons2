@@ -57,7 +57,7 @@ import net.minecraftforge.oredict.OreDictionary;
 		modid=Dungeons2.MODID,
 		name=Dungeons2.NAME,
 		version=Dungeons2.VERSION,
-		dependencies="required-after:forge@[14.23.5.2859,);required-after:gottschcore@[1.13.0,)",
+		dependencies="required-after:gottschcore@[1.15.0,)",
 		acceptedMinecraftVersions = "[1.12.2]",
 		updateJSON = Dungeons2.UPDATE_JSON_URL
 		)
@@ -70,7 +70,7 @@ public class Dungeons2 extends AbstractMod {
 
 	public static final String MODID = "dungeons2";
 	public static final String NAME = "Dungeons2!";
-	public static final String VERSION = "2.0.0"; 
+	public static final String VERSION = Tags.VERSION;
 	public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/1.12.2-master/update.json";
 
 	// latest VERSION

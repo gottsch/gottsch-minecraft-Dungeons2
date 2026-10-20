@@ -146,7 +146,8 @@ public class DungeonGenerator {
 				// TODO select the theme - themes need to be mapped.
 				levelTheme = styleSheet.getThemes().get(level.getConfig().getTheme());
 			}
-			else {
+			// fall back to the dungeon theme if not set or the configured theme name is not in the style sheet
+			if (levelTheme == null) {
 				levelTheme = dungeon.getTheme();
 			}
 			
