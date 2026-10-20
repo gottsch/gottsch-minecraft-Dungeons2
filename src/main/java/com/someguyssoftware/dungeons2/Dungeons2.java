@@ -12,12 +12,14 @@ import com.someguyssoftware.dungeons2.chest.ChestSheetLoader;
 import com.someguyssoftware.dungeons2.command.BuildCommand;
 import com.someguyssoftware.dungeons2.command.BuildEntranceCommand;
 import com.someguyssoftware.dungeons2.command.ChestCommand;
+import com.someguyssoftware.dungeons2.command.LocateCommand;
 import com.someguyssoftware.dungeons2.config.ModConfig;
 import com.someguyssoftware.dungeons2.eventhandler.WorldEventHandler;
 import com.someguyssoftware.dungeons2.items.DungeonsItems;
 import com.someguyssoftware.dungeons2.loot.DungeonLootTableMaster;
 import com.someguyssoftware.dungeons2.spawner.SpawnSheetLoader;
 import com.someguyssoftware.dungeons2.style.StyleSheetLoader;
+import com.someguyssoftware.dungeons2.worldgen.DungeonGenQueue;
 import com.someguyssoftware.dungeons2.worldgen.DungeonsWorldGen;
 import com.someguyssoftware.dungeonsengine.config.DungeonConfigManager;
 import com.someguyssoftware.gottschcore.GottschCore;
@@ -40,6 +42,8 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
+import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -57,7 +61,7 @@ import net.minecraftforge.oredict.OreDictionary;
 		modid=Dungeons2.MODID,
 		name=Dungeons2.NAME,
 		version=Dungeons2.VERSION,
-		dependencies="required-after:gottschcore@[1.15.0,)",
+		dependencies="required-after:gottschcore@[1.15.1,)",
 		acceptedMinecraftVersions = "[1.12.2]",
 		updateJSON = Dungeons2.UPDATE_JSON_URL
 		)
@@ -190,6 +194,18 @@ public class Dungeons2 extends AbstractMod {
 		event.registerServerCommand(new BuildCommand());
 		event.registerServerCommand(new ChestCommand());
 		event.registerServerCommand(new BuildEntranceCommand());
+		event.registerServerCommand(new LocateCommand());
+	}
+
+	/**
+	 * Finish any dungeon still being generated. This runs before the server saves the worlds.
+	 * @param event
+	 */
+	@EventHandler
+	public void serverStopping(FMLServerStoppingEvent event) {
+		if (DimensionManager.getWorld(0) != null) {
+			DungeonGenQueue.finishActiveJobs(DimensionManager.getWorld(0));
+		}
 	}
 
 

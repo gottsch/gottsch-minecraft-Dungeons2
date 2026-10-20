@@ -17,7 +17,6 @@ import java.util.Random;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.block.DeferredDungeonGeneratorBlock;
-import com.someguyssoftware.dungeons2.block.DungeonsBlocks;
 import com.someguyssoftware.dungeons2.builder.DungeonBuilderTopDown;
 import com.someguyssoftware.dungeons2.builder.IDungeonBuilder;
 import com.someguyssoftware.dungeons2.builder.LevelBuilder;
@@ -121,37 +120,47 @@ public class DungeonsWorldGen implements IWorldGenerator {
 	    dungeonSizes.add(25, new RandomBuildSize(BuildSize.LARGE));
 	    dungeonSizes.add(20, new RandomBuildSize(BuildSize.VAST));
 
-		try {	
-			// TODO this should be static in own classes
-			// add the directories if they don't exist
-			Path folder = Paths.get(ModConfig.dungeonsFolder, StyleSheetLoader.BUILT_IN_STYLE_SHEET_SUB_FOLDER);
-			try {
-				Files.createDirectory(folder);
-			}
-			catch(FileAlreadyExistsException e) {;}
-			
-			folder = Paths.get(ModConfig.dungeonsFolder, SpawnSheetLoader.BUILT_IN_SPAWN_SHEET_SUB_FOLDER);
-			try {
-				Files.createDirectory(folder);
-			}
-			catch(FileAlreadyExistsException e) {;}
-			
-			// load the sheets
+		// add the directories if they don't exist.
+		// NOTE createDirectories, not createDirectory - on a fresh install the parent (dungeonsFolder) doesn't exist yet
+		try {
+			Files.createDirectories(Paths.get(ModConfig.dungeonsFolder, StyleSheetLoader.BUILT_IN_STYLE_SHEET_SUB_FOLDER));
+			Files.createDirectories(Paths.get(ModConfig.dungeonsFolder, SpawnSheetLoader.BUILT_IN_SPAWN_SHEET_SUB_FOLDER));
+		} catch (IOException e) {
+			Dungeons2.log.error("Unable to create the style/spawn sheet folders: ", e);
+		}
+
+		// load the sheets. each falls back to the built-in sheet if the file system ones can't be loaded,
+		// otherwise a missing file would leave no themes and no dungeon could ever generate.
+		try {
 			styleSheet = StyleSheetLoader.loadAll();
-			if (styleSheet == null || styleSheet.getStyles() == null || styleSheet.getStyles().size() == 0) {
-				Dungeons2.log.debug("Stylesheet empty, loading default style sheet...");
-				styleSheet = StyleSheetLoader.load();
-			}
-		
-			this.spawnSheet = SpawnSheetLoader.loadAll();
-			if (this.spawnSheet == null || this.spawnSheet.getGroups() == null || this.spawnSheet.getGroups().size() == 0) {
-				Dungeons2.log.debug("Spawnsheet empty, loading default spawn sheet...");
-				spawnSheet = SpawnSheetLoader.load();
-			}
 		} catch (Exception e) {
-			Dungeons2.log.error("Error loading Style/Chest/Spawn sheet: ", e);
-			return;
-		}		
+			Dungeons2.log.error("Error loading style sheets: ", e);
+			styleSheet = null;
+		}
+		if (styleSheet == null || styleSheet.getStyles() == null || styleSheet.getStyles().isEmpty()
+				|| styleSheet.getThemes() == null || styleSheet.getThemes().isEmpty()) {
+			Dungeons2.log.debug("Stylesheet empty, loading default style sheet...");
+			try {
+				styleSheet = StyleSheetLoader.load();
+			} catch (Exception e) {
+				Dungeons2.log.error("Error loading the built-in style sheet: ", e);
+			}
+		}
+
+		try {
+			spawnSheet = SpawnSheetLoader.loadAll();
+		} catch (Exception e) {
+			Dungeons2.log.error("Error loading spawn sheets: ", e);
+			spawnSheet = null;
+		}
+		if (spawnSheet == null || spawnSheet.getGroups() == null || spawnSheet.getGroups().isEmpty()) {
+			Dungeons2.log.debug("Spawnsheet empty, loading default spawn sheet...");
+			try {
+				spawnSheet = SpawnSheetLoader.load();
+			} catch (Exception e) {
+				Dungeons2.log.error("Error loading the built-in spawn sheet: ", e);
+			}
+		}
 	}
 	
 	/**
@@ -211,14 +220,15 @@ public class DungeonsWorldGen implements IWorldGenerator {
 
 		ICoords spawnCoords = coords;
 		
-		// place deferred block. flag 2 (no neighbor updates) - nothing during population should notify neighbors.
-		world.setBlockState(spawnCoords.toPos(), DungeonsBlocks.DEFERRED_DUNGEON_GENERATOR.getDefaultState(), 2);
+		// queue the site. nothing is written during population; the dungeon is generated on the server tick
+		// once all its chunks are loaded and populated (see DungeonGenQueue)
+		DungeonGenQueue.add(spawnCoords);
 		
 		// cache placeholder
 		DungeonInfo info = new DungeonInfo();
 		info.setCoords(spawnCoords);
 		cache.cache(spawnCoords, info);
-		Dungeons2.log.info("deferred placerholder -> {}", info);
+		Dungeons2.log.info("queued dungeon site -> {}", info);
 
      	// save world data
 		DungeonsGenSavedData savedData = DungeonsGenSavedData.get(world);
