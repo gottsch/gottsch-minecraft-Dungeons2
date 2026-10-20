@@ -94,6 +94,8 @@ public class ModConfig extends AbstractConfig {
 	public static int minDistancePerDungeon;
 	public static int dungeonGenProbability;
 	public static int waitChunks;
+	public static int generationMsPerTick;
+	public static boolean buildWithoutPlayers;
 	
 	// biome type white/black lists
 	public static String[] generalDungeonBiomeWhiteList;
@@ -314,7 +316,9 @@ public class ModConfig extends AbstractConfig {
         minChunksPerDungeon = config.getInt("minChunksPerDungeon", "04-dungeon-gen", 300, 25, 32000, "");
         minDistancePerDungeon = config.getInt("minDistancePerDungeon", "04-dungeon-gen", 600, 300, 32000, "Minimum block distance between 2 consecutive dungeon spawns.");
         dungeonGenProbability = config.getInt("dungeonGenProbability", "04-dungeon-gen", 75, 0, 100, "");
-        waitChunks = config.getInt("dungeonGenProbability", "04-dungeon-gen", 50, 10, 32000, "");
+        waitChunks = config.getInt("waitChunks", "04-dungeon-gen", 50, 10, 32000, "Number of chunks to generate before the first dungeon can spawn.");
+        generationMsPerTick = config.getInt("generationMsPerTick", "04-dungeon-gen", 10, 1, 50, "Milliseconds per server tick spent building a dungeon. A dungeon is built a few rooms at a time over several ticks.\nLower values smooth out lag but take longer to finish a dungeon.");
+        buildWithoutPlayers = config.getBoolean("buildWithoutPlayers", "04-dungeon-gen", false, "Build a dungeon as soon as all of its chunks are generated, even with no player nearby.\nTurn on when pre-generating a world (ie Chunk Pregenerator) so dungeons are built ahead of time instead of while players explore.");
         
         // white/black lists
         generalDungeonBiomeWhiteList = config.getStringList("generalDungeonBiomeWhiteList", "04-dungeon-gen", new String[]{}, "Allowable Biome Types for general Dungeons. Must match the Type identifer(s).");

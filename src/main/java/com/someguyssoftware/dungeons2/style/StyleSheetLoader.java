@@ -242,19 +242,34 @@ public class StyleSheetLoader {
 	public static void exposeStyleSheet(String filePath) {
 		Path path = Paths.get(filePath).toAbsolutePath();
 		if (Files.notExists(path)) {	
-			Dungeons2.log.error("Attempting to copy style to path -> {}", path.toString());
-			// TODO create folder
+			Dungeons2.log.debug("Copying the built-in style sheet to path -> {}", path.toString());
 			// copy from resource/classpath to file path
-			InputStream is = Dungeons2.instance.getClass().getResourceAsStream(StyleSheetLoader.BUILT_IN_STYLE_SHEET_PATH);
-			try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
-				byte[] buf = new byte[2048];
-				int r;
-				while ((r = is.read(buf)) != -1) {
-					fos.write(buf,  0,  r);
-				}
+			try (InputStream is = Dungeons2.instance.getClass().getResourceAsStream(StyleSheetLoader.BUILT_IN_STYLE_SHEET_PATH)) {
+				// the folder doesn't exist on a fresh install (preInit runs before anything else creates it)
+				Files.createDirectories(path.getParent());
+				copy(is, path);
 			}
 			catch(IOException e) {
 				Dungeons2.log.error("Error exposing stylesheet resource to file system: ", e);
+			}
+		}
+	}
+
+	/**
+	 * 
+	 * @param is
+	 * @param path
+	 * @throws IOException
+	 */
+	private static void copy(InputStream is, Path path) throws IOException {
+		if (is == null) {
+			throw new IOException("built-in style sheet resource not found: " + BUILT_IN_STYLE_SHEET_PATH);
+		}
+		try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
+			byte[] buf = new byte[2048];
+			int r;
+			while ((r = is.read(buf)) != -1) {
+				fos.write(buf,  0,  r);
 			}
 		}
 	}

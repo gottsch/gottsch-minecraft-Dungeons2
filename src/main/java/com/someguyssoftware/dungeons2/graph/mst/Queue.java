@@ -19,7 +19,6 @@ package com.someguyssoftware.dungeons2.graph.mst;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import scala.actors.LinkedQueue;
 
 /**
  *  The <tt>Queue</tt> class represents a first-in-first-out (FIFO)
@@ -30,7 +29,7 @@ import scala.actors.LinkedQueue;
  *  the items in FIFO order.
  *  <p>
  *  This implementation uses a singly-linked list with a static nested class for
- *  linked-list nodes. See {@link LinkedQueue} for the VERSION from the
+ *  linked-list nodes. See LinkedQueue for the VERSION from the
  *  textbook that uses a non-static nested class.
  *  The <em>enqueue</em>, <em>dequeue</em>, <em>peek</em>, <em>size</em>, and <em>is-empty</em>
  *  operations all take constant time in the worst case.

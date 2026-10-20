@@ -123,19 +123,19 @@ public class DungeonInfo {
 			setMinX(tag.getInteger("minX"));
 		}
 		if (tag.hasKey("minY")) {
-			setMinX(tag.getInteger("minY"));
+			setMinY(tag.getInteger("minY"));
 		}
 		if (tag.hasKey("minZ")) {
-			setMinX(tag.getInteger("minZ"));
+			setMinZ(tag.getInteger("minZ"));
 		}
 		if (tag.hasKey("maxX")) {
 			setMaxX(tag.getInteger("maxX"));
 		}
 		if (tag.hasKey("maxY")) {
-			setMaxX(tag.getInteger("maxY"));
+			setMaxY(tag.getInteger("maxY"));
 		}
 		if (tag.hasKey("maxZ")) {
-			setMaxX(tag.getInteger("maxZ"));
+			setMaxZ(tag.getInteger("maxZ"));
 		}
 		
 		if (tag.hasKey("levels")) {

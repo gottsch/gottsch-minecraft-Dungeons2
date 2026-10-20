@@ -38,6 +38,7 @@ import com.someguyssoftware.gottschcore.positional.ICoords;
 import com.someguyssoftware.gottschcore.positional.Intersect;
 import com.someguyssoftware.gottschcore.random.RandomHelper;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.someguyssoftware.dungeons2.world.ChunkUtil;
 
 import io.github.jdiemke.triangulation.DelaunayTriangulator;
 import io.github.jdiemke.triangulation.NotEnoughPointsException;
@@ -2349,22 +2350,10 @@ public class LevelBuilder {
 	 * @return
 	 */
 	public boolean isRoomInLoadedChunks(World world, Room room) {
-		boolean isValid = false;
-		// check each corner
-		ChunkPos[] cp = room.getCornersInChunkPos();
-		
-		if (
-//				world.isChunkGeneratedAt(cp[0].x, cp[0].z) &&
-//				world.isChunkGeneratedAt(cp[1].x, cp[1].z) &&
-//				world.isChunkGeneratedAt(cp[2].x, cp[2].z) &&
-//				world.isChunkGeneratedAt(cp[3].x, cp[3].z)		
-				world.getChunkFromBlockCoords(new BlockPos(cp[0].x, 64, cp[0].z)).isLoaded() &&
-				world.getChunkFromBlockCoords(new BlockPos(cp[1].x, 64, cp[1].z)).isLoaded() &&
-				world.getChunkFromBlockCoords(new BlockPos(cp[2].x, 64, cp[2].z)).isLoaded() &&
-				world.getChunkFromBlockCoords(new BlockPos(cp[3].x, 64, cp[3].z)).isLoaded()
-				) isValid = true;			
-		
-		return isValid;
+		// NOTE getChunkFromBlockCoords().isLoaded() loads/generates the chunk, so it always passed.
+		// also, the old corner check passed chunk coords where block coords were expected.
+		// check every chunk the room overlaps (+1 for walls) without loading any of them
+		return ChunkUtil.isAreaReady(world, room.getMinX() - 1, room.getMinZ() - 1, room.getMaxX() + 1, room.getMaxZ() + 1);
 	}
 	
 	/**

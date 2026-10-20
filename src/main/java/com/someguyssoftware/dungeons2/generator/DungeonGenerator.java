@@ -83,7 +83,7 @@ public class DungeonGenerator {
 	}
 
 	/**
-	 * TODO return false if error or gen fails
+	 * Generates the entire dungeon into the world at once.
 	 * @param world
 	 * @param random
 	 * @param dungeon
@@ -96,21 +96,41 @@ public class DungeonGenerator {
 	public boolean generate(World world, Random random, 
 			Dungeon dungeon, StyleSheet styleSheet, @Deprecated ChestSheet chestSheet, SpawnSheet spawnSheet) 
 					throws FileNotFoundException {
+		createSteps(world, random, dungeon, styleSheet, spawnSheet).forEach(Runnable::run);
+		return true;
+	}
+
+	/**
+	 * Breaks the generation of the dungeon into ordered steps (the entrance, then per level: each room, each hallway
+	 * and each shaft), so that a dungeon can be written into the world over several ticks.
+	 * The steps must be run in order: hallways test against the rooms and hallways already generated.
+	 * @param world
+	 * @param random
+	 * @param dungeon
+	 * @param styleSheetIn
+	 * @param spawnSheet
+	 * @return
+	 * @throws FileNotFoundException
+	 */
+	public List<Runnable> createSteps(World world, Random random, 
+			Dungeon dungeon, StyleSheet styleSheetIn, SpawnSheet spawnSheet) throws FileNotFoundException {
+
+		List<Runnable> steps = new ArrayList<>();
 
 		// if styleSheet is null then use the default style sheet
-		if (styleSheet == null) {
+		final StyleSheet styleSheet;
+		if (styleSheetIn == null) {
 			Dungeons2.log.warn("Provided style sheet is null. Using default style sheet.");
 			styleSheet = DungeonGenerator.getDefaultStyleSheet();
+		}
+		else {
+			styleSheet = styleSheetIn;
 		}
 		
 		/*
 		 *  create a room generator factory
 		 */
 		RoomGeneratorFactory factory = new RoomGeneratorFactory(roomGenerators);
-		/*
-		 * 
-		 */
-		IRoomGenerator roomGen = null;
 
 		/*
 		 * a layout assigner. it determine the layout to use for each room and what design elements to enable
@@ -131,95 +151,94 @@ public class DungeonGenerator {
 		 */		
 
 		// build the entrance
-		buildEntrance(world, random, dungeon, layoutAssigner, factory, roomDecorator, styleSheet);
+		steps.add(() -> buildEntrance(world, random, dungeon, layoutAssigner, factory, roomDecorator, styleSheet));
 
 		/*
 		 * build all the levels 
 		 */
-		int levelCount = 0;
-		int libraryCount = 0;
+		// shared between steps
+		int[] libraryCount = {0};
 		// generate all the rooms
 		for (Level level : dungeon.getLevels()) {
-			Dungeons2.log.debug("Level -> {} ", levelCount);
-			Theme levelTheme = null;
+			Theme theme = null;
 			if (level.getConfig().getTheme() != null && !level.getConfig().getTheme().equals("")) {
 				// TODO select the theme - themes need to be mapped.
-				levelTheme = styleSheet.getThemes().get(level.getConfig().getTheme());
+				theme = styleSheet.getThemes().get(level.getConfig().getTheme());
 			}
-			else {
-				levelTheme = dungeon.getTheme();
-			}
+			// fall back to the dungeon theme if not set or the configured theme name is not in the style sheet
+			final Theme levelTheme = theme != null ? theme : dungeon.getTheme();
 			
 			// build the rooms for the level
 			for (Room room : level.getRooms()) {
-				// assign a layout to the room
-				layoutAssigner.assign(random, room);
-				
-				// get the room generator
-				roomGen = factory.createRoomGenerator(random, room, level.getConfig().isSupport());
-				
-				// generate the room into the world
-				roomGen.generate(world, random, room, levelTheme, styleSheet, level.getConfig());
-	
-				// TODO need a decorator factory
-				if (room.getType() == Type.BOSS) {
-                    Dungeons2.log.debug("Boss Room @ {}", room.getCoords());
-                    // TODO if going to integrate with Treasure2, need to know how big the dungeons is: size, # of levels
-                    // in order to select the correct chest/loot table rarity
-                    // TODO also should make it randomized ex 50% normal boss chest, 50% treasure2 chest
-                    // extend the bossRoomDecorator -> TreasureBossRoomDecorator and set more properties
-                    // TODO should return ICoords of boss chest so Dungeon can record
-					bossRoomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
-				}
-				
-				/*
-				 * TODO this should be a random selection of special rooms
-				 * TODO there should be something to describe where a special room can occur (ex levels 4-6)
-				 *  select any special decorators
-				 */					
-				// ensure room fits the criteria to host a library	
-				else if (room.getWidth() > 5
-						&& room.getDepth() > 5
-						&& room.getHeight() >=5
-						&& !room.hasPillar()
-						&& random.nextInt(100) < 10
-						&& libraryCount < 3) {
-					Dungeons2.log.debug("Using library decorator for room @ " + room.getCoords().toShortString());
+				steps.add(() -> {
+					// assign a layout to the room
+					layoutAssigner.assign(random, room);
+					
+					// get the room generator
+					IRoomGenerator roomGen = factory.createRoomGenerator(random, room, level.getConfig().isSupport());
+					
+					// generate the room into the world
+					roomGen.generate(world, random, room, levelTheme, styleSheet, level.getConfig());
+		
+					// TODO need a decorator factory
+					if (room.getType() == Type.BOSS) {
+						Dungeons2.log.debug("Boss Room @ {}", room.getCoords());
+						// TODO if going to integrate with Treasure2, need to know how big the dungeons is: size, # of levels
+						// in order to select the correct chest/loot table rarity
+						// TODO also should make it randomized ex 50% normal boss chest, 50% treasure2 chest
+						// extend the bossRoomDecorator -> TreasureBossRoomDecorator and set more properties
+						// TODO should return ICoords of boss chest so Dungeon can record
+						bossRoomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
+					}
+					
+					/*
+					 * TODO this should be a random selection of special rooms
+					 * TODO there should be something to describe where a special room can occur (ex levels 4-6)
+					 *  select any special decorators
+					 */					
+					// ensure room fits the criteria to host a library	
+					else if (room.getWidth() > 5
+							&& room.getDepth() > 5
+							&& room.getHeight() >=5
+							&& !room.hasPillar()
+							&& random.nextInt(100) < 10
+							&& libraryCount[0] < 3) {
+						Dungeons2.log.debug("Using library decorator for room @ " + room.getCoords().toShortString());
 						libraryDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
-						libraryCount++;
-				}
-				else {
-					// decorate the room (spawners, chests, webbings, etc)
-					roomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
-				}
-			
-				// TODO add to JSON output
-
+						libraryCount[0]++;
+					}
+					else {
+						// decorate the room (spawners, chests, webbings, etc)
+						roomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), room, level.getConfig());
+					}
+				});
 			}
 			// create a list of generated hallways
 			List<Hallway> generatedHallways = new ArrayList<>();
 			// generate the hallways
 			for (Hallway hallway : level.getHallways()) {
-				// assign a layout
-				layoutAssigner.assign(random, hallway);
-				// NOTE passing hallways here is a list of hallways (excluding the current one, to check if they intersect
-				roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), generatedHallways, level.getConfig().isSupport());
-				roomGen.generate(world, random, hallway, levelTheme, styleSheet, level.getConfig());
-				// add the hallway to the list of generated hallways
-				generatedHallways.add(hallway);
+				steps.add(() -> {
+					// assign a layout
+					layoutAssigner.assign(random, hallway);
+					// NOTE passing hallways here is a list of hallways (excluding the current one, to check if they intersect
+					IRoomGenerator roomGen = factory.createHallwayGenerator(hallway, level.getRooms(), generatedHallways, level.getConfig().isSupport());
+					roomGen.generate(world, random, hallway, levelTheme, styleSheet, level.getConfig());
+					// add the hallway to the list of generated hallways
+					generatedHallways.add(hallway);
+				});
 			}
 			
 			// generate the shafts
 			for (Shaft shaft : level.getShafts()) {
-//				Dungeons2.log.debug("Building Shaft: " + shaft);
-				// assign the layout
-				shaft.setLayout(shaft.getParent().getLayout());
-				roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupport());
-				roomGen.generate(world, random, shaft, levelTheme, styleSheet, level.getConfig());
+				steps.add(() -> {
+					// assign the layout
+					shaft.setLayout(shaft.getParent().getLayout());
+					IRoomGenerator roomGen = factory.createShaftGenerator(shaft, level.getConfig().isSupport());
+					roomGen.generate(world, random, shaft, levelTheme, styleSheet, level.getConfig());
+				});
 			}
-			levelCount++;
 		}
-		return true;
+		return steps;
 	}
 
 	/**
@@ -250,6 +269,8 @@ public class DungeonGenerator {
 		// to create a much more decayed surface structure.
 		roomGen.generate(world, random, entranceRoom, dungeon.getTheme(), styleSheet, entranceLevelConfig);
 		roomDecorator.decorate(world, random, dungeon, roomGen.getGenerationStrategy().getBlockProvider(), entranceRoom, entranceLevelConfig);
+		// weather the surface entrance into a ruin. material decay alone never changes its silhouette.
+		RuinProcessor.ruin(world, random, entranceRoom);
 	}
 
 	/**

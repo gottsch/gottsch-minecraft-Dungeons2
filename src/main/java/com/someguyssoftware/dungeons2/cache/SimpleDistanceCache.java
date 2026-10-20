@@ -70,12 +70,13 @@ public class SimpleDistanceCache<T> implements ISimpleDistanceCache<T> {
 	 */
 	@Override
 	public synchronized void uncache(ICoords key) {
-		IInterval<T> interval = distanceCache.delete(new CoordsInterval<T>(key, key, null));
-		T data = interval.getData();
-		
-		if (isCached(data)) {
-			cache.removeLast();
-		}
+		// use the same interval shape as cache()
+		CoordsInterval<T> target = new CoordsInterval<T>(key.withY(0), key.add(1, -key.getY(), 1), null);
+		// NOTE delete() returns the new root, not the deleted interval, so look up the data first
+		List<IInterval<T>> matches = distanceCache.getOverlapping(distanceCache.getRoot(), target);
+		distanceCache.delete(target);
+		// remove the matching object, not whichever is last
+		matches.forEach(match -> cache.remove(match.getData()));
 	}
 	
 	/**

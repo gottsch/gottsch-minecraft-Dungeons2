@@ -5,6 +5,7 @@ package com.someguyssoftware.dungeons2.persistence;
 
 import com.someguyssoftware.dungeons2.Dungeons2;
 import com.someguyssoftware.dungeons2.cache.FeatureCaches;
+import com.someguyssoftware.dungeons2.worldgen.DungeonGenQueue;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
@@ -42,6 +43,7 @@ public class DungeonsGenSavedData extends WorldSavedData {
 
 		NBTTagCompound cache = tag.getCompoundTag("cache");
 		FeatureCaches.load(cache);
+		DungeonGenQueue.load(tag.getCompoundTag("queue"));
 		
 		// dungeons
 //		NBTTagCompound dungeonGen = tag.getCompoundTag("dungeonGenerator");
@@ -117,6 +119,7 @@ public class DungeonsGenSavedData extends WorldSavedData {
 
 		try {
 			tag.setTag("cache", FeatureCaches.save());
+			tag.setTag("queue", DungeonGenQueue.save());
 			// dungeon generator
 //			NBTTagCompound dungeonGen = new NBTTagCompound();
 //			dungeonGen.setInteger("chunksSinceLastDungeon", Dungeons2.dungeonsWorldGen.getChunksSinceLastDungeon());
