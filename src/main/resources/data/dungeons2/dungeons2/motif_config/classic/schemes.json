@@ -830,8 +830,8 @@
         // The field writes tile 0 everywhere; dungeons2:pattern_tile, last in the processor list,
         // lines each one up with the world. Weight 5 (was 2, 2026-10-22: a whole 5-floor dungeon
         // showed none) -- about 1 hall in 5. Hall only: a chamber's false floor lids itself with
-        // the CRUMBLING twin of its floor, and there is no crumbling flagstone, so the lid would be
-        // stone brick in a flagstone floor -- a trap that announces itself.
+        // the CRUMBLING twin of its floor, and there is no crumbling flagstone, so the pit would be
+        // left as an open shaft -- a false floor that is not false.
         { "weight": 5, "type": "dungeons2:field", "config": { "block": "dungeonblocks:flagstones", "inset": 1 } },
         {
           "weight": 3,
