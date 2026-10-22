@@ -61,7 +61,8 @@ import java.util.function.UnaryOperator;
  * player walks through with vanilla's {@code half} property set &mdash; so a door works, and a
  * two-high grate or gate works, and anything else gets a two-high panel and ignores {@code half}.
  * A gap taller than two is deliberately not fillable: past head height the block is scenery, and
- * scenery on a partition is the partition's own material.</p>
+ * scenery on a partition is the partition's own material &mdash; so above the gap's two rows the
+ * partition's {@code block} carries on to its full height, a lintel over the doorway.</p>
  *
  * @author Mark Gottschling on Sep 2, 2026
  */
@@ -69,10 +70,12 @@ public record PartitionPatternEntry(PartitionShapePattern shape, String block,
                                     Optional<String> gapBlock, int height, SizeGate gate) {
 
     /**
-     * Three. Head height plus one: tall enough that a player cannot jump it, which is the whole
-     * point of a cell, and short enough to fit the shortest room the taper produces.
+     * Eight, the codec's ceiling, which {@link #heightWithin} clamps to the room: so by default a
+     * partition runs floor to CEILING. It was three (head height plus one) until 2026-10-22, when a
+     * 3-high run under a 7-high ceiling read in game as a wall that had fallen down rather than one
+     * built short -- Mark: full height or no partitions. A lower {@code height} is still allowed.
      */
-    public static final int DEFAULT_HEIGHT = 3;
+    public static final int DEFAULT_HEIGHT = 8;
 
     /** An ungated partition of the default shape and height. */
     public PartitionPatternEntry(String block) {

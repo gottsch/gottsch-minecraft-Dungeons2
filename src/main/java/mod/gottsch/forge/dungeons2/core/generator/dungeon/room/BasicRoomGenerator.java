@@ -17,7 +17,11 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.HangingConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.PartitionPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.OculusCeilingPattern;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.pit.HiddenMoatPitShape;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
@@ -47,6 +51,7 @@ import net.minecraft.util.RandomSource;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -192,7 +197,15 @@ public class BasicRoomGenerator implements IRoomGenerator {
             basicWall.withHiddenDoorways(Set.of(secretDoorway.door()));
         }
         IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme, width, depth, height);
-        IDungeonCeilingGenerator ceilingGen = selectCeilingGenerator(motif, scheme, width, depth, height);
+        // 2026-10-22, Mark: a partition and anything overhead do not share a room. A full-height
+        // wall run across the floor under an oculus or a chandelier reads as two rooms fighting
+        // over one ceiling. The partition wins -- it is the rarer roll and the bigger change to the
+        // room -- so the ceiling falls back to plain and the hangings go. Dropped AFTER the scheme
+        // drew, so no draw is added or removed for any room that rolled no partition.
+        Optional<PartitionPatternEntry> partitionEntry = scheme.partitionFor(width, depth, height);
+        Optional<CeilingPatternEntry> ceiling = partitionEntry.isPresent()
+                ? Optional.empty() : scheme.ceilingFor(width, depth, height);
+        IDungeonCeilingGenerator ceilingGen = ceilingGeneratorFor(ceiling, width, depth, height);
 
         // The renderer iterates this list in sequence and a later placement overwrites an earlier
         // one in the same cell, so order here is a layering order. Hollowing first establishes
@@ -240,7 +253,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // cuts a gap, so a chest behind bars is a chest behind a door. The one case that is a fault
         // is a doorway opening straight into the cage, and RoomPartitionGenerator refuses the whole
         // partition in that room rather than building a cage round the entrance.
-        Set<Coords2D> partition = scheme.partitionFor(width, depth, height)
+        Set<Coords2D> partition = partitionEntry
                 .map(entry -> RoomPartitionGenerator.build(room, floorY, entry, pit, random, blocks))
                 .orElseGet(Set::of);
 
@@ -381,7 +394,15 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // rise, a rib, a column, a dais, a barrel -- to find the air it can hang in and the ceiling
         // it hangs from. Anything emitted after this would be invisible to that read. They claim
         // no floor cells (CLEARANCE rows of air under each), so the pots do not need to know.
-        scheme.hangingsFor(width, depth, height).ifPresent(hangings ->
+        //
+        // None under a partition (see the ceiling above), and no CENTRE hanging under an oculus:
+        // both claim the middle of the ceiling, and a chandelier hung in the grated shaft is two
+        // centrepieces at once.
+        Optional<HangingConfig> hangingsEntry = partitionEntry.isPresent() ? Optional.empty()
+                : scheme.hangingsFor(width, depth, height)
+                        .filter(hangings -> !(hangings.placement() == HangingConfig.HangingPlacement.CENTRE
+                                && hasOculus(ceiling)));
+        hangingsEntry.ifPresent(hangings ->
                 RoomHangingGenerator.placeHangings(room, floorY, hangings, random, blocks));
 
         scheme.potsFor(width, depth, height).ifPresent(pots ->
@@ -442,6 +463,18 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme,
                                                           int width, int depth, int height) {
+        return ceilingGeneratorFor(scheme.ceilingFor(width, depth, height), width, depth, height);
+    }
+
+    /** Whether this ceiling cuts an oculus -- the shaft that owns the middle of the ceiling. */
+    static boolean hasOculus(Optional<CeilingPatternEntry> ceiling) {
+        return ceiling.map(entry -> entry.patterns().stream()
+                        .anyMatch(pattern -> pattern.pattern() instanceof OculusCeilingPattern))
+                .orElse(false);
+    }
+
+    private IDungeonCeilingGenerator ceilingGeneratorFor(Optional<CeilingPatternEntry> ceiling,
+                                                         int width, int depth, int height) {
         // #68: what this floor owns above the room and the room did not use. Clamped at zero, so a
         // room as tall as its floor's whole budget -- or a caller that never injected one -- gets a
         // ceiling that cannot rise rather than one that reaches into the next floor.
@@ -449,7 +482,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 .withRiseBudget(Math.max(0, ceilingBudget - height))
                 .withMotifConfig(motifConfig)
                 .withCeilingPattern(CeilingPatternSelector.providerFor(
-                        scheme.ceilingFor(width, depth, height), motifConfig.ceiling(),
+                        ceiling, motifConfig.ceiling(),
                         width, depth, height));
     }
 }

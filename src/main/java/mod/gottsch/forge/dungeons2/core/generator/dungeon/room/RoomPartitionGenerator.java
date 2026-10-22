@@ -52,6 +52,9 @@ public final class RoomPartitionGenerator {
 
     /** Vanilla's double-block half property; see {@link PartitionPatternEntry} on {@code gap_block}. */
     static final String HALF = "half";
+    /** How tall the way through is: a door's two halves, open or hung. */
+    static final int GAP_ROWS = 2;
+
     /** Vanilla's horizontal facing property. */
     static final String FACING = "facing";
 
@@ -110,6 +113,11 @@ public final class RoomPartitionGenerator {
             Coords2D cell = entry.getKey();
             if (entry.getValue()) {
                 emitGap(cell, floorY, config, plan.gapFacing(), out);
+                // Above the way through, the wall carries on: a doorway, not a slot to the ceiling.
+                for (int row = GAP_ROWS; row < rows; row++) {
+                    out.add(new BlockPlacement(cell.getX(), floorY + 1 + row, cell.getY(),
+                            config.block()));
+                }
             } else {
                 for (int row = 0; row < rows; row++) {
                     // floorY + 1 is the walking plane, the same row every other slot stands on.

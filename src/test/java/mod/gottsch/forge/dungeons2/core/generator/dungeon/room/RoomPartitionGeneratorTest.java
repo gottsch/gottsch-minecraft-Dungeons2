@@ -66,8 +66,10 @@ class RoomPartitionGeneratorTest {
         return place(room, config, Set.of(), seed);
     }
 
+    /** The cells walled at the WALKING row -- the gap is open there, whatever stands above it. */
     private static Set<Coords2D> cellsOf(List<BlockPlacement> placements) {
-        return placements.stream().map(p -> new Coords2D(p.getX(), p.getZ()))
+        return placements.stream().filter(p -> p.getY() == FLOOR_Y + 1)
+                .map(p -> new Coords2D(p.getX(), p.getZ()))
                 .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
@@ -90,15 +92,28 @@ class RoomPartitionGeneratorTest {
         assertEquals(expected, cells);
     }
 
-    /** Full height by default, standing on the walking plane. Three is over a player's jump. */
+    /**
+     * Floor to ceiling by default (2026-10-22; it was three high, and a short run read in game as a
+     * wall that had fallen down). The 8-high room has 6 interior rows.
+     */
     @Test
-    void barsStandThreeHighFromTheWalkingPlane() {
+    void barsStandFromTheWalkingPlaneToTheCeiling() {
         List<BlockPlacement> placed = place(room(), corner(3, 3, Corner.NORTH_WEST), 1L);
         Coords2D any = cellsOf(placed).iterator().next();
         List<Integer> rows = placed.stream()
                 .filter(p -> p.getX() == any.getX() && p.getZ() == any.getY())
                 .map(BlockPlacement::getY).sorted().toList();
-        assertEquals(List.of(FLOOR_Y + 1, FLOOR_Y + 2, FLOOR_Y + 3), rows);
+        assertEquals(List.of(FLOOR_Y + 1, FLOOR_Y + 2, FLOOR_Y + 3, FLOOR_Y + 4, FLOOR_Y + 5,
+                FLOOR_Y + 6), rows);
+    }
+
+    /** Over the way through, the partition carries on: two rows open, then wall to the ceiling. */
+    @Test
+    void theGapIsADoorwayWithWallAboveIt() {
+        List<Integer> rows = place(room(), corner(3, 3, Corner.NORTH_WEST), 1L).stream()
+                .filter(p -> p.getX() == 14 && p.getZ() == 12)
+                .map(BlockPlacement::getY).sorted().toList();
+        assertEquals(List.of(FLOOR_Y + 3, FLOOR_Y + 4, FLOOR_Y + 5, FLOOR_Y + 6), rows);
     }
 
     /**

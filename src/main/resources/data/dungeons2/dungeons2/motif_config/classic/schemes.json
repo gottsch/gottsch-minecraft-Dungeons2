@@ -1087,7 +1087,9 @@
       "min_floor_index": 1,
       "min_size": 7,
 
-      // A candle either side of each door, or in the corners (added 2026-10-22).
+      // A candle either side of each door, or in the corners (added 2026-10-22). UNLIT: a lit
+      // candle is a light source, and a cage spawning a light-tested mob would sit dark-starved
+      // in a room the generator lit for it. Lighting them is the player's move.
       "props": [
         {
           "weight": 3,
@@ -1095,9 +1097,9 @@
           "max_count": 4,
           "placement": "flanking_door",
           "variants": [
-            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "true", "waterlogged": "false" } },
-            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "true", "size": ["small", "medium", "large"] } },
-            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "true" } }
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "false", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "false", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "false" } }
           ]
         },
         {
@@ -1106,9 +1108,9 @@
           "max_count": 4,
           "placement": "corner",
           "variants": [
-            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "true", "waterlogged": "false" } },
-            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "true", "size": ["small", "medium", "large"] } },
-            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "true" } }
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "false", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "false", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "false" } }
           ]
         },
         { "weight": 2, "none": true }
@@ -1136,7 +1138,7 @@
             "rim_block": "$stair",
             "rim_orient": "outward",
             "centre_block": "dungeonblocks:dungeon_lantern",
-            "centre_properties": { "hanging": "false", "lit": "true", "waterlogged": "false" }
+            "centre_properties": { "hanging": "false", "lit": "false", "waterlogged": "false" }
           }
         },
         {
@@ -1377,7 +1379,8 @@
       "min_size": 9,
 
       // Candles in the corners, or the bones of the ones who did not make it into a tomb (added
-      // 2026-10-22). A huge candle is `tall`: both halves, or it stands cut off at the wick.
+      // 2026-10-22). A huge candle is `tall`: both halves, or it stands cut off at the wick. Unlit,
+      // as the shrine's: a lit candle would starve this room's cage.
       "props": [
         {
           "weight": 3,
@@ -1385,9 +1388,9 @@
           "max_count": 3,
           "placement": "corner",
           "variants": [
-            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "true", "waterlogged": "false" } },
-            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "true", "size": ["small", "medium", "large"] } },
-            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "true" } }
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "false", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "false", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "false" } }
           ]
         },
         {
