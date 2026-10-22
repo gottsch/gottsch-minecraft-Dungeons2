@@ -1,0 +1,28 @@
+{
+  "parent": "dungeons2:small_boss",
+  "display": {
+    "icon": {
+      "item": "minecraft:ender_eye"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.medium_boss.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.medium_boss.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "killed": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "#dungeons2:medium_dungeon_bosses"
+        }
+      }
+    }
+  }
+}

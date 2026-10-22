@@ -18,6 +18,8 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.PropConfig;
+import mod.gottsch.forge.dungeons2.core.config.WeaponRackConfig;
+import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -61,8 +63,18 @@ public final class RoomFurnitureGenerator {
     /** Vanilla's horizontal facing property; see {@link PropConfig.PropVariant} on {@code oriented}. */
     static final String FACING = "facing";
     /** The one prop a mimic can pose as, and what it becomes (#99). */
+    /** The two-block shape {@code tall} writes: a door's {@code half}. */
+    static final String HALF = "half";
+    static final String LOWER = "lower";
+    static final String UPPER = "upper";
+
     static final String BARREL = "minecraft:barrel";
     static final String BARREL_MIMIC_ENTITY = "dungeons2:barrel_mimic";
+    /** {@code dungeonblocks}' weapon rack block-entity type, which the rack's plan is addressed to. */
+    public static final String RACK_ENTITY = "dungeonblocks:weapon_rack";
+    /** Plan keys {@code WeaponRackFiller} consumes: the table for slot N, and the rolls' seed. */
+    public static final String RACK_TABLE = "D2RackTable";
+    public static final String RACK_SEED = "D2RackSeed";
 
     /** The four horizontal facings, in a fixed order so a random draw over them is reproducible. */
     private static final String[] HORIZONTAL = {"north", "east", "south", "west"};
@@ -100,6 +112,12 @@ public final class RoomFurnitureGenerator {
             if (variant.oriented()) {
                 properties.put(FACING, facingFor(room, cell, random));
             }
+            // After facing, so an authored facing wins. A one-value entry draws nothing.
+            for (Map.Entry<String, List<String>> entry : variant.properties().entrySet()) {
+                List<String> values = entry.getValue();
+                properties.put(entry.getKey(), values.size() == 1
+                        ? values.get(0) : values.get(random.nextInt(values.size())));
+            }
             // #99, and gated on the BLOCK as well as the rate. The slot's mimic_chance says how
             // often furniture bites; only a barrel can, because BarrelMimic is the only prop-shaped
             // model gmm ships. A crate or an anvil that stood up would need art that does not
@@ -119,10 +137,24 @@ public final class RoomFurnitureGenerator {
                 continue;
             }
 
+            if (variant.tall()) {
+                properties.put(HALF, LOWER);
+            }
             // floorY + 1: resting on the floor surface, the same row the pots, chests and spawners
             // use.
-            out.add(new BlockPlacement(cell.getX(), floorY + 1, cell.getY(), variant.block(),
-                    properties));
+            BlockPlacement placement = new BlockPlacement(cell.getX(), floorY + 1, cell.getY(),
+                    variant.block(), properties);
+            // A rack's contents are planned here and rolled when it is written. Carrying data is
+            // also what routes the placement round the processor pass to be written last, where
+            // hollow()'s air cannot land on it -- the same path a spawner or a tomb takes.
+            variant.rack().ifPresent(rack -> placement.setBlockEntityNbt(rackData(rack, random)));
+            out.add(placement);
+            if (variant.tall()) {
+                // Both halves, or the lower one stands alone (a huge candle cut off at the wick).
+                Map<String, String> upper = new LinkedHashMap<>(properties);
+                upper.put(HALF, UPPER);
+                out.add(new BlockPlacement(cell.getX(), floorY + 2, cell.getY(), variant.block(), upper));
+            }
             used.add(cell);
         }
         return used;
@@ -266,6 +298,43 @@ public final class RoomFurnitureGenerator {
         return touchesWall
                 ? RoomChestGenerator.facingAwayFromWall(room, cell)
                 : HORIZONTAL[random.nextInt(HORIZONTAL.length)];
+    }
+
+    /**
+     * A weapon rack's plan: which slots hold a weapon, which loot table each rolls, and the seed the
+     * rolls use. Decided here so the room's one stream fixes it, and rolled by
+     * {@code WeaponRackFiller} as the rack is written.
+     *
+     * <p>The keys are D2's own, not the rack's: the filler reads them, turns them into the rack's
+     * {@code Items}, and none of them reaches the block entity.</p>
+     */
+    static BlockEntityData rackData(WeaponRackConfig rack, RandomSource random) {
+        int min = rack.minWeapons();
+        int max = rack.clampedMaxWeapons();
+        int count = max > min ? min + random.nextInt(max - min + 1) : min;
+        List<Integer> slots = new ArrayList<>();
+        if (count >= WeaponRackConfig.SLOTS) {
+            for (int slot = 0; slot < WeaponRackConfig.SLOTS; slot++) {
+                slots.add(slot);
+            }
+        } else if (count == 1) {
+            slots.add(random.nextInt(WeaponRackConfig.SLOTS));
+        }
+        // At most ONE fine weapon per rack, and only drawn for a rack that holds something.
+        int fineSlot = -1;
+        if (!slots.isEmpty() && rack.fineLootTable().isPresent()
+                && random.nextDouble() < rack.fineChance()) {
+            fineSlot = slots.get(random.nextInt(slots.size()));
+        }
+
+        BlockEntityData data = new BlockEntityData(RACK_ENTITY);
+        for (int slot : slots) {
+            data.with(RACK_TABLE + slot, slot == fineSlot ? rack.fineLootTable().get() : rack.lootTable());
+        }
+        // Never 0, for the chest's reason: a zero seed reads as "no seed" in vanilla's loot code.
+        long seed = random.nextLong();
+        data.with(RACK_SEED, String.valueOf(seed == 0L ? 1L : seed));
+        return data;
     }
 
     /** Weighted draw over the declared variants. Mirrors {@code RoomChestGenerator#pickVariant}. */

@@ -4,6 +4,8 @@ import mod.gottsch.forge.dungeons2.core.config.PropConfig;
 import mod.gottsch.forge.dungeons2.core.config.PropConfig.PropPlacement;
 import mod.gottsch.forge.dungeons2.core.config.PropConfig.PropVariant;
 import mod.gottsch.forge.dungeons2.core.config.SizeGate;
+import mod.gottsch.forge.dungeons2.core.config.WeaponRackConfig;
+import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.EntityPlacement;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -15,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -364,5 +368,152 @@ class RoomFurnitureGeneratorTest {
                         placement + " placed two props in one cell at seed " + seed);
             }
         }
+    }
+
+    // ---- weapon racks ---------------------------------------------------------------------------
+
+    private static final String COMMON = "dungeons2:racks/classic_common";
+    private static final String FINE = "dungeons2:racks/classic_fine";
+
+    private static PropConfig racks(int minWeapons, int maxWeapons, double fineChance) {
+        WeaponRackConfig rack = new WeaponRackConfig(COMMON,
+                fineChance > 0 ? Optional.of(FINE) : Optional.empty(), fineChance,
+                minWeapons, maxWeapons);
+        return new PropConfig(4, 4, PropPlacement.AGAINST_WALL, List.of(new PropVariant(
+                RoomFurnitureGenerator.RACK_ENTITY, 1, true, Optional.of(rack))));
+    }
+
+    private static List<String> tables(BlockEntityData data) {
+        List<String> tables = new ArrayList<>();
+        for (int slot = 0; slot < WeaponRackConfig.SLOTS; slot++) {
+            String table = data.getData().get(RoomFurnitureGenerator.RACK_TABLE + slot);
+            if (table != null) {
+                tables.add(table);
+            }
+        }
+        return tables;
+    }
+
+    /** A rack is planned, not filled: its slots' tables and a non-zero seed ride on its data. */
+    @Test
+    void aRackCarriesItsPlanAndAFacing() {
+        for (long seed = 0; seed < 50; seed++) {
+            for (BlockPlacement rack : place(room(), racks(1, 2, 0.0), seed)) {
+                BlockEntityData data = rack.getBlockEntityNbt();
+                assertEquals(RoomFurnitureGenerator.RACK_ENTITY, data.getType());
+                assertNotEquals("0", data.getData().get(RoomFurnitureGenerator.RACK_SEED));
+                int count = tables(data).size();
+                assertTrue(count >= 1 && count <= 2, "seed " + seed + ": " + count + " weapons");
+                assertTrue(tables(data).stream().allMatch(COMMON::equals), "no fine table to draw");
+                assertTrue(rack.getProperties().containsKey("facing"), "a rack faces into the room");
+            }
+        }
+    }
+
+    /** At most one fine weapon per rack -- even at fine_chance 1 with both slots filled. */
+    @Test
+    void aRackHoldsAtMostOneFineWeapon() {
+        for (long seed = 0; seed < 50; seed++) {
+            for (BlockPlacement rack : place(room(), racks(2, 2, 1.0), seed)) {
+                List<String> tables = tables(rack.getBlockEntityNbt());
+                assertEquals(2, tables.size());
+                assertEquals(1, tables.stream().filter(FINE::equals).count(),
+                        "seed " + seed + ": " + tables);
+            }
+        }
+    }
+
+    @Test
+    void aPlainPropCarriesNoData() {
+        for (BlockPlacement prop : place(room(), props(4, 4, PropPlacement.AGAINST_WALL), 3L)) {
+            assertEquals(null, prop.getBlockEntityNbt(), "a barrel is scenery and is written as one");
+        }
+    }
+
+    @Test
+    void aFineChanceWithNoTableIsALoadError() {
+        assertTrue(WeaponRackConfig.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE,
+                com.google.gson.JsonParser.parseString("{\"loot_table\":\"" + COMMON
+                        + "\",\"fine_chance\":0.1}")).result().isEmpty());
+        assertTrue(WeaponRackConfig.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE,
+                com.google.gson.JsonParser.parseString("{\"loot_table\":\"" + COMMON
+                        + "\",\"fine_loot_table\":\"" + FINE + "\"}")).result().isEmpty());
+        assertTrue(WeaponRackConfig.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE,
+                com.google.gson.JsonParser.parseString("{\"loot_table\":\"" + COMMON
+                        + "\",\"fine_loot_table\":\"" + FINE + "\",\"fine_chance\":0.1}"))
+                .result().isPresent());
+    }
+
+    // ---- properties and tall (2026-10-22) -------------------------------------------------------
+
+    private static PropConfig withProperties(Map<String, List<String>> properties, boolean tall) {
+        return new PropConfig(3, 3, PropPlacement.FREE, List.of(new PropVariant(
+                "dungeonblocks:skull_pile", 1, false, Optional.empty(), properties, tall)));
+    }
+
+    /** A listed value is drawn per prop, from the list and nothing else, and the piles differ. */
+    @Test
+    void aListedPropertyIsDrawnPerProp() {
+        Set<String> seen = new HashSet<>();
+        for (long seed = 0; seed < 30; seed++) {
+            for (BlockPlacement prop : place(room(), withProperties(
+                    Map.of("bones", List.of("1", "2", "3", "4")), false), seed)) {
+                String bones = prop.getProperties().get("bones");
+                assertTrue(List.of("1", "2", "3", "4").contains(bones), "bones=" + bones);
+                seen.add(bones);
+            }
+        }
+        assertEquals(4, seen.size(), "every listed value should turn up: " + seen);
+    }
+
+    /** One value draws nothing: the plan matches a prop with no properties cell for cell. */
+    @Test
+    void aSingleValueDrawsNothing() {
+        for (long seed = 0; seed < 20; seed++) {
+            List<BlockPlacement> plain = place(room(), withProperties(Map.of(), false), seed);
+            List<BlockPlacement> fixed = place(room(), withProperties(
+                    Map.of("waterlogged", List.of("false")), false), seed);
+            assertEquals(cellsOf(plain), cellsOf(fixed), "seed " + seed);
+            fixed.forEach(p -> assertEquals("false", p.getProperties().get("waterlogged")));
+        }
+    }
+
+    /** An authored facing beats the oriented one. */
+    @Test
+    void anAuthoredFacingWinsOverOriented() {
+        PropConfig config = new PropConfig(3, 3, PropPlacement.AGAINST_WALL, List.of(new PropVariant(
+                "dungeonblocks:bone_pile", 1, true, Optional.empty(),
+                Map.of("facing", List.of("north")), false)));
+        place(room(), config, 5L).forEach(p -> assertEquals("north", p.getProperties().get("facing")));
+    }
+
+    /** {@code tall} writes both halves, the upper one row up, sharing every other property. */
+    @Test
+    void aTallPropIsWrittenAsBothHalves() {
+        List<BlockPlacement> out = place(room(), withProperties(Map.of("lit", List.of("true")), true), 9L);
+        assertEquals(6, out.size());
+        for (int i = 0; i < out.size(); i += 2) {
+            BlockPlacement lower = out.get(i);
+            BlockPlacement upper = out.get(i + 1);
+            assertEquals(FLOOR_Y + 1, lower.getY());
+            assertEquals(FLOOR_Y + 2, upper.getY());
+            assertEquals(lower.getX(), upper.getX());
+            assertEquals(lower.getZ(), upper.getZ());
+            assertEquals("lower", lower.getProperties().get("half"));
+            assertEquals("upper", upper.getProperties().get("half"));
+            assertEquals("true", upper.getProperties().get("lit"));
+        }
+    }
+
+    @Test
+    void anEmptyValueListIsALoadError() {
+        assertTrue(PropVariant.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE,
+                com.google.gson.JsonParser.parseString(
+                        "{\"block\":\"dungeonblocks:bone_pile\",\"properties\":{\"bones\":[]}}"))
+                .result().isEmpty());
+        assertTrue(PropVariant.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE,
+                com.google.gson.JsonParser.parseString(
+                        "{\"block\":\"dungeonblocks:bone_pile\",\"tall\":true,\"properties\":{\"bones\":[\"1\",\"2\"],\"lit\":\"true\"}}"))
+                .result().isPresent());
     }
 }

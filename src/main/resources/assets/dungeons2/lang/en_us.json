@@ -115,5 +115,22 @@
   "item.dungeons2.mirror_shield": "Mirror Shield",
   "tooltip.dungeons2.mirror_shield": "Turns back eye-rays and gazes that pass through ordinary shields.",
   "tooltip.dungeons2.mirror_shield.raise": "Raise it toward the eye. Lowered, it can still be torn away.",
-  "message.dungeons2.shield_pierced": "The spell passes through your shield."
+  "message.dungeons2.shield_pierced": "The spell passes through your shield.",
+  "book.dungeons2.delvers_last_pages": "A Delver's Last Pages",
+  "advancements.dungeons2.root.title": "Dungeons2",
+  "advancements.dungeons2.root.description": "Kill something that lives in a dungeon",
+  "advancements.dungeons2.small_boss.title": "Master of the Lowest Hall",
+  "advancements.dungeons2.small_boss.description": "Slay the master of a small dungeon",
+  "advancements.dungeons2.medium_boss.title": "Master of the Deep Halls",
+  "advancements.dungeons2.medium_boss.description": "Slay the master of a medium dungeon",
+  "advancements.dungeons2.large_boss.title": "The Bottom of the Stair",
+  "advancements.dungeons2.large_boss.description": "Slay the master of a large dungeon",
+  "advancements.dungeons2.mimic.title": "It Had Teeth",
+  "advancements.dungeons2.mimic.description": "Kill a mimic",
+  "advancements.dungeons2.mirror_shield.title": "Polished Steel",
+  "advancements.dungeons2.mirror_shield.description": "Find a Mirror Shield",
+  "advancements.dungeons2.boots_of_shock_absorption.title": "Soft Landing",
+  "advancements.dungeons2.boots_of_shock_absorption.description": "Find the Boots of Shock Absorption",
+  "advancements.dungeons2.delvers_last_pages.title": "Someone Went Before",
+  "advancements.dungeons2.delvers_last_pages.description": "Read A Delver's Last Pages"
 }

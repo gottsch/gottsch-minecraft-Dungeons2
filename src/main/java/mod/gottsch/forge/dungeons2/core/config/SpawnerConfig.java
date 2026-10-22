@@ -196,13 +196,25 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * One weighted {@code mob_sets} id. A record rather than a bare id list so a motif can say
      * "mostly vermin, occasionally something worse" without repeating ids &mdash; the same shape
      * {@code PotConfig.PotVariant} uses, and for the same reason.
+     *
+     * <p>{@code bonus_mobs}, when stated, REPLACES the depth band's bonus for this one set
+     * (2026-10-21). It exists for sets whose count must not grow with depth: the animated armor is
+     * one mob or none, and a band's +2 would otherwise turn a {@code 1..1} set into three of them.
+     * Absent means "whatever the band adds", which is every other set.</p>
      */
-    public record MobSetEntry(String mobSet, int weight) {
+    public record MobSetEntry(String mobSet, int weight, Optional<Integer> bonusMobs) {
+
+        public MobSetEntry(String mobSet, int weight) {
+            this(mobSet, weight, Optional.empty());
+        }
+
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<MobSetEntry> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.fieldOf("mob_set").forGetter(MobSetEntry::mobSet),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
-                        .forGetter(MobSetEntry::weight)
+                        .forGetter(MobSetEntry::weight),
+                Codecs.strictOptionalFieldOf(Codec.intRange(0, Integer.MAX_VALUE), "bonus_mobs")
+                        .forGetter(MobSetEntry::bonusMobs)
         ).apply(instance, MobSetEntry::new)));
     }
 
@@ -300,7 +312,18 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * the record component answers "what did the author write", which is a different question.
      */
     public MobRange mobRange(ResourceLocation mobSet) {
-        return MobRange.resolve(minMobs, maxMobs, mobSet, bonusMobs);
+        return MobRange.resolve(minMobs, maxMobs, mobSet, bonusFor(mobSet));
+    }
+
+    /** The depth bonus for {@code mobSet}: its entry's own {@code bonus_mobs}, else the band's. */
+    int bonusFor(ResourceLocation mobSet) {
+        for (MobSetEntry entry : declaredMobSets()) {
+            if (entry.bonusMobs().isPresent() && mobSet != null
+                    && mobSet.equals(ResourceLocation.tryParse(entry.mobSet()))) {
+                return entry.bonusMobs().get();
+            }
+        }
+        return bonusMobs;
     }
 
     /**

@@ -219,6 +219,32 @@
             { "block": "minecraft:dirt", "probability": 0.05 }
           ]
         },
+        // square_stone_brick_stairs (added 2026-10-21, 17x21_bridge_1): the stone_brick_stairs rules
+        // above, line for line, with the mossy square stair as the moss stage.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick_stairs",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick_stairs", "probability": 0.3 },
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone_stairs", "probability": 0.43 },
+            { "block": "minecraft:dirt", "probability": 0.05 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick_stairs",
+          "output_blocks": [
+            { "block": "minecraft:polished_andesite_stairs", "probability": 0.5 },
+            { "block": "minecraft:dirt", "probability": 0.05 }
+          ]
+        },
         {
           // `any`, stated rather than defaulted: a banner only exists where a template
           // authored one, so there is no surface to partition -- and the default is what
@@ -713,6 +739,104 @@
           "output_blocks": [
             { "block": "minecraft:air", "probability": 0.1 }
           ]
+        },
+        // ===================================================================================
+        // FIXTURES with no aged form (added 2026-10-21, 17x21_bridge_1). A gargoyle bust is a
+        // single fixture, so like a chain link it goes straight to a gap, at the chain rate. It
+        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule (removed
+        // 2026-10-22): a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
+        // block takes ONE of them -- a middle gone leaves the top hanging alone, half a cage. It is
+        // a hanging_sweep member, so it still falls whole when the chain above it breaks.
+        // ===================================================================================
+        {
+          "surface": "any",
+          "block": "dungeonblocks:gargoyle_bust",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        // square_stone_brick_capstone: one rung of moss, then a gap -- mossy 30%, gone 3%.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:square_stone_brick_capstone",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_square_stone_brick_capstone", "probability": 0.3 },
+            { "block": "minecraft:air", "probability": 0.1 }
+          ]
+        },
+        // TUFF (added 2026-10-21, 17x21_bridge_1): moss first, like stone bricks.
+        {
+          "surface": "any",
+          "block": "minecraft:tuff",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_tuff", "probability": 0.3 }
+          ]
+        },
+        // TUFF deep decay (added 2026-10-21) -- the same cobblestone -> rubble -> air chain stone
+        // bricks get, but slower. A second rule on one block is a FALLTHROUGH, reached only when
+        // the moss rule missed (70%), so composed: cobblestone 7%, rubble 1.4%, air 0.35%.
+        {
+          "surface": "any",
+          "block": "minecraft:tuff",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.1 },
+            { "block": "dungeonblocks:rubble", "probability": 0.2 },
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        // FLAGSTONES (Dungeon Blocks 3.1.0, added 2026-10-22). A floor, so NO air: a hole in a
+        // walking surface is a fall. Three rules on one block, each a FALLTHROUGH reached only when
+        // the ones above missed: cracked 30%, mossy 30.1%, then the stone-brick deep decay at half
+        // its first stage -- cobblestone 4%, dirt 1.2%, rubble 0.3%. The weathered twins carry the
+        // same `tile` property, and dungeons2:pattern_tile (last in this list) re-tiles whatever
+        // lands, so the pattern survives any rule type.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:flagstones",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_flagstones", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:flagstones",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_flagstones", "probability": 0.43 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:flagstones",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.1 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        // CRUMBLING floor stone (added 2026-10-22) -- a false floor's lid. Its own twins only, and
+        // NO deep decay: cobblestone or dirt would be a safe tile in the trap, and air a hole that
+        // gives it away. Ages like the floor around it so the lid is not one unbroken patch of the
+        // same cracked texture: cracked 30%, mossy 30.1% (a fallthrough); cobblestone mossy 30%.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:crumbling_stone_bricks",
+          "output_blocks": [
+            { "block": "dungeonblocks:crumbling_cracked_stone_bricks", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:crumbling_stone_bricks",
+          "output_blocks": [
+            { "block": "dungeonblocks:crumbling_mossy_stone_bricks", "probability": 0.43 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:crumbling_cobblestone",
+          "output_blocks": [
+            { "block": "dungeonblocks:crumbling_mossy_cobblestone", "probability": 0.3 }
+          ]
         }
       ]
     },
@@ -1169,6 +1293,9 @@
     // =========================================================================================
     {
       "processor_type": "dungeons2:sarcophagus",
+      // deepslate, not the stone default (Mark, 2026-10-21): it reaches only templates in pools
+      // that name this list -- procedural crypts take $sarcophagus from the motif, not this.
+      "sarcophagus_block": "dungeonblocks:deepslate_sarcophagus",
       "loot_tables": [
         { "loot_table": "dungeons2:chests/classic_tomb_deep", "weight": 2 },
         { "loot_table": "dungeons2:chests/classic_tomb_shallow", "weight": 1 }
@@ -1372,6 +1499,13 @@
       // 5-13 across, so this fires as the player comes through the door rather than once they
       // are well inside.
       "proximity": 12.0
+    },
+
+    // LAST, always: lines dungeonblocks pattern tiles (the flagstones) up with the world from
+    // their FINAL position, after every rule and sweep above has had its say. See
+    // PatternTileProcessor. Every list carries it, so a tile lines up in any pool.
+    {
+      "processor_type": "dungeons2:pattern_tile"
     }
   ]
 }

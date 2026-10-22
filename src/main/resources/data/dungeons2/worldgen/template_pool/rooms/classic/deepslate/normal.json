@@ -131,15 +131,6 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "dungeons2:rooms/classic/deepslate/13x13_cavern_1",
-        "processors": "dungeons2:classic_deepslate_weathering",
-        "projection": "rigid"
-      },
-      "weight": 1
-    },
-    {
-      "element": {
-        "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/deepslate/hallway/5x11_hallway_1",
         "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
@@ -195,6 +186,69 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/deepslate/hallway/7x17_hallway_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/11x11_corner_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/11x11_corner_2",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/11x11_corner_3",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/11x11_sewer_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/13x13_cavern_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/13x15_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/15x21_hall_1",
         "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
       },

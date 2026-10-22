@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "dungeons2:death_tyrant",
+      "required": false
+    },
+    {
+      "id": "dungeons2:stone_colossus",
+      "required": false
+    }
+  ]
+}

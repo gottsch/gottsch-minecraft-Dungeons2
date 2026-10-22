@@ -174,6 +174,40 @@ class DatapackResourcesParseTest {
     }
 
     /**
+     * Every loot table a weapon rack names must ship. A missing one is not an error in game: the
+     * rack is written empty with one WARN, which in a room reads exactly like an author's choice.
+     */
+    @Test
+    void everyRackLootTableReferencedByAMotifExists() {
+        int racks = 0;
+        for (String name : MOTIFS) {
+            for (RoomScheme scheme : motif(name).schemes()) {
+                for (var props : scheme.props().all().toList()) {
+                    for (var variant : props.variants()) {
+                        if (variant.rack().isEmpty()) {
+                            continue;
+                        }
+                        racks++;
+                        var rack = variant.rack().get();
+                        List<String> tables = new java.util.ArrayList<>(List.of(rack.lootTable()));
+                        rack.fineLootTable().ifPresent(tables::add);
+                        for (String id : tables) {
+                            assertTrue(id.startsWith("dungeons2:"), "scheme '" + scheme.name()
+                                    + "' racks from a foreign loot table (" + id + ")");
+                            String path = "/data/dungeons2/loot_tables/"
+                                    + id.substring("dungeons2:".length()) + ".json";
+                            assertNotNull(DatapackResourcesParseTest.class.getResourceAsStream(path),
+                                    "scheme '" + scheme.name() + "' racks from a table with no file: "
+                                            + path);
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue(racks > 0, "no shipped scheme carries a weapon rack, so this checked nothing");
+    }
+
+    /**
      * Every course of a scheme's wall slot, across all of its patterns.
      *
      * <p>The slot became an ordered list of patterns in Aug 2026 so that a wall could carry courses

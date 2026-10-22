@@ -32,6 +32,7 @@ import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.event.EchelonSpawnEvent;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 
@@ -60,6 +61,17 @@ import net.minecraft.util.RandomSource;
  * {@code facing} and {@code open=false} outright: a block's default state is not something to
  * trust with a boolean, and a tomb generated open would be a tomb whose first opening never
  * happens.</p>
+ *
+ * <h2>Never across a chunk seam</h2>
+ * <p>A room is written once per chunk it spans, each pass clipped to that chunk, so a tomb whose
+ * halves sit in two chunks is written in two passes. The half that lands first is on its own until
+ * the second pass runs, and a lone half does not survive: a {@code dungeonblocks} sarcophagus turns
+ * to air whenever its shape is settled with no partner beside it, and the first chunk can be
+ * finished and settled before its neighbour's pass has written anything. What is left is one
+ * orphan half where a tomb was planned (seen in game 2026-10-21: a foot at {@code -144, 63, 63},
+ * x&nbsp;=&nbsp;-144 the first column of chunk -9, its head logged at {@code -145} in chunk -10).
+ * Nothing at write time can rescue that, so a tomb is planned only where both halves share a
+ * chunk &mdash; which needs the floor's WORLD anchor, not the floor-local grid this plans in.</p>
  *
  * <p>The contents ride on the HEAD, which is the half DungeonBlocks reads first. Both halves carry
  * the tomb's origin in Forge's persistent data, the same compound a vanilla cage carries, so
@@ -95,6 +107,17 @@ public final class RoomTombGenerator {
     public static Set<Coords2D> placeTombs(RoomData room, int floorY, int floorIndex, String motif,
                                            TombConfig config, Set<Coords2D> occupied,
                                            RandomSource random, List<BlockPlacement> out) {
+        return placeTombs(room, floorY, floorIndex, motif, config, occupied, 0, 0, random, out);
+    }
+
+    /**
+     * As above, for a floor whose local grid sits at {@code (anchorX, anchorZ)} in the world, which
+     * is what decides where the chunk seams fall. See "Never across a chunk seam".
+     */
+    public static Set<Coords2D> placeTombs(RoomData room, int floorY, int floorIndex, String motif,
+                                           TombConfig config, Set<Coords2D> occupied,
+                                           int anchorX, int anchorZ,
+                                           RandomSource random, List<BlockPlacement> out) {
         List<TombConfig.TombVariant> variants = config.variants();
         int totalWeight = variants.stream().mapToInt(TombConfig.TombVariant::weight).sum();
         // No tomb at all rather than an inert one -- see TombContents#releasesAnything. Checked
@@ -102,7 +125,7 @@ public final class RoomTombGenerator {
         if (variants.isEmpty() || totalWeight <= 0 || !config.contents().releasesAnything()) {
             return Set.of();
         }
-        List<Coords2D> heads = headCells(room, occupied);
+        List<Coords2D> heads = headCells(room, occupied, anchorX, anchorZ);
         if (heads.isEmpty()) {
             return Set.of();
         }
@@ -140,18 +163,32 @@ public final class RoomTombGenerator {
 
     /**
      * The wall-adjacent cells a tomb's head may take: the pots' candidates, minus any whose foot
-     * would land outside the interior, in a claimed cell, or in a doorway's approach.
+     * would land outside the interior, in a claimed cell, in a doorway's approach, or in another
+     * chunk than the head's.
      */
-    static List<Coords2D> headCells(RoomData room, Set<Coords2D> occupied) {
+    static List<Coords2D> headCells(RoomData room, Set<Coords2D> occupied, int anchorX, int anchorZ) {
         Set<Coords2D> doorways = RoomInterior.cellsInsideDoorways(room);
         List<Coords2D> heads = new ArrayList<>();
         for (Coords2D head : RoomPropGenerator.eligibleCells(room, occupied)) {
             Coords2D foot = footOf(room, head);
-            if (isInterior(room, foot) && !occupied.contains(foot) && !doorways.contains(foot)) {
+            if (isInterior(room, foot) && !occupied.contains(foot) && !doorways.contains(foot)
+                    && !straddlesChunkSeam(head, foot, anchorX, anchorZ)) {
                 heads.add(head);
             }
         }
         return heads;
+    }
+
+    /**
+     * Whether the two cells fall in different chunks once the floor's anchor puts them in the world.
+     * Floor division by 16 ({@code >> 4}), so negative coordinates land in the right chunk: x = -1
+     * is chunk -1, not chunk 0.
+     */
+    static boolean straddlesChunkSeam(Coords2D a, Coords2D b, int anchorX, int anchorZ) {
+        return SectionPos.blockToSectionCoord(anchorX + a.getX())
+                != SectionPos.blockToSectionCoord(anchorX + b.getX())
+                || SectionPos.blockToSectionCoord(anchorZ + a.getY())
+                != SectionPos.blockToSectionCoord(anchorZ + b.getY());
     }
 
     /** One step from the head into the room: away from the wall it backs onto. */

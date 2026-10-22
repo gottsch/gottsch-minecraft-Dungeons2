@@ -26,6 +26,7 @@ import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.BlockStateCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomMiningChestGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomFurnitureGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomTombGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.HiddenDoors;
 import net.minecraft.core.BlockPos;
@@ -358,7 +359,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             // generation and would turn a walk through a finished dungeon into a log flood.
             //
             // A tomb (#104) takes its own line instead -- see probeTomb.
-            if (!probeTomb(p, worldPos) && !probeMiningChest(p, worldPos)) {
+            if (!probeTomb(p, worldPos) && !probeMiningChest(p, worldPos) && !probeRack(p, worldPos)) {
                 Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
                         p.getBlockEntityNbt());
             }
@@ -388,6 +389,24 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
                     worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING),
                     floorIndex, TombContents.Drawn.describe(data.getData()));
         }
+        return true;
+    }
+
+    /**
+     * A weapon rack's probe, in WORLD coordinates: the tables its slots were planned to roll. True
+     * when {@code p} is a planned rack. What actually landed on it is {@code /data get block}'s
+     * {@code Items}.
+     */
+    private boolean probeRack(BlockPlacement p, BlockPos worldPos) {
+        if (!WeaponRackFiller.isRackPlan(p.getBlockEntityNbt())) {
+            return false;
+        }
+        //   grep "D2-RACK" run/logs/dungeons2.log
+        Map<String, String> plan = p.getBlockEntityNbt().getData();
+        Dungeons.LOGGER.info("[D2-RACK] weapon rack at {} facing {} (floor {}) slot0={} slot1={}",
+                worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING), floorIndex,
+                plan.get(RoomFurnitureGenerator.RACK_TABLE + 0),
+                plan.get(RoomFurnitureGenerator.RACK_TABLE + 1));
         return true;
     }
 
@@ -636,8 +655,19 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             if (data.getType() != null) {
                 tag.putString("id", data.getType());
             }
+            // A weapon rack arrives as a plan -- which table each slot rolls, and a seed -- and is
+            // rolled into its Items here. The plan's keys are D2's own and stay out of the tag.
+            boolean rack = WeaponRackFiller.isRackPlan(data);
             for (Map.Entry<String, String> entry : data.getData().entrySet()) {
+                if (rack && WeaponRackFiller.isPlanKey(entry.getKey())) {
+                    continue;
+                }
                 putParsed(tag, entry.getKey(), entry.getValue());
+            }
+            if (rack) {
+                final CompoundTag rackTag = tag;
+                WeaponRackFiller.rollItems(level, pos, data)
+                        .ifPresent(items -> rackTag.put(WeaponRackFiller.ITEMS, items));
             }
             // Nested values arrive as SNBT text and are parsed here rather than in the data layer,
             // which has no Minecraft on its classpath. A vanilla minecraft:spawner needs this: its

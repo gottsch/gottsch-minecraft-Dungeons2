@@ -210,6 +210,44 @@ class RoomTombGeneratorTest {
         assertEquals(out.size(), claimed.size());
     }
 
+    /**
+     * A tomb across a chunk seam is written in two passes and loses whichever half lands first, so
+     * none is planned there. Anchored at 14, 14, the seam on each axis falls between local 1 and 2:
+     * exactly between the west and north walls' head row and their foot row, so every tomb on those
+     * two walls would straddle it.
+     */
+    @Test
+    void noTombStraddlesAChunkSeam() {
+        RoomData room = room(9, 9);
+        int anchorX = 14;
+        int anchorZ = 14;
+        int placed = 0;
+        for (long seed = 0; seed < 200; seed++) {
+            List<BlockPlacement> out = new ArrayList<>();
+            RoomTombGenerator.placeTombs(room, 64, 2, "classic", config(4, 4, CONTENTS), Set.of(),
+                    anchorX, anchorZ, RandomSource.create(seed), out);
+            for (BlockPlacement[] pair : pairs(out)) {
+                assertFalse(RoomTombGenerator.straddlesChunkSeam(cell(pair[0]), cell(pair[1]),
+                                anchorX, anchorZ),
+                        "seed " + seed + ": the tomb at " + cell(pair[0]) + " / " + cell(pair[1])
+                                + " spans two chunks");
+                placed++;
+            }
+        }
+        assertTrue(placed > 0, "the east and south walls still take tombs");
+    }
+
+    /** The in-game case: x = -145 is the last column of chunk -10, x = -144 the first of chunk -9. */
+    @Test
+    void theSeamTestFloorsNegativeCoordinates() {
+        Coords2D head = new Coords2D(-145, 63);
+        assertTrue(RoomTombGenerator.straddlesChunkSeam(head, new Coords2D(-144, 63), 0, 0));
+        assertFalse(RoomTombGenerator.straddlesChunkSeam(new Coords2D(-144, 63),
+                new Coords2D(-143, 63), 0, 0));
+        assertFalse(RoomTombGenerator.straddlesChunkSeam(new Coords2D(-1, 0), new Coords2D(-16, 0),
+                0, 0), "-1 and -16 are both chunk -1");
+    }
+
     /** DungeonBlocks reads the head first; the foot carries only the depth stamp. */
     @Test
     void theContentsRideOnTheHeadAndTheStampOnBoth() {

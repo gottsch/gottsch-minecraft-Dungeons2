@@ -37,7 +37,7 @@ import java.util.Optional;
  * version leaves the pit open.</p>
  *
  * <p>{@code spike_block} takes {@code minecraft:pointed_dripstone} (with {@code vertical_direction:
- * up}) or {@code dungeonblocks:iron_spikes} (with {@code facing: up}); both only hurt pointing
+ * up}) or {@code dungeonblocks:dark_iron_spikes} (with {@code facing: up}); both only hurt pointing
  * up.</p>
  */
 public record FalseFloorPitShape(int width, int depth, int offsetX, int offsetZ,

@@ -1,0 +1,18 @@
+{
+  "id": "dungeons2:classic_large_fire_bones",
+  "category": "classic",
+  "count": {
+    "min": 3,
+    "max": 5
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:magma_skeleton",
+      "weight": 5
+    },
+    {
+      "id": "dungeons2:burning_skeleton",
+      "weight": 4
+    }
+  ]
+}

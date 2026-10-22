@@ -1,0 +1,100 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_entrance",
+  "pools": [
+    {
+      "//": "The entrance chest (2026-10-22): the dungeon's introduction, once per player: only to someone who has never held it. Point a chest_marker in an entrance template at this table with /data merge block <x> <y> <z> {lootTable:\"dungeons2:chests/classic_entrance\"}.",
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "gottschbooks:book",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{\"gottschbooks:book\":\"dungeons2:delvers_last_pages\"}"
+            }
+          ],
+          "conditions": [
+            {
+              "condition": "minecraft:entity_properties",
+              "entity": "this",
+              "predicate": {
+                "player": {
+                  "advancements": {
+                    "dungeons2:lore/found_delvers_last_pages": false
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "//": "A little for the way down: light, food, a worn blade.",
+      "rolls": {
+        "min": 2.0,
+        "max": 3.0
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:torch",
+          "weight": 6,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "min": 4.0,
+                "max": 12.0
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:bread",
+          "weight": 5,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "min": 2.0,
+                "max": 5.0
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:arrow",
+          "weight": 3,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "min": 4.0,
+                "max": 10.0
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_sword",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "minecraft:set_damage",
+              "damage": {
+                "min": 0.3,
+                "max": 0.7
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -7,15 +7,7 @@
   },
   "mobs": [
     {
-      "id": "dungeons2:animated_armor",
-      "weight": 6
-    },
-    {
       "id": "dungeons2:margoyle",
-      "weight": 4
-    },
-    {
-      "id": "dungeons2:animated_weapon",
       "weight": 4
     }
   ]

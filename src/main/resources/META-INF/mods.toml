@@ -79,7 +79,8 @@ side="BOTH"
 [[dependencies.dungeons2]]
 modId="dungeonblocks"
 mandatory=true
-versionRange="[3.0.0,4.0.0)"
+# 3.1.0: the flagstone pattern tiles (PatternTileBlock), skull pile and large candles.
+versionRange="[3.1.0,4.0.0)"
 ordering="AFTER"
 side="BOTH"
 # gottsch's Monster Manual (gmm) - shared mob base-class/asset library; it registers nothing, this
@@ -91,6 +92,14 @@ mandatory=true
 # decoration, so on 1.0.1 they can be shoved off their square -- degraded rather than broken, but
 # not worth shipping. Keep in step with build.gradle.
 versionRange="[1.1.0,2.0.0)"
+ordering="AFTER"
+side="BOTH"
+# Gottsch Books - lore books found in dungeon loot. Nested in this jar (jarJar), so players need not
+# install it; mandatory because a loot table naming gottschbooks:book cannot load without it.
+[[dependencies.dungeons2]]
+modId="gottschbooks"
+mandatory=true
+versionRange="${gottschbooks_version_range}"
 ordering="AFTER"
 side="BOTH"
 

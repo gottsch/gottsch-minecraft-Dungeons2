@@ -292,6 +292,7 @@ public class DungeonRoomPiece extends DungeonPiece {
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(motifConfig).withSinkOffset(sinkOffset)
                 .withCeilingBudget(ceilingBudget)
+                .withAnchor(anchorX, anchorZ)
                 .withMiningHaul(miningHaul)
                 .withCounterLootTable(counterLootTable)
                 .withSecret(secretDoorway, counterItem)

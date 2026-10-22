@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "dungeons2:barrel_mimic",
+      "required": false
+    },
+    {
+      "id": "dungeons2:vanilla_chest_mimic",
+      "required": false
+    }
+  ]
+}

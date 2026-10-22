@@ -1,0 +1,104 @@
+{
+  "values": [
+    {
+      "id": "dungeons2:acid_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:alligator_gar",
+      "required": false
+    },
+    {
+      "id": "dungeons2:animated_armor",
+      "required": false
+    },
+    {
+      "id": "dungeons2:animated_weapon",
+      "required": false
+    },
+    {
+      "id": "dungeons2:black_pudding",
+      "required": false
+    },
+    {
+      "id": "dungeons2:bloater",
+      "required": false
+    },
+    {
+      "id": "dungeons2:bloody_bones",
+      "required": false
+    },
+    {
+      "id": "dungeons2:burning_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:electric_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:gargoyle",
+      "required": false
+    },
+    {
+      "id": "dungeons2:gelatinous_cube",
+      "required": false
+    },
+    {
+      "id": "dungeons2:ghoul",
+      "required": false
+    },
+    {
+      "id": "dungeons2:giant_rat",
+      "required": false
+    },
+    {
+      "id": "dungeons2:grave_zombie",
+      "required": false
+    },
+    {
+      "id": "dungeons2:gray_ooze",
+      "required": false
+    },
+    {
+      "id": "dungeons2:iron_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:magma_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:margoyle",
+      "required": false
+    },
+    {
+      "id": "dungeons2:ochre_jelly",
+      "required": false
+    },
+    {
+      "id": "dungeons2:orc",
+      "required": false
+    },
+    {
+      "id": "dungeons2:orc_shaman",
+      "required": false
+    },
+    {
+      "id": "dungeons2:rat",
+      "required": false
+    },
+    {
+      "id": "dungeons2:skeleton_warrior",
+      "required": false
+    },
+    {
+      "id": "dungeons2:tainted_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:winged_skeleton",
+      "required": false
+    }
+  ]
+}

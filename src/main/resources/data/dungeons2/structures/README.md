@@ -2024,7 +2024,16 @@ so a datapack can add or replace them without touching the mod:
 }
 ```
 
-`minecraft:empty` is a valid weighted entry and means "spawn nothing this roll".
+**A mob set's `count` is a number of separate draws** from its `mobs` list, and a depth band may add
+its `bonus_mobs` on top (see the Room Schemes manual, "How many mobs"). So a mob that must appear
+**alone** goes in a set of its own with `count` `1..1`, listed in the band with `"bonus_mobs": 0`.
+`classic_animated_armor` and `classic_animated_weapon` are shipped that way. Mixing it into a bigger
+set lets one spawn roll it twice. The marker route never gets a band bonus.
+
+> **`minecraft:empty` does not work as a mob entry**, although `ShippedMobSetsTest` lets it through.
+> Nothing resolves it: the id is written into the spawner verbatim, so a vanilla cage carries a dud
+> weight and the proximity spawner tries to summon it. To make a room sometimes have no spawner,
+> use `min_count: 0` on the scheme's slot or `probability` on the marker.
 
 > **Why a marker block rather than a DATA marker.** Vanilla's `handleDataMarker` hook belongs to
 > `StructurePiece`, and every authored Dungeons2 piece is a `PoolElementStructurePiece` this mod
@@ -2045,6 +2054,17 @@ so a datapack can add or replace them without touching the mod:
 > worldgen, so "not loaded yet" and "does not exist" are indistinguishable there. A misspelled set
 > is a build failure instead of a silent no-op spawner.
 
+## Flagstones and other pattern tiles (Dungeon Blocks 3.1.0, 2026-10-22)
+
+`dungeonblocks:flagstones` is one slice of a pattern three blocks square, and which slice is its
+`tile` property, worked out from the block's **world** position. Author a flagstone floor however
+you like: the tiles your dev world gave the template don't matter. The `dungeons2:pattern_tile`
+processor, last in every processor list, recomputes every tile from where the template finally
+lands, which also undoes rotation (`tile` does not rotate). A weathered twin swapped in by a rule
+is fixed the same way, as long as it is a `PatternTileBlock`. Every list ages `flagstones` into
+`cracked_flagstones` and `mossy_flagstones` (and, rarely, cobblestone, dirt or rubble; never air,
+since it is a floor), so author plain flagstones and let the list wear them.
+
 ## The sarcophagus marker (backlog #104, 2026-09-26)
 
 **Place a `dungeons2:sarcophagus_marker` where a sealed tomb's FOOT goes**, facing its head — place
@@ -2056,8 +2076,9 @@ air — a wall, another marker, `structure_void`, or outside the template — le
 with a `[D2-TOMB]` WARN rather than eating whatever is there.
 
 What the tomb holds is the processor entry's, per list, so a template tomb takes the contents and
-the block of the pool that placed it: the deepslate list builds `deepslate_sarcophagus` with the
-floor-4 dead, the mud list the floor-0 ones. One marker may override any of it:
+the block of the pool that placed it: the classic and deepslate lists build `deepslate_sarcophagus`
+(each list's `sarcophagus_block`; the default is `stone_sarcophagus`), the mud list a spruce coffin
+with the floor-0 dead. One marker may override the contents:
 
 ```
 /data merge block <x> <y> <z> {guardian:"dungeons2:ghoul",lootTable:"dungeons2:chests/classic_tomb_deep",lootWeight:1,guardianWeight:3,emptyWeight:0}
@@ -2065,6 +2086,17 @@ floor-4 dead, the mud list the floor-0 ones. One marker may override any of it:
 
 `floorIndex` + `motif` give the guardian an Enemy Echelons depth, exactly as on the spawner marker.
 DungeonBlocks makes the one roll between loot, guardian and nothing when the tomb is first opened.
+
+**The marker cannot choose the block.** There is no `sarcophagusBlock` key yet (Backlog #115), so a
+room that wants a different stone from its pool's list has to change the list, which changes every
+marker tomb in that pool.
+
+> **A marker tomb can be split by a chunk seam, and come out as one half.** A placed template is
+> written once per chunk it spans, so a tomb whose foot and head land in different chunks is written
+> in two passes, and the half written first turns to air when its chunk is finished, before its
+> partner exists. The procedural `tombs` slot skips seam-straddling spots; a marker can't, because
+> the processor can't move a tomb you placed, and where a template's seams fall depends on where
+> each dungeon puts it. Expect the occasional lone half from marker tombs.
 
 > A procedurally-built room reaches the same tomb through the **`tombs` scheme slot** — §11g of the
 > Room Schemes manual — and the two routes write the tomb's NBT from one record

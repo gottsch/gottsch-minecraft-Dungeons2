@@ -135,13 +135,13 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(11, processors.size(),
+        assertEquals(12, processors.size(),
                 "Expected the vanilla rule processor, the two aging processors (the main one and"
                         + " the joist-gated timber chain, which is separate because a geometric"
                         + " rule moves its whole processor into finalizeProcessing), decoration,"
                         + " the decoration sweep, the hanging sweep, the #10 spawner marker, the"
-                        + " #56 pot marker, the #61 chest marker, the #104 sarcophagus marker and"
-                        + " the rubble scatter");
+                        + " #56 pot marker, the #61 chest marker, the #104 sarcophagus marker, the"
+                        + " rubble scatter and, last, the pattern-tile fix-up");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -158,6 +158,9 @@ class WeatheringProcessorListTest {
                 case SARCOPHAGUS_TYPE -> SarcophagusMarkerProcessor.codec(NO_TYPE);
                 case "dungeons2:rubble_scatter" ->
                         mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor
+                                .codec(NO_TYPE);
+                case "dungeons2:pattern_tile" ->
+                        mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor
                                 .codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
@@ -260,9 +263,13 @@ class WeatheringProcessorListTest {
         //
         // dungeons2:rubble_scatter is marked LevelIndependentProcessor: it reads only the piece's two
         // lists, whole, and seeds every roll from the foot cell's world position.
+        //
+        // dungeons2:pattern_tile (2026-10-22) is the simplest case in the file: each tile's answer
+        // is a pure function of that cell's OWN world position, with no neighbour, no level read
+        // and no draw, so the clipped pass it lands in cannot change a single answer.
         Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
                 SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE,
-                "dungeons2:rubble_scatter");
+                "dungeons2:rubble_scatter", "dungeons2:pattern_tile");
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),

@@ -232,6 +232,22 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@code PatternTileProcessor} under this mod's namespace. */
+	public static final String PATTERN_TILE_PROCESSOR_NAME = "pattern_tile";
+
+	/**
+	 * Sets each dungeonblocks pattern tile's {@code tile} from its final world position, so a
+	 * flagstone floor lines up wherever a template lands and however it is rotated. LAST in every
+	 * list. See {@code PatternTileProcessor}.
+	 */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor>> PATTERN_TILE_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(PATTERN_TILE_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor
+								.codec(() -> Registration.PATTERN_TILE_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Registry name of {@link HangingSweepProcessor} under this mod's namespace. */
 	public static final String HANGING_SWEEP_PROCESSOR_NAME = "hanging_sweep";
 

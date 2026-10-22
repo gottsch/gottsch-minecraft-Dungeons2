@@ -80,6 +80,8 @@ public class BasicRoomGenerator implements IRoomGenerator {
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
     private int sinkOffset = 0;
     private int ceilingBudget = 0;
+    private int anchorX = 0;
+    private int anchorZ = 0;
     private MiningHaul miningHaul;
     private String counterLootTable;
     /** Non-null when this room can take a hidden door; see {@link #withSecret}. */
@@ -115,6 +117,19 @@ public class BasicRoomGenerator implements IRoomGenerator {
      */
     public BasicRoomGenerator withCeilingBudget(int ceilingBudget) {
         this.ceilingBudget = Math.max(0, ceilingBudget);
+        return this;
+    }
+
+    /**
+     * Where this floor's local grid sits in the world. Everything here plans in floor-local cells and
+     * needs no world position, except a placement whose parts must land in ONE chunk: a two-block
+     * tomb split across a seam is written in two passes and loses its first half (see
+     * {@code RoomTombGenerator}). Defaults to 0, 0 for callers with no world, such as the
+     * floor-plan viewer.
+     */
+    public BasicRoomGenerator withAnchor(int anchorX, int anchorZ) {
+        this.anchorX = anchorX;
+        this.anchorZ = anchorZ;
         return this;
     }
 
@@ -349,7 +364,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 taken.addAll(RoomTombGenerator.placeTombs(room, floorY, floorIndex,
                         motif == null ? null : motif.getValue(),
                         tombs.resolvedAgainst(motifConfig.tombBandFor(floorIndex)),
-                        taken, random, blocks)));
+                        taken, anchorX, anchorZ, random, blocks)));
 
         // Furniture (#73) after every guaranteed thing and before the pots, claiming its cells.
         // The ordering is the chests' argument one step on: a prop is a SOLID block, so a pot

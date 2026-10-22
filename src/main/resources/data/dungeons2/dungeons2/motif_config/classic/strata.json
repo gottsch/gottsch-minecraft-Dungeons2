@@ -70,7 +70,7 @@
         "arch_block": "minecraft:mud_brick_stairs",
         "traps": { "chance": 0.25, "options": [
           { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
-          { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
+          { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:dark_iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
           { "kind": "hazard", "weight": 1, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4, "rim_block": "minecraft:packed_mud" }
         ] },
         "courses": [
@@ -206,7 +206,7 @@
             {
               "weight": 1, "type": "dungeons2:false_floor",
               "config": {
-                "width": 3, "depth": 4, "spike_block": "dungeonblocks:iron_spikes",
+                "width": 3, "depth": 4, "spike_block": "dungeonblocks:dark_iron_spikes",
                 "spike_properties": { "facing": "up" }, "spike_probability": 0.6
               }
             }
@@ -558,7 +558,8 @@
               "weight": 3, "min_count": 0, "max_count": 2, "placement": "against_wall",
               "variants": [
                 { "block": "minecraft:barrel", "weight": 3, "oriented": false },
-                { "block": "minecraft:hay_block", "weight": 1 }
+                { "block": "minecraft:hay_block", "weight": 1 },
+                { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } }
               ]
             },
             {
@@ -990,7 +991,7 @@
         "arch_block": "minecraft:deepslate_brick_stairs",
         "traps": { "chance": 0.25, "options": [
           { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
-          { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
+          { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:dark_iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
           { "kind": "hazard", "weight": 1, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4, "rim_block": "$inlay" }
         ] },
         "styles": [

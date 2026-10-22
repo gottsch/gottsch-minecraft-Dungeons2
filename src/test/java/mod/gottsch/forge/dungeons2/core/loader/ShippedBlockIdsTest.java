@@ -156,12 +156,17 @@ class ShippedBlockIdsTest {
             // all once the layouts became registry ids; as a bare word it was invisible here.
             "layout",
             // content references
-            "entity", "loot_table", "function", "condition", "random_sequence",
+            "entity", "loot_table", "fine_loot_table", "function", "condition", "random_sequence",
             // ENCHANTMENT ids, on `minecraft:enchant_randomly`'s optional allow-list. New with the
             // boss chest tables (2026-09-03), which name Mending explicitly rather than trusting a
             // random draw to produce the one enchantment worth guaranteeing. Resolved from the
             // enchantment registry, so no more a block than `entity` is.
             "enchantments",
+            // Advancements and entity-type tags (#118, 2026-10-22): a parent advancement, a
+            // criterion trigger, the items an inventory_changed criterion waits for, a Gottsch
+            // Books book id, the tab's background texture, and a tag entry's `id`. None names a
+            // block; the advancement loader and the tag loader resolve them.
+            "parent", "trigger", "items", "book", "background", "id",
             // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
             // rather than from the block registry. ShippedMobSetsTest is what verifies it. ONE
             // entry since 2026-08-31: the marker processor and a scheme's spawners slot used to

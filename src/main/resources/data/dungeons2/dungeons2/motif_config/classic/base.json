@@ -110,7 +110,7 @@
     // every style below (a style may author its own). The bands in strata.json carry their own.
     "traps": { "chance": 0.25, "options": [
       { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
-      { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
+      { "kind": "false_floor", "weight": 1, "length": 2, "depth": 4, "spike_block": "dungeonblocks:dark_iron_spikes", "spike_properties": { "facing": "up" }, "spike_probability": 0.6 },
       { "kind": "hazard", "weight": 1, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4, "rim_block": "$inlay" }
     ] },
     "styles": [
@@ -272,20 +272,40 @@
       "min_floor_index": 0,
       "mob_sets": [
         {
+          "mob_set": "dungeons2:classic_small_vermin",
+          "weight": 12
+        },
+        {
           "mob_set": "dungeons2:classic_vermin",
           "weight": 6
+        },
+        {
+          "mob_set": "dungeons2:classic_small_bones",
+          "weight": 8
         },
         {
           "mob_set": "dungeons2:classic_bones",
           "weight": 4
         },
         {
+          "mob_set": "dungeons2:classic_small_undead",
+          "weight": 6
+        },
+        {
           "mob_set": "dungeons2:classic_undead",
           "weight": 3
         },
         {
+          "mob_set": "dungeons2:classic_small_vanilla",
+          "weight": 6
+        },
+        {
           "mob_set": "dungeons2:classic_vanilla",
           "weight": 3
+        },
+        {
+          "mob_set": "dungeons2:classic_small_lesser_ooze",
+          "weight": 4
         },
         {
           "mob_set": "dungeons2:classic_lesser_ooze",
@@ -298,19 +318,39 @@
       "min_floor_index": 1,
       "mob_sets": [
         {
+          "mob_set": "dungeons2:classic_small_bones",
+          "weight": 10
+        },
+        {
           "mob_set": "dungeons2:classic_bones",
           "weight": 5
+        },
+        {
+          "mob_set": "dungeons2:classic_small_undead",
+          "weight": 8
         },
         {
           "mob_set": "dungeons2:classic_undead",
           "weight": 4
         },
         {
+          "mob_set": "dungeons2:classic_small_warband",
+          "weight": 6
+        },
+        {
           "mob_set": "dungeons2:classic_warband",
           "weight": 3
         },
         {
+          "mob_set": "dungeons2:classic_small_vermin",
+          "weight": 4
+        },
+        {
           "mob_set": "dungeons2:classic_vermin",
+          "weight": 2
+        },
+        {
+          "mob_set": "dungeons2:classic_small_vanilla",
           "weight": 2
         },
         {
@@ -324,7 +364,19 @@
       "min_floor_index": 2,
       "mob_sets": [
         {
+          "mob_set": "dungeons2:classic_small_undead",
+          "weight": 4
+        },
+        {
           "mob_set": "dungeons2:classic_undead",
+          "weight": 4
+        },
+        {
+          "mob_set": "dungeons2:classic_large_undead",
+          "weight": 4
+        },
+        {
+          "mob_set": "dungeons2:classic_small_elemental_bones",
           "weight": 4
         },
         {
@@ -332,20 +384,60 @@
           "weight": 4
         },
         {
+          "mob_set": "dungeons2:classic_large_elemental_bones",
+          "weight": 4
+        },
+        {
+          "mob_set": "dungeons2:classic_small_warband",
+          "weight": 3
+        },
+        {
           "mob_set": "dungeons2:classic_warband",
           "weight": 3
         },
         {
-          "mob_set": "dungeons2:classic_ooze",
+          "mob_set": "dungeons2:classic_large_warband",
           "weight": 3
+        },
+        {
+          "mob_set": "dungeons2:classic_ooze",
+          "weight": 9
+        },
+        {
+          "mob_set": "dungeons2:classic_small_guardians",
+          "weight": 2
         },
         {
           "mob_set": "dungeons2:classic_guardians",
           "weight": 2
         },
         {
+          "mob_set": "dungeons2:classic_large_guardians",
+          "weight": 2
+        },
+        {
+          "mob_set": "dungeons2:classic_small_bones",
+          "weight": 2
+        },
+        {
           "mob_set": "dungeons2:classic_bones",
           "weight": 2
+        },
+        {
+          "mob_set": "dungeons2:classic_large_bones",
+          "weight": 2
+        },
+        // One animated mob or none, at ANY depth: bonus_mobs 0 keeps the band's +N off
+        // these two sets (2026-10-21, Mark).
+        {
+          "mob_set": "dungeons2:classic_animated_armor",
+          "weight": 2,
+          "bonus_mobs": 0
+        },
+        {
+          "mob_set": "dungeons2:classic_animated_weapon",
+          "weight": 1,
+          "bonus_mobs": 0
         }
       ],
       "bonus_mobs": 1,
@@ -359,20 +451,48 @@
           "weight": 6
         },
         {
+          "mob_set": "dungeons2:classic_large_elemental_bones",
+          "weight": 12
+        },
+        {
           "mob_set": "dungeons2:classic_guardians",
           "weight": 4
         },
         {
+          "mob_set": "dungeons2:classic_large_guardians",
+          "weight": 8
+        },
+        {
           "mob_set": "dungeons2:classic_ooze",
-          "weight": 4
+          "weight": 12
         },
         {
           "mob_set": "dungeons2:classic_undead",
           "weight": 3
         },
         {
+          "mob_set": "dungeons2:classic_large_undead",
+          "weight": 6
+        },
+        {
           "mob_set": "dungeons2:classic_warband",
           "weight": 2
+        },
+        {
+          "mob_set": "dungeons2:classic_large_warband",
+          "weight": 4
+        },
+        // One animated mob or none, at ANY depth: bonus_mobs 0 keeps the band's +N off
+        // these two sets (2026-10-21, Mark).
+        {
+          "mob_set": "dungeons2:classic_animated_armor",
+          "weight": 3,
+          "bonus_mobs": 0
+        },
+        {
+          "mob_set": "dungeons2:classic_animated_weapon",
+          "weight": 2,
+          "bonus_mobs": 0
         }
       ],
       "bonus_mobs": 2,
@@ -388,20 +508,36 @@
           "weight": 6
         },
         {
+          "mob_set": "dungeons2:classic_large_elemental_bones",
+          "weight": 12
+        },
+        {
           "mob_set": "dungeons2:classic_guardians",
           "weight": 4
         },
         {
+          "mob_set": "dungeons2:classic_large_guardians",
+          "weight": 8
+        },
+        {
           "mob_set": "dungeons2:classic_ooze",
-          "weight": 4
+          "weight": 12
         },
         {
           "mob_set": "dungeons2:classic_undead",
           "weight": 3
         },
         {
+          "mob_set": "dungeons2:classic_large_undead",
+          "weight": 6
+        },
+        {
           "mob_set": "dungeons2:classic_warband",
           "weight": 2
+        },
+        {
+          "mob_set": "dungeons2:classic_large_warband",
+          "weight": 4
         }
       ],
       "bonus_mobs": 2,

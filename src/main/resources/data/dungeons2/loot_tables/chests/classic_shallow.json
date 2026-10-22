@@ -24,6 +24,16 @@
         { "type": "minecraft:item", "name": "minecraft:bucket", "weight": 4 },
         { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 2 }
       ]
+    },
+    {
+      "//": "LORE (2026-10-22): A Delver's Last Pages, the dungeon's introduction (Gottsch Books, nested in the jar), so it belongs near the TOP: about 1 chest in 5 on the shallow floors, and only to a player who has never held it (the hidden advancement dungeons2:lore/found_delvers_last_pages). A pool of its own, so it never displaces the table's real loot.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [ { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_delvers_last_pages": false } } } } ],
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:delvers_last_pages\"}" } ] },
+        { "type": "minecraft:empty", "weight": 4 }
+      ]
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:writable_book"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.delvers_last_pages.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.delvers_last_pages.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "read": {
+      "trigger": "gottschbooks:book_read",
+      "conditions": {
+        "book": "dungeons2:delvers_last_pages"
+      }
+    }
+  }
+}

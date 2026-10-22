@@ -117,7 +117,7 @@ class StratumWeatheringListTest {
     private static final Set<String> CHUNK_SAFE =
             Set.of("minecraft:rule", AGING_TYPE, SURFACE_AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
                     SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE,
-                    "dungeons2:rubble_scatter");
+                    "dungeons2:rubble_scatter", "dungeons2:pattern_tile");
 
     private static final double EPSILON = 1.0e-6;
 

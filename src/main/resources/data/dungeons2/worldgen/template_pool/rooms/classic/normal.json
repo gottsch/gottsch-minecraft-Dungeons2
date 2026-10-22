@@ -199,6 +199,24 @@
         "projection": "rigid"
       },
       "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/17x21_bridge_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/17x21_bridge_2",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
     }
   ]
 }

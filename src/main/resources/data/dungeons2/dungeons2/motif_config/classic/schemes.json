@@ -60,9 +60,9 @@
       // Hazard pits and grated sumps live here and not on hall: a pit and a platform cannot share a
       // scheme (the pit emits first and the dais is dropped silently), and hall carries platforms.
       "pit": [
-        { "weight": 5, "none": true },
+        { "weight": 15, "none": true },
         {
-          "weight": 2,
+          "weight": 6,
           "min_size": 9,
           "type": "dungeons2:hazard",
           "config": {
@@ -79,7 +79,7 @@
         // floor laid there. Centred, so the lid is where a player crosses the room. One over
         // dripstone, one over iron spikes.
         {
-          "weight": 1,
+          "weight": 3,
           "min_size": 9,
           "type": "dungeons2:false_floor",
           "config": {
@@ -91,18 +91,20 @@
           }
         },
         {
-          "weight": 1,
+          "weight": 3,
           "min_size": 9,
           "type": "dungeons2:false_floor",
           "config": {
             "width": 3,
             "depth": 4,
-            "spike_block": "dungeonblocks:iron_spikes",
+            "spike_block": "dungeonblocks:dark_iron_spikes",
             "spike_properties": { "facing": "up" },
             "spike_probability": 0.6
           }
         },
-        // Grated sumps: dry, flooded, molten. Chamber floors start at index 1, so these never reach
+        // Grated sumps: dry, flooded, molten. Weight 1 each against the x3 weights above (2026-10-21,
+        // Mark: too many grate floors) -- 3 in 31 rooms of 9+, 3 in 18 of 7-8 (was 3 in 12 / 3 in 8).
+        // Chamber floors start at index 1, so these never reach
         // the mud band (floor 0), whose timber shoring and dressing are not meant for iron.
         {
           "weight": 1,
@@ -414,7 +416,22 @@
           "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
-            { "block": "minecraft:cauldron", "weight": 1 }
+            { "block": "minecraft:cauldron", "weight": 1 },
+            { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } },
+            { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false },
+            { "block": "dungeonblocks:wall_ring", "weight": 1 }
+          ]
+        },
+        // Bones where they fell (added 2026-10-22). `bones` is drawn per pile, so no two need match;
+        // waterlogged stated because some dungeonblocks defaults are true.
+        {
+          "weight": 2,
+          "min_count": 1,
+          "max_count": 3,
+          "placement": "free",
+          "variants": [
+            { "block": "dungeonblocks:bone_pile", "weight": 2, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } },
+            { "block": "dungeonblocks:skull_pile", "weight": 1, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } }
           ]
         },
         {
@@ -809,6 +826,13 @@
 
       "floor": [
         { "weight": 2, "none": true },
+        // Flagstones (Dungeon Blocks 3.1.0): a pattern three blocks square laid as one field.
+        // The field writes tile 0 everywhere; dungeons2:pattern_tile, last in the processor list,
+        // lines each one up with the world. Weight 5 (was 2, 2026-10-22: a whole 5-floor dungeon
+        // showed none) -- about 1 hall in 5. Hall only: a chamber's false floor lids itself with
+        // the CRUMBLING twin of its floor, and there is no crumbling flagstone, so the lid would be
+        // stone brick in a flagstone floor -- a trap that announces itself.
+        { "weight": 5, "type": "dungeons2:field", "config": { "block": "dungeonblocks:flagstones", "inset": 1 } },
         {
           "weight": 3,
           "type": "dungeons2:path",
@@ -959,7 +983,20 @@
           "mimic_chance": 0.02,
           "variants": [
             { "block": "minecraft:barrel", "weight": 3, "oriented": false },
-            { "block": "minecraft:cauldron", "weight": 1 }
+            { "block": "minecraft:cauldron", "weight": 1 },
+            { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } },
+            { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false }
+          ]
+        },
+        // A guard post either side of a door (added 2026-10-22): a cheval de frise beside the
+        // approach, never in it. `axis` drawn, so the pair is not always parallel.
+        {
+          "weight": 1,
+          "min_count": 2,
+          "max_count": 2,
+          "placement": "flanking_door",
+          "variants": [
+            { "block": "dungeonblocks:spruce_cheval_de_frise", "oriented": false, "properties": { "axis": ["x", "z"] } }
           ]
         },
         {
@@ -1049,6 +1086,33 @@
       "weight": 3,
       "min_floor_index": 1,
       "min_size": 7,
+
+      // A candle either side of each door, or in the corners (added 2026-10-22).
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 2,
+          "max_count": 4,
+          "placement": "flanking_door",
+          "variants": [
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "true", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "true", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "true" } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_count": 1,
+          "max_count": 4,
+          "placement": "corner",
+          "variants": [
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "true", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "true", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "true" } }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
 
       "pit": [
         {
@@ -1312,6 +1376,33 @@
       "min_floor_index": 1,
       "min_size": 9,
 
+      // Candles in the corners, or the bones of the ones who did not make it into a tomb (added
+      // 2026-10-22). A huge candle is `tall`: both halves, or it stands cut off at the wick.
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 1,
+          "max_count": 3,
+          "placement": "corner",
+          "variants": [
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "true", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "true", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "true" } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_count": 1,
+          "max_count": 3,
+          "placement": "free",
+          "variants": [
+            { "block": "dungeonblocks:bone_pile", "weight": 2, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } },
+            { "block": "dungeonblocks:skull_pile", "weight": 1, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
       "tombs": {
         "min_count": 2,
         "max_count": 4,
@@ -1433,7 +1524,7 @@
           "config": {
             "radius": 2,
             "depth": 4,
-            "spike_block": "dungeonblocks:iron_spikes",
+            "spike_block": "dungeonblocks:dark_iron_spikes",
             "spike_properties": { "facing": "up" },
             "spike_probability": 0.6
           }

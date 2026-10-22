@@ -283,6 +283,19 @@ public final class TestRegistries {
                 new ResourceLocation(Dungeons.MOD_ID, Registration.RUBBLE_SCATTER_PROCESSOR_NAME),
                 rubbleType);
 
+        // The pattern-tile fix-up, LAST in every shipped list (2026-10-22). Same reason, same toll:
+        // without it here every test that decodes a list fails on "could not read".
+        StructureProcessorType<?>[] tileSelf = new StructureProcessorType<?>[1];
+        Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> tileCodec =
+                mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor
+                        .codec(() -> tileSelf[0]);
+        StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> tileType =
+                () -> tileCodec;
+        tileSelf[0] = tileType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.PATTERN_TILE_PROCESSOR_NAME),
+                tileType);
+
         registry.freeze();
     }
 

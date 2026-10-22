@@ -1,0 +1,18 @@
+{
+  "id": "dungeons2:classic_large_warband",
+  "category": "classic",
+  "count": {
+    "min": 4,
+    "max": 6
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:orc",
+      "weight": 10
+    },
+    {
+      "id": "dungeons2:orc_shaman",
+      "weight": 3
+    }
+  ]
+}

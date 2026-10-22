@@ -17,13 +17,17 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.StringRepresentable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
@@ -153,13 +157,48 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
      * at". A {@code minecraft:barrel} defaults to {@code facing: up}, which is a barrel standing
      * open on the floor; orienting it lays it on its side against the wall. Both are things an
      * author might want, and no default can tell which, so the choice is written down.</p>
+     *
+     * <h2>{@code properties}</h2>
+     * <p>Block state values, each a string or a LIST of strings. A list is drawn from once per
+     * placed prop, so a room's skull piles do not all hold the same number of skulls:
+     * {@code "bones": ["1", "2", "3", "4"]}. A single value draws nothing, which keeps every
+     * existing prop's random stream as it was. A value written here wins over {@code oriented}'s
+     * {@code facing}. Name every boolean you care about &mdash; {@code waterlogged} included &mdash;
+     * because some dungeonblocks defaults are {@code true}.</p>
+     *
+     * <h2>{@code tall}</h2>
+     * <p>A two-block prop with a {@code half} of {@code lower}/{@code upper} (a door's shape): the
+     * huge candle, a pike. Written as both halves, the upper one row above with the same
+     * properties. Without it the block would stand as its lower half alone.</p>
      */
-    public record PropVariant(String block, int weight, boolean oriented) {
+    public record PropVariant(String block, int weight, boolean oriented,
+                              Optional<WeaponRackConfig> rack, Map<String, List<String>> properties,
+                              boolean tall) {
 
         /** The oriented form, which is the default. */
         public PropVariant(String block, int weight) {
             this(block, weight, true);
         }
+
+        /** A plain prop: no {@code rack} contents. */
+        public PropVariant(String block, int weight, boolean oriented) {
+            this(block, weight, oriented, Optional.empty());
+        }
+
+        /** A prop with no {@code properties}, standing one block tall. */
+        public PropVariant(String block, int weight, boolean oriented, Optional<WeaponRackConfig> rack) {
+            this(block, weight, oriented, rack, Map.of(), false);
+        }
+
+        /** One value or a list of them; an empty list has nothing to draw, so it is a load error. */
+        private static final Codec<List<String>> VALUES = Codec.either(Codec.STRING, Codec.STRING.listOf())
+                .flatXmap(either -> either.map(
+                                one -> DataResult.success(List.of(one)),
+                                many -> many.isEmpty()
+                                        ? DataResult.<List<String>>error(() -> "an empty list of property values")
+                                        : DataResult.success(List.copyOf(many))),
+                        values -> DataResult.success(values.size() == 1
+                                ? Either.left(values.get(0)) : Either.right(values)));
 
         // Codecs.closed -- see RoomScheme.CODEC.
         public static final Codec<PropVariant> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -167,7 +206,17 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(PropVariant::weight),
                 Codecs.strictOptionalFieldOf(Codec.BOOL, "oriented", true)
-                        .forGetter(PropVariant::oriented)
+                        .forGetter(PropVariant::oriented),
+                // What a weapon rack holds. The one exception to "no loot here": a racked weapon is
+                // on display rather than in a container, so it is part of how the prop LOOKS. See
+                // WeaponRackConfig. Only meaningful on dungeonblocks:weapon_rack; any other block
+                // carrying it would be handed a tag it ignores.
+                Codecs.strictOptionalFieldOf(WeaponRackConfig.CODEC, "rack")
+                        .forGetter(PropVariant::rack),
+                Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, VALUES), "properties", Map.of())
+                        .forGetter(PropVariant::properties),
+                Codecs.strictOptionalFieldOf(Codec.BOOL, "tall", false)
+                        .forGetter(PropVariant::tall)
         ).apply(instance, PropVariant::new)));
     }
 
@@ -216,7 +265,8 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
             if (resolved == null) {
                 resolved = new ArrayList<>(variants.subList(0, i));
             }
-            resolved.add(new PropVariant(block, variant.weight(), variant.oriented()));
+            resolved.add(new PropVariant(block, variant.weight(), variant.oriented(), variant.rack(),
+                    variant.properties(), variant.tall()));
         }
         return resolved == null ? this
                 : new PropConfig(minCount, maxCount, placement, List.copyOf(resolved), mimicChance, gate);

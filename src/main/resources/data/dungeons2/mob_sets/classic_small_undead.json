@@ -1,0 +1,22 @@
+{
+  "id": "dungeons2:classic_small_undead",
+  "category": "classic",
+  "count": {
+    "min": 1,
+    "max": 2
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:grave_zombie",
+      "weight": 10
+    },
+    {
+      "id": "dungeons2:ghoul",
+      "weight": 5
+    },
+    {
+      "id": "dungeons2:bloater",
+      "weight": 3
+    }
+  ]
+}

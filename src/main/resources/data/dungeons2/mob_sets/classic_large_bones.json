@@ -1,0 +1,22 @@
+{
+  "id": "dungeons2:classic_large_bones",
+  "category": "classic",
+  "count": {
+    "min": 3,
+    "max": 5
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:skeleton_warrior",
+      "weight": 10
+    },
+    {
+      "id": "dungeons2:bloody_bones",
+      "weight": 4
+    },
+    {
+      "id": "dungeons2:winged_skeleton",
+      "weight": 3
+    }
+  ]
+}

@@ -235,6 +235,33 @@ class MobSetsByFloorTest {
         MobSetDataRegistry.clear();
     }
 
+    /**
+     * An entry's own bonus_mobs replaces the band's for that set only: the animated armor stays one
+     * mob on a +2 floor while the rest of the band still grows.
+     */
+    @Test
+    void anEntrysBonusReplacesTheBandsForThatSetOnly() {
+        registerDeep(1, 1);
+        ResourceLocation other = new ResourceLocation("dungeons2:other_set");
+        MobSetDataRegistry.register(new MobSetData(other, "classic", 1, 1, List.of(), false));
+        MobSetBand band = new MobSetBand(0, List.of(
+                new SpawnerConfig.MobSetEntry(DEEP, 1, Optional.of(0)),
+                new SpawnerConfig.MobSetEntry(other.toString(), 1)), 2);
+        SpawnerConfig resolved = slot("{\"proximity\":12}").resolvedAgainst(Optional.of(band));
+        assertEquals(new MobRange(1, 1), resolved.mobRange(DEEP_ID), "bonus_mobs 0 holds it at one");
+        assertEquals(new MobRange(3, 3), resolved.mobRange(other), "the band still adds to the rest");
+    }
+
+    @Test
+    void anEntryParsesItsBonusAndRejectsANegativeOne() {
+        assertEquals(Optional.of(0), SpawnerConfig.MobSetEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"mob_set\":\"" + DEEP + "\",\"bonus_mobs\":0}"))
+                .result().orElseThrow().bonusMobs());
+        assertTrue(SpawnerConfig.MobSetEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"mob_set\":\"" + DEEP + "\",\"bonus_mobs\":-1}"))
+                .result().isEmpty());
+    }
+
     /** The whole point: editing a set's count changes what its spawners release. */
     @Test
     void theMobSetsCountIsTheBase() {
