@@ -75,6 +75,17 @@ public class Registration {
 			DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, Dungeons.MOD_ID);
 
 	/*
+	 * loot condition types (vanilla registry) -- referenced by loot table JSONs via "condition".
+	 */
+	public static final DeferredRegister<net.minecraft.world.level.storage.loot.predicates.LootItemConditionType> LOOT_CONDITIONS =
+			DeferredRegister.create(Registries.LOOT_CONDITION_TYPE, Dungeons.MOD_ID);
+
+	/** A boss tier's lore book only in the chests of a dungeon with that tier's boss. */
+	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.level.storage.loot.predicates.LootItemConditionType> BOSS_TIER_CONDITION =
+			LOOT_CONDITIONS.register("boss_tier", () -> new net.minecraft.world.level.storage.loot.predicates.LootItemConditionType(
+					new mod.gottsch.forge.dungeons2.core.loot.BossTierCondition.Serializer()));
+
+	/*
 	 * Both processors live in GottschCore, which deliberately registers no
 	 * StructureProcessorType of its own -- most mods depending on it never touch structure
 	 * processors. Each consuming mod registers its own type under its own namespace and
@@ -248,6 +259,18 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@code BarrelLootProcessor} under this mod's namespace. */
+	public static final String BARREL_LOOT_PROCESSOR_NAME = "barrel_loot";
+
+	/** Stocks an authored template's empty barrel with a loot table. See {@code BarrelLootProcessor}. */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor>> BARREL_LOOT_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(BARREL_LOOT_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor
+								.codec(() -> Registration.BARREL_LOOT_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Registry name of {@link HangingSweepProcessor} under this mod's namespace. */
 	public static final String HANGING_SWEEP_PROCESSOR_NAME = "hanging_sweep";
 
@@ -307,6 +330,7 @@ public class Registration {
 		PARTICLES.register(eventBus);
 		STRUCTURE_TYPES.register(eventBus);
 		STRUCTURE_PROCESSORS.register(eventBus);
+		LOOT_CONDITIONS.register(eventBus);
 
 	}
 }

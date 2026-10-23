@@ -516,4 +516,19 @@ class RoomFurnitureGeneratorTest {
                         "{\"block\":\"dungeonblocks:bone_pile\",\"tall\":true,\"properties\":{\"bones\":[\"1\",\"2\"],\"lit\":\"true\"}}"))
                 .result().isPresent());
     }
+
+    /** A barrel prop with a {@code loot_table} carries the table and a fixed, non-zero seed. */
+    @Test
+    void aLootedBarrelPropCarriesItsTableAndASeed() {
+        PropConfig config = new PropConfig(3, 3, PropPlacement.AGAINST_WALL, List.of(new PropVariant(
+                "minecraft:barrel", 1, false, Optional.empty(), Map.of(), false,
+                Optional.of("dungeons2:barrels/classic"))));
+        List<BlockPlacement> placed = place(room(), config, 11L);
+        assertEquals(3, placed.size());
+        for (BlockPlacement barrel : placed) {
+            BlockEntityData data = barrel.getBlockEntityNbt();
+            assertEquals("dungeons2:barrels/classic", data.getData().get("LootTable"));
+            assertNotEquals("0", data.getData().get("LootTableSeed"));
+        }
+    }
 }

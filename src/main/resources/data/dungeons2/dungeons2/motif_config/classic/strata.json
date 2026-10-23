@@ -165,14 +165,14 @@
             {
               "weight": 3, "min_count": 0, "max_count": 2, "placement": "against_wall",
               "variants": [
-                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
                 { "block": "minecraft:hay_block", "weight": 1 }
               ]
             },
             {
               "weight": 2, "min_count": 0, "max_count": 2, "placement": "corner",
               "variants": [
-                { "block": "minecraft:barrel", "weight": 1, "oriented": false }
+                { "block": "minecraft:barrel", "weight": 1, "oriented": false, "loot_table": "dungeons2:barrels/classic" }
               ]
             },
             { "weight": 3, "none": true }
@@ -557,7 +557,7 @@
             {
               "weight": 3, "min_count": 0, "max_count": 2, "placement": "against_wall",
               "variants": [
-                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
                 { "block": "minecraft:hay_block", "weight": 1 },
                 { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } }
               ]
@@ -565,7 +565,7 @@
             {
               "weight": 2, "min_size": 11, "min_count": 0, "max_count": 3, "placement": "free",
               "variants": [
-                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
                 { "block": "minecraft:hay_block", "weight": 1 }
               ]
             },
@@ -659,14 +659,14 @@
             {
               "weight": 4, "min_count": 1, "max_count": 3, "placement": "against_wall",
               "variants": [
-                { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+                { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
                 { "block": "minecraft:hay_block", "weight": 1 }
               ]
             },
             {
               "weight": 2, "min_count": 0, "max_count": 2, "placement": "corner",
               "variants": [
-                { "block": "minecraft:barrel", "weight": 1, "oriented": false }
+                { "block": "minecraft:barrel", "weight": 1, "oriented": false, "loot_table": "dungeons2:barrels/classic" }
               ]
             },
             { "weight": 2, "none": true }

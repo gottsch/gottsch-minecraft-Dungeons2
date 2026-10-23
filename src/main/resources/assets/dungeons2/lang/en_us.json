@@ -132,5 +132,14 @@
   "advancements.dungeons2.boots_of_shock_absorption.title": "Soft Landing",
   "advancements.dungeons2.boots_of_shock_absorption.description": "Find the Boots of Shock Absorption",
   "advancements.dungeons2.delvers_last_pages.title": "Someone Went Before",
-  "advancements.dungeons2.delvers_last_pages.description": "Read A Delver's Last Pages"
+  "advancements.dungeons2.delvers_last_pages.description": "Read A Delver's Last Pages",
+  "book.dungeons2.sextons_ledger": "The Sexton's Ledger",
+  "advancements.dungeons2.sextons_ledger.title": "Lesser Lords",
+  "advancements.dungeons2.sextons_ledger.description": "Read The Sexton's Ledger",
+  "book.dungeons2.branns_account": "Brann's Account",
+  "advancements.dungeons2.branns_account.title": "Not Pleased",
+  "advancements.dungeons2.branns_account.description": "Read Brann's Account",
+  "book.dungeons2.the_last_delve": "The Last Delve",
+  "advancements.dungeons2.the_last_delve.title": "Deeper Than Meant",
+  "advancements.dungeons2.the_last_delve.description": "Read The Last Delve"
 }

@@ -484,6 +484,17 @@
     },
 
     // =========================================================================================
+    // dungeons2:barrel_loot (added 2026-10-22) -- gives an authored template's barrel the barrel
+    // table: mostly junk or nothing, now and then something good. A barrel whose NBT already names a
+    // LootTable or holds Items is left as authored. The procedural twin is a barrel prop's
+    // `loot_table` in the motif's schemes.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:barrel_loot",
+      "loot_table": "dungeons2:barrels/classic"
+    },
+
+    // =========================================================================================
     // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
     // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
     // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's

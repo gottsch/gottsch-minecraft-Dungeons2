@@ -63,6 +63,8 @@ public class DungeonRoomPiece extends DungeonPiece {
     private MiningHaul miningHaul;
     /** The counter-item chest's loot table (#97), or null for every room but at most one. */
     private String counterLootTable;
+    /** The dungeon's boss tier, on rooms above the boss only; null elsewhere. */
+    private String bossTier;
     /** Where this room's hidden door would go, when it can be a secret room; else null. */
     private SecretDoorway secretDoorway;
     /** The counter-item on this room's pedestal (#97), which forces it secret; else null. */
@@ -102,6 +104,9 @@ public class DungeonRoomPiece extends DungeonPiece {
         }
         if (tag.contains("CounterLootTable")) {
             this.counterLootTable = tag.getString("CounterLootTable");
+        }
+        if (tag.contains("BossTier")) {
+            this.bossTier = tag.getString("BossTier");
         }
         if (tag.contains("SecretDoorway")) {
             this.secretDoorway = PieceNbt.readSecretDoorway(tag.getCompound("SecretDoorway"));
@@ -162,6 +167,25 @@ public class DungeonRoomPiece extends DungeonPiece {
         return this;
     }
 
+    /**
+     * Hands this room the dungeon's boss tier, stamped on its chests and tombs so the tier's lore
+     * book can be found here, above the boss (see {@code BossTierCondition}).
+     */
+    public DungeonRoomPiece withBossTier(String bossTier) {
+        this.bossTier = bossTier;
+        return this;
+    }
+
+    @Override
+    protected String bossTier() {
+        return bossTier;
+    }
+
+    /** The dungeon's boss tier this room stamps on its chests and tombs, or null. */
+    public String getBossTier() {
+        return bossTier;
+    }
+
     /** The counter-item chest's loot table, or null when this is not the room carrying it. */
     public String getCounterLootTable() {
         return counterLootTable;
@@ -219,6 +243,9 @@ public class DungeonRoomPiece extends DungeonPiece {
         // Absent for the same reason: the key's presence is the flag.
         if (counterLootTable != null) {
             tag.putString("CounterLootTable", counterLootTable);
+        }
+        if (bossTier != null) {
+            tag.putString("BossTier", bossTier);
         }
         if (secretDoorway != null) {
             tag.put("SecretDoorway", PieceNbt.writeSecretDoorway(secretDoorway));

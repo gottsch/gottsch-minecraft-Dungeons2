@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import mod.gottsch.forge.dungeons2.Dungeons;
+import mod.gottsch.forge.dungeons2.core.loot.BossTierCondition;
 import mod.gottsch.forge.dungeons2.core.config.TombContents;
 import mod.gottsch.forge.dungeons2.core.data.BlockEntityData;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
@@ -686,6 +687,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
                             entry.getValue());
                 }
             }
+            stampBossTier(tag, data);
             blockEntity.load(tag);
             blockEntity.setChanged();
             scheduleLootRoll(level, pos, data);
@@ -693,6 +695,30 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             Dungeons.LOGGER.warn("Failed to apply block-entity data {} at {}: {}",
                     data, pos, e.getMessage());
         }
+    }
+
+    /**
+     * The dungeon's boss tier, for {@code dungeons2:boss_tier} to read back off this piece's chests
+     * and tombs; null where no lore book should follow it (every piece but a room above the boss).
+     */
+    protected String bossTier() {
+        return null;
+    }
+
+    /**
+     * Stamps {@link #bossTier()} into {@code ForgeData} on a chest or a tomb half. After the SNBT
+     * values, because a tomb's own {@code ForgeData} (its echelon origin) arrives there as a whole
+     * compound and would replace a stamp put in first.
+     */
+    private void stampBossTier(CompoundTag tag, BlockEntityData data) {
+        String tier = bossTier();
+        if (tier == null || !(data.getData().containsKey("LootTable")
+                || RoomTombGenerator.SARCOPHAGUS_ENTITY.equals(data.getType()))) {
+            return;
+        }
+        CompoundTag forgeData = tag.getCompound("ForgeData");
+        forgeData.putString(BossTierCondition.KEY, tier);
+        tag.put("ForgeData", forgeData);
     }
 
     /**

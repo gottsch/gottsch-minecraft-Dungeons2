@@ -22,7 +22,7 @@
           "placement": "against_wall",
           "mimic_chance": 0.02,
           "variants": [
-            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
             { "block": "minecraft:cauldron", "weight": 1 }
           ]
         },
@@ -415,7 +415,7 @@
           "placement": "against_wall",
           "mimic_chance": 0.02,
           "variants": [
-            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
             { "block": "minecraft:cauldron", "weight": 1 },
             { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } },
             { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false },
@@ -441,7 +441,7 @@
           "placement": "corner",
           "mimic_chance": 0.02,
           "variants": [
-            { "block": "minecraft:barrel", "weight": 2, "oriented": false },
+            { "block": "minecraft:barrel", "weight": 2, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
             { "block": "minecraft:hay_block", "weight": 1 }
           ]
         },
@@ -982,7 +982,7 @@
           "placement": "against_wall",
           "mimic_chance": 0.02,
           "variants": [
-            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
             { "block": "minecraft:cauldron", "weight": 1 },
             { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } },
             { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false }
@@ -1007,7 +1007,7 @@
           "placement": "free",
           "mimic_chance": 0.02,
           "variants": [
-            { "block": "minecraft:barrel", "weight": 3, "oriented": false },
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
             { "block": "minecraft:hay_block", "weight": 2 }
           ]
         },

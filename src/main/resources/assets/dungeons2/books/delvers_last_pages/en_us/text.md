@@ -11,9 +11,9 @@ We found the rats first, then the rats found us. Brann lost a boot to one the si
 
 ---
 
-Note for whoever reads this: **watch the floor.** Where the stones are worn and mossy, walk easy. Where one patch is clean and new among the old, walk round it. Nothing down here stays new unless something keeps it new.
+Note for whoever reads this: **watch the floor.** It looks like the rest of the floor. That is the point of it. If a stone shivers under your boot, do not stop to wonder why. You have a breath, perhaps two. Get off it.
 
-Brann did not walk round it. We found him, after. He was not pleased.
+Brann stopped to wonder. We found him, after. He was not pleased.
 
 ---
 

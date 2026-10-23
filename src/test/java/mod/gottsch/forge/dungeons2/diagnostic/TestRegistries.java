@@ -296,6 +296,15 @@ public final class TestRegistries {
                 new ResourceLocation(Dungeons.MOD_ID, Registration.PATTERN_TILE_PROCESSOR_NAME),
                 tileType);
 
+        StructureProcessorType<?>[] barrelSelf = new StructureProcessorType<?>[1];
+        Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> barrelCodec =
+                mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor.codec(() -> barrelSelf[0]);
+        StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> barrelType = () -> barrelCodec;
+        barrelSelf[0] = barrelType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.BARREL_LOOT_PROCESSOR_NAME),
+                barrelType);
+
         registry.freeze();
     }
 

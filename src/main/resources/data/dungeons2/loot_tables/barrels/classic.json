@@ -1,0 +1,51 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:barrels/classic",
+  "pools": [
+    {
+      "//": "Junk, or nothing: a barrel left behind holds what nobody came back for. Half of all rolls are empty and a barrel gets 0-2 of them, so over half of barrels hold nothing here.",
+      "rolls": { "min": 0.0, "max": 2.0 },
+      "entries": [
+        { "type": "minecraft:empty", "weight": 50 },
+        { "type": "minecraft:item", "name": "minecraft:rotten_flesh", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:bone", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:stick", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:wheat", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:poisonous_potato", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:string", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:coal", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:leather", "weight": 3 },
+        { "type": "minecraft:item", "name": "minecraft:flint", "weight": 3 },
+        { "type": "minecraft:item", "name": "minecraft:paper", "weight": 3,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:bread", "weight": 3 }
+      ]
+    },
+    {
+      "//": "Sometimes something good: 1 barrel in 20. The reason a player opens the next one.",
+      "rolls": 1,
+      "conditions": [ { "condition": "minecraft:random_chance", "chance": 0.05 } ],
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:iron_ingot", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 3 },
+        { "type": "minecraft:item", "name": "minecraft:name_tag", "weight": 3 },
+        { "type": "minecraft:item", "name": "minecraft:saddle", "weight": 2 },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 3,
+          "functions": [ { "function": "minecraft:enchant_randomly" } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 2 }
+      ]
+    }
+  ]
+}

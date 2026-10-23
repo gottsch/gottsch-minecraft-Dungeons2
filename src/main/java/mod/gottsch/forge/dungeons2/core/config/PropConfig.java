@@ -22,6 +22,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 
 import java.util.ArrayList;
@@ -47,13 +48,13 @@ import java.util.function.UnaryOperator;
  *       {@link PropPlacement}, and it is the field with no counterpart on any other slot.</li>
  * </ol>
  *
- * <h2>No loot here</h2>
- * <p>Deliberately. A container with a loot table is a chest by another name, and the {@code chests}
- * slot (#48) already owns that whole pipeline &mdash; the table, the depth band, the fixed
- * {@code LootTableSeed}. A scheme that wants a lootable barrel authors {@code minecraft:barrel} as a
- * {@code chests} variant, which works today; this slot is for the barrel that is scenery. Keeping
- * them apart is also what stops a store room quietly becoming a treasure room because someone
- * authored six containers.</p>
+ * <h2>No real loot here</h2>
+ * <p>A container that PROMISES loot is a chest by another name, and the {@code chests} slot (#48)
+ * owns that whole pipeline &mdash; the table, the depth band, the fixed {@code LootTableSeed}.
+ * Keeping them apart is what stops a store room quietly becoming a treasure room because someone
+ * authored six containers. The one allowance is a variant's {@code loot_table}: a barrel worth
+ * opening, rolled from a table that is mostly junk or nothing (2026-10-22, so every barrel in a
+ * dungeon gets a look). A weapon rack's {@code rack} is the other exception.</p>
  *
  * <h2>What a variant may name</h2>
  * <p>Anything that stands on a floor cell. Nothing here can check that a block is a sensible thing
@@ -170,10 +171,17 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
      * <p>A two-block prop with a {@code half} of {@code lower}/{@code upper} (a door's shape): the
      * huge candle, a pike. Written as both halves, the upper one row above with the same
      * properties. Without it the block would stand as its lower half alone.</p>
+     *
+     * <h2>{@code loot_table}</h2>
+     * <p>For a container prop &mdash; a barrel &mdash; that should hold something: the table is written
+     * with a fixed seed when the room generates and rolled when a player opens it, as a chest's is.
+     * Meant for a table that is mostly junk or nothing and only sometimes good; a container that
+     * PROMISES loot is a {@code chests} variant. The block's id must be its block entity's id
+     * ({@code minecraft:barrel} is). Not with {@code rack}: a rack is stocked, not rolled.</p>
      */
     public record PropVariant(String block, int weight, boolean oriented,
                               Optional<WeaponRackConfig> rack, Map<String, List<String>> properties,
-                              boolean tall) {
+                              boolean tall, Optional<String> lootTable) {
 
         /** The oriented form, which is the default. */
         public PropVariant(String block, int weight) {
@@ -190,6 +198,12 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
             this(block, weight, oriented, rack, Map.of(), false);
         }
 
+        /** A prop holding no loot of its own. */
+        public PropVariant(String block, int weight, boolean oriented, Optional<WeaponRackConfig> rack,
+                           Map<String, List<String>> properties, boolean tall) {
+            this(block, weight, oriented, rack, properties, tall, Optional.empty());
+        }
+
         /** One value or a list of them; an empty list has nothing to draw, so it is a load error. */
         private static final Codec<List<String>> VALUES = Codec.either(Codec.STRING, Codec.STRING.listOf())
                 .flatXmap(either -> either.map(
@@ -201,7 +215,7 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
                                 ? Either.left(values.get(0)) : Either.right(values)));
 
         // Codecs.closed -- see RoomScheme.CODEC.
-        public static final Codec<PropVariant> CODEC = Codecs.closed(RecordCodecBuilder.mapCodec(instance -> instance.group(
+        public static final Codec<PropVariant> CODEC = Codecs.closed(RecordCodecBuilder.<PropVariant>mapCodec(instance -> instance.group(
                 Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(PropVariant::block),
                 Codecs.strictOptionalFieldOf(Codec.intRange(1, Integer.MAX_VALUE), "weight", 1)
                         .forGetter(PropVariant::weight),
@@ -216,8 +230,19 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
                 Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, VALUES), "properties", Map.of())
                         .forGetter(PropVariant::properties),
                 Codecs.strictOptionalFieldOf(Codec.BOOL, "tall", false)
-                        .forGetter(PropVariant::tall)
-        ).apply(instance, PropVariant::new)));
+                        .forGetter(PropVariant::tall),
+                Codecs.strictOptionalFieldOf(ResourceLocation.CODEC.<String>xmap(ResourceLocation::toString,
+                                id -> new ResourceLocation(id)), "loot_table")
+                        .forGetter(PropVariant::lootTable)
+        ).apply(instance, PropVariant::new)).flatXmap(PropVariant::validate, PropVariant::validate));
+
+        private static DataResult<PropVariant> validate(PropVariant variant) {
+            if (variant.rack().isPresent() && variant.lootTable().isPresent()) {
+                return DataResult.error(() -> "props variant " + variant.block()
+                        + ": 'rack' and 'loot_table' together -- a rack is stocked, not rolled");
+            }
+            return DataResult.success(variant);
+        }
     }
 
     /**
@@ -266,7 +291,7 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
                 resolved = new ArrayList<>(variants.subList(0, i));
             }
             resolved.add(new PropVariant(block, variant.weight(), variant.oriented(), variant.rack(),
-                    variant.properties(), variant.tall()));
+                    variant.properties(), variant.tall(), variant.lootTable()));
         }
         return resolved == null ? this
                 : new PropConfig(minCount, maxCount, placement, List.copyOf(resolved), mimicChance, gate);

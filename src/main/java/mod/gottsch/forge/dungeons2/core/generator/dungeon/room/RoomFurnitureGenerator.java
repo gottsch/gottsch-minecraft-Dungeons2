@@ -148,6 +148,13 @@ public final class RoomFurnitureGenerator {
             // also what routes the placement round the processor pass to be written last, where
             // hollow()'s air cannot land on it -- the same path a spawner or a tomb takes.
             variant.rack().ifPresent(rack -> placement.setBlockEntityNbt(rackData(rack, random)));
+            // A barrel worth opening: its table and a fixed seed, written as a chest's are and rolled
+            // on open. Carrying data routes it round the processor pass, like the rack.
+            variant.lootTable().ifPresent(table -> placement.setBlockEntityNbt(
+                    new BlockEntityData(variant.block())
+                            .with(RoomChestGenerator.LOOT_TABLE, table)
+                            .with(RoomChestGenerator.LOOT_TABLE_SEED,
+                                    Long.toString(RoomChestGenerator.lootSeed(random)))));
             out.add(placement);
             if (variant.tall()) {
                 // Both halves, or the lower one stands alone (a huge candle cut off at the wick).

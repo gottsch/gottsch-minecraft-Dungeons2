@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
+import mod.gottsch.forge.dungeons2.core.loot.BossTierCondition;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner.CounterChestPlan;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner.MiningChestPlan;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
@@ -192,6 +193,12 @@ public final class DungeonPieceEmitter {
                             && counterChest.floorIndex() == floorIndex
                             && counterChest.roomId() == room.getId()) {
                         piece.withCounterLootTable(counterChest.lootTable());
+                    }
+                    // The boss tier's lore book belongs in the rooms ABOVE the boss, so the boss
+                    // room (TERMINAL) is not stamped; nor is any room of a dungeon with no boss.
+                    if (layout.getBoss() != null && layout.getSize() != null
+                            && room.getRole() == RoomRole.NORMAL) {
+                        piece.withBossTier(BossTierCondition.tierOf(layout.getSize()));
                     }
                     pieces.add(piece);
                 }
