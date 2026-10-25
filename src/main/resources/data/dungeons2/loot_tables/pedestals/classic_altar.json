@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:pedestals/classic_altar",
+  "pools": [
+    {
+      "//": "THE OFFERING on an altar room's pedestal (2026-10-24). One roll: a pedestal shows only the first stack its table gives. What a cult left on its altar -- gold, a gem, a book of its learning, a skull -- worth stopping for but a step below pedestals/secret, which is the prize for finding a hidden room. The rare entries (totem, wither skull, golden apple) keep the odd altar memorable.",
+      "rolls": 1.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 14,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 8.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "//": "a plain book: enchant_with_levels turns it into an enchanted one. Named as enchanted_book it stays BLANK -- that item has no enchantment value, so nothing is drawn.",
+          "type": "minecraft:item", "name": "minecraft:book", "weight": 10,
+          "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 10.0, "max": 20.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:echo_shard", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:ender_eye", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 5 },
+        { "type": "minecraft:item", "name": "minecraft:wither_skeleton_skull", "weight": 2 },
+        { "type": "minecraft:item", "name": "minecraft:totem_of_undying", "weight": 2 }
+      ]
+    }
+  ]
+}

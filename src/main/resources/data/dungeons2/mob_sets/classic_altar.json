@@ -1,0 +1,18 @@
+{
+  "id": "dungeons2:classic_altar",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 3
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:skeleton_warrior",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:wight",
+      "weight": 3
+    }
+  ]
+}
