@@ -22,6 +22,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import mod.gottsch.forge.dungeons2.core.data.DungeonSize;
+import net.minecraft.SharedConstants;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -67,6 +70,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Mark Gottschling on Sep 4, 2026
  */
 class BossTierWiringTest {
+
+    /**
+     * {@code DungeonStructure} reaches vanilla's registries, which refuse to initialise unbootstrapped
+     * -- and fail for the REST OF THE JVM once they have. Without this the class passed only when an
+     * earlier test happened to bootstrap, and Gradle runs a previously failed class first.
+     */
+    @BeforeAll
+    static void bootstrap() {
+        SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
+    }
 
     private static final String POOL_DIR = "/data/dungeons2/worldgen/template_pool/end_rooms/classic";
     private static final String LIST_DIR = "/data/dungeons2/worldgen/processor_list";

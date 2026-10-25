@@ -5,10 +5,16 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import mod.gottsch.forge.dungeonblocks.core.block.PatternTileBlock;
+import mod.gottsch.forge.dungeonblocks.core.block.RitualCircleBlock;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,12 +45,58 @@ class PatternTileProcessorTest {
             "classic_boss_weathering_large.json");
 
     private static PatternTileBlock flagstones;
+    private static RitualCircleBlock circle;
 
+    // The stand-in block is built after bootstrap, so the block registry must be unfrozen first --
+    // the unfreeze() SarcophagusMarkerProcessorTest documents. Without it this passed only when an
+    // earlier test in the same JVM had unfrozen it.
     @BeforeAll
+    @SuppressWarnings("unchecked")
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        ((MappedRegistry<Block>) BuiltInRegistries.BLOCK).unfreeze();
         flagstones = new PatternTileBlock(BlockBehaviour.Properties.of());
+        circle = new RitualCircleBlock(BlockBehaviour.Properties.of());
+    }
+
+    /** A ritual circle is a picture of its own place: the processor keeps the tile its template gave it. */
+    @Test
+    void aRitualCircleKeepsItsAuthoredTile() {
+        BlockState authored = circle.defaultBlockState().setValue(PatternTileBlock.TILE, 7);
+        for (BlockPos pos : List.of(new BlockPos(0, 64, 0), new BlockPos(1, 64, 2), new BlockPos(-145, 63, 63))) {
+            assertSame(authored, PatternTileProcessor.aligned(authored, pos), "at " + pos);
+        }
+    }
+
+    /**
+     * Vanilla turns the processor's output with the block's own rotate/mirror, so the circle's tiles
+     * must follow the template: the north edge's middle (tile 1) turned clockwise is the east edge's
+     * middle (5), the north-west corner (0) the north-east (2); the centre (4) never moves.
+     */
+    @Test
+    void aRitualCircleTurnsWithItsTemplate() {
+        BlockState north = circle.defaultBlockState().setValue(PatternTileBlock.TILE, 1);
+        BlockState corner = circle.defaultBlockState().setValue(PatternTileBlock.TILE, 0);
+        BlockState centre = circle.defaultBlockState().setValue(PatternTileBlock.TILE, 4);
+        assertEquals(5, north.rotate(Rotation.CLOCKWISE_90).getValue(PatternTileBlock.TILE));
+        assertEquals(7, north.rotate(Rotation.CLOCKWISE_180).getValue(PatternTileBlock.TILE));
+        assertEquals(3, north.rotate(Rotation.COUNTERCLOCKWISE_90).getValue(PatternTileBlock.TILE));
+        assertEquals(2, corner.rotate(Rotation.CLOCKWISE_90).getValue(PatternTileBlock.TILE));
+        assertEquals(7, north.mirror(Mirror.LEFT_RIGHT).getValue(PatternTileBlock.TILE));
+        assertEquals(2, corner.mirror(Mirror.FRONT_BACK).getValue(PatternTileBlock.TILE));
+        for (Rotation r : Rotation.values()) {
+            assertEquals(4, centre.rotate(r).getValue(PatternTileBlock.TILE));
+        }
+        // four quarter turns are the identity, for every tile
+        for (int t = 0; t < 9; t++) {
+            BlockState s = circle.defaultBlockState().setValue(PatternTileBlock.TILE, t);
+            BlockState back = s;
+            for (int i = 0; i < 4; i++) {
+                back = back.rotate(Rotation.CLOCKWISE_90);
+            }
+            assertEquals(t, back.getValue(PatternTileBlock.TILE));
+        }
     }
 
     /** Whatever slice the template carried, the result is the world position's, negatives included. */

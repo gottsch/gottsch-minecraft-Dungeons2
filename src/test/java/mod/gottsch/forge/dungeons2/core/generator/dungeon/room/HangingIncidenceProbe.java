@@ -20,6 +20,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.TreeMap;
  * <p>For a room whose option rolled and placed nothing, the refusal is classified from the middle
  * column: what closes its air run, and how long the run is.</p>
  */
+@Tag("probe")
 class HangingIncidenceProbe {
 
     private static final int DUNGEONS = 40;

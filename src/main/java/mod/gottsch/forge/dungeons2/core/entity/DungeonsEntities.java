@@ -563,8 +563,8 @@ public class DungeonsEntities {
     public static final float MINOTAUR_MODEL_SCALE = MINOTAUR_HEIGHT / MINOTAUR_RIG_HEIGHT;
 
     /**
-     * 1.0 wide rather than the ~1.25 the shoulders and horns measure, matching the Orc's convention
-     * for the same reason: a hitbox over 1.0 cannot path a 1-block corridor, and a dungeon brute
+     * 1.0 wide rather than the ~1.25 the shoulders and horns measure: a hitbox over 1.0 cannot path
+     * a 1-block corridor, and a dungeon brute
      * that cannot follow the player down a hallway is not a threat. <strong>The width does not
      * scale with the height</strong> for that reason -- {@link #MINOTAUR_MODEL_SCALE} widens the
      * rig and this stays at 1.0, which widens a gap that already existed rather than creating one.
@@ -625,10 +625,18 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(STONE_COLOSSUS));
 
+    /**
+     * Under 1.0, NOT 1.0. Vanilla paths a mob as {@code floor(width + 1)} cells wide, so a 1.0-wide
+     * orc is planned as 2 wide and stalls short of a 1-cell doorway -- it can neither walk through
+     * nor reach the door to break it (backlog #125). 0.9 paths as 1 wide. Shared by the whole
+     * warband: the Orc, the Orc Warlord and the Orc Shaman.
+     */
+    public static final float ORC_WIDTH = 0.9F;
+
     public static final RegistryObject<EntityType<Orc>> ORC_ENTITY =
             Registration.ENTITIES.register(ORC,
                     () -> EntityType.Builder.of(Orc::new, MobCategory.MONSTER)
-                            .sized(1F, 1.99F)
+                            .sized(ORC_WIDTH, 1.99F)
                             .clientTrackingRange(12)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ORC));
@@ -642,7 +650,7 @@ public class DungeonsEntities {
     public static final RegistryObject<EntityType<OrcWarlord>> ORC_WARLORD_ENTITY =
             Registration.ENTITIES.register(ORC_WARLORD,
                     () -> EntityType.Builder.of(OrcWarlord::new, MobCategory.MONSTER)
-                            .sized(1F, 1.99F)
+                            .sized(ORC_WIDTH, 1.99F)
                             .clientTrackingRange(12)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ORC_WARLORD));
@@ -650,7 +658,7 @@ public class DungeonsEntities {
     public static final RegistryObject<EntityType<OrcShaman>> ORC_SHAMAN_ENTITY =
             Registration.ENTITIES.register(ORC_SHAMAN,
                     () -> EntityType.Builder.of(OrcShaman::new, MobCategory.MONSTER)
-                            .sized(1F, 1.99F)
+                            .sized(ORC_WIDTH, 1.99F)
                             .clientTrackingRange(12)
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ORC_SHAMAN));

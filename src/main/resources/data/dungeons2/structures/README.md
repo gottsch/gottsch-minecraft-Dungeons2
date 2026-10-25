@@ -2076,15 +2076,20 @@ air — a wall, another marker, `structure_void`, or outside the template — le
 with a `[D2-TOMB]` WARN rather than eating whatever is there.
 
 What the tomb holds is the processor entry's, per list, so a template tomb takes the contents and
-the block of the pool that placed it: the classic and deepslate lists build `deepslate_sarcophagus`
-(each list's `sarcophagus_block`; the default is `stone_sarcophagus`), the mud list a spruce coffin
-with the floor-0 dead. One marker may override the contents:
+the block of the pool that placed it: the classic list builds `stone_sarcophagus`, the deepslate
+list `deepslate_sarcophagus` (each list's `sarcophagus_block`), the mud list a spruce coffin with
+the floor-0 dead. One marker may override the contents:
 
 ```
 /data merge block <x> <y> <z> {guardian:"dungeons2:ghoul",lootTable:"dungeons2:chests/classic_tomb_deep",lootWeight:1,guardianWeight:3,emptyWeight:0}
 ```
 
 `floorIndex` + `motif` give the guardian an Enemy Echelons depth, exactly as on the spawner marker.
+
+Instead of one `guardian`, a marker can name a mob set: `{guardianMobSet:"dungeons2:classic_undead"}`.
+The tomb still raises ONE mob, drawn from the set by its weights when the room generates. If both are
+set, `guardian` wins. A set that isn't loaded, or has no mob that can be drawn, falls back to the
+processor list's guardians and logs a `[D2-TOMB]` warning.
 DungeonBlocks makes the one roll between loot, guardian and nothing when the tomb is first opened.
 
 **The marker cannot choose the block.** There is no `sarcophagusBlock` key yet (Backlog #115), so a

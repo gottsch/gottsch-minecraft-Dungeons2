@@ -20,7 +20,7 @@
           "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
         { "type": "minecraft:item", "name": "minecraft:bow", "weight": 8,
           "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] },
-        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 14,
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 14,
           "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 28.0, "max": 35.0 }, "treasure": true } ] }
       ]
     },
@@ -34,7 +34,7 @@
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
         { "type": "minecraft:item", "name": "minecraft:diamond_block", "weight": 10,
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
-        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 8,
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 8,
           "functions": [ { "function": "minecraft:enchant_randomly", "enchantments": [ "minecraft:mending" ] } ] }
       ]
     },

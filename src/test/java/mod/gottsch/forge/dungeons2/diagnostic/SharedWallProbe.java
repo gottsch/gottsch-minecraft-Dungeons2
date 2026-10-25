@@ -11,6 +11,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.maze.DungeonStackPlanner;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * excluded: one cell is not a wall run, and counting it would inflate the rate with contacts that
  * have no visible trim consequence.</p>
  */
+@Tag("probe")
 class SharedWallProbe {
 
     private static final int DUNGEONS = 60;

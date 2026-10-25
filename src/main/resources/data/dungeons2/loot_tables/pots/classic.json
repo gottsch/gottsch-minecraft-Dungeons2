@@ -32,7 +32,7 @@
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
         { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 8,
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
-        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 3,
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 3,
           "functions": [ { "function": "minecraft:enchant_randomly" } ] }
       ]
     }

@@ -13,6 +13,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.GridPillar
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.QuartetPillarPatternProvider;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>That gap is exactly the kind of thing this theme has been caught by before, which is why the
  * reach is measured against real planner output rather than reasoned about.</p>
  */
+@Tag("probe")
 class PillarLayoutReachProbe {
 
     private static final int DUNGEONS = 60;

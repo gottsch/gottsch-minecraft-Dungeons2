@@ -34,6 +34,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -57,6 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Floor 0 is excluded: it is the mud band's, whose schemes are its own and carry no stone
  * cornice by design.</p>
  */
+@Tag("probe")
 class CorniceIncidenceProbe {
 
     private static final int DUNGEONS = 60;

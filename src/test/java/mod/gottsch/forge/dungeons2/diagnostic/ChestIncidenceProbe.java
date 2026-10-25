@@ -37,6 +37,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -84,6 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Diagnostic, not a guard: it pins no rate. Numbers move whenever a scheme's weight or a size
  * gate changes, and pinning them would be a test that fails for the wrong reason.</p>
  */
+@Tag("probe")
 class ChestIncidenceProbe {
 
     private static final int DUNGEONS = 60;

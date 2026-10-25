@@ -33,6 +33,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -51,6 +52,7 @@ import java.util.Optional;
  * <p>Measured on <strong>floor 0</strong>, through {@code forFloor(0)}, because the converted
  * scheme lives on the mud stratum and the projection is what puts it in the list at all.</p>
  */
+@Tag("probe")
 class SlotOptionIncidenceProbe {
 
     private static final ICoords ANCHOR = new Coords(128, 0, 256);

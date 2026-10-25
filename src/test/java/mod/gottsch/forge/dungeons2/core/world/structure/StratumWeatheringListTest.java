@@ -273,6 +273,17 @@ class StratumWeatheringListTest {
                                 || types.indexOf(RUBBLE_TYPE) < types.indexOf(DECORATION_TYPE),
                         file + ": dungeons2:rubble_scatter must precede dungeons2:decoration. Got " + types);
             }
+
+            // The tomb's head cell is authored AIR, which is exactly what the scatter and the
+            // cobwebs fill. Claimed after them, a cobweb in the head refused the tomb (in game,
+            // 2026-10-24), so the sarcophagus must come first.
+            if (types.contains(SARCOPHAGUS_TYPE)) {
+                for (String filler : List.of(RUBBLE_TYPE, DECORATION_TYPE)) {
+                    assertTrue(!types.contains(filler)
+                                    || types.indexOf(SARCOPHAGUS_TYPE) < types.indexOf(filler),
+                            file + ": " + SARCOPHAGUS_TYPE + " must precede " + filler + ". Got " + types);
+                }
+            }
         }
     }
 

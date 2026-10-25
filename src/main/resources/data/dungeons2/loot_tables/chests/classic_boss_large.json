@@ -8,7 +8,7 @@
       "entries": [
         { "type": "minecraft:item", "name": "minecraft:netherite_ingot", "weight": 10 },
         { "type": "minecraft:item", "name": "minecraft:netherite_upgrade_smithing_template", "weight": 10 },
-        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 10,
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 10,
           "functions": [ { "function": "minecraft:enchant_randomly", "enchantments": [ "minecraft:mending" ] } ] },
         { "type": "minecraft:item", "name": "minecraft:enchanted_golden_apple", "weight": 8,
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 4.0 } } ] },
@@ -36,7 +36,7 @@
           "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
         { "type": "minecraft:item", "name": "minecraft:trident", "weight": 4,
           "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] },
-        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 14,
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 14,
           "functions": [ { "function": "minecraft:enchant_with_levels", "levels": { "min": 32.0, "max": 40.0 }, "treasure": true } ] }
       ]
     },

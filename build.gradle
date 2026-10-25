@@ -180,10 +180,36 @@ test {
         //
         // BEFORE PUBLISHING A JAR. Nothing runs it for you.
         excludeTags 'release'
+        // The @Tag("probe") classes measure rather than check: how often a slot fires, how big a
+        // boss room fits, who owns a wall. Tools for re-measuring after a tuning change, and two
+        // thirds of the suite's time, so they run only on purpose:
+        //
+        //   ./gradlew probes
+        excludeTags 'probe'
     }
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
+}
+
+// The @Tag("probe") measurements `test` skips. Each prints its report; run after changing what it
+// measures (a slot's counts, the room size tiers, the planner's spacing).
+//
+//   ./gradlew probes
+//   ./gradlew probes --tests '*SpawnerIncidenceProbe'
+tasks.register('probes', Test) {
+    group = 'verification'
+    description = 'Runs the measurement probes excluded from `test`, printing their reports.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'probe'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+    outputs.upToDateWhen { false }
 }
 
 // The @Tag("release") tests `test` skips -- the ones that assert authoring is FINISHED rather

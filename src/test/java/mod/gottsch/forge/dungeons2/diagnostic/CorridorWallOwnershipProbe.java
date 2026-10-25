@@ -10,6 +10,7 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Prints; asserts only that the sample is meaningful. Run with
  * {@code ./gradlew test --tests "*CorridorWallOwnershipProbe" -i}.</p>
  */
+@Tag("probe")
 class CorridorWallOwnershipProbe {
 
     private static final int DUNGEONS = 40;

@@ -22,6 +22,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * answer decides what is worth building: a feature that needs a 9-wide room cannot reach a
  * population that is mostly 5 and 7 wide, however good it is.</p>
  */
+@Tag("probe")
 class EmptyRoomProbe {
 
 

@@ -15,6 +15,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import java.util.TreeMap;
  * blocks, so those ids resolve to null, the whole course degrades, and the count is a flat zero
  * that says nothing about the game. Everything below is deliberately vanilla-only.</p>
  */
+@Tag("probe")
 class CorridorWallRowVisibilityProbe {
 
     @BeforeAll

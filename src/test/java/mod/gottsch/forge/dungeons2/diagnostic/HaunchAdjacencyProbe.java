@@ -18,6 +18,7 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import java.util.TreeMap;
  * <p>Prints; asserts nothing. Run with
  * {@code ./gradlew test --tests "*HaunchAdjacencyProbe" -i}.</p>
  */
+@Tag("probe")
 class HaunchAdjacencyProbe {
 
     @BeforeAll

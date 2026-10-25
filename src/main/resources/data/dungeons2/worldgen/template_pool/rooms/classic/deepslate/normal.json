@@ -230,6 +230,24 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/11x21_bridge_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/11x21_bridge_3",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/deepslate/13x13_cavern_1",
         "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
@@ -240,6 +258,15 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/deepslate/13x15_1",
+        "processors": "dungeons2:classic_deepslate_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/deepslate/13x17_alter_1",
         "processors": "dungeons2:classic_deepslate_weathering",
         "projection": "rigid"
       },

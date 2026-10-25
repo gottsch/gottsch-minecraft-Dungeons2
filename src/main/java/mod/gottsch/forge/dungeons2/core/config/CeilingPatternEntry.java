@@ -366,8 +366,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      * <p>This is a schema bound, not a fit check. A four-step vault authored on a scheme with no
      * {@code min_height} will draw in a 5-high room and come down to the floor at the perimeter.
      * That was equally true of the two-step one, and the author's tool is the same as it was: the
-     * scheme's {@code min_height} gate. See {@code VaultedHallSchemeTest}, which walks the perimeter
-     * of the shipped scheme rather than trusting the bound.</p>
+     * scheme's {@code min_height} gate.</p>
      *
      * <h2>What is still out of scope</h2>
      * <p>A genuinely curved multi-radius vault. The profile needs distinct rows per radius, and the

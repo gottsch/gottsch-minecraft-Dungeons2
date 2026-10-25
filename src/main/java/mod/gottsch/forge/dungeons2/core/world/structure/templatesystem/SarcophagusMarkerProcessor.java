@@ -25,6 +25,8 @@ import mod.gottsch.forge.dungeons2.core.config.ChestConfig;
 import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.config.TombContents;
 import mod.gottsch.forge.dungeons2.core.event.EchelonSpawnEvent;
+import mod.gottsch.forge.dungeons2.core.util.VanillaSpawnerNbt;
+import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
 import mod.gottsch.forge.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -56,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -76,9 +79,14 @@ import java.util.function.Supplier;
  *
  * <h2>The head cell must be authored air</h2>
  * <p>The head is not the marker's to take unless the template left it empty: a head written over a
- * wall, a column or another marker is a template fault, and the marker is left standing with a WARN
- * &mdash; as a chest marker that resolves to no table is. A head cell outside the template, or under
- * {@code structure_void}, is refused the same way: nothing guarantees what is there.</p>
+ * wall, a column or another marker is a template fault, and the marker is REMOVED with a WARN. A
+ * head cell outside the template, or under {@code structure_void}, is refused the same way: nothing
+ * guarantees what is there. (Until 2026-10-24 the marker was left standing, which put a debug block
+ * in a finished room; Mark asked for it gone.)</p>
+ *
+ * <p>Authored air is also what the decoration processors fill &mdash; cobwebs and rubble scatter,
+ * both in {@code finalizeProcessing} &mdash; so this entry sits BEFORE them in every list. After
+ * them, a cobweb in the head cell refused the tomb.</p>
  *
  * <h2>Rotation</h2>
  * <p>States here are UNROTATED &mdash; vanilla rotates this processor's output (see
@@ -96,7 +104,7 @@ import java.util.function.Supplier;
  * contents and the block of its depth: the deepslate list names {@code deepslate_sarcophagus} and
  * the deep dead. What an entry cannot do is follow the floor inside one pool, for the chest marker's
  * reason &mdash; a processor is handed no {@code floorIndex}. A tomb that resolves to nothing it could
- * release is left as a marker.</p>
+ * release is removed, like a marker with no head.</p>
  *
  * <p>Level-independent: it reads nothing but the block list, so on a procedural piece it belongs in
  * {@code PieceProcessors}' unclipped pass &mdash; where it never fires anyway, since only a template
@@ -166,9 +174,10 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
         if (tomb == null || tomb == Blocks.AIR || !isTombShaped(tombState)) {
             // A pack pointing at a block that is not a two-block tomb gets markers, not half-tombs.
             Dungeons.LOGGER.warn("[D2-TOMB] sarcophagus_block {} is missing or has no part/facing;"
-                    + " leaving every sarcophagus marker in this piece standing", sarcophagusBlock);
-            return super.finalizeProcessing(level, piecePos, originalPos, blocks, processedBlocks,
-                    settings);
+                    + " removing every sarcophagus marker in this piece", sarcophagusBlock);
+            return super.finalizeProcessing(level, piecePos, originalPos, blocks,
+                    processedBlocks.stream().map(info -> info.state().is(marker) ? removed(info) : info)
+                            .toList(), settings);
         }
         List<StructureTemplate.StructureBlockInfo> out = convert(processedBlocks,
                 state -> state.is(marker), tombState, settings.getRotation(), settings.getMirror(),
@@ -206,19 +215,21 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
             if (head == null || !processed.get(head).state().isAir() || claimed.contains(headPos)) {
                 if (owner) {
                     Dungeons.LOGGER.warn("[D2-TOMB] marker at {} needs AIR at {} for the tomb's head"
-                                    + " (found {}); leaving the marker standing",
+                                    + " (found {}); removing the marker",
                             info.pos().toShortString(), headPos.toShortString(),
                             head == null ? "no template cell" : processed.get(head).state());
                 }
+                out.set(i, removed(info));
                 continue;
             }
             TombContents.Drawn drawn = contentsFor(info.nbt(), pool, randomFor(info.pos()));
             if (!drawn.releasesAnything()) {
                 if (owner) {
                     Dungeons.LOGGER.warn("[D2-TOMB] marker at {} resolved to a tomb that can never"
-                            + " hold anything ({}); leaving the marker standing",
+                            + " hold anything ({}); removing the marker",
                             info.pos().toShortString(), drawn.describe());
                 }
+                out.set(i, removed(info));
                 continue;
             }
             CompoundTag origin = origin(info.nbt(), info.pos(), owner);
@@ -242,6 +253,16 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
     }
 
     /**
+     * A marker that could not become a tomb, as the air it stands in. A marker is a template block
+     * with no meaning in the world, so leaving it is a visible fault in a finished room; the WARN
+     * already says which marker and why.
+     */
+    static StructureTemplate.StructureBlockInfo removed(StructureTemplate.StructureBlockInfo marker) {
+        return new StructureTemplate.StructureBlockInfo(marker.pos(), Blocks.AIR.defaultBlockState(),
+                null);
+    }
+
+    /**
      * The marker's own values over the pool's, then drawn. The marker names ONE table and ONE mob,
      * so each becomes a one-entry list and {@link TombContents#over} does the precedence &mdash; the
      * rule is written once, whichever route asks.
@@ -253,19 +274,52 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
 
     /** What the marker itself states, as a {@link TombContents}; {@link TombContents#NONE} if nothing. */
     static TombContents markerContents(@Nullable CompoundTag nbt) {
+        return markerContents(nbt, SarcophagusMarkerProcessor::mobSetGuardians);
+    }
+
+    /**
+     * As above, with the mob-set lookup handed in. {@code guardian} (one entity) wins over
+     * {@code guardianMobSet}; a set becomes the guardian list, weighted as the set weights its mobs,
+     * so {@link TombContents#draw} picks one exactly as it picks from a motif's {@code guardians}.
+     * A set that names no usable mob states nothing, so the pool's guardians apply.
+     */
+    static TombContents markerContents(@Nullable CompoundTag nbt,
+                                       Function<String, List<TombContents.GuardianEntry>> mobSets) {
         if (nbt == null) {
             return TombContents.NONE;
         }
         String table = nbt.getString(SarcophagusMarkerBlockEntity.LOOT_TABLE);
         String guardian = nbt.getString(SarcophagusMarkerBlockEntity.GUARDIAN);
+        String mobSet = nbt.getString(SarcophagusMarkerBlockEntity.GUARDIAN_MOB_SET);
+        Optional<List<TombContents.GuardianEntry>> guardians = !guardian.isEmpty()
+                ? Optional.of(List.of(new TombContents.GuardianEntry(guardian, 1)))
+                : mobSet.isEmpty() ? Optional.empty()
+                : Optional.of(mobSets.apply(mobSet)).filter(list -> !list.isEmpty());
         return new TombContents(
                 table.isEmpty() ? Optional.empty()
                         : Optional.of(List.of(new ChestConfig.LootTableEntry(table, 1))),
-                guardian.isEmpty() ? Optional.empty()
-                        : Optional.of(List.of(new TombContents.GuardianEntry(guardian, 1))),
+                guardians,
                 weight(nbt, SarcophagusMarkerBlockEntity.LOOT_WEIGHT),
                 weight(nbt, SarcophagusMarkerBlockEntity.GUARDIAN_WEIGHT),
                 weight(nbt, SarcophagusMarkerBlockEntity.EMPTY_WEIGHT));
+    }
+
+    /**
+     * A mob set's usable mobs as tomb guardians, each at its set weight; empty, with a WARN, for a
+     * set that is not loaded or names no mob that could be drawn.
+     */
+    static List<TombContents.GuardianEntry> mobSetGuardians(String mobSet) {
+        ResourceLocation id = ResourceLocation.tryParse(mobSet);
+        List<TombContents.GuardianEntry> guardians = id == null ? List.of()
+                : MobSetDataRegistry.get(id).map(VanillaSpawnerNbt::usableMobs).orElseGet(List::of)
+                        .stream()
+                        .map(mob -> new TombContents.GuardianEntry(mob.id().toString(), mob.weight()))
+                        .toList();
+        if (guardians.isEmpty()) {
+            Dungeons.LOGGER.warn("[D2-TOMB] marker guardianMobSet '{}' is not a loaded mob set with a"
+                    + " usable mob; the tomb takes the pool's guardian instead", mobSet);
+        }
+        return guardians;
     }
 
     private static Optional<Integer> weight(CompoundTag nbt, String key) {

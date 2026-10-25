@@ -11,6 +11,7 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import java.util.TreeMap;
  * row and column extents (the planner's rule) and per floor index, since the report was the
  * deepslate band.</p>
  */
+@Tag("probe")
 class CorridorDescentWidthProbe {
 
     private static final int DUNGEONS = 40;

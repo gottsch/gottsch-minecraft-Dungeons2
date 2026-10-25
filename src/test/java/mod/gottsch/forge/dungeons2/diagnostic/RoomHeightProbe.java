@@ -28,6 +28,7 @@ import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.maze.DungeonStackPlanner;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code min_height} thresholds were tuned against it) rather than a contract, and a probe that
  * fails when a tuning number moves is a probe people delete.</p>
  */
+@Tag("probe")
 class RoomHeightProbe {
 
     private static final int DUNGEONS = 400;

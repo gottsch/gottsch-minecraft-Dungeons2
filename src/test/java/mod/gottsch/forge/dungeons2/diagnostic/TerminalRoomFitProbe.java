@@ -86,6 +86,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * that last one is a genuine invariant, since it is what the mod builds today. The rest is
  * calibration.</p>
  */
+@org.junit.jupiter.api.Tag("probe")
 class TerminalRoomFitProbe {
 
     private static final int DUNGEONS = 300;

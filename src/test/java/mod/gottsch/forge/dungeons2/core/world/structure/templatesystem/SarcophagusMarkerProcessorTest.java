@@ -141,21 +141,21 @@ class SarcophagusMarkerProcessorTest {
     }
 
     @Test
-    void aHeadCellThatIsNotAirLeavesTheMarkerStanding() {
+    void aHeadCellThatIsNotAirRemovesTheMarker() {
         List<StructureTemplate.StructureBlockInfo> blocks = piece(Direction.NORTH, null);
         blocks.set(blocks.indexOf(at(blocks, MARKER.north())),
-                info(MARKER.north(), Blocks.STONE_BRICKS.defaultBlockState(), null));
+                info(MARKER.north(), Blocks.COBWEB.defaultBlockState(), null));
         List<StructureTemplate.StructureBlockInfo> out = convert(blocks, Rotation.NONE, POOL);
-        assertTrue(at(out, MARKER).state().is(Blocks.CHEST), "the marker stays, visibly wrong");
-        assertTrue(at(out, MARKER.north()).state().is(Blocks.STONE_BRICKS), "the wall is not eaten");
+        assertTrue(at(out, MARKER).state().isAir(), "no tomb, and no marker left in the room");
+        assertTrue(at(out, MARKER.north()).state().is(Blocks.COBWEB), "the head cell is not eaten");
     }
 
     @Test
-    void aHeadCellOutsideTheTemplateLeavesTheMarkerStanding() {
+    void aHeadCellOutsideTheTemplateRemovesTheMarker() {
         List<StructureTemplate.StructureBlockInfo> blocks = piece(Direction.NORTH, null);
         blocks.removeIf(i -> i.pos().equals(MARKER.north()));
         List<StructureTemplate.StructureBlockInfo> out = convert(blocks, Rotation.NONE, POOL);
-        assertTrue(at(out, MARKER).state().is(Blocks.CHEST));
+        assertTrue(at(out, MARKER).state().isAir());
         assertEquals(blocks.size(), out.size(), "nothing is written outside the template");
     }
 
@@ -188,10 +188,10 @@ class SarcophagusMarkerProcessorTest {
     }
 
     @Test
-    void aTombThatCanHoldNothingLeavesTheMarkerStanding() {
+    void aTombThatCanHoldNothingRemovesTheMarker() {
         List<StructureTemplate.StructureBlockInfo> out = convert(piece(Direction.NORTH, null),
                 Rotation.NONE, TombContents.NONE);
-        assertTrue(at(out, MARKER).state().is(Blocks.CHEST));
+        assertTrue(at(out, MARKER).state().isAir());
     }
 
     @Test
@@ -240,5 +240,43 @@ class SarcophagusMarkerProcessorTest {
         assertTrue(SarcophagusMarkerProcessor.isTombShaped(TOMB));
         assertTrue(SarcophagusMarkerProcessor.isTombShaped(Blocks.RED_BED.defaultBlockState()));
         assertFalse(SarcophagusMarkerProcessor.isTombShaped(Blocks.CHEST.defaultBlockState()));
+    }
+
+    // ---- guardianMobSet (2026-10-23) ------------------------------------------------------------
+
+    private static final List<TombContents.GuardianEntry> UNDEAD = List.of(
+            new TombContents.GuardianEntry("minecraft:zombie", 3),
+            new TombContents.GuardianEntry("minecraft:skeleton", 1));
+
+    private static List<TombContents.GuardianEntry> sets(String id) {
+        return "dungeons2:classic_undead".equals(id) ? UNDEAD : List.of();
+    }
+
+    /** A mob set becomes the guardian list at the set's own weights. */
+    @Test
+    void aGuardianMobSetIsTheGuardianList() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(SarcophagusMarkerBlockEntity.GUARDIAN_MOB_SET, "dungeons2:classic_undead");
+        assertEquals(Optional.of(UNDEAD),
+                SarcophagusMarkerProcessor.markerContents(nbt, SarcophagusMarkerProcessorTest::sets).guardians());
+    }
+
+    /** The single {@code guardian} the existing rooms were authored with still wins. */
+    @Test
+    void aSingleGuardianWinsOverAMobSet() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(SarcophagusMarkerBlockEntity.GUARDIAN, "dungeons2:ghoul");
+        nbt.putString(SarcophagusMarkerBlockEntity.GUARDIAN_MOB_SET, "dungeons2:classic_undead");
+        assertEquals(Optional.of(List.of(new TombContents.GuardianEntry("dungeons2:ghoul", 1))),
+                SarcophagusMarkerProcessor.markerContents(nbt, SarcophagusMarkerProcessorTest::sets).guardians());
+    }
+
+    /** A set that resolves to nothing states nothing, so the pool's guardians apply. */
+    @Test
+    void anUnknownMobSetFallsBackToThePool() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(SarcophagusMarkerBlockEntity.GUARDIAN_MOB_SET, "dungeons2:no_such_set");
+        assertEquals(Optional.empty(),
+                SarcophagusMarkerProcessor.markerContents(nbt, SarcophagusMarkerProcessorTest::sets).guardians());
     }
 }

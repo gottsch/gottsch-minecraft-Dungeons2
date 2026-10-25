@@ -33,6 +33,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -47,6 +48,7 @@ import java.util.Optional;
  * number this codebase has learned not to trust (see {@code SchemeIncidenceTest}: size gates decide
  * which schemes are even eligible before weights are totalled).
  */
+@Tag("probe")
 class BandCeilingIncidenceProbe {
 
     private static final ICoords ANCHOR = new Coords(128, 0, 256);

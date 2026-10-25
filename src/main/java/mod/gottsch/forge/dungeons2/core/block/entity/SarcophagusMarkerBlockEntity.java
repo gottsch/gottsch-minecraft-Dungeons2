@@ -46,6 +46,11 @@ public class SarcophagusMarkerBlockEntity extends BlockEntity {
     public static final String LOOT_TABLE = "lootTable";
     /** The mob this tomb may raise, e.g. {@code minecraft:skeleton}. */
     public static final String GUARDIAN = "guardian";
+    /**
+     * A mob SET this tomb's guardian is drawn from, e.g. {@code dungeons2:classic_undead}: one mob,
+     * by the set's weights, fixed at generation. {@link #GUARDIAN} wins when both are stated.
+     */
+    public static final String GUARDIAN_MOB_SET = "guardianMobSet";
     /** The three weights of DungeonBlocks' one roll; see {@code TombContents}. */
     public static final String LOOT_WEIGHT = "lootWeight";
     public static final String GUARDIAN_WEIGHT = "guardianWeight";
@@ -60,6 +65,7 @@ public class SarcophagusMarkerBlockEntity extends BlockEntity {
 
     private String lootTable;
     private String guardian;
+    private String guardianMobSet;
     private Integer lootWeight;
     private Integer guardianWeight;
     private Integer emptyWeight;
@@ -78,6 +84,9 @@ public class SarcophagusMarkerBlockEntity extends BlockEntity {
         }
         if (tag.contains(GUARDIAN, Tag.TAG_STRING)) {
             this.guardian = tag.getString(GUARDIAN);
+        }
+        if (tag.contains(GUARDIAN_MOB_SET, Tag.TAG_STRING)) {
+            this.guardianMobSet = tag.getString(GUARDIAN_MOB_SET);
         }
         // TAG_ANY_NUMERIC: `lootWeight:3b` and `lootWeight:3` are the same thing to an author.
         if (tag.contains(LOOT_WEIGHT, Tag.TAG_ANY_NUMERIC)) {
@@ -106,6 +115,9 @@ public class SarcophagusMarkerBlockEntity extends BlockEntity {
         }
         if (guardian != null && !guardian.isEmpty()) {
             tag.putString(GUARDIAN, guardian);
+        }
+        if (guardianMobSet != null && !guardianMobSet.isEmpty()) {
+            tag.putString(GUARDIAN_MOB_SET, guardianMobSet);
         }
         if (lootWeight != null) {
             tag.putInt(LOOT_WEIGHT, lootWeight);

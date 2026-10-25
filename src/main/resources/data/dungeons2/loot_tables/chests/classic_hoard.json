@@ -11,7 +11,7 @@
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
         { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 16,
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 3.0, "max": 8.0 } } ] },
-        { "type": "minecraft:item", "name": "minecraft:enchanted_book", "weight": 10,
+        { "type": "minecraft:item", "name": "minecraft:book", "weight": 10,
           "functions": [ { "function": "minecraft:enchant_randomly" } ] },
         { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 10,
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },

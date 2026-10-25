@@ -271,6 +271,24 @@
             { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.3 }
           ]
         },
+        // dungeon_banner and plague_banner (added 2026-10-24): 11x11_sewer_1, 15x21_hall_1 and
+        // medium_boss_1 carry them and they hung pristine. The deepslate list's ladders, verbatim.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:dungeon_banner",
+          "output_blocks": [
+            { "block": "dungeonblocks:grimy_banner", "probability": 0.3 },
+            { "block": "dungeonblocks:tattered_banner", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:plague_banner",
+          "output_blocks": [
+            { "block": "dungeonblocks:tattered_plague_banner", "probability": 0.3 },
+            { "block": "dungeonblocks:bloodstained_plague_banner", "probability": 0.3 }
+          ]
+        },
         // ===================================================================================
         // RULES KEYED ON AN INTERMEDIATE BLOCK (backlog #26)
         //
@@ -1086,6 +1104,47 @@
         }
       ]
     },
+
+    // =========================================================================================
+    // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
+    // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
+    // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
+    // head cell must be authored AIR, or the marker is removed with a [D2-TOMB] WARN.
+    //
+    // BEFORE rubble_scatter and decoration (moved 2026-10-24): both fill authored AIR in
+    // finalizeProcessing, and the head cell is authored air -- a cobweb or a scatter landing in
+    // it refused the tomb and left the marker standing in game. Claiming the head first makes
+    // them go round it.
+    //
+    // The contents are this LIST's, because a processor is handed no floorIndex: pools are per
+    // stratum, so this is how an authored tomb gets its depth's dead.
+    // This list governs floors 1-3, so it is one
+    // blend of base.json's floor-0 and floor-2 bands, leaning deep: two of those three floors
+    // are deep ones.
+    // A marker's own lootTable / guardian / weights win over these, key by key.
+    // DungeonBlocks rolls loot vs guardian vs nothing once, on the first opening.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:sarcophagus",
+      // Stone, matching base.json's $sarcophagus for the same floors (back from the 2026-10-21
+      // deepslate stopgap, 2026-10-24: the deepslate layer's rooms have their own list, which
+      // names deepslate). Reaches only templates in pools that name this list -- procedural
+      // crypts take $sarcophagus from the motif, not this. A per-marker override is #115.
+      "sarcophagus_block": "dungeonblocks:stone_sarcophagus",
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_tomb_deep", "weight": 2 },
+        { "loot_table": "dungeons2:chests/classic_tomb_shallow", "weight": 1 }
+      ],
+      "guardians": [
+        { "entity": "dungeons2:grave_zombie", "weight": 4 },
+        { "entity": "dungeons2:skeleton_warrior", "weight": 4 },
+        { "entity": "dungeons2:ghoul", "weight": 2 },
+        { "entity": "minecraft:zombie", "weight": 2 },
+        { "entity": "minecraft:skeleton", "weight": 2 },
+        { "entity": "dungeons2:bloody_bones", "weight": 1 }
+      ],
+      "loot_weight": 3, "guardian_weight": 3, "empty_weight": 4
+    },
     {
       // Rubble at the foot of a broken wall: where aging above knocked a hole in the masonry
       // (the cell aged into one of `broken`, with masonry still above and below it), a scatter
@@ -1284,42 +1343,6 @@
     {
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
-    },
-
-    // =========================================================================================
-    // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
-    // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
-    // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
-    // head cell must be authored AIR, or the marker is left standing with a [D2-TOMB] WARN.
-    //
-    // Beside the chest entry, before the sweep, for the chest entry's reason.
-    //
-    // The contents are this LIST's, because a processor is handed no floorIndex: pools are per
-    // stratum, so this is how an authored tomb gets its depth's dead.
-    // This list governs floors 1-3, so it is one
-    // blend of base.json's floor-0 and floor-2 bands, leaning deep: two of those three floors
-    // are deep ones.
-    // A marker's own lootTable / guardian / weights win over these, key by key.
-    // DungeonBlocks rolls loot vs guardian vs nothing once, on the first opening.
-    // =========================================================================================
-    {
-      "processor_type": "dungeons2:sarcophagus",
-      // deepslate, not the stone default (Mark, 2026-10-21): it reaches only templates in pools
-      // that name this list -- procedural crypts take $sarcophagus from the motif, not this.
-      "sarcophagus_block": "dungeonblocks:deepslate_sarcophagus",
-      "loot_tables": [
-        { "loot_table": "dungeons2:chests/classic_tomb_deep", "weight": 2 },
-        { "loot_table": "dungeons2:chests/classic_tomb_shallow", "weight": 1 }
-      ],
-      "guardians": [
-        { "entity": "dungeons2:grave_zombie", "weight": 4 },
-        { "entity": "dungeons2:skeleton_warrior", "weight": 4 },
-        { "entity": "dungeons2:ghoul", "weight": 2 },
-        { "entity": "minecraft:zombie", "weight": 2 },
-        { "entity": "minecraft:skeleton", "weight": 2 },
-        { "entity": "dungeons2:bloody_bones", "weight": 1 }
-      ],
-      "loot_weight": 3, "guardian_weight": 3, "empty_weight": 4
     },
 
     // =========================================================================================

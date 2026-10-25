@@ -45,7 +45,9 @@ import java.util.function.Supplier;
  * <p>This processor recomputes {@code tile} from each tile's final world position. One processor
  * covers all three routes: an authored template, a procedural room (which runs the same processor
  * list, see {@code PieceProcessors}), and a tile that weathering swapped in, because it keys on the
- * block CLASS and so reaches any future mossy or cracked twin that carries the same property.</p>
+ * block CLASS and so reaches any future mossy or cracked twin that carries the same property.
+ * A tile whose block says it does not align to the world ({@code alignsToWorld()}, the ritual
+ * circle) is left as authored: it is a picture of its own place, not a floor pattern.</p>
  *
  * <h2>Last in the list, and in {@code finalizeProcessing}</h2>
  * <p>It has to run after anything that can put a tile there or replace one. Vanilla runs every
@@ -99,9 +101,15 @@ public class PatternTileProcessor extends StructureProcessor {
         return out == null ? processed : out;
     }
 
-    /** {@code state} with its {@code tile} set for {@code worldPos}; any other block unchanged. */
+    /**
+     * {@code state} with its {@code tile} set for {@code worldPos}; any other block unchanged, and so
+     * is a pattern tile that does not align to the world (a ritual circle, Dungeon Blocks 3.1.0): it
+     * keeps the tile its template gave it, and its own {@code rotate}/{@code mirror} turn that tile
+     * with the template when vanilla rotates this processor's output.
+     */
     static BlockState aligned(BlockState state, BlockPos worldPos) {
-        if (!(state.getBlock() instanceof PatternTileBlock)
+        if (!(state.getBlock() instanceof PatternTileBlock patternTile)
+                || !patternTile.alignsToWorld()
                 || !state.hasProperty(PatternTileBlock.TILE)) {
             return state;
         }

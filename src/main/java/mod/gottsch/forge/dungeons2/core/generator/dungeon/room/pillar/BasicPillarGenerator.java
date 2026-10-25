@@ -26,6 +26,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomInterior;
 import net.minecraft.util.RandomSource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,14 @@ import java.util.Set;
  * from the row above the floor to the row below the ceiling, {@code floorY + 1} through
  * {@code floorY + height - 2}. That is exactly the span {@code RoomVolumeGenerator} clears as
  * interior air, which is why this runs after it: the column simply wins those cells back.</p>
+ *
+ * <p><strong>Under a rising vault it keeps going.</strong> The vault (#68) opens the ceiling plane
+ * and the rows above it, so a column stopped at {@code floorY + height - 2} ended with its capital
+ * in mid-air under the steps &mdash; cut off, as Mark saw it in game 2026-10-24. The column now
+ * grows up through whatever the ceiling cleared over it and puts its capital under the first block
+ * that is not air. It never replaces that block: a field, a crown or a stair step stays, and the
+ * column carries it. Inside the room's own rows nothing changed &mdash; a column still wins a cell
+ * from a hanging rib or ring there, as it always has.</p>
  *
  * <p>A layout's footprint is therefore a set of <strong>anchors</strong> rather than of columns.
  * Thickness is applied here and not in the provider because it is orthogonal to arrangement: doing
@@ -73,6 +82,8 @@ import java.util.Set;
  */
 public class BasicPillarGenerator implements IDungeonPillarGenerator {
 
+    private static final String AIR = "minecraft:air";
+
     /** Empty means no columns: the interior stays as {@code RoomVolumeGenerator} left it. */
     private List<PillarLayout> layouts = List.of();
 
@@ -102,6 +113,7 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
 
         Set<Coords2D> doorways = RoomInterior.cellsInsideDoorways(room);
         Set<Coords2D> taken = new LinkedHashSet<>();
+        Map<Coords2D, Map<Integer, String>> overhead = overhead(floorY + 1 + interiorRows, out);
 
         for (PillarLayout layout : layouts) {
             int thickness = layout.entry().thickness();
@@ -119,6 +131,12 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
                         c -> doorways.contains(c) || excluded.contains(c))) {
                     continue;
                 }
+                // A thick pier takes the TALLEST opening over any of its cells, so its top is one
+                // level: where a vault step comes down across it, the pier runs into the step
+                // rather than coming out with a stepped top.
+                int rows = interiorRows + shaft.stream()
+                        .mapToInt(c -> openRowsAbove(overhead.get(c), floorY + 1 + interiorRows))
+                        .max().orElse(0);
                 for (Coords2D at : shaft) {
                     // Per CELL, not per column: an earlier layout that already claimed this cell
                     // has drawn it, and emitting again would be a second real write into open air.
@@ -126,7 +144,7 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
                     if (!taken.add(at)) {
                         continue;
                     }
-                    emitColumn(at.getX(), at.getY(), floorY, interiorRows, layout.entry(), out);
+                    emitColumn(at.getX(), at.getY(), floorY, rows, layout.entry(), out);
                 }
             }
         }
@@ -159,6 +177,47 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
             }
         }
         return cells;
+    }
+
+    /**
+     * What the ceiling left in each column from the ceiling plane up, last write winning, keyed by
+     * floor-local cell then world Y.
+     *
+     * <p>Read off the placements rather than asked of the ceiling generator, the way the hangings
+     * read it, because the answer is the ceiling's OUTPUT: a rising vault (#68) clears the plane
+     * cell and the rows above it, and only the emitted air says how far a given column was opened
+     * after the render-time rise clamp and the steps' overlapping excavations have all applied.</p>
+     */
+    private static Map<Coords2D, Map<Integer, String>> overhead(int ceilingY,
+                                                                List<BlockPlacement> out) {
+        Map<Coords2D, Map<Integer, String>> columns = new HashMap<>();
+        for (BlockPlacement p : out) {
+            if (p.getY() >= ceilingY) {
+                columns.computeIfAbsent(new Coords2D(p.getX(), p.getZ()), c -> new HashMap<>())
+                        .put(p.getY(), p.getBlockId());
+            }
+        }
+        return columns;
+    }
+
+    /**
+     * How many rows above the ceiling plane stand open over one cell &mdash; 0 under an ordinary
+     * ceiling, the vault's excavated height under a rising one.
+     *
+     * <p>Counts only cells the ceiling explicitly wrote as AIR, so the column grows through the
+     * opening and stops under the first thing that is not air, whatever it is: a vault field, a
+     * crown, or a stair step all stay, and the capital sits beneath them. A cell nobody wrote is
+     * rock the room never excavated, and stops it too.</p>
+     */
+    private static int openRowsAbove(Map<Integer, String> column, int ceilingY) {
+        if (column == null) {
+            return 0;
+        }
+        int rows = 0;
+        while (AIR.equals(column.get(ceilingY + rows))) {
+            rows++;
+        }
+        return rows;
     }
 
     private void emitColumn(int x, int z, int floorY, int interiorRows, PillarEntry entry,
