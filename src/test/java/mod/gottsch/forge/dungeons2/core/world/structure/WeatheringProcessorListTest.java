@@ -135,13 +135,14 @@ class WeatheringProcessorListTest {
         // dungeons2:aging into it. Decoding the bodies directly validates the same
         // content; processorTypeMatchesTheRegisteredName covers the dispatch key.
         JsonArray processors = readJson().getAsJsonArray("processors");
-        assertEquals(13, processors.size(),
+        assertEquals(14, processors.size(),
                 "Expected the vanilla rule processor, the two aging processors (the main one and"
                         + " the joist-gated timber chain, which is separate because a geometric"
                         + " rule moves its whole processor into finalizeProcessing), decoration,"
                         + " the decoration sweep, the hanging sweep, the #10 spawner marker, the"
                         + " #56 pot marker, the #61 chest marker, the #104 sarcophagus marker, the"
-                        + " rubble scatter and, last, the pattern-tile fix-up");
+                        + " rubble scatter, the barrel and pedestal loot and, last, the pattern-tile"
+                        + " fix-up");
 
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
@@ -163,6 +164,7 @@ class WeatheringProcessorListTest {
                         mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PatternTileProcessor
                                 .codec(NO_TYPE);
                 case "dungeons2:barrel_loot" -> mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor.codec(NO_TYPE);
+                case "dungeons2:pedestal_loot" -> mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
             codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
@@ -270,7 +272,8 @@ class WeatheringProcessorListTest {
         // and no draw, so the clipped pass it lands in cannot change a single answer.
         Set<String> chunkSafe = Set.of("minecraft:rule", AGING_TYPE, DECORATION_TYPE, SPAWNER_TYPE,
                 SWEEP_TYPE, POT_TYPE, SUPPORT_TYPE, CHEST_TYPE, HANGING_TYPE, SARCOPHAGUS_TYPE,
-                "dungeons2:rubble_scatter", "dungeons2:pattern_tile", "dungeons2:barrel_loot");
+                "dungeons2:rubble_scatter", "dungeons2:pattern_tile", "dungeons2:barrel_loot",
+                "dungeons2:pedestal_loot");
         for (var element : readJson().getAsJsonArray("processors")) {
             String type = element.getAsJsonObject().get("processor_type").getAsString();
             assertTrue(chunkSafe.contains(type),

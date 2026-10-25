@@ -231,6 +231,22 @@
             { "block": "minecraft:blackstone", "probability": 0.3 }
           ]
         },
+        // Polished blackstone PILLARS (added 2026-10-24): the plain block's one step above,
+        // polished -> rough, onto the rough pillar twins.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_blackstone_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:blackstone_pillar_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:polished_blackstone_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:blackstone_pillar_base_block", "probability": 0.3 }
+          ]
+        },
         {
           "surface": "any",
           "block": "minecraft:polished_blackstone_brick_stairs",
@@ -480,6 +496,37 @@
             { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
           ]
         },
+        // Stone brick PILLARS (added 2026-10-24): the hall's columns and pilasters aged no stage at
+        // all. The wall's own cracked / mossy rates, onto the pillar blocks' cracked / mossy twins;
+        // the cobblestone stage has no pillar to go to, so it is dropped.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_stone_bricks_pillar_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_stone_bricks_pillar_block", "probability": 0.43 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_stone_bricks_pillar_base_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_stone_bricks_pillar_base_block", "probability": 0.43 }
+          ]
+        },
         {
           "surface": "any",
           "block": "minecraft:stone_bricks",
@@ -663,20 +710,23 @@
         // BANNERS. Cloth is the one material here with a decay ladder authored for it, and the
         // undead rule is classic_weathering's verbatim. dungeon_banner is the generic one and
         // takes the generic pair: soiled, then shredded.
+        // The two outputs are a CHAIN, not alternatives: 0.6 then 0.4 is 60% worn at all (36%
+        // first stage, 24% second). Raised from 0.3/0.3 in every list 2026-10-24 -- 30% worn read
+        // as "1 in 8" in game.
         {
           "surface": "any",
           "block": "dungeonblocks:dungeon_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:grimy_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:tattered_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:grimy_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:tattered_banner", "probability": 0.4 }
           ]
         },
         {
           "surface": "any",
           "block": "dungeonblocks:undead_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.4 }
           ]
         },
         // The faction banners the deepslate templates also carry (2026-10-24: Mark saw them hang
@@ -686,24 +736,24 @@
           "surface": "any",
           "block": "dungeonblocks:orc_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.4 }
           ]
         },
         {
           "surface": "any",
           "block": "dungeonblocks:cult_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_cult_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_cult_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_cult_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_cult_banner", "probability": 0.4 }
           ]
         },
         {
           "surface": "any",
           "block": "dungeonblocks:plague_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_plague_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_plague_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_plague_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_plague_banner", "probability": 0.4 }
           ]
         },
 
@@ -1038,6 +1088,10 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
+    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
+    // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
+    { "processor_type": "dungeons2:pedestal_loot" },
 
     {
       "processor_type": "dungeons2:decoration_sweep",

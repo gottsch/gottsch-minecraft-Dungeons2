@@ -1614,6 +1614,10 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
+    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
+    // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
+    { "processor_type": "dungeons2:pedestal_loot" },
 
     // =========================================================================================
     // dungeons2:decoration_sweep (added 2026-08-26) -- undoes the decoration above in cells a

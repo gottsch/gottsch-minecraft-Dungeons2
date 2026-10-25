@@ -62,6 +62,33 @@
             { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
           ]
         },
+        // Stone brick PILLARS (added 2026-10-24): the hall's columns and pilasters aged no stage at
+        // all. The wall's own cracked / mossy rates, onto the pillar blocks' cracked / mossy twins;
+        // the cobblestone stage has no pillar to go to, so it is dropped.
+        {
+          "block": "dungeonblocks:stone_bricks_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_stone_bricks_pillar_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:stone_bricks_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_stone_bricks_pillar_block", "probability": 0.43 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:stone_bricks_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_stone_bricks_pillar_base_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "block": "dungeonblocks:stone_bricks_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_stone_bricks_pillar_base_block", "probability": 0.43 }
+          ]
+        },
         {
           "block": "minecraft:stone_brick_stairs",
           "output_blocks": [
@@ -138,15 +165,15 @@
         {
           "block": "dungeonblocks:undead_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.4 }
           ]
         },
         {
           "block": "dungeonblocks:orc_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.4 }
           ]
         },
         {
@@ -527,6 +554,10 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
+    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
+    // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
+    { "processor_type": "dungeons2:pedestal_loot" },
     {
       // =====================================================================================
       // The sweep, paired with the decoration pass above -- both or neither, which is what

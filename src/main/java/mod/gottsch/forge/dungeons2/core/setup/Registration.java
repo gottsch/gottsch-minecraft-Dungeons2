@@ -271,6 +271,18 @@ public class Registration {
 				return () -> codec;
 			});
 
+	/** Registry name of {@code PedestalLootProcessor} under this mod's namespace. */
+	public static final String PEDESTAL_LOOT_PROCESSOR_NAME = "pedestal_loot";
+
+	/** Makes a template's pedestal roll its table in a live chunk. See {@code PedestalLootProcessor}. */
+	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor>> PEDESTAL_LOOT_PROCESSOR =
+			STRUCTURE_PROCESSORS.register(PEDESTAL_LOOT_PROCESSOR_NAME, () -> {
+				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> codec =
+						mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor
+								.codec(() -> Registration.PEDESTAL_LOOT_PROCESSOR.get());
+				return () -> codec;
+			});
+
 	/** Registry name of {@link HangingSweepProcessor} under this mod's namespace. */
 	public static final String HANGING_SWEEP_PROCESSOR_NAME = "hanging_sweep";
 

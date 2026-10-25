@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.setup;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.api.DungeonsApi;
 import mod.gottsch.forge.dungeons2.core.config.Config;
+import mod.gottsch.forge.dungeons2.core.entity.DungeonSpawnPlacements;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.dungeons2.core.entity.projectile.AnnihilationRay;
 import mod.gottsch.forge.dungeons2.core.item.DungeonsItems;
@@ -445,7 +446,8 @@ public class CommonSetup {
 		event.register(DungeonsEntities.IRON_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.MAGMA_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		// The two fire-immune skeletons may also stand on lava -- see DungeonSpawnPlacements.
+		event.register(DungeonsEntities.MAGMA_SKELETON_ENTITY.get(), DungeonSpawnPlacements.ON_GROUND_OR_LAVA,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.TAINTED_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
@@ -457,7 +459,7 @@ public class CommonSetup {
 		event.register(DungeonsEntities.ELECTRIC_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.BURNING_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.BURNING_SKELETON_ENTITY.get(), DungeonSpawnPlacements.ON_GROUND_OR_LAVA,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		event.register(DungeonsEntities.BLOODY_BONES_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,

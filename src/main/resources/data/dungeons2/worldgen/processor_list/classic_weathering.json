@@ -254,8 +254,8 @@
           "surface": "any",
           "block": "dungeonblocks:undead_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_undead_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.4 }
           ]
         },
         {
@@ -267,8 +267,8 @@
           "surface": "any",
           "block": "dungeonblocks:orc_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_orc_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_orc_banner", "probability": 0.4 }
           ]
         },
         // dungeon_banner and plague_banner (added 2026-10-24): 11x11_sewer_1, 15x21_hall_1 and
@@ -277,16 +277,16 @@
           "surface": "any",
           "block": "dungeonblocks:dungeon_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:grimy_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:tattered_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:grimy_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:tattered_banner", "probability": 0.4 }
           ]
         },
         {
           "surface": "any",
           "block": "dungeonblocks:plague_banner",
           "output_blocks": [
-            { "block": "dungeonblocks:tattered_plague_banner", "probability": 0.3 },
-            { "block": "dungeonblocks:bloodstained_plague_banner", "probability": 0.3 }
+            { "block": "dungeonblocks:tattered_plague_banner", "probability": 0.6 },
+            { "block": "dungeonblocks:bloodstained_plague_banner", "probability": 0.4 }
           ]
         },
         // ===================================================================================
@@ -430,6 +430,37 @@
               "block": "minecraft:mossy_cobblestone",
               "probability": 0.3
             }
+          ]
+        },
+        // Stone brick PILLARS (added 2026-10-24): the hall's columns and pilasters aged no stage at
+        // all. The wall's own cracked / mossy rates, onto the pillar blocks' cracked / mossy twins;
+        // the cobblestone stage has no pillar to go to, so it is dropped.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_stone_bricks_pillar_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_stone_bricks_pillar_block", "probability": 0.43 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_stone_bricks_pillar_base_block", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:stone_bricks_pillar_base_block",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_stone_bricks_pillar_base_block", "probability": 0.43 }
           ]
         },
         {
@@ -1344,6 +1375,10 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
+    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
+    // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
+    { "processor_type": "dungeons2:pedestal_loot" },
 
     // =========================================================================================
     // dungeons2:decoration_sweep (added 2026-08-26) -- undoes the decoration above in cells a

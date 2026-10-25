@@ -305,6 +305,15 @@ public final class TestRegistries {
                 new ResourceLocation(Dungeons.MOD_ID, Registration.BARREL_LOOT_PROCESSOR_NAME),
                 barrelType);
 
+        StructureProcessorType<?>[] pedestalSelf = new StructureProcessorType<?>[1];
+        Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> pedestalCodec =
+                mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor.codec(() -> pedestalSelf[0]);
+        StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> pedestalType = () -> pedestalCodec;
+        pedestalSelf[0] = pedestalType;
+        Registry.register(registry,
+                new ResourceLocation(Dungeons.MOD_ID, Registration.PEDESTAL_LOOT_PROCESSOR_NAME),
+                pedestalType);
+
         registry.freeze();
     }
 
