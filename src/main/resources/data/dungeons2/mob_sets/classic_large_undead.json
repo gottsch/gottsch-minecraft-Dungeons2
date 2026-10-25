@@ -2,8 +2,8 @@
   "id": "dungeons2:classic_large_undead",
   "category": "classic",
   "count": {
-    "min": 4,
-    "max": 6
+    "min": 3,
+    "max": 5
   },
   "mobs": [
     {

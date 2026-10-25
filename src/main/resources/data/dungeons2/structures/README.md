@@ -2025,9 +2025,10 @@ so a datapack can add or replace them without touching the mod:
 ```
 
 **A mob set's `count` is a number of separate draws** from its `mobs` list, and a depth band may add
-its `bonus_mobs` on top (see the Room Schemes manual, "How many mobs"). So a mob that must appear
-**alone** goes in a set of its own with `count` `1..1`, listed in the band with `"bonus_mobs": 0`.
-`classic_animated_armor` and `classic_animated_weapon` are shipped that way. Mixing it into a bigger
+its `bonus_mobs` on top (see the Room Schemes manual, "How many mobs") -- never to a `1..1` set, and
+not at all with Enemy Echelons installed. So a mob that must appear **alone** goes in a set of its
+own with `count` `1..1`; `classic_animated_armor`, `classic_animated_weapon` and `classic_ooze` are
+shipped that way. Mixing it into a bigger
 set lets one spawn roll it twice. The marker route never gets a band bonus.
 
 > **`minecraft:empty` does not work as a mob entry**, although `ShippedMobSetsTest` lets it through.

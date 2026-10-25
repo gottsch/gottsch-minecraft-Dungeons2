@@ -21,6 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.gottschcore.mobset.MobCount;
 import mod.gottsch.forge.gottschcore.mobset.MobSetData;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
 import net.minecraft.resources.ResourceLocation;
@@ -243,13 +244,25 @@ class MobSetsByFloorTest {
     void anEntrysBonusReplacesTheBandsForThatSetOnly() {
         registerDeep(1, 1);
         ResourceLocation other = new ResourceLocation("dungeons2:other_set");
-        MobSetDataRegistry.register(new MobSetData(other, "classic", 1, 1, List.of(), false));
+        MobSetDataRegistry.register(new MobSetData(other, "classic", 1, 2, List.of(), false));
         MobSetBand band = new MobSetBand(0, List.of(
                 new SpawnerConfig.MobSetEntry(DEEP, 1, Optional.of(0)),
                 new SpawnerConfig.MobSetEntry(other.toString(), 1)), 2);
         SpawnerConfig resolved = slot("{\"proximity\":12}").resolvedAgainst(Optional.of(band));
         assertEquals(new MobRange(1, 1), resolved.mobRange(DEEP_ID), "bonus_mobs 0 holds it at one");
-        assertEquals(new MobRange(3, 3), resolved.mobRange(other), "the band still adds to the rest");
+        assertEquals(new MobRange(3, 4), resolved.mobRange(other), "the band still adds to the rest");
+    }
+
+    /** A set of exactly one takes no bonus at any depth: one ooze stays one ooze on a +2 floor. */
+    @Test
+    void aSingleMobSetTakesNoBonus() {
+        assertEquals(new MobRange(1, 1), MobRange.resolve(Optional.empty(), Optional.empty(),
+                Optional.of(new MobCount(1, 1)), 2));
+        assertEquals(new MobRange(3, 4), MobRange.resolve(Optional.empty(), Optional.empty(),
+                Optional.of(new MobCount(1, 2)), 2), "one-to-two is a crowd, and grows");
+        assertEquals(new MobRange(SpawnerConfig.DEFAULT_MIN_MOBS + 2, SpawnerConfig.DEFAULT_MAX_MOBS + 2),
+                MobRange.resolve(Optional.empty(), Optional.empty(), Optional.empty(), 2),
+                "an unregistered set's default still takes it");
     }
 
     @Test

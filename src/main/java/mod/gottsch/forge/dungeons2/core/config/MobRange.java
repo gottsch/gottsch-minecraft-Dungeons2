@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import mod.gottsch.forge.dungeons2.core.integration.EchelonsIntegration;
 import mod.gottsch.forge.gottschcore.mobset.MobCount;
 import mod.gottsch.forge.gottschcore.mobset.MobSetData;
 import mod.gottsch.forge.gottschcore.mobset.MobSetDataRegistry;
@@ -32,7 +33,8 @@ import java.util.Optional;
  * <ol>
  *   <li>A stated {@code min_mobs}/{@code max_mobs} &mdash; the scheme slot on the procedural route,
  *       the marker's NBT on the authored one. An exact per-spawner override: no bonus.</li>
- *   <li>The drawn mob set's {@code count}, plus the depth band's {@code bonus_mobs}.</li>
+ *   <li>The drawn mob set's {@code count}, plus the depth band's {@code bonus_mobs} &mdash; see
+ *       <em>When the bonus applies</em> below.</li>
  *   <li>{@link SpawnerConfig#DEFAULT_MIN_MOBS}/{@link SpawnerConfig#DEFAULT_MAX_MOBS}, plus the
  *       bonus &mdash; only when the set is not in the registry, which in a real game means a
  *       misnamed set (and no mobs to release anyway) and headlessly means an empty registry.</li>
@@ -47,6 +49,17 @@ import java.util.Optional;
  * <p>Baked, not resolved at trigger time, because the vanilla cage must be handed a
  * {@code SpawnCount} at generation and the two routes must agree. The consequence: a datapack edit
  * to {@code count} reaches newly generated chunks only.</p>
+ *
+ * <h2>When the bonus applies (2026-10-24)</h2>
+ * <p>Not to a set whose {@code count} is exactly 1&ndash;1. Such a set is a deliberate "one of
+ * these" (an ooze, an animated armour, a priest), and a +2 floor made it three. The per-entry
+ * {@code bonus_mobs: 0} the shipped bands give the animated sets did the same job one entry at a
+ * time; this covers every such set, including ones a datapack adds.</p>
+ *
+ * <p>And not at all while Enemy Echelons is installed. The bonus and EE's difficulty both answer
+ * "harder deeper down", and with EE they stacked: more mobs AND stronger ones on the same floor.
+ * So with EE, depth makes mobs harder and the counts stay the sets' own; without it, depth adds
+ * mobs as before. The band data is the same either way.</p>
  *
  * <p>{@code min} may be 0 (a set whose {@code count.min} is 0); {@code max} is clamped up to
  * {@code min}. The vanilla cage clamps its own {@code SpawnCount} to at least 1.</p>
@@ -63,7 +76,7 @@ public record MobRange(int min, int max) {
                                    ResourceLocation mobSet, int bonus) {
         Optional<MobCount> count = mobSet == null ? Optional.empty()
                 : MobSetDataRegistry.get(mobSet).map(MobSetData::getCount);
-        return resolve(statedMin, statedMax, count, bonus);
+        return resolve(statedMin, statedMax, count, EchelonsIntegration.isLoaded() ? 0 : bonus);
     }
 
     /** The registry-free form, so the precedence is testable headlessly. */
@@ -71,6 +84,7 @@ public record MobRange(int min, int max) {
                                    Optional<MobCount> setCount, int bonus) {
         int baseMin = setCount.map(MobCount::getMin).orElse(SpawnerConfig.DEFAULT_MIN_MOBS);
         int baseMax = setCount.map(MobCount::getMax).orElse(SpawnerConfig.DEFAULT_MAX_MOBS);
-        return new MobRange(statedMin.orElse(baseMin + bonus), statedMax.orElse(baseMax + bonus));
+        int applied = baseMin == 1 && baseMax == 1 && setCount.isPresent() ? 0 : bonus;
+        return new MobRange(statedMin.orElse(baseMin + applied), statedMax.orElse(baseMax + applied));
     }
 }
