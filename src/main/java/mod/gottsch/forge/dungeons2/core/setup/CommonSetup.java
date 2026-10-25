@@ -37,6 +37,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
+import mod.gottsch.forge.gmm.core.entity.monster.Leech;
 import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Beholder;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.DeathTyrant;
@@ -390,6 +391,9 @@ public class CommonSetup {
 		event.put(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShaman.createAttributes().build());
 		event.put(DungeonsEntities.ORC_WARLORD_ENTITY.get(), OrcWarlord.createAttributes().build());
 		event.put(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), AlligatorGar.createAttributes().build());
+		// One class, two sizes -- but GMM ships the giant's attributes itself, unlike the giant rat's.
+		event.put(DungeonsEntities.LEECH_ENTITY.get(), Leech.createAttributes().build());
+		event.put(DungeonsEntities.GIANT_LEECH_ENTITY.get(), Leech.createGiantAttributes().build());
 		// prepareAttributes, not createAttributes -- Beholderkin's own naming (Mob.createMobAttributes
 		// rather than Monster.createMonsterAttributes underneath, since it is not a PathfinderMob).
 		event.put(DungeonsEntities.BEHOLDER_ENTITY.get(), Beholder.prepareAttributes().build());
@@ -554,6 +558,13 @@ public class CommonSetup {
 		// OCEAN_FLOOR rather than MOTION_BLOCKING_NO_LEAVES -- the latter heightmap stops at the water
 		// SURFACE, so a gar placed against it would be asked to stand on top of the pool.
 		event.register(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), SpawnPlacements.Type.IN_WATER,
+				Heightmap.Types.OCEAN_FLOOR, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		// The leeches are water mobs too, for the same reasons.
+		event.register(DungeonsEntities.LEECH_ENTITY.get(), SpawnPlacements.Type.IN_WATER,
+				Heightmap.Types.OCEAN_FLOOR, Mob::checkMobSpawnRules,
+				SpawnPlacementRegisterEvent.Operation.OR);
+		event.register(DungeonsEntities.GIANT_LEECH_ENTITY.get(), SpawnPlacements.Type.IN_WATER,
 				Heightmap.Types.OCEAN_FLOOR, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 	}

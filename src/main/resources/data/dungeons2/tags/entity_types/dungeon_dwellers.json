@@ -49,6 +49,10 @@
       "required": false
     },
     {
+      "id": "dungeons2:giant_leech",
+      "required": false
+    },
+    {
       "id": "dungeons2:giant_rat",
       "required": false
     },
@@ -62,6 +66,10 @@
     },
     {
       "id": "dungeons2:iron_skeleton",
+      "required": false
+    },
+    {
+      "id": "dungeons2:leech",
       "required": false
     },
     {

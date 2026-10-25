@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.entity;
 
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
 import mod.gottsch.forge.gmm.core.entity.monster.AlligatorGar;
+import mod.gottsch.forge.gmm.core.entity.monster.Leech;
 import mod.gottsch.forge.gmm.core.entity.monster.BlackPudding;
 import mod.gottsch.forge.gmm.core.entity.monster.beholderkin.Beholder;
 import mod.gottsch.forge.gmm.core.entity.monster.mimic.BarrelMimic;
@@ -682,6 +683,34 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .setTrackingRange(20)
                             .build(ALLIGATOR_GAR));
+
+    public static final String LEECH = "leech";
+    public static final String GIANT_LEECH = "giant_leech";
+
+    /**
+     * The second water mob (2026-10-25): it attaches to a player who wades in and stops them healing
+     * until it comes off. Registered like the gar ({@code IN_WATER} in {@code CommonSetup}).
+     *
+     * <p>Two tiers of one class, the rat / giant rat way. {@code Leech.tier()} reads the tier back off
+     * the registered height, so {@code HEIGHT * 2} is not cosmetic here: it is what makes the giant
+     * ignore armour, drain and slow. The width stays {@code Leech.WIDTH}; the swimming box is GMM's.</p>
+     */
+    public static final RegistryObject<EntityType<Leech>> LEECH_ENTITY =
+            Registration.ENTITIES.register(LEECH,
+                    () -> EntityType.Builder.of(Leech::new, MobCategory.MONSTER)
+                            .sized(Leech.WIDTH, Leech.HEIGHT)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(LEECH));
+
+    /** Rendered at 2x in {@code ClientSetup} -- keep that in step with this {@code sized(...)}. */
+    public static final RegistryObject<EntityType<Leech>> GIANT_LEECH_ENTITY =
+            Registration.ENTITIES.register(GIANT_LEECH,
+                    () -> EntityType.Builder.of(Leech::new, MobCategory.MONSTER)
+                            .sized(Leech.WIDTH, Leech.HEIGHT * 2)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GIANT_LEECH));
 
     /**
      * The projectiles and spells the roster's mobs throw &mdash; and the reason they have to be here.

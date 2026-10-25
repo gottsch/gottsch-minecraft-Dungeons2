@@ -258,6 +258,16 @@ public class DungeonsItems {
             () -> new ForgeSpawnEggItem(DungeonsEntities.ALLIGATOR_GAR_ENTITY, 0x4a5c3a, 0x8f9f6b,
                     new Item.Properties()));
 
+    public static final RegistryObject<Item> LEECH_EGG = Registration.ITEMS.register(
+            DungeonsEntities.LEECH + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.LEECH_ENTITY, 0x3b2f2a, 0x6e1a1a,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> GIANT_LEECH_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GIANT_LEECH + "_egg",
+            () -> new ForgeSpawnEggItem(DungeonsEntities.GIANT_LEECH_ENTITY, 0x241c19, 0x8a1c1c,
+                    new Item.Properties()));
+
     /**
      * The two projectiles that render as a spinning <em>item</em> rather than a model, and the
      * items they render as.

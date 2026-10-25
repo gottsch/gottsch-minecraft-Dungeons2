@@ -9,6 +9,14 @@
     {
       "id": "dungeons2:alligator_gar",
       "weight": 10
+    },
+    {
+      "id": "dungeons2:leech",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:giant_leech",
+      "weight": 2
     }
   ]
 }

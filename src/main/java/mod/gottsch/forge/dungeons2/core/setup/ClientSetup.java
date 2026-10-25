@@ -26,7 +26,9 @@ import mod.gottsch.forge.gmm.core.client.model.BarrelMimicModel;
 import mod.gottsch.forge.gmm.core.client.model.VanillaChestMimicModel;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.BarrelMimicRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.VanillaChestMimicRenderer;
+import mod.gottsch.forge.gmm.core.GMM;
 import mod.gottsch.forge.gmm.core.client.model.AlligatorGarModel;
+import mod.gottsch.forge.gmm.core.client.model.LeechModel;
 import mod.gottsch.forge.gmm.core.client.model.BlackPuddingModel;
 import mod.gottsch.forge.gmm.core.client.model.BloaterArmModel;
 import mod.gottsch.forge.gmm.core.client.model.BeholderModel;
@@ -52,6 +54,7 @@ import mod.gottsch.forge.gmm.core.client.model.TaintedSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.model.WingedSkeletonModel;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AcidSkeletonRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AlligatorGarRenderer;
+import mod.gottsch.forge.gmm.core.client.renderer.entity.LeechRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AnimatedArmorRenderer;
 import mod.gottsch.forge.gmm.core.client.model.AnimatedWeaponModel;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.AnimatedWeaponRenderer;
@@ -91,6 +94,7 @@ import mod.gottsch.forge.gmm.core.client.renderer.entity.TaintedSkeletonRenderer
 import mod.gottsch.forge.gmm.core.client.renderer.entity.WightRenderer;
 import mod.gottsch.forge.gmm.core.client.renderer.entity.WingedSkeletonRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.resources.ResourceLocation;
 import mod.gottsch.forge.gmm.core.client.model.RatModel;
 import mod.gottsch.forge.gmm.core.client.model.ShriekerModel;
 import mod.gottsch.forge.gmm.core.client.model.VioletFungusModel;
@@ -180,6 +184,7 @@ public class ClientSetup {
         event.registerLayerDefinition(OrcModel.LAYER_LOCATION, OrcModel::createBodyLayer);
         event.registerLayerDefinition(OrcShamanModel.LAYER_LOCATION, OrcShamanModel::createBodyLayer);
         event.registerLayerDefinition(AlligatorGarModel.LAYER_LOCATION, AlligatorGarModel::createBodyLayer);
+        event.registerLayerDefinition(LeechModel.LAYER_LOCATION, LeechModel::createBodyLayer);
 
         // The projectile rigs. BoneShardModel is a set of variants -- a shard is a randomly
         // chosen bone shape -- so every one of its layers has to be registered, not just the first.
@@ -243,6 +248,11 @@ public class ClientSetup {
         // out -- reusing the orc's layer removes that failure mode entirely.
         event.registerEntityRenderer(DungeonsEntities.ORC_WARLORD_ENTITY.get(), OrcWarlordRenderer::new);
         event.registerEntityRenderer(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), AlligatorGarRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.LEECH_ENTITY.get(), LeechRenderer::new);
+        // GMM's darker giant texture, at 2x -- in step with GIANT_LEECH_ENTITY's sized(...), as the giant rat.
+        event.registerEntityRenderer(DungeonsEntities.GIANT_LEECH_ENTITY.get(),
+                context -> new LeechRenderer<>(context,
+                        new ResourceLocation(GMM.MOD_ID, "textures/entity/giant_leech.png"), 2.0F));
 
         // The projectiles. The rock and the withering gaze are rendered as a spinning ITEM --
         // GMM's own choice, and the reason each has an `itemSupplier` hook; the second argument
