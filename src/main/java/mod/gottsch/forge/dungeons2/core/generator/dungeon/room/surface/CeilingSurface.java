@@ -187,4 +187,65 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
             }
         }
     }
+
+    /**
+     * Walls in the hollows a set of raised layers carved (#68), so they read as masonry from every
+     * side rather than opening onto whatever is behind them.
+     *
+     * <p>{@link #emitRaised} clears the column under each raised block and writes the block, and
+     * nothing else. A vault with {@code step_height} 1 is closed by construction &mdash; every
+     * hollow is one row and the step beside it is that row. Taller steps, and an oculus's shaft,
+     * leave the SIDES of a hollow unwritten. In rock that is invisible; in a cavern it is a hole
+     * through the ceiling into the cave (seen in game 2026-10-26). So every cell above the plane
+     * that faces a carved one, and that no raised layer wrote, gets {@code backing}.</p>
+     *
+     * <p>Layers are replayed in emission order with the same later-wins rule, so what counts as
+     * carved is what is still air when the last layer has been written. The plane row itself is
+     * skipped: it is the ceiling, already whole.</p>
+     *
+     * @param layers each raised layer's plan and the rise it was emitted at, in emission order
+     */
+    public void backRaisedHollows(List<java.util.Map.Entry<SurfacePlan, Integer>> layers, BlockState backing,
+                                  List<BlockPlacement> out) {
+        // (u, row, v) -> true if carved (air), false if a raised block
+        java.util.Map<Long, Boolean> cells = new java.util.HashMap<>();
+        for (java.util.Map.Entry<SurfacePlan, Integer> layer : layers) {
+            int rows = Math.max(0, layer.getValue());
+            for (int u = 0; u < uSize; u++) {
+                for (int v = 0; v < vSize; v++) {
+                    if (layer.getKey().get(u, v) == null) {
+                        continue;
+                    }
+                    for (int row = 0; row < rows; row++) {
+                        cells.put(key(u, row, v), true);
+                    }
+                    cells.put(key(u, rows, v), false);
+                }
+            }
+        }
+        java.util.Set<Long> backed = new java.util.HashSet<>();
+        int[][] sides = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (java.util.Map.Entry<Long, Boolean> cell : cells.entrySet()) {
+            if (!cell.getValue()) {
+                continue;
+            }
+            long k = cell.getKey();
+            int u = (int) (k >> 42) - (1 << 20);
+            int row = (int) ((k >> 21) & 0x1FFFFF) - (1 << 20);
+            int v = (int) (k & 0x1FFFFF) - (1 << 20);
+            if (row <= 0) {
+                continue;
+            }
+            for (int[] side : sides) {
+                long n = key(u + side[0], row, v + side[1]);
+                if (!cells.containsKey(n) && backed.add(n)) {
+                    out.add(BlockStateCodec.placement(xAt(u + side[0]), ceilingY + row, zAt(v + side[1]), backing));
+                }
+            }
+        }
+    }
+
+    private static long key(int u, int row, int v) {
+        return ((long) (u + (1 << 20)) << 42) | ((long) (row + (1 << 20)) << 21) | (v + (1 << 20));
+    }
 }

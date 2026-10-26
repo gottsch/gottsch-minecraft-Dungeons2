@@ -112,11 +112,13 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
         if (ceilingPattern instanceof IProjectingPatternProvider projecting) {
             Map<Integer, SurfacePlan> projected = projecting.projectedPlans(
                     surface.uSize(), surface.vSize(), surface.facing(), random);
+            List<Map.Entry<SurfacePlan, Integer>> raised = new java.util.ArrayList<>();
             for (Map.Entry<Integer, SurfacePlan> layer : projected.entrySet()) {
                 int depth = layer.getKey();
                 if (depth >= 0) {
                     surface.emitProjected(layer.getValue(), depth, out);
                 } else {
+                    raised.add(Map.entry(layer.getValue(), Math.min(-depth, riseBudget)));
                     // #68: a NEGATIVE depth rises above the plane instead of hanging below it, and
                     // unlike a hanging rib it has to excavate on the way -- see
                     // CeilingSurface#emitRaised. Clamped to what this floor has left above the room
@@ -124,6 +126,9 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
                     surface.emitRaised(layer.getValue(), Math.min(-depth, riseBudget), out);
                 }
             }
+            // A raised hollow taller than one row has open sides; wall them so a vault or oculus
+            // over a cavern does not open into it.
+            surface.backRaisedHollows(raised, ceilingState, out);
         }
     }
 }

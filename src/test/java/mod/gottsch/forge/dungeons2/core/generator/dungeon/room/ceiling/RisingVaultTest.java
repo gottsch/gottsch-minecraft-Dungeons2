@@ -452,4 +452,32 @@ class RisingVaultTest {
         assertEquals(VAULT_BLOCK, at(world, 15, ceilingY + 2, 25), "the far corner of the field is missing");
         assertEquals(null, at(world, 12, ceilingY + 2, 22), "the field leaked outside its inset");
     }
+
+    /**
+     * A vault with steps two rows tall carves hollows whose sides nothing wrote. In rock that is
+     * invisible; over a cavern it opened the ceiling into the cave (2026-10-26). Every carved cell
+     * above the plane must now face something written on all four sides.
+     */
+    @Test
+    void tallStepsAreWalledNotOpenToWhateverIsBehind() {
+        Map<String, String> world = settle(render(10, rising(1, 2), rising(2, 4)));
+        int planeY = FLOOR_Y + 5;
+        int carved = 0;
+        List<String> open = new ArrayList<>();
+        for (Map.Entry<String, String> cell : world.entrySet()) {
+            String[] c = cell.getKey().split(",");
+            int x = Integer.parseInt(c[0]), y = Integer.parseInt(c[1]), z = Integer.parseInt(c[2]);
+            if (y <= planeY || !AIR.equals(cell.getValue())) {
+                continue;
+            }
+            carved++;
+            for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                if (at(world, x + d[0], y, z + d[1]) == null) {
+                    open.add((x + d[0]) + "," + y + "," + (z + d[1]));
+                }
+            }
+        }
+        assertTrue(carved > 0, "expected the vault to carve above the plane");
+        assertTrue(open.isEmpty(), "carved cells open onto unwritten space at " + open);
+    }
 }

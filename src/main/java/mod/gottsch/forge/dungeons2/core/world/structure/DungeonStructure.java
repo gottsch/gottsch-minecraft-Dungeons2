@@ -210,7 +210,15 @@ public class DungeonStructure extends Structure {
         return new ResourceLocation(Dungeons.MOD_ID, "transitions/" + motifValue + "/shaft_bottom");
     }
     private static final int TRANSITION_MAX_DEPTH = 6;
-    private static final int TRANSITION_MAX_DISTANCE = 32;
+    /**
+     * Vanilla's {@code maxDistanceFromCenter} for a transition assembly. It bounds the chain
+     * VERTICALLY as well as horizontally: every piece must fit within start Y +/- this, and a piece
+     * that does not is silently dropped, leaving the chain without its top. 32 lost the sewer pit's
+     * top piece (2026-10-26): its sump puts 5 rows under the doors, plus the 22 span, plus an 8-tall
+     * top = 35 rows. 64 covers a 22 pitch, the 5-row sink budget and a full-floor-height top with room
+     * to spare. {@code TransitionSpanTest.everyChainFitsTheAssemblyBounds} checks the shipped chains.
+     */
+    public static final int TRANSITION_MAX_DISTANCE = 64;
 
     /**
      * Phase 8: jigsaw-assembled interior ("NORMAL") room prefabs.
@@ -876,6 +884,12 @@ public class DungeonStructure extends Structure {
             if (tgeo == null) {
                 return Optional.empty();
             }
+            // The chain's LOWEST door row -- not the entry piece's local Y 0 -- is what sits on the
+            // lower floor's walking plane, as for prefab rooms: a pit or sump authored below the
+            // doors spends the floor's sinkOffset budget. A chain whose doors are on its local Y 0
+            // (every one before the sewer pit) is not moved.
+            seatOnWalkingPlane(assembled, tgeo.bottomPlaneY(), worldY, generationConfig.sinkOffset(),
+                    "transition");
             if (commit) {
                 // A measuring probe (commit == false) is read for its geometry and
                 // discarded -- staging it would put a second copy of the chain in
@@ -1473,7 +1487,8 @@ public class DungeonStructure extends Structure {
         }
 
         Rectangle2D worldFootprint = new Rectangle2D(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
-        return new TransitionGeometry(worldFootprint, topDoors, bottomDoors, topPremade, bottomPremade);
+        return new TransitionGeometry(worldFootprint, topDoors, bottomDoors, topPremade, bottomPremade,
+                minMarkerY);
     }
 
     /**
@@ -1661,7 +1676,7 @@ public class DungeonStructure extends Structure {
     /** World geometry read off an assembled transition's door/connector jigsaw markers. */
     private record TransitionGeometry(Rectangle2D worldFootprint, List<Coords2D> topDoorWorldCells,
                                       List<Coords2D> bottomDoorWorldCells, List<Coords2D> topPremadeWorldCells,
-                                      List<Coords2D> bottomPremadeWorldCells) {
+                                      List<Coords2D> bottomPremadeWorldCells, int bottomPlaneY) {
     }
 
     /**
@@ -1803,7 +1818,18 @@ public class DungeonStructure extends Structure {
      */
     private static void seatRoomOnWalkingPlane(List<StructurePiece> pieces, RoomGeometry geometry,
                                                int walkingPlaneY, int sinkOffset) {
-        int lift = geometry.doorPlaneY() - walkingPlaneY;
+        seatOnWalkingPlane(pieces, geometry.doorPlaneY(), walkingPlaneY, sinkOffset, "room");
+    }
+
+    /**
+     * Drops an assembly so its lowest door-marker row ({@code doorPlaneY}) lands on
+     * {@code walkingPlaneY}. Shared by prefab rooms and transitions; see {@link #seatRoomOnWalkingPlane}.
+     *
+     * @param kind "room" or "transition", for the log
+     */
+    private static void seatOnWalkingPlane(List<StructurePiece> pieces, int doorPlaneY,
+                                           int walkingPlaneY, int sinkOffset, String kind) {
+        int lift = doorPlaneY - walkingPlaneY;
         if (lift == 0) {
             return;
         }
@@ -1816,11 +1842,11 @@ public class DungeonStructure extends Structure {
             // floor owns sinkOffset blocks under its walking plane, and rows past that are cut out
             // of gapBetweenFloors and eventually out of the ceiling of the floor beneath.
             Dungeons.LOGGER.warn(
-                    "[D2-PREFAB] room template {} carries {} rows below its door markers but the "
+                    "[D2-PREFAB] {} template {} carries {} rows below its door markers but the "
                             + "floor's sink_offset budget is only {} -- the bottom {} will be dug out "
                             + "of the buffer under the floor. Either raise sink_offset or author the "
                             + "door markers no higher than local Y {}.",
-                    describeElements(pieces), lift, sinkOffset, lift - sinkOffset, sinkOffset);
+                    kind, describeElements(pieces), lift, sinkOffset, lift - sinkOffset, sinkOffset);
         }
     }
 

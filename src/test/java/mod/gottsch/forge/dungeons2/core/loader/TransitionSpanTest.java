@@ -174,6 +174,40 @@ class TransitionSpanTest {
     }
 
     /**
+     * Every chain fits inside vanilla's jigsaw bounds for a transition: start Y +/-
+     * {@code DungeonStructure.TRANSITION_MAX_DISTANCE}. A piece outside them is not an error to
+     * vanilla -- it is simply not attached -- so a too-tall chain generates without its top and
+     * nothing says why (the sewer pit at a cap of 32, 2026-10-26).
+     */
+    @Test
+    void everyChainFitsTheAssemblyBounds() {
+        int cap = mod.gottsch.forge.dungeons2.core.world.structure.DungeonStructure.TRANSITION_MAX_DISTANCE;
+        Map<String, Template> shipped = reachable();
+        List<String> offenders = new ArrayList<>();
+        int checked = 0;
+        for (Map.Entry<String, Template> entry : shipped.entrySet()) {
+            Template template = entry.getValue();
+            if (template.isMonolithic() || template.outgoing() == null || template.doorYs().isEmpty()) {
+                continue;
+            }
+            for (JigsawChains.Walk walk : JigsawChains.walk(entry.getKey(), shipped)) {
+                checked++;
+                for (JigsawChains.Seat seat : walk.seats()) {
+                    int top = seat.originY() + seat.template().height() - 1;
+                    if (top > cap || seat.originY() < -cap) {
+                        offenders.add(walk.trail() + ": " + seat.name() + " occupies local Y "
+                                + seat.originY() + ".." + top + ", outside +/-" + cap);
+                    }
+                }
+            }
+        }
+        assertTrue(checked >= 1, "expected at least one chained transition, found " + checked);
+        if (!offenders.isEmpty()) {
+            fail("piece(s) vanilla would silently leave off the chain:\n  " + String.join("\n  ", offenders));
+        }
+    }
+
+    /**
      * Follows one chain from its entry piece, returning a complaint or empty if it lands.
      *
      * <p>The walking is {@code JigsawChains}'; what belongs here is the terminal question, which is

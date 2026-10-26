@@ -10,9 +10,13 @@
     "TransitionSpanTest (./gradlew releaseCheck) until they are re-cut or deleted; taking them out",
     "of this pool is what stops them being CHOSEN in the meantime.",
     "",
-    "ONE ENTRY IS A SINGLE POINT OF FAILURE. Every floor-to-floor link in every dungeon now uses",
-    "winding_stairs_1, so a fault in that chain is a fault in every dungeon rather than in a third",
-    "of them. Worth restoring variety as soon as a second chain is cut for 22."
+    "A second chain cut for 22 joined on 2026-10-26: sewer_1 (sewer_bottom_1 -> sewer_mid_1 ->",
+    "sewer_top_1, continuation pool transitions/classic/sewer_1), the pit with the sewer pipe. Its",
+    "doors sit 5 above its local Y 0 (the sump); the assembler seats a chain on its lowest door",
+    "row, so the sump spends the floor's sink_offset.",
+    "",
+    "WEIGHTS 3 : 1 (Gottsch, 2026-10-26): the stairs are the ordinary way down, the sewer pit the",
+    "occasional surprise -- about one link in four."
   ],
   "name": "dungeons2:transitions/classic/shaft_bottom",
   "fallback": "minecraft:empty",
@@ -21,6 +25,15 @@
       "element": {
         "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:transitions/classic/winding_stairs_bottom_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 3
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:transitions/classic/sewer_bottom_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },
