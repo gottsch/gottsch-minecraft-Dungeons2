@@ -32,7 +32,7 @@
             { "condition": "dungeons2:boss_tier", "tier": "small" },
             { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_sextons_ledger": false } } } }
           ],
-          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:sextons_ledger\"}" } ] },
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:sextons_ledger\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_sextons_ledger" } ] },
         { "type": "minecraft:empty", "weight": 3 }
       ]
     },
@@ -45,7 +45,7 @@
             { "condition": "dungeons2:boss_tier", "tier": "medium" },
             { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_branns_account": false } } } }
           ],
-          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:branns_account\"}" } ] },
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:branns_account\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_branns_account" } ] },
         { "type": "minecraft:empty", "weight": 3 }
       ]
     },
@@ -58,8 +58,17 @@
             { "condition": "dungeons2:boss_tier", "tier": "large" },
             { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_the_last_delve": false } } } }
           ],
-          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:the_last_delve\"}" } ] },
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:the_last_delve\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_the_last_delve" } ] },
         { "type": "minecraft:empty", "weight": 3 }
+      ]
+    },
+    {
+      "//": "DUNGEON MAP (2026-10-25): about 1 chest in 5 holds a map of the floor it is on -- a vanilla filled map, centred on the floor and drawn as its holder explores. dungeons2:dungeon_map reads the floor off the chest (a room stamps it there); a chest with no stamp gives nothing. Rare enough that a floor is usually explored unaided for a while first.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:filled_map", "weight": 1,
+          "functions": [ { "function": "dungeons2:dungeon_map" } ] },
+        { "type": "minecraft:empty", "weight": 4 }
       ]
     }
   ]

@@ -472,8 +472,8 @@
       },
 
       // Weighted: the two `entity` entries are GMM mobs grown as if they were plants (#54), and
-      // unweighted they would be a quarter of everything that grows. At 1 against the mushrooms'
-      // 10 they are about 3%. Kept here on purpose -- a Shrieker rooted in a boss room's decayed
+      // unweighted they would be a quarter of everything that grows. At 3 against the mushrooms'
+      // 10 they are about 9%. Kept here on purpose -- a Shrieker rooted in a boss room's decayed
       // corner is atmosphere, and unlike a cobweb it does not fight on the player's side.
       "floor_growth": {
         "probability": 0.35,
@@ -484,8 +484,8 @@
           { "block": "minecraft:grass", "weight": 10 },
           { "block": "minecraft:fern", "weight": 10 },
           { "block": "minecraft:dead_bush", "weight": 10 },
-          { "entity": "dungeons2:shrieker", "weight": 1 },
-          { "entity": "dungeons2:violet_fungus", "weight": 1 }
+          { "entity": "dungeons2:shrieker", "weight": 3 },
+          { "entity": "dungeons2:violet_fungus", "weight": 3 }
         ]
       },
       "hanging_growth": {

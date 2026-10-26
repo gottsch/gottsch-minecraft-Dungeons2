@@ -13,6 +13,10 @@
             {
               "function": "minecraft:set_nbt",
               "tag": "{\"gottschbooks:book\":\"dungeons2:delvers_last_pages\"}"
+            },
+            {
+              "function": "dungeons2:grant_advancement",
+              "advancement": "dungeons2:lore/found_delvers_last_pages"
             }
           ],
           "conditions": [

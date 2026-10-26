@@ -107,6 +107,36 @@ class BossTierBooksTest {
     }
 
     /**
+     * Every lore entry gated on a {@code lore/found_<book>} advancement also grants it as it rolls,
+     * so a second chest opened before the first copy is picked up cannot give the book again.
+     */
+    @Test
+    void everyLoreBookIsMarkedFoundAsItRolls() throws Exception {
+        int entries = 0;
+        for (String table : List.of("classic_shallow", "classic_tomb_shallow", "classic_deep",
+                "classic_tomb_deep", "classic_entrance")) {
+            for (JsonElement pool : read("/data/dungeons2/loot_tables/chests/" + table + ".json").getAsJsonArray("pools")) {
+                for (JsonElement element : pool.getAsJsonObject().getAsJsonArray("entries")) {
+                    JsonObject entry = element.getAsJsonObject();
+                    String conditions = String.valueOf(entry.get("conditions"));
+                    int at = conditions.indexOf("dungeons2:lore/found_");
+                    if (at < 0) {
+                        continue;
+                    }
+                    entries++;
+                    String advancement = conditions.substring(at, conditions.indexOf('"', at));
+                    String functions = String.valueOf(entry.get("functions"));
+                    assertTrue(functions.contains("\"dungeons2:grant_advancement\"")
+                                    && functions.contains("\"" + advancement + "\""),
+                            table + ": the entry gated on " + advancement + " does not grant it");
+                }
+            }
+        }
+        // the intro book in three tables, and the three tier books in four
+        assertEquals(3 + 3 * 4, entries);
+    }
+
+    /**
      * The stamp goes on the rooms ABOVE the boss -- every NORMAL room -- and never on the boss room,
      * and a dungeon with no boss stamps nothing.
      */

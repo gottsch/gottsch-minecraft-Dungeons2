@@ -157,6 +157,9 @@ class ShippedBlockIdsTest {
             "layout",
             // content references
             "entity", "loot_table", "fine_loot_table", "function", "condition", "random_sequence",
+            // ADVANCEMENT ids, on dungeons2:grant_advancement - a lore book marks itself found as it
+            // rolls (2026-10-25). BossTierBooksTest checks each one against the entry's own guard.
+            "advancement",
             // ENCHANTMENT ids, on `minecraft:enchant_randomly`'s optional allow-list. New with the
             // boss chest tables (2026-09-03), which name Mending explicitly rather than trusting a
             // random draw to produce the one enchantment worth guaranteeing. Resolved from the

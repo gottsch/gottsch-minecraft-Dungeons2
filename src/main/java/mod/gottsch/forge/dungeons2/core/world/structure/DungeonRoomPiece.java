@@ -29,6 +29,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerato
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
+import mod.gottsch.forge.dungeons2.core.map.FloorMapStamp;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -65,6 +66,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     private String counterLootTable;
     /** The dungeon's boss tier, on rooms above the boss only; null elsewhere. */
     private String bossTier;
+    private FloorMapStamp floorMap;
     /** Where this room's hidden door would go, when it can be a secret room; else null. */
     private SecretDoorway secretDoorway;
     /** The counter-item on this room's pedestal (#97), which forces it secret; else null. */
@@ -107,6 +109,9 @@ public class DungeonRoomPiece extends DungeonPiece {
         }
         if (tag.contains("BossTier")) {
             this.bossTier = tag.getString("BossTier");
+        }
+        if (tag.contains("FloorMap")) {
+            this.floorMap = FloorMapStamp.load(tag.getCompound("FloorMap"));
         }
         if (tag.contains("SecretDoorway")) {
             this.secretDoorway = PieceNbt.readSecretDoorway(tag.getCompound("SecretDoorway"));
@@ -171,6 +176,22 @@ public class DungeonRoomPiece extends DungeonPiece {
      * Hands this room the dungeon's boss tier, stamped on its chests and tombs so the tier's lore
      * book can be found here, above the boss (see {@code BossTierCondition}).
      */
+    /** The floor this room is on, for the Dungeon Maps its chests can hold. */
+    public DungeonRoomPiece withFloorMap(FloorMapStamp floorMap) {
+        this.floorMap = floorMap;
+        return this;
+    }
+
+    @Override
+    protected FloorMapStamp floorMap() {
+        return floorMap;
+    }
+
+    /** The floor stamped on this room's chests, or null. */
+    public FloorMapStamp getFloorMap() {
+        return floorMap;
+    }
+
     public DungeonRoomPiece withBossTier(String bossTier) {
         this.bossTier = bossTier;
         return this;
@@ -243,6 +264,9 @@ public class DungeonRoomPiece extends DungeonPiece {
         // Absent for the same reason: the key's presence is the flag.
         if (counterLootTable != null) {
             tag.putString("CounterLootTable", counterLootTable);
+        }
+        if (floorMap != null) {
+            tag.put("FloorMap", floorMap.save());
         }
         if (bossTier != null) {
             tag.putString("BossTier", bossTier);

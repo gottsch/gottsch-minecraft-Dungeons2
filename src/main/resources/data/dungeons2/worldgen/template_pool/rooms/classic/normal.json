@@ -230,6 +230,15 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
+        "location": "dungeons2:rooms/classic/13x17_gaol_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 2
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
         "location": "dungeons2:rooms/classic/17x21_bridge_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"

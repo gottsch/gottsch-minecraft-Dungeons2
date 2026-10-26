@@ -1262,8 +1262,8 @@
       // THE PALETTE IS WEIGHTED. An entry is either a bare id (weight 1) or {block, weight}, and
       // the draw is one roll over the total. Weights matter here more than anywhere else in this
       // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
-      // which is ground-cover frequency for something that is actually a monster. At 1 each against
-      // the mushrooms' 10 they are 2 of 62, about 3%.
+      // which is ground-cover frequency for something that is actually a monster. At 3 each against
+      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each, 2026-10-25).
       "floor_growth": {
         "probability": 0.35,
         "blocks": [
@@ -1273,8 +1273,8 @@
           { "block": "minecraft:grass", "weight": 10 },
           { "block": "minecraft:fern", "weight": 10 },
           { "block": "minecraft:dead_bush", "weight": 10 },
-          { "entity": "dungeons2:shrieker", "weight": 1 },
-          { "entity": "dungeons2:violet_fungus", "weight": 1 }
+          { "entity": "dungeons2:shrieker", "weight": 3 },
+          { "entity": "dungeons2:violet_fungus", "weight": 3 }
         ]
       },
       // Underneath a dirt block, where the cell below it is air.

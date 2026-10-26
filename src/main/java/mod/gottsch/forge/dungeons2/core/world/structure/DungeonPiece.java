@@ -30,6 +30,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomMiningChestGe
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomFurnitureGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomTombGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.door.HiddenDoors;
+import mod.gottsch.forge.dungeons2.core.map.FloorMapStamp;
 import net.minecraft.core.BlockPos;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.nbt.CompoundTag;
@@ -688,6 +689,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
                 }
             }
             stampBossTier(tag, data);
+            stampFloorMap(tag, data);
             blockEntity.load(tag);
             blockEntity.setChanged();
             scheduleLootRoll(level, pos, data);
@@ -703,6 +705,25 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
      */
     protected String bossTier() {
         return null;
+    }
+
+    /**
+     * The floor this piece lies on, for {@code dungeons2:dungeon_map} to read back off its chests;
+     * null where none is known (every piece but a room).
+     */
+    protected FloorMapStamp floorMap() {
+        return null;
+    }
+
+    /** Stamps {@link #floorMap()} into {@code ForgeData} on a chest, after the SNBT values as the tier is. */
+    private void stampFloorMap(CompoundTag tag, BlockEntityData data) {
+        FloorMapStamp stamp = floorMap();
+        if (stamp == null || !data.getData().containsKey("LootTable")) {
+            return;
+        }
+        CompoundTag forgeData = tag.getCompound("ForgeData");
+        forgeData.put(FloorMapStamp.KEY, stamp.save());
+        tag.put("ForgeData", forgeData);
     }
 
     /**

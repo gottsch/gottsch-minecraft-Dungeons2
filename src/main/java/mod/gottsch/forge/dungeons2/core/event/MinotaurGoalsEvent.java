@@ -55,10 +55,12 @@ import java.util.List;
 public class MinotaurGoalsEvent {
 
     /**
-     * Continuous ticks pressed against something before the first swing. A second of being genuinely
-     * stuck, which is long enough that walking through a doorway never trips it.
+     * Continuous ticks pressed against something before the first swing. Half a second of being
+     * genuinely stuck: the test is that the mob has stopped getting CLOSER, which walking through a
+     * doorway never does. Was a full second until 2026-10-25, when Mark fought one back through the
+     * hallways and it spent too long standing at each thing in its way.
      */
-    private static final int BLOCKED_GRACE_TICKS = 20;
+    private static final int BLOCKED_GRACE_TICKS = 10;
 
     /**
      * Ticks between swings.
@@ -72,8 +74,10 @@ public class MinotaurGoalsEvent {
      * <p>12 keeps the swing readable &mdash; still an animation per block, not an evaporating wall
      * &mdash; while roughly halving the time to dig out. Raise it again only if the smashing starts
      * reading as a jackhammer rather than as a bull hitting a wall.</p>
+     *
+     * <p>9 on 2026-10-25 (Mark: "slightly" shorter), after a fight in the hallways.</p>
      */
-    private static final int SWING_INTERVAL_TICKS = 12;
+    private static final int SWING_INTERVAL_TICKS = 9;
 
     /**
      * Hardness cap. Dungeon brick and its kin sit at 1.5-2, so 6 admits the structure comfortably

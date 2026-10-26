@@ -86,6 +86,22 @@ public class Registration {
 					new mod.gottsch.forge.dungeons2.core.loot.BossTierCondition.Serializer()));
 
 	/*
+	 * loot function types (vanilla registry) -- referenced by loot table JSONs via "function".
+	 */
+	public static final DeferredRegister<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> LOOT_FUNCTIONS =
+			DeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, Dungeons.MOD_ID);
+
+	/** Marks a lore book found the moment it rolls, so only one chest gives it to each player. */
+	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> GRANT_ADVANCEMENT_FUNCTION =
+			LOOT_FUNCTIONS.register("grant_advancement", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType(
+					new mod.gottsch.forge.dungeons2.core.loot.GrantAdvancementFunction.Serializer()));
+
+	/** Turns a rolled item into a Dungeon Map of the chest's own floor. */
+	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> DUNGEON_MAP_FUNCTION =
+			LOOT_FUNCTIONS.register("dungeon_map", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType(
+					new mod.gottsch.forge.dungeons2.core.loot.DungeonMapFunction.Serializer()));
+
+	/*
 	 * Both processors live in GottschCore, which deliberately registers no
 	 * StructureProcessorType of its own -- most mods depending on it never touch structure
 	 * processors. Each consuming mod registers its own type under its own namespace and
@@ -343,6 +359,7 @@ public class Registration {
 		STRUCTURE_TYPES.register(eventBus);
 		STRUCTURE_PROCESSORS.register(eventBus);
 		LOOT_CONDITIONS.register(eventBus);
+		LOOT_FUNCTIONS.register(eventBus);
 
 	}
 }

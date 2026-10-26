@@ -1,5 +1,8 @@
 {
   "flags": {
     "breakDoors": true
+  },
+  "properties": {
+    "doorBreakTime": 120
   }
 }

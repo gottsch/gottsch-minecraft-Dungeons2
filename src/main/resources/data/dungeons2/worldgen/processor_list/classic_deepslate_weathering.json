@@ -1023,11 +1023,11 @@
           },
           {
             "entity": "dungeons2:shrieker",
-            "weight": 1
+            "weight": 3
           },
           {
             "entity": "dungeons2:violet_fungus",
-            "weight": 1
+            "weight": 3
           }
         ]
       },

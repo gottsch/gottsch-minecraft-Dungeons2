@@ -21,11 +21,13 @@ import mod.gottsch.forge.dungeons2.core.data.CorridorData;
 import mod.gottsch.forge.dungeons2.core.data.DoorData;
 import mod.gottsch.forge.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.loot.BossTierCondition;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.counter.CounterItemPlanner.CounterChestPlan;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningChestPlanner.MiningChestPlan;
+import mod.gottsch.forge.dungeons2.core.map.FloorMapStamp;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 
 import java.util.ArrayList;
@@ -154,6 +156,7 @@ public final class DungeonPieceEmitter {
         for (FloorLayout floor : layout.getFloors()) {
             int floorY = floor.getFloorY();
             int floorIndex = floor.getFloorIndex();
+            FloorMapStamp floorMap = floorMapOf(floor, anchorX, anchorZ);
             // Corridors BEFORE rooms, and that order is load-bearing. A room's perimeter is
             // CellType.WALL, so a corridor beside it emits a wall column over the very same
             // cells -- unconditionally, with the motif's plain wall block and no knowledge of
@@ -200,12 +203,38 @@ public final class DungeonPieceEmitter {
                             && room.getRole() == RoomRole.NORMAL) {
                         piece.withBossTier(BossTierCondition.tierOf(layout.getSize()));
                     }
+                    if (floorMap != null) {
+                        piece.withFloorMap(floorMap);
+                    }
                     pieces.add(piece);
                 }
             }
         }
 
         return pieces;
+    }
+
+    /**
+     * The floor as a Dungeon Map sees it: its footprint and walking plane, and its stairs down (the
+     * {@code END} slot), in world coordinates. Null for a floor with no footprint.
+     */
+    static FloorMapStamp floorMapOf(FloorLayout floor, int anchorX, int anchorZ) {
+        Rectangle2D footprint = floor.getFootprint();
+        if (footprint == null || footprint.isEmpty()) {
+            return null;
+        }
+        int[] down = null;
+        for (RoomData room : floor.getRooms()) {
+            if (room.getRole() == RoomRole.END) {
+                down = new int[]{anchorX + room.getOriginX(), anchorZ + room.getOriginZ(),
+                        anchorX + room.getOriginX() + room.getWidth() - 1,
+                        anchorZ + room.getOriginZ() + room.getDepth() - 1};
+                break;
+            }
+        }
+        return new FloorMapStamp(floor.getFloorIndex(), floor.getFloorY(),
+                anchorX + footprint.getMinX(), anchorZ + footprint.getMinY(),
+                anchorX + footprint.getMaxX(), anchorZ + footprint.getMaxY(), down);
     }
 
     /**

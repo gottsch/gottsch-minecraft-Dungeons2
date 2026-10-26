@@ -121,6 +121,7 @@
   "tooltip.dungeons2.mirror_shield.raise": "Raise it toward the eye. Lowered, it can still be torn away.",
   "message.dungeons2.shield_pierced": "The spell passes through your shield.",
   "book.dungeons2.delvers_last_pages": "A Delver's Last Pages",
+  "map.dungeons2.dungeon_map": "Dungeon Map: Level %s",
   "advancements.dungeons2.root.title": "Dungeons2",
   "advancements.dungeons2.root.description": "Kill something that lives in a dungeon",
   "advancements.dungeons2.small_boss.title": "Master of the Lowest Hall",
