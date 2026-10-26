@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "dungeons2:mud_crypts"
+    "dungeons2:mud_crypts",
+    "dungeons2:molten_halls"
   ]
 }

@@ -7,7 +7,15 @@
     "dungeons2:rooms/classic/7x13_sewer_1": "dungeons2:flooded_cistern",
     "dungeons2:rooms/classic/mud/7x9_sewer_1": "dungeons2:flooded_cistern",
     "dungeons2:rooms/classic/mud/7x13_sewer_1": "dungeons2:flooded_cistern",
-    "dungeons2:rooms/classic/deepslate/11x11_sewer_1": "dungeons2:flooded_cistern"
+    "dungeons2:rooms/classic/deepslate/11x11_sewer_1": "dungeons2:flooded_cistern",
+    // the water bridges: a channel the full length of the room
+    "dungeons2:rooms/classic/11x21_bridge_2": "dungeons2:flooded_cistern",
+    "dungeons2:rooms/classic/17x21_bridge_2": "dungeons2:flooded_cistern",
+    // the lava bridges and the lava hallway: the whole floor is lava, so the band's mood is wrong
+    "dungeons2:rooms/classic/11x21_bridge_3": "dungeons2:molten_halls",
+    "dungeons2:rooms/classic/17x21_bridge_3": "dungeons2:molten_halls",
+    "dungeons2:rooms/classic/deepslate/11x21_bridge_3": "dungeons2:molten_halls",
+    "dungeons2:rooms/classic/deepslate/hallway/7x17_hallway_2": "dungeons2:molten_halls"
   },
   "palette": {
     "base": "minecraft:stone_bricks",

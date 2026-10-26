@@ -275,8 +275,29 @@ and chains **upward**; the terminal piece must land exactly at the *upper* floor
 matches how `ladder1.nbt`/`stairs_1.nbt` are already authored (built upward from their own floor
 at local Y=0) — don't flip this without re-authoring those templates.
 
+**A transition may sink below its doors (2026-10-26).** The chain is seated on its **lowest
+`dungeons2:door`/`connector` marker**, not its local Y 0 — the same rule as prefab rooms. So a pit or
+sump authored under the bottom doors (`sewer_bottom_1`: doors at local y5 over a 5-deep sump) spends the
+floor's `sink_offset` budget (5); deeper than that logs `[D2-PREFAB] transition template ... carries N
+rows below its door markers`. A chain with its doors on local Y 0 is not moved.
+
+**The whole chain must fit within 64 blocks of its start, vertically too.** Vanilla's jigsaw
+`maxDistanceFromCenter` (`DungeonStructure.TRANSITION_MAX_DISTANCE`) bounds the assembly in all three
+axes, and a piece outside it is **silently not attached** — the chain just ends. It was 32, which cut
+the sewer pit's top off (35 rows). `./gradlew releaseCheck` (`TransitionSpanTest.everyChainFitsTheAssemblyBounds`)
+names any piece outside the bound.
+
+**A jigsaw's `final_state` must be a real block id.** Vanilla's `JigsawReplacementProcessor` throws on
+one it cannot parse (`minecraft:stone_brick` for `stone_bricks`), which crashes chunk generation the
+first time that marker is not chosen as a doorway.
+
+**Weights in `shaft_bottom`:** `winding_stairs_bottom_1` 3, `sewer_bottom_1` 1 — about one link in four
+is the sewer pit.
+
 Pools live under `data/dungeons2/worldgen/template_pool/transitions/<motif>/` (currently only
-`classic/` is authored; see the motif-naming note above).
+`classic/` is authored; see the motif-naming note above). Every element uses
+`dungeons2:dry_single_pool_element` (backlog #130), not `minecraft:single_pool_element`: the vanilla
+type waterlogs any stair or slab placed where the ground had water.
 
 | Pool | Role | Contents |
 |------|------|----------|
