@@ -22,6 +22,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.commands.PlaceCommand;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
@@ -117,6 +118,13 @@ public class SpawnDungeonCommand {
         try {
             BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
             ServerLevel level = source.getLevel();
+
+            // overworld only, as natural generation is (its biome tag lists only overworld biomes):
+            // the depth bands, weathering and descent are all built for the overworld's stone
+            if (level.dimension() != Level.OVERWORLD) {
+                source.sendFailure(Component.literal("d2-generate: dungeons generate in the overworld only."));
+                return 0;
+            }
 
             if (motif != null && DungeonMotif.getByValue(motif) == null) {
                 source.sendFailure(Component.literal("Unknown motif '" + motif + "'."));

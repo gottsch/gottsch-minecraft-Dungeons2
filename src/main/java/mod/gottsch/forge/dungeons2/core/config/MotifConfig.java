@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.config;
 
+import net.minecraft.resources.ResourceLocation;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +83,40 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                           List<Stratum> strataByFloorIndex,
                           Map<String, String> palette,
                           Optional<EchelonConfig> echelon,
-                          List<TombBand> tombContentsByFloorIndex) {
+                          List<TombBand> tombContentsByFloorIndex,
+                          Optional<ResourceLocation> biome,
+                          Map<String, ResourceLocation> templateBiomes) {
+
+    /** The shape before {@code template_biomes} (#129 step 2): no prefab names a mood of its own. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       List<ChestLootBand> chestLootByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits,
+                       List<Stratum> strataByFloorIndex,
+                       Map<String, String> palette,
+                       Optional<EchelonConfig> echelon,
+                       List<TombBand> tombContentsByFloorIndex,
+                       Optional<ResourceLocation> biome) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, echelon,
+                tombContentsByFloorIndex, biome, Map.of());
+    }
+
+    /** The shape before {@code biome} (#129): a motif that leaves the ground's own biome alone. */
+    public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
+                       CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
+                       List<MobSetBand> mobSetsByFloorIndex,
+                       List<ChestLootBand> chestLootByFloorIndex,
+                       Map<String, TemplateLimit> templateLimits,
+                       List<Stratum> strataByFloorIndex,
+                       Map<String, String> palette,
+                       Optional<EchelonConfig> echelon,
+                       List<TombBand> tombContentsByFloorIndex) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, echelon,
+                tombContentsByFloorIndex, Optional.empty());
+    }
 
     /** The shape before {@code tomb_contents_by_floor_index} (#104): a motif with no tombs to fill. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
@@ -243,6 +278,30 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     }
 
     /**
+     * The mood biome a prefab paints over its own box instead of its floor's (#129 step 2), keyed by
+     * the template's full id &mdash; the {@code "location"} its pool names, as {@link #limitFor} is.
+     * Empty means the prefab takes its floor's biome.
+     */
+    public Optional<ResourceLocation> biomeForTemplate(String templateId) {
+        return Optional.ofNullable(templateBiomes.get(templateId));
+    }
+
+    /**
+     * The mood biome painted over this floor's pieces (#129): the covering band's {@code biome},
+     * else the motif's own. Empty means paint nothing, so the ground's biome shows through.
+     *
+     * <p>Falls through to the MOTIF, never to the band above, like every other stratum section.
+     * Read from the <em>unprojected</em> config for the reason {@link #stratumNameFor} gives.
+     *
+     * @param floorIndex 0 at the entrance, counting downward
+     */
+    public Optional<ResourceLocation> biomeFor(int floorIndex) {
+        return Stratum.forFloor(strataByFloorIndex, floorIndex)
+                .flatMap(Stratum::biome)
+                .or(() -> biome);
+    }
+
+    /**
      * This motif as it is built on {@code floorIndex}: the element sections swapped for the
      * covering stratum's, everything else untouched. Backlog #45.
      *
@@ -301,7 +360,9 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                         // and how hard its mobs are is the depth band's `difficulty`.
                         echelon,
                         // A depth table like the two above, so carried through for their reason.
-                        tombContentsByFloorIndex))
+                        tombContentsByFloorIndex,
+                        // The motif's own; a band's is read off the unprojected motif by biomeFor.
+                        biome, templateBiomes))
                 // No band covers this floor -- UNREACHABLE for any pack that loads, since
                 // Stratum.validate already rejects a band table that does not cover floor 0 and
                 // bands run downward from their own floor. Kept resolving roles anyway rather than
@@ -327,7 +388,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                 resolvedFloor, resolved, motif.mobSetsByFloorIndex(),
                 motif.chestLootByFloorIndex(), motif.templateLimits(),
                 motif.strataByFloorIndex(), palette, motif.echelon(),
-                motif.tombContentsByFloorIndex());
+                motif.tombContentsByFloorIndex(), motif.biome(), motif.templateBiomes());
     }
 
     /**

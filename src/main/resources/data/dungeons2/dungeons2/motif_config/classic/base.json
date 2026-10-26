@@ -1,4 +1,14 @@
 {
+  // #129: the mood biome painted over every floor's pieces; strata.json overrides it per band.
+  "biome": "dungeons2:stone_halls",
+  // #129 step 2: prefabs with a mood of their own, painted over their box instead of the band's.
+  "template_biomes": {
+    "dungeons2:rooms/classic/11x11_sewer_1": "dungeons2:flooded_cistern",
+    "dungeons2:rooms/classic/7x13_sewer_1": "dungeons2:flooded_cistern",
+    "dungeons2:rooms/classic/mud/7x9_sewer_1": "dungeons2:flooded_cistern",
+    "dungeons2:rooms/classic/mud/7x13_sewer_1": "dungeons2:flooded_cistern",
+    "dungeons2:rooms/classic/deepslate/11x11_sewer_1": "dungeons2:flooded_cistern"
+  },
   "palette": {
     "base": "minecraft:stone_bricks",
     "shaft": "dungeonblocks:stone_bricks_pillar_block",

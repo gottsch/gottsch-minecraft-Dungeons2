@@ -4,7 +4,7 @@
   "elements": [
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/5x5_junction_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -13,7 +13,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/5x5_junction_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -22,7 +22,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/5x5_junction_3",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -31,7 +31,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/5x5_junction_4",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -40,7 +40,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/7x7_junction_0",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -49,7 +49,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/7x7_junction_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -58,7 +58,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/7x7_junction_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -67,7 +67,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/7x7_hall_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -76,7 +76,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/7x13_sewer_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -85,7 +85,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/9x9_junction_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -94,7 +94,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/9x7_dungeon_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -103,7 +103,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/15x21_hall_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -112,7 +112,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x11_corner_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -121,7 +121,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x11_corner_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -130,7 +130,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x11_corner_3",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -139,7 +139,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x11_sewer_1",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"
@@ -148,7 +148,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/5x11_hallway_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -157,7 +157,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/5x11_hallway_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -166,7 +166,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/5x17_hallway_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -175,7 +175,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/5x17_hallway_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -184,7 +184,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/7x17_hallway_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -193,7 +193,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/13x13_cavern_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -202,7 +202,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x21_bridge_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -211,7 +211,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x21_bridge_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -220,7 +220,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/11x21_bridge_3",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -229,7 +229,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/13x17_gaol_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -238,7 +238,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/17x21_bridge_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -247,7 +247,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/17x21_bridge_2",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -256,7 +256,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/17x21_bridge_3",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"

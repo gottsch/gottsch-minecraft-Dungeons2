@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.event;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.map.DungeonMaps;
 import mod.gottsch.forge.dungeons2.core.map.FloorMapStamp;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ServerLevel;
@@ -29,6 +30,8 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.List;
 
 /**
  * Draws a held Dungeon Map as its holder explores, and tidies its tooltip. See {@link DungeonMaps}.
@@ -55,15 +58,22 @@ public class DungeonMapEvent {
     }
 
     /**
-     * Drops vanilla's "Locked" line. The data is locked only so vanilla will not paint the surface
-     * over the floor; to the player the map is not locked at all - it fills in as they go.
+     * Drops vanilla's "Locked" line and says how the map works instead. The data is locked only so
+     * vanilla will not paint the surface over the floor; to the player the map is not locked at all
+     * - it fills in as they go. The lines go straight after the name, ahead of anything advanced
+     * tooltips add.
      */
     @SubscribeEvent
     public static void onTooltip(ItemTooltipEvent event) {
         if (DungeonMaps.stampOf(event.getItemStack()) == null) {
             return;
         }
-        event.getToolTip().removeIf(DungeonMapEvent::isLockedLine);
+        List<Component> tooltip = event.getToolTip();
+        tooltip.removeIf(DungeonMapEvent::isLockedLine);
+        int at = Math.min(1, tooltip.size());
+        tooltip.add(at, Component.translatable("tooltip.dungeons2.dungeon_map.copy").withStyle(ChatFormatting.GRAY));
+        tooltip.add(at, Component.translatable("tooltip.dungeons2.dungeon_map.key").withStyle(ChatFormatting.GRAY));
+        tooltip.add(at, Component.translatable("tooltip.dungeons2.dungeon_map").withStyle(ChatFormatting.GRAY));
     }
 
     private static boolean isLockedLine(Component line) {

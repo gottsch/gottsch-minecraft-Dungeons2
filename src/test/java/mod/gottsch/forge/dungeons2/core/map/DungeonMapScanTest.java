@@ -78,6 +78,59 @@ class DungeonMapScanTest {
         assertEquals(DungeonMaps.FLOOR, colour(drawn, 5, 5));
     }
 
+    /** A crafted map knows no stairs room; a ladder down a hole is the way down all the same. */
+    @Test
+    void aLadderDownIsTheStairsDown() {
+        Map<BlockPos, BlockState> blocks = blocks();
+        blocks.remove(new BlockPos(2, 0, 2));
+        blocks.put(new BlockPos(2, 0, 2), Blocks.LADDER.defaultBlockState());
+        blocks.put(new BlockPos(2, -1, 2), Blocks.LADDER.defaultBlockState());
+        Map<Long, Byte> drawn = scan(getter(blocks), new BlockPos(4, 1, 4));
+        assertEquals(DungeonMaps.STAIRS, colour(drawn, 2, 2));
+    }
+
+    /**
+     * Steps that go on down past a corridor's deepest descent lead to the next floor: the first
+     * step out of the floor's reach is drawn red, and the walk goes no further.
+     */
+    @Test
+    void aWalkThatKeepsGoingDownIsTheStairsDown() {
+        Map<BlockPos, BlockState> blocks = new HashMap<>();
+        for (int x = 0; x <= 12; x++) {
+            int y = x < 4 ? 0 : 3 - x;
+            blocks.put(new BlockPos(x, y, 0), Blocks.STONE.defaultBlockState());
+        }
+        FloorMapStamp stamp = new FloorMapStamp(-1, 0, -60, -60, 60, 60, null);
+        Map<Long, Byte> drawn = new HashMap<>();
+        DungeonMaps.scan(getter(blocks), stamp, new BlockPos(1, 1, 0), (x, z, colour) -> drawn.put(key(x, z), colour));
+        assertEquals(DungeonMaps.FLOOR, colour(drawn, 8, 0), "4 down is still this floor");
+        assertEquals(DungeonMaps.STAIRS, colour(drawn, 9, 0), "6 down is the way to the next");
+        assertFalse(drawn.containsKey(key(10, 0)), "and the walk stops there");
+    }
+
+    /**
+     * Only what can be seen is drawn: along an L of corridor, the leg round the corner is in reach
+     * on foot but out of sight, so it stays blank until the holder turns it.
+     */
+    @Test
+    void roundACornerIsNotDrawn() {
+        Map<BlockPos, BlockState> blocks = new HashMap<>();
+        for (int x = -1; x <= 8; x++) {
+            for (int z = -1; z <= 8; z++) {
+                blocks.put(new BlockPos(x, 0, z), Blocks.STONE.defaultBlockState());
+                boolean corridor = (z == 0 && x >= 0 && x <= 6) || (x == 6 && z >= 0 && z <= 6);
+                if (!corridor) {
+                    blocks.put(new BlockPos(x, 1, z), Blocks.STONE_BRICKS.defaultBlockState());
+                    blocks.put(new BlockPos(x, 2, z), Blocks.STONE_BRICKS.defaultBlockState());
+                }
+            }
+        }
+        Map<Long, Byte> drawn = scan(getter(blocks), new BlockPos(0, 1, 0));
+        assertEquals(DungeonMaps.FLOOR, colour(drawn, 6, 0), "the corner, in sight down the corridor");
+        assertEquals(DungeonMaps.WALL, colour(drawn, 3, 1), "the corridor's wall");
+        assertFalse(drawn.containsKey(key(6, 4)), "the leg round the corner is out of sight");
+    }
+
     private static Map<Long, Byte> scan(BlockGetter world, BlockPos feet) {
         FloorMapStamp stamp = new FloorMapStamp(0, 0, 0, 0, 15, 8, null);
         Map<Long, Byte> drawn = new HashMap<>();
@@ -94,6 +147,10 @@ class DungeonMapScanTest {
     }
 
     private static BlockGetter world() {
+        return getter(blocks());
+    }
+
+    private static Map<BlockPos, BlockState> blocks() {
         Map<BlockPos, BlockState> blocks = new HashMap<>();
         for (int x = 0; x <= 15; x++) {
             for (int z = 0; z <= 8; z++) {
@@ -123,6 +180,10 @@ class DungeonMapScanTest {
                 }
             }
         }
+        return blocks;
+    }
+
+    private static BlockGetter getter(Map<BlockPos, BlockState> blocks) {
         return new BlockGetter() {
             @Override
             public BlockEntity getBlockEntity(BlockPos pos) {

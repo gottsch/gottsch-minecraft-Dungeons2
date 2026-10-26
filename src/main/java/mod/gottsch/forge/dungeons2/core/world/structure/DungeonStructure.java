@@ -64,6 +64,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
@@ -1826,6 +1830,16 @@ public class DungeonStructure extends Structure {
      */
     private record RoomGeometry(Rectangle2D worldFootprint, List<Coords2D> doorWorldCells,
                                 List<Coords2D> premadeWorldCells, int doorPlaneY) {
+    }
+
+    /**
+     * Paints the floors' mood biomes over this chunk's share of the piece boxes (#129). After every
+     * piece's {@code postProcess}, once per chunk; see {@link MotifBiomes}.
+     */
+    @Override
+    public void afterPlace(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
+                           RandomSource random, BoundingBox box, ChunkPos chunkPos, PiecesContainer pieces) {
+        MotifBiomes.paint(level, box, chunkPos, pieces.pieces());
     }
 
     @Override

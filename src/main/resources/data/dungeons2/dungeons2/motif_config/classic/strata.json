@@ -2,6 +2,7 @@
   "strata_by_floor_index": [
     {
       "min_floor_index": 0, "name": "mud",
+      "biome": "dungeons2:mud_crypts",
       "palette": {
         "shaft": "minecraft:spruce_log", "footing": "dungeonblocks:square_stone_brick",
         "stair": "minecraft:mud_brick_stairs", "corbel": "dungeonblocks:stone_corbel_block",
@@ -920,6 +921,7 @@
       // turns on StratumWeatheringCoverageTest for this band, which is the guard that makes
       // "named but half-authored" fail the build instead of rendering pristine in game.
       "name": "deepslate",
+      "biome": "dungeons2:deep_vaults",
       "palette": {
         "base": "minecraft:deepslate_bricks",
         "floor": "minecraft:deepslate_tiles",

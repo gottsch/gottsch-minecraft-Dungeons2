@@ -122,6 +122,12 @@
   "message.dungeons2.shield_pierced": "The spell passes through your shield.",
   "book.dungeons2.delvers_last_pages": "A Delver's Last Pages",
   "map.dungeons2.dungeon_map": "Dungeon Map: Level %s",
+  "message.dungeons2.dungeon_map.no_floor": "This map can only be started on a dungeon floor.",
+  "tooltip.dungeons2.blank_dungeon_map": "Use on a dungeon floor to map it",
+  "tooltip.dungeons2.dungeon_map": "Fills in as you explore this floor",
+  "tooltip.dungeons2.dungeon_map.key": "Red: stairs down. Gold: stairs up",
+  "tooltip.dungeons2.dungeon_map.copy": "Craft with an Empty Map and coal for a blank one",
+  "item.dungeons2.blank_dungeon_map": "Blank Dungeon Map",
   "advancements.dungeons2.root.title": "Dungeons2",
   "advancements.dungeons2.root.description": "Kill something that lives in a dungeon",
   "advancements.dungeons2.small_boss.title": "Master of the Lowest Hall",
@@ -146,5 +152,9 @@
   "advancements.dungeons2.branns_account.description": "Read Brann's Account",
   "book.dungeons2.the_last_delve": "The Last Delve",
   "advancements.dungeons2.the_last_delve.title": "Deeper Than Meant",
-  "advancements.dungeons2.the_last_delve.description": "Read The Last Delve"
+  "advancements.dungeons2.the_last_delve.description": "Read The Last Delve",
+  "biome.dungeons2.mud_crypts": "Mud Crypts",
+  "biome.dungeons2.stone_halls": "Stone Halls",
+  "biome.dungeons2.deep_vaults": "Deep Vaults",
+  "biome.dungeons2.flooded_cistern": "Flooded Cistern"
 }

@@ -4,7 +4,7 @@
   "elements": [
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/mud/hallway/12x29_sunken_hallway_1b",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"
@@ -13,7 +13,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/mud/hallway/12x29_sunken_hallway_1c",
         "processors": "dungeons2:classic_mud_weathering",
         "projection": "rigid"

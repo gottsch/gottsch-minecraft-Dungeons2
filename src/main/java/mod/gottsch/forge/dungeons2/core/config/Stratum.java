@@ -20,6 +20,7 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashSet;
 import java.util.List;
@@ -150,7 +151,17 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
                       Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
                       Optional<CorridorConfig> corridor, Optional<FloorConfig> floor,
                       Optional<List<RoomScheme>> schemes,
-                      Map<String, String> palette) {
+                      Map<String, String> palette,
+                      Optional<ResourceLocation> biome) {
+
+    /** The shape before {@code biome} (#129): a band whose mood is the motif's. */
+    public Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
+                   Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
+                   Optional<CorridorConfig> corridor, Optional<FloorConfig> floor,
+                   Optional<List<RoomScheme>> schemes,
+                   Map<String, String> palette) {
+        this(minFloorIndex, name, wall, ceiling, door, corridor, floor, schemes, palette, Optional.empty());
+    }
 
     /** The shape before {@code palette}: a band that repaints materials but names no roles. */
     public Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
@@ -181,7 +192,7 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
         // constructor is a fine thing to CALL and a bad thing to rebuild a record through: it
         // defaults away exactly the fields a future component will be added to.
         return new Stratum(minFloorIndex, name, wall, ceiling, door, corridor, floor,
-                Optional.of(resolved), palette);
+                Optional.of(resolved), palette, biome);
     }
 
     /**
@@ -215,7 +226,10 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
             // the motif's. A palette does not -- it overlays key by key, so declaring nothing and
             // declaring an empty map are the same statement, and an empty default says it.
             Codecs.strictOptionalFieldOf(Codecs.PALETTE, "palette", Map.of())
-                    .forGetter(Stratum::palette)
+                    .forGetter(Stratum::palette),
+            // #129. The mood biome painted over this depth's pieces; absent falls through to the
+            // motif's own -- see MotifConfig#biomeFor.
+            Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "biome").forGetter(Stratum::biome)
     ).apply(instance, Stratum::new))).flatXmap(Stratum::validateBand, Stratum::validateBand);
 
     /**

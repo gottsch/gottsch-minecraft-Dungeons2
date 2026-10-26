@@ -4,7 +4,7 @@
   "elements": [
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:entrances/classic/entrance_1",
         "processors": "dungeons2:classic_entrance_weathering",
         "projection": "rigid"
@@ -13,7 +13,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:entrances/classic/entrance_2",
         "processors": "dungeons2:classic_entrance_weathering",
         "projection": "rigid"

@@ -1,4 +1,5 @@
 {
+  "biome": "dungeons2:deep_vaults",
   "wall": {
     "wall": "minecraft:deepslate_bricks"
   },

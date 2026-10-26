@@ -177,6 +177,11 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
         return floorIndex;
     }
 
+    /** The dungeon's motif, as stored on the piece. */
+    public String getMotifValue() {
+        return motifValue;
+    }
+
     /** Planning constructor. */
     protected DungeonPiece(StructurePieceType type, String motifValue, int floorY, int floorIndex,
                            int anchorX, int anchorZ, BoundingBox box) {

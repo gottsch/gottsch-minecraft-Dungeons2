@@ -203,7 +203,13 @@ class ShippedBlockIdsTest {
             // Treasure2 rarity ids for the boss chest, 2026-10-05. Treasure2's own registry, which
             // does not exist without Treasure2; an unknown id is logged and Treasure2 draws.
             // BossTierWiringTest pins the shipped values.
-            "treasure_rarities");
+            "treasure_rarities",
+            // #129: a motif's mood biome, and the sound events in the biome files themselves.
+            // ShippedMoodBiomesTest decodes both against their registries.
+            "biome", "ambient_sound", "sound",
+            // #129 step 2: a prefab's own biome, filed under template_biomes by POSITION (its key is
+            // a template id) -- see collect. ShippedMoodBiomesTest checks both sides.
+            "template_biomes");
 
     /** Where a modded block proves it exists, absent a running game. See the class notes. */
     private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";
@@ -457,6 +463,9 @@ class ShippedBlockIdsTest {
         return found;
     }
 
+    /** A map keyed by template id (#129); its values are reported under this key, not the id. */
+    private static final String TEMPLATE_BIOMES = "template_biomes";
+
     /** The key a motif declares its material roles under. #65. */
     private static final String PALETTE = "palette";
 
@@ -467,7 +476,7 @@ class ShippedBlockIdsTest {
                         List<Found> out) {
         if (element.isJsonObject()) {
             for (var entry : element.getAsJsonObject().entrySet()) {
-                collect(entry.getValue(), entry.getKey(), file,
+                collect(entry.getValue(), TEMPLATE_BIOMES.equals(key) ? key : entry.getKey(), file,
                         palette || PALETTE.equals(key), out);
             }
         } else if (element.isJsonArray()) {

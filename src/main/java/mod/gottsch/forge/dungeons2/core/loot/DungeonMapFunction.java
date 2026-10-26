@@ -23,6 +23,7 @@ import com.google.gson.JsonSerializationContext;
 import mod.gottsch.forge.dungeons2.core.map.DungeonMaps;
 import mod.gottsch.forge.dungeons2.core.map.FloorMapStamp;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
+import mod.gottsch.forge.dungeons2.core.world.DungeonFloorIndex;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -43,9 +44,10 @@ import java.util.Set;
  * {@link DungeonMaps}).
  *
  * <p>The floor is read off the chest: the room piece stamped it there as
- * {@code ForgeData.}{@value FloorMapStamp#KEY} when it wrote the chest. A chest with no stamp - a
- * template's, or one outside a dungeon - has no floor to map, and the item comes out
- * <strong>empty</strong>, so the entry gives nothing rather than a map of nowhere.</p>
+ * {@code ForgeData.}{@value FloorMapStamp#KEY} when it wrote the chest. Anything without a stamp -
+ * a barrel, a pot (an entity, with no block entity to stamp), a template's chest - asks the
+ * {@link DungeonFloorIndex} which floor its position is on instead. Nowhere on a dungeon floor, the
+ * item comes out <strong>empty</strong>, so the entry gives nothing rather than a map of nowhere.</p>
  *
  * <p>The origin and its four horizontal neighbours are read, as {@link BossTierCondition} reads them,
  * so the same lookup serves a container that rolls from beside its own block.</p>
@@ -69,7 +71,14 @@ public class DungeonMapFunction implements LootItemFunction {
     @Override
     public ItemStack apply(ItemStack stack, LootContext context) {
         Vec3 origin = context.getParamOrNull(LootContextParams.ORIGIN);
-        FloorMapStamp stamp = origin == null ? null : stampNear(context, BlockPos.containing(origin));
+        if (origin == null) {
+            return ItemStack.EMPTY;
+        }
+        BlockPos pos = BlockPos.containing(origin);
+        FloorMapStamp stamp = stampNear(context, pos);
+        if (stamp == null) {
+            stamp = DungeonFloorIndex.get(context.getLevel()).floorAt(pos).orElse(null);
+        }
         if (stamp == null) {
             return ItemStack.EMPTY;
         }

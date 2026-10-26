@@ -8,7 +8,7 @@
   "elements": [
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:end_rooms/classic/large_boss_1",
         "processors": "dungeons2:classic_boss_weathering_large",
         "projection": "rigid"

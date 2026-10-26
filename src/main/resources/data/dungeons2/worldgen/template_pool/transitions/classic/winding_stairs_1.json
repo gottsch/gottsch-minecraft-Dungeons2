@@ -30,7 +30,7 @@
   "elements": [
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:transitions/classic/winding_stairs_mid_bottom_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -39,7 +39,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:transitions/classic/winding_stairs_mid_top_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -48,7 +48,7 @@
     },
     {
       "element": {
-        "element_type": "minecraft:single_pool_element",
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:transitions/classic/winding_stairs_top_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"

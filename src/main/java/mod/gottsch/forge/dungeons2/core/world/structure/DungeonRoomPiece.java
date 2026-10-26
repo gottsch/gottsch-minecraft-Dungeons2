@@ -30,6 +30,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
 import mod.gottsch.forge.dungeons2.core.map.FloorMapStamp;
+import mod.gottsch.forge.dungeons2.core.world.DungeonFloorIndex;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -67,6 +69,8 @@ public class DungeonRoomPiece extends DungeonPiece {
     /** The dungeon's boss tier, on rooms above the boss only; null elsewhere. */
     private String bossTier;
     private FloorMapStamp floorMap;
+    /** Whether this piece object has already filed its floor this session; see {@link #fileFloor}. */
+    private boolean floorFiled;
     /** Where this room's hidden door would go, when it can be a secret room; else null. */
     private SecretDoorway secretDoorway;
     /** The counter-item on this room's pedestal (#97), which forces it secret; else null. */
@@ -187,6 +191,33 @@ public class DungeonRoomPiece extends DungeonPiece {
         return floorMap;
     }
 
+    /**
+     * Files this room's floor in the {@link DungeonFloorIndex}, so a crafted Dungeon Map can find it.
+     * On the server thread, as {@code BossRoomRegistry} is written: postProcess runs on world
+     * generation threads, and saved data is not thread-safe. Once per piece object, not per chunk;
+     * the index drops the same floor arriving again from the floor's other rooms.
+     *
+     * <p>Headless there is no server level ({@code FakeWorldGenLevel#getLevel} throws), and nothing
+     * to file in.</p>
+     */
+    private void fileFloor(WorldGenLevel level) {
+        if (floorMap == null || floorFiled) {
+            return;
+        }
+        ServerLevel serverLevel;
+        try {
+            serverLevel = level.getLevel();
+        } catch (RuntimeException headless) {
+            return;
+        }
+        if (serverLevel == null || serverLevel.getServer() == null) {
+            return;
+        }
+        floorFiled = true;
+        FloorMapStamp floor = floorMap;
+        serverLevel.getServer().execute(() -> DungeonFloorIndex.get(serverLevel).add(floor));
+    }
+
     /** The floor stamped on this room's chests, or null. */
     public FloorMapStamp getFloorMap() {
         return floorMap;
@@ -283,6 +314,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
         logChunkTouch(level, chunkPos, box);
+        fileFloor(level);
         // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
         // so this is a no-op for everything shipped today. Build time, not plan time -- both
         // inputs are in hand right here and nothing needs serialising.

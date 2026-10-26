@@ -17,6 +17,8 @@
  */
 package mod.gottsch.forge.dungeons2.core.map;
 
+import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import mod.gottsch.forge.dungeonblocks.core.block.HiddenDoorBlock;
@@ -31,6 +33,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
@@ -56,12 +59,23 @@ import java.util.Deque;
  * vanilla, but its holder is still marked on it, and this class writes its colours itself.</p>
  *
  * <h2>What it shows</h2>
- * <p>The floor at its own walking plane, revealed by walking it: every {@link #REVEAL_INTERVAL}
- * ticks, the floor reachable on foot within {@link #REVEAL_RADIUS} blocks of the holder is filled
- * in - flooded outward from where they stand, through anywhere a player could walk, so it goes
- * round corners but not through walls. It stops at a door and draws the door, so an unopened door
- * shows as a way on; it draws a hidden door as wall, so a map gives no secret away. The stairs down
- * are drawn red. Unexplored parchment stays bare.</p>
+ * <p>The floor at its own walking plane, as its holder sees it: every {@link #REVEAL_INTERVAL}
+ * ticks, the floor within {@link #REVEAL_RADIUS} blocks that the holder could both walk to and see -
+ * a straight line to it over open floor - is filled in. A room fills in once you are in it or look
+ * into it through its doorway; nothing round a corner or behind a wall is drawn (Mark, 2026-10-26:
+ * at 12 blocks with no sight test, the map drew rooms he had only walked past). It stops at a door
+ * and draws the door, so an unopened door shows as a way on; it draws a hidden door as wall, so a
+ * map gives no secret away. Unexplored parchment stays bare.</p>
+ *
+ * <p>The way off the floor is drawn where the walking leaves it: a walk that goes on down past a
+ * corridor's deepest descent, or a ladder down, is the stairs down and drawn red; the same upward is
+ * the way up, drawn gold. The floor's own stairs-down room is drawn red too, from its stamp.</p>
+ *
+ * <h2>Two ways to get one</h2>
+ * <p>Found in a chest, it maps the chest's floor, read off the chest. Crafted, a Blank Dungeon Map
+ * maps the floor its user stands on, looked up in the {@code DungeonFloorIndex}. Either way the map
+ * is made by {@link #create} from the floor's {@link FloorMapStamp}, centred on the floor and named
+ * for its level.</p>
  *
  * <p>It only draws while held, as a vanilla map does, and only on its own floor: a holder well above
  * or below the walking plane (on the stairs, or on the next floor) draws nothing.</p>
@@ -74,7 +88,7 @@ public final class DungeonMaps {
     public static final String TAG = "D2DungeonMap";
 
     /** How far round the holder the floor is drawn, in blocks. */
-    public static final int REVEAL_RADIUS = 12;
+    public static final int REVEAL_RADIUS = 8;
     /** Ticks between drawings - often enough to keep up with a running player. */
     public static final int REVEAL_INTERVAL = 5;
 
@@ -86,11 +100,20 @@ public final class DungeonMaps {
     private static final int BELOW = 6;
     private static final int ABOVE = 4;
 
+    /**
+     * How far the walking may drop below the walking plane, or rise above it, and still be this floor:
+     * a corridor descends at most 4, a room's dais or steps rise a block or two. A walk that goes
+     * further is on its way to another floor.
+     */
+    private static final int FLOOR_DROP = 5;
+    private static final int FLOOR_RISE = 3;
+
     // the map's palette: dressed stone, dark walls, a wooden door, red stairs down
     static final byte FLOOR = MapColor.STONE.getPackedId(MapColor.Brightness.HIGH);
     static final byte WALL = MapColor.DEEPSLATE.getPackedId(MapColor.Brightness.LOW);
     static final byte DOOR = MapColor.WOOD.getPackedId(MapColor.Brightness.HIGH);
     static final byte STAIRS = MapColor.COLOR_RED.getPackedId(MapColor.Brightness.HIGH);
+    static final byte STAIRS_UP = MapColor.GOLD.getPackedId(MapColor.Brightness.HIGH);
     static final byte WATER = MapColor.WATER.getPackedId(MapColor.Brightness.NORMAL);
     static final byte LAVA = MapColor.FIRE.getPackedId(MapColor.Brightness.HIGH);
     static final byte PIT = MapColor.COLOR_BLACK.getPackedId(MapColor.Brightness.NORMAL);
@@ -164,9 +187,12 @@ public final class DungeonMaps {
             return;
         }
 
-        LongSet seen = new LongOpenHashSet();
+        // 1. walk: every column reachable on foot within the radius, and where each walk stops
+        LongSet floor = new LongOpenHashSet();
+        Long2ByteMap colours = new Long2ByteOpenHashMap();
         Deque<int[]> open = new ArrayDeque<>();
         open.add(new int[]{feet.getX(), feet.getZ(), start});
+        LongSet seen = new LongOpenHashSet();
         seen.add(key(feet.getX(), feet.getZ()));
         int radiusSqr = REVEAL_RADIUS * REVEAL_RADIUS;
         while (!open.isEmpty()) {
@@ -174,7 +200,8 @@ public final class DungeonMaps {
             int x = cell[0];
             int z = cell[1];
             int y = cell[2];
-            painter.paint(x, z, floorColour(level, stamp, x, y, z));
+            floor.add(key(x, z));
+            colours.put(key(x, z), floorColour(level, stamp, x, y, z));
             for (int[] step : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
                 int nx = x + step[0];
                 int nz = z + step[1];
@@ -184,13 +211,64 @@ public final class DungeonMaps {
                     continue;
                 }
                 Integer ny = walkable(level, nx, nz, y);
-                if (ny != null) {
+                if (ny != null && ny < stamp.floorY() - FLOOR_DROP) {
+                    // walking on down, past any descent of this floor's own: the way to the floor below
+                    colours.put(key(nx, nz), STAIRS);
+                } else if (ny != null && ny > stamp.floorY() + FLOOR_RISE) {
+                    colours.put(key(nx, nz), STAIRS_UP);
+                } else if (ny != null) {
                     open.add(new int[]{nx, nz, ny});
                 } else {
-                    painter.paint(nx, nz, edgeColour(level, nx, y, nz));
+                    colours.put(key(nx, nz), edgeColour(level, nx, y, nz));
                 }
             }
         }
+
+        // 2. look: of the floor, only what the holder can see - a straight line to it over open floor
+        LongSet seenFloor = new LongOpenHashSet();
+        for (long cell : floor) {
+            int x = (int) (cell >> 32);
+            int z = (int) cell;
+            if (inSight(floor, feet.getX(), feet.getZ(), x, z)) {
+                seenFloor.add(cell);
+                painter.paint(x, z, colours.get(cell));
+            }
+        }
+        // and every wall, door or drop that edges a stretch of floor in sight - seen across that
+        // floor, though at a corridor's grazing angle the line to the wall itself is cut by the wall
+        for (Long2ByteMap.Entry entry : colours.long2ByteEntrySet()) {
+            long cell = entry.getLongKey();
+            if (floor.contains(cell)) {
+                continue;
+            }
+            int x = (int) (cell >> 32);
+            int z = (int) cell;
+            if (seenFloor.contains(key(x + 1, z)) || seenFloor.contains(key(x - 1, z))
+                    || seenFloor.contains(key(x, z + 1)) || seenFloor.contains(key(x, z - 1))) {
+                painter.paint(x, z, entry.getByteValue());
+            }
+        }
+    }
+
+    /**
+     * Whether a column can be seen from the holder's: every column a straight line between their
+     * centres crosses, short of the far end, is open floor. Sampled every quarter block, which catches
+     * both columns at a diagonal corner, so the line cannot slip between two walls that only touch
+     * at a corner.
+     */
+    static boolean inSight(LongSet floor, int fromX, int fromZ, int toX, int toZ) {
+        int dx = toX - fromX;
+        int dz = toZ - fromZ;
+        int steps = Math.max(Math.abs(dx), Math.abs(dz)) * 4;
+        for (int i = 1; i < steps; i++) {
+            double t = (double) i / steps;
+            int x = (int) Math.floor(fromX + 0.5D + dx * t);
+            int z = (int) Math.floor(fromZ + 0.5D + dz * t);
+            if ((x != toX || z != toZ) && !floor.contains(key(x, z))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -201,11 +279,18 @@ public final class DungeonMaps {
     @Nullable
     static Integer walkable(BlockGetter level, int x, int z, int from) {
         for (int y = from + 1; y >= from - 1; y--) {
-            if (solid(level, x, y, z) && !solid(level, x, y + 1, z) && !solid(level, x, y + 2, z)) {
+            // a ladder's box is solid, but the top of a ladder is a way down, not a floor
+            if (solid(level, x, y, z) && !climbable(level, x, y, z)
+                    && !solid(level, x, y + 1, z) && !solid(level, x, y + 2, z)) {
                 return y;
             }
         }
         return null;
+    }
+
+    /** A ladder - not anything climbable: vines hang in pits and on walls all through a dungeon. */
+    private static boolean climbable(BlockGetter level, int x, int y, int z) {
+        return level.getBlockState(new BlockPos(x, y, z)).getBlock() instanceof LadderBlock;
     }
 
     private static boolean solid(BlockGetter level, int x, int y, int z) {
@@ -227,8 +312,15 @@ public final class DungeonMaps {
         return FLOOR;
     }
 
-    /** Where the walking stops: a door, a wall, or a drop with no floor in reach. */
+    /** Where the walking stops: a ladder, a door, a wall, or a drop with no floor in reach. */
     private static byte edgeColour(BlockGetter level, int x, int y, int z) {
+        // a ladder first: it has a collision box, so it would otherwise read as wall
+        if (climbable(level, x, y, z) || climbable(level, x, y - 1, z)) {
+            return STAIRS;
+        }
+        if (climbable(level, x, y + 1, z) || climbable(level, x, y + 2, z)) {
+            return STAIRS_UP;
+        }
         for (int up = 1; up <= 2; up++) {
             BlockPos pos = new BlockPos(x, y + up, z);
             BlockState state = level.getBlockState(pos);

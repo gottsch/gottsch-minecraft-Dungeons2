@@ -116,6 +116,22 @@ public class DungeonCorridorPiece extends DungeonPiece {
                 anchorX + maxX, top, anchorZ + maxZ);
     }
 
+    /**
+     * One full-height box per cell column this corridor occupies (floor, walls, doors), in world
+     * coordinates. Its bounding box is the rectangle around all of them, which for a winding corridor
+     * takes in rooms and rock it never touches; {@code MotifBiomes} paints these instead (#129).
+     */
+    public List<BoundingBox> cellBoxes() {
+        List<Coords2D> cells = allCells(corridor);
+        List<BoundingBox> out = new ArrayList<>(cells.size());
+        for (Coords2D c : cells) {
+            int x = anchorX + c.getX();
+            int z = anchorZ + c.getY();
+            out.add(new BoundingBox(x, boundingBox.minY(), z, x, boundingBox.maxY(), z));
+        }
+        return out;
+    }
+
     private static List<Coords2D> allCells(CorridorData corridor) {
         List<Coords2D> all = new ArrayList<>(corridor.getCells().size()
                 + corridor.getWallCells().size() + corridor.getDoorCells().size());

@@ -1,4 +1,5 @@
 {
+  "biome": "dungeons2:stone_halls",
   "wall": {
     "wall": "minecraft:bricks"
   },

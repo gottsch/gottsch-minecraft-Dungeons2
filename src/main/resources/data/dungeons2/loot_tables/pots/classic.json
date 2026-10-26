@@ -35,6 +35,15 @@
         { "type": "minecraft:item", "name": "minecraft:book", "weight": 3,
           "functions": [ { "function": "minecraft:enchant_randomly" } ] }
       ]
+    },
+    {
+      "//": "DUNGEON MAP (2026-10-26): 1 pot in 60 holds a map of the floor it is on. There are many of these, so it stays rare; the map is the way to copy blanks for the floors below (dungeons2:dungeon_map_copy). The floor is looked up by position (DungeonFloorIndex), since a barrel or pot carries no stamp; off a dungeon floor it gives nothing.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:filled_map", "weight": 1,
+          "functions": [ { "function": "dungeons2:dungeon_map" } ] },
+        { "type": "minecraft:empty", "weight": 59 }
+      ]
     }
   ]
 }

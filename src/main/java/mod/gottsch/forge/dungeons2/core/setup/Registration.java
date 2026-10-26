@@ -37,6 +37,7 @@ import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import mod.gottsch.forge.dungeons2.core.world.structure.DrySinglePoolElement;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -66,6 +67,17 @@ public class Registration {
 	/** The dungeon structure type. Its codec is referenced by the Phase 5 structure JSON. */
 	public static final RegistryObject<StructureType<DungeonStructure>> DUNGEON =
 			STRUCTURE_TYPES.register("dungeon", () -> () -> DungeonStructure.CODEC);
+
+	/*
+	 * template pool element types (vanilla registry) -- referenced by worldgen/template_pool JSONs
+	 * via their "element_type" field.
+	 */
+	public static final DeferredRegister<net.minecraft.world.level.levelgen.structure.pools.StructurePoolElementType<?>> POOL_ELEMENT_TYPES =
+			DeferredRegister.create(Registries.STRUCTURE_POOL_ELEMENT, Dungeons.MOD_ID);
+
+	/** A single template that ignores the water it is placed into. See DrySinglePoolElement. */
+	public static final RegistryObject<net.minecraft.world.level.levelgen.structure.pools.StructurePoolElementType<DrySinglePoolElement>> DRY_SINGLE_POOL_ELEMENT =
+			POOL_ELEMENT_TYPES.register("dry_single_pool_element", () -> () -> DrySinglePoolElement.CODEC);
 
 	/*
 	 * structure processor types (vanilla registry) -- referenced by
@@ -100,6 +112,17 @@ public class Registration {
 	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> DUNGEON_MAP_FUNCTION =
 			LOOT_FUNCTIONS.register("dungeon_map", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType(
 					new mod.gottsch.forge.dungeons2.core.loot.DungeonMapFunction.Serializer()));
+
+	/*
+	 * recipe serializers (vanilla registry) -- referenced by recipe JSONs via "type".
+	 */
+	public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeSerializer<?>> RECIPE_SERIALIZERS =
+			DeferredRegister.create(Registries.RECIPE_SERIALIZER, Dungeons.MOD_ID);
+
+	/** A Dungeon Map and an Empty Map make a Blank Dungeon Map; the Dungeon Map is kept. */
+	public static final RegistryObject<net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<mod.gottsch.forge.dungeons2.core.item.crafting.DungeonMapCopyRecipe>> DUNGEON_MAP_COPY_RECIPE =
+			RECIPE_SERIALIZERS.register("dungeon_map_copy", () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
+					mod.gottsch.forge.dungeons2.core.item.crafting.DungeonMapCopyRecipe::new));
 
 	/*
 	 * Both processors live in GottschCore, which deliberately registers no
@@ -358,8 +381,10 @@ public class Registration {
 		PARTICLES.register(eventBus);
 		STRUCTURE_TYPES.register(eventBus);
 		STRUCTURE_PROCESSORS.register(eventBus);
+		POOL_ELEMENT_TYPES.register(eventBus);
 		LOOT_CONDITIONS.register(eventBus);
 		LOOT_FUNCTIONS.register(eventBus);
+		RECIPE_SERIALIZERS.register(eventBus);
 
 	}
 }

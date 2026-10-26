@@ -19,6 +19,7 @@ package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -66,7 +67,42 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                                   Optional<List<Stratum>> strataByFloorIndex,
                                   Map<String, String> palette,
                                   Optional<EchelonConfig> echelon,
-                                  Optional<List<TombBand>> tombContentsByFloorIndex) {
+                                  Optional<List<TombBand>> tombContentsByFloorIndex,
+                                  Optional<ResourceLocation> biome,
+                                  Map<String, ResourceLocation> templateBiomes) {
+
+    /** The shape before {@code template_biomes} (#129 step 2). */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                               Optional<List<ChestLootBand>> chestLootByFloorIndex,
+                               Map<String, TemplateLimit> templateLimits,
+                               Optional<List<Stratum>> strataByFloorIndex,
+                               Map<String, String> palette,
+                               Optional<EchelonConfig> echelon,
+                               Optional<List<TombBand>> tombContentsByFloorIndex,
+                               Optional<ResourceLocation> biome) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, echelon,
+                tombContentsByFloorIndex, biome, Map.of());
+    }
+
+    /** The shape before {@code biome} (#129). */
+    public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
+                               Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
+                               Optional<FloorConfig> floor, List<RoomScheme> schemes,
+                               Optional<List<MobSetBand>> mobSetsByFloorIndex,
+                               Optional<List<ChestLootBand>> chestLootByFloorIndex,
+                               Map<String, TemplateLimit> templateLimits,
+                               Optional<List<Stratum>> strataByFloorIndex,
+                               Map<String, String> palette,
+                               Optional<EchelonConfig> echelon,
+                               Optional<List<TombBand>> tombContentsByFloorIndex) {
+        this(wall, ceiling, door, corridor, floor, schemes, mobSetsByFloorIndex,
+                chestLootByFloorIndex, templateLimits, strataByFloorIndex, palette, echelon,
+                tombContentsByFloorIndex, Optional.empty());
+    }
 
     /** The shape before {@code tomb_contents_by_floor_index} (#104). */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
@@ -198,7 +234,15 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             Codecs.strictOptionalFieldOf(
                             TombBand.CODEC.listOf().flatXmap(TombBand::validate, TombBand::validate),
                             "tomb_contents_by_floor_index")
-                    .forGetter(MotifConfigFragment::tombContentsByFloorIndex)
+                    .forGetter(MotifConfigFragment::tombContentsByFloorIndex),
+            // #129. One id, replaced by the last fragment that names one, like `echelon`.
+            Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "biome")
+                    .forGetter(MotifConfigFragment::biome),
+            // #129 step 2. MERGED BY KEY, like template_limits: each entry is one prefab's own mood,
+            // so an addon can give its prefab one without restating the shipped entries.
+            Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC),
+                            "template_biomes", Map.of())
+                    .forGetter(MotifConfigFragment::templateBiomes)
     ).apply(instance, MotifConfigFragment::new));
 
     /**
@@ -253,6 +297,8 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         Map<String, RoomScheme> schemes = new LinkedHashMap<>();
         Map<String, String> palette = new LinkedHashMap<>();
         Optional<EchelonConfig> echelon = Optional.empty();
+        Optional<ResourceLocation> biome = Optional.empty();
+        Map<String, ResourceLocation> templateBiomes = new LinkedHashMap<>();
 
         for (MotifConfigFragment fragment : fragments) {
             wall = fragment.wall().orElse(wall);
@@ -265,6 +311,8 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             tombs = fragment.tombContentsByFloorIndex().orElse(tombs);
             strata = fragment.strataByFloorIndex().orElse(strata);
             echelon = fragment.echelon().isPresent() ? fragment.echelon() : echelon;
+            biome = fragment.biome().isPresent() ? fragment.biome() : biome;
+            templateBiomes.putAll(fragment.templateBiomes());
             // put, not putAll-into-a-fresh-map: a later fragment replaces an entry for the same
             // template and leaves every other pack's entries alone.
             templateLimits.putAll(fragment.templateLimits());
@@ -289,7 +337,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
         MotifConfig resolved = new MotifConfig(wall, ceiling, door, corridor, floor,
                 rolled.isEmpty() ? List.of(RoomScheme.PLAIN) : rolled, mobSets, chestLoot,
                 Map.copyOf(templateLimits), inheritBandSchemes(strata, schemes, reported, problems),
-                Map.copyOf(palette), echelon, tombs);
+                Map.copyOf(palette), echelon, tombs, biome, Map.copyOf(templateBiomes));
         checkRoles(resolved, problem -> {
             if (reported.add(problem)) {
                 problems.accept(problem);

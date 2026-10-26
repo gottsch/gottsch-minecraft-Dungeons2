@@ -100,10 +100,10 @@ class DungeonMapStampTest {
     }
 
     @Test
-    void theFloorChestsHandOutMaps() throws Exception {
-        for (String table : List.of("classic_shallow", "classic_deep")) {
+    void theFloorContainersHandOutMaps() throws Exception {
+        for (String table : List.of("chests/classic_shallow", "chests/classic_deep", "barrels/classic", "pots/classic")) {
             int pools = 0;
-            for (JsonElement pool : read("/data/dungeons2/loot_tables/chests/" + table + ".json").getAsJsonArray("pools")) {
+            for (JsonElement pool : read("/data/dungeons2/loot_tables/" + table + ".json").getAsJsonArray("pools")) {
                 if (pool.toString().contains("\"dungeons2:dungeon_map\"")) {
                     pools++;
                     assertTrue(pool.toString().contains("\"minecraft:filled_map\""), table);

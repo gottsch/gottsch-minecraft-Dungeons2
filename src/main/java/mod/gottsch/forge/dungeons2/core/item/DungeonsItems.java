@@ -482,6 +482,14 @@ public class DungeonsItems {
             "mining_chest",
             () -> new BlockItem(DungeonsBlocks.MINING_CHEST.get(), new Item.Properties()));
 
+    /**
+     * #128: a Dungeon Map not yet started; used on a dungeon floor, it maps that floor. Copied from
+     * a Dungeon Map onto an Empty Map with a coal (DungeonMapCopyRecipe), so the first map is always a find.
+     */
+    public static final RegistryObject<Item> BLANK_DUNGEON_MAP = Registration.ITEMS.register(
+            "blank_dungeon_map",
+            () -> new BlankDungeonMapItem(new Item.Properties()));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -505,6 +513,9 @@ public class DungeonsItems {
                     .map(RegistryObject::get)
                     .filter(item -> item instanceof ForgeSpawnEggItem)
                     .forEach(egg -> event.accept(egg, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
+        }
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(BLANK_DUNGEON_MAP.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(MINOTAUR_AXE.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
