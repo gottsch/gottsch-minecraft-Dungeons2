@@ -143,8 +143,11 @@ public final class DungeonMaps {
         stack.getOrCreateTag().putInt("map", id);
         stack.getOrCreateTag().put(TAG, stamp.save());
         stack.getOrCreateTagElement("display").putInt("MapColor", MAP_TINT);
-        stack.setHoverName(Component.translatable("map.dungeons2.dungeon_map", stamp.floorIndex() + 1)
-                .withStyle(style -> style.withItalic(false)));
+        Component name = stamp.hasDungeon()
+                ? Component.translatable("map.dungeons2.dungeon_map.named",
+                        DungeonNames.nameFor(stamp.dungeonX(), stamp.dungeonZ()), stamp.floorIndex() + 1)
+                : Component.translatable("map.dungeons2.dungeon_map", stamp.floorIndex() + 1);
+        stack.setHoverName(name.copy().withStyle(style -> style.withItalic(false)));
         return stack;
     }
 
@@ -163,10 +166,15 @@ public final class DungeonMaps {
             return;
         }
         BlockPos feet = player.blockPosition();
-        if (feet.getY() < stamp.floorY() - BELOW || feet.getY() > stamp.floorY() + ABOVE) {
+        if (!onLevel(stamp, feet.getY())) {
             return;
         }
         scan(level, stamp, feet, (x, z, colour) -> paint(data, x, z, colour));
+    }
+
+    /** Whether a holder standing at {@code y} is on this map's floor, as far as drawing goes. */
+    public static boolean onLevel(FloorMapStamp stamp, double y) {
+        return y >= stamp.floorY() - BELOW && y < stamp.floorY() + ABOVE + 1;
     }
 
     /** Where {@link #scan} puts a colour: a column and what it shows. */

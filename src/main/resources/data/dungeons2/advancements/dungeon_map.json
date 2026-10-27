@@ -1,0 +1,33 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:filled_map"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.dungeon_map.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.dungeon_map.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:filled_map"
+            ],
+            "nbt": "{D2DungeonMap:{}}"
+          }
+        ]
+      }
+    }
+  }
+}

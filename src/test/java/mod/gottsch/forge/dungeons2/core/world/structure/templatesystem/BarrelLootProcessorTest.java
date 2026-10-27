@@ -39,7 +39,7 @@ class BarrelLootProcessorTest {
     private static final String LISTS = "/data/dungeons2/worldgen/processor_list/";
     private static final List<String> SHIPPED = List.of(
             "classic_weathering.json", "classic_mud_weathering.json",
-            "classic_deepslate_weathering.json", "classic_entrance_weathering.json",
+            "classic_deepslate_weathering.json", "classic_entrance_weathering.json", "classic_mine_weathering.json",
             "classic_boss_weathering_small.json", "classic_boss_weathering_medium.json",
             "classic_boss_weathering_large.json");
 

@@ -108,6 +108,9 @@ public class CommonSetup {
 	 * @param event
 	 */
 	public static void common(final FMLCommonSetupEvent event) {
+		// Advancement criteria (#129 follow-up). Vanilla's trigger map is a plain HashMap, so on the
+		// main thread rather than from the (parallel) mod constructor; datapacks load after this.
+		event.enqueueWork(mod.gottsch.forge.dungeons2.core.advancement.DungeonsTriggers::register);
 		wireRangedAttacks();
 		wireGroundSlam();
 		// add mod specific logging

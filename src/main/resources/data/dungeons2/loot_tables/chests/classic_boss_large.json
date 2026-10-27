@@ -62,6 +62,14 @@
         { "type": "minecraft:item", "name": "minecraft:obsidian", "weight": 6,
           "functions": [ { "function": "minecraft:set_count", "count": { "min": 8.0, "max": 16.0 } } ] }
       ]
+    },
+    {
+      "//": "DUNGEON COMPASS (2026-10-26): points to the nearest dungeon, re-aiming as its holder travels, so leaving one it swings to the next once that is nearer. Loot only, no recipe: the first dungeon is found by exploring. Half of boss chests.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "dungeons2:dungeon_compass", "weight": 1 },
+        { "type": "minecraft:empty", "weight": 1 }
+      ]
     }
   ]
 }

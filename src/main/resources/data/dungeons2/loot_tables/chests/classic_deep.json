@@ -63,11 +63,37 @@
       ]
     },
     {
-      "//": "DUNGEON MAP (2026-10-25): about 1 chest in 5 holds a map of the floor it is on -- a vanilla filled map, centred on the floor and drawn as its holder explores. dungeons2:dungeon_map reads the floor off the chest (a room stamps it there); a chest with no stamp gives nothing. Rare enough that a floor is usually explored unaided for a while first.",
+      "//": "DUNGEON MAP (2026-10-25; 1 in 5 -> 1 in 3 on 2026-10-26, Mark: still too rare): about 1 chest in 3 holds a map of the floor it is on -- a vanilla filled map, centred on the floor and drawn as its holder explores. dungeons2:dungeon_map reads the floor off the chest (a room stamps it there); a chest with no stamp gives nothing. Rare enough that a floor is usually explored unaided for a while first.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "minecraft:filled_map", "weight": 1,
           "functions": [ { "function": "dungeons2:dungeon_map" } ] },
+        { "type": "minecraft:empty", "weight": 2 }
+      ]
+    },
+    {
+      "//": "LORE (2026-10-27): Oswin's Margins teaches the Dungeon Map copy (map + empty map + coal), which the recipe book never shows. On every floor, because a player can find their first map on any floor; about 1 chest in 5, once per player.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [ { "condition": "minecraft:entity_properties", "entity": "this",
+            "predicate": { "player": { "advancements": { "dungeons2:lore/found_oswins_margins": false } } } } ],
+          "functions": [
+            { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:oswins_margins\"}" },
+            { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_oswins_margins" } ] },
+        { "type": "minecraft:empty", "weight": 4 }
+      ]
+    },
+    {
+      "//": "LORE (2026-10-27): The Wall That Wasn't hints at secret rooms (the lever sconce) and the pedestal's hidden moat. On every floor, as secret rooms are; about 1 chest in 5, once per player.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [ { "condition": "minecraft:entity_properties", "entity": "this",
+            "predicate": { "player": { "advancements": { "dungeons2:lore/found_the_wall_that_wasnt": false } } } } ],
+          "functions": [
+            { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:the_wall_that_wasnt\"}" },
+            { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_the_wall_that_wasnt" } ] },
         { "type": "minecraft:empty", "weight": 4 }
       ]
     }

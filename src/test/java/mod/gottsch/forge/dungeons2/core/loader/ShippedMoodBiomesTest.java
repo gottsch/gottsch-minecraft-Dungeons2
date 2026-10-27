@@ -138,7 +138,7 @@ class ShippedMoodBiomesTest {
     @Test
     void everyShippedBiomeHasOneDarkFogTier() {
         List<String> tiered = new ArrayList<>();
-        for (String tier : List.of("shallow", "middle", "deep")) {
+        for (String tier : List.of("shallow", "middle", "deep", "haze")) {
             Path file = Paths.get(resource("/data/dungeons2/tags/worldgen/biome/dark_fog/" + tier + ".json"));
             read(file).getAsJsonObject().getAsJsonArray("values").forEach(v -> tiered.add(v.getAsString()));
         }

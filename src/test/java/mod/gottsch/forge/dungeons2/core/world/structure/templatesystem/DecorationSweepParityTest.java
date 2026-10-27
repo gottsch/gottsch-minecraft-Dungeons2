@@ -79,6 +79,7 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_mine_weathering.json",
             // The boss room's list (2026-09-03). It carries NO dungeons2:decoration and therefore
             // no sweep either -- the sweep exists only to repair what decoration placed. Named
             // here anyway: the parity check has to see a list with neither and agree that neither
@@ -163,6 +164,7 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_mine_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",
@@ -191,6 +193,7 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_mine_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",
@@ -218,6 +221,7 @@ class DecorationSweepParityTest {
             "/data/dungeons2/worldgen/processor_list/classic_mud_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_deepslate_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_entrance_weathering.json",
+            "/data/dungeons2/worldgen/processor_list/classic_mine_weathering.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_small.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_medium.json",
             "/data/dungeons2/worldgen/processor_list/classic_boss_weathering_large.json",

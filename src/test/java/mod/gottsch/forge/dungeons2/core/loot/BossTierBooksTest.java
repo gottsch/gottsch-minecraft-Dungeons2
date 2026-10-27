@@ -132,8 +132,9 @@ class BossTierBooksTest {
                 }
             }
         }
-        // the intro book in three tables, and the three tier books in four
-        assertEquals(3 + 3 * 4, entries);
+        // the intro book in three tables, the three tier books in four, and the map-copy and
+        // secrets books in the two chest tables
+        assertEquals(3 + 3 * 4 + 2 * 2, entries);
     }
 
     /**

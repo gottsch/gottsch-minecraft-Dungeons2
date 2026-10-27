@@ -119,14 +119,30 @@ public class ClientSetup {
     /**
      * #97: vanilla registers the {@code blocking} item property for {@code minecraft:shield} only,
      * so the Mirror Shield's model override would never fire without this.
+     *
+     * <p>The Dungeon Compass's needle is vanilla's, pointed at its own target; the Dungeon Map is a
+     * vanilla {@code filled_map}, told apart by its tag so its model (D2's override of
+     * {@code minecraft:item/filled_map}) can swap in the brown sheet.</p>
      */
     @SubscribeEvent
     public static void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
-        event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(
-                mod.gottsch.forge.dungeons2.core.item.DungeonsItems.MIRROR_SHIELD.get(),
-                new net.minecraft.resources.ResourceLocation("blocking"),
-                (stack, level, entity, seed) ->
-                        entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F));
+        event.enqueueWork(() -> {
+            net.minecraft.client.renderer.item.ItemProperties.register(
+                    mod.gottsch.forge.dungeons2.core.item.DungeonsItems.MIRROR_SHIELD.get(),
+                    new net.minecraft.resources.ResourceLocation("blocking"),
+                    (stack, level, entity, seed) ->
+                            entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
+            net.minecraft.client.renderer.item.ItemProperties.register(
+                    mod.gottsch.forge.dungeons2.core.item.DungeonsItems.DUNGEON_COMPASS.get(),
+                    new net.minecraft.resources.ResourceLocation("angle"),
+                    new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) ->
+                            mod.gottsch.forge.dungeons2.core.item.DungeonCompassItem.target(stack)));
+            net.minecraft.client.renderer.item.ItemProperties.register(
+                    net.minecraft.world.item.Items.FILLED_MAP,
+                    new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, "dungeon_map"),
+                    (stack, level, entity, seed) -> stack.getTag() != null
+                            && stack.getTag().contains(mod.gottsch.forge.dungeons2.core.map.DungeonMaps.TAG) ? 1.0F : 0.0F);
+        });
     }
 
     /**

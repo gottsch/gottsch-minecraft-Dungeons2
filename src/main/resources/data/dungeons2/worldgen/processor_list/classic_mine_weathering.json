@@ -1,0 +1,407 @@
+// =================================================================================================
+// LIGHT weathering for the CLASSIC motif's MINE ENTRANCE (mine_top_1, mine_bottom_1), named by
+// template_pool/entrance/classic/surface_entrance.json and entrance/classic/mine_1.json
+// (Gottsch, 2026-10-27).
+//
+// WHY NOT classic_entrance_weathering. That list ruins a building: collapse by height takes most of
+// the top third to air. A mine is cut INTO rock, so there is no storey to fall, and what ages is the
+// face of the cut -- moss, a few loose stones, webs in the timbering, lichen and mold on the walls.
+// Nothing here turns masonry or timber to air (only an authored bone pile may vanish), so nothing
+// can leave a rail, a beam or a ladder hanging: no
+// support_sweep, and no hanging_sweep (nothing ages a chain -- StratumWeatheringListTest pairs the two).
+//
+// The materials are the templates' own: minecraft:stone and minecraft:cobblestone (plus its stairs
+// and slab). The timber (oak log, spruce slab / stairs / trapdoor) is deliberately left alone: it is
+// the frame holding the adit open, and a hole in it reads as a bug, not as age.
+//
+// Probabilities follow classic_weathering.json's header: rules on one source block are alternatives
+// tried in order, so the second number is of what the first left (the fork formula).
+//
+// THE CHARACTER -- webs, lichen, mold -- is classic's decoration pass, copied verbatim, so the mine
+// grows exactly what the corridors below it grow.
+//
+// THE TAIL IS classic_weathering.json's, entry for entry (markers, sweeps, pattern_tile), because a
+// pool element names exactly ONE list and every marker processor must be in every list (#61).
+// Keep it in step by hand.
+// =================================================================================================
+{
+  "processors": [
+    {
+      // Shaped cobblestone keeps its facing/half/shape through surface_aging; a vanilla rule would
+      // reset them. One stage, 25%, matching the full-cube cobblestone rule below.
+      "processor_type": "dungeons2:surface_aging",
+      "agings": 2,
+      "rules": [
+        {
+          "surface": "any",
+          "block": "minecraft:cobblestone_stairs",
+          "output_blocks": [
+            { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.25 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "minecraft:cobblestone_slab",
+          "output_blocks": [
+            { "block": "minecraft:mossy_cobblestone_slab", "probability": 0.25 }
+          ]
+        },
+        // BONE PILES (2026-10-27). Author them by hand where the dead belong -- by the cart, at the
+        // end of the track, in a side cut -- as dungeonblocks:bone_pile. This makes no two mines
+        // alike: a third become skull piles (surface_aging carries `bones`, `facing` and
+        // `waterlogged` across), then a quarter of what is left is gone. So of every authored pile,
+        // about 33% skulls, 17% gone, 50% as authored.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:bone_pile",
+          "output_blocks": [
+            { "block": "dungeonblocks:skull_pile", "probability": 0.33 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:bone_pile",
+          "output_blocks": [
+            { "block": "minecraft:air", "probability": 0.25 }
+          ]
+        },
+        // Copied from classic_boss_weathering_*.json: neither block is in the mine templates today,
+        // but every list ages them so a flagstone or a false floor authored later weathers right.
+        // FLAGSTONES (Dungeon Blocks 3.1.0, added 2026-10-22). A floor, so NO air: a hole in a
+        // walking surface is a fall. Three rules on one block, each a FALLTHROUGH reached only when
+        // the ones above missed: cracked 30%, mossy 30.1%, then the stone-brick deep decay at half
+        // its first stage -- cobblestone 4%, dirt 1.2%, rubble 0.3%. The weathered twins carry the
+        // same `tile` property, and dungeons2:pattern_tile (last in this list) re-tiles whatever
+        // lands, so the pattern survives any rule type.
+        // This list runs `agings: 2`, so the deep decay stops at dirt here.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:flagstones",
+          "output_blocks": [
+            { "block": "dungeonblocks:cracked_flagstones", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:flagstones",
+          "output_blocks": [
+            { "block": "dungeonblocks:mossy_flagstones", "probability": 0.43 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:flagstones",
+          "output_blocks": [
+            { "block": "minecraft:cobblestone", "probability": 0.1 },
+            { "block": "minecraft:dirt", "probability": 0.3 },
+            { "block": "dungeonblocks:rubble", "probability": 0.25 }
+          ]
+        },
+        // CRUMBLING floor stone (added 2026-10-22) -- a false floor's lid. Its own twins only, and
+        // NO deep decay: cobblestone or dirt would be a safe tile in the trap, and air a hole that
+        // gives it away. Ages like the floor around it so the lid is not one unbroken patch of the
+        // same cracked texture: cracked 30%, mossy 30.1% (a fallthrough); cobblestone mossy 30%.
+        {
+          "surface": "any",
+          "block": "dungeonblocks:crumbling_stone_bricks",
+          "output_blocks": [
+            { "block": "dungeonblocks:crumbling_cracked_stone_bricks", "probability": 0.3 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:crumbling_stone_bricks",
+          "output_blocks": [
+            { "block": "dungeonblocks:crumbling_mossy_stone_bricks", "probability": 0.43 }
+          ]
+        },
+        {
+          "surface": "any",
+          "block": "dungeonblocks:crumbling_cobblestone",
+          "output_blocks": [
+            { "block": "dungeonblocks:crumbling_mossy_cobblestone", "probability": 0.3 }
+          ]
+        }
+      ]
+    },
+    {
+      // Full cubes. Stone: 5% mossy cobblestone, then 5% (0.0526 of the remaining 95%) loose
+      // cobblestone -- about one block in ten of the rock face shows its age. Cobblestone: 25% mossy.
+      // The cobblestone this rule makes out of stone is NOT re-aged into mossy (a rule list never
+      // re-reads its own output), which is why stone gets its own mossy route.
+      "processor_type": "minecraft:rule",
+      "rules": [
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:stone",
+            "probability": 0.05
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:mossy_cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:stone",
+            "probability": 0.0526
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:cobblestone" }
+        },
+        {
+          "input_predicate": {
+            "predicate_type": "minecraft:random_block_match",
+            "block": "minecraft:cobblestone",
+            "probability": 0.25
+          },
+          "location_predicate": { "predicate_type": "minecraft:always_true" },
+          "output_state": { "Name": "minecraft:mossy_cobblestone" }
+        }
+      ]
+    },
+
+    // dungeons2:sarcophagus -- BEFORE decoration, as in classic_weathering.json (a web landing in the
+    // tomb's authored-air head cell refuses the tomb). Entrance-depth contents: the shallow table.
+    {
+      "processor_type": "dungeons2:sarcophagus",
+      "sarcophagus_block": "dungeonblocks:stone_sarcophagus",
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_tomb_shallow", "weight": 1 }
+      ],
+      "guardians": [
+        { "entity": "dungeons2:grave_zombie", "weight": 4 },
+        { "entity": "dungeons2:skeleton_warrior", "weight": 4 },
+        { "entity": "minecraft:zombie", "weight": 2 },
+        { "entity": "minecraft:skeleton", "weight": 2 }
+      ],
+      "loot_weight": 3, "guardian_weight": 3, "empty_weight": 4
+    },
+    // rubble_scatter and decoration are classic_weathering.json's, VERBATIM -- nothing above makes
+    // air, so the scatter is a no-op here, and the webs, lichen and mold come from classic's own
+    // decoration pass (StratumWeatheringListTest#theCopiedProcessorsStillMatchClassicVerbatim).
+    {
+      // Rubble at the foot of a broken wall: where aging above knocked a hole in the masonry
+      // (the cell aged into one of `broken`, with masonry still above and below it), a scatter
+      // lands on the floor at the wall's foot on either side, thicker the more of the column
+      // came down. Must follow EVERY aging entry -- it compares the authored list with theirs.
+      // Only ever writes into a cell the piece itself places as AIR. See the Processor Manual.
+      "processor_type": "dungeons2:rubble_scatter",
+      "broken": { "blocks": [ "minecraft:air", "dungeonblocks:rubble", "dungeonblocks:mossy_rubble" ] },
+      "scatter_block": "dungeonblocks:rubble_scatter",
+      "probability": 0.5
+    },
+    {
+      // dungeons2:decoration -- the NEIGHBOUR-aware pass. Everything above decides one
+      // block at a time; this one decides from a block's surroundings, which is what
+      // cobwebs (air with a wall beside it) and creeping growth need.
+      //
+      // Its probabilities are ABSOLUTE, not conditional -- one roll per candidate
+      // position, unlike the rule/aging chains above.
+      //
+      // It only ever writes into a cell the piece itself places as AIR (bar underwater
+      // growth, which replaces the piece's own water). Nothing here can touch terrain.
+      "processor_type": "dungeons2:decoration",
+
+      // Air with at least one horizontally adjacent solid block. Corners and wall faces
+      // web up; the middle of a room stays clear.
+      "cobwebs": {
+        "probability": 0.02,
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // The angle webs are a DIFFERENT behaviour, not more entries in the palette above.
+      // They are modelled as a triangular sheet gathering into the angle where two
+      // surfaces meet and tapering away from it, so they need a wall AND a floor or
+      // ceiling -- one halfway up a bare wall has nothing to gather into and reads as a
+      // sheet hanging in mid-air. Both surfaces must be full cubes for the same reason
+      // wall growth needs one; the processor works out the facing from the neighbours,
+      // and picks the junction with the block's `half` (top = ceiling, bottom = floor).
+      //
+      // Higher than the plain web's rate on purpose: this fires on far fewer cells --
+      // only wall/floor and wall/ceiling junctions -- so 0.02 here would be nearly
+      // invisible.
+      "corner_cobwebs": {
+        "probability": 0.06,
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+
+      // Growth in the air beside a wall, attached to the wall's face. "probability" is
+      // the chance with nothing already growing next to the spot; each of the 6
+      // neighbours that IS growth adds "bonus", capped at "max", and the spot inherits
+      // its neighbour's species. That's what makes it spread in patches rather than an
+      // even speckle -- turn "bonus" up for bigger, blotchier patches. Blocks should be
+      // multiface (glow-lichen-like) to take a face; anything else is placed as-is.
+      "wall_growth": {
+        "probability": 0.04,
+        "bonus": 0.22,
+        "max": 0.55,
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // What counts as dirt for floor_growth/hanging_growth below. Classic dungeons are
+      // not authored with dirt -- this catches the dirt the AGING processor above makes
+      // out of decayed stairs, which is exactly where a tuft of growth belongs.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+      // On top of a dirt block, where the cell above it is air. All single-block plants that
+      // survive in the dark: mushrooms need darkness, and grass/fern/moss only need light to
+      // SPREAD, not to stay put, so none of these pop off in an unlit dungeon.
+      // (No tall_grass or large_fern -- those are two blocks high and only the lower half
+      // would be placed.)
+      //
+      // The two "entity" entries are MOBS grown as if they were plants. GMM's Shrieker and Violet
+      // Fungus root themselves and never move, so a patch of decayed dirt is exactly where they
+      // belong -- and dungeons2:decoration spawns them from its finalizeProcessing pass, which has
+      // a real ServerLevelAccessor and the chunk box to dedupe against. No marker block involved.
+      //
+      // THE PALETTE IS WEIGHTED. An entry is either a bare id (weight 1) or {block, weight}, and
+      // the draw is one roll over the total. Weights matter here more than anywhere else in this
+      // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
+      // which is ground-cover frequency for something that is actually a monster. At 3 each against
+      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each, 2026-10-25).
+      "floor_growth": {
+        "probability": 0.35,
+        "blocks": [
+          { "block": "minecraft:brown_mushroom", "weight": 10 },
+          { "block": "minecraft:red_mushroom", "weight": 10 },
+          { "block": "minecraft:moss_carpet", "weight": 10 },
+          { "block": "minecraft:grass", "weight": 10 },
+          { "block": "minecraft:fern", "weight": 10 },
+          { "block": "minecraft:dead_bush", "weight": 10 },
+          { "entity": "dungeons2:shrieker", "weight": 3 },
+          { "entity": "dungeons2:violet_fungus", "weight": 3 }
+        ]
+      },
+      // Underneath a dirt block, where the cell below it is air.
+      "hanging_growth": {
+        "probability": 0.3,
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // Architectural blocks that delete themselves once the wall behind them is gone --
+      // a corbel or ledge left hanging in the air after what it was bracketed onto
+      // crumbled away. Structural, so no probability: it either has a wall or it doesn't.
+      //
+      // A block with a "facing" property is held up from BEHIND and by nothing else: it
+      // GIVES support to what sits on top of it, it doesn't TAKE support from there, nor
+      // from below, nor from whatever happens to sit beside it. Only the neighbour at
+      // facing.getOpposite() is consulted.
+      //
+      // Deliberately generous otherwise, since a false positive deletes authored
+      // architecture: any non-air block behind counts (a ledge mounted on a stair or on
+      // another ledge stays put), and so does a neighbour that simply isn't part of this
+      // piece -- absent means "nothing placed here", not "nothing is here".
+      //
+      // It follows that this fires only where weathering actually produced air, so how
+      // often you see it is really a property of the aging rules above.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      },
+
+      // Water standing on a solid floor becomes seagrass. Only the piece's OWN water: the
+      // sewer rooms, the well and stairs_1 author it. Aquifer water that seeps in after
+      // generation is not in the block list and gets nothing.
+      "underwater_growth": {
+        "probability": 0.15,
+        "blocks": ["minecraft:seagrass"]
+      }
+      // Lily pads on the air above water are available but OFF:
+      //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
+    },
+
+    { "processor_type": "dungeons2:pot" },
+    {
+      "processor_type": "dungeons2:chest",
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_shallow", "weight": 1 }
+      ]
+    },
+    {
+      "processor_type": "dungeons2:barrel_loot",
+      "loot_table": "dungeons2:barrels/classic"
+    },
+    { "processor_type": "dungeons2:pedestal_loot" },
+
+    {
+      "processor_type": "dungeons2:decoration_sweep",
+
+      // wall_growth. Multiface, so this repairs FACE BY FACE: a patch wrapping a corner keeps the
+      // faces whose walls survived and loses only the dead one. Air when nothing is left.
+      "growth": {
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // cobwebs -- needs one horizontally adjacent solid block. Mostly a no-op in practice: a
+      // facade still passes isSolid, so only a neighbour turning to AIR strands a plain web.
+      "webs": {
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // corner_cobwebs -- the pickier pair. Needs a full-cube wall behind its facing AND the
+      // full-cube floor or ceiling its `half` names, exactly as maybeCornerCobweb required.
+      "corner_webs": {
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+
+      // Must be the same match as dungeons2:decoration's `dirt` -- it is what floor_growth and
+      // hanging_growth below are tested against.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+
+      // floor_growth, minus the two entity entries: a Shrieker or a Violet Fungus is a MOB, and a
+      // block sweep neither sees nor removes one.
+      "floor_growth": {
+        "blocks": [
+          "minecraft:brown_mushroom",
+          "minecraft:red_mushroom",
+          "minecraft:moss_carpet",
+          "minecraft:grass",
+          "minecraft:fern",
+          "minecraft:dead_bush"
+        ]
+      },
+      "hanging_growth": {
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // The same corbels and ledges the `unsupported` rule clears, re-tested once the neighbouring
+      // piece has had its say: a ledge keeps whatever is behind its facing, and goes when that
+      // turns to air.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+    },
+    {
+      "processor_type": "dungeons2:spawner",
+      "mob_set": "dungeons2:classic_vermin",
+      "marker_block": "dungeons2:spawner_marker",
+      "proximity": 12.0
+    },
+
+    // LAST, always (see classic_weathering.json).
+    { "processor_type": "dungeons2:pattern_tile" }
+  ]
+}

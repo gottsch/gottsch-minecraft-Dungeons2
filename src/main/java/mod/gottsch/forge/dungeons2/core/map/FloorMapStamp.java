@@ -41,7 +41,34 @@ import javax.annotation.Nullable;
  * @author Mark Gottschling on 10/25/2026
  */
 public record FloorMapStamp(int floorIndex, int floorY, int minX, int minZ, int maxX, int maxZ,
-                            @Nullable int[] down) {
+                            @Nullable int[] down, @Nullable int[] dungeon) {
+
+    /**
+     * The shape before {@code dungeon}: a floor that does not say which dungeon it belongs to (a
+     * stamp written before 2026-10-26 loads as this).
+     */
+    public FloorMapStamp(int floorIndex, int floorY, int minX, int minZ, int maxX, int maxZ,
+                         @Nullable int[] down) {
+        this(floorIndex, floorY, minX, minZ, maxX, maxZ, down, null);
+    }
+
+    /** Whether this floor knows its dungeon: the {@code {x, z}} the dungeon was planned from. */
+    public boolean hasDungeon() {
+        return dungeon != null && dungeon.length == 2;
+    }
+
+    public int dungeonX() {
+        return dungeon[0];
+    }
+
+    public int dungeonZ() {
+        return dungeon[1];
+    }
+
+    /** Whether a column is on this floor's footprint, give or take {@code margin}. */
+    public boolean covers(double x, double z, int margin) {
+        return x >= minX - margin && x <= maxX + 1 + margin && z >= minZ - margin && z <= maxZ + 1 + margin;
+    }
 
     /** The {@code ForgeData} key a room piece writes on its chests. */
     public static final String KEY = "D2FloorMap";
@@ -81,6 +108,9 @@ public record FloorMapStamp(int floorIndex, int floorY, int minX, int minZ, int 
         if (down != null) {
             tag.putIntArray("Down", down);
         }
+        if (hasDungeon()) {
+            tag.putIntArray("Dungeon", dungeon);
+        }
         return tag;
     }
 
@@ -92,7 +122,8 @@ public record FloorMapStamp(int floorIndex, int floorY, int minX, int minZ, int 
             return null;
         }
         int[] down = tag.getIntArray("Down");
+        int[] dungeon = tag.getIntArray("Dungeon");
         return new FloorMapStamp(tag.getInt("Floor"), tag.getInt("Y"), bounds[0], bounds[1], bounds[2], bounds[3],
-                down.length == 4 ? down : null);
+                down.length == 4 ? down : null, dungeon.length == 2 ? dungeon : null);
     }
 }

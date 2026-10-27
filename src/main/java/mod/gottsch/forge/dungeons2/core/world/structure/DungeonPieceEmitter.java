@@ -234,7 +234,9 @@ public final class DungeonPieceEmitter {
         }
         return new FloorMapStamp(floor.getFloorIndex(), floor.getFloorY(),
                 anchorX + footprint.getMinX(), anchorZ + footprint.getMinY(),
-                anchorX + footprint.getMaxX(), anchorZ + footprint.getMaxY(), down);
+                anchorX + footprint.getMaxX(), anchorZ + footprint.getMaxY(), down,
+                // which dungeon: every floor of one dungeon shares its anchor, so its maps share a name
+                new int[]{anchorX, anchorZ});
     }
 
     /**

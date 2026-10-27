@@ -31,6 +31,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -213,7 +214,9 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
     /**
      * The walkable cell at the foot of this column: the highest cell at or below {@code fromY}, no
      * more than {@link #maxDrop} down, that the piece writes as AIR and that stands on something the
-     * piece writes solid. Null when the column is not the piece's (terrain), or is solid all the way.
+     * piece writes solid. A pool's surface is not a floor: air over water or lava is passed by, and
+     * the walk carries on down through the liquid, which it can never land in. Null when the column
+     * is not the piece's (terrain), or is solid all the way.
      */
     private BlockPos footBelow(BlockPos column, int fromY, Map<BlockPos, BlockState> pending) {
         for (int y = fromY; y >= fromY - maxDrop; y--) {
@@ -226,7 +229,7 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
                 continue;
             }
             BlockState under = pending.get(cell.below());
-            if (under != null && !under.isAir()) {
+            if (under != null && !under.isAir() && !(under.getBlock() instanceof LiquidBlock)) {
                 return cell;
             }
         }

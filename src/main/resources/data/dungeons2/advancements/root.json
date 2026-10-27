@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "minecraft:skeleton_skull"
+      "item": "minecraft:mossy_stone_bricks"
     },
     "title": {
       "translate": "advancements.dungeons2.root.title"
@@ -16,12 +16,10 @@
     "background": "minecraft:textures/block/mossy_stone_bricks.png"
   },
   "criteria": {
-    "killed_a_dweller": {
-      "trigger": "minecraft:player_killed_entity",
+    "entered": {
+      "trigger": "dungeons2:reached_floor",
       "conditions": {
-        "entity": {
-          "type": "#dungeons2:dungeon_dwellers"
-        }
+        "min_floor": 0
       }
     }
   }

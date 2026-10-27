@@ -147,6 +147,19 @@ class RubbleScatterProcessorTest {
         assertEquals(CARPET, out.get(new BlockPos(1, 1, 2)));
     }
 
+    /** Rubble sinks: it never rests on a pool's surface, and cannot land in the water either. */
+    @Test
+    void aHoleOverAPoolLeavesNothingOnTheWater() {
+        Map<BlockPos, BlockState> authored = room();
+        for (int x = 1; x <= 3; x++) {
+            for (int z = 0; z <= 4; z++) {
+                authored.put(new BlockPos(x, 1, z), Blocks.WATER.defaultBlockState());
+            }
+        }
+        Map<BlockPos, BlockState> aged = Map.of(new BlockPos(0, 3, 2), AIR);
+        assertEquals(0, scatters(run(authored, aged, "minecraft:moss_carpet", 1.0)));
+    }
+
     /** A pot or chest marker emptying on the floor has room air above: that is not a broken wall. */
     @Test
     void somethingEmptiedOnTheFloorIsNotABrokenWall() {

@@ -19,6 +19,15 @@
         "projection": "rigid"
       },
       "weight": 2
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:entrances/classic/mine_top_1",
+        "processors": "dungeons2:classic_mine_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
     }
   ]
 }

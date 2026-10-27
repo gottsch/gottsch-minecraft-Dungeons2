@@ -1,0 +1,30 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:water_bucket"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.flooded_cistern.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.flooded_cistern.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "entered": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "location": {
+            "biome": "dungeons2:flooded_cistern"
+          }
+        }
+      }
+    }
+  }
+}

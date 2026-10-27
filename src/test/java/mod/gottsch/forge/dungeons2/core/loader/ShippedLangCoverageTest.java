@@ -59,6 +59,7 @@ class ShippedLangCoverageTest {
 
     private static final String LANG = "/assets/dungeons2/lang/en_us.json";
     private static final String ITEM_MODELS = "/assets/dungeons2/models/item";
+    private static final String VANILLA_ITEM_MODELS = "/assets/minecraft/models/item";
 
     @Test
     void everyItemModelHasADisplayName() {
@@ -138,7 +139,11 @@ class ShippedLangCoverageTest {
     /** Names of every model some item model's {@code overrides} point at. */
     private static java.util.Set<String> overrideTargets() {
         java.util.Set<String> targets = new java.util.HashSet<>();
-        for (Path model : itemModels()) {
+        // D2's overrides of VANILLA item models count too: the Dungeon Map is a minecraft:filled_map
+        // whose model D2 replaces to point at dungeons2:item/dungeon_map.
+        List<Path> models = new ArrayList<>(itemModels());
+        models.addAll(itemModels(VANILLA_ITEM_MODELS));
+        for (Path model : models) {
             try (Reader reader = Files.newBufferedReader(model, StandardCharsets.UTF_8)) {
                 JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
                 if (json.has("overrides")) {
@@ -155,7 +160,11 @@ class ShippedLangCoverageTest {
     }
 
     private static List<Path> itemModels() {
-        URL url = ShippedLangCoverageTest.class.getResource(ITEM_MODELS);
+        return itemModels(ITEM_MODELS);
+    }
+
+    private static List<Path> itemModels(String root) {
+        URL url = ShippedLangCoverageTest.class.getResource(root);
         if (url == null) {
             return List.of();
         }
@@ -165,7 +174,7 @@ class ShippedLangCoverageTest {
                     .sorted()
                     .toList();
         } catch (IOException | URISyntaxException unreadable) {
-            return fail("could not walk " + ITEM_MODELS + ": " + unreadable);
+            return fail("could not walk " + root + ": " + unreadable);
         }
     }
 }

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dungeons2:item/blank_dungeon_map",
+    "layer1": "minecraft:item/filled_map_markings"
+  }
+}

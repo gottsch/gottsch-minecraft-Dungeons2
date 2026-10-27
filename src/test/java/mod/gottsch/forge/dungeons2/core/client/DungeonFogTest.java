@@ -85,4 +85,29 @@ class DungeonFogTest {
         float far = fog.far(VANILLA_FAR);
         assertEquals(far * DungeonFog.NEAR_FRACTION, fog.near(VANILLA_NEAR, far), 0.01);
     }
+
+    /**
+     * A haze holds the biome's own fog colour whatever vanilla handed in (vanilla darkens it toward
+     * night), and closes in nearer than the shallowest dark.
+     */
+    @Test
+    void aHazeHoldsItsOwnColour() {
+        DungeonFog fog = new DungeonFog();
+        for (int i = 0; i < 200; i++) {
+            fog.update(Tier.HAZE, 0.05f, 0xA24A1E);
+        }
+        float[] night = fog.colour(0.02f, 0.02f, 0.03f);
+        assertEquals(0xA2 / 255f, night[0], 0.01);
+        assertEquals(0x4A / 255f, night[1], 0.01);
+        assertEquals(0x1E / 255f, night[2], 0.01);
+        assertTrue(fog.far(VANILLA_FAR) < Tier.SHALLOW.far);
+    }
+
+    /** A dark tier only scales vanilla's colour; it never pulls toward a glow. */
+    @Test
+    void aDarkTierOnlyScales() {
+        DungeonFog fog = settled(Tier.DEEP);
+        float[] colour = fog.colour(0.5f, 0.5f, 0.5f);
+        assertEquals(0.5f * Tier.DEEP.colourScale, colour[0], 0.01);
+    }
 }

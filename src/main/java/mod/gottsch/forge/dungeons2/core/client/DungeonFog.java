@@ -40,18 +40,27 @@ public final class DungeonFog {
 
     /** How far a band's dark lets you see, and how dark its fog colour turns. Deeper is closer and darker. */
     public enum Tier {
-        SHALLOW(40f, 0.6f),
-        MIDDLE(28f, 0.4f),
-        DEEP(16f, 0.2f);
+        SHALLOW(40f, 0.6f, false),
+        MIDDLE(28f, 0.4f, false),
+        DEEP(16f, 0.2f, false),
+        /**
+         * A lit haze, not darkness (Molten Halls): close, and the biome's own fog colour held as is.
+         * Vanilla darkens a biome's fog colour toward night by the sun angle, which underground at
+         * night would turn a lava glow black, so a glowing tier replaces the colour outright.
+         */
+        HAZE(18f, 1f, true);
 
         /** Blocks to the fog wall. */
         public final float far;
         /** What the fog colour is multiplied by. */
         public final float colourScale;
+        /** Whether the fog takes the biome's colour outright, ignoring time of day. */
+        public final boolean glow;
 
-        Tier(float far, float colourScale) {
+        Tier(float far, float colourScale, boolean glow) {
             this.far = far;
             this.colourScale = colourScale;
+            this.glow = glow;
         }
     }
 
@@ -63,6 +72,8 @@ public final class DungeonFog {
     private float darkness;
     private float darkFar = Tier.MIDDLE.far;
     private float colourScale = 1f;
+    private float glow;
+    private int glowRgb;
 
     /**
      * Eases toward this frame's targets.
@@ -71,6 +82,14 @@ public final class DungeonFog {
      * @param seconds time since the last update
      */
     public void update(Tier tier, float seconds) {
+        update(tier, seconds, glowRgb);
+    }
+
+    /**
+     * As {@link #update(Tier, float)}, with the camera biome's fog colour for a {@link Tier#glow}
+     * tier.
+     */
+    public void update(Tier tier, float seconds, int biomeFogRgb) {
         float k = 1f - (float) Math.exp(-RATE * Math.max(0f, seconds));
         darkness += ((tier == null ? 0f : 1f) - darkness) * k;
         // Outside the dungeon the wall and colour hold where they were, so leaving fades the dark
@@ -78,6 +97,10 @@ public final class DungeonFog {
         if (tier != null) {
             darkFar += (tier.far - darkFar) * k;
             colourScale += (tier.colourScale - colourScale) * k;
+            glow += ((tier.glow ? 1f : 0f) - glow) * k;
+            if (tier.glow) {
+                glowRgb = biomeFogRgb;
+            }
         }
         if (darkness < 0.001f) {
             darkness = 0f;
@@ -104,5 +127,19 @@ public final class DungeonFog {
     /** What to multiply the fog colour by. */
     public float colourScale() {
         return 1f + (colourScale - 1f) * darkness;
+    }
+
+    /**
+     * This frame's fog colour, given vanilla's: scaled, then pulled toward a glowing tier's own colour.
+     *
+     * @return {r, g, b}, each 0..1
+     */
+    public float[] colour(float r, float g, float b) {
+        float scale = colourScale();
+        float w = glow * darkness;
+        return new float[]{
+                r * scale + (((glowRgb >> 16) & 0xFF) / 255f - r * scale) * w,
+                g * scale + (((glowRgb >> 8) & 0xFF) / 255f - g * scale) * w,
+                b * scale + ((glowRgb & 0xFF) / 255f - b * scale) * w};
     }
 }

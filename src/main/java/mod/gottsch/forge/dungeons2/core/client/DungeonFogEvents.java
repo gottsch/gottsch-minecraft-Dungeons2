@@ -58,6 +58,7 @@ public final class DungeonFogEvents {
     public static final TagKey<Biome> SHALLOW = tag("dark_fog/shallow");
     public static final TagKey<Biome> MIDDLE = tag("dark_fog/middle");
     public static final TagKey<Biome> DEEP = tag("dark_fog/deep");
+    public static final TagKey<Biome> HAZE = tag("dark_fog/haze");
 
     private static final DungeonFog FOG = new DungeonFog();
     private static long lastNanos;
@@ -79,14 +80,16 @@ public final class DungeonFogEvents {
         float seconds = lastNanos == 0L ? 0f : Math.min(1f, (now - lastNanos) / 1.0e9f);
         lastNanos = now;
         boolean applies = applies(camera);
-        FOG.update(applies ? tierAt(camera) : null, seconds);
+        Holder<Biome> biome = applies ? biomeAt(camera) : null;
+        FOG.update(biome == null ? null : tierOf(biome), seconds,
+                biome == null ? 0 : biome.value().getFogColor());
         if (!applies || !FOG.active()) {
             return;
         }
-        float scale = FOG.colourScale();
-        event.setRed(event.getRed() * scale);
-        event.setGreen(event.getGreen() * scale);
-        event.setBlue(event.getBlue() * scale);
+        float[] colour = FOG.colour(event.getRed(), event.getGreen(), event.getBlue());
+        event.setRed(colour[0]);
+        event.setGreen(colour[1]);
+        event.setBlue(colour[2]);
     }
 
     @SubscribeEvent
@@ -112,13 +115,16 @@ public final class DungeonFogEvents {
                 || !(living.hasEffect(MobEffects.BLINDNESS) || living.hasEffect(MobEffects.DARKNESS));
     }
 
-    /** The deepest tier the camera's biome is tagged with, or null. */
-    private static DungeonFog.Tier tierAt(Camera camera) {
+    private static Holder<Biome> biomeAt(Camera camera) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) {
-            return null;
+        return minecraft.level == null ? null : minecraft.level.getBiome(camera.getBlockPosition());
+    }
+
+    /** The tier a biome is tagged with (a haze first, then the deepest dark), or null. */
+    static DungeonFog.Tier tierOf(Holder<Biome> biome) {
+        if (biome.is(HAZE)) {
+            return DungeonFog.Tier.HAZE;
         }
-        Holder<Biome> biome = minecraft.level.getBiome(camera.getBlockPosition());
         if (biome.is(DEEP)) {
             return DungeonFog.Tier.DEEP;
         }

@@ -490,6 +490,11 @@ public class DungeonsItems {
             "blank_dungeon_map",
             () -> new BlankDungeonMapItem(new Item.Properties()));
 
+    /** Points to the nearest dungeon. Loot only: boss and secret chests. */
+    public static final RegistryObject<Item> DUNGEON_COMPASS = Registration.ITEMS.register(
+            "dungeon_compass",
+            () -> new DungeonCompassItem(new Item.Properties().stacksTo(1)));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -516,6 +521,7 @@ public class DungeonsItems {
         }
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(BLANK_DUNGEON_MAP.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(DUNGEON_COMPASS.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(MINOTAUR_AXE.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
