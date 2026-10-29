@@ -125,6 +125,65 @@
                 }
               ]
             },
+            {
+              "weight": 2, "min_size": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:pilasters",
+                  "config": {
+                    "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
+                    "spacing": 4, "projection": 1
+                  }
+                }
+              ]
+            },
+            { "weight": 3, "none": true }
+          ],
+          // 2026-10-28 (Mark: the mud band is "a little boring"): plain had NO ceiling slot, and every
+          // room under 9 across is plain, so most of the band's ceilings were bare brick.
+          "ceiling": [
+            {
+              "weight": 3, "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists", "projection": 1,
+                  "config": { "block": "minecraft:stripped_spruce_log", "spacing": 4 }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": {
+                    "block": "minecraft:mud_bricks",
+                    "springing_block": "dungeonblocks:square_mud_brick", "steps": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 2, "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:coffers",
+                  "config": { "block": "dungeonblocks:square_mud_brick", "spacing": 3 }
+                }
+              ]
+            },
+            {
+              "weight": 2,
+              "patterns": [
+                {
+                  "type": "dungeons2:border",
+                  "config": {
+                    "block": "dungeonblocks:square_mud_brick",
+                    "corner_block": "dungeonblocks:mossy_square_mud_brick"
+                  }
+                }
+              ]
+            },
             { "weight": 3, "none": true }
           ],
           "floor": [
@@ -272,7 +331,7 @@
             }
           ],
           "ceiling": [
-            { "weight": 4, "none": true },
+            { "weight": 2, "none": true },
             {
               "weight": 4,
               "patterns": [
@@ -320,7 +379,19 @@
             }
           ],
           "wall": [
-            { "weight": 4, "none": true },
+            { "weight": 2, "none": true },
+            {
+              "weight": 2, "min_size": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:pilasters",
+                  "config": {
+                    "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
+                    "spacing": 4, "projection": 1
+                  }
+                }
+              ]
+            },
             {
               "weight": 3, "min_height": 7,
               "patterns": [
@@ -597,6 +668,44 @@
         },
         {
           "name": "mud_works", "weight": 5, "min_size": 9,
+          "wall": [
+            {
+              "weight": 3,
+              "patterns": [
+                {
+                  "type": "dungeons2:pilasters",
+                  "config": {
+                    "block": "$shaft", "base_block": "$footing", "cap_block": "$footing",
+                    "spacing": 4, "projection": 1
+                  }
+                }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
+          "ceiling": [
+            {
+              "weight": 3, "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists", "projection": 1,
+                  "config": {
+                    "block": "$shaft", "bracket_block": "$corbel", "orient": "inward", "spacing": 3
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 3, "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:joists", "projection": 1,
+                  "config": { "block": "minecraft:stripped_spruce_log", "spacing": 4 }
+                }
+              ]
+            },
+            { "weight": 2, "none": true }
+          ],
           "pit": [
             { "weight": 3, "none": true },
             {
@@ -755,7 +864,16 @@
             }
           ],
           "ceiling": [
-            { "weight": 3, "none": true },
+            { "weight": 1, "none": true },
+            {
+              "weight": 2, "min_height": 7,
+              "patterns": [
+                {
+                  "type": "dungeons2:coffers",
+                  "config": { "block": "dungeonblocks:square_mud_brick", "spacing": 3 }
+                }
+              ]
+            },
             {
               "weight": 3,
               "patterns": [

@@ -90,6 +90,61 @@ class DungeonMapScanTest {
     }
 
     /**
+     * The sewer transition's bottom: the ladder up starts down in the pool beside the ledge, its foot
+     * level with the floor, and rises out of the room. It is the way up.
+     */
+    @Test
+    void aLadderUpFromAPoolIsTheWayUp() {
+        Map<BlockPos, BlockState> blocks = blocks();
+        blocks.remove(new BlockPos(2, 0, 2));
+        for (int y = -1; y <= 6; y++) {
+            blocks.put(new BlockPos(2, y, 2), Blocks.LADDER.defaultBlockState());
+        }
+        Map<Long, Byte> drawn = scan(getter(blocks), new BlockPos(4, 1, 4));
+        assertEquals(DungeonMaps.STAIRS_UP, colour(drawn, 2, 2));
+    }
+
+    /** A pool a block below the floor is drawn as water, not as a pit. */
+    @Test
+    void aPoolBelowTheFloorIsWater() {
+        Map<BlockPos, BlockState> blocks = blocks();
+        blocks.put(new BlockPos(2, 0, 2), Blocks.WATER.defaultBlockState());
+        blocks.put(new BlockPos(2, -1, 2), Blocks.WATER.defaultBlockState());
+        blocks.put(new BlockPos(2, -2, 2), Blocks.STONE.defaultBlockState());
+        Map<Long, Byte> drawn = scan(getter(blocks), new BlockPos(4, 1, 4));
+        assertEquals(DungeonMaps.WATER, colour(drawn, 2, 2));
+    }
+
+    /**
+     * On a large dungeon's map a pixel covers 2x2 blocks: the ladder's pixel must survive the floor
+     * beside it painted after, and spread onto the floor pixels round it but never a wall.
+     */
+    @Test
+    void aWayOffTheFloorKeepsItsPixelAndSpreadsOntoFloorOnly() {
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        tag.putString("dimension", "minecraft:overworld");
+        tag.putInt("xCenter", 0);
+        tag.putInt("zCenter", 0);
+        tag.putByte("scale", (byte) 1);
+        tag.putBoolean("locked", true);
+        net.minecraft.world.level.saveddata.maps.MapItemSavedData data =
+                net.minecraft.world.level.saveddata.maps.MapItemSavedData.load(tag);
+        // pixel (64,64) holds blocks 0..1; its neighbours hold 2..3 and -2..-1
+        DungeonMaps.paint(data, 2, 0, DungeonMaps.FLOOR);
+        DungeonMaps.paint(data, -2, 0, DungeonMaps.WALL);
+        DungeonMaps.paint(data, 0, -2, DungeonMaps.WATER);
+        DungeonMaps.paint(data, 0, 0, DungeonMaps.STAIRS_UP);
+        DungeonMaps.paint(data, 1, 0, DungeonMaps.FLOOR);
+        assertEquals(DungeonMaps.STAIRS_UP, data.colors[64 + 64 * 128], "the floor beside it does not win the pixel");
+
+        DungeonMaps.halo(data, 0, 0, DungeonMaps.STAIRS_UP);
+        assertEquals(DungeonMaps.STAIRS_UP, data.colors[65 + 64 * 128], "floor next to it takes the colour");
+        assertEquals(DungeonMaps.STAIRS_UP, data.colors[64 + 63 * 128], "so does water: a ladder out of a pool");
+        assertEquals(DungeonMaps.WALL, data.colors[63 + 64 * 128], "a wall next to it does not");
+        assertEquals(0, data.colors[64 + 65 * 128], "nor does unexplored parchment");
+    }
+
+    /**
      * Steps that go on down past a corridor's deepest descent lead to the next floor: the first
      * step out of the floor's reach is drawn red, and the walk goes no further.
      */
@@ -197,7 +252,11 @@ class DungeonMapScanTest {
 
             @Override
             public FluidState getFluidState(BlockPos pos) {
-                return getBlockState(pos).getFluidState();
+                // a water block's own fluid state is empty off a running game: Forge fills the
+                // LiquidBlock's cache lazily, and nothing does in a unit test
+                BlockState state = getBlockState(pos);
+                return state.is(Blocks.WATER) ? net.minecraft.world.level.material.Fluids.WATER.getSource(false)
+                        : state.getFluidState();
             }
 
             @Override

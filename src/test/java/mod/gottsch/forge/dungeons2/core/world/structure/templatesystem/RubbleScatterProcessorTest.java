@@ -160,6 +160,31 @@ class RubbleScatterProcessorTest {
         assertEquals(0, scatters(run(authored, aged, "minecraft:moss_carpet", 1.0)));
     }
 
+    /** A carpet on a stair floats over the low step: a stair is no floor for rubble either. */
+    @Test
+    void aHoleOverStairsLeavesNothingOnThem() {
+        Map<BlockPos, BlockState> authored = room();
+        for (int z = 0; z <= 4; z++) {
+            authored.put(new BlockPos(1, 1, z), Blocks.STONE_BRICK_STAIRS.defaultBlockState());
+        }
+        Map<BlockPos, BlockState> aged = Map.of(new BlockPos(0, 3, 2), AIR);
+        assertEquals(0, scatters(run(authored, aged, "minecraft:moss_carpet", 1.0)));
+    }
+
+    /**
+     * A doorway is two high. A scatter on its floor leaves 1.9375 of headroom, so a 1.95-tall Skeleton
+     * Warrior that fits the bare doorway jams in it: the foot under a lintel gets nothing.
+     */
+    @Test
+    void aDoorwayFloorGetsNoScatter() {
+        Map<BlockPos, BlockState> authored = room();
+        authored.put(new BlockPos(1, 3, 2), STONE); // the lintel: (1,1,2) is now a two-high gap
+        Map<BlockPos, BlockState> aged = Map.of(new BlockPos(0, 2, 2), AIR);
+        Map<BlockPos, BlockState> out = run(authored, aged, "minecraft:moss_carpet", 1.0);
+        assertEquals(AIR, out.get(new BlockPos(1, 1, 2)));
+        assertEquals(0, scatters(out));
+    }
+
     /** A pot or chest marker emptying on the floor has room air above: that is not a broken wall. */
     @Test
     void somethingEmptiedOnTheFloorIsNotABrokenWall() {

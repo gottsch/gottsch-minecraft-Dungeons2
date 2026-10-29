@@ -20,6 +20,8 @@ package mod.gottsch.forge.dungeons2.core.item;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.forge.dungeons2.core.setup.Registration;
+import mod.gottsch.forge.gottschbooks.api.BookItem;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.AxeItem;
@@ -495,6 +497,16 @@ public class DungeonsItems {
             "dungeon_compass",
             () -> new DungeonCompassItem(new Item.Properties().stacksTo(1)));
 
+    /**
+     * The Delver's Companion, the mod's own Gottsch Books manual. Announced on first join rather than
+     * given (its server entry); its entries unlock with the advancements, and hovering a dungeon item
+     * with it carried opens the entry that explains it. Named by {@code book.dungeons2.delvers_companion}.
+     */
+    public static final RegistryObject<Item> DELVERS_COMPANION = Registration.ITEMS.register(
+            "delvers_companion",
+            () -> new BookItem(new Item.Properties().stacksTo(1),
+                    new ResourceLocation(Dungeons.MOD_ID, "delvers_companion")));
+
     @SubscribeEvent
     public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -522,6 +534,7 @@ public class DungeonsItems {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(BLANK_DUNGEON_MAP.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(DUNGEON_COMPASS.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(DELVERS_COMPANION.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(MINOTAUR_AXE.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);

@@ -37,13 +37,16 @@ import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 /**
  * Dungeon Maps: a vanilla filled map of one dungeon floor that draws itself as you explore it.
@@ -70,6 +73,13 @@ import java.util.Deque;
  * <p>The way off the floor is drawn where the walking leaves it: a walk that goes on down past a
  * corridor's deepest descent, or a ladder down, is the stairs down and drawn red; the same upward is
  * the way up, drawn gold. The floor's own stairs-down room is drawn red too, from its stamp.</p>
+ *
+ * <p>A way off the floor is the one thing the map must not lose, and on a large dungeon's map a pixel
+ * covers several blocks, the last one painted winning it. So a red or gold pixel is never painted
+ * over by anything else, and a ladder or walk-off stairs spreads its colour one pixel onto the floor
+ * and water pixels round it, never onto a wall or door (Mark, 2026-10-28: one pixel of gold was lost on the
+ * parchment). Not a map icon: an icon is 8 pixels across at every scale, so on a large map it would
+ * cover rooms and hide where the ladder really is.</p>
  *
  * <h2>Two ways to get one</h2>
  * <p>Found in a chest, it maps the chest's floor, read off the chest. Crafted, a Blank Dungeon Map
@@ -169,7 +179,17 @@ public final class DungeonMaps {
         if (!onLevel(stamp, feet.getY())) {
             return;
         }
-        scan(level, stamp, feet, (x, z, colour) -> paint(data, x, z, colour));
+        List<long[]> ways = new ArrayList<>();
+        scan(level, stamp, feet, (x, z, colour) -> {
+            paint(data, x, z, colour);
+            // the stairs room is drawn whole from its stamp; a ladder or a walk-off is a point
+            if (isWayOff(colour) && !stamp.isStairsDown(x, z)) {
+                ways.add(new long[]{x, z, colour});
+            }
+        });
+        for (long[] way : ways) {
+            halo(data, (int) way[0], (int) way[1], (byte) way[2]);
+        }
     }
 
     /** Whether a holder standing at {@code y} is on this map's floor, as far as drawing goes. */
@@ -322,11 +342,17 @@ public final class DungeonMaps {
 
     /** Where the walking stops: a ladder, a door, a wall, or a drop with no floor in reach. */
     private static byte edgeColour(BlockGetter level, int x, int y, int z) {
-        // a ladder first: it has a collision box, so it would otherwise read as wall
+        // a ladder first: it has a collision box, so it would otherwise read as wall. One that rises
+        // past head height is the way up even when its foot is at or below the floor: the sewer
+        // transition's ladder starts down in its pool, beside the ledge it is climbed from, and was
+        // drawn red (Mark, 2026-10-28). A ladder down has at most a top rung above the floor.
+        if (climbable(level, x, y + 2, z)) {
+            return STAIRS_UP;
+        }
         if (climbable(level, x, y, z) || climbable(level, x, y - 1, z)) {
             return STAIRS;
         }
-        if (climbable(level, x, y + 1, z) || climbable(level, x, y + 2, z)) {
+        if (climbable(level, x, y + 1, z)) {
             return STAIRS_UP;
         }
         for (int up = 1; up <= 2; up++) {
@@ -338,6 +364,19 @@ public final class DungeonMaps {
         }
         if (solid(level, x, y + 1, z) || solid(level, x, y + 2, z)) {
             return WALL;
+        }
+        // a drop whose top is water or lava is a pool, not a pit: the sewer transition's pool lies a
+        // block below its ledges, and drawn black it was neither readable nor something the ladder's
+        // halo could spread onto (Mark, 2026-10-28)
+        for (int down = 1; down >= -1; down--) {
+            FluidState fluid = level.getFluidState(new BlockPos(x, y + down, z));
+            // the tag for modded fluids, the vanilla fluid where no tags are bound (a unit test)
+            if (fluid.is(FluidTags.WATER) || fluid.getType().isSame(Fluids.WATER)) {
+                return WATER;
+            }
+            if (fluid.is(FluidTags.LAVA) || fluid.getType().isSame(Fluids.LAVA)) {
+                return LAVA;
+            }
         }
         return PIT;
     }
@@ -361,13 +400,39 @@ public final class DungeonMaps {
                 || type == BlockPathTypes.DOOR_OPEN;
     }
 
-    private static void paint(MapItemSavedData data, int x, int z, byte colour) {
+    /** Paints the pixel holding block column (x, z), unless it already shows a way off the floor. */
+    static void paint(MapItemSavedData data, int x, int z, byte colour) {
         int size = 1 << data.scale;
         int px = Math.floorDiv(x - data.centerX, size) + 64;
         int pz = Math.floorDiv(z - data.centerZ, size) + 64;
-        if (px >= 0 && px < 128 && pz >= 0 && pz < 128) {
+        if (px >= 0 && px < 128 && pz >= 0 && pz < 128
+                && (isWayOff(colour) || !isWayOff(data.colors[px + pz * 128]))) {
             data.updateColor(px, pz, colour);
         }
+    }
+
+    /**
+     * Spreads a way off the floor onto the floor and water pixels round its own, and nothing else.
+     * Water counts: the sewer transition's ladder stands in its pool, and with floor alone only the
+     * ledge beside it took the colour (Mark, 2026-10-28).
+     */
+    static void halo(MapItemSavedData data, int x, int z, byte colour) {
+        int size = 1 << data.scale;
+        int px = Math.floorDiv(x - data.centerX, size) + 64;
+        int pz = Math.floorDiv(z - data.centerZ, size) + 64;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int nx = px + dx;
+                int nz = pz + dz;
+                if (nx >= 0 && nx < 128 && nz >= 0 && nz < 128 && (data.colors[nx + nz * 128] == FLOOR || data.colors[nx + nz * 128] == WATER)) {
+                    data.updateColor(nx, nz, colour);
+                }
+            }
+        }
+    }
+
+    private static boolean isWayOff(long colour) {
+        return colour == STAIRS || colour == STAIRS_UP;
     }
 
     private static long key(int x, int z) {

@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "minecraft:mossy_stone_bricks"
+      "item": "dungeonblocks:dark_oak_dungeon_door"
     },
     "title": {
       "translate": "advancements.dungeons2.root.title"

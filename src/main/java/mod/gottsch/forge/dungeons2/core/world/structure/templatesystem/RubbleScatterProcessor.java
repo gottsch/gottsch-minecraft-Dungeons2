@@ -32,6 +32,7 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -70,6 +71,9 @@ import java.util.function.Supplier;
  * {@link #probability}, and the scatter's {@code chips} (when the block has that property) is the
  * points plus a coin toss, capped at the block's maximum &mdash; so the more of a wall came down, the
  * thicker the pile.</p>
+ *
+ * <p>Never in a doorway: a foot cell with anything but the piece's own air two above it is passed
+ * over, because a scatter there jams every mob taller than 1.9375 (see {@link #lowHeadroom}).</p>
  *
  * <h2>Chunk safety</h2>
  * <p>A {@link LevelIndependentProcessor}: it reads only the piece's lists, which that marker hands
@@ -179,6 +183,9 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
         Map<BlockPos, BlockState> placed = new HashMap<>();
         for (Map.Entry<Long, Integer> foot : feet.entrySet()) {
             BlockPos pos = BlockPos.of(foot.getKey());
+            if (lowHeadroom(pos, pending)) {
+                continue;
+            }
             RandomSource random = RandomSource.create(Mth.getSeed(pos));
             if (random.nextDouble() >= probability) {
                 continue;
@@ -215,8 +222,9 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
      * The walkable cell at the foot of this column: the highest cell at or below {@code fromY}, no
      * more than {@link #maxDrop} down, that the piece writes as AIR and that stands on something the
      * piece writes solid. A pool's surface is not a floor: air over water or lava is passed by, and
-     * the walk carries on down through the liquid, which it can never land in. Null when the column
-     * is not the piece's (terrain), or is solid all the way.
+     * the walk carries on down through the liquid, which it can never land in. Nor is a stair: a
+     * scatter is a flat carpet, and on a stair's top cell it floats over the low step (Mark,
+     * 2026-10-28). Null when the column is not the piece's (terrain), or is solid all the way.
      */
     private BlockPos footBelow(BlockPos column, int fromY, Map<BlockPos, BlockState> pending) {
         for (int y = fromY; y >= fromY - maxDrop; y--) {
@@ -229,11 +237,24 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
                 continue;
             }
             BlockState under = pending.get(cell.below());
-            if (under != null && !under.isAir() && !(under.getBlock() instanceof LiquidBlock)) {
+            if (under != null && !under.isAir() && !(under.getBlock() instanceof LiquidBlock)
+                    && !(under.getBlock() instanceof StairBlock)) {
                 return cell;
             }
         }
         return null;
+    }
+
+    /**
+     * True when the cell two above the foot is not known to be open: a doorway, or any other two-high
+     * gap. A scatter is a carpet, 1/16 of a block, and on the floor of a two-high gap it leaves 1.9375
+     * of headroom -- under the 1.95 of a zombie or a Skeleton Warrior and the 1.99 of a skeleton, so a
+     * mob that fits the bare doorway jams in it, while the 1.8-tall player walks through. Unknown counts
+     * as closed: the lintel over a doorway can belong to the door's own piece, outside this list.
+     */
+    private static boolean lowHeadroom(BlockPos foot, Map<BlockPos, BlockState> pending) {
+        BlockState overhead = pending.get(foot.above(2));
+        return overhead == null || !overhead.isAir();
     }
 
     /** The scatter with its {@code chips} set, clamped to what the block allows; unchanged otherwise. */

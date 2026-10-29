@@ -79,7 +79,10 @@ class ShippedLangCoverageTest {
             // ever looks up. (Found 2026-08-14 with spawner_marker, the mod's first BlockItem.)
             String itemKey = "item.dungeons2." + name;
             String blockKey = "block.dungeons2." + name;
-            if (!lang.has(itemKey) && !lang.has(blockKey)) {
+            // A Gottsch Books BookItem names itself from its BOOK's key, book.dungeons2.<book>
+            // (BookItem#getName), and the manual's item shares its book's name.
+            String bookKey = "book.dungeons2." + name;
+            if (!lang.has(itemKey) && !lang.has(blockKey) && !lang.has(bookKey)) {
                 missing.add(itemKey + " / " + blockKey
                         + "  (model " + model.getFileName() + " ships with no display name)");
             }

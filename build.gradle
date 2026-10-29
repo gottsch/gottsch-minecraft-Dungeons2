@@ -90,10 +90,26 @@ repositories {
     maven {
         url = "https://maven.theillusivec4.top/"
     }
+    // Modrinth's maven, for dev-only runtime mods (Terralith). Limited to its own group so Gradle
+    // never asks it for anything else.
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
     
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
      flatDir {
          dir 'libs'
+         // Stronger Mobs Below's own build output (dev-only runtime mod below): SMB is not published
+         // to any maven, so its jar is read where its repo builds it
+         dir '../StrongerMobsBelow-1.20.1/build/libs'
      }
 }
 
@@ -158,6 +174,17 @@ dependencies {
     // DEV ONLY, same trade as the Treasure2 line: uncomment to exercise the present case, and put
     // it back so the checked-in build tests the absent one.
     runtimeOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.0.1")
+
+    // Terralith - DEV ONLY, added 2026-10-29 to check that its biomes get dungeons through the
+    // category tags in has_structure/dungeon.json. One jar for every loader, data only, so no deobf.
+    // Like the lines above it reaches the test classpath too. D2 has no dependency on it.
+    runtimeOnly "maven.modrinth:terralith:2.5.4"
+
+    // Stronger Mobs Below - DEV ONLY, added 2026-10-29: SMB scales mobs by WORLD Y through EE, and
+    // D2 sets its own floor-based echelon first (bosses pinned at 0), so this exercises the two
+    // together. Read from SMB's build/libs via the flatDir above; rebuild SMB there if it changes.
+    // EE is already on the runtime classpath above, which SMB requires.
+    runtimeOnly fg.deobf("gottsch:strongermobsbelow-1.20.1:1.0.0")
 //    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // JUnit 5 for the POJO core / planner tests (no Minecraft needed).
