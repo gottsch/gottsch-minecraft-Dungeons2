@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -580,5 +581,243 @@ class RisingVaultTest {
         DataResult<VaultedCeilingPattern> bad = VaultedCeilingPattern.CODEC.codec().parse(JsonOps.INSTANCE,
                 JsonParser.parseString("{\"block\":\"minecraft:stone\",\"barrel\":\"diagonal\"}"));
         assertTrue(bad.error().isPresent(), "an unknown barrel axis must fail the load");
+    }
+
+    // ---------- double barrel vaults (2026-10-29) ----------
+
+    private static final String SPRINGING = "minecraft:polished_granite";
+
+    /** A two-barrel long vault of three steps; {@code springing} empty leaves the spine plain. */
+    private static SurfacePatternEntry doubleBarrel(Optional<String> springing, int stepInset) {
+        return new SurfacePatternEntry(new VaultedCeilingPattern(VAULT_BLOCK, 3, 1, stepInset, springing,
+                Optional.empty(), SurfaceOrient.INWARD, Map.of(), Optional.of(BarrelAxis.Mode.LONG), 2),
+                0, 0, SizeGate.UNBOUNDED);
+    }
+
+    /** 21 wide (x) by 15 deep (z): interior x 11..29, z 21..33, so 13 cells across the barrel. */
+    private static RoomData oddHall() {
+        return new RoomData(1, 10, 20, 21, 15, 6, RoomRole.NORMAL);
+    }
+
+    /** 21 wide (x) by 14 deep (z): interior x 11..29, z 21..32, so 12 cells across the barrel. */
+    private static RoomData evenHall() {
+        return new RoomData(1, 10, 20, 21, 14, 6, RoomRole.NORMAL);
+    }
+
+    /**
+     * How many rows above the plane the vault roofs each cell of one cross-section at {@code x}, from
+     * {@code zFrom} to {@code zTo} inclusive: 0 for a cell left on the plane. The end view of the
+     * vault, which is what symmetry is about.
+     */
+    private static int[] endView(Map<String, String> world, int ceilingY, int x, int zFrom, int zTo) {
+        int[] rise = new int[zTo - zFrom + 1];
+        for (int z = zFrom; z <= zTo; z++) {
+            for (int r = CeilingPatternEntry.MAX_RISE; r > 0; r--) {
+                if (VAULT_BLOCK.equals(at(world, x, ceilingY + r, z))) {
+                    rise[z - zFrom] = r;
+                    break;
+                }
+            }
+        }
+        return rise;
+    }
+
+    @Test
+    void aDoubleBarrelDrawsTwoCrownsEachRunningEndWallToEndWall() {
+        int ceilingY = FLOOR_Y + oddHall().getHeight() - 1;
+        Map<String, String> world = renderIn(oddHall(), 1L, doubleBarrel(Optional.of(SPRINGING), 1));
+
+        // 13 across: bays of 7 sharing the spine at cross 6 (z 27), so each bay's crown is its own
+        // middle -- cross 3 and 9, z 24 and 30 -- three rows up, the full length of the room
+        for (int x = 11; x <= 29; x++) {
+            assertEquals(VAULT_BLOCK, at(world, x, ceilingY + 3, 24), "the north crown breaks at x " + x);
+            assertEquals(VAULT_BLOCK, at(world, x, ceilingY + 3, 30), "the south crown breaks at x " + x);
+        }
+        // and they are two crowns, not one wide one: nothing that high between them
+        for (int z = 25; z <= 29; z++) {
+            assertEquals(null, at(world, 20, ceilingY + 3, z), "the crowns merged at z " + z);
+        }
+    }
+
+    @Test
+    void theSpineStaysOnThePlaneInTheSpringingMaterial() {
+        int ceilingY = FLOOR_Y + oddHall().getHeight() - 1;
+        Map<String, String> world = renderIn(oddHall(), 1L, doubleBarrel(Optional.of(SPRINGING), 1));
+
+        for (int x = 11; x <= 29; x++) {
+            assertEquals(SPRINGING, at(world, x, ceilingY, 27), "the spine is not springing at x " + x);
+            assertEquals(null, at(world, x, ceilingY + 1, 27), "the spine was raised at x " + x);
+        }
+        // the outer lips are still the ring's springing, as on a single barrel
+        assertEquals(SPRINGING, at(world, 20, ceilingY, 21));
+        assertEquals(SPRINGING, at(world, 20, ceilingY, 33));
+        // and the cells either side of the spine are the bays' first steps, not more lip
+        assertEquals(VAULT_BLOCK, at(world, 20, ceilingY + 1, 26));
+        assertEquals(VAULT_BLOCK, at(world, 20, ceilingY + 1, 28));
+    }
+
+    @Test
+    void withoutASpringingBlockTheSpineIsPlainCeiling() {
+        int ceilingY = FLOOR_Y + oddHall().getHeight() - 1;
+        Map<String, String> world = renderIn(oddHall(), 1L, doubleBarrel(Optional.empty(), 1));
+
+        assertEquals(PLAIN_CEILING, at(world, 20, ceilingY, 27));
+        assertEquals(null, at(world, 20, ceilingY + 1, 27));
+        assertEquals(VAULT_BLOCK, at(world, 20, ceilingY + 3, 24), "the bays should still rise");
+    }
+
+    @Test
+    void anOddCrossWidthSplitsAboutAOneCellSpine() {
+        int ceilingY = FLOOR_Y + oddHall().getHeight() - 1;
+        Map<String, String> world = renderIn(oddHall(), 1L, doubleBarrel(Optional.of(SPRINGING), 1));
+
+        // lip, 1, 2, 3, 2, 1, spine, 1, 2, 3, 2, 1, lip
+        assertArrayEquals(new int[]{0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0},
+                endView(world, ceilingY, 20, 21, 33));
+    }
+
+    @Test
+    void anEvenCrossWidthSplitsAboutATwoCellSpine() {
+        int ceilingY = FLOOR_Y + evenHall().getHeight() - 1;
+        Map<String, String> world = renderIn(evenHall(), 1L, doubleBarrel(Optional.of(SPRINGING), 1));
+
+        // 12 across: two bays of 6 abutting, their inner lips side by side as the spine (z 26, 27).
+        // Each bay is a barrel of 6, whose two middle cells tie for the crown at two rows.
+        assertArrayEquals(new int[]{0, 1, 2, 2, 1, 0, 0, 1, 2, 2, 1, 0},
+                endView(world, ceilingY, 20, 21, 32));
+        assertEquals(SPRINGING, at(world, 20, ceilingY, 26));
+        assertEquals(SPRINGING, at(world, 20, ceilingY, 27));
+    }
+
+    @Test
+    void aRoomTooNarrowForTwoBaysFallsBackToOneBarrel() {
+        // 13 by 6: 4 across, so each bay would be 2 cells, lip and lip with nothing between them to
+        // raise. It must come out exactly as the single barrel, spine and all -- i.e. no spine.
+        RoomData narrow = new RoomData(1, 10, 20, 13, 6, 6, RoomRole.NORMAL);
+        SurfacePatternEntry single = new SurfacePatternEntry(new VaultedCeilingPattern(VAULT_BLOCK, 3, 1, 1,
+                Optional.of(SPRINGING), Optional.empty(), SurfaceOrient.INWARD, Map.of(),
+                Optional.of(BarrelAxis.Mode.LONG)), 0, 0, SizeGate.UNBOUNDED);
+        Map<String, String> asSingle = renderIn(narrow, 1L, single);
+
+        assertEquals(asSingle, renderIn(narrow, 1L, doubleBarrel(Optional.of(SPRINGING), 1)));
+        int ceilingY = FLOOR_Y + narrow.getHeight() - 1;
+        assertEquals(VAULT_BLOCK, at(asSingle, 16, ceilingY + 1, 22), "the fallback should still rise");
+    }
+
+    @Test
+    void theNarrowestRoomThatSplitsIsFourStepInsetsAndOneAcross() {
+        int ceilingY = FLOOR_Y + 5;
+        // 5 across at step_inset 1: bays of 3, each raising one cell either side of a 1-cell spine
+        RoomData five = new RoomData(1, 10, 20, 13, 7, 6, RoomRole.NORMAL);
+        Map<String, String> world = renderIn(five, 1L, doubleBarrel(Optional.of(SPRINGING), 1));
+        assertArrayEquals(new int[]{0, 1, 0, 1, 0}, endView(world, ceilingY, 16, 21, 25));
+        assertEquals(SPRINGING, at(world, 16, ceilingY, 23));
+
+        // and the threshold follows step_inset: 7 across at inset 2 is under 4 * 2 + 1, one barrel
+        RoomData seven = new RoomData(1, 10, 20, 13, 9, 6, RoomRole.NORMAL);
+        Map<String, String> wide = renderIn(seven, 1L, doubleBarrel(Optional.of(SPRINGING), 2));
+        assertArrayEquals(new int[]{0, 0, 1, 1, 1, 0, 0}, endView(wide, ceilingY, 16, 21, 27));
+        assertEquals(VAULT_BLOCK, at(wide, 16, ceilingY + 1, 24), "no spine down a fallen-back vault");
+    }
+
+    @Test
+    void aDoubleBarrelIsClampedToTheRoomLikeAnyOtherRise() {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCeilingGenerator()
+                .withRiseBudget(1)
+                .withCeilingPattern(CeilingPatternSelector.providerFor(
+                        Optional.of(entry(doubleBarrel(Optional.of(SPRINGING), 1)))))
+                .build(oddHall(), FLOOR_Y, DungeonMotif.CLASSIC, RandomSource.create(1L), out);
+        int ceilingY = FLOOR_Y + oddHall().getHeight() - 1;
+        Map<String, String> world = settle(out);
+
+        assertArrayEquals(new int[]{0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0},
+                endView(world, ceilingY, 20, 21, 33));
+        for (BlockPlacement bp : out) {
+            assertTrue(bp.getY() <= ceilingY + 1, "the clamp did not hold: " + bp);
+        }
+    }
+
+    /**
+     * A square room picks one axis with the room's random, and both bays -- every step of each, and
+     * the spine between them -- must follow it, or the room gets a lattice of half-barrels.
+     */
+    @Test
+    void aSquareRoomsTwoBaysShareOneAxis() {
+        // 15 square: interior x 11..23, z 21..33; 13 across either way, so crowns at cross 3 and 9
+        RoomData square = new RoomData(1, 10, 20, 15, 15, 6, RoomRole.NORMAL);
+        int ceilingY = FLOOR_Y + square.getHeight() - 1;
+        boolean sawEastWest = false;
+        boolean sawNorthSouth = false;
+        for (long seed = 0; seed < 40; seed++) {
+            Map<String, String> world = renderIn(square, mix(seed), doubleBarrel(Optional.of(SPRINGING), 1));
+            boolean eastWest = true;
+            boolean northSouth = true;
+            for (int i = 0; i < 13; i++) {
+                eastWest &= VAULT_BLOCK.equals(at(world, 11 + i, ceilingY + 3, 24))
+                        && VAULT_BLOCK.equals(at(world, 11 + i, ceilingY + 3, 30))
+                        && SPRINGING.equals(at(world, 11 + i, ceilingY, 27));
+                northSouth &= VAULT_BLOCK.equals(at(world, 14, ceilingY + 3, 21 + i))
+                        && VAULT_BLOCK.equals(at(world, 20, ceilingY + 3, 21 + i))
+                        && SPRINGING.equals(at(world, 17, ceilingY, 21 + i));
+            }
+            assertTrue(eastWest != northSouth, "seed " + seed + ": the bays do not share one axis");
+            sawEastWest |= eastWest;
+            sawNorthSouth |= northSouth;
+        }
+        assertTrue(sawEastWest && sawNorthSouth, "40 square rooms all chose the same axis");
+    }
+
+    private static DataResult<VaultedCeilingPattern> parseVault(String json) {
+        return VaultedCeilingPattern.CODEC.codec().parse(JsonOps.INSTANCE, JsonParser.parseString(json));
+    }
+
+    @Test
+    void barrelsDecodesAndDefaultsToOne() {
+        assertEquals(2, parseVault("{\"block\":\"minecraft:stone\",\"barrel\":\"long\",\"barrels\":2}")
+                .result().orElseThrow().barrels());
+        assertEquals(1, parseVault("{\"block\":\"minecraft:stone\",\"barrel\":\"long\"}")
+                .result().orElseThrow().barrels(), "absent must stay one barrel");
+        assertEquals(1, parseVault("{\"block\":\"minecraft:stone\"}").result().orElseThrow().barrels());
+    }
+
+    @Test
+    void barrelsWithoutABarrelOrOutOfRangeIsALoadError() {
+        DataResult<VaultedCeilingPattern> noBarrel = parseVault("{\"block\":\"minecraft:stone\",\"barrels\":2}");
+        assertTrue(noBarrel.result().isEmpty(), "barrels with no barrel axis must not decode");
+        assertTrue(noBarrel.error().orElseThrow().message().contains("barrel"),
+                "the error must name the field to add: " + noBarrel.error().orElseThrow().message());
+
+        for (int barrels : new int[]{0, 3}) {
+            assertTrue(parseVault("{\"block\":\"minecraft:stone\",\"barrel\":\"long\",\"barrels\":"
+                    + barrels + "}").result().isEmpty(), "barrels " + barrels + " must not decode");
+        }
+    }
+
+    /** The example the Room Schemes Manual shows, verbatim: it must stay loadable. */
+    @Test
+    void theManualsDoubleBarrelExampleDecodes() {
+        DataResult<CeilingPatternEntry> result = parse("""
+                {
+                  "patterns": [
+                    {
+                      "type": "dungeons2:vaulted",
+                      "config": {
+                        "block": "minecraft:stone_bricks",
+                        "springing_block": "minecraft:polished_andesite",
+                        "crown_block": "minecraft:chiseled_stone_bricks",
+                        "steps": 3,
+                        "barrel": "long",
+                        "barrels": 2
+                      }
+                    }
+                  ]
+                }""");
+
+        CeilingPatternEntry entry = result.result().orElseThrow(
+                () -> new AssertionError(result.error().map(Object::toString).orElse("")));
+        VaultedCeilingPattern vault = (VaultedCeilingPattern) entry.patterns().get(0).pattern();
+        assertEquals(2, vault.barrels());
+        assertEquals(Optional.of(BarrelAxis.Mode.LONG), vault.barrel());
     }
 }

@@ -26,6 +26,8 @@ import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient
 import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPatternSelector.Layer;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BarrelAxis;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BarrelBays;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BarrelSpineSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BorderSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CeilingSurface;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.FieldSurfacePatternProvider;
@@ -90,6 +92,15 @@ import java.util.Optional;
  *       picks a side with the room's random, once for every step); {@code x} runs it east-west and
  *       {@code z} north-south, whatever the room's shape. Absent, the vault is the four-sided dome
  *       it always was. Added 2026-10-29 (Mark).</li>
+ *   <li>{@code barrels} &mdash; 1 or 2, default 1; only with {@code barrel}, and rejected without
+ *       one, for the same reason as {@code orient} without a springing course. 2 draws TWO parallel
+ *       barrels side by side, each a full barrel of the same {@code steps}, {@code step_height},
+ *       {@code step_inset} and {@code crown_block}, with a spine between them on the ceiling plane
+ *       running end wall to end wall &mdash; in {@code springing_block} when there is one, as the
+ *       shared springing line of both, and plain ceiling otherwise. An odd cross-width has a 1-cell
+ *       spine; an even one a 2-cell spine, which keeps the two bays mirror images. A room too narrow
+ *       for each bay to raise its first step (under {@code 4 * step_inset + 1} cells across the
+ *       barrel) is drawn as one barrel instead. See {@link BarrelBays}. Added 2026-10-29 (Mark).</li>
  *   <li>{@code properties} &mdash; applied to every state this places, as everywhere else.</li>
  * </ul>
  *
@@ -108,7 +119,7 @@ import java.util.Optional;
 public record VaultedCeilingPattern(String block, int steps, int stepHeight, int stepInset,
                                     Optional<String> springingBlock, Optional<String> crownBlock,
                                     SurfaceOrient orient, Map<String, String> properties,
-                                    Optional<BarrelAxis.Mode> barrel)
+                                    Optional<BarrelAxis.Mode> barrel, int barrels)
         implements CeilingPattern {
 
     public static final String NAME = "vaulted";
@@ -127,7 +138,7 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
             return this;
         }
         return new VaultedCeilingPattern(resolvedBlock, steps, stepHeight, stepInset,
-                resolvedSpringing, resolvedCrown, orient, properties, barrel);
+                resolvedSpringing, resolvedCrown, orient, properties, barrel, barrels);
     }
 
     /** A plain three-step vault of one material, no springing course. */
@@ -142,6 +153,15 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
                                  SurfaceOrient orient, Map<String, String> properties) {
         this(block, steps, stepHeight, stepInset, springingBlock, crownBlock, orient, properties,
                 Optional.empty());
+    }
+
+    /** One barrel, or a dome: every field but {@code barrels}. */
+    public VaultedCeilingPattern(String block, int steps, int stepHeight, int stepInset,
+                                 Optional<String> springingBlock, Optional<String> crownBlock,
+                                 SurfaceOrient orient, Map<String, String> properties,
+                                 Optional<BarrelAxis.Mode> barrel) {
+        this(block, steps, stepHeight, stepInset, springingBlock, crownBlock, orient, properties,
+                barrel, 1);
     }
 
     public static final MapCodec<VaultedCeilingPattern> CODEC = Codecs.closedMap(
@@ -162,12 +182,14 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
                             "properties", Map.of()).forGetter(VaultedCeilingPattern::properties),
                     Codecs.strictOptionalFieldOf(BarrelAxis.Mode.CODEC, "barrel")
-                            .forGetter(VaultedCeilingPattern::barrel)
+                            .forGetter(VaultedCeilingPattern::barrel),
+                    Codecs.strictOptionalFieldOf(Codec.intRange(1, BarrelBays.MAX_BARRELS),
+                            "barrels", 1).forGetter(VaultedCeilingPattern::barrels)
             ).apply(instance, VaultedCeilingPattern::new)).flatXmap(
                     VaultedCeilingPattern::validate, VaultedCeilingPattern::validate));
 
     /**
-     * The two rules no field range can express, because both are relationships between fields.
+     * The three rules no field range can express, because both are relationships between fields.
      *
      * <p>The height one is a load error rather than a clamp for the reason the class doc gives: the
      * render-time clamp exists to fit a vault to a ROOM, which varies; an authored vault that could
@@ -189,6 +211,13 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
             return DataResult.error(() -> "ceiling pattern 'vaulted': orient turns the springing"
                     + " course, and this entry has no springing_block to turn; the steps themselves"
                     + " are areas and have no edge to face");
+        }
+        // And once more for barrels: splitting is across a barrel's axis, and a dome has none. As
+        // with orient, only a value the default could not have produced can be blamed on the author.
+        if (pattern.barrels() != 1 && pattern.barrel().isEmpty()) {
+            return DataResult.error(() -> "ceiling pattern 'vaulted': barrels " + pattern.barrels()
+                    + " splits a barrel vault across its axis, and this entry has no barrel; add"
+                    + " \"barrel\": \"long\" (or x or z), or remove barrels");
         }
         return DataResult.success(pattern);
     }
@@ -215,7 +244,9 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
 
     /**
      * Expands to the layers a hand-stacked vault would have been written as: the springing course at
-     * the entry's own depth, then one field per step, each further in and further up.
+     * the entry's own depth (and a double barrel's spine beside it), then one field per step, each
+     * further in and further up. A double barrel is still one field per step, not two stacks: each
+     * step's field is the pair of strips, one per bay, so the ordering below holds for both bays.
      *
      * <p>Emitted in ASCENDING order, which is not cosmetic &mdash; each step's excavation reopens the
      * roof the step below it laid over the same cells, so the highest step is what survives. Reverse
@@ -231,18 +262,26 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
         if (state == null) {
             return;
         }
-        springingBlock.map(id -> CeilingPattern.state(id, properties))
-                .ifPresent(springing -> out.add(new Layer(depth,
-                        new BorderSurfacePatternProvider(0, springing, springing, orient,
-                                CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION))));
+        BlockState springing = springingBlock.map(id -> CeilingPattern.state(id, properties))
+                .orElse(null);
+        if (springing != null) {
+            out.add(new Layer(depth, new BorderSurfacePatternProvider(0, springing, springing, orient,
+                    CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION)));
+        }
 
         BlockState crown = crownBlock.map(id -> CeilingPattern.state(id, properties)).orElse(state);
         // one axis for every step of this vault: see BarrelAxis
         BarrelAxis axis = barrel.map(BarrelAxis::new).orElse(null);
+        // and, when doubled, one split for every step and the spine: see BarrelBays
+        BarrelBays bays = axis != null && barrels > 1 ? new BarrelBays(barrels, stepInset) : null;
+        if (bays != null && springing != null) {
+            // the shared springing line of both barrels, in the plane with the ring
+            out.add(new Layer(depth, new BarrelSpineSurfacePatternProvider(springing, axis, bays)));
+        }
         for (int step = 1; step <= steps; step++) {
             BlockState material = step == steps && crown != null ? crown : state;
             out.add(new Layer(depth - step * stepHeight,
-                    new FieldSurfacePatternProvider(step * stepInset, material, axis)));
+                    new FieldSurfacePatternProvider(step * stepInset, material, axis, bays)));
         }
     }
 }
