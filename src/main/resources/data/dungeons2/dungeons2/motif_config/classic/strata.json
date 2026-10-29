@@ -331,6 +331,16 @@
             }
           ],
           "ceiling": [
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "minecraft:mud_bricks", "springing_block": "dungeonblocks:square_mud_brick", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
             { "weight": 2, "none": true },
             {
               "weight": 4,
@@ -541,6 +551,15 @@
             { "weight": 2, "none": true }
           ],
           "ceiling": [
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "minecraft:mud_bricks", "springing_block": "dungeonblocks:square_mud_brick", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
             {
               "weight": 3,
               "patterns": [

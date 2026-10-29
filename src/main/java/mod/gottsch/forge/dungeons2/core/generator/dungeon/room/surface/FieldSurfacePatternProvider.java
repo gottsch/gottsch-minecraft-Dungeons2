@@ -59,17 +59,37 @@ public class FieldSurfacePatternProvider implements ISurfacePatternProvider {
 
     private final int inset;
     private final BlockState block;
+    /** Null for the four-sided field; otherwise the inset is across one axis only (a barrel vault). */
+    private final BarrelAxis barrel;
 
     public FieldSurfacePatternProvider(int inset, BlockState block) {
+        this(inset, block, null);
+    }
+
+    /**
+     * With a {@code barrel}, the inset is drawn in from the two walls the barrel runs between only,
+     * and the field runs the full length to the end walls: one step of a barrel vault.
+     */
+    public FieldSurfacePatternProvider(int inset, BlockState block, BarrelAxis barrel) {
         this.inset = Math.max(0, inset);
         this.block = Objects.requireNonNull(block, "block");
+        this.barrel = barrel;
     }
 
     @Override
     public SurfacePlan plan(int uSize, int vSize, Direction facing, RandomSource random) {
         SurfacePlan plan = SurfacePlan.of(uSize, vSize);
-        for (int u = inset; u < uSize - inset; u++) {
-            for (int v = inset; v < vSize - inset; v++) {
+        int uInset = inset;
+        int vInset = inset;
+        if (barrel != null) {
+            if (barrel.runsAlongU(uSize, vSize, random)) {
+                uInset = 0;
+            } else {
+                vInset = 0;
+            }
+        }
+        for (int u = uInset; u < uSize - uInset; u++) {
+            for (int v = vInset; v < vSize - vInset; v++) {
                 plan.set(u, v, block);
             }
         }

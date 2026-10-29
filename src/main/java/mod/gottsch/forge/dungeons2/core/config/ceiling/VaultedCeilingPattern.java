@@ -25,6 +25,7 @@ import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry.SurfaceOrient;
 import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPatternSelector.Layer;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BarrelAxis;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BorderSurfacePatternProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.CeilingSurface;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.FieldSurfacePatternProvider;
@@ -83,8 +84,18 @@ import java.util.Optional;
  *       {@code inward} (solid mass toward the middle, stepping up into the vault). Meaningless
  *       without {@code springing_block}, and rejected in that case for the same reason an oriented
  *       joists with no bracket is.</li>
+ *   <li>{@code barrel} &mdash; optional; makes it a BARREL vault instead of a dome. Each step is
+ *       drawn in from the two walls the barrel runs between only, and runs the full length of the
+ *       room to flat end walls. {@code long} runs it along the room's longer side (a square room
+ *       picks a side with the room's random, once for every step); {@code x} runs it east-west and
+ *       {@code z} north-south, whatever the room's shape. Absent, the vault is the four-sided dome
+ *       it always was. Added 2026-10-29 (Mark).</li>
  *   <li>{@code properties} &mdash; applied to every state this places, as everywhere else.</li>
  * </ul>
+ *
+ * <p>A barrel's springing course is still authored as a ring, and only its two long sides survive:
+ * the steps run to the end walls, and each step's excavation reopens the plane under it, so the
+ * springing along each end wall is lifted with the vault.</p>
  *
  * <h2>What it does NOT decide</h2>
  * <p>How far it may actually rise. Every step is clamped at render time to the rows this floor has
@@ -96,7 +107,8 @@ import java.util.Optional;
  */
 public record VaultedCeilingPattern(String block, int steps, int stepHeight, int stepInset,
                                     Optional<String> springingBlock, Optional<String> crownBlock,
-                                    SurfaceOrient orient, Map<String, String> properties)
+                                    SurfaceOrient orient, Map<String, String> properties,
+                                    Optional<BarrelAxis.Mode> barrel)
         implements CeilingPattern {
 
     public static final String NAME = "vaulted";
@@ -115,13 +127,21 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
             return this;
         }
         return new VaultedCeilingPattern(resolvedBlock, steps, stepHeight, stepInset,
-                resolvedSpringing, resolvedCrown, orient, properties);
+                resolvedSpringing, resolvedCrown, orient, properties, barrel);
     }
 
     /** A plain three-step vault of one material, no springing course. */
     public VaultedCeilingPattern(String block) {
         this(block, DEFAULT_STEPS, 1, 1, Optional.empty(), Optional.empty(), SurfaceOrient.INWARD,
                 Map.of());
+    }
+
+    /** A dome: every field but {@code barrel}. */
+    public VaultedCeilingPattern(String block, int steps, int stepHeight, int stepInset,
+                                 Optional<String> springingBlock, Optional<String> crownBlock,
+                                 SurfaceOrient orient, Map<String, String> properties) {
+        this(block, steps, stepHeight, stepInset, springingBlock, crownBlock, orient, properties,
+                Optional.empty());
     }
 
     public static final MapCodec<VaultedCeilingPattern> CODEC = Codecs.closedMap(
@@ -140,7 +160,9 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
                     Codecs.strictOptionalFieldOf(SurfaceOrient.CODEC, "orient", SurfaceOrient.INWARD)
                             .forGetter(VaultedCeilingPattern::orient),
                     Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, Codec.STRING),
-                            "properties", Map.of()).forGetter(VaultedCeilingPattern::properties)
+                            "properties", Map.of()).forGetter(VaultedCeilingPattern::properties),
+                    Codecs.strictOptionalFieldOf(BarrelAxis.Mode.CODEC, "barrel")
+                            .forGetter(VaultedCeilingPattern::barrel)
             ).apply(instance, VaultedCeilingPattern::new)).flatXmap(
                     VaultedCeilingPattern::validate, VaultedCeilingPattern::validate));
 
@@ -215,10 +237,12 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
                                 CeilingSurface.U_DIRECTION, CeilingSurface.V_DIRECTION))));
 
         BlockState crown = crownBlock.map(id -> CeilingPattern.state(id, properties)).orElse(state);
+        // one axis for every step of this vault: see BarrelAxis
+        BarrelAxis axis = barrel.map(BarrelAxis::new).orElse(null);
         for (int step = 1; step <= steps; step++) {
             BlockState material = step == steps && crown != null ? crown : state;
             out.add(new Layer(depth - step * stepHeight,
-                    new FieldSurfacePatternProvider(step * stepInset, material)));
+                    new FieldSurfacePatternProvider(step * stepInset, material, axis)));
         }
     }
 }

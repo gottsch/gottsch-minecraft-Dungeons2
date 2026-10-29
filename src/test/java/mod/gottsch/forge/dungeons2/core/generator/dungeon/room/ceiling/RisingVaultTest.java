@@ -30,6 +30,7 @@ import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.RoomRole;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.BarrelAxis;
 import mod.gottsch.forge.dungeons2.core.world.structure.DungeonRoomPiece;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
@@ -479,5 +480,105 @@ class RisingVaultTest {
         }
         assertTrue(carved > 0, "expected the vault to carve above the plane");
         assertTrue(open.isEmpty(), "carved cells open onto unwritten space at " + open);
+    }
+
+    // ---------- barrel vaults (2026-10-29) ----------
+
+    /** 13 wide (x) by 9 deep (z): interior x 11..21, z 21..27. */
+    private static RoomData longRoom() {
+        return new RoomData(1, 10, 20, 13, 9, 6, RoomRole.NORMAL);
+    }
+
+    private static SurfacePatternEntry barrel(BarrelAxis.Mode mode) {
+        return new SurfacePatternEntry(new VaultedCeilingPattern(VAULT_BLOCK, 3, 1, 1, Optional.empty(),
+                Optional.empty(), SurfaceOrient.INWARD, Map.of(), Optional.of(mode)),
+                0, 0, SizeGate.UNBOUNDED);
+    }
+
+    private static Map<String, String> renderIn(RoomData room, long seed, SurfacePatternEntry pattern) {
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCeilingGenerator()
+                .withRiseBudget(4)
+                .withCeilingPattern(CeilingPatternSelector.providerFor(Optional.of(entry(pattern))))
+                .build(room, FLOOR_Y, DungeonMotif.CLASSIC, RandomSource.create(seed), out);
+        return settle(out);
+    }
+
+    @Test
+    void aLongBarrelRunsTheLengthOfTheRoomToFlatEndWalls() {
+        int ceilingY = FLOOR_Y + longRoom().getHeight() - 1;
+        Map<String, String> world = renderIn(longRoom(), 1L, barrel(BarrelAxis.Mode.LONG));
+
+        // the crown runs east-west down the middle, all the way to both end walls
+        assertEquals(VAULT_BLOCK, at(world, 11, ceilingY + 3, 24), "the crown stops short of the west end");
+        assertEquals(VAULT_BLOCK, at(world, 21, ceilingY + 3, 24), "the crown stops short of the east end");
+        assertEquals(VAULT_BLOCK, at(world, 16, ceilingY + 1, 22), "the first step off the north wall");
+        // and it springs from the long walls, which stay on the plane
+        assertEquals(PLAIN_CEILING, at(world, 16, ceilingY, 21), "the north lip should stay on the plane");
+        assertEquals(PLAIN_CEILING, at(world, 16, ceilingY, 27), "the south lip should stay on the plane");
+    }
+
+    @Test
+    void aFixedAxisIgnoresTheRoomsShape() {
+        int ceilingY = FLOOR_Y + longRoom().getHeight() - 1;
+        Map<String, String> world = renderIn(longRoom(), 1L, barrel(BarrelAxis.Mode.Z));
+
+        // north-south across the long room: it springs from the west and east walls instead
+        assertEquals(VAULT_BLOCK, at(world, 16, ceilingY + 3, 21), "the crown stops short of the north end");
+        assertEquals(VAULT_BLOCK, at(world, 16, ceilingY + 3, 27), "the crown stops short of the south end");
+        assertEquals(PLAIN_CEILING, at(world, 11, ceilingY, 24), "the west lip should stay on the plane");
+    }
+
+    /**
+     * A square room picks its axis with the room's random, and every step must follow the same one:
+     * steps that disagreed would draw a cross of two half-vaults. Across seeds both axes turn up.
+     */
+    @Test
+    void aSquareRoomPicksOneAxisForEveryStep() {
+        int ceilingY = FLOOR_Y + room().getHeight() - 1;
+        boolean sawEastWest = false;
+        boolean sawNorthSouth = false;
+        for (long seed = 0; seed < 40; seed++) {
+            // mixed, as DungeonPiece.deterministicRandom mixes a room's seed: the first draw off
+            // RandomSource.create(0, 1, 2, ...) barely varies, and every room "chose" the same axis
+            Map<String, String> world = renderIn(room(), mix(seed), barrel(BarrelAxis.Mode.LONG));
+            // interior x 11..17, z 21..27; the crown is the middle row or column
+            boolean eastWest = true;
+            boolean northSouth = true;
+            for (int i = 11; i <= 17; i++) {
+                eastWest &= VAULT_BLOCK.equals(at(world, i, ceilingY + 3, 24));
+                northSouth &= VAULT_BLOCK.equals(at(world, 14, ceilingY + 3, 10 + i));
+            }
+            assertTrue(eastWest != northSouth, "seed " + seed + ": the crown is not one straight run");
+            // the first step agrees with the crown: it reaches the end walls along the same axis
+            String firstStep = eastWest ? at(world, 11, ceilingY + 1, 22) : at(world, 12, ceilingY + 1, 21);
+            assertEquals(VAULT_BLOCK, firstStep, "seed " + seed + ": the first step ran the other way");
+            sawEastWest |= eastWest;
+            sawNorthSouth |= northSouth;
+        }
+        assertTrue(sawEastWest && sawNorthSouth, "40 square rooms all chose the same axis");
+    }
+
+    /** SplitMix64's finalizer. */
+    private static long mix(long seed) {
+        long z = seed + 0x9E3779B97F4A7C15L;
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
+    }
+
+    @Test
+    void barrelDecodesAndAnUnknownAxisIsALoadError() {
+        DataResult<VaultedCeilingPattern> good = VaultedCeilingPattern.CODEC.codec().parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"block\":\"minecraft:stone\",\"barrel\":\"long\"}"));
+        assertEquals(Optional.of(BarrelAxis.Mode.LONG), good.result().orElseThrow().barrel());
+
+        DataResult<VaultedCeilingPattern> dome = VaultedCeilingPattern.CODEC.codec().parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"block\":\"minecraft:stone\"}"));
+        assertEquals(Optional.empty(), dome.result().orElseThrow().barrel(), "absent must stay a dome");
+
+        DataResult<VaultedCeilingPattern> bad = VaultedCeilingPattern.CODEC.codec().parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"block\":\"minecraft:stone\",\"barrel\":\"diagonal\"}"));
+        assertTrue(bad.error().isPresent(), "an unknown barrel axis must fail the load");
     }
 }

@@ -294,6 +294,16 @@
       ],
 
       "ceiling": [
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
         { "weight": 3, "none": true },
         {
           "weight": 3,
@@ -749,6 +759,15 @@
       ],
 
       "ceiling": [
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
         { "weight": 3, "none": true },
         {
           "weight": 3,
@@ -1556,6 +1575,15 @@
       ],
 
       "ceiling": [
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
         { "weight": 2, "none": true },
         {
           "weight": 2,
