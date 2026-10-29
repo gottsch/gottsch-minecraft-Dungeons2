@@ -170,10 +170,10 @@ dependencies {
     // ModList says `eechelonsapi` is loaded. Deliberately NOT Stronger Mobs Below -- SMB is a
     // content pack with no public API; EE is the API. D2 fills its OWN EchelonRegistry from the
     // motif config's `echelon` block, so it works with EE alone and never uses SMB's numbers.
-    compileOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.0.1")
+    compileOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.1.0")
     // DEV ONLY, same trade as the Treasure2 line: uncomment to exercise the present case, and put
     // it back so the checked-in build tests the absent one.
-    runtimeOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.0.1")
+    runtimeOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.1.0")
 
     // Terralith - DEV ONLY, added 2026-10-29 to check that its biomes get dungeons through the
     // category tags in has_structure/dungeon.json. One jar for every loader, data only, so no deobf.

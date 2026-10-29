@@ -11,5 +11,6 @@ public class ModCommands {
     @SubscribeEvent
     public static void onServerStarting(RegisterCommandsEvent event) {
         SpawnDungeonCommand.register(event.getDispatcher());
+        LocateDungeonCommand.register(event.getDispatcher(), event.getBuildContext());
     }
 }

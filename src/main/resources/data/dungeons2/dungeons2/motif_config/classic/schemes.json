@@ -4,6 +4,91 @@
       "name": "plain",
       "weight": 4,
 
+      // 2026-10-29 (Mark: the stone rooms want more ceilings and pilasters, as the mud band got):
+      // plain had NO wall or ceiling slot, so every plain room was bare above and around. Still the
+      // plainest scheme -- a third of each slot is bare, more in small rooms where the gated options
+      // drop out.
+      "wall": [
+        {
+          "weight": 2,
+          "min_size": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "spacing": 4,
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top", "offset": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "ceiling": [
+        {
+          "weight": 2,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:joists",
+              "projection": 1,
+              "config": {
+                "block": "minecraft:spruce_log",
+                "bracket_block": "$joist_bracket",
+                "orient": "inward",
+                "spacing": 3
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+            }
+          ]
+        },
+        { "weight": 4, "none": true }
+      ],
+
       // Mostly bare -- this is the plain room -- but a worn path is wear, not decoration.
       "floor": [
         { "weight": 5, "none": true },
@@ -131,7 +216,24 @@
       ],
 
       "wall": [
-        { "weight": 5, "none": true },
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "spacing": 4,
+                "projection": 1
+              }
+            }
+          ]
+        },
         {
           "weight": 4,
           "patterns": [
@@ -192,7 +294,7 @@
       ],
 
       "ceiling": [
-        { "weight": 6, "none": true },
+        { "weight": 3, "none": true },
         {
           "weight": 3,
           "patterns": [
@@ -1235,7 +1337,17 @@
       ],
 
       "ceiling": [
-        { "weight": 4, "none": true },
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+            }
+          ]
+        },
         {
           "weight": 1,
           "min_size": 9,
@@ -1444,7 +1556,24 @@
       ],
 
       "ceiling": [
-        { "weight": 3, "none": true },
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } }
+          ]
+        },
         {
           "weight": 2,
           "patterns": [
