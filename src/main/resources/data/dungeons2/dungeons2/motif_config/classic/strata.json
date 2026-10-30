@@ -8,6 +8,9 @@
         // The same square stone as `footing`, which is what this band's floor patterns laid
         // before `floor_accent` existed (2026-10-30): mud floors look exactly as they did.
         "floor_accent": "dungeonblocks:square_stone_brick",
+        // And the same square stone for the two vaults that sprang from `footing`; this band's
+        // other vaults name square_mud_brick literally and are unchanged.
+        "springing_inlay": "dungeonblocks:square_stone_brick",
         "stair": "minecraft:mud_brick_stairs", "corbel": "dungeonblocks:stone_corbel_block",
         "wall_capital_left": "dungeonblocks:left_large_mud_brick",
         "wall_capital_right": "dungeonblocks:right_large_mud_brick",
@@ -617,7 +620,7 @@
                 {
                   "type": "dungeons2:vaulted",
                   "config": {
-                    "block": "minecraft:mud_bricks", "springing_block": "$footing",
+                    "block": "minecraft:mud_bricks", "springing_block": "$springing_inlay",
                     "crown_block": "dungeonblocks:mossy_square_mud_brick", "steps": 2,
                     "step_height": 2
                   }
@@ -924,7 +927,7 @@
                 {
                   "type": "dungeons2:vaulted",
                   "config": {
-                    "block": "minecraft:mud_bricks", "springing_block": "$footing",
+                    "block": "minecraft:mud_bricks", "springing_block": "$springing_inlay",
                     "crown_block": "dungeonblocks:mossy_square_mud_brick", "steps": 2,
                     "step_height": 2
                   }
@@ -1098,6 +1101,7 @@
         "inlay_alt": "minecraft:deepslate_tiles",
         "ornament": "minecraft:chiseled_deepslate",
         "floor_accent": "minecraft:chiseled_deepslate",
+        "springing_inlay": "minecraft:polished_deepslate",
         "plinth_left": "dungeonblocks:left_large_deepslate_brick",
         "plinth_right": "dungeonblocks:right_large_deepslate_brick",
         // The four roles added to base.json's palette on 2026-09-16. Before they existed these were

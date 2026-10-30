@@ -69,7 +69,13 @@
     // border used `footing` for its corners, and `footing` is the base of a column -- so a big
     // chamber had a pillar base set flat into each corner of its floor, reading as an upside-down
     // column. One role per purpose: `footing` stands under a shaft; this lies in a floor.
-    "floor_accent": "minecraft:chiseled_stone_bricks"
+    "floor_accent": "minecraft:chiseled_stone_bricks",
+    // The course a rising vault springs from: the ring in the ceiling plane at its lip, and a
+    // double barrel's spine. Added 2026-10-30 (Mark), for `floor_accent`'s reason: every vault
+    // used `inlay`, which is also every flush border and course trim, and the mud band's used
+    // `footing`, a column's base. One role per purpose, so a band can give its vaults a springing
+    // stone without repainting its trim or its columns. The same polished andesite as `inlay`.
+    "springing_inlay": "minecraft:polished_andesite"
   },
   "wall": {
     "wall": "$base",

@@ -82,7 +82,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
             }
           ]
         },
@@ -300,7 +300,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
             }
           ]
         },
@@ -394,7 +394,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
             }
           ]
         },
@@ -764,7 +764,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
             }
           ]
         },
@@ -774,7 +774,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long", "barrels": 2 }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long", "barrels": 2 }
             }
           ]
         },
@@ -801,7 +801,7 @@
               "type": "dungeons2:vaulted",
               "config": {
                 "block": "$base",
-                "springing_block": "$inlay",
+                "springing_block": "$springing_inlay",
                 "crown_block": "$ornament",
                 "steps": 2,
                 "step_height": 2
@@ -1373,7 +1373,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
             }
           ]
         },
@@ -1590,7 +1590,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
             }
           ]
         },
@@ -1601,7 +1601,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3 }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
             }
           ]
         },
