@@ -768,6 +768,16 @@
             }
           ]
         },
+        {
+          "weight": 2,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long", "barrels": 2 }
+            }
+          ]
+        },
         { "weight": 3, "none": true },
         {
           "weight": 3,

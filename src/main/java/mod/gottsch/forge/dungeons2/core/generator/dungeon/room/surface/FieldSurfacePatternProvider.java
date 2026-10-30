@@ -57,10 +57,15 @@ public class FieldSurfacePatternProvider implements ISurfacePatternProvider {
     /** Matches {@link BorderSurfacePatternProvider#DEFAULT_INSET}: the ring just inside the wall. */
     public static final int DEFAULT_INSET = 0;
 
+    /** One barrel, whatever the width: what a barrel with no {@code bays} is. */
+    private static final BarrelBays SINGLE = new BarrelBays(1, 1);
+
     private final int inset;
     private final BlockState block;
     /** Null for the four-sided field; otherwise the inset is across one axis only (a barrel vault). */
     private final BarrelAxis barrel;
+    /** Null for one barrel; otherwise how the cross-width is split between barrels. */
+    private final BarrelBays bays;
 
     public FieldSurfacePatternProvider(int inset, BlockState block) {
         this(inset, block, null);
@@ -71,28 +76,47 @@ public class FieldSurfacePatternProvider implements ISurfacePatternProvider {
      * and the field runs the full length to the end walls: one step of a barrel vault.
      */
     public FieldSurfacePatternProvider(int inset, BlockState block, BarrelAxis barrel) {
+        this(inset, block, barrel, null);
+    }
+
+    /**
+     * With {@code bays} as well, one step of a DOUBLE barrel: the same inset drawn in from both edges
+     * of each bay, so the step is two parallel strips either side of the spine. Ignored without a
+     * {@code barrel}, since a dome has no axis to split across.
+     */
+    public FieldSurfacePatternProvider(int inset, BlockState block, BarrelAxis barrel, BarrelBays bays) {
         this.inset = Math.max(0, inset);
         this.block = Objects.requireNonNull(block, "block");
         this.barrel = barrel;
+        this.bays = bays;
     }
 
     @Override
     public SurfacePlan plan(int uSize, int vSize, Direction facing, RandomSource random) {
         SurfacePlan plan = SurfacePlan.of(uSize, vSize);
-        int uInset = inset;
-        int vInset = inset;
-        if (barrel != null) {
-            if (barrel.runsAlongU(uSize, vSize, random)) {
-                uInset = 0;
-            } else {
-                vInset = 0;
-            }
+        if (barrel == null) {
+            fill(plan, inset, uSize - inset, inset, vSize - inset);
+            return plan;
         }
-        for (int u = uInset; u < uSize - uInset; u++) {
-            for (int v = vInset; v < vSize - vInset; v++) {
+        // a barrel insets across one axis only and runs the other end wall to end wall
+        boolean alongU = barrel.runsAlongU(uSize, vSize, random);
+        int cross = alongU ? vSize : uSize;
+        BarrelBays split = bays != null ? bays : SINGLE;
+        split.forEachSpan(cross, inset, (from, to) -> {
+            if (alongU) {
+                fill(plan, 0, uSize, from, to);
+            } else {
+                fill(plan, from, to, 0, vSize);
+            }
+        });
+        return plan;
+    }
+
+    private void fill(SurfacePlan plan, int uFrom, int uTo, int vFrom, int vTo) {
+        for (int u = uFrom; u < uTo; u++) {
+            for (int v = vFrom; v < vTo; v++) {
                 plan.set(u, v, block);
             }
         }
-        return plan;
     }
 }

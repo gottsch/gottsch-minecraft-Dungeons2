@@ -560,6 +560,16 @@
             }
           ]
         },
+        {
+          "weight": 2,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "minecraft:mud_bricks", "springing_block": "dungeonblocks:square_mud_brick", "steps": 3, "barrel": "long", "barrels": 2 }
+            }
+          ]
+        },
             {
               "weight": 3,
               "patterns": [
