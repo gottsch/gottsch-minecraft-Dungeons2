@@ -18,6 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.RoomSlots;
 import net.minecraft.util.RandomSource;
 
 import java.util.ArrayList;
@@ -85,6 +86,20 @@ public final class RoomSchemeSelector {
     public static RoomScheme select(List<RoomScheme> schemes, int width, int depth, int height,
                                     int floorIndex, int doorCount, SecretEligibility secret,
                                     RandomSource random) {
+        return select(schemes, width, depth, height, floorIndex, doorCount, secret,
+                RoomSlots.NO_FEATURED_MINIMUM, random);
+    }
+
+    /**
+     * As above, and a room at least {@code featuredMinSize} on its shorter side may not come out
+     * bare: when the scheme's own roll leaves it with no ceiling, pillars, platforms, pit or
+     * partition, one of them is rolled again without its {@code none}. See
+     * {@link RoomSlots#resolve(int, int, int, RandomSource, int)}. The scheme draw itself is
+     * untouched; this only changes what the winning scheme puts in a big room.
+     */
+    public static RoomScheme select(List<RoomScheme> schemes, int width, int depth, int height,
+                                    int floorIndex, int doorCount, SecretEligibility secret,
+                                    int featuredMinSize, RandomSource random) {
         List<RoomScheme> eligible = new ArrayList<>();
         List<RoomScheme> secrets = new ArrayList<>();
         for (RoomScheme scheme : schemes) {
@@ -129,7 +144,7 @@ public final class RoomSchemeSelector {
                 // decided in one place, from one RandomSource, once. A scheme with no option lists
                 // -- which is every scheme authored before this existed -- draws nothing further,
                 // so its dungeons are byte-identical. See SlotOptions#resolve.
-                return scheme.resolve(width, depth, height, random);
+                return scheme.resolve(width, depth, height, random, featuredMinSize);
             }
         }
         return RoomScheme.PLAIN; // unreachable: roll < totalWeight == cumulative sum

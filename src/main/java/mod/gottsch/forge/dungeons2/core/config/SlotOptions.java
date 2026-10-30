@@ -213,6 +213,16 @@ public record SlotOptions<T>(List<Option<T>> options) {
         return mapped == null ? this : new SlotOptions<>(List.copyOf(mapped));
     }
 
+    /**
+     * This slot with its {@code none} options removed, for the one roll that may not come up empty:
+     * a big room's shape slot, see {@link RoomSlots#featured}. The treatments keep their authored
+     * weights, so they keep their proportions to each other.
+     */
+    public SlotOptions<T> withoutNone() {
+        List<Option<T>> kept = options.stream().filter(option -> option.value().isPresent()).toList();
+        return kept.size() == options.size() ? this : new SlotOptions<>(kept);
+    }
+
     /** This slot if the author filled it, else the inherited one. See {@code RoomScheme#inheritFrom}. */
     public SlotOptions<T> orElse(SlotOptions<T> inherited) {
         return isEmpty() ? inherited : this;

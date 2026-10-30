@@ -219,6 +219,117 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
     }
 
     /**
+     * The {@code featuredMinSize} that switches the big-room rule off, since no room is that big.
+     * What every caller that does not pass the generation config's value gets, so tests and probes
+     * written before the rule see the authored roll alone.
+     */
+    public static final int NO_FEATURED_MINIMUM = Integer.MAX_VALUE;
+
+    /**
+     * {@link #resolve(int, int, int, RandomSource)}, and then the one rule the authored weights
+     * cannot express on their own: <strong>a big room may not be bare</strong> (Mark, 2026-10-30).
+     *
+     * <h2>Why a rule and not more weight</h2>
+     * <p>A bare room is a fine result in a small room and a bad one in a big room. The height taper
+     * (#51) makes every big procedural room LOW &mdash; 5 to 7 high once its long side passes 15
+     * &mdash; and a 17x17 room 5 high with a flat ceiling and nothing standing in it is a lot of
+     * floor to cross for nothing; the player heads straight for the nearest door. Each slot's
+     * {@code none} weight is chosen for the rooms the scheme mostly dresses, which are small, and
+     * a {@code max_size} on a {@code none} option could only fix one slot at a time, where what is
+     * wanted is "a ceiling, or pillars, or a pit": any one of them makes the room worth crossing.</p>
+     *
+     * <h2>The rule</h2>
+     * <p>A room whose shorter side is at least {@code featuredMinSize} (the same measure as
+     * {@code min_size}) must draw at least one of the slots that change the room's SHAPE:
+     * {@code ceiling}, {@code pillars}, {@code platforms}, {@code pit} or {@code partition}. Floor
+     * and wall patterns, pots, props, spawners, chests, tombs and hangings do not count &mdash; a
+     * patterned floor under a flat ceiling is still an empty box, and so is one with a chandelier
+     * in it.</p>
+     *
+     * <p>When the authored roll drew none of them, the first of those slots, in declaration order
+     * with {@code ceiling} first, that has a treatment fitting this room is rolled again with its
+     * {@code none} options removed. Ceiling first because it is the treatment that never gets in
+     * the way of anything else in the room, and because a big room is always low and so always has
+     * rise budget to spare for a vault. A scheme with no fitting treatment in any of the five is
+     * left bare; {@code FeaturedRoomRuleTest} checks no shipped scheme is one.</p>
+     *
+     * <h2>What it costs the random stream</h2>
+     * <p>Nothing, except in a room the rule changes. The authored roll draws exactly what it
+     * always drew, and the re-roll happens after it and only in a big bare room, which consumes at
+     * most one further value &mdash; and that room is generated differently anyway, which is the
+     * point. Small rooms, and big rooms the authored roll already dressed, are byte-identical.</p>
+     */
+    public RoomSlots resolve(int width, int depth, int height, RandomSource random,
+                             int featuredMinSize) {
+        RoomSlots resolved = resolve(width, depth, height, random);
+        if (Math.min(width, depth) < featuredMinSize || resolved.shapesRoom()) {
+            return resolved;
+        }
+        return resolved.featured(this, width, depth, height, random);
+    }
+
+    /**
+     * Whether a RESOLVED set of slots draws anything that changes the room's shape. See
+     * {@link #resolve(int, int, int, RandomSource, int)} for which slots those are and why.
+     */
+    public boolean shapesRoom() {
+        return ceiling.isPresent() || pillars.isPresent() || platforms.isPresent()
+                || pit.isPresent() || partition.isPresent();
+    }
+
+    /**
+     * Whether {@link #featured} can find something for a room of these dimensions: some shape slot
+     * has a treatment, not a {@code none}, that fits. Asked of AUTHORED slots.
+     */
+    public boolean canShape(int width, int depth, int height) {
+        return anyOptionFits(ceiling, CeilingPatternEntry::gate, width, depth, height)
+                || anyOptionFits(pillars, PillarPatternEntry::gate, width, depth, height)
+                || anyOptionFits(platforms, PlatformPatternEntry::gate, width, depth, height)
+                || anyOptionFits(pit, PitPatternEntry::gate, width, depth, height)
+                || anyOptionFits(partition, PartitionPatternEntry::gate, width, depth, height);
+    }
+
+    /**
+     * These resolved (and bare) slots with the first shape slot that can draw here re-rolled from
+     * {@code authored} without its {@code none} options. Only one slot is forced: the rule asks for
+     * a room worth crossing, not for every treatment at once.
+     */
+    RoomSlots featured(RoomSlots authored, int width, int depth, int height, RandomSource random) {
+        if (anyOptionFits(authored.ceiling, CeilingPatternEntry::gate, width, depth, height)) {
+            return withCeiling(authored.ceiling.withoutNone()
+                    .resolve(random, entry -> entry.gate().fits(width, depth, height)));
+        }
+        if (anyOptionFits(authored.pillars, PillarPatternEntry::gate, width, depth, height)) {
+            return new RoomSlots(floor, wall, ceiling, pots, authored.pillars.withoutNone()
+                    .resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                    platforms, spawners, chests, pit, props, partition, tombs, hangings);
+        }
+        if (anyOptionFits(authored.platforms, PlatformPatternEntry::gate, width, depth, height)) {
+            return new RoomSlots(floor, wall, ceiling, pots, pillars, authored.platforms.withoutNone()
+                    .resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                    spawners, chests, pit, props, partition, tombs, hangings);
+        }
+        if (anyOptionFits(authored.pit, PitPatternEntry::gate, width, depth, height)) {
+            return new RoomSlots(floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
+                    authored.pit.withoutNone()
+                            .resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                    props, partition, tombs, hangings);
+        }
+        if (anyOptionFits(authored.partition, PartitionPatternEntry::gate, width, depth, height)) {
+            return new RoomSlots(floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
+                    pit, props, authored.partition.withoutNone()
+                            .resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                    tombs, hangings);
+        }
+        return this;
+    }
+
+    private RoomSlots withCeiling(SlotOptions<CeilingPatternEntry> newCeiling) {
+        return new RoomSlots(floor, wall, newCeiling, pots, pillars, platforms, spawners, chests,
+                pit, props, partition, tombs, hangings);
+    }
+
+    /**
      * Whether any slot is filled at all. False for the deliberately undecorated room, which is a
      * legitimate authored outcome rather than a mistake &mdash; see {@link RoomScheme#declaresAnySlot}.
      */

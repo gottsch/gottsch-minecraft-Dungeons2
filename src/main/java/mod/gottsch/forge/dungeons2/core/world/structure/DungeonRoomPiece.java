@@ -21,6 +21,7 @@ import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.RoomSlots;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
@@ -332,9 +333,12 @@ public class DungeonRoomPiece extends DungeonPiece {
         // vault. Same reasoning as the line above -- a datapack value, read here rather than
         // serialised, so a reload moves it.
         int ceilingBudget = generationConfig.ceilingBudget();
+        // and the size past which a room may not come out bare -- a datapack value, same as both
+        int featuredRoomMinSize = generationConfig.featuredRoomMinSize();
         // Render from a piece-stable seed, not the chunk-seeded `random` (see
         // DungeonPiece#deterministicRandom) so the result is identical in every chunk.
-        RoomPlacements placements = renderRoom(motifConfig, sinkOffset, ceilingBudget);
+        RoomPlacements placements = renderRoom(motifConfig, sinkOffset, ceilingBudget,
+                featuredRoomMinSize);
         safePlaceAll(level, box, stratum, placements::getBlocks);
         // Entities are spawned separately and clipped to the chunk box -- unlike blocks they are
         // not idempotent across the per-chunk postProcess re-runs. See DungeonPiece#placeEntities.
@@ -372,9 +376,19 @@ public class DungeonRoomPiece extends DungeonPiece {
      * spend: a pit downward, a rising vault upward.
      */
     public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset, int ceilingBudget) {
+        return renderRoom(motifConfig, sinkOffset, ceilingBudget, RoomSlots.NO_FEATURED_MINIMUM);
+    }
+
+    /**
+     * As above, where a room at least {@code featuredRoomMinSize} on its shorter side may not come
+     * out bare. See {@code RoomSlots#resolve}.
+     */
+    public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset, int ceilingBudget,
+                                     int featuredRoomMinSize) {
         RoomPlacements out = new RoomPlacements();
         new BasicRoomGenerator().withMotifConfig(motifConfig).withSinkOffset(sinkOffset)
                 .withCeilingBudget(ceilingBudget)
+                .withFeaturedRoomMinSize(featuredRoomMinSize)
                 .withAnchor(anchorX, anchorZ)
                 .withMiningHaul(miningHaul)
                 .withCounterLootTable(counterLootTable)

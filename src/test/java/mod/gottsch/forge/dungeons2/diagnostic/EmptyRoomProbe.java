@@ -1,5 +1,6 @@
 package mod.gottsch.forge.dungeons2.diagnostic;
 
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfig;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
 import mod.gottsch.forge.dungeons2.core.config.WallPatternEntry;
@@ -69,6 +70,12 @@ class EmptyRoomProbe {
         int surfaceOnly = 0;  // surfaces dressed, but nothing standing in the room
         int builtNothing = 0; // the scheme CLAIMED furniture and the generators emitted none
         int potsPlaced = 0;   // loot density: pots are the only slot carrying a loot table
+        // The big-room rule (featured_room_min_size): how many rooms that big draw no ceiling,
+        // pillars, platforms, pit or partition, without the rule and with it. With is the number
+        // that must be 0 -- anything else is a shipped scheme the rule has nothing to force in.
+        int bigRooms = 0;
+        int bigBareAuthored = 0;
+        int bigBareRuled = 0;
         // Which scheme actually wins, overall and inside each size band. SchemeIncidenceTest is
         // @Disabled while classic is cut down, so nothing else reports this.
         Map<String, int[]> bySchemeAndSize = new TreeMap<>();
@@ -100,6 +107,22 @@ class EmptyRoomProbe {
                             // min_floor_index -- so passing the entrance index reported the mud
                             // floor's answer for the whole stack.
                             config.schemes(), w, d, h, floor.getFloorIndex(), random);
+                    if (Math.min(w, d) >= DungeonGenerationConfig.DEFAULT_FEATURED_ROOM_MIN_SIZE) {
+                        bigRooms++;
+                        // Separate, identical RandomSources, so the two rolls are the same roll with
+                        // and without the rule, and neither shifts the main stream above.
+                        long rollSeed = seed * 31 + rooms;
+                        if (!RoomSchemeSelector.select(config.schemes(), w, d, h, floor.getFloorIndex(),
+                                RandomSource.create(rollSeed)).slots().shapesRoom()) {
+                            bigBareAuthored++;
+                        }
+                        if (!RoomSchemeSelector.select(config.schemes(), w, d, h, floor.getFloorIndex(), -1,
+                                RoomSchemeSelector.SecretEligibility.NONE,
+                                DungeonGenerationConfig.DEFAULT_FEATURED_ROOM_MIN_SIZE,
+                                RandomSource.create(rollSeed)).slots().shapesRoom()) {
+                            bigBareRuled++;
+                        }
+                    }
                     // [total, at min side 7, at min side 9, at 11+]
                     int minSide = Math.min(w, d);
                     int[] tally = bySchemeAndSize.computeIfAbsent(scheme.name(), k -> new int[4]);
@@ -145,6 +168,12 @@ class EmptyRoomProbe {
                 builtNothing, 100.0 * builtNothing / rooms);
         System.out.printf("  loot pots placed                    %d (%.2f per room, %.1f per dungeon)%n%n",
                 potsPlaced, (double) potsPlaced / rooms, (double) potsPlaced / DUNGEONS);
+        System.out.printf("  big rooms (min side %d+) with no ceiling, pillars, platforms, pit or partition:%n",
+                DungeonGenerationConfig.DEFAULT_FEATURED_ROOM_MIN_SIZE);
+        System.out.printf("    as authored  %d of %d (%.1f%%)%n", bigBareAuthored, bigRooms,
+                bigRooms == 0 ? 0.0 : 100.0 * bigBareAuthored / bigRooms);
+        System.out.printf("    with rule    %d of %d (%.1f%%)%n%n", bigBareRuled, bigRooms,
+                bigRooms == 0 ? 0.0 : 100.0 * bigBareRuled / bigRooms);
         System.out.println("  min(width,depth)   rooms   bare room");
         byMinSide.forEach((k, v) -> System.out.printf("      %2d          %5d   %5d  (%5.1f%%)%n",
                 k, v[0], v[1], 100.0 * v[1] / v[0]));

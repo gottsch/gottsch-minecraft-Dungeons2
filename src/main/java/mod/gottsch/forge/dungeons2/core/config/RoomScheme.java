@@ -675,7 +675,18 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
      * dungeons it always did. See {@link SlotOptions#resolve}.</p>
      */
     public RoomScheme resolve(int width, int depth, int height, RandomSource random) {
-        return new RoomScheme(name, weight, gate, slots.resolve(width, depth, height, random),
+        return resolve(width, depth, height, random, RoomSlots.NO_FEATURED_MINIMUM);
+    }
+
+    /**
+     * {@link #resolve(int, int, int, RandomSource)}, and then a room at least
+     * {@code featuredMinSize} on its shorter side may not come out bare. See
+     * {@link RoomSlots#resolve(int, int, int, RandomSource, int)}.
+     */
+    public RoomScheme resolve(int width, int depth, int height, RandomSource random,
+                              int featuredMinSize) {
+        return new RoomScheme(name, weight, gate,
+                slots.resolve(width, depth, height, random, featuredMinSize),
                 floors, doors, secret, parent, isAbstract);
     }
 
