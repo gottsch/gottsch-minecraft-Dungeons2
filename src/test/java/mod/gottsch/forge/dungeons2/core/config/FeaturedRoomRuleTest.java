@@ -70,6 +70,9 @@ class FeaturedRoomRuleTest {
             + " \"config\": {\"inset\": 1, \"depth\": 2}}";
     private static final String FALSE_FLOOR_PIT = "{\"weight\": 1, \"type\": \"dungeons2:false_floor\","
             + " \"config\": {\"width\": 3, \"depth\": 4}}";
+    /** A ring of andesite flush in the plane: paint, not shape. */
+    private static final String FLUSH_RING = "{\"weight\": 1000, \"patterns\": [{\"type\": \"dungeons2:border\","
+            + " \"config\": {\"block\": \"minecraft:polished_andesite\"}}]}";
     private static final String CHANDELIER = "{\"placement\": \"centre\", \"min_count\": 1, \"max_count\": 1,"
             + " \"variants\": [{\"block\": \"dungeonblocks:chandelier\"}]}";
 
@@ -229,6 +232,49 @@ class FeaturedRoomRuleTest {
         return false;
     }
 
+    /**
+     * The room this rule failed in the second time (Mark, 2026-10-30): a big chamber whose ceiling
+     * was a flush ring of large bricks one cell in from the walls, which on a weathered ceiling all
+     * but disappears. A flush ceiling is paint; the rule wants one that changes the room's shape,
+     * and replaces the paint with one.
+     */
+    @Test
+    void aFlushCeilingDoesNotCountAndIsReplacedByOneThatShapesTheRoom() {
+        RoomScheme scheme = scheme("\"ceiling\": [" + FLUSH_RING + ", " + VAULT + "]");
+        for (long seed = 0; seed < 50; seed++) {
+            RoomScheme ruled = scheme.resolve(17, 17, 5, RandomSource.create(mix(seed)), MIN);
+            assertTrue(ruled.ceilingFor(17, 17, 5).orElseThrow().shapesCeiling(),
+                    "seed " + seed + ": a big room kept a flush ring");
+            // and a small room keeps whatever it rolled, which is nearly always the ring
+            RoomScheme small = scheme.resolve(9, 9, 5, RandomSource.create(mix(seed)), MIN);
+            assertEquals(scheme.resolve(9, 9, 5, RandomSource.create(mix(seed))).slots(), small.slots());
+        }
+    }
+
+    /** What counts as shape: off the plane by projection or rise, or a type that leaves it itself. */
+    @Test
+    void shapesCeilingIsAboutLeavingThePlane() {
+        assertFalse(ceiling("{\"type\": \"dungeons2:border\", \"config\": {\"block\": \"minecraft:polished_andesite\"}}"),
+                "a flush border is paint");
+        assertFalse(ceiling("{\"type\": \"dungeons2:coffers\", \"config\": {\"block\": \"minecraft:polished_andesite\"}}"),
+                "flush coffers are paint");
+        assertTrue(ceiling("{\"type\": \"dungeons2:border\", \"projection\": 1,"
+                + " \"config\": {\"block\": \"minecraft:polished_andesite\"}}"), "a hanging ring");
+        assertTrue(ceiling("{\"type\": \"dungeons2:field\", \"rise\": 1,"
+                + " \"config\": {\"block\": \"minecraft:stone_bricks\", \"inset\": 1}}"), "a raised field");
+        assertTrue(ceiling("{\"type\": \"dungeons2:vaulted\", \"config\": {\"block\": \"minecraft:stone_bricks\"}}"),
+                "a vault, at no authored depth");
+        assertTrue(ceiling("{\"type\": \"dungeons2:oculus\", \"config\": {\"cap_block\": \"minecraft:glowstone\","
+                + " \"size\": 3, \"depth\": 3}}"), "an oculus, at no authored depth");
+    }
+
+    private static boolean ceiling(String pattern) {
+        DataResult<CeilingPatternEntry> result = CeilingPatternEntry.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"patterns\": [" + pattern + "]}"));
+        return result.result().orElseThrow(() -> new AssertionError(
+                "expected this ceiling to decode: " + result.error().orElseThrow().message())).shapesCeiling();
+    }
+
     /** Nothing to force: the room stays bare rather than inventing a treatment nobody authored. */
     @Test
     void aSchemeWithNoShapeTreatmentAtAllIsLeftAlone() {
@@ -252,7 +298,8 @@ class FeaturedRoomRuleTest {
     /**
      * The rule can only force what a scheme authored, and it tries the ceiling first because that is
      * what a big room wants: so every shipped scheme a big room can roll must have a CEILING that
-     * fits it, at every height the taper gives a big room. Stricter than the rule needs (any shape
+     * fits it and changes the room's shape ({@link CeilingPatternEntry#shapesCeiling}), at every
+     * height the taper gives a big room. Stricter than the rule needs (any shape
      * slot would do), on purpose -- {@code mud_works} once had only 7-row joists, so its big low
      * rooms fell through to a pit; it now has a low barrel (2026-10-30), and this keeps it so.
      */
@@ -272,7 +319,7 @@ class FeaturedRoomRuleTest {
                         int s = size;
                         int h = height;
                         if (scheme.fits(size, size, height) && scheme.slots().ceiling().all()
-                                .noneMatch(entry -> entry.gate().fits(s, s, h))) {
+                                .noneMatch(entry -> entry.shapesCeiling() && entry.gate().fits(s, s, h))) {
                             bare.add("floor " + floor + " " + scheme.name() + " " + size + "x" + size
                                     + " h" + height);
                         }
@@ -280,7 +327,7 @@ class FeaturedRoomRuleTest {
                 }
             }
         }
-        assertTrue(bare.isEmpty(), "big rooms these schemes can roll have no ceiling to force: " + bare);
+        assertTrue(bare.isEmpty(), "big rooms these schemes can roll have no shaping ceiling to force: " + bare);
     }
 
     @Test

@@ -242,6 +242,12 @@ public record VaultedCeilingPattern(String block, int steps, int stepHeight, int
         return CODEC;
     }
 
+    /** True: it climbs above the plane, step by step. See {@link CeilingPattern#leavesPlane}. */
+    @Override
+    public boolean leavesPlane() {
+        return true;
+    }
+
     /**
      * Expands to the layers a hand-stacked vault would have been written as: the springing course at
      * the entry's own depth (and a double barrel's spine beside it), then one field per step, each

@@ -246,7 +246,11 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * patterned floor under a flat ceiling is still an empty box, and so is one with a chandelier
      * in it. Nor does a HIDDEN pit ({@code PitShapePattern#hidden}): a false floor is the room's
      * own floor until it gives way, and the first room this rule shipped against was a 17x17 that
-     * looked bare over one (Mark, 2026-10-30). A hidden pit is never the one forced, either.</p>
+     * looked bare over one (Mark, 2026-10-30). A hidden pit is never the one forced, either. And
+     * only a ceiling that changes the room's SHAPE counts, or is forced
+     * ({@link CeilingPatternEntry#shapesCeiling}): a vault, an oculus, joists, a hanging ring. A
+     * flush border or centre is paint, and a big chamber under a weathered ring of large bricks
+     * read as bare too (same day).</p>
      *
      * <p>This decides from the ROLL. Whether what was rolled actually got built is a second
      * question, asked after the room is built: see {@code BasicRoomGenerator#build}.</p>
@@ -279,7 +283,8 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * {@link #resolve(int, int, int, RandomSource, int)} for which slots those are and why.
      */
     public boolean shapesRoom() {
-        return ceiling.isPresent() || pillars.isPresent() || platforms.isPresent()
+        return ceiling.value().filter(CeilingPatternEntry::shapesCeiling).isPresent()
+                || pillars.isPresent() || platforms.isPresent()
                 || pit.value().filter(RoomSlots::visiblePit).isPresent() || partition.isPresent();
     }
 
@@ -288,7 +293,8 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * has a treatment, not a {@code none}, that fits. Asked of AUTHORED slots.
      */
     public boolean canShape(int width, int depth, int height) {
-        return anyOptionFits(ceiling, CeilingPatternEntry::gate, width, depth, height)
+        return ceiling.all().anyMatch(entry -> entry.shapesCeiling()
+                        && entry.gate().fits(width, depth, height))
                 || anyOptionFits(pillars, PillarPatternEntry::gate, width, depth, height)
                 || anyOptionFits(platforms, PlatformPatternEntry::gate, width, depth, height)
                 || pit.all().anyMatch(entry -> visiblePit(entry)
@@ -307,9 +313,11 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * a room worth crossing, not for every treatment at once.
      */
     RoomSlots featured(RoomSlots authored, int width, int depth, int height, RandomSource random) {
-        if (anyOptionFits(authored.ceiling, CeilingPatternEntry::gate, width, depth, height)) {
-            return withCeiling(authored.ceiling.withoutNone()
-                    .resolve(random, entry -> entry.gate().fits(width, depth, height)));
+        if (authored.ceiling.all().anyMatch(entry -> entry.shapesCeiling()
+                && entry.gate().fits(width, depth, height))) {
+            // only ceilings that change the room's shape: a flush ring is what left it bare
+            return withCeiling(authored.ceiling.withoutNone().resolve(random,
+                    entry -> entry.shapesCeiling() && entry.gate().fits(width, depth, height)));
         }
         if (anyOptionFits(authored.pillars, PillarPatternEntry::gate, width, depth, height)) {
             return new RoomSlots(floor, wall, ceiling, pots, authored.pillars.withoutNone()
