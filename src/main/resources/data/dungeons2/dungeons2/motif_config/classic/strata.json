@@ -733,6 +733,18 @@
                 }
               ]
             },
+            // 2026-10-30 (Mark): both joists need 7 rows, so a low works room had no ceiling at all
+            // and a big low one had nothing for the big-room rule to give it but a pit. A mud barrel
+            // fills exactly that gap: max_height 6, so the taller rooms keep their timber.
+            {
+              "weight": 2, "max_height": 6,
+              "patterns": [
+                {
+                  "type": "dungeons2:vaulted",
+                  "config": { "block": "minecraft:mud_bricks", "springing_block": "dungeonblocks:square_mud_brick", "steps": 3, "barrel": "long" }
+                }
+              ]
+            },
             { "weight": 2, "none": true }
           ],
           "pit": [

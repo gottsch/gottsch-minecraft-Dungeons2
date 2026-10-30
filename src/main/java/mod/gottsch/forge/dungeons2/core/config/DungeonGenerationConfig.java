@@ -49,7 +49,16 @@ import java.util.Optional;
  */
 public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTemplate,
                                       List<RoomHeightBand> roomHeightBands,
-                                      int floorHeight, int gapBetweenFloors, int sinkOffset) {
+                                      int floorHeight, int gapBetweenFloors, int sinkOffset,
+                                      int featuredRoomMinSize) {
+
+    /** The shape before {@code featured_room_min_size}: the shipped size, 13. */
+    public DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTemplate,
+                                   List<RoomHeightBand> roomHeightBands,
+                                   int floorHeight, int gapBetweenFloors, int sinkOffset) {
+        this(corridorWidth, floorCellsPerRoomTemplate, roomHeightBands, floorHeight,
+                gapBetweenFloors, sinkOffset, DEFAULT_FEATURED_ROOM_MIN_SIZE);
+    }
 
     /** The shape before {@code sink_offset}: a floor whose walking plane is its own slab. */
     public DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTemplate,
@@ -130,6 +139,19 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
             new RoomHeightBand(Optional.of(15), 5, 8),
             new RoomHeightBand(Optional.empty(), 5, 7));
 
+    /**
+     * The smallest procedural room, by its SHORTER side (full footprint, as {@code min_size}
+     * measures), that may not come out bare: it must draw a ceiling, pillars, platforms, a pit or
+     * a partition, and when its scheme's own roll drew none of them one is rolled again without
+     * its {@code none}. See {@code RoomSlots#resolve} for the rule and why it exists.
+     *
+     * <p><strong>13</strong>, chosen by Mark on 2026-10-30 after a 17x17 room five high came out
+     * with nothing but a floor pattern: fine as a {@code none} room if it were smaller, a waste of
+     * space at that size. 13 is also where the double barrel starts. A value past the largest room
+     * the planner makes switches the rule off.</p>
+     */
+    public static final int DEFAULT_FEATURED_ROOM_MIN_SIZE = 13;
+
     /** Fallback used when no entry exists, so lookups never NPE. */
     /**
      * Floor cells per prefab-room attempt &mdash; the knob that decides how much of a dungeon is
@@ -169,7 +191,8 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
 
     public static final DungeonGenerationConfig DEFAULT =
             new DungeonGenerationConfig(3, DEFAULT_FLOOR_CELLS_PER_ROOM_TEMPLATE, DEFAULT_ROOM_HEIGHT_BANDS,
-                    DEFAULT_FLOOR_HEIGHT, DEFAULT_GAP_BETWEEN_FLOORS, DEFAULT_SINK_OFFSET);
+                    DEFAULT_FLOOR_HEIGHT, DEFAULT_GAP_BETWEEN_FLOORS, DEFAULT_SINK_OFFSET,
+                    DEFAULT_FEATURED_ROOM_MIN_SIZE);
 
     /**
      * The vertical budget ABOVE the walking plane &mdash; what a room's height is actually bounded
@@ -232,7 +255,12 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
                     // #3/#29. Upper bound is floorHeight's own, since a range cannot name another
                     // field; what actually constrains it is validateBudget below.
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, 24), "sink_offset",
-                            DEFAULT_SINK_OFFSET).forGetter(DungeonGenerationConfig::sinkOffset)
+                            DEFAULT_SINK_OFFSET).forGetter(DungeonGenerationConfig::sinkOffset),
+                    // From 5, the smallest room the height bands make room for: below that the rule
+                    // would be forcing treatments into rooms too small for most of them to fit.
+                    Codecs.strictOptionalFieldOf(Codec.intRange(5, Integer.MAX_VALUE),
+                            "featured_room_min_size", DEFAULT_FEATURED_ROOM_MIN_SIZE)
+                            .forGetter(DungeonGenerationConfig::featuredRoomMinSize)
             ).apply(instance, DungeonGenerationConfig::new)).flatXmap(
                     DungeonGenerationConfig::validateBudget, DungeonGenerationConfig::validateBudget),
             // The file's own warning labels. Declared so the closed schema accepts them, decoded to
@@ -240,7 +268,8 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
             // "//sink_offset" sits beside the field it explains rather than in the header block: the
             // header is the pitch warning, and burying a second unrelated essay in it is how both
             // stop being read.
-            "_comment", "//sink_offset", "//room_height_bands", "//floor_cells_per_room_template"));
+            "_comment", "//sink_offset", "//room_height_bands", "//floor_cells_per_room_template",
+            "//featured_room_min_size"));
 
     /**
      * The one thing this file can say that no field range can catch: a {@code sink_offset} that

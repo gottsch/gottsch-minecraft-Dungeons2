@@ -23,6 +23,7 @@ import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
 import mod.gottsch.forge.dungeons2.core.config.PartitionPatternEntry;
 import mod.gottsch.forge.dungeons2.core.config.ceiling.OculusCeilingPattern;
 import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.RoomSlots;
 import mod.gottsch.forge.dungeons2.core.config.pit.HiddenMoatPitShape;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
@@ -85,6 +86,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
     private MotifConfig motifConfig = MotifConfig.DEFAULT;
     private int sinkOffset = 0;
     private int ceilingBudget = 0;
+    private int featuredRoomMinSize = RoomSlots.NO_FEATURED_MINIMUM;
     private int anchorX = 0;
     private int anchorZ = 0;
     private MiningHaul miningHaul;
@@ -122,6 +124,17 @@ public class BasicRoomGenerator implements IRoomGenerator {
      */
     public BasicRoomGenerator withCeilingBudget(int ceilingBudget) {
         this.ceilingBudget = Math.max(0, ceilingBudget);
+        return this;
+    }
+
+    /**
+     * The generation config's {@code featured_room_min_size}: a room at least this big on its
+     * shorter side may not come out bare (see {@code RoomSlots#resolve}). The default here is off,
+     * so a generator built without it rolls exactly what its scheme authored, as it always did;
+     * {@code DungeonRoomPiece} injects the datapack value.
+     */
+    public BasicRoomGenerator withFeaturedRoomMinSize(int featuredRoomMinSize) {
+        this.featuredRoomMinSize = featuredRoomMinSize;
         return this;
     }
 
@@ -444,7 +457,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 : RoomSchemeSelector.SecretEligibility.ALLOWED;
         return RoomSchemeSelector.select(motifConfig.schemes(),
                 room.getWidth(), room.getDepth(), room.getHeight(), floorIndex,
-                RoomDoorways.count(room), secret, random);
+                RoomDoorways.count(room), secret, featuredRoomMinSize, random);
     }
 
     public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme,
