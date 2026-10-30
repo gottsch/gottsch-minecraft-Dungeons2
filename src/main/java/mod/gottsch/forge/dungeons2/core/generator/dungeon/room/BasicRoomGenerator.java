@@ -323,12 +323,15 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // ceiling step on purpose -- a later placement wins -- and before anything stands in the
         // room, so the hangings below read the vault it may raise. No draw unless it fires.
         Optional<CeilingPatternEntry> drawnCeiling = ceiling;
-        if (Math.min(width, depth) >= featuredRoomMinSize && ceiling.isEmpty() && partition.isEmpty()
+        if (Math.min(width, depth) >= featuredRoomMinSize
+                && ceiling.filter(CeilingPatternEntry::shapesCeiling).isEmpty() && partition.isEmpty()
                 && !builtVisiblePit(scheme, width, depth, height, pit)
                 && pillarGen.occupiedFloorCells().isEmpty() && platformGen.occupiedFloorCells().isEmpty()) {
-            drawnCeiling = fallbackCeiling(scheme, width, depth, height, random);
-            drawnCeiling.ifPresent(entry -> ceilingGeneratorFor(Optional.of(entry), width, depth, height)
-                    .build(room, floorY, motif, random, blocks));
+            Optional<CeilingPatternEntry> fallback = fallbackCeiling(scheme, width, depth, height, random);
+            if (fallback.isPresent()) {
+                ceilingGeneratorFor(fallback, width, depth, height).build(room, floorY, motif, random, blocks);
+                drawnCeiling = fallback;
+            }
         }
         Optional<CeilingPatternEntry> finalCeiling = drawnCeiling;
 
@@ -507,15 +510,17 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     /**
      * The ceiling a big room that built nothing gets: the one its scheme rolled, if a refused
-     * partition took it away, else a roll of the scheme's AUTHORED ceiling options without its
-     * {@code none}, exactly as RoomSlots#featured rolls one. The authored options are read off the
+     * partition took it away and it changes the room's shape, else a roll of the scheme's AUTHORED
+     * ceilings that do ({@code CeilingPatternEntry#shapesCeiling}), exactly as RoomSlots#featured
+     * rolls one. Drawn over whatever flush pattern the room already has. The authored options are read off the
      * motif's own copy of the scheme, by name, because the resolved one has already collapsed them.
      * Empty when the scheme has no ceiling that fits, which FeaturedRoomRuleTest keeps from being
      * true of any shipped scheme a big room can roll.
      */
     private Optional<CeilingPatternEntry> fallbackCeiling(RoomScheme scheme, int width, int depth,
                                                           int height, RandomSource random) {
-        Optional<CeilingPatternEntry> rolled = scheme.ceilingFor(width, depth, height);
+        Optional<CeilingPatternEntry> rolled = scheme.ceilingFor(width, depth, height)
+                .filter(CeilingPatternEntry::shapesCeiling);
         if (rolled.isPresent()) {
             return rolled;
         }
@@ -523,9 +528,10 @@ public class BasicRoomGenerator implements IRoomGenerator {
                 .filter(authored -> authored.name().equals(scheme.name()))
                 .findFirst()
                 .map(authored -> authored.ceiling().withoutNone())
-                .filter(options -> options.all().anyMatch(entry -> entry.gate().fits(width, depth, height)))
-                .flatMap(options -> options.resolve(random, entry -> entry.gate().fits(width, depth, height))
-                        .value());
+                .filter(options -> options.all().anyMatch(entry -> entry.shapesCeiling()
+                        && entry.gate().fits(width, depth, height)))
+                .flatMap(options -> options.resolve(random, entry -> entry.shapesCeiling()
+                        && entry.gate().fits(width, depth, height)).value());
     }
 
     /** Whether this ceiling cuts an oculus -- the shaft that owns the middle of the ceiling. */

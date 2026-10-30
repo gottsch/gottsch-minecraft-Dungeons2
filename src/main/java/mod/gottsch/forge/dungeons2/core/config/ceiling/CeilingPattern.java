@@ -78,6 +78,19 @@ public interface CeilingPattern {
     }
 
     /**
+     * Whether this pattern leaves the ceiling plane ON ITS OWN, whatever {@code projection} or
+     * {@code rise} its entry gives it: true for a {@code vaulted} (it climbs) and an {@code oculus}
+     * (it cuts a shaft up). The big-room rule asks it, through
+     * {@link mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry#shapesCeiling}, to tell a
+     * ceiling that changes the room's shape from one that only paints the plane. Defaults to false,
+     * so a third-party pattern that does not say is treated as paint: the rule then gives that room
+     * something else rather than trusting it.
+     */
+    default boolean leavesPlane() {
+        return false;
+    }
+
+    /**
      * Appends the layers this pattern draws &mdash; usually one, and <strong>two for a bracketed
      * {@code joists}</strong>.
      *

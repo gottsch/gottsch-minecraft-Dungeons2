@@ -146,6 +146,12 @@ public record OculusCeilingPattern(String capBlock, Optional<String> grateBlock,
         return CODEC;
     }
 
+    /** True: it cuts a shaft up through the plane. See {@link CeilingPattern#leavesPlane}. */
+    @Override
+    public boolean leavesPlane() {
+        return true;
+    }
+
     /**
      * The cap first, then the grate one row below it.
      *

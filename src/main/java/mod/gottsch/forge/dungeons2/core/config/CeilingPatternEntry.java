@@ -75,6 +75,21 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
         return resolved == null ? this : new CeilingPatternEntry(List.copyOf(resolved), gate);
     }
 
+    /**
+     * Whether this ceiling changes the SHAPE of the room rather than painting its plane: some layer
+     * hangs below the plane ({@code projection}), rises above it ({@code rise}), or is a pattern
+     * that leaves it on its own ({@link mod.gottsch.forge.dungeons2.core.config.ceiling.CeilingPattern#leavesPlane}).
+     *
+     * <p>What the big-room rule asks for (see {@code RoomSlots#resolve}). A flush border, centre,
+     * cross or checkerboard is paint: on a weathered stone ceiling a ring of large bricks one cell
+     * in from the walls all but disappears, and a big room under one read as bare in game (Mark,
+     * 2026-10-30). Mark's list was "vault, barrel, double barrel, oculus" -- the ceilings you
+     * notice walking in.</p>
+     */
+    public boolean shapesCeiling() {
+        return patterns.stream().anyMatch(entry -> entry.depth() != 0 || entry.pattern().leavesPlane());
+    }
+
     /** An ungated treatment -- drawn whenever its scheme is rolled. */
     public CeilingPatternEntry(List<SurfacePatternEntry> patterns) {
         this(patterns, SizeGate.UNBOUNDED);
