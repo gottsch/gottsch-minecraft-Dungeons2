@@ -57,6 +57,12 @@ public record HiddenMoatPitShape(int radius, int depth, Optional<String> spikeBl
                             .forGetter(HiddenMoatPitShape::spikeProbability)
             ).apply(instance, HiddenMoatPitShape::new)));
 
+    /** Hidden: the floor over it is the room's own, untouched until the prize is taken. */
+    @Override
+    public boolean hidden() {
+        return true;
+    }
+
     /** See {@link PitShapePattern#withRoles}. */
     @Override
     public PitShapePattern withRoles(java.util.function.UnaryOperator<String> resolver) {

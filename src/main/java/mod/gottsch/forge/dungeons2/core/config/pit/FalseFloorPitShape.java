@@ -66,6 +66,15 @@ public record FalseFloorPitShape(int width, int depth, int offsetX, int offsetZ,
                             .forGetter(FalseFloorPitShape::spikeProbability)
             ).apply(instance, FalseFloorPitShape::new)));
 
+    /**
+     * Hidden: the lid is the crumbling version of the floor itself, so the room looks bare until
+     * someone falls through.
+     */
+    @Override
+    public boolean hidden() {
+        return true;
+    }
+
     /** See {@link PitShapePattern#withRoles}. */
     @Override
     public PitShapePattern withRoles(java.util.function.UnaryOperator<String> resolver) {

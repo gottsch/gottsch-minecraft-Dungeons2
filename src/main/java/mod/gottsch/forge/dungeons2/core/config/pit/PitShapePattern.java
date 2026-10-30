@@ -57,6 +57,16 @@ public interface PitShapePattern {
         return this;
     }
 
+    /**
+     * Whether this pit is HIDDEN under a floor that looks like any other, so a room that has one
+     * still looks bare until the trap is sprung. The big-room rule (see {@code RoomSlots#resolve})
+     * does not count a hidden pit as dressing the room, and never forces one: a 17x17 room over a
+     * false floor looks exactly like a 17x17 room with nothing in it (Mark, 2026-10-30).
+     */
+    default boolean hidden() {
+        return false;
+    }
+
     /** The provider deciding which interior cells are excavated. */
     IPitShapeProvider provider();
 }

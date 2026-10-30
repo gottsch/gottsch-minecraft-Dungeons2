@@ -244,7 +244,12 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * {@code ceiling}, {@code pillars}, {@code platforms}, {@code pit} or {@code partition}. Floor
      * and wall patterns, pots, props, spawners, chests, tombs and hangings do not count &mdash; a
      * patterned floor under a flat ceiling is still an empty box, and so is one with a chandelier
-     * in it.</p>
+     * in it. Nor does a HIDDEN pit ({@code PitShapePattern#hidden}): a false floor is the room's
+     * own floor until it gives way, and the first room this rule shipped against was a 17x17 that
+     * looked bare over one (Mark, 2026-10-30). A hidden pit is never the one forced, either.</p>
+     *
+     * <p>This decides from the ROLL. Whether what was rolled actually got built is a second
+     * question, asked after the room is built: see {@code BasicRoomGenerator#build}.</p>
      *
      * <p>When the authored roll drew none of them, the first of those slots, in declaration order
      * with {@code ceiling} first, that has a treatment fitting this room is rolled again with its
@@ -275,7 +280,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      */
     public boolean shapesRoom() {
         return ceiling.isPresent() || pillars.isPresent() || platforms.isPresent()
-                || pit.isPresent() || partition.isPresent();
+                || pit.value().filter(RoomSlots::visiblePit).isPresent() || partition.isPresent();
     }
 
     /**
@@ -286,8 +291,14 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
         return anyOptionFits(ceiling, CeilingPatternEntry::gate, width, depth, height)
                 || anyOptionFits(pillars, PillarPatternEntry::gate, width, depth, height)
                 || anyOptionFits(platforms, PlatformPatternEntry::gate, width, depth, height)
-                || anyOptionFits(pit, PitPatternEntry::gate, width, depth, height)
+                || pit.all().anyMatch(entry -> visiblePit(entry)
+                        && entry.gate().fits(width, depth, height))
                 || anyOptionFits(partition, PartitionPatternEntry::gate, width, depth, height);
+    }
+
+    /** A pit that changes how the room LOOKS: any but a hidden one, see {@code PitShapePattern#hidden}. */
+    private static boolean visiblePit(PitPatternEntry entry) {
+        return !entry.shape().hidden();
     }
 
     /**
@@ -310,10 +321,13 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                     .resolve(random, entry -> entry.gate().fits(width, depth, height)),
                     spawners, chests, pit, props, partition, tombs, hangings);
         }
-        if (anyOptionFits(authored.pit, PitPatternEntry::gate, width, depth, height)) {
+        if (authored.pit.all().anyMatch(entry -> visiblePit(entry)
+                && entry.gate().fits(width, depth, height))) {
+            // hidden pits leave the denominator, as gated-out options do: forcing a false floor
+            // into a bare room would leave it exactly as bare
             return new RoomSlots(floor, wall, ceiling, pots, pillars, platforms, spawners, chests,
-                    authored.pit.withoutNone()
-                            .resolve(random, entry -> entry.gate().fits(width, depth, height)),
+                    authored.pit.withoutNone().resolve(random, entry -> visiblePit(entry)
+                            && entry.gate().fits(width, depth, height)),
                     props, partition, tombs, hangings);
         }
         if (anyOptionFits(authored.partition, PartitionPatternEntry::gate, width, depth, height)) {

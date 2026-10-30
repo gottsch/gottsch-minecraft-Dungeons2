@@ -90,11 +90,13 @@
     "A procedural room at least this big on its SHORTER side (walls included, as min_size measures)",
     "may not come out bare. When its scheme's roll draws no ceiling, pillars, platforms, pit or",
     "partition, the first of those with a treatment that fits is rolled again without its `none`,",
-    "ceiling first. Floor and wall patterns, pots, props and hangings do not count.",
+    "ceiling first. Floor and wall patterns, pots, props and hangings do not count, and neither",
+    "does a HIDDEN pit (a false floor looks like any floor). If what was rolled then builds",
+    "nothing -- a refused partition, a pit with nowhere to dig -- the room gets a ceiling anyway.",
     "",
-    "13 (Mark, 2026-10-30): the height taper makes every big room low, and a 17x17 room five high",
-    "with nothing in it is a waste of space -- the player heads straight for the nearest door. A",
-    "bare SMALL room is fine. Raise this past the largest room to switch the rule off."
+    "11 (Mark, 2026-10-30; first 13): the height taper makes big rooms low, and a 17x17 room five",
+    "high with nothing in it is a waste of space -- the player heads straight for the nearest door.",
+    "A bare SMALL room is fine. Raise this past the largest room to switch the rule off."
   ],
-  "featured_room_min_size": 13
+  "featured_room_min_size": 11
 }
