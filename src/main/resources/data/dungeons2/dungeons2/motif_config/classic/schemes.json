@@ -436,7 +436,7 @@
           "type": "dungeons2:border",
           "config": {
             "inset": 1,
-            "corner_block": "$footing",
+            "corner_block": "$floor_accent",
             "edge_left_block": "$plinth_left",
             "edge_right_block": "$plinth_right"
           }

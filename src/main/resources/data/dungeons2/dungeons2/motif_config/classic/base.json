@@ -63,7 +63,13 @@
     // #104: the tomb a `tombs` slot places. A role rather than a literal for the pilasters' reason
     // above: the deepslate band answers with deepslate_sarcophagus, and a literal here would lay
     // stone tombs on a deepslate floor.
-    "sarcophagus": "dungeonblocks:stone_sarcophagus"
+    "sarcophagus": "dungeonblocks:stone_sarcophagus",
+    // The flat stone a FLOOR pattern sets into the paving: a border's corners, a cross, a
+    // checkerboard's or diagonal's second block. Added 2026-10-30 (Mark): the chamber's floor
+    // border used `footing` for its corners, and `footing` is the base of a column -- so a big
+    // chamber had a pillar base set flat into each corner of its floor, reading as an upside-down
+    // column. One role per purpose: `footing` stands under a shaft; this lies in a floor.
+    "floor_accent": "minecraft:chiseled_stone_bricks"
   },
   "wall": {
     "wall": "$base",

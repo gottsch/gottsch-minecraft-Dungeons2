@@ -5,6 +5,9 @@
       "biome": "dungeons2:mud_crypts",
       "palette": {
         "shaft": "minecraft:spruce_log", "footing": "dungeonblocks:square_stone_brick",
+        // The same square stone as `footing`, which is what this band's floor patterns laid
+        // before `floor_accent` existed (2026-10-30): mud floors look exactly as they did.
+        "floor_accent": "dungeonblocks:square_stone_brick",
         "stair": "minecraft:mud_brick_stairs", "corbel": "dungeonblocks:stone_corbel_block",
         "wall_capital_left": "dungeonblocks:left_large_mud_brick",
         "wall_capital_right": "dungeonblocks:right_large_mud_brick",
@@ -195,7 +198,7 @@
             {
               "weight": 2, "min_size": 9, "type": "dungeons2:border",
               "config": {
-                "inset": 1, "corner_block": "$footing", "edge_left_block": "$plinth_left",
+                "inset": 1, "corner_block": "$floor_accent", "edge_left_block": "$plinth_left",
                 "edge_right_block": "$plinth_right"
               }
             }
@@ -279,7 +282,7 @@
                 "generators": [
                   {
                     "type": "dungeons2:checkerboard",
-                    "config": { "primary_block": "$footing", "secondary_block": "minecraft:stone" }
+                    "config": { "primary_block": "$floor_accent", "secondary_block": "minecraft:stone" }
                   },
                   {
                     "type": "dungeons2:border",
@@ -309,7 +312,7 @@
                   {
                     "type": "dungeons2:border",
                     "config": {
-                      "inset": 2, "corner_block": "$footing",
+                      "inset": 2, "corner_block": "$floor_accent",
                       "edge_left_block": "dungeonblocks:square_mud_brick",
                       "edge_right_block": "dungeonblocks:square_mud_brick"
                     }
@@ -323,7 +326,7 @@
             },
             {
               "weight": 2, "type": "dungeons2:cross",
-              "config": { "thickness": 1, "block": "$footing" }
+              "config": { "thickness": 1, "block": "$floor_accent" }
             },
             {
               "weight": 2, "type": "dungeons2:path",
@@ -646,7 +649,7 @@
             {
               "weight": 2, "type": "dungeons2:diagonal",
               "config": {
-                "primary_block": "minecraft:mud_bricks", "secondary_block": "$footing", "width": 3
+                "primary_block": "minecraft:mud_bricks", "secondary_block": "$floor_accent", "width": 3
               }
             },
             {
@@ -1094,6 +1097,7 @@
         "inlay": "minecraft:polished_deepslate",
         "inlay_alt": "minecraft:deepslate_tiles",
         "ornament": "minecraft:chiseled_deepslate",
+        "floor_accent": "minecraft:chiseled_deepslate",
         "plinth_left": "dungeonblocks:left_large_deepslate_brick",
         "plinth_right": "dungeonblocks:right_large_deepslate_brick",
         // The four roles added to base.json's palette on 2026-09-16. Before they existed these were
