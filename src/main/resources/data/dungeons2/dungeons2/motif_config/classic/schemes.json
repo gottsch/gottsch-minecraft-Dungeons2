@@ -1168,6 +1168,19 @@
           "block": "$base",
           "gap_block": "$door_block",
           "config": { "axis": "any" }
+        },
+        // A stepped arcade across the hall, wall to the ceiling above its arches. Eight high for
+        // the six rows the default arches need.
+        {
+          "weight": 2,
+          "min_size": 11,
+          "min_height": 8,
+          "type": "dungeons2:arcade",
+          "block": "$base",
+          "config": {
+            "axis": "any", "base_block": "$inlay", "corbel_block": "$stair",
+            "keystone_block": "$ornament"
+          }
         }
       ],
 

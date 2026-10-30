@@ -21,9 +21,14 @@ import mod.gottsch.forge.dungeons2.core.config.PartitionPatternEntry;
 import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.partition.ElevatedPartitionPlan;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.partition.IElevatedPartitionProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.partition.IPartitionShapeProvider;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.partition.PartitionPlan;
 import net.minecraft.util.RandomSource;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,6 +62,7 @@ public final class RoomPartitionGenerator {
 
     /** Vanilla's horizontal facing property. */
     static final String FACING = "facing";
+    static final String AIR = "minecraft:air";
 
     private RoomPartitionGenerator() {}
 
@@ -80,8 +86,11 @@ public final class RoomPartitionGenerator {
             return Set.of();
         }
 
-        PartitionPlan plan = config.shape().provider()
-                .plan(interiorWidth, interiorDepth, random);
+        IPartitionShapeProvider provider = config.shape().provider();
+        if (provider instanceof IElevatedPartitionProvider elevated) {
+            return buildElevated(room, floorY, config, elevated, occupied, random, out);
+        }
+        PartitionPlan plan = provider.plan(interiorWidth, interiorDepth, random);
         if (plan.isEmpty()) {
             return Set.of();
         }
@@ -156,6 +165,102 @@ public final class RoomPartitionGenerator {
         properties.put(FACING, facing);
         properties.put(HALF, half);
         return properties;
+    }
+
+    /**
+     * An {@link IElevatedPartitionProvider}'s partition: the shape's fixed rows, then wall from each
+     * column's {@code fillFrom} to the ceiling that column actually has.
+     *
+     * <h2>Where the ceiling is, per column</h2>
+     * <p>Not the room's height alone. The ceiling step has already run and is in {@code out}: a
+     * rising vault opened air above the plane over some cells, and a joist or cornice hangs below it
+     * over others. So the wall is built to the plane's underside at least, through anything
+     * hanging there, and on up through whatever air the ceiling opened above that &mdash;
+     * {@code RoomHangingGenerator}'s read of the placement list, last write wins. A scheme ceiling
+     * never shares a room with a partition, but the motif's or band's own default still applies,
+     * which is why this reads and does not assume.</p>
+     *
+     * <p>The entry's {@code height} and {@code gap_block} play no part; the codec refuses both for a
+     * shape like this.</p>
+     */
+    private static Set<Coords2D> buildElevated(RoomData room, int floorY, PartitionPatternEntry config,
+                                               IElevatedPartitionProvider provider,
+                                               Set<Coords2D> occupied, RandomSource random,
+                                               List<BlockPlacement> out) {
+        int rows = room.getHeight() - 2;
+        Set<Coords2D> blocked = new HashSet<>();
+        for (Coords2D cell : RoomInterior.cellsInsideDoorways(room)) {
+            blocked.add(toInteriorLocal(room, cell));
+        }
+        for (Coords2D cell : occupied) {
+            blocked.add(toInteriorLocal(room, cell));
+        }
+        ElevatedPartitionPlan plan = provider.elevate(room.getWidth() - 2, room.getDepth() - 2,
+                blocked, random);
+        if (plan.isEmpty() || plan.rows() > rows) {
+            return Set.of();
+        }
+        for (ElevatedPartitionPlan.Column column : plan.columns()) {
+            if (blocked.contains(column.cell())) {
+                return Set.of();
+            }
+        }
+
+        Map<Coords2D, ElevatedPartitionPlan.Column> byCell = new LinkedHashMap<>();
+        for (ElevatedPartitionPlan.Column column : plan.columns()) {
+            byCell.put(toFloorLocal(room, column.cell()), column);
+        }
+        Map<Coords2D, Integer> tops = ceilingUndersides(byCell.keySet(), floorY + rows, out);
+
+        for (Map.Entry<Coords2D, ElevatedPartitionPlan.Column> entry : byCell.entrySet()) {
+            Coords2D cell = entry.getKey();
+            ElevatedPartitionPlan.Column column = entry.getValue();
+            for (Map.Entry<Integer, ElevatedPartitionPlan.Stone> stone : column.stones().entrySet()) {
+                out.add(new BlockPlacement(cell.getX(), floorY + 1 + stone.getKey(), cell.getY(),
+                        stone.getValue().block().orElse(config.block()),
+                        stone.getValue().properties()));
+            }
+            for (int y = floorY + 1 + column.fillFrom(); y <= tops.get(cell); y++) {
+                out.add(new BlockPlacement(cell.getX(), y, cell.getY(), config.block()));
+            }
+        }
+        return new LinkedHashSet<>(byCell.keySet());
+    }
+
+    /**
+     * The highest row each column's wall should reach: the top air row under the room's plane
+     * ({@code nominalTop}), or higher where the placements so far leave the column open above it.
+     */
+    static Map<Coords2D, Integer> ceilingUndersides(Set<Coords2D> cells, int nominalTop,
+                                                    List<BlockPlacement> out) {
+        Map<Coords2D, Map<Integer, BlockPlacement>> columns = new HashMap<>();
+        for (Coords2D cell : cells) {
+            columns.put(cell, new HashMap<>());
+        }
+        for (BlockPlacement p : out) {
+            if (p.getY() <= nominalTop) {
+                continue;
+            }
+            Map<Integer, BlockPlacement> column = columns.get(new Coords2D(p.getX(), p.getZ()));
+            if (column != null) {
+                column.put(p.getY(), p);
+            }
+        }
+        Map<Coords2D, Integer> tops = new HashMap<>();
+        for (Map.Entry<Coords2D, Map<Integer, BlockPlacement>> entry : columns.entrySet()) {
+            int top = nominalTop;
+            BlockPlacement above = entry.getValue().get(top + 1);
+            while (above != null && AIR.equals(above.getBlockId())) {
+                top++;
+                above = entry.getValue().get(top + 1);
+            }
+            tops.put(entry.getKey(), top);
+        }
+        return tops;
+    }
+
+    private static Coords2D toInteriorLocal(RoomData room, Coords2D cell) {
+        return new Coords2D(cell.getX() - room.getOriginX() - 1, cell.getY() - room.getOriginZ() - 1);
     }
 
     /** Interior-local to floor-local. The room box includes its wall ring, so the interior is +1. */

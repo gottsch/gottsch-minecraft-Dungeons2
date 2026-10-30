@@ -115,6 +115,9 @@ class ShippedBlockIdsTest {
             // #74: the partition slot. Its "block" key -- the run itself -- is already listed
             // above; this is what hangs in the way through.
             "gap_block",
+            // The arcade partition's corbel courses and keystone. Its pier foot is `base_block`,
+            // already listed above for the pillars.
+            "corbel_block", "keystone_block",
             // #77: the oculus. `cap_block` is already listed above (the pillars use it).
             "grate_block",
             // #78: the blind arcade's springing course. Its `block` and `stair_block` are already

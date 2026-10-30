@@ -18,8 +18,10 @@
 package mod.gottsch.forge.dungeons2.core.config;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import mod.gottsch.forge.dungeons2.core.config.partition.ArcadePartitionShape;
 import mod.gottsch.forge.dungeons2.core.config.partition.CornerPartitionShape;
 import mod.gottsch.forge.dungeons2.core.config.partition.PartitionShapePattern;
 import mod.gottsch.forge.dungeons2.core.config.partition.PartitionShapeRegistry;
@@ -94,7 +96,8 @@ public record PartitionPatternEntry(PartitionShapePattern shape, String block,
      * one level up, over the union of both key sets, rather than here.
      */
     public static final MapCodec<PartitionPatternEntry> MAP_CODEC =
-            RecordCodecBuilder.mapCodec(instance -> instance.group(
+            // Explicit type witness for flatXmap; see CentrePitShape#CODEC.
+            RecordCodecBuilder.<PartitionPatternEntry>mapCodec(instance -> instance.group(
             // `type` + `config`, dispatched over the partition shape registry. An unregistered id
             // is a LOAD ERROR naming what is registered, not a room that quietly has no partition.
             PartitionShapeRegistry.MAP_CODEC.forGetter(PartitionPatternEntry::shape),
@@ -111,7 +114,27 @@ public record PartitionPatternEntry(PartitionShapePattern shape, String block,
             Codecs.strictOptionalFieldOf(Codec.intRange(1, 8), "height", DEFAULT_HEIGHT)
                     .forGetter(PartitionPatternEntry::height),
             SizeGate.MAP_CODEC.forGetter(PartitionPatternEntry::gate)
-    ).apply(instance, PartitionPatternEntry::new));
+    ).apply(instance, PartitionPatternEntry::new)).flatXmap(PartitionPatternEntry::validate,
+            PartitionPatternEntry::validate);
+
+    /**
+     * An arcade builds its own way through and always reaches the ceiling, so the two entry fields
+     * that say otherwise would be read by nothing. A key read by nothing is the silent default the
+     * closed schema exists to stop, so they are refused here rather than ignored there.
+     */
+    private static DataResult<PartitionPatternEntry> validate(PartitionPatternEntry entry) {
+        if (entry.shape() instanceof ArcadePartitionShape) {
+            if (entry.gapBlock().isPresent()) {
+                return DataResult.error(() -> "partition 'arcade': gap_block has no door to hang --"
+                        + " the arches are the way through");
+            }
+            if (entry.height() != DEFAULT_HEIGHT) {
+                return DataResult.error(() -> "partition 'arcade': height " + entry.height()
+                        + " is not used -- an arcade always reaches the ceiling");
+            }
+        }
+        return DataResult.success(entry);
+    }
 
     public static final Codec<PartitionPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 

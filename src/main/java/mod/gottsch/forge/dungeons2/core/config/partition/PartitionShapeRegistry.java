@@ -67,6 +67,7 @@ public final class PartitionShapeRegistry {
         }
         register(CornerPartitionShape.NAME, CornerPartitionShape.CODEC);
         register(StripPartitionShape.NAME, StripPartitionShape.CODEC);
+        register(ArcadePartitionShape.NAME, ArcadePartitionShape.CODEC);
     }
 
     static {
