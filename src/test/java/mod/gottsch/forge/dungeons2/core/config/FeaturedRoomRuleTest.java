@@ -187,12 +187,14 @@ class FeaturedRoomRuleTest {
     }
 
     /**
-     * The rule can only force what a scheme authored, so every shipped scheme a big room can roll
-     * must have SOMETHING in a shape slot that fits it, at every height the taper gives a big room.
-     * A scheme that fails here would come out bare in a big room whatever the rule says.
+     * The rule can only force what a scheme authored, and it tries the ceiling first because that is
+     * what a big room wants: so every shipped scheme a big room can roll must have a CEILING that
+     * fits it, at every height the taper gives a big room. Stricter than the rule needs (any shape
+     * slot would do), on purpose -- {@code mud_works} once had only 7-row joists, so its big low
+     * rooms fell through to a pit; it now has a low barrel (2026-10-30), and this keeps it so.
      */
     @Test
-    void everyShippedSchemeABigRoomCanRollHasATreatmentToForce() {
+    void everyShippedSchemeABigRoomCanRollHasACeilingThatFits() {
         MotifConfig classic = MotifConfigs.load("classic");
         List<String> bare = new ArrayList<>();
         for (int floor = 0; floor <= 6; floor++) {
@@ -203,7 +205,10 @@ class FeaturedRoomRuleTest {
                 // a big room's long side is at least 13, so the taper gives it 5 to 8 rows
                 for (int size = MIN; size <= 25; size++) {
                     for (int height = 5; height <= 8; height++) {
-                        if (scheme.fits(size, size, height) && !scheme.slots().canShape(size, size, height)) {
+                        int s = size;
+                        int h = height;
+                        if (scheme.fits(size, size, height) && scheme.slots().ceiling().all()
+                                .noneMatch(entry -> entry.gate().fits(s, s, h))) {
                             bare.add("floor " + floor + " " + scheme.name() + " " + size + "x" + size
                                     + " h" + height);
                         }
@@ -211,7 +216,7 @@ class FeaturedRoomRuleTest {
                 }
             }
         }
-        assertTrue(bare.isEmpty(), "big rooms these schemes can roll have nothing to force: " + bare);
+        assertTrue(bare.isEmpty(), "big rooms these schemes can roll have no ceiling to force: " + bare);
     }
 
     @Test

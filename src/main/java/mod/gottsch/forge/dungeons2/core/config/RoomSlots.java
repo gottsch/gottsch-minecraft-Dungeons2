@@ -251,7 +251,8 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * {@code none} options removed. Ceiling first because it is the treatment that never gets in
      * the way of anything else in the room, and because a big room is always low and so always has
      * rise budget to spare for a vault. A scheme with no fitting treatment in any of the five is
-     * left bare; {@code FeaturedRoomRuleTest} checks no shipped scheme is one.</p>
+     * left bare; {@code FeaturedRoomRuleTest} checks no shipped scheme is one, and that every shipped
+     * scheme a big room can roll has a ceiling for it.</p>
      *
      * <h2>What it costs the random stream</h2>
      * <p>Nothing, except in a room the rule changes. The authored roll draws exactly what it
