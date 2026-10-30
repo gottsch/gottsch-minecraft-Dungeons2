@@ -560,6 +560,45 @@ class RisingVaultTest {
         assertTrue(sawEastWest && sawNorthSouth, "40 square rooms all chose the same axis");
     }
 
+    /**
+     * A barrel's steps run end wall to end wall, so they carve the PLANE cell right against the
+     * cell at plane height over the end wall -- which belongs to no surface (the walls stop a
+     * course below the plane, the ceiling covers the interior) and nothing wrote. The vault had a
+     * one-course slot along each end wall into whatever was behind it: stone at one end, a cavern
+     * at the other (Mark, 2026-10-30). Every carved cell at or above the plane must face something
+     * written on all four sides.
+     */
+    @Test
+    void aBarrelsEndsAreWalledAtThePlaneToo() {
+        List<String> open = new ArrayList<>();
+        open.addAll(openCells(renderIn(longRoom(), 1L, barrel(BarrelAxis.Mode.LONG)), FLOOR_Y + 5, "x barrel"));
+        open.addAll(openCells(renderIn(longRoom(), 1L, barrel(BarrelAxis.Mode.Z)), FLOOR_Y + 5, "z barrel"));
+        open.addAll(openCells(renderIn(oddHall(), 1L, doubleBarrel(Optional.of(SPRINGING), 1)),
+                FLOOR_Y + 5, "double barrel"));
+        assertTrue(open.isEmpty(), "carved cells open onto unwritten space at " + open);
+    }
+
+    /** Every air cell at or above {@code planeY} whose side faces a cell nothing wrote. */
+    private static List<String> openCells(Map<String, String> world, int planeY, String label) {
+        List<String> open = new ArrayList<>();
+        int carved = 0;
+        for (Map.Entry<String, String> cell : world.entrySet()) {
+            String[] c = cell.getKey().split(",");
+            int x = Integer.parseInt(c[0]), y = Integer.parseInt(c[1]), z = Integer.parseInt(c[2]);
+            if (y < planeY || !AIR.equals(cell.getValue())) {
+                continue;
+            }
+            carved++;
+            for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                if (at(world, x + d[0], y, z + d[1]) == null) {
+                    open.add(label + " " + (x + d[0]) + "," + y + "," + (z + d[1]));
+                }
+            }
+        }
+        assertTrue(carved > 0, label + ": expected the vault to carve");
+        return open;
+    }
+
     /** SplitMix64's finalizer. */
     private static long mix(long seed) {
         long z = seed + 0x9E3779B97F4A7C15L;
