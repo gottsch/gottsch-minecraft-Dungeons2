@@ -20,6 +20,12 @@ package mod.gottsch.forge.dungeons2.core.config;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
+import mod.gottsch.forge.dungeons2.core.data.RoomRole;
+import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.BasicRoomGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomSchemeSelector;
 import mod.gottsch.forge.dungeons2.diagnostic.MotifConfigs;
 import net.minecraft.SharedConstants;
@@ -62,6 +68,8 @@ class FeaturedRoomRuleTest {
             + "\"type\": \"dungeons2:joists\", \"projection\": 1, \"config\": {\"block\": \"minecraft:spruce_log\"}}]}";
     private static final String INSET_PIT = "{\"weight\": 1, \"type\": \"dungeons2:inset\","
             + " \"config\": {\"inset\": 1, \"depth\": 2}}";
+    private static final String FALSE_FLOOR_PIT = "{\"weight\": 1, \"type\": \"dungeons2:false_floor\","
+            + " \"config\": {\"width\": 3, \"depth\": 4}}";
     private static final String CHANDELIER = "{\"placement\": \"centre\", \"min_count\": 1, \"max_count\": 1,"
             + " \"variants\": [{\"block\": \"dungeonblocks:chandelier\"}]}";
 
@@ -100,17 +108,17 @@ class FeaturedRoomRuleTest {
     @Test
     void theThresholdIsTheShorterSideAndInclusive() {
         RoomScheme scheme = scheme(MOSTLY_BARE_CEILING);
-        int bareAt12 = 0;
+        int bareJustUnder = 0;
         for (long seed = 0; seed < 50; seed++) {
             assertTrue(scheme.resolve(MIN, 30, 5, RandomSource.create(mix(seed)), MIN)
                     .ceilingFor(MIN, 30, 5).isPresent(), "a room exactly at the threshold is big");
             if (scheme.resolve(MIN - 1, 30, 5, RandomSource.create(mix(seed)), MIN)
                     .ceilingFor(MIN - 1, 30, 5).isEmpty()) {
-                bareAt12++;
+                bareJustUnder++;
             }
         }
-        // 12 x 30 is long, but its shorter side is under 13: it may be bare, and mostly is
-        assertTrue(bareAt12 > 40, "a room one under the threshold should keep its authored roll");
+        // long, but its shorter side is one under the threshold: it may be bare, and mostly is
+        assertTrue(bareJustUnder > 40, "a room one under the threshold should keep its authored roll");
     }
 
     /** Small rooms are untouched: same slots, and the same random stream left behind them. */
@@ -120,7 +128,7 @@ class FeaturedRoomRuleTest {
         for (long seed = 0; seed < 50; seed++) {
             RandomSource a = RandomSource.create(mix(seed));
             RandomSource b = RandomSource.create(mix(seed));
-            assertEquals(scheme.resolve(11, 11, 6, a).slots(), scheme.resolve(11, 11, 6, b, MIN).slots());
+            assertEquals(scheme.resolve(9, 9, 6, a).slots(), scheme.resolve(9, 9, 6, b, MIN).slots());
             assertEquals(a.nextLong(), b.nextLong(), "seed " + seed + ": the rule drew from a small room");
         }
     }
@@ -166,6 +174,61 @@ class FeaturedRoomRuleTest {
         }
     }
 
+    /**
+     * The room this rule first failed in (Mark, 2026-10-30): a big chamber with no ceiling over a
+     * FALSE FLOOR. The pit drew, so the room counted as dressed, and it looked exactly as bare as
+     * one with nothing in it. A hidden pit does not count, and is never the one forced.
+     */
+    @Test
+    void aHiddenPitDoesNotCountAsDressingTheRoom() {
+        RoomScheme scheme = scheme(MOSTLY_BARE_CEILING + ", \"pit\": [" + FALSE_FLOOR_PIT + "]");
+        for (long seed = 0; seed < 50; seed++) {
+            RoomScheme ruled = scheme.resolve(17, 17, 5, RandomSource.create(mix(seed)), MIN);
+            assertTrue(ruled.pitFor(17, 17, 5).isPresent(), "the trap is kept");
+            assertTrue(ruled.ceilingFor(17, 17, 5).isPresent(), "seed " + seed + ": bare over a false floor");
+        }
+        RoomScheme onlyHidden = scheme("\"ceiling\": [{\"weight\": 1, \"none\": true}, " + LOW_JOISTS + "],"
+                + " \"pit\": [{\"weight\": 1, \"none\": true}, " + FALSE_FLOOR_PIT + "]");
+        assertFalse(onlyHidden.slots().canShape(17, 17, 5), "a false floor is nothing to force");
+    }
+
+    /**
+     * The rule's second half, in the generator: a slot the roll drew can still BUILD nothing, and a
+     * big room that built nothing gets a ceiling after the fact. Here the pit drew -- so the roll
+     * looked dressed -- but the floor has no sink budget, so nothing was dug.
+     */
+    @Test
+    void aBigRoomWhoseDrawnSlotBuiltNothingGetsACeilingAnyway() {
+        RoomScheme scheme = scheme(MOSTLY_BARE_CEILING + ", \"pit\": [" + INSET_PIT + "]");
+        MotifConfig config = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,
+                DoorConfig.DEFAULT, CorridorConfig.DEFAULT, FloorConfig.DEFAULT, List.of(scheme));
+        RoomData room = new RoomData(1, 0, 0, 17, 17, 5, RoomRole.NORMAL);
+        int floorY = 60;
+        int ceilingY = floorY + room.getHeight() - 1;
+        for (long seed = 0; seed < 10; seed++) {
+            // sink offset 0 (the generator's default): the pit is drawn and cannot be dug
+            assertTrue(rises(new BasicRoomGenerator().withMotifConfig(config).withCeilingBudget(15)
+                            .withFeaturedRoomMinSize(MIN), room, floorY, ceilingY, mix(seed)),
+                    "seed " + seed + ": the room built nothing and got no ceiling");
+            assertFalse(rises(new BasicRoomGenerator().withMotifConfig(config).withCeilingBudget(15),
+                            room, floorY, ceilingY, mix(seed)),
+                    "seed " + seed + ": without the rule this room should have stayed bare");
+        }
+    }
+
+    /** Whether the built room has a vault: anything solid above its ceiling plane. */
+    private static boolean rises(BasicRoomGenerator generator, RoomData room, int floorY, int ceilingY,
+                                 long seed) {
+        RoomPlacements out = new RoomPlacements();
+        generator.build(room, floorY, 1, DungeonMotif.CLASSIC, RandomSource.create(seed), out);
+        for (BlockPlacement bp : out.getBlocks()) {
+            if (bp.getY() > ceilingY && !"minecraft:air".equals(bp.getBlockId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Nothing to force: the room stays bare rather than inventing a treatment nobody authored. */
     @Test
     void aSchemeWithNoShapeTreatmentAtAllIsLeftAlone() {
@@ -202,9 +265,10 @@ class FeaturedRoomRuleTest {
                 if (scheme.isSecret() || !scheme.fitsFloor(floor)) {
                     continue;
                 }
-                // a big room's long side is at least 13, so the taper gives it 5 to 8 rows
+                // the taper gives a room 11 or more across 5 to 9 rows; 10 covers a band retuned
+                // upward by a row without this test silently skipping it
                 for (int size = MIN; size <= 25; size++) {
-                    for (int height = 5; height <= 8; height++) {
+                    for (int height = 5; height <= 10; height++) {
                         int s = size;
                         int h = height;
                         if (scheme.fits(size, size, height) && scheme.slots().ceiling().all()

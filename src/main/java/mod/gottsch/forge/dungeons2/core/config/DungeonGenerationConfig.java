@@ -52,7 +52,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
                                       int floorHeight, int gapBetweenFloors, int sinkOffset,
                                       int featuredRoomMinSize) {
 
-    /** The shape before {@code featured_room_min_size}: the shipped size, 13. */
+    /** The shape before {@code featured_room_min_size}: the shipped size, 11. */
     public DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTemplate,
                                    List<RoomHeightBand> roomHeightBands,
                                    int floorHeight, int gapBetweenFloors, int sinkOffset) {
@@ -145,12 +145,13 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * a partition, and when its scheme's own roll drew none of them one is rolled again without
      * its {@code none}. See {@code RoomSlots#resolve} for the rule and why it exists.
      *
-     * <p><strong>13</strong>, chosen by Mark on 2026-10-30 after a 17x17 room five high came out
+     * <p><strong>11</strong> (Mark, 2026-10-30). First 13, after a 17x17 room five high came out
      * with nothing but a floor pattern: fine as a {@code none} room if it were smaller, a waste of
-     * space at that size. 13 is also where the double barrel starts. A value past the largest room
-     * the planner makes switches the rule off.</p>
+     * space at that size. Lowered to 11 the same day after playing it. Every shipped scheme a room
+     * that size can roll has a ceiling for it ({@code FeaturedRoomRuleTest}), so the rule always
+     * has something to give. A value past the largest room the planner makes switches it off.</p>
      */
-    public static final int DEFAULT_FEATURED_ROOM_MIN_SIZE = 13;
+    public static final int DEFAULT_FEATURED_ROOM_MIN_SIZE = 11;
 
     /** Fallback used when no entry exists, so lookups never NPE. */
     /**

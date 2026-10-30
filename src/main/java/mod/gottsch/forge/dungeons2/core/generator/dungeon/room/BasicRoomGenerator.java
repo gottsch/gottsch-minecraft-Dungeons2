@@ -313,6 +313,25 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // the slot places at the walking plane and is kept OFF the dais's cells entirely.
         out.getEntities().addAll(platformGen.entities());
 
+        // The big-room rule's second half (2026-10-30). RoomSlots#resolve made sure the ROLL gave a
+        // big room something that shapes it; this makes sure something was BUILT. Every shape step
+        // above can come back empty after its slot was drawn -- a partition refused because a
+        // doorway opens into it (and the ceiling given up for it), a pit the floor had no budget
+        // or room to dig, a dais dropped for blocking a doorway, columns with nowhere to stand --
+        // and a big room that drew one of those and built none of them is the bare room the rule
+        // exists to prevent. So: give it a ceiling, here, after the fact. It is drawn after the
+        // ceiling step on purpose -- a later placement wins -- and before anything stands in the
+        // room, so the hangings below read the vault it may raise. No draw unless it fires.
+        Optional<CeilingPatternEntry> drawnCeiling = ceiling;
+        if (Math.min(width, depth) >= featuredRoomMinSize && ceiling.isEmpty() && partition.isEmpty()
+                && !builtVisiblePit(scheme, width, depth, height, pit)
+                && pillarGen.occupiedFloorCells().isEmpty() && platformGen.occupiedFloorCells().isEmpty()) {
+            drawnCeiling = fallbackCeiling(scheme, width, depth, height, random);
+            drawnCeiling.ifPresent(entry -> ceilingGeneratorFor(Optional.of(entry), width, depth, height)
+                    .build(room, floorY, motif, random, blocks));
+        }
+        Optional<CeilingPatternEntry> finalCeiling = drawnCeiling;
+
         // Props last: they stand ON the finished floor, and unlike the four steps above they emit
         // entities, which the piece writes to the world by a different route entirely.
         //
@@ -414,7 +433,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         Optional<HangingConfig> hangingsEntry = partitionEntry.isPresent() ? Optional.empty()
                 : scheme.hangingsFor(width, depth, height)
                         .filter(hangings -> !(hangings.placement() == HangingConfig.HangingPlacement.CENTRE
-                                && hasOculus(ceiling)));
+                                && hasOculus(finalCeiling)));
         hangingsEntry.ifPresent(hangings ->
                 RoomHangingGenerator.placeHangings(room, floorY, hangings, random, blocks));
 
@@ -477,6 +496,36 @@ public class BasicRoomGenerator implements IRoomGenerator {
     public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme,
                                                           int width, int depth, int height) {
         return ceilingGeneratorFor(scheme.ceilingFor(width, depth, height), width, depth, height);
+    }
+
+    /** Whether the pit this room dug is one a player can SEE: dug at all, and not hidden. */
+    private static boolean builtVisiblePit(RoomScheme scheme, int width, int depth, int height,
+                                           Set<Coords2D> pit) {
+        return !pit.isEmpty() && scheme.pitFor(width, depth, height)
+                .map(entry -> !entry.shape().hidden()).orElse(false);
+    }
+
+    /**
+     * The ceiling a big room that built nothing gets: the one its scheme rolled, if a refused
+     * partition took it away, else a roll of the scheme's AUTHORED ceiling options without its
+     * {@code none}, exactly as RoomSlots#featured rolls one. The authored options are read off the
+     * motif's own copy of the scheme, by name, because the resolved one has already collapsed them.
+     * Empty when the scheme has no ceiling that fits, which FeaturedRoomRuleTest keeps from being
+     * true of any shipped scheme a big room can roll.
+     */
+    private Optional<CeilingPatternEntry> fallbackCeiling(RoomScheme scheme, int width, int depth,
+                                                          int height, RandomSource random) {
+        Optional<CeilingPatternEntry> rolled = scheme.ceilingFor(width, depth, height);
+        if (rolled.isPresent()) {
+            return rolled;
+        }
+        return motifConfig.schemes().stream()
+                .filter(authored -> authored.name().equals(scheme.name()))
+                .findFirst()
+                .map(authored -> authored.ceiling().withoutNone())
+                .filter(options -> options.all().anyMatch(entry -> entry.gate().fits(width, depth, height)))
+                .flatMap(options -> options.resolve(random, entry -> entry.gate().fits(width, depth, height))
+                        .value());
     }
 
     /** Whether this ceiling cuts an oculus -- the shaft that owns the middle of the ceiling. */
