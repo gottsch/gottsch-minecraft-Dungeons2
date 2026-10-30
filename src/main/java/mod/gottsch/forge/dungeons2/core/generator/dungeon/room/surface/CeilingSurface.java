@@ -200,8 +200,19 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
      * that faces a carved one, and that no raised layer wrote, gets {@code backing}.</p>
      *
      * <p>Layers are replayed in emission order with the same later-wins rule, so what counts as
-     * carved is what is still air when the last layer has been written. The plane row itself is
-     * skipped: it is the ceiling, already whole.</p>
+     * carved is what is still air when the last layer has been written.</p>
+     *
+     * <h2>The plane row: whole inside the surface, NOT outside it</h2>
+     * <p>A carved cell IN the plane row needs no backing toward the rest of the surface &mdash;
+     * that is the ceiling, already paved by {@link #emit}. But this surface is the interior only,
+     * and the walls stop a course below the plane ({@code PieceSurfaceMap} has the arithmetic), so
+     * the cell at plane height over the wall ring belongs to no surface and nothing writes it.
+     * Under a flat ceiling it only touches the room corner to corner and is never seen. A dome's
+     * steps are inset from every wall, so the plane it carves is surrounded by plane. A BARREL runs
+     * end wall to end wall, so its steps carve the plane cell right against that unwritten ring,
+     * and the vault had a one-course slot along each end wall into whatever was behind: stone at
+     * one end, a cavern at the other (Mark, 2026-10-30). So in the plane row, a neighbour OUTSIDE
+     * the surface is backed like any other.</p>
      *
      * @param layers each raised layer's plan and the rise it was emitted at, in emission order
      */
@@ -233,11 +244,16 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
             int u = (int) (k >> 42) - (1 << 20);
             int row = (int) ((k >> 21) & 0x1FFFFF) - (1 << 20);
             int v = (int) (k & 0x1FFFFF) - (1 << 20);
-            if (row <= 0) {
+            if (row < 0) {
                 continue;
             }
             for (int[] side : sides) {
-                long n = key(u + side[0], row, v + side[1]);
+                int nu = u + side[0];
+                int nv = v + side[1];
+                if (row == 0 && nu >= 0 && nu < uSize && nv >= 0 && nv < vSize) {
+                    continue; // the plane itself, paved by emit
+                }
+                long n = key(nu, row, nv);
                 if (!cells.containsKey(n) && backed.add(n)) {
                     out.add(BlockStateCodec.placement(xAt(u + side[0]), ceilingY + row, zAt(v + side[1]), backing));
                 }
