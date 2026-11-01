@@ -1,0 +1,28 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:iron_sword"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.small_boss.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.small_boss.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "killed": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "#dungeons2:small_dungeon_bosses"
+        }
+      }
+    }
+  }
+}

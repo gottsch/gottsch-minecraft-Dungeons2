@@ -17,8 +17,6 @@
  */
 package mod.gottsch.forge.dungeons2.core.util;
 
-import java.util.Random;
-
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
@@ -92,4 +90,5 @@ public class ModUtil {
 			return mob;
 		}
 	}
+
 }

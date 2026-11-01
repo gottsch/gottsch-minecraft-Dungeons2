@@ -1,0 +1,32 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "dungeons2:boots_of_shock_absorption"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.boots_of_shock_absorption.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.boots_of_shock_absorption.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "dungeons2:boots_of_shock_absorption"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

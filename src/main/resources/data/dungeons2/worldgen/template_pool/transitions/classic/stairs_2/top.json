@@ -1,0 +1,15 @@
+{
+  "name": "dungeons2:transitions/classic/stairs_2/top",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:transitions/classic/stairs_2_top",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

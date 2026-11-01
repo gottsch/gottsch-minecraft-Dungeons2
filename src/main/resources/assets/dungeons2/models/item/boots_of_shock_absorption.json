@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dungeons2:item/boots_of_shock_absorption"
+  }
+}

@@ -17,159 +17,540 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room;
 
-import mod.gottsch.forge.dungeons2.core.collection.Array2D;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
-import mod.gottsch.forge.dungeons2.core.decorator.IRoomElementDecorator;
-import mod.gottsch.forge.dungeons2.core.enums.FloorElementType;
+import mod.gottsch.forge.dungeons2.core.config.CeilingPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.HangingConfig;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.config.PartitionPatternEntry;
+import mod.gottsch.forge.dungeons2.core.config.ceiling.OculusCeilingPattern;
+import mod.gottsch.forge.dungeons2.core.config.RoomScheme;
+import mod.gottsch.forge.dungeons2.core.config.RoomSlots;
+import mod.gottsch.forge.dungeons2.core.config.pit.HiddenMoatPitShape;
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
+import mod.gottsch.forge.dungeons2.core.data.SecretDoorway;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.mining.MiningHaul;
+import mod.gottsch.forge.dungeons2.core.data.RoomPlacements;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.enums.WallElementType;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.DungeonLevel;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.Grid2D;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.BasicCeilingGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.CeilingPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.ceiling.IDungeonCeilingGenerator;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.BasicFloorGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.FloorPatternSelector;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.RoomPitGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.BasicPillarGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.IDungeonPillarGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.PillarPatternSelector;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.BasicPlatformGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.IDungeonPlatformGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.platform.PlatformPatternSelector;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.BasicWallGenerator;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.IDungeonWallGenerator;
-import mod.gottsch.forge.dungeons2.core.registry.DecoratorRegistry;
-import mod.gottsch.forge.gottschcore.random.RandomHelper;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import net.minecraft.server.level.ServerLevel;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.WallPatternSelector;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
- * @author Mark Gottschling on Dec 7, 2023
+ * Default room orchestrator: delegates walls, floor, and ceiling to the three
+ * sub-builders. Phase 2 dropped the {@code IRoomElementDecorator} chain that
+ * the original implementation called &mdash; the decorators still wrote
+ * blocks via {@code ServerLevel} and need their own Phase 8 refactor before
+ * they can sit on top of this pipeline.
+ *
+ * <p>Sub-builder selection is currently hard-coded; the original code shipped
+ * with motif-aware lookups stubbed (returning a {@code Basic*} for every
+ * motif). Real per-motif specialization happens in a later phase.</p>
+ *
+ * <p>All three sub-builders draw their blocks from a {@link MotifConfig} (default: all plain
+ * stone_bricks, see {@link MotifConfig#DEFAULT}) injected via {@link #withMotifConfig}, resolved by
+ * the caller from the datapack registry &mdash; same "resolve once where {@code RegistryAccess} is
+ * available, inject the resolved value" shape as {@code DungeonStackPlanner#withCorridorWidth}.</p>
+ *
+ * <p>Decoration comes from a single {@link RoomScheme} rolled once per room by
+ * {@link RoomSchemeSelector}, which each sub-builder then reads its own slot from. One roll rather
+ * than one per element is what keeps a room's floor, walls and ceiling parts of the same authored
+ * style instead of three independent draws. The roll uses this room's own {@code random}, so it
+ * stays deterministic across the repeated {@code postProcess} calls a piece gets per overlapping
+ * chunk &mdash; which is also why it must happen exactly once, here, and be passed down rather than
+ * re-rolled by any sub-builder.</p>
+ *
+ * @author Mark Gottschling on Dec 7, 2023 (Phase 2 rewrite May 25, 2026)
  */
 public class BasicRoomGenerator implements IRoomGenerator {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
+    private int sinkOffset = 0;
+    private int ceilingBudget = 0;
+    private int featuredRoomMinSize = RoomSlots.NO_FEATURED_MINIMUM;
+    private int anchorX = 0;
+    private int anchorZ = 0;
+    private MiningHaul miningHaul;
+    private String counterLootTable;
+    /** Non-null when this room can take a hidden door; see {@link #withSecret}. */
+    private SecretDoorway secretDoorway;
+    /** The counter-item on this room's pedestal, which also FORCES a secret scheme. */
+    private String counterItem;
+
+    public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
+        return this;
+    }
 
     /**
-     * TODO add config / theme
-     *
-     * @param level
-     * @param dungeonLevel
-     * @param spawnCoords
+     * The floor's budget below its walking plane, which is the hard cap on any pit a scheme
+     * digs. Zero &mdash; the shipped value, and the default here &mdash; means no room gets a pit
+     * however its scheme is authored.
      */
+    public BasicRoomGenerator withSinkOffset(int sinkOffset) {
+        this.sinkOffset = Math.max(0, sinkOffset);
+        return this;
+    }
+
+    /**
+     * The floor's budget ABOVE its walking plane ({@code floor_height - sink_offset}), which is the
+     * hard cap on how far a rising vault may reach. Zero -- the default here -- means no
+     * ceiling rises however its scheme is authored, exactly as {@code sinkOffset} 0 means no pit.
+     *
+     * <p>The mirror of {@link #withSinkOffset} in every way that matters. A pit spends the budget
+     * below the walking plane and a rising vault spends what is left of the budget above it, so
+     * neither can reach the stone buffer between floors: what a rising ceiling actually gets is
+     * {@code ceilingBudget - height}, the rows this floor owns and this room did not use. At the
+     * shipped 20/5 that is 5 to 10 rows of stone sitting over every procedural room.</p>
+     */
+    public BasicRoomGenerator withCeilingBudget(int ceilingBudget) {
+        this.ceilingBudget = Math.max(0, ceilingBudget);
+        return this;
+    }
+
+    /**
+     * The generation config's {@code featured_room_min_size}: a room at least this big on its
+     * shorter side may not come out bare (see {@code RoomSlots#resolve}). The default here is off,
+     * so a generator built without it rolls exactly what its scheme authored, as it always did;
+     * {@code DungeonRoomPiece} injects the datapack value.
+     */
+    public BasicRoomGenerator withFeaturedRoomMinSize(int featuredRoomMinSize) {
+        this.featuredRoomMinSize = featuredRoomMinSize;
+        return this;
+    }
+
+    /**
+     * Where this floor's local grid sits in the world. Everything here plans in floor-local cells and
+     * needs no world position, except a placement whose parts must land in ONE chunk: a two-block
+     * tomb split across a seam is written in two passes and loses its first half (see
+     * {@code RoomTombGenerator}). Defaults to 0, 0 for callers with no world, such as the
+     * floor-plan viewer.
+     */
+    public BasicRoomGenerator withAnchor(int anchorX, int anchorZ) {
+        this.anchorX = anchorX;
+        this.anchorZ = anchorZ;
+        return this;
+    }
+
+    /**
+     * The Mining Chest's contents, when this is the one room in the dungeon that carries it.
+     *
+     * <p>Injected rather than rolled, and this is the only slot in the room that works that way:
+     * the haul is a property of the WHOLE dungeon's excavation, which only the emitter can see. A
+     * room asked to compute it would compute the same answer as every other room, and every room
+     * would place a chest. Null -- the default, and the case for every room but one in the whole
+     * dungeon -- means no Mining Chest here.</p>
+     */
+    public BasicRoomGenerator withMiningHaul(MiningHaul miningHaul) {
+        this.miningHaul = miningHaul;
+        return this;
+    }
+
+    /**
+     * The counter-item chest's loot table, when this is the one room carrying it. Injected
+     * for the Mining Chest's reason: which boss the dungeon has is only visible to the emitter.
+     * Null -- nearly every room -- means no counter chest here.
+     */
+    public BasicRoomGenerator withCounterLootTable(String counterLootTable) {
+        this.counterLootTable = counterLootTable;
+        return this;
+    }
+
+    /**
+     * Tells this room it can be a secret room, and where its hidden door would go.
+     *
+     * <p>Injected for the Mining Chest's reason: whether the one doorway opens onto a corridor with
+     * wall beside it for a lever is a question about the corridors, which only the planner at
+     * generation can see. Null &mdash; every room but a hideable dead end &mdash; drops every secret
+     * scheme from the roll.</p>
+     *
+     * @param counterItem the dungeon's counter-item when {@code CounterItemPlanner} put it
+     *                    here: it goes on this room's pedestal, and the room is FORCED secret
+     */
+    public BasicRoomGenerator withSecret(SecretDoorway secretDoorway, String counterItem) {
+        this.secretDoorway = secretDoorway;
+        this.counterItem = secretDoorway == null ? null : counterItem;
+        return this;
+    }
+
     @Override
-    public void addToWorld(ServerLevel level, RandomSource random, DungeonLevel dungeonLevel, ICoords spawnCoords, IDungeonMotif motif) {
-        // a typical room will generate at y+2
-        ICoords normalizedSpawnCoords = spawnCoords.add(0, 2, 0);
+    public void build(RoomData room, int floorY, int floorIndex, IDungeonMotif motif,
+                      RandomSource random, RoomPlacements out) {
+        RoomScheme scheme = selectScheme(room, floorIndex, random);
+        boolean secret = scheme.isSecret() && secretDoorway != null;
+        List<BlockPlacement> blocks = out.getBlocks();
 
-        // TODO revisit how decorators are registered - why introduce FloorElementType when Pattern already exist
-        IRoomElementDecorator floorDecorator;
-        List<IRoomElementDecorator> floorDecoratorList = DecoratorRegistry.get(FloorElementType.FLOOR);
-        if (floorDecoratorList.isEmpty()) {
-            return;
+        // Room dims are passed to the selectors because a scheme's element slots carry their own
+        // size gates -- a slot the room fails is dropped while the rest of the scheme still draws.
+        int width = room.getWidth();
+        int depth = room.getDepth();
+        int height = room.getHeight();
+
+        IDungeonWallGenerator wallGen = selectWallGenerator(motif, scheme, width, depth, height);
+        if (secret && wallGen instanceof BasicWallGenerator basicWall) {
+            basicWall.withHiddenDoorways(Set.of(secretDoorway.door()));
         }
-        floorDecorator = floorDecoratorList.get(RandomHelper.randomInt(random, 0, floorDecoratorList.size() - 1));
+        IDungeonFloorGenerator floorGen = selectFloorGenerator(motif, scheme, width, depth, height);
+        // 2026-10-22, Mark: a partition and anything overhead do not share a room. A full-height
+        // wall run across the floor under an oculus or a chandelier reads as two rooms fighting
+        // over one ceiling. The partition wins -- it is the rarer roll and the bigger change to the
+        // room -- so the ceiling falls back to plain and the hangings go. Dropped AFTER the scheme
+        // drew, so no draw is added or removed for any room that rolled no partition.
+        Optional<PartitionPatternEntry> partitionEntry = scheme.partitionFor(width, depth, height);
+        Optional<CeilingPatternEntry> ceiling = partitionEntry.isPresent()
+                ? Optional.empty() : scheme.ceilingFor(width, depth, height);
+        IDungeonCeilingGenerator ceilingGen = ceilingGeneratorFor(ceiling, width, depth, height);
 
-        Optional<IRoomElementDecorator> wallDecorator = Optional.empty();
-        List<IRoomElementDecorator> wallDecorators = DecoratorRegistry.get(WallElementType.WALL);
-        if (!wallDecorators.isEmpty()) {
-            wallDecorator = Optional.of(wallDecorators.get(random.nextInt(wallDecorators.size())));
-        }
+        // The renderer iterates this list in sequence and a later placement overwrites an earlier
+        // one in the same cell, so order here is a layering order. Hollowing first establishes
+        // "the room is empty" as a precondition the rest build on top of, which is what lets a
+        // future interior feature (pillar, vault) simply run later and win the cells it needs
+        // rather than having to coordinate with the step that emitted the air.
+        //
+        // Their planes do not overlap -- walls are the perimeter ring, floor Y=floorY, ceiling
+        // Y=floorY+height-1 -- but two of them reach INTO the volume: a wall's projecting trim (a
+        // cornice) and a ceiling's projecting ribs (a coffer) both land in interior cells that
+        // hollow() has just cleared. So running after hollow() is load-bearing for those two.
+        //
+        // Those two layers can also want the SAME cells, where a rib meets the cornice ring, so
+        // ceiling-after-wall is load-bearing as well: the ceiling is meant to win, a rib running
+        // into the cornice and interrupting it rather than stopping short of it. Floor is still
+        // free to move.
+        RoomVolumeGenerator.hollow(room, floorY, blocks);
+        wallGen.build(room, floorY, motif, random, blocks);
+        floorGen.build(room, floorY, motif, random, blocks);
+        ceilingGen.build(room, floorY, motif, random, blocks);
 
-        for (IRoom room : dungeonLevel.getRooms()) {
-            // TODO determine if custom room
-            // TODO use resource location to get template
-            // TODO calculate offset if any
+        // The pit comes out of the floor immediately after it is paved, and BEFORE anything
+        // stands on it. The order is load-bearing in both directions -- after the floor because it
+        // overwrites the slab it just laid (a later placement in the same cell wins), and before
+        // pillars, platforms and props because those choose cells to stand on and a cell that is
+        // now a hole is not one of them.
+        //
+        // ORDER ALONE WAS NOT ENOUGH, and for a year this comment claimed more than the code
+        // did. Running first only makes the pit's cells AVAILABLE to the steps after it; each of
+        // those steps still has to ask. The props did ask, via `taken` below. The columns and daises
+        // did not -- they build from a layout, and a layout knows the room's dimensions and nothing
+        // about what has been carved out of it -- so a colonnade rolled over a pit put columns in
+        // mid-air above the hole. They are handed the set explicitly now.
+        Set<Coords2D> pit = scheme.pitFor(width, depth, height)
+                .map(entry -> RoomPitGenerator.excavate(room, floorY, entry, sinkOffset,
+                        motifConfig.floor(), random, blocks))
+                .orElseGet(Set::of);
 
-            addRoomToWorld(level, random, room, normalizedSpawnCoords, motif);
+        // The partition next, because it is the other thing that changes the SHAPE of the
+        // room rather than its surfaces, and everything from here on picks cells to stand in.
+        // Before the columns and daises so neither grows through the bars; before the chests, the
+        // spawners and the props so none of them is placed in a cell the bars occupy.
+        //
+        // Content ending up INSIDE the enclosure is fine and is rather the point -- the shape always
+        // cuts a gap, so a chest behind bars is a chest behind a door. The one case that is a fault
+        // is a doorway opening straight into the cage, and RoomPartitionGenerator refuses the whole
+        // partition in that room rather than building a cage round the entrance.
+        Set<Coords2D> partition = partitionEntry
+                .map(entry -> RoomPartitionGenerator.build(room, floorY, entry, pit, random, blocks))
+                .orElseGet(Set::of);
 
-            // perform decorations
-            if (wallDecorator.isPresent()) {
-                // TODO replace grid with Array2D
-                Grid2D grid = wallDecorator.get().decorate(level, random, null, room, normalizedSpawnCoords, motif);
+        // What the volume slots must not build into: the pit's excavated cells and the partition's
+        // run. One set rather than two parameters, because to a layout they are the same fact --
+        // this cell is not available -- and a second parameter is one more thing a new generator can
+        // forget to ask for. (A pit and a column once shared a cell because asking was not explicit.)
+        Set<Coords2D> blockedFloorCells = new HashSet<>(pit);
+        blockedFloorCells.addAll(partition);
+
+        // Pillars and platforms draw in the room's VOLUME rather than on one of its surfaces, which
+        // is why both run after the four surface steps -- they stand in the interior air the hollow
+        // step cleared, so anything that also reaches into it must already have been emitted.
+        //
+        // That makes a column win against a projecting ceiling rib where the two meet, which is the
+        // right way round: a column is structure and a rib is decoration, so the column should read
+        // as carrying the ceiling rather than being interrupted a block short of it.
+        IDungeonPillarGenerator pillarGen = selectPillarGenerator(motif, scheme, width, depth, height);
+        pillarGen.build(room, floorY, motif, random, blocks, blockedFloorCells);
+
+        // Platforms after columns, and for a concrete reason rather than symmetry: both draw in the
+        // interior air, and where a dais meets a column the column should be the thing standing on
+        // it.
+        //
+        // ORDER ALONE WAS NOT ENOUGH, exactly as it was not enough for the pit (see above), and
+        // this comment claimed more than the code did for the same reason. Running second only
+        // makes the columns EXIST before the dais is planned; the dais still has to be told where
+        // they are, and it was not -- it was handed the pit-and-partition set and nothing else. So
+        // a dais footprint could sit right over a column, and its centrepiece landed in the
+        // column's own cell: Mark walked into a room with a brazier skewered on a pillar
+        // (2026-09-09), twice, the second time after the scheme-level fix that was supposed to stop
+        // it. The scheme gate could only ever have stopped the pair it named; ANY layout can put a
+        // column under ANY dais.
+        //
+        // Handed the columns explicitly, the dais's own all-or-nothing footprint check does the
+        // rest: it declines that position outright rather than building around the obstruction,
+        // which is right -- a dais with a pillar through it is not a dais.
+        Set<Coords2D> blockedByColumns = new HashSet<>(blockedFloorCells);
+        blockedByColumns.addAll(pillarGen.occupiedFloorCells());
+        IDungeonPlatformGenerator platformGen =
+                selectPlatformGenerator(motif, scheme, width, depth, height);
+        platformGen.build(room, floorY, motif, random, blocks, blockedByColumns);
+        // The pots standing ON a dais. They are the platform's, not the pots slot's:
+        // the slot places at the walking plane and is kept OFF the dais's cells entirely.
+        out.getEntities().addAll(platformGen.entities());
+
+        // The big-room rule's second half (2026-10-30). RoomSlots#resolve made sure the ROLL gave a
+        // big room something that shapes it; this makes sure something was BUILT. Every shape step
+        // above can come back empty after its slot was drawn -- a partition refused because a
+        // doorway opens into it (and the ceiling given up for it), a pit the floor had no budget
+        // or room to dig, a dais dropped for blocking a doorway, columns with nowhere to stand --
+        // and a big room that drew one of those and built none of them is the bare room the rule
+        // exists to prevent. So: give it a ceiling, here, after the fact. It is drawn after the
+        // ceiling step on purpose -- a later placement wins -- and before anything stands in the
+        // room, so the hangings below read the vault it may raise. No draw unless it fires.
+        Optional<CeilingPatternEntry> drawnCeiling = ceiling;
+        if (Math.min(width, depth) >= featuredRoomMinSize
+                && ceiling.filter(CeilingPatternEntry::shapesCeiling).isEmpty() && partition.isEmpty()
+                && !builtVisiblePit(scheme, width, depth, height, pit)
+                && pillarGen.occupiedFloorCells().isEmpty() && platformGen.occupiedFloorCells().isEmpty()) {
+            Optional<CeilingPatternEntry> fallback = fallbackCeiling(scheme, width, depth, height, random);
+            if (fallback.isPresent()) {
+                ceilingGeneratorFor(fallback, width, depth, height).build(room, floorY, motif, random, blocks);
+                drawnCeiling = fallback;
             }
-            wallDecorator.get().decorate(level, random, null, room, normalizedSpawnCoords, motif);
-            floorDecorator.decorate(level, random, null, room, normalizedSpawnCoords, motif);
-            // ceilingDecorator.decorate(level, random, null, room, normailzedSpawnCoords, motif);
         }
+        Optional<CeilingPatternEntry> finalCeiling = drawnCeiling;
+
+        // Props last: they stand ON the finished floor, and unlike the four steps above they emit
+        // entities, which the piece writes to the world by a different route entirely.
+        //
+        // The wall's projecting trim gets right of way over them: it is part of the architecture and
+        // was emitted before the pots were placed, so the pots move rather than spawning inside it.
+        // Asking the generator which cells it took (rather than working it out here) keeps the rules
+        // about which cells a projected layer actually reaches in the one place that has them.
+        // Both the wall's projecting trim and the columns get right of way: each is architecture,
+        // each was emitted before the pots, and a pot inside either is invisible until someone walks
+        // into the room. Asking each generator which cells it took (rather than re-deriving them
+        // here) keeps those rules in the one place that has them -- the columns' set in particular
+        // is what actually got built, doorway drops and all, not what the layout asked for.
+        Set<Coords2D> taken = new HashSet<>(wallGen.occupiedFloorCells());
+        taken.addAll(pillarGen.occupiedFloorCells());
+        taken.addAll(platformGen.occupiedFloorCells());
+        // A pit's cells are not floor at all, so nothing may stand ON them. Without this a chest or
+        // spawner is placed in mid-air over the hole and a pot drops in and shatters as soon as the
+        // chunk ticks -- the same gravity trap the chest/pot ordering above exists for.
+        taken.addAll(pit);
+        // And the partition's own cells: a pot inside the bars is invisible, and a chest inside them
+        // is a chest whose lid cannot open.
+        taken.addAll(partition);
+
+        // The secret room's prize, first of everything that stands on the floor: it is the reason
+        // the room exists, so it takes the centre and the rest works round it.
+        if (secret) {
+            taken.addAll(RoomPedestalGenerator.place(room, floorY, scheme.secret().orElse(null),
+                    counterItem, moatRadius(scheme, room, pit), taken, random, blocks));
+        }
+
+        // Spawners before pots, and they claim their cells against them. Not because the two
+        // collide -- the spawner block is invisible and has no collision, so a pot would sit in one
+        // without complaint -- but because the mobs materialise at that cell and would break the pot
+        // on their way out, which reads as a bug rather than an ambush.
+        //
+        // Emitted into the BLOCK list even though nothing about them is visible: the block entity is
+        // how a spawner exists at all, and DungeonPiece writes block-entity placements after the
+        // decoration pass precisely so an interior air cell cannot overwrite one.
+        // The depth axis: which mob sets this room's spawners draw from is the FLOOR's decision by
+        // default, and only the scheme's if the scheme said so. That is what lets one hall scheme be
+        // authored once and get harder the deeper it is rolled, instead of needing a near-duplicate
+        // scheme per depth band. The band carries the mobs-per-spawn counts too, so a deeper floor
+        // can be more crowded as well as nastier. See SpawnerConfig#resolvedAgainst.
+        scheme.spawnersFor(width, depth, height).ifPresent(spawners ->
+                taken.addAll(RoomSpawnerGenerator.placeSpawners(room, floorY, floorIndex,
+                        motif == null ? null : motif.getValue(),
+                        spawners.resolvedAgainst(motifConfig.bandFor(floorIndex)),
+                        taken, random, blocks)));
+
+        // Chests before pots and claiming their cells, for a blunter reason than the spawners':
+        // a chest is a SOLID block, so a pot entity spawned in the same cell stands inside it and,
+        // having gravity, falls and shatters as soon as the chunk ticks.
+        scheme.chestsFor(width, depth, height).ifPresent(chests ->
+                taken.addAll(RoomChestGenerator.placeChests(room, floorY,
+                        chests.resolvedAgainst(motifConfig.chestBandFor(floorIndex)),
+                        taken, random, blocks, out.getEntities())));
+
+        // The Mining Chest, before the pots and claiming its cell for the same reason an ordinary
+        // chest does: it is a solid block, and a pot entity standing inside one falls and shatters
+        // the moment the chunk ticks. After the scheme's own chests rather than before, so that a
+        // room whose scheme rolled chests still gets them -- this one is guaranteed by the plan and
+        // the scheme's are not, so it is this one that should give way if the floor runs out.
+        taken.addAll(RoomMiningChestGenerator.placeChest(room, floorY, miningHaul, taken, random,
+                blocks));
+        // The boss's counter-item, on the same terms as the Mining Chest -- planned against the
+        // whole dungeon and injected into one room.
+        taken.addAll(RoomChestGenerator.placeCounterChest(room, floorY, counterLootTable, taken,
+                random, blocks));
+
+        // The tombs, after every chest and before the furniture, claiming both halves. A tomb
+        // is an encounter and a barrel is scenery, so if the floor runs short it is the barrel that
+        // gives way -- the chests' argument one step on. What the dead hold is the FLOOR's by
+        // default, exactly as the chests' loot is: resolved against this depth's tomb band here.
+        scheme.tombsFor(width, depth, height).ifPresent(tombs ->
+                taken.addAll(RoomTombGenerator.placeTombs(room, floorY, floorIndex,
+                        motif == null ? null : motif.getValue(),
+                        tombs.resolvedAgainst(motifConfig.tombBandFor(floorIndex)),
+                        taken, anchorX, anchorZ, random, blocks)));
+
+        // Furniture after every guaranteed thing and before the pots, claiming its cells.
+        // The ordering is the chests' argument one step on: a prop is a SOLID block, so a pot
+        // spawned in the same cell stands inside it and, having gravity, falls and shatters as soon
+        // as the chunk ticks. It runs after the chests rather than before because a chest is a
+        // reward and a barrel is scenery -- if the floor runs out of cells, it is the scenery that
+        // should give way.
+        taken.addAll(scheme.propsFor(width, depth, height)
+                .map(props -> RoomFurnitureGenerator.placeProps(room, floorY, props, taken, random,
+                        blocks, out.getEntities()))
+                .orElseGet(java.util.Set::of));
+
+        // Hangings last of the blocks: each one reads its column out of `blocks` -- the vault's
+        // rise, a rib, a column, a dais, a barrel -- to find the air it can hang in and the ceiling
+        // it hangs from. Anything emitted after this would be invisible to that read. They claim
+        // no floor cells (CLEARANCE rows of air under each), so the pots do not need to know.
+        //
+        // None under a partition (see the ceiling above), and no CENTRE hanging under an oculus:
+        // both claim the middle of the ceiling, and a chandelier hung in the grated shaft is two
+        // centrepieces at once.
+        Optional<HangingConfig> hangingsEntry = partitionEntry.isPresent() ? Optional.empty()
+                : scheme.hangingsFor(width, depth, height)
+                        .filter(hangings -> !(hangings.placement() == HangingConfig.HangingPlacement.CENTRE
+                                && hasOculus(finalCeiling)));
+        hangingsEntry.ifPresent(hangings ->
+                RoomHangingGenerator.placeHangings(room, floorY, hangings, random, blocks));
+
+        scheme.potsFor(width, depth, height).ifPresent(pots ->
+                RoomPropGenerator.placePots(room, floorY, pots, taken, random, out.getEntities()));
     }
 
-    // TODO will have to return a map of grids - each decorator may need to know about the others
-    private void addRoomToWorld(ServerLevel level, RandomSource random, IRoom room, ICoords normalSpawnCoords, IDungeonMotif motif) {
-        // TODO wallGenerator
-        IDungeonWallGenerator wallGenerator = selectWallGenerator(level, motif);
-        // TODO properly develop the 2d map from the walls
-        IDungeonFloorGenerator floorGenerator = selectFloorGenerator(level, motif);
-        IDungeonCeilingGenerator ceilingGenerator = selectCeilingGenerator(level, motif);
-
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
-
-        // TODO how to pass ALL the grids back up to the generators and decorators
-        // generate the walls
-        Array2D<Integer> wallGrid = wallGenerator.addToWorld(level, random, room, normalSpawnCoords, motif);
-
-        // generate the floor
-        Array2D<Integer> floorGrid = floorGenerator.addToWorld(level, random, room, normalSpawnCoords, motif);
-
-        Array2D<Integer> ceilingGrid = ceilingGenerator.addToWorld(level, random, room, normalSpawnCoords, motif);
-//        // build box (minus the floor)
-//        for (int y = 1; y < room.getHeight(); y++) {
-//            for (int x = 0; x < room.getWidth(); x++) {
-//                for (int z = 0; z < room.getDepth(); z++) {
-//                    // edges
-//                    if (
-//                            ((x == 0 || x == room.getWidth() - 1) && (z == 0 || z == room.getDepth() - 1))
-//                                    || ((x == 0 || x == room.getWidth() - 1) && (y == 0 || y == room.getHeight() - 1))
-//                                    || ((z == 0 || z == room.getDepth() - 1) && (y == 0 || y == room.getHeight() - 1))
-//                    ) {
-//                        // skip the edges as they aren't visible anyway
-//                    } else {
-//                        // NOTE rooms will overwrite corridor walls? no can't do that! arg.
-//                        // NOTE meaning - can't have good wall designs unless make the wall thicker
-//                        // NOTE OR build a buffer around all rooms during 2D build - but then connectors would be out of wack
-//                        // build ceiling
-////                        if (y == room.getHeight() - 1) {
-//                            // TODO extract to a ceiling generator
-//                            // TEMP don't gen the ceiling
-////                            level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), blockProvider.get(FloorPattern.FLOOR).orElse(DEFAULT));
-////                        }
-//                        // TODO extract to a wall generator and it goes first as it will determine how
-//                        // floor and ceiling is generated & decorated
-//                        // build walls
-////                        else if (x == 0 || x == room.getWidth() - 1 || z == 0 || z == room.getDepth() - 1) {
-////                            // top/bottom corners of wall
-////                            if (
-////                                    (y == 1 || y == room.getHeight() - 2) &&
-////                                            (
-////                                                    ((x == 0 || x == room.getWidth() - 1) && (z == 1 || z == room.getDepth() - 2))
-////                                                            || ((x == 1 || x == room.getWidth() - 2) && (z == 0 || z == room.getDepth() - 1))
-////                                            )
-////                            ) {
-////                                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-////                                        blockProvider.get(WallPattern.CORNER).orElse(DEFAULT));
-////                            } else {
-////                                level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-////                                        blockProvider.get(WallPattern.WALL).orElse(DEFAULT));
-////                            }
-////                        } else {
-////                            // replace with air ie inside the room
-////                            level.setBlock(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), Blocks.AIR.defaultBlockState(), 3);
-////                        }
-//                    }
-//                }
-//            }
-//        }
+    public IDungeonPlatformGenerator selectPlatformGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                            int width, int depth, int height) {
+        return new BasicPlatformGenerator().withPlatformLayouts(PlatformPatternSelector.layoutsFor(
+                scheme.platformsFor(width, depth, height), width, depth, height));
     }
 
-    public IDungeonWallGenerator selectWallGenerator(ServerLevel level, IDungeonMotif motif) {
-        return new BasicWallGenerator();
+    public IDungeonPillarGenerator selectPillarGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                        int width, int depth, int height) {
+        return new BasicPillarGenerator().withPillarLayouts(PillarPatternSelector.layoutsFor(
+                scheme.pillarsFor(width, depth, height), width, depth, height));
     }
 
-    public IDungeonFloorGenerator selectFloorGenerator(ServerLevel level, IDungeonMotif motif) {
-        // TODO lookup registry for the floors by motif
-        return new BasicFloorGenerator();
+    /**
+     * How far the hidden moat under this room reaches from its centre, when the room's pit is one
+     * and was dug; 0 otherwise. The pedestal standing on the centre carries it as its trap.
+     */
+    private static int moatRadius(RoomScheme scheme, RoomData room, Set<Coords2D> pit) {
+        if (pit.isEmpty()) {
+            return 0;
+        }
+        return scheme.pitFor(room.getWidth(), room.getDepth(), room.getHeight())
+                .filter(entry -> entry.shape() instanceof HiddenMoatPitShape)
+                .map(entry -> ((HiddenMoatPitShape) entry.shape()).provider()
+                        .fittedRadius(room.getWidth() - 2, room.getDepth() - 2))
+                .orElse(0);
     }
 
-    public IDungeonCeilingGenerator selectCeilingGenerator(ServerLevel level, IDungeonMotif motif) {
-        return new BasicCeilingGenerator();
+    /** The one decorative roll a room gets. See {@link RoomSchemeSelector}. */
+    public RoomScheme selectScheme(RoomData room, int floorIndex, RandomSource random) {
+        RoomSchemeSelector.SecretEligibility secret = secretDoorway == null
+                ? RoomSchemeSelector.SecretEligibility.NONE
+                : counterItem != null ? RoomSchemeSelector.SecretEligibility.FORCED
+                : RoomSchemeSelector.SecretEligibility.ALLOWED;
+        return RoomSchemeSelector.select(motifConfig.schemes(),
+                room.getWidth(), room.getDepth(), room.getHeight(), floorIndex,
+                RoomDoorways.count(room), secret, featuredRoomMinSize, random);
+    }
+
+    public IDungeonWallGenerator selectWallGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                    int width, int depth, int height) {
+        return new BasicWallGenerator()
+                .withMotifConfig(motifConfig)
+                .withWallPattern(WallPatternSelector.providerFor(
+                        scheme.wallFor(width, depth, height), motifConfig.wall(),
+                        width, depth, height));
+    }
+
+    public IDungeonFloorGenerator selectFloorGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                      int width, int depth, int height) {
+        return FloorPatternSelector.generatorFor(scheme.floorFor(width, depth, height), motifConfig.floor());
+    }
+
+    public IDungeonCeilingGenerator selectCeilingGenerator(IDungeonMotif motif, RoomScheme scheme,
+                                                          int width, int depth, int height) {
+        return ceilingGeneratorFor(scheme.ceilingFor(width, depth, height), width, depth, height);
+    }
+
+    /** Whether the pit this room dug is one a player can SEE: dug at all, and not hidden. */
+    private static boolean builtVisiblePit(RoomScheme scheme, int width, int depth, int height,
+                                           Set<Coords2D> pit) {
+        return !pit.isEmpty() && scheme.pitFor(width, depth, height)
+                .map(entry -> !entry.shape().hidden()).orElse(false);
+    }
+
+    /**
+     * The ceiling a big room that built nothing gets: the one its scheme rolled, if a refused
+     * partition took it away and it changes the room's shape, else a roll of the scheme's AUTHORED
+     * ceilings that do ({@code CeilingPatternEntry#shapesCeiling}), exactly as RoomSlots#featured
+     * rolls one. Drawn over whatever flush pattern the room already has. The authored options are read off the
+     * motif's own copy of the scheme, by name, because the resolved one has already collapsed them.
+     * Empty when the scheme has no ceiling that fits, which FeaturedRoomRuleTest keeps from being
+     * true of any shipped scheme a big room can roll.
+     */
+    private Optional<CeilingPatternEntry> fallbackCeiling(RoomScheme scheme, int width, int depth,
+                                                          int height, RandomSource random) {
+        Optional<CeilingPatternEntry> rolled = scheme.ceilingFor(width, depth, height)
+                .filter(CeilingPatternEntry::shapesCeiling);
+        if (rolled.isPresent()) {
+            return rolled;
+        }
+        return motifConfig.schemes().stream()
+                .filter(authored -> authored.name().equals(scheme.name()))
+                .findFirst()
+                .map(authored -> authored.ceiling().withoutNone())
+                .filter(options -> options.all().anyMatch(entry -> entry.shapesCeiling()
+                        && entry.gate().fits(width, depth, height)))
+                .flatMap(options -> options.resolve(random, entry -> entry.shapesCeiling()
+                        && entry.gate().fits(width, depth, height)).value());
+    }
+
+    /** Whether this ceiling cuts an oculus -- the shaft that owns the middle of the ceiling. */
+    static boolean hasOculus(Optional<CeilingPatternEntry> ceiling) {
+        return ceiling.map(entry -> entry.patterns().stream()
+                        .anyMatch(pattern -> pattern.pattern() instanceof OculusCeilingPattern))
+                .orElse(false);
+    }
+
+    private IDungeonCeilingGenerator ceilingGeneratorFor(Optional<CeilingPatternEntry> ceiling,
+                                                         int width, int depth, int height) {
+        // What this floor owns above the room and the room did not use. Clamped at zero, so a
+        // room as tall as its floor's whole budget -- or a caller that never injected one -- gets a
+        // ceiling that cannot rise rather than one that reaches into the next floor.
+        return new BasicCeilingGenerator()
+                .withRiseBudget(Math.max(0, ceilingBudget - height))
+                .withMotifConfig(motifConfig)
+                .withCeilingPattern(CeilingPatternSelector.providerFor(
+                        ceiling, motifConfig.ceiling(),
+                        width, depth, height));
     }
 }

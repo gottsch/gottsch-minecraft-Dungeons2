@@ -1,0 +1,20 @@
+{
+  "values": [
+    {
+      "id": "dungeons2:bodak",
+      "required": false
+    },
+    {
+      "id": "dungeons2:skeleton_champion",
+      "required": false
+    },
+    {
+      "id": "dungeons2:wight",
+      "required": false
+    },
+    {
+      "id": "dungeons2:orc_warlord",
+      "required": false
+    }
+  ]
+}

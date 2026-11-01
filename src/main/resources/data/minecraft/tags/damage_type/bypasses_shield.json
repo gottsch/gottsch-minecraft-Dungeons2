@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "gmm:harm_spell", "required": false },
+    { "id": "gmm:disintegrate_spell", "required": false },
+    { "id": "gmm:withering_gaze_spell", "required": false },
+    "dungeons2:annihilation_ray"
+  ]
+}

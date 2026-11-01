@@ -17,17 +17,21 @@
  */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor;
 
-import mod.gottsch.forge.dungeons2.core.collection.Array2D;
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 
+import java.util.List;
+
 /**
- * @author Mark Gottschling on Mar 1, 2024
+ * Renders the floor surface of a {@link RoomData} as a list of {@link BlockPlacement}s.
  *
+ * <p>See {@link mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall.IDungeonWallGenerator}
+ * for the coord-space convention.</p>
+ *
+ * @author Mark Gottschling on Mar 1, 2024 (Phase 2 rewrite May 25, 2026)
  */
 public interface IDungeonFloorGenerator {
-    Array2D<Integer> addToWorld(ServerLevel level, RandomSource random, IRoom room, ICoords normalSpawnCoords, IDungeonMotif motif);
+    void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random, List<BlockPlacement> out);
 }

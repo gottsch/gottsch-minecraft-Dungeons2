@@ -1,0 +1,26 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "dungeonblocks:dark_iron_ladder"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.third_level.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.third_level.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "reached": {
+      "trigger": "dungeons2:reached_floor",
+      "conditions": {
+        "min_floor": 2
+      }
+    }
+  }
+}

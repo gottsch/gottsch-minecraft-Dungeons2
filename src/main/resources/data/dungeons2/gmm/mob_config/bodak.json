@@ -1,0 +1,37 @@
+{
+  "spawn": {
+    "enabled": false,
+    "minHeight": -64,
+    "maxHeight": 319,
+    "skyVisibility": "any",
+    "requiresDarkness": true
+  },
+  "properties": {
+    "armor": 6.0,
+    "knockbackResistance": 0.6,
+    "attackDamage": 6.0,
+    "gazeRange": 14.0,
+    "gazeConeDegrees": 25.0,
+    "gazeChargeTicks": 45.0,
+    "gazeCooldownTicks": 80.0,
+    "gazeDamage": 14.0,
+    "nearLethalChance": 0.2,
+    "auraRadius": 4.0,
+    "auraDamage": 1.5,
+    "auraIntervalTicks": 20.0,
+    "spellChargeTime": 50.0,
+    "spellMinRange": 4.0,
+    "spellCooldownTime": 70.0,
+    "sunBonusDamage": 2.0,
+    "sunPanicSpeedBoost": 0.12,
+    "jerkMinAngleDegrees": 6.0,
+    "jerkMaxAngleDegrees": 12.0,
+    "jerkPeriodTicks": 16.0
+  },
+  "flags": {
+    "deathGaze": true,
+    "auraOfAnnihilation": true,
+    "nearLethalGazeAllowKill": false,
+    "sunPanic": true
+  }
+}

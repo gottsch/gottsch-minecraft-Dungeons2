@@ -1,0 +1,18 @@
+{
+  "id": "dungeons2:classic_vermin",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 4
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:rat",
+      "weight": 10
+    },
+    {
+      "id": "dungeons2:giant_rat",
+      "weight": 3
+    }
+  ]
+}

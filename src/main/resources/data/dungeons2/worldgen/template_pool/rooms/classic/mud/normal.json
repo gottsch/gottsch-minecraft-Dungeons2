@@ -1,0 +1,240 @@
+{
+  "name": "dungeons2:rooms/classic/mud/normal",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/5x5_junction_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/5x5_junction_2",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/5x5_junction_3",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/5x5_junction_4",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_0",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_2",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_3",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_4",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_5",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x7_junction_6",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/9x9_junction_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x11_store_room_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x9_sewer_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x13_sewer_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/7x15_barracks_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/12x29_sunken_hallway_1a",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/5x11_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/5x11_hallway_2",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/5x17_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/7x17_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/hallway/7x15_timber_hallway_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_corner_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_corner_2",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/11x11_corner_3",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/mud/13x17_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

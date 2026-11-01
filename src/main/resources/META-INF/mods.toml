@@ -60,16 +60,72 @@ mandatory=true
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
+# ORDERING IS "AFTER" FOR ALL THREE LIBRARIES, AND MUST STAY CONSISTENT.
+# `ordering` says where THIS mod sits relative to the dependency, so AFTER = "dungeons2 loads after
+# gottschcore", which is what building on it implies.
+# These were BEFORE until 2026-08-13, which was harmless on its own but became a load-order CYCLE the
+# moment gmm was added: gmm's own toml declares gottschcore AFTER, so BEFORE here gave
+#     dungeons2 -> gottschcore -> gmm -> dungeons2
+# and Forge dies at ModSorter with "Detected Cycles" and a NullPointerException on a null sortedList,
+# naming three anonymous ModFileInfo objects and nothing else. Dungeon Denizens uses AFTER for all of
+# its libraries; Village Dungeons uses BEFORE for all of its. Either is fine -- MIXING them is not.
 [[dependencies.dungeons2]]
 modId="gottschcore"
 mandatory=true
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
-versionRange="[2.1.0,)"
-ordering="BEFORE"
+versionRange="[2.9.0,3.0.0)"
+ordering="AFTER"
 side="BOTH"
 [[dependencies.dungeons2]]
 modId="dungeonblocks"
 mandatory=true
-versionRange="[2.0.0,)"
-ordering="BEFORE"
+# 3.1.0: the flagstone pattern tiles (PatternTileBlock), skull pile and large candles.
+versionRange="[3.1.0,4.0.0)"
+ordering="AFTER"
+side="BOTH"
+# gottsch's Monster Manual (gmm) - shared mob base-class/asset library; it registers nothing, this
+# mod registers dungeons2:rat / dungeons2:giant_rat from its classes. See the ordering note above.
+[[dependencies.dungeons2]]
+modId="gmm"
+mandatory=true
+# 1.1.0 is where the Shrieker and Violet Fungus became unpushable. This mod grows them as floor
+# decoration, so on 1.0.1 they can be shoved off their square -- degraded rather than broken, but
+# not worth shipping. Keep in step with build.gradle.
+versionRange="[1.1.0,2.0.0)"
+ordering="AFTER"
+side="BOTH"
+# Gottsch Books - lore books found in dungeon loot. Nested in this jar (jarJar), so players need not
+# install it; mandatory because a loot table naming gottschbooks:book cannot load without it.
+[[dependencies.dungeons2]]
+modId="gottschbooks"
+mandatory=true
+versionRange="${gottschbooks_version_range}"
+ordering="AFTER"
+side="BOTH"
+
+# Treasure2 (treasure2) - OPTIONAL. The chest routing: a chest marker can opt in to a real Treasure2 chest
+# per marker (the boss chest), and everything else falls back to this mod's own chest. mandatory=false
+# so the dungeon still generates without it, and AFTER for the same reason as the three above: the
+# API is called during worldgen, so Treasure2 must have registered by then. Compiled against
+# compileOnly, so every call site is guarded by ModList.get().isLoaded("treasure2").
+[[dependencies.dungeons2]]
+modId="treasure2"
+mandatory=false
+versionRange="[4.1.0,5.0.0)"
+ordering="AFTER"
+side="BOTH"
+
+# Enemy Echelons API (eechelonsapi) - OPTIONAL. Mobs from this mod's spawners are scaled by DUNGEON
+# DEPTH (the motif's `echelon` block x the depth band's `difficulty`) through Dungeons2's OWN echelon
+# registry, so it works with EE alone and with or without Stronger Mobs Below. Nothing is called at
+# worldgen -- only as a mob spawns -- so no ordering is needed. compileOnly; every call site is behind
+# ModList.get().isLoaded("eechelonsapi"), in EchelonsIntegration.
+# 1.1.0 floor (2026-10-29): EE 1.1.0 reads the datapack exclusion data/dungeons2/echelons/exclusions/
+# dungeons2.json, which keeps EVERY other echelon config (SMB's catch_all included) off this mod's mobs.
+# Older EE ignores the file, so it is the floor, not a hard break.
+[[dependencies.dungeons2]]
+modId="eechelonsapi"
+mandatory=false
+versionRange="[1.1.0,2.0.0)"
+ordering="NONE"
 side="BOTH"

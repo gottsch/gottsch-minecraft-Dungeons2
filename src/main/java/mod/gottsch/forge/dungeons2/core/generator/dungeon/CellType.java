@@ -1,6 +1,5 @@
 package mod.gottsch.forge.dungeons2.core.generator.dungeon;
 
-////////////// processing constants ///////////////
 public enum CellType {
     ROCK(0),
     WALL(1),

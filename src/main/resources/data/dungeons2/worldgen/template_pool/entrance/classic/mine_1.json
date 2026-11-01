@@ -1,0 +1,15 @@
+{
+  "name": "dungeons2:entrance/classic/mine_1",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:entrances/classic/mine_bottom_1",
+        "processors": "dungeons2:classic_mine_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

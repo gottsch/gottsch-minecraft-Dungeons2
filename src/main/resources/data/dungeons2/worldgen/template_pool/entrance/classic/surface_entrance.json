@@ -1,0 +1,33 @@
+{
+  "name": "dungeons2:entrance/classic/surface_entrance",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:entrances/classic/entrance_1",
+        "processors": "dungeons2:classic_entrance_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:entrances/classic/entrance_2",
+        "processors": "dungeons2:classic_entrance_weathering",
+        "projection": "rigid"
+      },
+      "weight": 2
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:entrances/classic/mine_top_1",
+        "processors": "dungeons2:classic_mine_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

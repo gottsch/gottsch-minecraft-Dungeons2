@@ -1,0 +1,10 @@
+{
+  "echelon": {
+    "hp_factor": 0.2,
+    "damage_factor": 0.15,
+    "armor_factor": 0.1,
+    "knockback_resist_increment": 0.05,
+    "speed_factor": 0.03,
+    "xp_factor": 0.25
+  }
+}

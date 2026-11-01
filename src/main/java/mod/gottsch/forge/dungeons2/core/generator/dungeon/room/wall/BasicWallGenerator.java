@@ -1,64 +1,198 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2024 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
 package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.wall;
 
-import mod.gottsch.forge.dungeons2.core.collection.Array2D;
-import mod.gottsch.forge.dungeons2.core.decorator.IBlockProvider;
+import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
+import mod.gottsch.forge.dungeons2.core.data.BlockPlacement;
+import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.enums.IDungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
-import mod.gottsch.forge.dungeons2.core.generator.dungeon.IRoom;
-import mod.gottsch.forge.dungeons2.core.pattern.wall.WallPattern;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import net.minecraft.server.level.ServerLevel;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.RoomVolumeGenerator;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IDoorAwarePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.IProjectingPatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.ISurfacePatternProvider;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.SurfacePlan;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.surface.WallSurface;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
- * @author Mark Gottschling on Mar 6, 2024
+ * Builds the four walls of a {@link RoomData} as {@link BlockPlacement}s &mdash; the perimeter ring
+ * only. The interior air the room stands in is {@link RoomVolumeGenerator}'s job.
+ *
+ * <p>Geometry lives in {@link WallSurface}: this class works out the wall height and the doorway
+ * set, then hands each of the four runs a {@link SurfacePlan} to render. The plan here is empty, so
+ * every cell falls through to the motif's plain wall block &mdash; which is exactly what a room
+ * with no wall treatment should be. A wall pattern is then a provider that fills cells of that
+ * plan, with no change to this class beyond asking one for it.</p>
+ *
+ * <p>Output coords are floor-local X/Z and absolute world Y. The room occupies
+ * {@code [originX..originX+width-1] x [originZ..originZ+depth-1]} on the floor; vertically the
+ * walls span {@code [floorY+1..floorY+height-2]} (the floor block at Y=floorY and the ceiling at
+ * Y=floorY+height-1 are emitted by {@code BasicFloorGenerator} / {@code BasicCeilingGenerator}).
+ * That gives a wall {@code height - 2} rows tall &mdash; between <strong>3 and 8</strong> under the
+ * shipped taper, since {@code DungeonStackPlanner#pickRoomHeight} rolls {@code 5 + rand(6)} and
+ * clamps it into the footprint's {@code RoomHeightBand}. Any pattern measured from the top
+ * has to cope with the low end of that.</p>
+ *
+ * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026; surface frame Aug 1, 2026)
  */
-public class BasicWallGenerator implements IDungeonWallGenerator  {
-    private static final BlockState DEFAULT = Blocks.STONE_BRICKS.defaultBlockState();
+public class BasicWallGenerator implements IDungeonWallGenerator {
+
+    private MotifConfig motifConfig = MotifConfig.DEFAULT;
+    /** Null means no wall treatment: every cell falls through to the plain wall block. */
+    private ISurfacePatternProvider wallPattern;
+    /** Filled by {@link #build}; see {@link #occupiedFloorCells()}. */
+    private Set<Coords2D> occupiedFloorCells = Set.of();
+    /** Doorways the wall PATTERNS must not see; see {@link #withHiddenDoorways}. */
+    private Set<Coords2D> hiddenDoorways = Set.of();
+
+    /**
+     * Doorways to keep from the door-aware patterns: a secret room's one door. {@code door_jambs}
+     * frames an opening so a player sees it from across the room, which is the one thing a secret
+     * door must not have &mdash; from the corridor, a jamb is a picture frame round "more wall".
+     *
+     * <p>Only the PATTERNS lose it. The two door rows are still left open for the door piece to
+     * hang its hidden door in, and a projecting cornice is still kept out of the column, so the
+     * door can swing into the room.</p>
+     */
+    public BasicWallGenerator withHiddenDoorways(Set<Coords2D> hiddenDoorways) {
+        this.hiddenDoorways = hiddenDoorways == null ? Set.of() : hiddenDoorways;
+        return this;
+    }
+
+    /**
+     * Injects the resolved motif config. Same "resolve once where {@code RegistryAccess} is
+     * available, inject the resolved value" shape the rest of this pipeline uses; left at
+     * {@link MotifConfig#DEFAULT} (plain stone_bricks) when not supplied.
+     */
+    public BasicWallGenerator withMotifConfig(MotifConfig motifConfig) {
+        this.motifConfig = motifConfig;
+        return this;
+    }
+
+    /**
+     * Injects the wall treatment for this room, already chosen by the room's scheme (see
+     * {@code WallPatternSelector}). Null &mdash; the default &mdash; is a plain wall.
+     */
+    public BasicWallGenerator withWallPattern(ISurfacePatternProvider wallPattern) {
+        this.wallPattern = wallPattern;
+        return this;
+    }
 
     @Override
-    public Array2D<Integer> addToWorld(ServerLevel level, RandomSource random, IRoom room, ICoords normalSpawnCoords, IDungeonMotif motif) {
-        // get the size of the footprint
-        Coords2D size = new Coords2D(room.getWidth(), room.getDepth());
-        // create a grid
-        Array2D<Integer> grid = new Array2D<>(Integer.class, size.getX(), size.getY());
+    public void build(RoomData room, int floorY, IDungeonMotif motif,
+                      RandomSource random, List<BlockPlacement> out) {
+        BlockState wallState = motifConfig.wall().wallState();
 
-        // NOTE did it this way to build without using conditional statements
-        IBlockProvider blockProvider = IBlockProvider.get(motif);
-        // TODO move the corners to the decorators
-        int[] xx = {0, room.getWidth()-1};
-        for (int x: xx) {
-            for (int z = 0; z < room.getDepth(); z++) {
-                for (int y = 1; y < room.getHeight() - 1; y++) {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-                            blockProvider.get(WallPattern.WALL).orElse(DEFAULT));
-                    grid.put(x, z, 1);
+        // Interior rows only: the floor and ceiling planes belong to their own generators.
+        int wallHeight = room.getHeight() - 2;
+
+        // Doorway cells are floor-local grid coords, the same space as the surfaces' xAt/zAt.
+        Set<Coords2D> doorways = new HashSet<>(room.getDoorways());
+        Set<Coords2D> patternDoorways = new HashSet<>(doorways);
+        patternDoorways.removeAll(hiddenDoorways);
+
+        occupiedFloorCells = new HashSet<>();
+        for (WallSurface surface : WallSurface.forRoom(room)) {
+            SurfacePlan plan = planFor(surface, wallHeight, patternDoorways, random);
+            surface.emit(plan, floorY, doorways, wallState, out);
+
+            // Trim that stands out from the wall (a cornice, a moulding) lands in the room's
+            // interior air, which RoomVolumeGenerator has already cleared -- so it runs after the
+            // wall plane and simply wins those cells. Emitting it here rather than as a separate
+            // room step keeps it with the surface that decides its orientation.
+            if (wallPattern instanceof IProjectingPatternProvider projecting) {
+                Map<Integer, SurfacePlan> projected = projecting.projectedPlans(
+                        surface.length(), wallHeight, surface.facing(), random);
+                int before = out.size();
+                for (Map.Entry<Integer, SurfacePlan> layer : projected.entrySet()) {
+                    surface.emitProjected(layer.getValue(), layer.getKey(), floorY, doorways, out);
                 }
+                recordFloorLevelTrim(out, before, floorY);
             }
         }
+    }
 
-        int[] zz = {0, room.getDepth()-1};
-        for (int z : zz) {
-            for (int x = 0; x < room.getWidth(); x++) {
-                for (int y = 1; y < room.getHeight() - 1; y++) {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(),
-                            blockProvider.get(WallPattern.WALL).orElse(DEFAULT));
-                    grid.put(x, z, 1);
-                }
+    /**
+     * Notes which interior cells this run's projecting trim just took at floor level, so the room's
+     * props can keep out of them.
+     *
+     * <p><strong>Read back off the emitted placements rather than re-derived from the plans.</strong>
+     * Which cells a projected layer actually occupies is the product of three rules that all live in
+     * {@code WallSurface} &mdash; the projectable range that cedes corner columns between runs, the
+     * whole-column drop at a doorway, and the sparse "only marked cells" rule. Re-deriving them here
+     * would be a second copy that goes stale the first time one of them changes, and the failure it
+     * would cause (a pot inside a block, or a pot needlessly excluded) is invisible except in game.
+     * Asking what was emitted cannot disagree with what was emitted.</p>
+     *
+     * <p>Floor level is {@code floorY + 1}: {@code v = 0}, the row a pot stands in. Trim higher up
+     * a wall is irrelevant &mdash; a pot is one block tall.</p>
+     */
+    private void recordFloorLevelTrim(List<BlockPlacement> out, int fromIndex, int floorY) {
+        for (int i = fromIndex; i < out.size(); i++) {
+            BlockPlacement placement = out.get(i);
+            if (placement.getY() == floorY + 1) {
+                occupiedFloorCells.add(new Coords2D(placement.getX(), placement.getZ()));
             }
         }
+    }
 
-        // air
-        for (int x = 1; x < room.getWidth() - 1; x++) {
-            for (int z = 1; z < room.getDepth() - 1; z++) {
-                for (int y = 1; y < room.getHeight() -1; y++) {
-                    level.setBlockAndUpdate(normalSpawnCoords.add(room.getCoords()).add(x, y, z).toPos(), Blocks.AIR.defaultBlockState());
-                    grid.put(x, z, 0);
-                }
-            }
+    @Override
+    public Set<Coords2D> occupiedFloorCells() {
+        return occupiedFloorCells;
+    }
+
+    /**
+     * The pattern for one wall run. With no provider injected this is an all-null plan, so every
+     * cell renders as the motif's wall block &mdash; a room with no wall treatment.
+     *
+     * <p>Each run is planned separately and handed its own {@code facing}, which is the whole point
+     * of the {@code (u, v)} frame: one authored pattern comes out correctly oriented on all four
+     * walls without the provider knowing anything about the room.</p>
+     */
+    protected SurfacePlan planFor(WallSurface surface, int wallHeight, RandomSource random) {
+        return planFor(surface, wallHeight, Set.of(), random);
+    }
+
+    /**
+     * As above, telling a door-aware pattern which of this run's columns are an opening.
+     *
+     * <p>The doorways were already in this class -- {@code WallSurface#emit} needs them to blank the
+     * two door rows, and {@code emitProjected} to keep a cornice out of an opening. All this adds is
+     * passing them one level further, to the PATTERN, and only when the pattern implements
+     * {@link IDoorAwarePatternProvider}. Every other pattern is called exactly as it was and draws
+     * exactly what it drew before.</p>
+     */
+    protected SurfacePlan planFor(WallSurface surface, int wallHeight, Set<Coords2D> doorways,
+                                  RandomSource random) {
+        if (wallPattern == null) {
+            return SurfacePlan.of(surface.length(), wallHeight);
         }
-        return grid;
+        if (wallPattern instanceof IDoorAwarePatternProvider doorAware) {
+            return doorAware.plan(surface.length(), wallHeight, surface.facing(),
+                    surface.doorColumns(doorways), random);
+        }
+        return wallPattern.plan(surface.length(), wallHeight, surface.facing(), random);
     }
 }

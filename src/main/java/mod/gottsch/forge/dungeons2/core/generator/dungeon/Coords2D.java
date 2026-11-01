@@ -77,6 +77,19 @@ public class Coords2D {
 	}
 
 	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof Coords2D)) return false;
+		Coords2D other = (Coords2D) o;
+		return x == other.x && y == other.y;
+	}
+
+	@Override
+	public int hashCode() {
+		return 31 * x + y;
+	}
+
+	@Override
 	public String toString() {
 		return "Coords2D [x=" + x + ", y=" + y + "]";
 	}

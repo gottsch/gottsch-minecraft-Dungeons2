@@ -1,0 +1,30 @@
+{
+  "id": "dungeons2:large_dungeon_escort_ranged",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 3
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:winged_skeleton",
+      "weight": 6
+    },
+    {
+      "id": "dungeons2:tainted_skeleton",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:iron_skeleton",
+      "weight": 6
+    },
+    {
+      "id": "dungeons2:magma_skeleton",
+      "weight": 5
+    },
+    {
+      "id": "dungeons2:orc_shaman",
+      "weight": 5
+    }
+  ]
+}

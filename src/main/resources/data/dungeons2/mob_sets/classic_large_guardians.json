@@ -1,0 +1,14 @@
+{
+  "id": "dungeons2:classic_large_guardians",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 3
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:margoyle",
+      "weight": 4
+    }
+  ]
+}

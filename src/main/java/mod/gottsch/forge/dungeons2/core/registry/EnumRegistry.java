@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// TODO really needs to move to GottschCore
 /**
  * Central registry to register all enums that are expandable ie IEnum.
  * @author Mark Gottschling on Mar 3, 2024

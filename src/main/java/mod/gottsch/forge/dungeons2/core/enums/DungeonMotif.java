@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  *
  */
 public enum DungeonMotif implements IDungeonMotif {
-	STONEBRICK(0, "stonebrick"),
+	CLASSIC(0, "classic"),
 	CATACOMBS(1, "catacombs"),
 	DESERT(2, "desert"),
 	UNKNOWN(-1, "unknown");

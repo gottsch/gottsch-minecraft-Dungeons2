@@ -37,7 +37,6 @@ public class Region2D {
 
     public Region2D(Integer id) {
         this.id = id;
-//        tiles = new ArrayList<>();
         connectors = new ArrayList<>();
     }
 
@@ -46,9 +45,6 @@ public class Region2D {
         this.box = box;
     }
 
-//    public void addTile(Tile tile) {
-//        tiles.add(tile);
-//    }
 
     public Integer getId() {
         return id;

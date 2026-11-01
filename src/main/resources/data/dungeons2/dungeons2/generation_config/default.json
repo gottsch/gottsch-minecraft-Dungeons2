@@ -1,0 +1,103 @@
+{
+  "_comment": [
+    "READ BEFORE CHANGING floorHeight OR gapBetweenFloors.",
+    "Their sum is the floor-to-floor PITCH, now 20 + 2 = 22.",
+    "The pitch is the exact distance every entrance and transition template has to span.",
+    "",
+    "The shipped templates DO span 22 (the transition span guard and the entrance span check): TransitionSpanTest and",
+    "EntranceSpanTest walk the chains in the .nbt files and compare their door-marker span against",
+    "this pitch, and both pass. They are release gates (./gradlew releaseCheck) rather than part of",
+    "`test` because a chain being re-cut is an expected mid-authoring state -- so moving either",
+    "field below re-opens that authoring job for every entrance and transition chain, and the gate",
+    "is what tells you so.",
+    "",
+    "Watch the log for [D2-PITCH] and [D2-SPAN]. Every other field in this file is safe to tune."
+  ],
+
+  "corridor_width": 3,
+
+  "//floor_cells_per_room_template": [
+    "How much of a dungeon is AUTHORED rather than procedurally dressed: one prefab-room assembly",
+    "attempt per this many cells of a floor's own footprint. 0 turns prefab rooms off entirely",
+    "without emptying the pool, which is the only way to A/B them.",
+    "",
+    "A DENSITY, NOT A COUNT. It used to be room_template_attempts_per_floor,",
+    "shipped at 4 -- the same four attempts on every floor however big it was. But room COUNT has",
+    "always scaled with floor AREA, and a LARGE floor is about three times a MEDIUM one, so the",
+    "authored share fell off a cliff as dungeons got bigger. Measured over 300 seeds per tier:",
+    "",
+    "                        at the old flat 4      at 520 cells/template",
+    "    SMALL   (31-43)          31.3%                    ~20%",
+    "    MEDIUM  (35-55)          20.6%                    ~20%",
+    "    LARGE   (55-75)          11.0%                    ~20%",
+    "",
+    "Backwards from what anyone wants: the biggest dungeon, where the player sees the most rooms,",
+    "felt the most generated. Raising the flat count could not fix it -- at its ceiling of 8, LARGE",
+    "still only reached 20.2% while SMALL hit 68.2% and its floors began to crowd.",
+    "",
+    "520 LEVELS THE THREE TIERS at roughly where MEDIUM already was, which is the tier the feel was",
+    "judged on. So it raises LARGE and deliberately LOWERS SMALL. Lower this number for more",
+    "authored rooms everywhere: ~320 gives ~30%, ~215 gives ~45%. Cost scales with it, because each",
+    "attempt is TWO jigsaw assemblies (a probe to measure the rotated footprint, then the placement).",
+    "",
+    "RE-MEASURE, NEVER QUOTE. RoomAssemblyPlacementTest prints the share. A change to room count",
+    "moves these figures without anything touching this field, and that has caught this project out",
+    "twice already."
+  ],
+  "floor_cells_per_room_template": 520,
+
+  "floor_height": 20,
+  "gap_between_floors": 2,
+
+  "//sink_offset": [
+    "How far the walking plane sits UP into its own floor's slab -- the depth a sunken pit has to",
+    "sink into (the sunken pits). SHIPPED AT 0, which makes the whole mechanism arithmetically absent.",
+    "",
+    "It is bought from the CEILING, not from the descent. A floor owns exactly floorHeight blocks",
+    "either way; sinkOffset just moves the boundary inside that budget, leaving",
+    "floorHeight - sinkOffset above the walking plane and sinkOffset below it. So the floor-to-floor",
+    "pitch does NOT move and no transition template has to be re-cut to allow pits -- which is the",
+    "whole reason pits are separable from the floorHeight raise rather than blocked behind it.",
+    "",
+    "5, bought by raising floorHeight to 20: a 15-block ceiling budget for",
+    "authored rooms, 5 for pits, and a",
+    "transition drop of 22. It trades one-for-one against room height, so raising this without",
+    "raising floorHeight takes the height straight back out of the rooms; the file fails to load if",
+    "it leaves less headroom than a roomHeightBand asks for."
+  ],
+  "sink_offset": 5,
+
+  "//room_height_bands": [
+    "UNCHANGED by the floorHeight raise, deliberately. The 15-block ceiling",
+    "budget is headroom for AUTHORED rooms -- a template may be cut 15 high and now fits. A",
+    "PROCEDURAL room stays capped at 10: a tall empty box is a worse room than a short one, and",
+    "what makes height worth having is content, which a template has and a rolled room does not.",
+    "The slack above a procedural room costs nothing -- unused floor height is unexcavated stone,",
+    "not empty volume, and is invisible in play.",
+    "",
+    "The taper: the ceiling FALLS as the footprint grows, so a 7x7 may be a shaft",
+    "and a 19x19 may not be a box. No band may ask for more than floorHeight - sinkOffset, or the",
+    "file fails to load."
+  ],
+  "room_height_bands": [
+    { "max_long_side": 7, "min_height": 6, "max_height": 10 },
+    { "max_long_side": 11, "min_height": 5, "max_height": 9 },
+    { "max_long_side": 15, "min_height": 5, "max_height": 8 },
+    { "min_height": 5, "max_height": 7 }
+  ],
+
+  "//featured_room_min_size": [
+    "A procedural room at least this big on its SHORTER side (walls included, as min_size measures)",
+    "may not come out bare. When its scheme's roll draws no ceiling, pillars, platforms, pit or",
+    "partition, the first of those with a treatment that fits is rolled again without its `none`,",
+    "ceiling first. Floor and wall patterns, pots, props and hangings do not count, and neither",
+    "does a HIDDEN pit (a false floor looks like any floor) or a FLUSH ceiling (a border or centre",
+    "laid in the plane is paint): the ceiling must rise, hang or open. If what was rolled then builds",
+    "nothing -- a refused partition, a pit with nowhere to dig -- the room gets a ceiling anyway.",
+    "",
+    "11: the height taper makes big rooms low, and a 17x17 room five",
+    "high with nothing in it is a waste of space -- the player heads straight for the nearest door.",
+    "A bare SMALL room is fine. Raise this past the largest room to switch the rule off."
+  ],
+  "featured_room_min_size": 11
+}

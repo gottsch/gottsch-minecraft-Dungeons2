@@ -1,0 +1,26 @@
+{
+  "parent": "dungeons2:delvers_last_pages",
+  "display": {
+    "icon": {
+      "item": "minecraft:lever"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.the_wall_that_wasnt.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.the_wall_that_wasnt.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "read": {
+      "trigger": "gottschbooks:book_read",
+      "conditions": {
+        "book": "dungeons2:the_wall_that_wasnt"
+      }
+    }
+  }
+}

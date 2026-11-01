@@ -1,0 +1,13 @@
+{
+  "spawn": {
+    "enabled": false,
+    "minHeight": -64,
+    "maxHeight": 319
+  },
+  "properties": {
+    "maxHealth": 75.0,
+    "maxFloatHeight": 8,
+    "biteCooldownTime": 40,
+    "spellChargeTime": 80
+  }
+}

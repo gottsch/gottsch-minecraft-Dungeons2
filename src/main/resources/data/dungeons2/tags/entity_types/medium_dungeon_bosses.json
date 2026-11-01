@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "dungeons2:beholder",
+      "required": false
+    },
+    {
+      "id": "dungeons2:minotaur",
+      "required": false
+    }
+  ]
+}

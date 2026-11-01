@@ -1,0 +1,26 @@
+{
+  "id": "dungeons2:classic_small_elemental_bones",
+  "category": "classic",
+  "count": {
+    "min": 1,
+    "max": 2
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:electric_skeleton",
+      "weight": 4
+    },
+    {
+      "id": "dungeons2:acid_skeleton",
+      "weight": 4
+    },
+    {
+      "id": "dungeons2:tainted_skeleton",
+      "weight": 3
+    },
+    {
+      "id": "dungeons2:iron_skeleton",
+      "weight": 2
+    }
+  ]
+}

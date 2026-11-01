@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "dungeons2:dungeon",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 40,
+    "separation": 16,
+    "salt": 901002,
+    "frequency": 0.9
+  }
+}

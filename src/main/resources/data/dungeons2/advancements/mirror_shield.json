@@ -1,0 +1,32 @@
+{
+  "parent": "dungeons2:root",
+  "display": {
+    "icon": {
+      "item": "dungeons2:mirror_shield"
+    },
+    "title": {
+      "translate": "advancements.dungeons2.mirror_shield.title"
+    },
+    "description": {
+      "translate": "advancements.dungeons2.mirror_shield.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "dungeons2:mirror_shield"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

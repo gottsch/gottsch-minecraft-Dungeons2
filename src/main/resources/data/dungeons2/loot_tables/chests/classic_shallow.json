@@ -1,0 +1,113 @@
+{
+  "type": "minecraft:chest",
+  "random_sequence": "dungeons2:chests/classic_shallow",
+  "pools": [
+    {
+      "rolls": { "min": 2.0, "max": 4.0 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:bread", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:torch", "weight": 20,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:coal", "weight": 18,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 5.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_nugget", "weight": 15,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 2.0, "max": 6.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:string", "weight": 12,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_ingot", "weight": 10,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 2.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:leather", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 3.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:wheat", "weight": 8,
+          "functions": [ { "function": "minecraft:set_count", "count": { "min": 1.0, "max": 4.0 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:bucket", "weight": 4 },
+        { "type": "minecraft:item", "name": "minecraft:golden_apple", "weight": 2 }
+      ]
+    },
+    {
+      "//": "LORE: A Delver's Last Pages, the dungeon's introduction (Gottsch Books, nested in the jar), so it belongs near the TOP: about 1 chest in 5 on the shallow floors, and only to a player who has never held it (the hidden advancement dungeons2:lore/found_delvers_last_pages). A pool of its own, so it never displaces the table's real loot.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [ { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_delvers_last_pages": false } } } } ],
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:delvers_last_pages\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_delvers_last_pages" } ] },
+        { "type": "minecraft:empty", "weight": 4 }
+      ]
+    },
+    {
+      "//": "BOSS-TIER LORE: The Sexton's Ledger, the small-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [
+            { "condition": "dungeons2:boss_tier", "tier": "small" },
+            { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_sextons_ledger": false } } } }
+          ],
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:sextons_ledger\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_sextons_ledger" } ] },
+        { "type": "minecraft:empty", "weight": 3 }
+      ]
+    },
+    {
+      "//": "BOSS-TIER LORE: Brann's Account, the medium-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [
+            { "condition": "dungeons2:boss_tier", "tier": "medium" },
+            { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_branns_account": false } } } }
+          ],
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:branns_account\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_branns_account" } ] },
+        { "type": "minecraft:empty", "weight": 3 }
+      ]
+    },
+    {
+      "//": "BOSS-TIER LORE: The Last Delve, the large-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [
+            { "condition": "dungeons2:boss_tier", "tier": "large" },
+            { "condition": "minecraft:entity_properties", "entity": "this", "predicate": { "player": { "advancements": { "dungeons2:lore/found_the_last_delve": false } } } }
+          ],
+          "functions": [ { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:the_last_delve\"}" }, { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_the_last_delve" } ] },
+        { "type": "minecraft:empty", "weight": 3 }
+      ]
+    },
+    {
+      "//": "DUNGEON MAP: about 1 chest in 3 holds a map of the floor it is on -- a vanilla filled map, centred on the floor and drawn as its holder explores. dungeons2:dungeon_map reads the floor off the chest (a room stamps it there); a chest with no stamp gives nothing. Rare enough that a floor is usually explored unaided for a while first.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:filled_map", "weight": 1,
+          "functions": [ { "function": "dungeons2:dungeon_map" } ] },
+        { "type": "minecraft:empty", "weight": 2 }
+      ]
+    },
+    {
+      "//": "LORE: Oswin's Margins teaches the Dungeon Map copy (map + empty map + coal), which the recipe book never shows. On every floor, because a player can find their first map on any floor; about 1 chest in 5, once per player.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [ { "condition": "minecraft:entity_properties", "entity": "this",
+            "predicate": { "player": { "advancements": { "dungeons2:lore/found_oswins_margins": false } } } } ],
+          "functions": [
+            { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:oswins_margins\"}" },
+            { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_oswins_margins" } ] },
+        { "type": "minecraft:empty", "weight": 4 }
+      ]
+    },
+    {
+      "//": "LORE: The Wall That Wasn't hints at secret rooms (the lever sconce) and the pedestal's hidden moat. On every floor, as secret rooms are; about 1 chest in 5, once per player.",
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
+          "conditions": [ { "condition": "minecraft:entity_properties", "entity": "this",
+            "predicate": { "player": { "advancements": { "dungeons2:lore/found_the_wall_that_wasnt": false } } } } ],
+          "functions": [
+            { "function": "minecraft:set_nbt", "tag": "{\"gottschbooks:book\":\"dungeons2:the_wall_that_wasnt\"}" },
+            { "function": "dungeons2:grant_advancement", "advancement": "dungeons2:lore/found_the_wall_that_wasnt" } ] },
+        { "type": "minecraft:empty", "weight": 4 }
+      ]
+    }
+  ]
+}

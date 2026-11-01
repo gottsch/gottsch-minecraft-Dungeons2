@@ -61,8 +61,6 @@ public class Rectangle2D {
 		this.origin = origin;
 		this.width = Math.abs(coords1.getX() - coords2.getX()) + 1;
 		this.height = Math.abs(coords1.getY() - coords2.getY()) + 1;
-//		this.width = width == 0 ? 1 : width;
-//		this.height = height == 0 ? 1 : height;
 	}
 	
 	/**

@@ -1,0 +1,142 @@
+{
+  "schemes": [
+    {
+      "name": "andesite_plinth",
+      "weight": 6,
+      "min_height": 6,
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:polished_andesite",
+                "corner_block": "minecraft:chiseled_stone_bricks"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "andesite_trim",
+      "weight": 14,
+      "min_height": 6,
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "dungeonblocks:left_large_stone_brick",
+                "alternate_block": "dungeonblocks:right_large_stone_brick",
+                "alternate": "strict",
+                "corner_block": "minecraft:polished_andesite"
+              },
+              {
+                "block": "dungeonblocks:square_stone_brick",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "andesite_hall",
+      "weight": 8,
+      "min_height": 7,
+      "min_size": 7,
+      "floor": {
+        "type": "border",
+        "inset": 2,
+        "corner_block": "minecraft:chiseled_stone_bricks",
+        "edge_left_block": "minecraft:polished_andesite",
+        "edge_right_block": "minecraft:polished_andesite"
+      },
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "dungeonblocks:left_large_stone_brick",
+                "alternate_block": "dungeonblocks:right_large_stone_brick",
+                "alternate": "strict"
+              },
+              {
+                "block": "minecraft:polished_andesite",
+                "anchor": "top",
+                "offset": 1
+              },
+              {
+                "block": "minecraft:stone_bricks",
+                "alternate_block": "dungeonblocks:square_stone_brick",
+                "corner_block": "minecraft:chiseled_stone_bricks",
+                "anchor": "top"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "stair_cornice",
+      "weight": 14,
+      "min_height": 6,
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "minecraft:stone_brick_stairs",
+                "anchor": "top",
+                "offset": 0,
+                "projection": 1,
+                "orient": "toward_wall",
+                "properties": {
+                  "half": "top"
+                }
+              },
+              {
+                "block": "dungeonblocks:left_large_stone_brick",
+                "alternate_block": "dungeonblocks:right_large_stone_brick",
+                "alternate": "strict",
+                "corner_block": "minecraft:polished_andesite"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "crown_molding",
+      "weight": 10,
+      "min_height": 6,
+      "wall": {
+        "patterns": [
+          {
+            "type": "courses",
+            "courses": [
+              {
+                "block": "dungeonblocks:polished_andesite_crown_molding_block",
+                "anchor": "top",
+                "offset": 0,
+                "projection": 1,
+                "orient": "toward_room"
+              },
+              {
+                "block": "dungeonblocks:polished_andesite_facade_block",
+                "anchor": "bottom",
+                "offset": 0,
+                "projection": 1,
+                "orient": "toward_room"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

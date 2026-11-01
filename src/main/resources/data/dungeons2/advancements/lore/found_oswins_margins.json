@@ -1,0 +1,17 @@
+{
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "gottschbooks:book"
+            ],
+            "nbt": "{\"gottschbooks:book\":\"dungeons2:oswins_margins\"}"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "spawn": {
+    "enabled": false,
+    "minHeight": -64,
+    "maxHeight": 319
+  },
+  "properties": {
+    "firespoutCooldownTime": 200,
+    "firespoutMaxDistance": 10
+  }
+}

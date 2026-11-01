@@ -1,0 +1,89 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
+package mod.gottsch.forge.dungeons2.core.config.floor;
+
+import com.mojang.serialization.MapCodec;
+import mod.gottsch.forge.dungeons2.core.config.FloorConfig;
+import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
+
+/**
+ * One authored floor treatment: the <em>config</em> for a pattern, plus the ability to build the
+ * {@link IDungeonFloorGenerator} that draws it.
+ *
+ * <h2>What this replaces, and why</h2>
+ * <p>Until now a floor treatment was a {@code type} string switched over in
+ * {@code FloorPatternSelector}, reading its arguments out of one flat record that carried
+ * <em>every</em> pattern's slots at once &mdash; {@code corner_block}, {@code edge_left_block},
+ * {@code edge_right_block}, {@code primary_block}, {@code secondary_block}, {@code probability},
+ * {@code thickness}, {@code spokes}, {@code inset}. That shape only works because the selector
+ * privately knows which fields each type reads, which has two costs: the set of types is closed
+ * to this mod, and nothing stops an author writing {@code spokes} on a {@code border} entry.</p>
+ *
+ * <p>Each implementation now owns its own {@link MapCodec}, so it declares exactly the fields it
+ * uses and no others, and the set of implementations is open &mdash; see
+ * {@link FloorPatternRegistry}.</p>
+ *
+ * <h2>Implementations declare only their own fields</h2>
+ * <p>A pattern's codec is nested under {@code config} rather than flattened alongside {@code type}.
+ * That is forced by the closed-schema rule: {@code Codecs#closed} derives its permitted key
+ * set from {@link MapCodec#keys}, and a dispatching codec cannot know its subtype's keys until it
+ * has read {@code type} &mdash; so a flat layout would reject every type-specific field. Nesting
+ * keeps both levels closed with no bespoke codec machinery, and has the side benefit that a
+ * pattern's arguments are visibly scoped to the pattern.</p>
+ *
+ * @see FloorPatternRegistry
+ */
+public interface FloorPattern {
+
+    /**
+     * This pattern's own codec, as registered. Used to write it back out; the registry id is
+     * recovered by looking this up, which is why an implementation must return the <em>same</em>
+     * codec instance it was registered with.
+     */
+    MapCodec<? extends FloorPattern> codec();
+
+    /**
+     * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
+     * scope names.
+     *
+     * <p><strong>A default rather than an abstract method, and that is an API decision.</strong>
+     * {@link mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry} is open to other
+     * mods on purpose, so adding an abstract method here would break every third-party pattern on
+     * upgrade. The default is safe for them for the same reason it would be safe for a new
+     * first-party type that forgot to override: a block field only ever carries a role if its codec
+     * is {@code Codecs.BLOCK_ID_OR_ROLE}, and the default is {@code Codecs.BLOCK_ID}, which rejects
+     * one at load. Forgetting to override therefore costs an author a load error, not a floor that
+     * silently comes out blank.</p>
+     *
+     * <p>Implementations must return {@code this} when nothing changed. This runs on the per-piece
+     * path (see {@code MotifConfig#forFloor}), so the common case has to allocate nothing.</p>
+     */
+    default FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        return this;
+    }
+
+    /**
+     * The generator that draws this pattern.
+     *
+     * @param config the motif or stratum's floor materials, for the patterns that fill their
+     *               unmarked cells from it ({@code cross} and {@code spokes} draw their accent over
+     *               the config's own base; {@code border} fills its interior with it). A pattern
+     *               that names every block it draws ignores this.
+     */
+    IDungeonFloorGenerator generator(FloorConfig config);
+}

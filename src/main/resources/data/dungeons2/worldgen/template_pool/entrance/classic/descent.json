@@ -1,0 +1,15 @@
+{
+  "name": "dungeons2:entrance/classic/descent",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:entrances/classic/entrance_exit_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

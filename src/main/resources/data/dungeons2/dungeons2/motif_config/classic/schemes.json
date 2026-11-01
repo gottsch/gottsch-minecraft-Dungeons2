@@ -1,0 +1,1757 @@
+{
+  "schemes": [
+    {
+      "name": "plain",
+      "weight": 4,
+
+      // The stone rooms want ceilings and pilasters, as the mud band has:
+      // plain had NO wall or ceiling slot, so every plain room was bare above and around. Still the
+      // plainest scheme -- a third of each slot is bare, more in small rooms where the gated options
+      // drop out.
+      "wall": [
+        {
+          "weight": 2,
+          "min_size": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "spacing": 4,
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top", "offset": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "ceiling": [
+        {
+          "weight": 2,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:joists",
+              "projection": 1,
+              "config": {
+                "block": "minecraft:spruce_log",
+                "bracket_block": "$joist_bracket",
+                "orient": "inward",
+                "spacing": 3
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
+        { "weight": 4, "none": true }
+      ],
+
+      // Mostly bare -- this is the plain room -- but a worn path is wear, not decoration.
+      "floor": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 2,
+          "type": "dungeons2:path",
+          "config": { "path_block": "$rubble", "width": 3, "routing": "auto" }
+        }
+      ],
+
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "mimic_chance": 0.02,
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
+            { "block": "minecraft:cauldron", "weight": 1 }
+          ]
+        },
+        { "weight": 4, "none": true }
+      ],
+
+      "pots": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 4, "min_count": 1, "max_count": 1, "proximity": 12 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 6, "none": true }
+      ]
+    },
+
+    {
+      "name": "chamber",
+      "weight": 12,
+      "min_floor_index": 1,
+
+      // Hazard pits and grated sumps live here and not on hall: a pit and a platform cannot share a
+      // scheme (the pit emits first and the dais is dropped silently), and hall carries platforms.
+      "pit": [
+        { "weight": 15, "none": true },
+        {
+          "weight": 6,
+          "min_size": 9,
+          "type": "dungeons2:hazard",
+          "config": {
+            "width": 3,
+            "depth": 4,
+            "offset_x": 2,
+            "spike_block": "minecraft:pointed_dripstone",
+            "spike_properties": { "vertical_direction": "up" },
+            "spike_probability": 0.4,
+            "rim_block": "$inlay"
+          }
+        },
+        // False floors: the same shaft with no rim, lidded with a crumbling copy of whatever the
+        // floor laid there. Centred, so the lid is where a player crosses the room. One over
+        // dripstone, one over iron spikes.
+        {
+          "weight": 3,
+          "min_size": 9,
+          "type": "dungeons2:false_floor",
+          "config": {
+            "width": 3,
+            "depth": 4,
+            "spike_block": "minecraft:pointed_dripstone",
+            "spike_properties": { "vertical_direction": "up" },
+            "spike_probability": 0.4
+          }
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "type": "dungeons2:false_floor",
+          "config": {
+            "width": 3,
+            "depth": 4,
+            "spike_block": "dungeonblocks:dark_iron_spikes",
+            "spike_properties": { "facing": "up" },
+            "spike_probability": 0.6
+          }
+        },
+        // Grated sumps: dry, flooded, molten. Weight 1 each against the x3 weights above, or there are
+        // too many grate floors -- 3 in 31 rooms of 9+, 3 in 18 of 7-8.
+        // Chamber floors start at index 1, so these never reach
+        // the mud band (floor 0), whose timber shoring and dressing are not meant for iron.
+        {
+          "weight": 1,
+          "min_size": 7,
+          "type": "dungeons2:grate",
+          "config": { "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 2 }
+        },
+        {
+          "weight": 1,
+          "min_size": 7,
+          "type": "dungeons2:grate",
+          "config": {
+            "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 3, "liquid": "water"
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 7,
+          "type": "dungeons2:grate",
+          "config": {
+            "grate_block": "dungeonblocks:dark_iron_grate", "size": 3, "depth": 2, "liquid": "lava"
+          }
+        }
+      ],
+
+      "wall": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "spacing": 4,
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "$inlay",
+                    "corner_block": "$inlay_alt",
+                    "anchor": "top",
+                    "offset": 1
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:panels",
+              "config": {
+                "block": "$pilaster",
+                "width": 3,
+                "spacing": 4,
+                "inset": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:diamond",
+              "config": { "block": "$ornament", "size": 2, "spacing": 6, "filled": true }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:door_jambs",
+              "config": {
+                "block": "$inlay",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "lintel_block": "$inlay_alt"
+              }
+            }
+          ]
+        }
+      ],
+
+      "ceiling": [
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 1 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent_alt", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 1 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:checkerboard", "config": { "block": "$accent", "inset": 2 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:checkerboard", "config": { "block": "$accent_alt", "inset": 2 } }
+          ]
+        },
+        // The floor border's large-brick frame, on the ceiling.
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_height": 7,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            {
+              "type": "dungeons2:joists",
+              "projection": 1,
+              "config": {
+                "block": "minecraft:spruce_log",
+                "bracket_block": "$joist_bracket",
+                "orient": "inward",
+                "spacing": 3
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "type": "dungeons2:path",
+          "config": { "path_block": "$rubble", "width": 3, "routing": "auto" }
+        },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "type": "dungeons2:border",
+          "config": {
+            "inset": 1,
+            "corner_block": "$floor_accent",
+            "edge_left_block": "$plinth_left",
+            "edge_right_block": "$plinth_right"
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:cross",
+          "config": { "thickness": 1, "block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:cross",
+          "config": { "thickness": 1, "block": "$accent_alt" }
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "type": "dungeons2:diagonal",
+          "config": { "primary_block": "$base", "secondary_block": "$accent", "width": 3 }
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "type": "dungeons2:diagonal",
+          "config": { "primary_block": "$base", "secondary_block": "$accent_alt", "width": 3 }
+        },
+        {
+          "weight": 3,
+          "type": "dungeons2:gradient",
+          "config": {
+            "edge_block": "$rubble",
+            "centre_block": "$base",
+            "edge_probability": 0.8,
+            "centre_probability": 0.05,
+            "hold_cells": 1
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent_alt" }
+        }
+      ],
+
+      "pots": [
+        {
+          "weight": 3,
+          "max_size": 7,
+          "min_count": 0,
+          "max_count": 2,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "min_count": 1,
+          "max_count": 3,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 },
+            { "entity": "dungeonblocks:pot", "weight": 1 }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "mimic_chance": 0.02,
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
+            { "block": "minecraft:cauldron", "weight": 1 },
+            { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } },
+            { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false },
+            { "block": "dungeonblocks:wall_ring", "weight": 1 }
+          ]
+        },
+        // Bones where they fell. `bones` is drawn per pile, so no two need match;
+        // waterlogged stated because some dungeonblocks defaults are true.
+        {
+          "weight": 2,
+          "min_count": 1,
+          "max_count": 3,
+          "placement": "free",
+          "variants": [
+            { "block": "dungeonblocks:bone_pile", "weight": 2, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } },
+            { "block": "dungeonblocks:skull_pile", "weight": 1, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "corner",
+          "mimic_chance": 0.02,
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 2, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
+            { "block": "minecraft:hay_block", "weight": 1 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 5, "none": true }
+      ]
+    },
+
+    {
+      "name": "hall",
+      "weight": 10,
+      "min_floor_index": 1,
+      "min_size": 9,
+      "min_height": 7,
+
+      "pillars": [
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:grid",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 4, "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:grid",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 3, "inset": 1 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:colonnade",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 3, "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:centre",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "thickness": 3,
+              "config": { "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:quartet",
+              "block": "$shaft",
+              "base_block": "$footing",
+              "cap_block": "$footing",
+              "base_properties": { "base": "up" },
+              "cap_properties": { "base": "down" },
+              "config": { "spacing": 4, "inset": 2 }
+            }
+          ]
+        }
+      ],
+
+      "wall": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "$inlay",
+                    "corner_block": "$inlay_alt",
+                    "anchor": "top",
+                    "offset": 1
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  {
+                    "block": "$inlay",
+                    "corner_block": "$inlay_alt",
+                    "anchor": "top",
+                    "offset": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "dungeons2:pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "spacing": 4,
+                "projection": 1
+              }
+            },
+            {
+              "type": "dungeons2:end_pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:panels",
+              "config": {
+                "block": "$pilaster",
+                "width": 3,
+                "spacing": 4,
+                "inset": 1
+              }
+            },
+            {
+              "type": "dungeons2:end_pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "projection": 1
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:arcade",
+              "config": {
+                "block": "$inlay",
+                "stair_block": "$stair",
+                "impost_block": "$inlay_alt",
+                "width": 5,
+                "height": 5,
+                "spacing": 2
+              }
+            }
+          ]
+        }
+      ],
+
+      "ceiling": [
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long", "barrels": 2 }
+            }
+          ]
+        },
+        { "weight": 3, "none": true },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:joists",
+              "projection": 1,
+              "config": {
+                "block": "minecraft:spruce_log",
+                "bracket_block": "$joist_bracket",
+                "orient": "inward",
+                "spacing": 3
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": {
+                "block": "$base",
+                "springing_block": "$springing_inlay",
+                "crown_block": "$ornament",
+                "steps": 2,
+                "step_height": 2
+              }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } },
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "projection": 2,
+              "config": {
+                "block": "$stair",
+                "inset": 0,
+                "orient": "outward",
+                "properties": { "half": "top" }
+              }
+            },
+            {
+              "type": "dungeons2:border",
+              "projection": 1,
+              "config": { "block": "$base", "inset": 0 }
+            },
+            {
+              "type": "dungeons2:border",
+              "projection": 1,
+              "config": {
+                "block": "$stair",
+                "inset": 1,
+                "orient": "outward",
+                "properties": { "half": "top" }
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            },
+            {
+              "type": "dungeons2:field",
+              "config": { "block": "$inlay_alt", "inset": 2 }
+            },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            { "type": "dungeons2:spokes", "config": { "block": "$accent", "spokes": 8 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "patterns": [
+            { "type": "dungeons2:spokes", "config": { "block": "$accent_alt", "spokes": 8 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            {
+              "type": "dungeons2:diagonal",
+              "config": { "block": "$accent", "width": 2, "inset": 2 }
+            }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 13,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 1,
+                "orient": "outward"
+              }
+            },
+            {
+              "type": "dungeons2:diagonal",
+              "config": { "block": "$accent_alt", "width": 2, "inset": 2 }
+            }
+          ]
+        },
+        // Echoes the hall's framed floor: a large-brick frame round an inlaid panel.
+        {
+          "weight": 3,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 2,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:field", "config": { "block": "$inlay", "inset": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:oculus",
+              "config": {
+                "cap_block": "minecraft:glowstone",
+                "grate_block": "dungeonblocks:dark_iron_grate",
+                "size": 3,
+                "depth": 3
+              }
+            }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 2, "none": true },
+        // Flagstones (Dungeon Blocks 3.1.0): a pattern three blocks square laid as one field.
+        // The field writes tile 0 everywhere; dungeons2:pattern_tile, last in the processor list,
+        // lines each one up with the world. Weight 5 (was 2: a whole 5-floor dungeon
+        // showed none) -- about 1 hall in 5. Hall only: a chamber's false floor lids itself with
+        // the CRUMBLING twin of its floor, and there is no crumbling flagstone, so the pit would be
+        // left as an open shaft -- a false floor that is not false.
+        { "weight": 5, "type": "dungeons2:field", "config": { "block": "dungeonblocks:flagstones", "inset": 1 } },
+        {
+          "weight": 3,
+          "type": "dungeons2:path",
+          "config": { "path_block": "$rubble", "width": 3, "routing": "auto" }
+        },
+        {
+          "weight": 3,
+          "min_size": 11,
+          "type": "dungeons2:composite",
+          "config": {
+            "generators": [
+              {
+                "type": "dungeons2:border",
+                "config": {
+                  "inset": 2,
+                  "corner_block": "$ornament",
+                  "edge_left_block": "$plinth_left",
+                  "edge_right_block": "$plinth_right"
+                }
+              },
+              { "type": "dungeons2:field", "config": { "block": "$inlay", "inset": 3 } }
+            ]
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "type": "dungeons2:chevron",
+          "config": { "block": "$accent", "spacing": 4 }
+        },
+        {
+          "weight": 1,
+          "min_size": 11,
+          "type": "dungeons2:chevron",
+          "config": { "block": "$accent_alt", "spacing": 4 }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 8, "block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 8, "block": "$accent_alt" }
+        },
+        {
+          "weight": 3,
+          "type": "dungeons2:gradient",
+          "config": {
+            "edge_block": "$rubble",
+            "centre_block": "$base",
+            "edge_probability": 0.75,
+            "centre_probability": 0.05,
+            "hold_cells": 2
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$inlay" }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:checkerboard",
+          "config": { "primary_block": "$base", "secondary_block": "$accent_alt" }
+        }
+      ],
+
+      "platforms": [
+        { "weight": 5, "none": true },
+        {
+          "weight": 3,
+          "max_size": 11,
+          "patterns": [
+            {
+              "type": "dais",
+              "layout": "dungeons2:centre",
+              "block": "$base",
+              "stair_block": "$stair",
+              "centre_block": "$ornament",
+              "size": 3,
+              "config": { "inset": 1 },
+              "orient": "inward",
+              "top_block": "dungeonblocks:brazier_block",
+              "top_properties": { "fire": "embers" }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dais",
+              "layout": "dungeons2:corners",
+              "block": "$base",
+              "stair_block": "$stair",
+              "centre_block": "$ornament",
+              "size": 1,
+              "config": { "inset": 1 },
+              "orient": "inward",
+              "top_block": "dungeonblocks:brazier_block",
+              "top_properties": { "fire": "embers" }
+            }
+          ]
+        }
+      ],
+
+      "pots": [
+        {
+          "weight": 3,
+          "min_count": 1,
+          "max_count": 3,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "min_count": 2,
+          "max_count": 4,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_clay_pot", "weight": 1 },
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "placement": "against_wall",
+          "mimic_chance": 0.02,
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
+            { "block": "minecraft:cauldron", "weight": 1 },
+            { "block": "dungeonblocks:weapon_rack", "weight": 1, "rack": { "loot_table": "dungeons2:racks/classic_common", "fine_loot_table": "dungeons2:racks/classic_fine", "fine_chance": 0.1 } },
+            { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false }
+          ]
+        },
+        // A guard post either side of a door: a cheval de frise beside the
+        // approach, never in it. `axis` drawn, so the pair is not always parallel.
+        {
+          "weight": 1,
+          "min_count": 2,
+          "max_count": 2,
+          "placement": "flanking_door",
+          "variants": [
+            { "block": "dungeonblocks:spruce_cheval_de_frise", "oriented": false, "properties": { "axis": ["x", "z"] } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "min_count": 0,
+          "max_count": 3,
+          "placement": "free",
+          "mimic_chance": 0.02,
+          "variants": [
+            { "block": "minecraft:barrel", "weight": 3, "oriented": false, "loot_table": "dungeons2:barrels/classic" },
+            { "block": "minecraft:hay_block", "weight": 2 }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 12 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1, "ignore_light": true },
+        { "weight": 2, "min_size": 11, "min_count": 2, "max_count": 2, "proximity": 12 },
+        { "weight": 4, "none": true }
+      ],
+
+      "partition": [
+        { "weight": 7, "none": true },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:strip",
+          "block": "$base",
+          "config": { "axis": "any" }
+        },
+        {
+          "weight": 2,
+          "min_size": 13,
+          "type": "dungeons2:strip",
+          "block": "$base",
+          "gap_block": "$door_block",
+          "config": { "axis": "any" }
+        },
+        // A stepped arcade across the hall, wall to the ceiling above its arches. Eight high for
+        // the six rows the default arches need.
+        {
+          "weight": 2,
+          "min_size": 11,
+          "min_height": 8,
+          "type": "dungeons2:arcade",
+          "block": "$base",
+          "config": {
+            "axis": "any", "base_block": "$inlay", "corbel_block": "$stair",
+            "keystone_block": "$ornament"
+          }
+        }
+      ],
+
+      "chests": {
+        "min_count": 0,
+        "max_count": 1,
+        // Low, because a hall's chest is not guaranteed in the first place -- a rate that
+        // bites often on a thing you rarely find makes finding one feel bad rather than tense.
+        "mimic_chance": 0.04,
+        "variants": [
+          { "block": "minecraft:chest", "weight": 1 }
+        ]
+      },
+
+      // The hall's chandelier, long out, over the middle of the floor; or a butcher's row of meat
+      // hooks; or, rarely, a gibbet with its occupant still in it. A gibbet is three blocks tall and
+      // needs two rows of headroom under it, so it hangs only where the ceiling is 5+ rows up --
+      // elsewhere its cell is refused and another is tried.
+      "hangings": [
+        {
+          "weight": 4,
+          "placement": "centre",
+          "min_count": 1,
+          "max_count": 1,
+          "max_drop": 2,
+          "variants": [ { "block": "dungeonblocks:chandelier" } ]
+        },
+        {
+          "weight": 2,
+          "min_count": 2,
+          "max_count": 4,
+          "max_drop": 2,
+          "variants": [ { "block": "dungeonblocks:meat_hook" } ]
+        },
+        {
+          "weight": 1,
+          "min_count": 1,
+          "max_count": 1,
+          "variants": [ { "block": "dungeonblocks:gibbet" } ]
+        },
+        { "weight": 4, "none": true }
+      ]
+    },
+
+    {
+      "name": "sunken_shrine",
+      "weight": 3,
+      "min_floor_index": 1,
+      "min_size": 7,
+
+      // A candle either side of each door, or in the corners. UNLIT: a lit
+      // candle is a light source, and a cage spawning a light-tested mob would sit dark-starved
+      // in a room the generator lit for it. Lighting them is the player's move.
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 2,
+          "max_count": 4,
+          "placement": "flanking_door",
+          "variants": [
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "false", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "false", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "false" } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_count": 1,
+          "max_count": 4,
+          "placement": "corner",
+          "variants": [
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "false", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "false", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "false" } }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "pit": [
+        {
+          "weight": 1,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_block": "dungeonblocks:brazier_block",
+            "centre_properties": { "fire": "embers" }
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_block": "dungeonblocks:dungeon_lantern",
+            "centre_properties": { "hanging": "false", "lit": "false", "waterlogged": "false" }
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_block": "$ornament"
+          }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward"
+          }
+        },
+        {
+          "weight": 2,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 3,
+            "depth": 1,
+            "rim_block": "$stair",
+            "rim_orient": "outward",
+            "centre_chest": {
+              "min_count": 1,
+              "max_count": 1,
+              // Double the hall's, and the best mimic in the mod: this chest is GUARANTEED and it
+              // sits alone on a lit dais in the middle of a shrine, which is exactly the chest a
+              // player walks straight up to. The rate can be higher precisely because the room
+              // always has one -- nobody loses a rare find, they lose an easy one.
+              "mimic_chance": 0.08,
+              "loot_tables": [
+                { "loot_table": "dungeons2:chests/classic_shallow", "weight": 2 },
+                { "loot_table": "dungeons2:chests/classic_deep", "weight": 1 }
+              ],
+              "variants": [
+                { "block": "minecraft:chest", "weight": 1 }
+              ]
+            }
+          }
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "type": "dungeons2:centre",
+          "config": {
+            "size": 5,
+            "depth": 1,
+            "rim_block": "$rubble_stair",
+            "rim_orient": "outward"
+          }
+        }
+      ],
+
+      "wall": [
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top", "offset": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:end_pilasters",
+              "config": {
+                "block": "$shaft",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "base_properties": { "base": "up" },
+                "cap_properties": { "base": "down" },
+                "projection": 1
+              }
+            }
+          ]
+        },
+        { "weight": 3, "none": true }
+      ],
+
+      "ceiling": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
+            }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:cross", "config": { "block": "$accent_alt", "thickness": 1 } },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": {
+                "block": "$plinth_left",
+                "alternate_block": "$plinth_right",
+                "corner_block": "$ornament",
+                "inset": 0,
+                "orient": "outward"
+              }
+            },
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 3,
+          "min_size": 9,
+          "patterns": [
+            { "type": "dungeons2:centre", "config": { "block": "$ornament", "size": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_size": 11,
+          "patterns": [
+            {
+              "type": "dungeons2:oculus",
+              "config": {
+                "cap_block": "minecraft:glowstone",
+                "grate_block": "dungeonblocks:dark_iron_grate",
+                "size": 3,
+                "depth": 3
+              }
+            }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "type": "dungeons2:border",
+          "config": {
+            "inset": 0,
+            "corner_block": "$ornament",
+            "edge_left_block": "$base",
+            "edge_right_block": "$base"
+          }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 4, "block": "$accent" }
+        },
+        {
+          "weight": 1,
+          "min_size": 9,
+          "type": "dungeons2:spokes",
+          "config": { "spokes": 4, "block": "$accent_alt" }
+        }
+      ],
+
+      "pots": [
+        {
+          "weight": 4,
+          "min_count": 1,
+          "max_count": 3,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:pot", "weight": 1 }
+          ]
+        },
+        { "weight": 1, "none": true }
+      ],
+
+      "spawners": [
+        { "weight": 5, "min_count": 1, "max_count": 1, "proximity": 10 },
+        { "weight": 2, "type": "vanilla", "min_count": 1, "max_count": 1 },
+        { "weight": 3, "none": true }
+      ],
+
+      // Now and then one of the shrine's dead, head to the wall. min 0 / max 1 is "a tomb
+      // here sometimes" -- half the rooms. Its contents are the floor's tomb band.
+      "tombs": {
+        "min_count": 0,
+        "max_count": 1,
+        "variants": [ { "block": "$sarcophagus" } ]
+      },
+
+      // A censer over the sunken pit, when the room is tall enough to hang one with headroom.
+      "hangings": [
+        {
+          "weight": 2,
+          "placement": "centre",
+          "min_count": 1,
+          "max_count": 1,
+          "max_drop": 2,
+          "variants": [ { "block": "dungeonblocks:censer" } ]
+        },
+        { "weight": 1, "none": true }
+      ]
+    },
+
+    // ---------------------------------------------------------------------------------------------
+    // The dead's own room: sealed sarcophagi in rows along the walls, heads to the wall, feet
+    // to the aisle -- `tombs` keeps a cell clear round each one. No spawners and no chests, on
+    // purpose: the tombs ARE the encounter. Each holds the floor's grave goods or one of its dead,
+    // and DungeonBlocks decides which when the lid first moves, so a crypt of four is a gamble four
+    // times over. $sarcophagus is stone above and deepslate in the deepslate band.
+    //
+    // min_floor_index 1 is a DESIGN gate, not the scheme floor gates' scaffolding: the entrance floor gets its odd
+    // tomb from mud_shrine instead. min_size 9 leaves an aisle between two rows of tombs.
+    // ---------------------------------------------------------------------------------------------
+    {
+      "name": "crypt",
+      "weight": 3,
+      "min_floor_index": 1,
+      "min_size": 9,
+
+      // Candles in the corners, or the bones of the ones who did not make it into a tomb. A huge candle is `tall`: both halves, or it stands cut off at the wick. Unlit,
+      // as the shrine's: a lit candle would starve this room's cage.
+      "props": [
+        {
+          "weight": 3,
+          "min_count": 1,
+          "max_count": 3,
+          "placement": "corner",
+          "variants": [
+            { "block": "dungeonblocks:huge_candle", "weight": 1, "oriented": false, "tall": true, "properties": { "lit": "false", "waterlogged": "false" } },
+            { "block": "dungeonblocks:large_candle", "weight": 2, "oriented": false, "properties": { "lit": "false", "size": ["small", "medium", "large"] } },
+            { "block": "dungeonblocks:candle_cluster", "weight": 2, "oriented": false, "properties": { "lit": "false" } }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_count": 1,
+          "max_count": 3,
+          "placement": "free",
+          "variants": [
+            { "block": "dungeonblocks:bone_pile", "weight": 2, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } },
+            { "block": "dungeonblocks:skull_pile", "weight": 1, "properties": { "bones": ["1", "2", "3", "4"], "waterlogged": "false" } }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "tombs": {
+        "min_count": 2,
+        "max_count": 4,
+        "variants": [ { "block": "$sarcophagus" } ]
+      },
+
+      "wall": [
+        {
+          "weight": 4,
+          "patterns": [
+            {
+              "type": "dungeons2:door_jambs",
+              "config": {
+                "block": "$inlay",
+                "base_block": "$footing",
+                "cap_block": "$footing",
+                "lintel_block": "$inlay_alt"
+              }
+            }
+          ]
+        },
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:courses",
+              "config": {
+                "courses": [
+                  { "block": "$inlay", "corner_block": "$inlay_alt", "anchor": "top", "offset": 1 }
+                ]
+              }
+            }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      "ceiling": [
+        {
+          "weight": 3,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
+            }
+          ]
+        },
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "min_size": 9,
+          "patterns": [
+            {
+              "type": "dungeons2:vaulted",
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3 }
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "min_height": 7,
+          "patterns": [
+            { "type": "dungeons2:coffers", "config": { "block": "$inlay", "spacing": 3 } }
+          ]
+        },
+        {
+          "weight": 2,
+          "patterns": [
+            {
+              "type": "dungeons2:border",
+              "config": { "block": "$inlay", "corner_block": "$inlay_alt" }
+            }
+          ]
+        }
+      ],
+
+      "floor": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 2,
+          "type": "dungeons2:border",
+          "config": {
+            "inset": 0,
+            "corner_block": "$ornament",
+            "edge_left_block": "$base",
+            "edge_right_block": "$base"
+          }
+        }
+      ],
+
+      // Urns, not the storeroom's clay pots: the stone ones, and not many.
+      "pots": [
+        {
+          "weight": 3,
+          "min_count": 0,
+          "max_count": 2,
+          "loot_table": "dungeons2:pots/classic",
+          "variants": [
+            { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+            { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+          ]
+        },
+        { "weight": 2, "none": true }
+      ],
+
+      // Incense for the dead, unlit: whoever lit it is long gone. Flush to the ceiling or one link
+      // down; a crypt is rarely tall enough for more.
+      "hangings": {
+        "min_count": 1,
+        "max_count": 2,
+        "max_drop": 1,
+        "variants": [ { "block": "dungeonblocks:censer" } ]
+      }
+    },
+
+    {
+      // A SECRET room: its one doorway is hung with a hidden door in the wall's own stone, and a
+      // lever sconce on the corridor wall beside it opens it (a plain torch sconce on the other
+      // side is the decoy, and the clue). Only ever rolled in a dead end that can take one -- one
+      // doorway, one block wide, onto a corridor, in a wall stone DungeonBlocks makes a hidden door
+      // for -- so its weight competes only with what else fits a small dead end.
+      //
+      // max_size 9: a vault, not a hall. No wall slot, and it must stay that way: door_jambs would
+      // frame "more wall" from the corridor, and a flush course crossing the door's rows would stop
+      // at the door. The motif's own wall pattern still runs, as it does round every door.
+      //
+      // The dungeon's counter-item (the counter-items), when there is one to hide, is put on THIS room's pedestal
+      // in place of the table below.
+      "name": "secret_vault",
+      "weight": 4,
+      "max_size": 9,
+
+      "secret": {
+        "pedestal_loot_tables": [ { "loot_table": "dungeons2:pedestals/secret" } ]
+      },
+
+      // Take the prize, lose the floor: a spiked moat dug under the untouched floor round the
+      // pedestal, sprung when the pedestal is emptied. The floor holds until then, so nothing
+      // about it shows, and the chest and pots stay on the walkable ring against the walls.
+      "pit": [
+        { "weight": 2, "none": true },
+        {
+          "weight": 1,
+          "type": "dungeons2:hidden_moat",
+          "config": {
+            "radius": 2,
+            "depth": 4,
+            "spike_block": "dungeonblocks:dark_iron_spikes",
+            "spike_properties": { "facing": "up" },
+            "spike_probability": 0.6
+          }
+        },
+        {
+          "weight": 1,
+          "type": "dungeons2:hidden_moat",
+          "config": {
+            "radius": 2,
+            "depth": 4,
+            "spike_block": "minecraft:pointed_dripstone",
+            "spike_properties": { "vertical_direction": "up" },
+            "spike_probability": 0.4
+          }
+        }
+      ],
+
+      // One chest, always, and never a mimic: finding the lever was the test.
+      "chests": {
+        "min_count": 1,
+        "max_count": 1,
+        "mimic_chance": 0.0,
+        "variants": [ { "block": "minecraft:chest" } ],
+        "loot_tables": [ { "loot_table": "dungeons2:chests/secret" } ]
+      },
+
+      "pots": {
+        "min_count": 0,
+        "max_count": 2,
+        "loot_table": "dungeons2:pots/classic",
+        "variants": [
+          { "entity": "dungeonblocks:stone_pot", "weight": 2 },
+          { "entity": "dungeonblocks:squat_stone_pot", "weight": 1 }
+        ]
+      }
+    }
+  ]
+}

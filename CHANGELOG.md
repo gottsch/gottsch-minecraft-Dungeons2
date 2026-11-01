@@ -1,60 +1,26 @@
-# Changelog for Treasure2 1.20.1
+# Changelog for Dungeons2 1.20.1
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.6.1] - 2023-10-16
+## [3.0.0] - 2026-11-01
+
+A ground-up rewrite. Dungeons2 now builds sprawling, multi-floor dungeons deep underground, full of monsters, traps, treasure and secrets, with a boss at the bottom. Nothing carries over from the 1.12 version, so read this as a new mod. The features are described on the mod's page and in the wiki.
 
 ### Changed
-
-- Fixed crash when removing item from crafting table (anything requiring the Treasure Tool.)
-- Data generated all recipes.
-
-## [3.6.0] - 2023-10-16
-
-### Changed
-
-- Updated to use Forge 47.2.0
-- Fixed generation crashes.
-- Fixed structure alignments.
-- Fixed treasure tab name display.
-- Updated SurfaceStructureFeatureGenerator to return an Optional.
-- Updated treasure2-structures-1.20.1 to version 2.
-- Updated sunken-ship structures.
+- **Built on Minecraft's own structure system.** A dungeon's layout is planned up front, then placed chunk by chunk the way vanilla places villages and strongholds, rather than being built in one go.
+- **Procedural and hand-built together.** Generated rooms and corridors are mixed with hand-built pieces.
+- **Datapacks instead of config sheets.** The stylesheets and chestsheets are gone, and there is no config file for dungeon generation. Placement, materials, room styles, weathering, monsters and loot are all datapack JSON, and a mistake in a pack is reported when it loads.
+- **Existing worlds:** dungeons only generate in chunks that haven't been generated yet.
 
 ### Added
+- The dungeon's own monsters and bosses, plus secret rooms, traps, mimics, sealed tombs, counter-items, Dungeon Maps, a Dungeon Compass, lore books and advancements.
+- Optional support for Treasure2 (boss chests) and Enemy Echelons API (monsters that get tougher with depth).
 
-- Blackrock and Deepslate variations of towers.
-- Deferred Random Vanilla Spawner generation classes.
-- Deferred Wither Tree generation classes. 
-- GeometryUtil class.
-
-## [3.5.0] - 2023-09-05
-
-### Changed
-
-- Fixed built-in structure registration.
-- Update structure datapack registering to handle multiple datapacks (see loot tables)
-- Update when selecting loot table/structure list based on category/type to merge built-in and datapacks, replacing built-ins with datapack elements when overlapped.
-- Fixed PlayerEventHandler when checking for wishables - check that the item has an owner
-
-## [3.4.0] - 2023-09-03
-
-### Changed
-- Fixed ChestRegistry registering chests by Rarity.
-- Added Cauldron Chest to chest rarity tag.
-- Fixed Emerald Key registration in CommonSetup.
-- Changed Lock Item rarity tooltip color to BLUE to be the same as Key Item.
-- Changed Treasure Chest Block Item rarity tooltip color to BLUE to be the same as Key & Lock Item.
-
-## [3.3.0] - 2023-07-26
-
-- TODO - see 1.19.2
-
-## [3.2.0] - 2023-07-16
-
-### Added 
-
-- Port from 1.19.3-3.2.1
+### Requirements
+- Forge 1.20.1.
+- GottschCore 2.9.0+, Dungeon Blocks 3.1.0+ and Gottsch's Monster Manual 1.1.0+.
+- Gottsch Books is bundled inside the jar.
+- Optional: Treasure2 4.1.0+ and Enemy Echelons API 1.1.0+.

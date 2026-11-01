@@ -1,0 +1,39 @@
+{
+  "name": "dungeons2:decorations/classic/center_decor",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:empty_pool_element"
+      },
+      "weight": 3
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:decorations/classic/5x5_well_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:decorations/classic/5x5_tree_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:decorations/classic/statue_3",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

@@ -15,6 +15,9 @@ base {
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
+// nests Gottsch Books (see the jarJar dependency); the jarJar task's jar is the one to ship
+jarJar.enable()
+
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
     mappings channel: mapping_channel, version: mapping_version
@@ -76,6 +79,7 @@ repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
+    mavenLocal()
     maven {
         url "file:///${project.projectDir}/../maven"
     }
@@ -86,10 +90,26 @@ repositories {
     maven {
         url = "https://maven.theillusivec4.top/"
     }
+    // Modrinth's maven, for dev-only runtime mods (Terralith). Limited to its own group so Gradle
+    // never asks it for anything else.
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
     
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
      flatDir {
          dir 'libs'
+         // Stronger Mobs Below's own build output (dev-only runtime mod below): SMB is not published
+         // to any maven, so its jar is read where its repo builds it
+         dir '../StrongerMobsBelow-1.20.1/build/libs'
      }
 }
 
@@ -99,10 +119,188 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     //minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-	implementation fg.deobf("gottsch:gottschcore:1.20.1-2.1.0")
-    implementation fg.deobf("gottsch:dungeonblocks:1.20.1-2.1.0")
-    //compile group: 'com.github.jdiemke.delaunay-triangulator', name: 'DelaunayTriangulator', version: '1.0.0'
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+	implementation fg.deobf("gottsch:gottschcore:1.20.1-2.9.0")
+    implementation fg.deobf("gottsch:dungeonblocks:1.20.1-3.1.0")
+    // Gottsch Books, nested in the jar (lore books found in dungeon loot): Forge loads the highest
+    // nested/installed copy that fits every range. REQUIRED, not optional, because a loot table that
+    // names gottschbooks:book fails to load as a whole when the item does not exist.
+    implementation fg.deobf("gottsch:gottschbooks-forge-1.20.1:${gottschbooks_version}")
+    jarJar(group: 'gottsch', name: 'gottschbooks-forge-1.20.1', version: gottschbooks_version_range) {
+        jarJar.pin(it, gottschbooks_version)
+    }
+    // gottsch's Monster Manual (gmm) - shared mob base-class/asset library. It REGISTERS NOTHING;
+    // this mod registers the mobs it wants under its own namespace (see DungeonsEntities).
+    //
+    // Floor raised to 1.1.0 (2026-08-20): the Shrieker and Violet Fungus this mod grows as floor
+    // decoration are only rooted from that version -- 1.0.1 lets a player shove them off their
+    // square. Keep this in step with mods.toml's range; DependencyFloorsAgreeTest pins that.
+    implementation fg.deobf("gottsch:monster-manual:[1.20.1-1.1.0,1.20.1-2.0.0)")
+    // Treasure2 - OPTIONAL soft dependency (backlog #48). compileOnly, NOT implementation: a chest
+    // marker can opt in to a real Treasure2 chest, and the dungeon has to generate perfectly well
+    // without the mod installed, so no Treasure2 class may be loaded unless
+    // ModList.get().isLoaded("treasure2") says it is there. Add a runtimeOnly line temporarily if you
+    // want to exercise the integration in dev.
+    compileOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
+    // DEV ONLY, and it changes what the dev run tests. runtimeOnly puts Treasure2 on the dev
+    // client's classpath so the per-marker `treasure: true` branch actually executes -- compileOnly
+    // deliberately does not, which is why the branch fell through to the D2 chest on every run up to
+    // now. It does NOT ship: runtimeOnly is not written into mods.toml, and Treasure2 stays
+    // mandatory=false there.
+    //
+    // The trade: with this line in, the dev run no longer exercises the ABSENT case, which is the
+    // one that breaks users (see TreasureIntegrationTest -- the guard is what stops a
+    // NoClassDefFoundError). Comment it out again to test that half.
+    //
+    // It is COMMENTED OUT as of 2026-08-19, deliberately: the absent case is the default state a
+    // user is in, so it is the one the checked-in build should be testing. Uncomment only while
+    // exercising the T2 branch, and put it back.
+    //
+    // It reaches further than the dev run: `runtimeOnly` extends into testRuntimeClasspath, so with
+    // the line in, the whole suite runs with Treasure2 PRESENT. The 770-test run on 2026-08-19 was
+    // the first with it absent, and it is green. That is not the same as the in-game check -- the
+    // suite has no ServerLevel and never places a marker -- but it does prove no test was leaning
+    // on T2 being resolvable.
+    //
+    // UNCOMMENTED 2026-10-05 for Mark's Treasure2 integration testing. Comment it out again when
+    // that is done, so the checked-in build goes back to testing the ABSENT case.
+    runtimeOnly fg.deobf("gottsch:treasure2:1.20.1-4.1.0")
+
+    // Enemy Echelons API - OPTIONAL soft dependency, same shape as Treasure2 above and for the same
+    // reason: every EE reference lives in EchelonsIntegration's nested Delegate, reached only once
+    // ModList says `eechelonsapi` is loaded. Deliberately NOT Stronger Mobs Below -- SMB is a
+    // content pack with no public API; EE is the API. D2 fills its OWN EchelonRegistry from the
+    // motif config's `echelon` block, so it works with EE alone and never uses SMB's numbers.
+    compileOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.1.0")
+    // DEV ONLY, same trade as the Treasure2 line: uncomment to exercise the present case, and put
+    // it back so the checked-in build tests the absent one.
+    runtimeOnly fg.deobf("gottsch:eechelonsapi:1.20.1-1.1.0")
+
+    // Terralith - DEV ONLY, added 2026-10-29 to check that its biomes get dungeons through the
+    // category tags in has_structure/dungeon.json. One jar for every loader, data only, so no deobf.
+    // Like the lines above it reaches the test classpath too. D2 has no dependency on it.
+    runtimeOnly "maven.modrinth:terralith:2.5.4"
+
+    // Stronger Mobs Below - DEV ONLY, added 2026-10-29: SMB scales mobs by WORLD Y through EE, and
+    // D2 sets its own floor-based echelon first (bosses pinned at 0), so this exercises the two
+    // together. Read from SMB's build/libs via the flatDir above; rebuild SMB there if it changes.
+    // EE is already on the runtime classpath above, which SMB requires.
+    runtimeOnly fg.deobf("gottsch:strongermobsbelow-1.20.1:1.0.0")
+//    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // JUnit 5 for the POJO core / planner tests (no Minecraft needed).
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Minimal SLF4J binding so MazeLevelGenerator2D's logger calls don't print "no provider" warnings during tests.
+    testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.9'
+}
+
+test {
+    useJUnitPlatform {
+        // Checks that only make sense on FINISHED content. A template is blocked out in
+        // minecraft:bedrock while it is being authored and only swapped to structure_void when
+        // the room is finalised, so a bedrock assertion would fail continuously during authoring
+        // -- and a permanently red build is worse than no build, because a real failure hides in
+        // the noise. Run these deliberately instead:
+        //
+        //   ./gradlew releaseCheck
+        //
+        // BEFORE PUBLISHING A JAR. Nothing runs it for you.
+        excludeTags 'release'
+        // The @Tag("probe") classes measure rather than check: how often a slot fires, how big a
+        // boss room fits, who owns a wall. Tools for re-measuring after a tuning change, and two
+        // thirds of the suite's time, so they run only on purpose:
+        //
+        //   ./gradlew probes
+        excludeTags 'probe'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+// The @Tag("probe") measurements `test` skips. Each prints its report; run after changing what it
+// measures (a slot's counts, the room size tiers, the planner's spacing).
+//
+//   ./gradlew probes
+//   ./gradlew probes --tests '*SpawnerIncidenceProbe'
+tasks.register('probes', Test) {
+    group = 'verification'
+    description = 'Runs the measurement probes excluded from `test`, printing their reports.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'probe'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+    outputs.upToDateWhen { false }
+}
+
+// The @Tag("release") tests `test` skips -- the ones that assert authoring is FINISHED rather
+// than that the code is correct. Run before publishing.
+//
+//   ./gradlew releaseCheck
+tasks.register('releaseCheck', Test) {
+    group = 'verification'
+    description = 'Runs the release-gate checks excluded from `test` (finished-content assertions).'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'release'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+    // Otherwise an unchanged tree reports UP-TO-DATE and prints nothing, which reads as "passed"
+    // for a task whose whole job is to be run at a moment that matters.
+    outputs.upToDateWhen { false }
+}
+
+// Diagnostic: sweeps the minimum gap between rooms and reports what each setting costs
+// (rooms per floor, plan failures) and buys (corridor width, rooms not sharing a wall).
+// Planning only -- no rendering -- so it runs hundreds of dungeons per setting.
+//
+//   ./gradlew spacingSweep
+//   ./gradlew spacingSweep -Pseeds=200 -Psize=LARGE -Pgaps=0,2,4
+tasks.register('spacingSweep', JavaExec) {
+    group = 'diagnostic'
+    description = 'Measures the room-spacing / corridor-width trade-off across many seeds.'
+    dependsOn 'testClasses'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'mod.gottsch.forge.dungeons2.diagnostic.SpacingSweep'
+    // The planner logs a WARN per rejected room; at hundreds of dungeons that buries the report.
+    systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'error'
+    ['seeds', 'size', 'gaps', 'corridorWidth'].each { k ->
+        if (project.hasProperty(k)) {
+            args "--$k=${project.property(k)}"
+        }
+    }
+}
+
+// Diagnostic: plans a dungeon headlessly and writes a standalone interactive 2D floor-plan
+// viewer (one HTML file, no server, no game). Runs on the test runtime classpath because that
+// is where Minecraft and the diagnostic sources both live.
+//
+//   ./gradlew floorplan
+//   ./gradlew floorplan -Pseed=12345 -Psize=MEDIUM -Pfloors=2 -Popen=true
+//
+// See FloorPlanTool for the full option list.
+tasks.register('floorplan', JavaExec) {
+    group = 'diagnostic'
+    description = 'Writes an interactive 2D dungeon floor-plan viewer to build/floorplan/.'
+    dependsOn 'testClasses'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'mod.gottsch.forge.dungeons2.diagnostic.FloorPlanTool'
+    systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'error'
+    ['seed', 'size', 'motif', 'floors', 'corridorWidth', 'corridorHeight', 'narrowHeight', 'profile', 'archBlock',
+     'minRoomGap', 'x', 'z', 'surfaceY', 'order', 'out', 'open', 'describe'].each { k ->
+        if (project.hasProperty(k)) {
+            args "--$k=${project.property(k)}"
+        }
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -116,6 +314,7 @@ tasks.named('processResources', ProcessResources).configure {
             loader_version_range: loader_version_range,
             mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
             mod_authors: mod_authors, mod_description: mod_description,
+            gottschbooks_version_range: gottschbooks_version_range,
     ]
     inputs.properties replaceProperties
 
@@ -139,6 +338,17 @@ tasks.named('jar', Jar).configure {
     }
     // This is the preferred method to reobfuscate your jar file
      finalizedBy 'reobfJar'
+    // the jar without the nested library; the shipped one is jarJar's
+    archiveClassifier = 'slim'
+}
+
+// the jar to ship: the mod with Gottsch Books nested in META-INF/jarjar, reobfuscated
+tasks.named('jarJar').configure {
+    archiveClassifier = ''
+    finalizedBy 'reobfJarJar'
+}
+tasks.named('build').configure {
+    dependsOn 'jarJar'
 }
 
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing

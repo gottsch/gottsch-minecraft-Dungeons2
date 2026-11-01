@@ -1,0 +1,22 @@
+{
+  "id": "dungeons2:classic_large_lesser_ooze",
+  "category": "classic",
+  "count": {
+    "min": 2,
+    "max": 3
+  },
+  "mobs": [
+    {
+      "id": "dungeons2:gray_ooze",
+      "weight": 8
+    },
+    {
+      "id": "dungeons2:ochre_jelly",
+      "weight": 5
+    },
+    {
+      "id": "minecraft:slime",
+      "weight": 4
+    }
+  ]
+}

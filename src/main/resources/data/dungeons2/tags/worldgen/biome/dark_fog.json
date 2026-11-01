@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#dungeons2:dark_fog/shallow",
+    "#dungeons2:dark_fog/middle",
+    "#dungeons2:dark_fog/deep",
+    "#dungeons2:dark_fog/haze"
+  ]
+}
