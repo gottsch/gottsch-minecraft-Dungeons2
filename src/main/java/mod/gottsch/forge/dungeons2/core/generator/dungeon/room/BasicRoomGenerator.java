@@ -93,7 +93,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
     private String counterLootTable;
     /** Non-null when this room can take a hidden door; see {@link #withSecret}. */
     private SecretDoorway secretDoorway;
-    /** The counter-item on this room's pedestal (#97), which also FORCES a secret scheme. */
+    /** The counter-item on this room's pedestal, which also FORCES a secret scheme. */
     private String counterItem;
 
     public BasicRoomGenerator withMotifConfig(MotifConfig motifConfig) {
@@ -102,7 +102,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
     }
 
     /**
-     * The floor's budget below its walking plane (#29), which is the hard cap on any pit a scheme
+     * The floor's budget below its walking plane, which is the hard cap on any pit a scheme
      * digs. Zero &mdash; the shipped value, and the default here &mdash; means no room gets a pit
      * however its scheme is authored.
      */
@@ -113,7 +113,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     /**
      * The floor's budget ABOVE its walking plane ({@code floor_height - sink_offset}), which is the
-     * hard cap on how far a rising vault may reach (#68). Zero -- the default here -- means no
+     * hard cap on how far a rising vault may reach. Zero -- the default here -- means no
      * ceiling rises however its scheme is authored, exactly as {@code sinkOffset} 0 means no pit.
      *
      * <p>The mirror of {@link #withSinkOffset} in every way that matters. A pit spends the budget
@@ -152,7 +152,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
     }
 
     /**
-     * The Mining Chest's contents (#7), when this is the one room in the dungeon that carries it.
+     * The Mining Chest's contents, when this is the one room in the dungeon that carries it.
      *
      * <p>Injected rather than rolled, and this is the only slot in the room that works that way:
      * the haul is a property of the WHOLE dungeon's excavation, which only the emitter can see. A
@@ -166,7 +166,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
     }
 
     /**
-     * The counter-item chest's loot table (#97), when this is the one room carrying it. Injected
+     * The counter-item chest's loot table, when this is the one room carrying it. Injected
      * for the Mining Chest's reason: which boss the dungeon has is only visible to the emitter.
      * Null -- nearly every room -- means no counter chest here.
      */
@@ -183,7 +183,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
      * generation can see. Null &mdash; every room but a hideable dead end &mdash; drops every secret
      * scheme from the roll.</p>
      *
-     * @param counterItem the dungeon's counter-item (#97) when {@code CounterItemPlanner} put it
+     * @param counterItem the dungeon's counter-item when {@code CounterItemPlanner} put it
      *                    here: it goes on this room's pedestal, and the room is FORCED secret
      */
     public BasicRoomGenerator withSecret(SecretDoorway secretDoorway, String counterItem) {
@@ -240,13 +240,13 @@ public class BasicRoomGenerator implements IRoomGenerator {
         floorGen.build(room, floorY, motif, random, blocks);
         ceilingGen.build(room, floorY, motif, random, blocks);
 
-        // #3: the pit comes out of the floor immediately after it is paved, and BEFORE anything
+        // The pit comes out of the floor immediately after it is paved, and BEFORE anything
         // stands on it. The order is load-bearing in both directions -- after the floor because it
         // overwrites the slab it just laid (a later placement in the same cell wins), and before
         // pillars, platforms and props because those choose cells to stand on and a cell that is
         // now a hole is not one of them.
         //
-        // #58: ORDER ALONE WAS NOT ENOUGH, and for a year this comment claimed more than the code
+        // ORDER ALONE WAS NOT ENOUGH, and for a year this comment claimed more than the code
         // did. Running first only makes the pit's cells AVAILABLE to the steps after it; each of
         // those steps still has to ask. The props did ask, via `taken` below. The columns and daises
         // did not -- they build from a layout, and a layout knows the room's dimensions and nothing
@@ -257,7 +257,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
                         motifConfig.floor(), random, blocks))
                 .orElseGet(Set::of);
 
-        // #74: the partition next, because it is the other thing that changes the SHAPE of the
+        // The partition next, because it is the other thing that changes the SHAPE of the
         // room rather than its surfaces, and everything from here on picks cells to stand in.
         // Before the columns and daises so neither grows through the bars; before the chests, the
         // spawners and the props so none of them is placed in a cell the bars occupy.
@@ -309,7 +309,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         IDungeonPlatformGenerator platformGen =
                 selectPlatformGenerator(motif, scheme, width, depth, height);
         platformGen.build(room, floorY, motif, random, blocks, blockedByColumns);
-        // The pots standing ON a dais (#86). They are the platform's, not the pots slot's:
+        // The pots standing ON a dais. They are the platform's, not the pots slot's:
         // the slot places at the walking plane and is kept OFF the dais's cells entirely.
         out.getEntities().addAll(platformGen.entities());
 
@@ -399,12 +399,12 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // the scheme's are not, so it is this one that should give way if the floor runs out.
         taken.addAll(RoomMiningChestGenerator.placeChest(room, floorY, miningHaul, taken, random,
                 blocks));
-        // #97: the boss's counter-item, on the same terms as the Mining Chest -- planned against the
+        // The boss's counter-item, on the same terms as the Mining Chest -- planned against the
         // whole dungeon and injected into one room.
         taken.addAll(RoomChestGenerator.placeCounterChest(room, floorY, counterLootTable, taken,
                 random, blocks));
 
-        // #104: the tombs, after every chest and before the furniture, claiming both halves. A tomb
+        // The tombs, after every chest and before the furniture, claiming both halves. A tomb
         // is an encounter and a barrel is scenery, so if the floor runs short it is the barrel that
         // gives way -- the chests' argument one step on. What the dead hold is the FLOOR's by
         // default, exactly as the chests' loot is: resolved against this depth's tomb band here.
@@ -414,7 +414,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
                         tombs.resolvedAgainst(motifConfig.tombBandFor(floorIndex)),
                         taken, anchorX, anchorZ, random, blocks)));
 
-        // Furniture (#73) after every guaranteed thing and before the pots, claiming its cells.
+        // Furniture after every guaranteed thing and before the pots, claiming its cells.
         // The ordering is the chests' argument one step on: a prop is a SOLID block, so a pot
         // spawned in the same cell stands inside it and, having gravity, falls and shatters as soon
         // as the chunk ticks. It runs after the chests rather than before because a chest is a
@@ -543,7 +543,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
 
     private IDungeonCeilingGenerator ceilingGeneratorFor(Optional<CeilingPatternEntry> ceiling,
                                                          int width, int depth, int height) {
-        // #68: what this floor owns above the room and the room did not use. Clamped at zero, so a
+        // What this floor owns above the room and the room did not use. Clamped at zero, so a
         // room as tall as its floor's whole budget -- or a caller that never injected one -- gets a
         // ceiling that cannot rise rather than one that reaches into the next floor.
         return new BasicCeilingGenerator()

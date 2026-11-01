@@ -32,7 +32,7 @@ import java.util.Set;
 
 /**
  * Places the one Mining Chest a dungeon gets, in the one room
- * {@code MiningChestPlanner} named &mdash; backlog #7.
+ * {@code MiningChestPlanner} named.
  *
  * <p>Structurally {@link RoomChestGenerator} with two things removed and one added. Removed: the
  * count roll (there is exactly one) and the loot table (the contents are already decided). Added:

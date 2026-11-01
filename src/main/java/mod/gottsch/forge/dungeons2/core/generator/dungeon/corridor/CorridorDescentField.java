@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The depth of every cell of one sinking corridor (#108): a distance field from its doors.
+ * The depth of every cell of one sinking corridor: a distance field from its doors.
  *
  * <p>Every cell beside a door or connector is an <em>anchor</em> at depth 0, cells within
  * {@code landing} of an anchor stay level, and beyond that the floor steps down one block every

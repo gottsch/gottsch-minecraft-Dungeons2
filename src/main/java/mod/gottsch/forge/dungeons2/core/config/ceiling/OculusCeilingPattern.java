@@ -31,10 +31,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * An <strong>oculus</strong>: a lit shaft rising over the middle of the room. Backlog #77.
+ * An <strong>oculus</strong>: a lit shaft rising over the middle of the room.
  *
  * <h2>It is not a skylight, and that is the design</h2>
- * <p>No daylight (Mark). A shaft to the surface is a different claim entirely and this is a dungeon.
+ * <p>No daylight. A shaft to the surface is a different claim entirely and this is a dungeon.
  * What is built instead is a <strong>lamp at the top of the shaft with a grate under it</strong>: the
  * light passes through the grate, and what a player sees looking up is a lit grille with the source
  * hidden behind it, and a well of light on the floor. That reads as something that was built and lit,

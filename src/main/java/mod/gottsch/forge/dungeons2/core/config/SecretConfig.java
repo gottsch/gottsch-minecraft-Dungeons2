@@ -47,7 +47,7 @@ import java.util.Optional;
  *
  * @param pedestalLootTables weighted tables for the pedestal at the room's centre, rolled as chest
  *                           loot on first load with the FIRST stack kept. Absent: no pedestal,
- *                           unless the dungeon's counter-item is put here (#97), which always
+ *                           unless the dungeon's counter-item is put here, which always
  *                           brings one.
  *
  * @author Mark Gottschling on Sep 28, 2026

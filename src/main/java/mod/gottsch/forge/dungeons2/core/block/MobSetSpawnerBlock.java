@@ -165,11 +165,11 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock implements Simple
             // Once per block entity created, so cheap. Kept because "is the world even asking this
             // block for an entity" was the question that finally narrowed #10, and a spawner that
             // works looks exactly like one that was never placed.
-            Dungeons.LOGGER.debug("[D2-SPAWNER] newBlockEntity OK at {}", pos);
+            Dungeons.LOGGER.debug("[D2-SPAWNER] newBlockEntity OK at {}", pos.toShortString());
             return blockEntity;
         } catch (RuntimeException e) {
             Dungeons.LOGGER.error("[D2-SPAWNER] newBlockEntity FAILED at {} -- the block will exist "
-                    + "with no block entity and never tick", pos, e);
+                    + "with no block entity and never tick", pos.toShortString(), e);
             throw e;
         }
     }

@@ -32,7 +32,7 @@ import java.util.Set;
  * One depth band of a motif's {@code strata_by_floor_index} table: the element sections the dungeon's
  * <strong>shell</strong> is built from, from this floor down, until the next band takes over.
  *
- * <p>Backlog #45. The dungeon should read as older architecture the deeper you go &mdash; the upper
+ * <p>The dungeon should read as older architecture the deeper you go &mdash; the upper
  * floors cruder and recently patched, the lower ones the original grand construction. Room schemes
  * could already do that for a room's <em>dressing</em>, because a scheme names explicit block ids in
  * its patterns. What they could not touch is the surface underneath: {@code wall}, {@code ceiling},
@@ -154,7 +154,7 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
                       Map<String, String> palette,
                       Optional<ResourceLocation> biome) {
 
-    /** The shape before {@code biome} (#129): a band whose mood is the motif's. */
+    /** The shape before {@code biome}: a band whose mood is the motif's. */
     public Stratum(int minFloorIndex, Optional<String> name, Optional<WallConfig> wall,
                    Optional<CeilingConfig> ceiling, Optional<DoorConfig> door,
                    Optional<CorridorConfig> corridor, Optional<FloorConfig> floor,

@@ -21,7 +21,7 @@ import com.mojang.serialization.MapCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.partition.IPartitionShapeProvider;
 
 /**
- * Where a room's interior wall runs. Backlog #74.
+ * Where a room's interior wall runs.
  *
  * <p>Dispatched on {@code type} over {@link PartitionShapeRegistry}, with the shape's own fields
  * nested under {@code config}, exactly like the {@code pit} slot. The seventh of these registries,

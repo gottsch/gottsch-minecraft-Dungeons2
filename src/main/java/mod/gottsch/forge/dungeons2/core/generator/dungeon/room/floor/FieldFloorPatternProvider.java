@@ -31,13 +31,13 @@ import java.util.Objects;
 
 /**
  * Every cell at or inside {@code inset} &mdash; a filled rectangle, and the missing half of
- * {@link FloorBorderPatternProvider}'s ring. Backlog #75.
+ * {@link FloorBorderPatternProvider}'s ring.
  *
  * <h2>What it is for</h2>
  * <p>Nothing could fill the panel a {@code border} frames. The nearest things were a
  * {@link CrossFloorPatternProvider} (a plus, not a panel) and a hand-sized {@code centre}, and
  * neither follows the room's size &mdash; a 3&times;3 boss is a dot in a 15-wide floor. This is the
- * ceiling's {@code field} (#68) laid flat, minus the rise: the ceiling grew one first because a
+ * ceiling's {@code field} laid flat, minus the rise: the ceiling grew one first because a
  * RISING vault needs a filled area rather than an outline, and the floor never had the equivalent
  * need until someone wanted to fill a border.</p>
  *

@@ -38,7 +38,7 @@ public interface IDungeonPillarGenerator {
      * Append this room's columns to {@code out}, standing off every cell in {@code excluded}.
      * See {@code IDungeonWallGenerator#build}.
      *
-     * <p><strong>{@code excluded} is the room's pit</strong> &mdash; backlog #58. A column is drawn
+     * <p><strong>{@code excluded} is the room's pit</strong>. A column is drawn
      * from the walking plane UPWARD, so one standing in an excavated cell hangs over the hole with
      * nothing under it. The pit is not derivable from {@link RoomData}: it is rolled per room by
      * {@code RoomPitGenerator}, which is why it arrives as an argument rather than being worked out

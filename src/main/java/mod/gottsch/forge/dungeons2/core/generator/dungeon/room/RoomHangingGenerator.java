@@ -45,7 +45,7 @@ import java.util.Set;
  *
  * <h2>It reads the room it is hanging in</h2>
  * <p>Every other slot knows where the ceiling is from the room's height. This one cannot: a rising
- * vault (#68) has lifted it over some cells, a coffer rib or a cornice has dropped it over others,
+ * vault has lifted it over some cells, a coffer rib or a cornice has dropped it over others,
  * a column or a partition fills the whole column, and a dais has raised the floor. So it runs after
  * every other block-emitting step and reads their output &mdash; the placement list, last write
  * wins, exactly as the piece will render it &mdash; column by column. What it needs from a column

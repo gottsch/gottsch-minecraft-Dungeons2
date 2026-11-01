@@ -16,7 +16,7 @@ import net.minecraftforge.registries.RegistryObject;
  * reference in the whole mod was from {@code DeferredDungeonGeneratorBlockEntity}'s own
  * constructor, which cannot run until after the type it needs is registered. The same was true of
  * {@link DungeonsBlocks}. Both were therefore absent from the game's registries, silently and with
- * no error &mdash; the identical trap {@code DungeonsEntities} hit during the rat work (#40/#41).
+ * no error &mdash; the identical trap {@code DungeonsEntities} hit during the rat work.
  * {@link Registration#init()} now touches both explicitly.</p>
  *
  * <h2>Backlog #43 said not to fix this. That advice was right, and is now spent</h2>
@@ -33,7 +33,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class DungeonsBlockEntities {
 
 	/**
-	 * Backlog #10. The block entity is {@link DungeonSpawnerBlockEntity} &mdash; GottschCore's
+	 * The block entity is {@link DungeonSpawnerBlockEntity} &mdash; GottschCore's
 	 * proximity mob-set spawner plus a persisted floor index. GottschCore is a library that
 	 * registers nothing, so the type belongs to whoever consumes it.
 	 *
@@ -57,7 +57,7 @@ public class DungeonsBlockEntities {
 	}
 
 	/**
-	 * Backlog #48 step 3. Carries no behaviour -- it exists so a template can store per-marker
+	 * Carries no behaviour -- it exists so a template can store per-marker
 	 * fields and {@code ChestMarkerProcessor} can read them back during placement.
 	 */
 	public static final RegistryObject<BlockEntityType<ChestMarkerBlockEntity>> CHEST_MARKER =
@@ -76,7 +76,7 @@ public class DungeonsBlockEntities {
 							DungeonsBlocks.SPAWNER_MARKER.get()).build(null));
 
 	/**
-	 * Backlog #56. Like {@link #CHEST_MARKER} it carries no behaviour: it exists so a template can
+	 * Like {@link #CHEST_MARKER} it carries no behaviour: it exists so a template can
 	 * store per-marker fields and {@code PotMarkerProcessor} can read them back during placement.
 	 */
 	public static final RegistryObject<BlockEntityType<PotMarkerBlockEntity>> POT_MARKER =
@@ -93,7 +93,7 @@ public class DungeonsBlockEntities {
 					() -> BlockEntityType.Builder.of(SarcophagusMarkerBlockEntity::new,
 							DungeonsBlocks.SARCOPHAGUS_MARKER.get()).build(null));
 
-	/** Backlog #7: the Mining Chest. A vanilla chest entity under its own type, for its own renderer. */
+	/** The Mining Chest. A vanilla chest entity under its own type, for its own renderer. */
 	public static final RegistryObject<BlockEntityType<MiningChestBlockEntity>> MINING_CHEST =
 			Registration.BLOCK_ENTITIES.register("mining_chest",
 					() -> BlockEntityType.Builder.of(MiningChestBlockEntity::new,

@@ -76,7 +76,7 @@ public final class DungeonPieceEmitter {
         return emit(layout, anchorX, anchorZ, 0);
     }
 
-    /** As above, on floors sunk {@code sinkOffset} below their walking planes (#3/#29). */
+    /** As above, on floors sunk {@code sinkOffset} below their walking planes. */
     public static List<StructurePiece> emit(DungeonLayout layout, int anchorX, int anchorZ,
                                             int sinkOffset) {
         List<StructurePiece> pieces =
@@ -109,7 +109,7 @@ public final class DungeonPieceEmitter {
     }
 
     /**
-     * As above, additionally handing the dungeon's Mining Chest (#7) to the one room the plan names.
+     * As above, additionally handing the dungeon's Mining Chest to the one room the plan names.
      *
      * <p>The plan arrives already made rather than being computed here, which is what keeps this
      * class the pure function of its inputs it claims to be: {@code MiningChestPlanner} draws from
@@ -124,7 +124,7 @@ public final class DungeonPieceEmitter {
     }
 
     /**
-     * As above, on floors that also own {@code ceilingBudget} rows above their walking planes (#68).
+     * As above, on floors that also own {@code ceilingBudget} rows above their walking planes.
      *
      * <p>Only the room pieces care, and for the same reason {@code sinkOffset} is here: it widens
      * their bounding box UPWARD so a rising vault cannot fall outside its own piece. The two are the
@@ -137,7 +137,7 @@ public final class DungeonPieceEmitter {
     }
 
     /**
-     * As above, additionally handing the boss's counter-item chest (#97) to the one room
+     * As above, additionally handing the boss's counter-item chest to the one room
      * {@code CounterItemPlanner} named. Planned outside for the Mining Chest's reason; null means none.
      */
     public static List<StructurePiece> emitTerrain(DungeonLayout layout, int anchorX, int anchorZ,
@@ -183,7 +183,7 @@ public final class DungeonPieceEmitter {
                 if (room.getRole().isProcedurallyBuilt() && room.getTemplateId() == null) {
                     DungeonRoomPiece piece = new DungeonRoomPiece(room, motif, floorY, floorIndex,
                             anchorX, anchorZ, sinkOffset, ceilingBudget);
-                    // #7: exactly one room in the whole dungeon carries the Mining Chest. Matched on
+                    // Exactly one room in the whole dungeon carries the Mining Chest. Matched on
                     // floor AND room id -- room ids are unique per floor, not per dungeon, so the
                     // floor is half the key and dropping it would put a chest on every floor.
                     if (miningChest != null && miningChest.floorIndex() == floorIndex

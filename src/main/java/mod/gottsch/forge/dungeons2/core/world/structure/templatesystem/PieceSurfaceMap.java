@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Backlog #15. Which surface of a piece each of its cells belongs to, decided <strong>once from
+ * Which surface of a piece each of its cells belongs to, decided <strong>once from
  * the whole block list</strong> rather than one block at a time -- the thing that lets a weathering
  * rule say "beams, not posts" or "the ceiling, not the walls" without being keyed on block
  * identity.

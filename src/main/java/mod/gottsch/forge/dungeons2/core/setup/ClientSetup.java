@@ -107,7 +107,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Client-side registration for the dungeon's mobs (backlog #40 / #41).
+ * Client-side registration for the dungeon's mobs.
  *
  * <p>This is the mod's first client setup class; there was nothing to render before.</p>
  *
@@ -117,7 +117,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ClientSetup {
 
     /**
-     * #97: vanilla registers the {@code blocking} item property for {@code minecraft:shield} only,
+     * Vanilla registers the {@code blocking} item property for {@code minecraft:shield} only,
      * so the Mirror Shield's model override would never fire without this.
      *
      * <p>The Dungeon Compass's needle is vanilla's, pointed at its own target; the Dungeon Map is a
@@ -307,7 +307,7 @@ public class ClientSetup {
         event.registerEntityRenderer(DungeonsEntities.ANNIHILATION_RAY_ENTITY.get(),
                 AnnihilationRayRenderer::new);
 
-        // Backlog #7. ChestBlock renders as ENTITYBLOCK_ANIMATED, so without this the Mining Chest
+        // ChestBlock renders as ENTITYBLOCK_ANIMATED, so without this the Mining Chest
         // is invisible in the world.
         event.registerBlockEntityRenderer(DungeonsBlockEntities.MINING_CHEST.get(), MiningChestRenderer::new);
     }

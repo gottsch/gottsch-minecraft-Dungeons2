@@ -24,7 +24,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
 
 /**
- * The Mining Chest's payout table &mdash; backlog #7.
+ * The Mining Chest's payout table.
  *
  * <p>Entries live at {@code data/dungeons2/dungeons2/mining_config/<name>.json}; one shipped entry,
  * {@code default}, looked up via {@link MiningConfigHelper#get}.</p>

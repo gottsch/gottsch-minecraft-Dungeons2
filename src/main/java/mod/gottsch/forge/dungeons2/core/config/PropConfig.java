@@ -33,7 +33,7 @@ import java.util.function.UnaryOperator;
 
 /**
  * The {@code props} scheme slot: a room's <strong>furniture</strong> &mdash; barrels, crates, cages,
- * an anvil, a lectern. Backlog #73.
+ * an anvil, a lectern.
  *
  * <h2>Why this is not the {@code pots} slot</h2>
  * <p>Mechanically it very nearly is: pick interior cells, roll a count, honour the {@code taken}
@@ -49,7 +49,7 @@ import java.util.function.UnaryOperator;
  * </ol>
  *
  * <h2>No real loot here</h2>
- * <p>A container that PROMISES loot is a chest by another name, and the {@code chests} slot (#48)
+ * <p>A container that PROMISES loot is a chest by another name, and the {@code chests} slot
  * owns that whole pipeline &mdash; the table, the depth band, the fixed {@code LootTableSeed}.
  * Keeping them apart is what stops a store room quietly becoming a treasure room because someone
  * authored six containers. The one allowance is a variant's {@code loot_table}: a barrel worth

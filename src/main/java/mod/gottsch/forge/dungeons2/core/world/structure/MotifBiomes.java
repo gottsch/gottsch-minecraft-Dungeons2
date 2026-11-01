@@ -48,7 +48,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 
 /**
- * Paints a floor's mood biome (#129) over the dungeon's piece boxes, one chunk at a time.
+ * Paints a floor's mood biome over the dungeon's piece boxes, one chunk at a time.
  *
  * <p>Only the boxes, never the footprint: a cave crossing the rock between two rooms keeps its own
  * biome, and only where it meets a box does the 4&times;4&times;4 biome cell snap over a few blocks of
@@ -60,7 +60,7 @@ import java.util.function.IntFunction;
  * have no D2 {@code postProcess} to hook. It writes only the chunk being placed, so it is
  * order-independent. Which floor a pool piece's cell is on is decided by height; see {@link #plan}.
  * A prefab whose template the motif names in {@code template_biomes} paints its own mood instead
- * (#129 step 2).
+ *.
  *
  * @author Mark Gottschling on 10/26/2026
  */

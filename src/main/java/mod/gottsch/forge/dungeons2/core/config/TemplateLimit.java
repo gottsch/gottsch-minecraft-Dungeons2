@@ -24,7 +24,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 
 /**
- * How many times one authored template may be placed &mdash; backlog #44.
+ * How many times one authored template may be placed.
  *
  * <h2>Templates, not schemes</h2>
  * <p>This caps <strong>authored</strong> rooms only. A procedural room's scheme is a dressing style,

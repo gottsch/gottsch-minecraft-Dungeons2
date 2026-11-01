@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * The per-cell data a {@code dungeons2:chest_marker} carries. Backlog #48 step 3.
+ * The per-cell data a {@code dungeons2:chest_marker} carries.
  *
  * <p>Nothing here has any runtime behaviour: the block entity exists so a <em>template</em> can
  * store these fields per marker and {@code ChestMarkerProcessor} can read them back as
@@ -35,7 +35,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *   <li>{@link #LOOT_TABLE} &mdash; which table this chest draws. Absent means the processor's own
  *       default, so a template full of ordinary chests states nothing and one special chest states
  *       one line.</li>
- *   <li>{@link #TREASURE} &mdash; the Treasure2 opt-in (#48 step 4). Read here so the marker's
+ *   <li>{@link #TREASURE} &mdash; the Treasure2 opt-in. Read here so the marker's
  *       shape is settled in one place, and deliberately inert until that step wires it: a template
  *       authored today can already say {@code treasure: true} and will simply get an ordinary chest
  *       until the branch exists.</li>

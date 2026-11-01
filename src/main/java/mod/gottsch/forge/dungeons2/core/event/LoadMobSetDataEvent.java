@@ -69,7 +69,7 @@ public class LoadMobSetDataEvent {
     public static void onServerStarted(ServerStartedEvent event) {
         ResourceLocation shipped = new ResourceLocation(Dungeons.MOD_ID, "classic_vermin");
         boolean present = MobSetDataRegistry.get(shipped).isPresent();
-        Dungeons.LOGGER.info("[D2-MOBSET] {} present={}", shipped, present);
+        Dungeons.LOGGER.debug("[D2-MOBSET] {} present={}", shipped, present);
         if (!present) {
             Dungeons.LOGGER.error("[D2-MOBSET] {} did NOT load. Every spawner using it will spawn"
                     + " nothing and then self-destruct, leaving no trace to diagnose.", shipped);

@@ -62,7 +62,7 @@ public final class RoomChestGenerator {
     static final String LOOT_TABLE_SEED = "LootTableSeed";
     /** The block-entity type {@code DungeonPiece.applyBlockEntity} routes on. */
     static final String CHEST_ENTITY = "minecraft:chest";
-    /** What a chest becomes when it bites (#99). */
+    /** What a chest becomes when it bites. */
     static final String CHEST_MIMIC_ENTITY = "dungeons2:vanilla_chest_mimic";
     /** Vanilla's chest facing property. */
     static final String FACING = "facing";
@@ -105,7 +105,7 @@ public final class RoomChestGenerator {
      * Places chests on exactly {@code candidates}, at exactly {@code y}, each facing whatever
      * {@code facing} says &mdash; the one place a chest BLOCK is built, whoever chose the cells.
      *
-     * <p>Extracted when a dais and a sunken court grew centrepiece chests (backlog #86). Neither is
+     * <p>Extracted when a dais and a sunken court grew centrepiece chests. Neither is
      * a floor cell and neither has a wall to back onto, so the two halves of {@link #placeChests}'s
      * own rule (wall-adjacent cells, face away from the wall) do not apply &mdash; but everything
      * about the chest itself does, and those are the parts worth having one copy of: the weighted
@@ -150,7 +150,7 @@ public final class RoomChestGenerator {
             // walk into and the better thing to have built.
             if (config.mimicChance() > 0.0D && random.nextDouble() < config.mimicChance()) {
                 entities.add(mimicFor(cell, y, table));
-                mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info(
+                mod.gottsch.forge.dungeons2.Dungeons.LOGGER.debug(
                         "[D2-CHEST] PROC MIMIC at {} (table {})",
                         new net.minecraft.core.BlockPos(cell.getX(), y, cell.getY()).toShortString(),
                         table);
@@ -161,13 +161,8 @@ public final class RoomChestGenerator {
             BlockPlacement placement = new BlockPlacement(cell.getX(), y, cell.getY(),
                     variant, properties);
             placement.setBlockEntityNbt(chestData(table, random));
-            // The procedural route's probe, and it is INFO for the same reason the marker route's
-            // is: at the shipped "info" level a debug line is invisible to the person verifying the
-            // feature. Tagged PROC so the two routes can be told apart in one grep -- without it a
-            // chest in a finished dungeon says nothing about which half of #48 produced it.
-            // toShortString, matching ChestMarkerProcessor: a position in a log is read by someone
-            // about to go and look at it, so it has to survive a copy and paste into a command.
-            mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info(
+            // Tagged PROC so a chest's line says which route placed it: this one or the marker's.
+            mod.gottsch.forge.dungeons2.Dungeons.LOGGER.debug(
                     "[D2-CHEST] PROC {} at {} (table {})",
                     placement.getBlockId(),
                     new net.minecraft.core.BlockPos(placement.getX(), placement.getY(),
@@ -205,7 +200,7 @@ public final class RoomChestGenerator {
     public record ChestDraw(String block, BlockEntityData data) {}
 
     /**
-     * Emits the one counter-item chest (#97) {@code CounterItemPlanner} gave this room, returning
+     * Emits the one counter-item chest {@code CounterItemPlanner} gave this room, returning
      * the cell it took &mdash; empty when there is no table or no free wall-adjacent cell.
      *
      * <p>A plain vanilla chest, never a mimic: the chest exists to hand over the item that answers
@@ -230,7 +225,7 @@ public final class RoomChestGenerator {
                 CHEST_ENTITY, properties);
         placement.setBlockEntityNbt(chestData(lootTable, random));
         out.add(placement);
-        mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info("[D2-COUNTER] chest at {} from {}",
+        mod.gottsch.forge.dungeons2.Dungeons.LOGGER.debug("[D2-COUNTER] chest at {} from {}",
                 new net.minecraft.core.BlockPos(placement.getX(), placement.getY(), placement.getZ())
                         .toShortString(), lootTable);
         return Set.of(cell);
@@ -269,7 +264,7 @@ public final class RoomChestGenerator {
     }
 
     /**
-     * The chest that is not a chest (#99).
+     * The chest that is not a chest.
      *
      * <p>No {@code facing}: the mimic is an entity and turns to look at whoever wakes it, so a
      * baked-in rotation would only be wrong a moment later. No loot SEED either &mdash; a chest's
@@ -296,7 +291,7 @@ public final class RoomChestGenerator {
      */
     static String pickTable(List<ChestConfig.LootTableEntry> tables, int totalWeight,
                             RandomSource random) {
-        // Delegates since 2026-08-30 (#61): the authored route needs the same draw, so the
+        // Delegates since 2026-08-30: the authored route needs the same draw, so the
         // arithmetic moved to LootTableEntry where both can reach it. The totalWeight parameter is
         // kept because this call site already computed it to reject an all-zero list above.
         return ChestConfig.LootTableEntry.pick(tables, random);

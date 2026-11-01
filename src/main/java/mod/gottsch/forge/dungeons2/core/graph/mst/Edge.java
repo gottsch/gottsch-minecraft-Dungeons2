@@ -108,12 +108,5 @@ public class Edge implements Comparable<Edge> {
         return String.format("%d-%d %.5f", v, w, weight);
     }
 
-//    /**
-//     * Unit tests the <tt>Edge</tt> data type.
-//     */
-//    public static void main(String[] args) {
-//        Edge e = new Edge(12, 34, 5.67);
-//        StdOut.println(e);
-//    }
 }
 

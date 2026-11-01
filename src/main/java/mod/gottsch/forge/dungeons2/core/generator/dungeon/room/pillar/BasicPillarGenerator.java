@@ -41,7 +41,7 @@ import java.util.Set;
  * {@code floorY + height - 2}. That is exactly the span {@code RoomVolumeGenerator} clears as
  * interior air, which is why this runs after it: the column simply wins those cells back.</p>
  *
- * <p><strong>Under a rising vault it keeps going.</strong> The vault (#68) opens the ceiling plane
+ * <p><strong>Under a rising vault it keeps going.</strong> The vault opens the ceiling plane
  * and the rows above it, so a column stopped at {@code floorY + height - 2} ended with its capital
  * in mid-air under the steps &mdash; cut off, as Mark saw it in game 2026-10-24. The column now
  * grows up through whatever the ceiling cleared over it and puts its capital under the first block
@@ -184,7 +184,7 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
      * floor-local cell then world Y.
      *
      * <p>Read off the placements rather than asked of the ceiling generator, the way the hangings
-     * read it, because the answer is the ceiling's OUTPUT: a rising vault (#68) clears the plane
+     * read it, because the answer is the ceiling's OUTPUT: a rising vault clears the plane
      * cell and the rows above it, and only the emitted air says how far a given column was opened
      * after the render-time rise clamp and the steps' overlapping excavations have all applied.</p>
      */

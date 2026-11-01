@@ -30,7 +30,7 @@ import java.util.Map;
 
 /**
  * Every cell at or inside {@code inset} &mdash; the filled counterpart of {@link
- * BorderCeilingPattern}'s ring, and the step a RISING vault is built from (#68).
+ * BorderCeilingPattern}'s ring, and the step a RISING vault is built from.
  *
  * <p>A hanging vault is authored as rings, because only its perimeter moves. A rising one needs the
  * whole inner area to move, so it needs an area: see {@link FieldSurfacePatternProvider} for why a

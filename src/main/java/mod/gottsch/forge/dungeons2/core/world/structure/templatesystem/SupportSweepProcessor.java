@@ -182,14 +182,13 @@ public class SupportSweepProcessor extends StructureProcessor {
                 continue;
             }
             dropped++;
-            //   grep "D2-SUPPORT" run/logs/dungeons2.log
             Dungeons.LOGGER.debug("[D2-SUPPORT] dropping {} at {} -- no path to the ground",
                     info.state(), info.pos().toShortString());
         }
         if (dropped == 0) {
             return processedBlocks;
         }
-        Dungeons.LOGGER.info("[D2-SUPPORT] dropped {} floating block(s) of {} at {}",
+        Dungeons.LOGGER.debug("[D2-SUPPORT] dropped {} floating block(s) of {} at {}",
                 dropped, processedBlocks.size(), piecePos.toShortString());
         return out;
     }

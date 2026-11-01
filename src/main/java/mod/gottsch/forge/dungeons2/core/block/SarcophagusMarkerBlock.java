@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The authoring marker for a sealed tomb (#104). ONE block, standing where the tomb's FOOT goes.
+ * The authoring marker for a sealed tomb. ONE block, standing where the tomb's FOOT goes.
  *
  * <h2>One block for a two-block tomb</h2>
  * <p>A sarcophagus is a head and a foot, and {@code SarcophagusMarkerProcessor} writes both: the

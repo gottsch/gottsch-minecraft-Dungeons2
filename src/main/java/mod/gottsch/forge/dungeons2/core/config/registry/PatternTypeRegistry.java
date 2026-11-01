@@ -52,7 +52,7 @@ import java.util.stream.Stream;
  *
  * <h2>Why {@code config} is nested</h2>
  * <p>{@link Codec#dispatch} merges the subtype's fields flat beside {@code type}, and a flat level
- * cannot be closed (#31): the enclosing record cannot declare the subtype's keys, because which
+ * cannot be closed: the enclosing record cannot declare the subtype's keys, because which
  * subtype it is has not been read yet; and the subtype cannot declare {@code type} or the
  * enclosing {@code SizeGate}'s keys, because they are not its. Nesting gives each level a key set
  * it fully knows, so both are closed and neither is loosened.</p>

@@ -146,8 +146,7 @@ public class PedestalTrapEvent {
         for (BlockPos cell : inner) {
             level.scheduleTick(cell, level.getBlockState(cell).getBlock(), FIRST_TREMOR);
         }
-        //   grep "D2-TRAP" run/logs/dungeons2.log
-        Dungeons.LOGGER.info("[D2-TRAP] pedestal at {} sprang its moat (radius {}): {}",
+        Dungeons.LOGGER.debug("[D2-TRAP] pedestal at {} sprang its moat (radius {}): {}",
                 pedestalPos.toShortString(), radius, why);
     }
 

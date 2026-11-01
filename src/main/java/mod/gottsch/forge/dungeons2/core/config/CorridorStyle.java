@@ -72,7 +72,7 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                 Optional.empty());
     }
 
-    /** The pre-descent form (#108): a style that never sinks. */
+    /** The pre-descent form: a style that never sinks. */
     public CorridorStyle(String name, int weight, int height, Profile profile,
                          Optional<String> archBlock, Optional<Integer> narrowHeight,
                          List<WallPatternEntry.CourseEntry> courses) {

@@ -30,7 +30,7 @@ package mod.gottsch.forge.dungeons2.core.data;
  *     <li>{@link #TERMINAL} &mdash; the bottom floor's final room, where the dungeon
  *         stops. Nothing covers it, so it is built procedurally.</li>
  *     <li>{@link #BOSS} &mdash; the same slot as {@code TERMINAL}, but covered by an
- *         authored {@code end_rooms} template that actually assembled. Backlog #46.</li>
+ *         authored {@code end_rooms} template that actually assembled.</li>
  * </ul>
  *
  * <p>The piece emitter in the Forge shell skips rooms marked {@code START} or

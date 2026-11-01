@@ -128,11 +128,11 @@ public class DungeonDoorPiece extends DungeonPiece {
     @Override
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
-        // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
+        // The motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
         // so this is a no-op for everything shipped today. Build time, not plan time -- both
         // inputs are in hand right here and nothing needs serialising.
         MotifConfig motif = MotifConfigHelper.get(level.registryAccess(), motifValue);
-        // #45 step 4: asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
+        // Asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
         // projection has no band left to name. Same reason DungeonStructure asks it of the motif.
         Optional<String> stratum = motif.stratumNameFor(floorIndex);
         MotifConfig motifConfig = motif.forFloor(floorIndex);

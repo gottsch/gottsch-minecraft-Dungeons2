@@ -131,7 +131,7 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
 
     /**
      * The dungeon floor this spawner's mobs are scaled for, 0 at the entrance &mdash; Enemy Echelons
-     * depth scaling (Backlog #103). A jigsaw placement cannot know which floor it lands on, so an
+     * depth scaling. A jigsaw placement cannot know which floor it lands on, so an
      * authored spawner has none unless the author states it here. <strong>It is a fixed number, not
      * the floor the room actually lands on</strong>: a template used on floors 1 and 4 scales
      * identically on both. Needs {@link #MOTIF} beside it; the pair names the depth band.

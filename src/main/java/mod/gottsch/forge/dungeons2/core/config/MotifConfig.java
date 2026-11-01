@@ -87,7 +87,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                           Optional<ResourceLocation> biome,
                           Map<String, ResourceLocation> templateBiomes) {
 
-    /** The shape before {@code template_biomes} (#129 step 2): no prefab names a mood of its own. */
+    /** The shape before {@code template_biomes}: no prefab names a mood of its own. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex,
@@ -103,7 +103,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                 tombContentsByFloorIndex, biome, Map.of());
     }
 
-    /** The shape before {@code biome} (#129): a motif that leaves the ground's own biome alone. */
+    /** The shape before {@code biome}: a motif that leaves the ground's own biome alone. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex,
@@ -118,7 +118,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
                 tombContentsByFloorIndex, Optional.empty());
     }
 
-    /** The shape before {@code tomb_contents_by_floor_index} (#104): a motif with no tombs to fill. */
+    /** The shape before {@code tomb_contents_by_floor_index}: a motif with no tombs to fill. */
     public MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig door,
                        CorridorConfig corridor, FloorConfig floor, List<RoomScheme> schemes,
                        List<MobSetBand> mobSetsByFloorIndex,
@@ -188,7 +188,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     }
 
     /**
-     * What a tomb holds on {@code floorIndex} (#104). Pair with {@code TombConfig#resolvedAgainst};
+     * What a tomb holds on {@code floorIndex}. Pair with {@code TombConfig#resolvedAgainst};
      * a scheme's own keys win one by one.
      *
      * @param floorIndex 0 at the entrance, counting downward
@@ -261,7 +261,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     }
 
     /**
-     * The name of the stratum covering {@code floorIndex}, when it has one. Backlog #45 step 3.
+     * The name of the stratum covering {@code floorIndex}, when it has one.
      *
      * <p>This is the segment that opts a depth into its own template pools:
      * {@code rooms/<motif>/<stratum>/normal}, resolved ahead of the motif's own by
@@ -278,7 +278,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     }
 
     /**
-     * The mood biome a prefab paints over its own box instead of its floor's (#129 step 2), keyed by
+     * The mood biome a prefab paints over its own box instead of its floor's, keyed by
      * the template's full id &mdash; the {@code "location"} its pool names, as {@link #limitFor} is.
      * Empty means the prefab takes its floor's biome.
      */
@@ -287,7 +287,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
     }
 
     /**
-     * The mood biome painted over this floor's pieces (#129): the covering band's {@code biome},
+     * The mood biome painted over this floor's pieces: the covering band's {@code biome},
      * else the motif's own. Empty means paint nothing, so the ground's biome shows through.
      *
      * <p>Falls through to the MOTIF, never to the band above, like every other stratum section.
@@ -303,7 +303,7 @@ public record MotifConfig(WallConfig wall, CeilingConfig ceiling, DoorConfig doo
 
     /**
      * This motif as it is built on {@code floorIndex}: the element sections swapped for the
-     * covering stratum's, everything else untouched. Backlog #45.
+     * covering stratum's, everything else untouched.
      *
      * <p><strong>A motif with no strata returns itself</strong> &mdash; not a copy, the same
      * instance &mdash; which is what makes this safe to call unconditionally from every piece. That

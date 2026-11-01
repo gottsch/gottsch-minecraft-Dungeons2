@@ -89,7 +89,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
             for (Coords2D at : layout.provider().footprint(interiorWidth, interiorDepth)) {
                 Map<Coords2D, String> dais = plan(at, half, entry, room, interiorWidth, interiorDepth);
                 // The whole footprint has to be clear: inside the interior, off every doorway
-                // approach, out of the pit (#58), and not already taken by an earlier platform.
+                // approach, out of the pit, and not already taken by an earlier platform.
                 // All-or-nothing on purpose -- a dais with a bite out of it over a hole is worse
                 // than no dais, where a colonnade missing one column is still a colonnade.
                 if (dais == null || dais.keySet().stream().anyMatch(
@@ -158,7 +158,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
         entry.topBlock().ifPresent(top -> out.add(new BlockPlacement(
                 centreX, floorY + 2, centreZ, top, entry.topPropertiesOrBase())));
 
-        // The chest ON the dais (#86), on the centre cell and in the same row as topBlock --
+        // The chest ON the dais, on the centre cell and in the same row as topBlock --
         // which is why the codec refuses to let a dais author both.
         entry.topChest().ifPresent(chest -> mod.gottsch.forge.dungeons2.core.generator.dungeon.room
                 .RoomChestGenerator.placeChestsOn(
@@ -167,7 +167,7 @@ public class BasicPlatformGenerator implements IDungeonPlatformGenerator {
                                 .RoomChestGenerator.randomHorizontalFacing(random),
                         random, out, entities));
 
-        // The pots ON the dais (#86). floorY + 2, one row above the dais blocks themselves --
+        // The pots ON the dais. floorY + 2, one row above the dais blocks themselves --
         // the same row topBlock occupies, because both stand on the platform's surface.
         entry.topProps().ifPresent(props -> mod.gottsch.forge.dungeons2.core.generator.dungeon.room
                 .RoomPropGenerator.placePotsOn(

@@ -27,11 +27,11 @@ import mod.gottsch.forge.dungeons2.core.config.pit.PitShapeRegistry;
 import java.util.Optional;
 
 /**
- * The {@code pit} scheme slot: a sunken area in a room's floor. Backlog #3.
+ * The {@code pit} scheme slot: a sunken area in a room's floor.
  *
  * <h2>A pit is dug out of the FLOOR'S OWN BUDGET, never out of the gap</h2>
  * <p>This is the rule the whole feature hangs on. A floor owns {@code floor_height} blocks;
- * {@code sink_offset} (#29) decides how many of them sit <em>below</em> the walking plane, and a pit
+ * {@code sink_offset} decides how many of them sit <em>below</em> the walking plane, and a pit
  * lives entirely in those. The stone buffer between floors, {@code gap_between_floors}, is not
  * available to it at any depth &mdash; the planner measures that buffer from the deepest possible
  * pit bottom rather than from the walking plane, so the separation between floors is preserved

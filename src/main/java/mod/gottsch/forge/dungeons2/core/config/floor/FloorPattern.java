@@ -40,7 +40,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFlo
  *
  * <h2>Implementations declare only their own fields</h2>
  * <p>A pattern's codec is nested under {@code config} rather than flattened alongside {@code type}.
- * That is forced by the closed-schema rule (#31): {@code Codecs#closed} derives its permitted key
+ * That is forced by the closed-schema rule: {@code Codecs#closed} derives its permitted key
  * set from {@link MapCodec#keys}, and a dispatching codec cannot know its subtype's keys until it
  * has read {@code type} &mdash; so a flat layout would reject every type-specific field. Nesting
  * keeps both levels closed with no bespoke codec machinery, and has the side benefit that a

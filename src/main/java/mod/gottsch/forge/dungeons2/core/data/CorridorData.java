@@ -109,7 +109,7 @@ public class CorridorData {
      */
     private String styleName = BASELINE_STYLE;
     /**
-     * #108: how far each cell's walking plane sits BELOW the floor's, parallel to {@link #cells}.
+     * How far each cell's walking plane sits BELOW the floor's, parallel to {@link #cells}.
      * Empty means every cell is at depth 0, which is every corridor that does not sink and every save
      * from before it could. Decided by the planner, for the reason {@link #wallHeight} is: it sizes
      * the piece's box downward at construction.

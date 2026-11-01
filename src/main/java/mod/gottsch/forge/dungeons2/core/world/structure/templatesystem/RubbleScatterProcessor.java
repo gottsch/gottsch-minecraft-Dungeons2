@@ -195,7 +195,6 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
         if (placed.isEmpty()) {
             return processedBlocks;
         }
-        //   grep "D2-RUBBLE" run/logs/dungeons2.log
         Dungeons.LOGGER.debug("[D2-RUBBLE] {} scatter(s) under broken walls at {}", placed.size(),
                 piecePos.toShortString());
         List<StructureTemplate.StructureBlockInfo> out = new ArrayList<>(processedBlocks.size());
@@ -223,8 +222,7 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
      * more than {@link #maxDrop} down, that the piece writes as AIR and that stands on something the
      * piece writes solid. A pool's surface is not a floor: air over water or lava is passed by, and
      * the walk carries on down through the liquid, which it can never land in. Nor is a stair: a
-     * scatter is a flat carpet, and on a stair's top cell it floats over the low step (Mark,
-     * 2026-10-28). Null when the column is not the piece's (terrain), or is solid all the way.
+     * scatter is a flat carpet, and on a stair's top cell it floats over the low step. Null when the column is not the piece's (terrain), or is solid all the way.
      */
     private BlockPos footBelow(BlockPos column, int fromY, Map<BlockPos, BlockState> pending) {
         for (int y = fromY; y >= fromY - maxDrop; y--) {

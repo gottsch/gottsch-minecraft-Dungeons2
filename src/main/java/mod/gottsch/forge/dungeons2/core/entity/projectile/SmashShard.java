@@ -35,7 +35,7 @@ import net.minecraft.world.level.Level;
  *
  * <p><strong>This is gmm's {@code BoneShard} in stone.</strong> Same rig, same three variants, same
  * tumble, same physics, same damage, same despawn; the only difference is the texture it is drawn
- * with. That is deliberate (Mark, 2026-09-08), and it replaced a cleverer first version that synched
+ * with. That is deliberate, and it replaced a cleverer first version that synched
  * the smashed {@code BlockState} and drew that block's own model shrunk down &mdash; so a mud wall
  * threw mud and a brick wall threw brick, self-themeing, with no art to author. It read badly: a
  * shrunken cube tumbling through the air looks like a floating block, not a chip off one.

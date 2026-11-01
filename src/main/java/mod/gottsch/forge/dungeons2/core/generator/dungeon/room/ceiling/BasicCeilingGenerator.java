@@ -67,7 +67,7 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
 
     /**
      * How many rows of the floor's budget are still unspent ABOVE this room's ceiling &mdash; the
-     * hard cap on how far a rising vault may reach (#68). Zero, the default, means no layer rises
+     * hard cap on how far a rising vault may reach. Zero, the default, means no layer rises
      * however its scheme is authored, exactly as {@code sink_offset} 0 means no room gets a pit.
      *
      * <h2>The clamp is on the OUTPUT, and that is deliberate</h2>
@@ -119,7 +119,7 @@ public class BasicCeilingGenerator implements IDungeonCeilingGenerator {
                     surface.emitProjected(layer.getValue(), depth, out);
                 } else {
                     raised.add(Map.entry(layer.getValue(), Math.min(-depth, riseBudget)));
-                    // #68: a NEGATIVE depth rises above the plane instead of hanging below it, and
+                    // A NEGATIVE depth rises above the plane instead of hanging below it, and
                     // unlike a hanging rib it has to excavate on the way -- see
                     // CeilingSurface#emitRaised. Clamped to what this floor has left above the room
                     // (withRiseBudget), which is the only place the room's own height is known.

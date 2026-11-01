@@ -162,7 +162,7 @@ public class Registration {
 	public static final String SPAWNER_PROCESSOR_NAME = "spawner";
 
 	/**
-	 * Backlog #10: turns an authored {@code d2:spawner} DATA marker into the mob-set spawner.
+	 * Turns an authored {@code d2:spawner} DATA marker into the mob-set spawner.
 	 * Unlike the two above, this class is Dungeons2's own -- it is specific to this mod's marker
 	 * convention and its own block, so there is nothing to promote.
 	 */
@@ -176,7 +176,7 @@ public class Registration {
 	/** Registry name of {@link mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor}. */
 	public static final String CHEST_PROCESSOR_NAME = "chest";
 
-	/** Backlog #48 step 3: turns an authored {@code dungeons2:chest_marker} into a chest with loot. */
+	/** Turns an authored {@code dungeons2:chest_marker} into a chest with loot. */
 	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor>> CHEST_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(CHEST_PROCESSOR_NAME, () -> {
 				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor> codec =
@@ -188,7 +188,7 @@ public class Registration {
 	/** Registry name of {@link mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor}. */
 	public static final String POT_PROCESSOR_NAME = "pot";
 
-	/** Backlog #56: turns an authored {@code dungeons2:pot_marker} into pot entities. */
+	/** Turns an authored {@code dungeons2:pot_marker} into pot entities. */
 	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor>> POT_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(POT_PROCESSOR_NAME, () -> {
 				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor> codec =
@@ -200,7 +200,7 @@ public class Registration {
 	/** Registry name of {@link mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor}. */
 	public static final String SARCOPHAGUS_PROCESSOR_NAME = "sarcophagus";
 
-	/** #104: turns an authored {@code dungeons2:sarcophagus_marker} into a sealed two-block tomb. */
+	/** Turns an authored {@code dungeons2:sarcophagus_marker} into a sealed two-block tomb. */
 	public static final RegistryObject<StructureProcessorType<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor>> SARCOPHAGUS_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(SARCOPHAGUS_PROCESSOR_NAME, () -> {
 				Codec<mod.gottsch.forge.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor> codec =
@@ -238,7 +238,7 @@ public class Registration {
 	/**
 	 * Clears decoration a later piece's blocks would strand at a shared wall. Dungeons2's own,
 	 * like the two marker processors: the defect it repairs is a consequence of this mod's
-	 * shared-wall + render-order rules (#18), not of anything in the template system.
+	 * shared-wall + render-order rules, not of anything in the template system.
 	 * It must sit AFTER {@code dungeons2:decoration} in a processor list, or the growth it is
 	 * meant to inspect has not been decided yet. See {@link DecorationSweepProcessor}.
 	 */

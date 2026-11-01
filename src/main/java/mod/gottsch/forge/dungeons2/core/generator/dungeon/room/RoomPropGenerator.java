@@ -97,7 +97,7 @@ public final class RoomPropGenerator {
      * Places pots on exactly {@code candidates}, at exactly {@code y} &mdash; the one place a pot
      * ENTITY is built, whoever chose the cells.
      *
-     * <p>Extracted when the dais grew a {@code top_props} slot (backlog #86). A dais top is not a
+     * <p>Extracted when the dais grew a {@code top_props} slot. A dais top is not a
      * floor: the cells are the platform's own, and the Y is a row higher than the room's walking
      * plane, so neither half of {@link #placePots}'s rule applies &mdash; but every rule about the
      * pot itself does, and those are the ones worth not having two copies of. The loot seed in

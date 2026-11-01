@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.Block;
 
 /**
  * Every cell at or inside {@code inset}, in one material &mdash; the filled counterpart of
- * {@link BorderFloorPattern}'s ring. Backlog #75.
+ * {@link BorderFloorPattern}'s ring.
  *
  * <p>The ceiling has had this since #68, where a filled area is what a RISING vault is built from.
  * The floor never did, so nothing could fill the panel a {@code border} frames: the nearest were a

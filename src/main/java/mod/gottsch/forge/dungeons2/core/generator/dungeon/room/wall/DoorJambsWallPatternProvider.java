@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * A jamb up each side of every doorway in this run, with an optional lintel over the opening
  * &mdash; the first pattern that draws where the MAZE put something rather than where the author
- * did (#72).
+ * did.
  *
  * <h2>Why this is worth having</h2>
  * <p>A player in a dark room cannot see which of four identical walls has the way out. Framing the

@@ -68,7 +68,7 @@ public record SpeckleFloorPattern(Optional<String> primaryBlock, String secondar
                     // primary_block is overlay mode, where only the accent cells are drawn and
                     // everything else is left to whatever is underneath. That is the whole reason
                     // this pattern can accent a corridor's floor pair or a composite's base
-                    // (Mark, 2026-09-09) instead of replacing it.
+                    // instead of replacing it.
                     //
                     // Worth flagging against this field's own history: it was made REQUIRED when
                     // the flat record was split up, because back then an absent base degraded

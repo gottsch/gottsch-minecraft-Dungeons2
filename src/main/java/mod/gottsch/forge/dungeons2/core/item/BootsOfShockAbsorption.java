@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * Backlog #97: the Stone Colossus's counter-item. What it actually does lives in
+ * The Stone Colossus's counter-item. What it actually does lives in
  * {@link ShockAbsorptionEvent} &mdash; this class is the item, the tooltip, and nothing else.
  *
  * <h2>Why the behaviour is not in here</h2>

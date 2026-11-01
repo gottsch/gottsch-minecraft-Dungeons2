@@ -22,7 +22,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import java.util.List;
 
 /**
- * Where a {@code partition} runs, in <strong>interior-local</strong> cells. Backlog #74.
+ * Where a {@code partition} runs, in <strong>interior-local</strong> cells.
  *
  * <p>{@code (0, 0)} is the interior cell at the room's minimum X and Z &mdash; floor-local
  * {@code (originX + 1, originZ + 1)} &mdash; the same convention {@code IPitShapeProvider} uses, and

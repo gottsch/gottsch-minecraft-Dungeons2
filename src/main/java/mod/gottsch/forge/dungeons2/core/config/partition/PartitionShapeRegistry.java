@@ -26,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Set;
 
 /**
- * The {@code partition} slot's shape types, dispatched on {@code type}. Backlog #74.
+ * The {@code partition} slot's shape types, dispatched on {@code type}.
  *
  * <p>The seventh of these registries. See
  * {@code mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry} for why these are plain

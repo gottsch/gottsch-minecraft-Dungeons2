@@ -111,7 +111,7 @@ public final class PieceProcessors {
 
     /**
      * The processor list a piece on this stratum weathers from, or empty when neither tier is
-     * registered. Backlog #45 step 4.
+     * registered.
      *
      * <h2>Two tiers, and the stratum's list REPLACES the motif's</h2>
      * <ol>

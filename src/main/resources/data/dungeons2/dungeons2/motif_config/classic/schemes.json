@@ -92,7 +92,7 @@
           "patterns": [
             {
               "type": "dungeons2:vaulted",
-              "config": { "block": "$base", "springing_block": "$inlay", "steps": 3, "barrel": "long" }
+              "config": { "block": "$base", "springing_block": "$springing_inlay", "steps": 3, "barrel": "long" }
             }
           ]
         },

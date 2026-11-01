@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
- * The {@code partition} scheme slot: a <strong>wall inside the room</strong>. Backlog #74.
+ * The {@code partition} scheme slot: a <strong>wall inside the room</strong>.
  *
  * <p>Iron bars across a corner make a prison cell; a low masonry run across a strip makes a pen or
  * an antechamber. This is the first slot that changes the shape of the space a player moves through,
@@ -107,7 +107,7 @@ public record PartitionPatternEntry(PartitionShapePattern shape, String block,
             Codecs.BLOCK_ID_OR_ROLE.fieldOf("block").forGetter(PartitionPatternEntry::block),
             Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "gap_block")
                     .forGetter(PartitionPatternEntry::gapBlock),
-            // Capped at 8 rather than at the tallest room: the taper (#51) gives a room between 3
+            // Capped at 8 rather than at the tallest room: the taper gives a room between 3
             // and 8 interior rows, so 8 is "as tall as the room allows" and anything above it is a
             // number that can never mean more than 8 does. The generator clamps to the room too --
             // a codec cannot see the room, the same wall ChestConfig#clampedMaxCount runs into.

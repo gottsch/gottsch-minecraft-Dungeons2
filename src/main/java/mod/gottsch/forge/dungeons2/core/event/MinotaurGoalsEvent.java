@@ -66,7 +66,7 @@ public class MinotaurGoalsEvent {
      * Ticks between swings.
      *
      * <p>Was 25, chosen so a wall came apart at a watchable pace. <strong>That was the wrong thing
-     * to optimise for</strong> (Mark, 2026-09-09): in a maze the Minotaur is not putting on a show,
+     * to optimise for</strong>: in a maze the Minotaur is not putting on a show,
      * it is STUCK, and every swing interval is time the player spends waiting for a boss that
      * cannot reach them. At 25 a one-block wall cost 1.25s per block on top of the grace second,
      * and it gets wedged often enough that the cost is paid repeatedly.</p>
@@ -141,7 +141,7 @@ public class MinotaurGoalsEvent {
      * generic monster: giving up when it loses you is ordinary mob behaviour and gmm has no idea
      * what any consumer will use the mob for.</p>
      *
-     * <p>It is wrong <em>here</em>, where the Minotaur is a boss (Mark, 2026-09-08). A boss you can
+     * <p>It is wrong <em>here</em>, where the Minotaur is a boss. A boss you can
      * escape by stepping round a corner is not a boss, and it makes {@link SmashBlocksGoal} pointless
      * on top: the mob digs through a wall and then does not walk through the hole, because nothing is
      * driving it at a target it cannot see. So the override is D2's, not gmm's, exactly like the

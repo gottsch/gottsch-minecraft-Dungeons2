@@ -119,7 +119,7 @@ public final class CeilingPatternSelector {
 
     /**
      * One treatment and where it sits relative to the ceiling plane. Depth 0 is flush; POSITIVE
-     * hangs that many cells below the plane, NEGATIVE rises that many above it (#68).
+     * hangs that many cells below the plane, NEGATIVE rises that many above it.
      *
      * <p>One signed axis rather than two fields, because every consumer wants it that way:
      * {@code CeilingSurface} writes at {@code ceilingY - depth}, and a joists bracket is authored one

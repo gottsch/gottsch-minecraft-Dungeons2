@@ -82,8 +82,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *
      * <p>What the big-room rule asks for (see {@code RoomSlots#resolve}). A flush border, centre,
      * cross or checkerboard is paint: on a weathered stone ceiling a ring of large bricks one cell
-     * in from the walls all but disappears, and a big room under one read as bare in game (Mark,
-     * 2026-10-30). Mark's list was "vault, barrel, double barrel, oculus" -- the ceilings you
+     * in from the walls all but disappears, and a big room under one read as bare in game. Mark's list was "vault, barrel, double barrel, oculus" -- the ceilings you
      * notice walking in.</p>
      */
     public boolean shapesCeiling() {
@@ -355,7 +354,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
     }
 
     /**
-     * How deep a ceiling treatment may hang below the ceiling plane. Backlog #28b.
+     * How deep a ceiling treatment may hang below the ceiling plane.
      *
      * <h2>Why this is not {@code WallPatternEntry.MAX_PROJECTION}</h2>
      * <p>It was, until 2026-08-31, and the sharing was an accident of one constant rather than a
@@ -392,7 +391,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
 
     /**
      * How far a ceiling treatment may rise ABOVE the ceiling plane, into the floor's own spare
-     * budget. Backlog #68.
+     * budget.
      *
      * <h2>The mirror of {@code projection}, and the opposite trade</h2>
      * <p>A projecting vault buys its shape out of the room's headroom: the perimeter drops and the

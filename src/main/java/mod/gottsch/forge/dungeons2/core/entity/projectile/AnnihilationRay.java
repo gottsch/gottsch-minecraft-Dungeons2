@@ -193,7 +193,7 @@ public class AnnihilationRay extends Entity {
     private static final EntityDataAccessor<Vector3f> DATA_END =
             SynchedEntityData.defineId(AnnihilationRay.class, EntityDataSerializers.VECTOR3);
     /**
-     * #97: a Mirror Shield is turning the beam back on its caster. Synced because the reflection is
+     * A Mirror Shield is turning the beam back on its caster. Synced because the reflection is
      * otherwise invisible -- the beam already stopped on the shield, and the damage lands on the
      * caster server-side -- so the renderer recolours the beam and the client bursts sparks.
      */
@@ -434,7 +434,7 @@ public class AnnihilationRay extends Entity {
 
         EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(this.level(), this, origin, end,
                 new AABB(origin, end).inflate(1.0D), entity -> canHurt(caster, entity));
-        // #97: judged every tick, not only on a damage tick, so the beam's colour tracks the shield
+        // Judged every tick, not only on a damage tick, so the beam's colour tracks the shield
         // being raised and lowered rather than lagging a pulse behind it.
         LivingEntity shieldBearer = entityHit != null && entityHit.getEntity() instanceof LivingEntity bearer
                 && MirrorShield.isReflecting(bearer, origin) ? bearer : null;
@@ -446,7 +446,7 @@ public class AnnihilationRay extends Entity {
             this.burning = null;
             this.burnTicks = 0;
             if (this.damageCooldown == 0) {
-                // #97: a Mirror Shield raised toward the caster turns the pulse back on it, credited
+                // A Mirror Shield raised toward the caster turns the pulse back on it, credited
                 // to the player. The beam still stops on the shield -- it is a mirror, not a window.
                 if (shieldBearer != null) {
                     caster.hurt(new DamageSource(this.level().registryAccess()
@@ -574,7 +574,7 @@ public class AnnihilationRay extends Entity {
     }
 
     /**
-     * #97: where the shield meets the beam, a spray of bright sparks thrown back toward the caster
+     * Where the shield meets the beam, a spray of bright sparks thrown back toward the caster
      * -- the visible half of the reflection, every tick it holds.
      */
     private void reflectBurst(Vec3 end) {
@@ -595,7 +595,7 @@ public class AnnihilationRay extends Entity {
         }
     }
 
-    /** #97: true while a Mirror Shield is turning this beam back on its caster. */
+    /** True while a Mirror Shield is turning this beam back on its caster. */
     public boolean isReflecting() {
         return this.entityData.get(DATA_REFLECTING);
     }

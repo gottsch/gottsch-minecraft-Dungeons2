@@ -158,7 +158,6 @@ public final class SecretRooms {
             }
             door.withSecret(secret);
             secretRooms++;
-            //   grep "D2-SECRET" run/logs/dungeons2.log
             BlockPos lever = new BlockPos(door.anchorX + secret.lever().getX(), door.floorY + 2,
                     door.anchorZ + secret.lever().getY());
             // The centre is where the pedestal stands (and, on a hidden moat, the one safe cell),
@@ -166,7 +165,7 @@ public final class SecretRooms {
             RoomData data = room.getRoom();
             BlockPos centre = new BlockPos(room.anchorX + data.getOriginX() + data.getWidth() / 2,
                     room.floorY + 1, room.anchorZ + data.getOriginZ() + data.getDepth() / 2);
-            Dungeons.LOGGER.info("[D2-SECRET] floor {} room {} is {}: centre at {}, door at {},"
+            Dungeons.LOGGER.debug("[D2-SECRET] floor {} room {} is {}: centre at {}, door at {},"
                             + " lever at {}{}",
                     floorIndex, key.roomId(), scheme.name(), centre.toShortString(),
                     new BlockPos(door.anchorX + secret.x(), door.floorY + 1, door.anchorZ + secret.z())

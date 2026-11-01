@@ -46,7 +46,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Backlog #97: what the Mirror Shield does, and how a player learns that ordinary shields do not.
+ * What the Mirror Shield does, and how a player learns that ordinary shields do not.
  *
  * <h2>Reflecting a bolt</h2>
  * <p>The eye-spells are GMM projectiles. Their damage is applied in {@code onHitEntity}, which only

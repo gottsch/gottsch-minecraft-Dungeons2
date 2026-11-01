@@ -95,7 +95,7 @@ public final class PieceNbt {
         if (!corridor.getStyleName().isEmpty()) {
             tag.putString("CorridorStyle", corridor.getStyleName());
         }
-        // #108: only a corridor that actually sinks writes this, so every other one keeps the tag
+        // Only a corridor that actually sinks writes this, so every other one keeps the tag
         // it always had.
         if (corridor.isSunk()) {
             tag.putIntArray("Depths", corridor.getCellDepths());
@@ -189,7 +189,7 @@ public final class PieceNbt {
                 tag.getBoolean("Decoy"));
     }
 
-    // -------- MiningHaul (#7) --------
+    // -------- MiningHaul --------
 
     /**
      * The Mining Chest's contents, on the one room piece that carries them.

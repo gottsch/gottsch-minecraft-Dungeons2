@@ -39,7 +39,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * leaving the door) and would want its own provider rather than being what this degrades into.</p>
  *
  * <p>An authored {@code centreBlock} stands one block in the middle cell &mdash; the sunken dais of
- * backlog #86. See {@link mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape} for what it is
+ * See {@link mod.gottsch.forge.dungeons2.core.config.pit.CentrePitShape} for what it is
  * for; the parity handling is here, because only this class knows what the size SHRANK to.</p>
  */
 public class CentrePitShapeProvider implements IPitShapeProvider {

@@ -27,7 +27,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.floor.IDungeonFlo
 import net.minecraft.world.level.block.Block;
 
 /**
- * A run of chevrons up the room's depth axis, over the {@link FloorConfig}'s own base. Backlog #82.
+ * A run of chevrons up the room's depth axis, over the {@link FloorConfig}'s own base.
  *
  * <p>Every {@code spacing} rows a V restarts at the floor's centre column, its arms walking outward
  * at {@code slope} cells per row; {@code filled} turns the outline into solid triangles. The wall

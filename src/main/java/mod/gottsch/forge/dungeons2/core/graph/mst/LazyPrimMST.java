@@ -194,18 +194,6 @@ public class LazyPrimMST {
     }
     
     
-//    /**
-//     * Unit tests the <tt>LazyPrimMST</tt> data type.
-//     */
-//    public static void main(String[] args) {
-//        In in = new In(args[0]);
-//        EdgeWeightedGraph G = new EdgeWeightedGraph(in);
-//        LazyPrimMST mst = new LazyPrimMST(G);
-//        for (Edge e : mst.edges()) {
-//            StdOut.println(e);
-//        }
-//        StdOut.printf("%.5f\n", mst.weight());
-//    }
 
 }
 

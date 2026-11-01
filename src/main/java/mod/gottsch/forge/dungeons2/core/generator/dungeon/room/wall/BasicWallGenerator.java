@@ -52,7 +52,7 @@ import java.util.Set;
  * Y=floorY+height-1 are emitted by {@code BasicFloorGenerator} / {@code BasicCeilingGenerator}).
  * That gives a wall {@code height - 2} rows tall &mdash; between <strong>3 and 8</strong> under the
  * shipped taper, since {@code DungeonStackPlanner#pickRoomHeight} rolls {@code 5 + rand(6)} and
- * clamps it into the footprint's {@code RoomHeightBand} (#51). Any pattern measured from the top
+ * clamps it into the footprint's {@code RoomHeightBand}. Any pattern measured from the top
  * has to cope with the low end of that.</p>
  *
  * @author Mark Gottschling on Mar 6, 2024 (Phase 2 rewrite May 25, 2026; surface frame Aug 1, 2026)
@@ -176,7 +176,7 @@ public class BasicWallGenerator implements IDungeonWallGenerator {
     }
 
     /**
-     * As above, telling a door-aware pattern which of this run's columns are an opening (#72).
+     * As above, telling a door-aware pattern which of this run's columns are an opening.
      *
      * <p>The doorways were already in this class -- {@code WallSurface#emit} needs them to blank the
      * two door rows, and {@code emitProjected} to keep a cornice out of an opening. All this adds is

@@ -190,7 +190,6 @@ public class HangingSweepProcessor extends StructureProcessor {
             }
             if (!held.contains(info.pos())) {
                 cut++;
-                //   grep "D2-HANG" run/logs/dungeons2.log
                 Dungeons.LOGGER.debug("[D2-HANG] cutting {} at {} -- the run above it is broken",
                         info.state(), info.pos().toShortString());
                 // Air rather than omission: this cell is inside the volume the template is
@@ -203,7 +202,7 @@ public class HangingSweepProcessor extends StructureProcessor {
         }
 
         if (cut > 0) {
-            Dungeons.LOGGER.info("[D2-HANG] cut {} unsupported hanging block(s) of {} at {}",
+            Dungeons.LOGGER.debug("[D2-HANG] cut {} unsupported hanging block(s) of {} at {}",
                     cut, members.size(), piecePos.toShortString());
         }
         // `out` even when nothing was cut: a `top` fixup may still have rewritten a survivor, which

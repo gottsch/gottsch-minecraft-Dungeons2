@@ -89,7 +89,7 @@ import java.util.stream.Stream;
  * after the chests so nothing a player needs is sealed behind it.</p>
  *
  * <p>{@code tombs} holds a {@link TombConfig} &mdash; sealed two-block sarcophagi, head to the wall,
- * each holding a loot table and a guardian for its first opening to choose between (#104). Placed
+ * each holding a loot table and a guardian for its first opening to choose between. Placed
  * after the chests and before the furniture: a tomb is an encounter, a barrel is scenery.</p>
  *
  * <p>{@code hangings} holds a {@link HangingConfig} &mdash; a chandelier, a gibbet, meat hooks, a
@@ -106,7 +106,7 @@ import java.util.stream.Stream;
  * <p>{@link #minHeight} and {@link #minSize} filter a scheme out of the roll for rooms too small to
  * carry it, <em>before</em> weights are totalled. This matters more than it did for floors:
  * {@code DungeonStackPlanner#pickRoomHeight} rolls {@code 5 + rand(6)} and clamps it into the
- * footprint's {@link RoomHeightBand} (#51), so a room has only {@code height - 2} interior wall
+ * footprint's {@link RoomHeightBand}, so a room has only {@code height - 2} interior wall
  * rows &mdash; between <strong>3 and 8</strong> under the shipped taper. At
  * the low end, rows 1 and 2 are the door halves and row 3 is the door lintel, leaving nowhere to put
  * a crown molding course. A vaulted ceiling or a two-course wall is not a pattern that degrades
@@ -192,7 +192,7 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
                 floors, parent, isAbstract);
     }
 
-    /** The shape before the {@code props} slot (#73): a room whose furniture is only its pots. */
+    /** The shape before the {@code props} slot: a room whose furniture is only its pots. */
     public RoomScheme(String name, int weight, SizeGate gate,
                       SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
                       SlotOptions<CeilingPatternEntry> ceiling, SlotOptions<PotConfig> pots,
@@ -272,7 +272,7 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
         return slots.hangings();
     }
 
-    /** The shape before the {@code pit} slot (#3): a scheme whose floor is flat everywhere. */
+    /** The shape before the {@code pit} slot: a scheme whose floor is flat everywhere. */
     public RoomScheme(String name, int weight, SizeGate gate,
                       Optional<FloorPatternEntry> floor, Optional<WallPatternEntry> wall,
                       Optional<CeilingPatternEntry> ceiling, Optional<PotConfig> pots,
@@ -413,8 +413,8 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
             SizeGate.MAP_CODEC.forGetter(RoomScheme::gate),
             // All ten element slots, as ONE group argument. Their keys are still flat on this
             // object -- RoomSlots.MAP_CODEC is a MapCodec -- so the fold moved no JSON. It happened
-            // because `props` (#73) took this group to sixteen arguments, which is DFU's ceiling,
-            // and `partition` (#74) would not have compiled. See RoomSlots.
+            // because `props` took this group to sixteen arguments, which is DFU's ceiling,
+            // and `partition` would not have compiled. See RoomSlots.
             RoomSlots.MAP_CODEC.forGetter(RoomScheme::slots),
             // The depth axis, flattened into min_floor_index/max_floor_index keys. Spelled that way
             // rather than min_floor/min_depth because a scheme object already has a "floor" key

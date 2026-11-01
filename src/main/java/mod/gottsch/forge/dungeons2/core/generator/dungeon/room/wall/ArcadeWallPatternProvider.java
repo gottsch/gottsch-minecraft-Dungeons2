@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A <strong>blind arcade</strong>: a run of arch outlines drawn flat against the wall. Backlog #78.
+ * A <strong>blind arcade</strong>: a run of arch outlines drawn flat against the wall.
  *
  * <p>The detail that makes a hall read as <em>built by someone</em> rather than merely aged, which
  * courses alone never quite manage: a stringcourse says the wall was finished, an arcade says it was

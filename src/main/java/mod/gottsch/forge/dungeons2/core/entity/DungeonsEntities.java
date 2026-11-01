@@ -78,7 +78,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * The dungeon's mobs (backlog #40 / #41).
+ * The dungeon's mobs.
  *
  * <h2>GMM is a library; this mod does the registering</h2>
  * <p>gottsch's Monster Manual ships the mob classes, models, renderers and textures and
@@ -184,7 +184,7 @@ public class DungeonsEntities {
      * not a mob. Registering it would not compile, which is the only reason that mistake cannot be
      * made silently here.</p>
      *
-     * <p>GMM's {@code FrostSkeleton} is deliberately absent (Mark, 2026-08-31): it is cold-themed
+     * <p>GMM's {@code FrostSkeleton} is deliberately absent: it is cold-themed
      * and the classic motif is not, so it waits for an ice motif to belong to. A different kind of
      * exclusion from the mini-bosses below &mdash; those are held back until their placement is
      * designed, this one until there is somewhere for it to fit.</p>
@@ -448,7 +448,7 @@ public class DungeonsEntities {
     public static final String ORC = "orc";
     public static final String ORC_SHAMAN = "orc_shaman";
     /**
-     * The large tier's bruiser boss (#83). Dormant scenery until approached, and big enough that it
+     * The large tier's bruiser boss. Dormant scenery until approached, and big enough that it
      * never leaves the room it wakes in -- see the Stone Colossus plan.
      */
     public static final String STONE_COLOSSUS = "stone_colossus";
@@ -460,7 +460,7 @@ public class DungeonsEntities {
     public static final String ORC_WARLORD = "orc_warlord";
 
     /**
-     * The two mimics (#99). Registered, egg-able and <strong>in no mob set and no spawn
+     * The two mimics. Registered, egg-able and <strong>in no mob set and no spawn
      * override</strong> &mdash; a mimic exists only where a container would have been, so the swap
      * that puts one there is the only route in. Naming one in a mob set would put a chest-shaped
      * ambush in the middle of a floor with no chest anywhere near it, which reads as a bug.
@@ -629,7 +629,7 @@ public class DungeonsEntities {
     /**
      * Under 1.0, NOT 1.0. Vanilla paths a mob as {@code floor(width + 1)} cells wide, so a 1.0-wide
      * orc is planned as 2 wide and stalls short of a 1-cell doorway -- it can neither walk through
-     * nor reach the door to break it (backlog #125). 0.9 paths as 1 wide. Shared by the whole
+     * nor reach the door to break it. 0.9 paths as 1 wide. Shared by the whole
      * warband: the Orc, the Orc Warlord and the Orc Shaman.
      */
     public static final float ORC_WIDTH = 0.9F;

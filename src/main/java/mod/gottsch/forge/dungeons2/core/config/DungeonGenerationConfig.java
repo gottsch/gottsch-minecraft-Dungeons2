@@ -103,7 +103,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
 
     /**
      * How far the walking plane sits UP into its own floor's slab &mdash; the room a pit has to
-     * sink into (#3). <strong>0, and shipping at 0 is the point:</strong> at 0 this whole mechanism
+     * sink into. <strong>0, and shipping at 0 is the point:</strong> at 0 this whole mechanism
      * is arithmetically absent and every existing world lays out identically.
      *
      * <h2>It is bought from the ceiling, not from the descent</h2>
@@ -128,7 +128,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
     public static final int DEFAULT_SINK_OFFSET = 5;
 
     /**
-     * The shipped room-height taper (#51), kept in step with
+     * The shipped room-height taper, kept in step with
      * {@code data/dungeons2/dungeons2/generation_config/default.json}. The ceiling <em>falls</em>
      * as the footprint grows: a 7x7 may be a shaft, a 19x19 may not be a box. See
      * {@link RoomHeightBand} for why it is a clamp rather than a re-roll.
@@ -145,7 +145,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * a partition, and when its scheme's own roll drew none of them one is rolled again without
      * its {@code none}. See {@code RoomSlots#resolve} for the rule and why it exists.
      *
-     * <p><strong>11</strong> (Mark, 2026-10-30). First 13, after a 17x17 room five high came out
+     * <p><strong>11</strong>. First 13, after a 17x17 room five high came out
      * with nothing but a floor pattern: fine as a {@code none} room if it were smaller, a waste of
      * space at that size. Lowered to 11 the same day after playing it. Every shipped scheme a room
      * that size can roll has a ceiling for it ({@code FeaturedRoomRuleTest}), so the rule always

@@ -18,7 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.data;
 
 /**
- * How a corridor style sinks into its floor's {@code sink_offset} band (#108): runs that step down
+ * How a corridor style sinks into its floor's {@code sink_offset} band: runs that step down
  * away from their doors and back up to the next.
  *
  * <p>Geometry only. The stair a riser is built from is a <em>material</em> and is re-resolved at

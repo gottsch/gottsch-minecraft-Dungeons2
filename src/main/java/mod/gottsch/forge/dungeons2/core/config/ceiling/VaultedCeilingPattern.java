@@ -40,7 +40,7 @@ import java.util.Optional;
 /**
  * A stepped vault that RISES above the ceiling plane, as one entry: {@code steps} corbelled courses
  * climbing into the floor's unspent budget, with an optional springing course at the lip and an
- * optional distinct crown (#68).
+ * optional distinct crown.
  *
  * <h2>This is the type; {@code field} is the primitive</h2>
  * <p>A rising vault is expressible as a stack of {@link FieldCeilingPattern} entries at increasing
@@ -79,7 +79,7 @@ import java.util.Optional;
  *       viewer sees their face and their underside; a rising vault's lip sits in the ceiling plane
  *       with the room's air below it, so the only face ever visible is the bottom one &mdash; a plain
  *       full square on a stair, which reads as a full block at best and as a backwards one at worst
- *       (Mark, in game 2026-09-01). Accent the lip by MATERIAL rather than by shape.</li>
+ *. Accent the lip by MATERIAL rather than by shape.</li>
  *   <li>{@code crown_block} &mdash; optional distinct material for the topmost step. Absent, the
  *       crown is {@code block}.</li>
  *   <li>{@code orient} &mdash; turns the springing course only, default
@@ -91,7 +91,7 @@ import java.util.Optional;
  *       room to flat end walls. {@code long} runs it along the room's longer side (a square room
  *       picks a side with the room's random, once for every step); {@code x} runs it east-west and
  *       {@code z} north-south, whatever the room's shape. Absent, the vault is the four-sided dome
- *       it always was. Added 2026-10-29 (Mark).</li>
+ *       it always was.</li>
  *   <li>{@code barrels} &mdash; 1 or 2, default 1; only with {@code barrel}, and rejected without
  *       one, for the same reason as {@code orient} without a springing course. 2 draws TWO parallel
  *       barrels side by side, each a full barrel of the same {@code steps}, {@code step_height},
@@ -100,7 +100,7 @@ import java.util.Optional;
  *       shared springing line of both, and plain ceiling otherwise. An odd cross-width has a 1-cell
  *       spine; an even one a 2-cell spine, which keeps the two bays mirror images. A room too narrow
  *       for each bay to raise its first step (under {@code 4 * step_inset + 1} cells across the
- *       barrel) is drawn as one barrel instead. See {@link BarrelBays}. Added 2026-10-29 (Mark).</li>
+ *       barrel) is drawn as one barrel instead. See {@link BarrelBays}.</li>
  *   <li>{@code properties} &mdash; applied to every state this places, as everywhere else.</li>
  * </ul>
  *

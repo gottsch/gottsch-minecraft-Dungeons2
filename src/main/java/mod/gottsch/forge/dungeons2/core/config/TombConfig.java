@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
- * The {@code tombs} scheme slot (#104): how many sealed sarcophagi a room gets, which block they
+ * The {@code tombs} scheme slot: how many sealed sarcophagi a room gets, which block they
  * are, and &mdash; optionally &mdash; what they hold.
  *
  * <h2>A tomb is two blocks, and stands like a bed</h2>

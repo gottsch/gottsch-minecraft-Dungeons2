@@ -28,7 +28,7 @@ import java.util.Objects;
  * {@link BorderSurfacePatternProvider}'s ring around one.
  *
  * <h2>What this is for, and why a ring could not do it</h2>
- * <p>It is the step of a RISING vault (#68). A vault that hangs below the ceiling is drawn as rings,
+ * <p>It is the step of a RISING vault. A vault that hangs below the ceiling is drawn as rings,
  * because the plane behind each ring stays where it is and only the perimeter comes down. A vault
  * that rises inverts that: the perimeter stays on the plane and everything inside it has to come
  * <em>up</em>, which is a filled area, not an outline. Drawn as rings, a rising vault would be a set

@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * Backlog #97: the Beholder-kin's counter-item. An ordinary shield in every way but one &mdash;
+ * The Beholder-kin's counter-item. An ordinary shield in every way but one &mdash;
  * raised toward eye-magic, it sends the bolt (or the Annihilation Ray) back at the caster. That
  * part lives in {@link MirrorShieldEvent} and {@code AnnihilationRay}; this class is the item.
  *

@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Writes a scheme's {@code pit} into a room's floor. Backlog #3.
+ * Writes a scheme's {@code pit} into a room's floor.
  *
  * <h2>The provider decides the shape; this decides what is legal</h2>
  * <p>A provider returns a {@link PitPlan} &mdash; a depth per cell, and optionally something

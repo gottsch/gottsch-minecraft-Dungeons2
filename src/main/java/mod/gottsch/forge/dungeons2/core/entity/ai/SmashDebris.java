@@ -56,7 +56,7 @@ public final class SmashDebris {
     /**
      * Launch speed and spread, and the damage the caller passes, are gmm's bone-shard numbers
      * verbatim ({@code TaintedSkeleton.spawnShrapnel}: {@code shoot(dx, dy, dz, 0.9F, 12.0F)}).
-     * Deliberate (Mark, 2026-09-08) &mdash; the two are the same kind of shrapnel and should hit the
+     * Deliberate &mdash; the two are the same kind of shrapnel and should hit the
      * same, not merely look alike.
      */
     private static final float SHARD_SPEED = 0.9F;

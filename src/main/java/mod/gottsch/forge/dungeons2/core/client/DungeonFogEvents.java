@@ -37,7 +37,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Pulls the fog in while the camera stands in a {@code #dungeons2:dark_fog/*} biome (#129 step 3).
+ * Pulls the fog in while the camera stands in a {@code #dungeons2:dark_fog/*} biome.
  * The arithmetic is {@link DungeonFog}'s.
  *
  * <p>The tier tags are datapack data, so a pack opts its own biome in by adding it to

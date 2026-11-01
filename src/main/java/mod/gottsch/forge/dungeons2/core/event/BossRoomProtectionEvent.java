@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  *       chunks of a structure's start, and a dungeon sprawls past 128 blocks &mdash; so from inside
  *       its own boss room the dungeon is invisible. Failed closed and silently, for a day.</li>
  *   <li><strong>A box around the boss.</strong> Cheap and visibly wrong: round where a room is
- *       square, and sliding about as the boss paced. Rejected outright (Mark, 2026-09-08): "it
+ *       square, and sliding about as the boss paced. Rejected outright: "it
  *       either needs to fit exactly on the boss room, or don't do it. Having one wall possibly
  *       breakable while the other wall and partial hallway is protected, doesn't work."</li>
  *   <li><strong>Flood-fill the room at runtime.</strong> Exact while the room is sealed &mdash; and

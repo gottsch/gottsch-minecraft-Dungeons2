@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
+import mod.gottsch.forge.dungeons2.core.config.DungeonGenerationConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MiningConfig;
 import mod.gottsch.forge.dungeons2.core.config.MiningConfigHelper;
 import mod.gottsch.forge.dungeons2.core.config.MotifConfig;
@@ -264,7 +265,11 @@ class MiningChestPlacementTest {
         // the position asserted below was a cell the world had put a cobweb in, because the world
         // had built a different room.
         MotifConfig motif = MotifConfigs.load(MOTIF).forFloor(piece.getFloorIndex());
-        for (BlockPlacement placement : piece.renderRoom(motif, 5).getBlocks()) {
+        // And the same budgets postProcess reads: a different ceiling budget or featured-room size
+        // is a different roll as well.
+        var generation = DungeonGenerationConfigHelper.get(FakeWorldGenLevel.create().level().registryAccess());
+        for (BlockPlacement placement : piece.renderRoom(motif, generation.sinkOffset(),
+                generation.ceilingBudget(), generation.featuredRoomMinSize()).getBlocks()) {
             if (placement.getBlockEntityNbt() != null
                     && placement.getBlockEntityNbt().getNbtValues().containsKey("Items")) {
                 return placement;

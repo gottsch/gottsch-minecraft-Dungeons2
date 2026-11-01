@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Backlog #97: what the {@link BootsOfShockAbsorption} actually do.
+ * What the {@link BootsOfShockAbsorption} actually do.
  *
  * <p>The colossus knows nothing about the boots and the boots know nothing about the colossus. The
  * only thing the two ends share is the damage type {@code dungeons2:ground_slam}, which
@@ -105,7 +105,7 @@ public class ShockAbsorptionEvent {
         if (!isWearingBoots(victim)) {
             // The comparison half of the probe below: what a slam does to someone NOT wearing them.
             if (slam && victim instanceof Player) {
-                Dungeons.LOGGER.info("[D2-BOOTS] slam hit {} WITHOUT boots: {} damage",
+                Dungeons.LOGGER.debug("[D2-BOOTS] slam hit {} WITHOUT boots: {} damage",
                         victim.getName().getString(), String.format("%.1f", event.getAmount()));
             }
             return;
@@ -115,16 +115,15 @@ public class ShockAbsorptionEvent {
             float raw = event.getAmount();
             event.setAmount(raw * SLAM_DAMAGE_MULTIPLIER);
             wear(victim);
-            // INFO: the effect is hard to judge by eye mid-fight (Mark, 2026-10-05), so the probe
+            // INFO: the effect is hard to judge by eye mid-fight, so the probe
             // says what the boots took off. One line per slam that lands on a wearer.
-            //   grep "D2-BOOTS" run/logs/dungeons2.log
-            Dungeons.LOGGER.info("[D2-BOOTS] slam hit {} WITH boots: {} -> {} damage",
+            Dungeons.LOGGER.debug("[D2-BOOTS] slam hit {} WITH boots: {} -> {} damage",
                     victim.getName().getString(), String.format("%.1f", raw),
                     String.format("%.1f", event.getAmount()));
         } else if (event.getSource().is(DamageTypes.FALL)) {
             float raw = event.getAmount();
             event.setAmount(raw * FALL_DAMAGE_MULTIPLIER);
-            Dungeons.LOGGER.info("[D2-BOOTS] fall on {} WITH boots: {} -> {} damage",
+            Dungeons.LOGGER.debug("[D2-BOOTS] fall on {} WITH boots: {} -> {} damage",
                     victim.getName().getString(), String.format("%.1f", raw),
                     String.format("%.1f", event.getAmount()));
         }
@@ -135,7 +134,7 @@ public class ShockAbsorptionEvent {
         if (wasSlammedThisTick(event.getEntity())) {
             float raw = event.getStrength();
             event.setStrength((float) (raw * SLAM_KNOCKBACK_MULTIPLIER));
-            Dungeons.LOGGER.info("[D2-BOOTS] slam knockback on {}: {} -> {}",
+            Dungeons.LOGGER.debug("[D2-BOOTS] slam knockback on {}: {} -> {}",
                     event.getEntity().getName().getString(), String.format("%.2f", raw),
                     String.format("%.2f", event.getStrength()));
         }
@@ -146,7 +145,7 @@ public class ShockAbsorptionEvent {
         if (event.getEffectInstance().getEffect() == MobEffects.MOVEMENT_SLOWDOWN
                 && wasSlammedThisTick(event.getEntity())) {
             event.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY);
-            Dungeons.LOGGER.info("[D2-BOOTS] slam slowness on {}: BLOCKED",
+            Dungeons.LOGGER.debug("[D2-BOOTS] slam slowness on {}: BLOCKED",
                     event.getEntity().getName().getString());
         }
     }

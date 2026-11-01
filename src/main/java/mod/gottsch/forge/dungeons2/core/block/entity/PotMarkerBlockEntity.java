@@ -29,14 +29,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Backlog #56: the per-cell authored data behind a {@code dungeons2:pot_marker}.
+ * The per-cell authored data behind a {@code dungeons2:pot_marker}.
  *
  * <h2>Why this follows the CHEST marker and not the spawner marker</h2>
  * <p>{@code SpawnerMarkerBlock} is a plain block: every one of them means the same thing, and the
  * processor that swaps it needs no per-cell information. A pot marker does &mdash; how likely, how
  * many, which variants, what loot, what effects &mdash; and a template holds several of them saying
  * different things. That is the same requirement {@code chest_marker} has, and a block entity is
- * how D2 already answers it (#48).</p>
+ * how D2 already answers it.</p>
  *
  * <h2>The fields</h2>
  * <ul>

@@ -229,7 +229,6 @@ public class DecorationSweepProcessor extends StructureProcessor {
             if (stored == null) {
                 continue;
             }
-            //   grep "D2-SWEEP" run/logs/dungeons2.log
             Dungeons.LOGGER.debug("[D2-SWEEP] {} -> {} at {} (orphaned by this piece)",
                     current, stored, pos.toShortString());
             repairs.add(new StructureTemplate.StructureBlockInfo(pos, stored, null));

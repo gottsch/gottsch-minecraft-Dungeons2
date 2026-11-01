@@ -71,7 +71,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                                   Optional<ResourceLocation> biome,
                                   Map<String, ResourceLocation> templateBiomes) {
 
-    /** The shape before {@code template_biomes} (#129 step 2). */
+    /** The shape before {@code template_biomes}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,
@@ -88,7 +88,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                 tombContentsByFloorIndex, biome, Map.of());
     }
 
-    /** The shape before {@code biome} (#129). */
+    /** The shape before {@code biome}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,
@@ -104,7 +104,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                 tombContentsByFloorIndex, Optional.empty());
     }
 
-    /** The shape before {@code tomb_contents_by_floor_index} (#104). */
+    /** The shape before {@code tomb_contents_by_floor_index}. */
     public MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingConfig> ceiling,
                                Optional<DoorConfig> door, Optional<CorridorConfig> corridor,
                                Optional<FloorConfig> floor, List<RoomScheme> schemes,

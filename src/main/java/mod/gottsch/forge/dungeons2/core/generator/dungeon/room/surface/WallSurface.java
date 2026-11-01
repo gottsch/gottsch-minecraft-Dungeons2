@@ -97,7 +97,7 @@ public record WallSurface(int startX, int startZ, int stepX, int stepZ, int leng
     }
 
     /**
-     * The {@code u} positions on this run that are doorway cells (#72).
+     * The {@code u} positions on this run that are doorway cells.
      *
      * <p>Lives here because this is the class whose {@link #xAt}/{@link #zAt} define the mapping
      * from a run position to the floor-local space the doorways are stored in &mdash; the same

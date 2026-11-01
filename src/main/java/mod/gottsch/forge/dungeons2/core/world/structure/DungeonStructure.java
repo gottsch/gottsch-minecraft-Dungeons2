@@ -136,7 +136,7 @@ public class DungeonStructure extends Structure {
      * pool(s). {@code maxDepth} is kept small so assembly never recurses into
      * the dungeon body.
      *
-     * <p><strong>Motif-parametrized since 2026-08-13</strong> (backlog #6), which
+     * <p><strong>Motif-parametrized since 2026-08-13</strong>, which
      * makes it the last of the three pools to be. The entrance was held back because
      * unlike rooms and transitions its pieces chain to each other, so each carries
      * jigsaw fields naming the next link -- and those are baked into compressed NBT,
@@ -231,7 +231,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * The room pool for one stratum of a motif &mdash; backlog #45 step 3.
+     * The room pool for one stratum of a motif.
      *
      * <p>{@code rooms/<motif>/<stratum>/normal}, tried ahead of {@link #roomStartPool}. Without it,
      * prefabs are ~20% of a dungeon's rooms and all baked stone brick, so a stone-brick prefab lands
@@ -269,7 +269,7 @@ public class DungeonStructure extends Structure {
     private static final int ROOM_MAX_DISTANCE = 48;
 
     /**
-     * Backlog #46: the authored boss room for the bottom floor's terminal slot.
+     * The authored boss room for the bottom floor's terminal slot.
      *
      * <p>A fourth pool category alongside entrance / transitions / rooms, resolving through #5's
      * fallback like the rest. <strong>Nothing ships one</strong>, deliberately: with no
@@ -324,7 +324,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Backlog #5: the motif whose pools stand in for a motif that has not authored its own.
+     * The motif whose pools stand in for a motif that has not authored its own.
      *
      * <p><strong>Why a fallback tier exists at all, and it is not about looks.</strong> Before this,
      * a themed pool that did not exist degraded straight to the same behaviour an empty pool always
@@ -384,7 +384,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Which room pool to use, with the stratum tier in front of #5's two &mdash; backlog #45 step 3.
+     * Which room pool to use, with the stratum tier in front of #5's two.
      *
      * <p>Three tiers: {@code rooms/<motif>/<stratum>/normal}, then {@code rooms/<motif>/normal},
      * then {@code rooms/classic/normal}. A motif with no strata, or a stratum that authors no rooms
@@ -498,7 +498,7 @@ public class DungeonStructure extends Structure {
             return Optional.of(Holder.direct(
                     retagged(context, donorId, donor.get().value(), processors)));
         }
-        // Nothing of this motif's own at any tier. The motif fallback (#5) is the last resort and
+        // Nothing of this motif's own at any tier. The motif fallback is the last resort and
         // borrows classic's pool for THIS size, processors and all -- correct by construction,
         // because that pool is authored for this size.
         return resolveStartPool(context, motifValue, m -> bossRoomStartPool(m, size));
@@ -596,7 +596,7 @@ public class DungeonStructure extends Structure {
      *
      * <p><strong>The draw is a PIN, not a new set.</strong> A first version swapped the spawner's
      * assigned set for a one-boss set named by convention ({@code boss_<mob>}), so what the data
-     * assigned was no longer what the spawner got (Mark, 2026-09-10). Now the spawner keeps the tier's
+     * assigned was no longer what the spawner got. Now the spawner keeps the tier's
      * set and carries the drawn mob beside it &mdash; see {@code DungeonSpawnerBlockEntity}.</p>
      */
     private static String pickBoss(GenerationContext context, String motifValue, DungeonSize size,
@@ -728,7 +728,7 @@ public class DungeonStructure extends Structure {
 
     /**
      * How much taller than the pitch an assembled transition's <em>door span</em> may be before it
-     * is reported &mdash; backlog #52.
+     * is reported.
      *
      * <h2>The span is the traverse; the volume is not</h2>
      * <p>What has to reach is the distance between the transition's two {@code dungeons2:door}
@@ -919,7 +919,7 @@ public class DungeonStructure extends Structure {
             // transitions (see transitionAssembler above) -- request one block
             // higher so the piece's real local Y=0 lands exactly at worldY.
             BlockPos candidatePos = new BlockPos(worldX, worldY + 1, worldZ);
-            // #45 step 3: which stratum this depth is in decides which rooms pool is tried first.
+            // Which stratum this depth is in decides which rooms pool is tried first.
             // Read off the UNPROJECTED motif -- MotifConfig#forFloor clears the table, so a
             // projection has no stratum to name.
             List<StructurePiece> assembled = assembleRoom(context, candidatePos, motifValue,
@@ -945,7 +945,7 @@ public class DungeonStructure extends Structure {
                     PoolElementIds.locationsOf(assembled)));
         };
 
-        // #46: the authored boss room. Same staging list as the interior prefabs -- both are
+        // The authored boss room. Same staging list as the interior prefabs -- both are
         // adopted by commitStagedRooms on a non-null templateId, so there is nothing for a second
         // list to key differently. Same contract, a different pool.
         DungeonStackPlanner.BossRoomAssembler bossRoomAssembler =
@@ -973,7 +973,7 @@ public class DungeonStructure extends Structure {
                 stagedRooms.add(new StagedRoom(rgeo.worldFootprint(), worldY, assembled));
                 // The tier is printed because it is the whole point of the pool split and is
                 // otherwise invisible: two dungeons draw the same template and pay out differently.
-                Dungeons.LOGGER.info("[D2-BOSS] boss room {} ({} tier, boss {}) at ({},{},{}) {}x{}",
+                Dungeons.LOGGER.debug("[D2-BOSS] boss room {} ({} tier, boss {}) at ({},{},{}) {}x{}",
                         describeElements(assembled), size, boss == null ? "drawn by spawner" : boss,
                         worldX, worldY, worldZ,
                         rgeo.worldFootprint().getWidth(), rgeo.worldFootprint().getHeight());
@@ -999,14 +999,14 @@ public class DungeonStructure extends Structure {
         planner.withGapBetweenFloors(generationConfig.gapBetweenFloors());
         planner.withSinkOffset(generationConfig.sinkOffset());
         warnIfPitchIsNotTheShippedOne(generationConfig);
-        // #51: the room-height taper, clamped into whatever vertical budget the pitch above leaves.
+        // The room-height taper, clamped into whatever vertical budget the pitch above leaves.
         // Clamped rather than rejected -- see clampToBudget.
         planner.withRoomHeightBands(
                 RoomHeightBand.clampToBudget(generationConfig.roomHeightBands(),
                         generationConfig.floorHeight()));
         planner.withMinBuildY(context.heightAccessor().getMinBuildHeight());
         planner.withCorridorStyles(corridorStyleWeights(motifConfig.corridor()));
-        // #44: how often an authored template may repeat. Same resolved-motif source as the
+        // How often an authored template may repeat. Same resolved-motif source as the
         // corridor styles above, so an addon's own limits arrive through its own fragment.
         planner.withTemplateLimits(motifConfig.templateLimits());
         if (overrides != null && overrides.size() != null) {
@@ -1104,27 +1104,29 @@ public class DungeonStructure extends Structure {
                 // doors would seal them shut again. (dungeons2:connector cells are exempt from the
                 // question entirely -- they never get a door piece, because the template already
                 // has a real built door there.)
-                // #7: the Mining Chest. Planned HERE, once, against the finished layout -- it is
+                // The Mining Chest. Planned HERE, once, against the finished layout -- it is
                 // what the whole dungeon's excavation destroyed, so no single piece can work it out
                 // and every piece that tried would work out the same answer and place its own chest.
                 // The plan names one room; the emitter hands it that room's piece.
                 Optional<MiningChestPlan> miningChest =
                         MiningChestPlanner.plan(layout, MiningConfigHelper.get(context.registryAccess()));
-                miningChest.ifPresent(plan -> Dungeons.LOGGER.info(
-                        "[D2-MINING] floor {} room {} pays back {} from {} blocks excavated",
-                        plan.floorIndex(), plan.roomId(), plan.haul(),
-                        ExcavationLedger.totalVolume(ExcavationLedger.of(layout))));
+                if (Dungeons.LOGGER.isDebugEnabled()) {
+                    miningChest.ifPresent(plan -> Dungeons.LOGGER.debug(
+                            "[D2-MINING] floor {} room {} pays back {} from {} blocks excavated",
+                            plan.floorIndex(), plan.roomId(), plan.haul(),
+                            ExcavationLedger.totalVolume(ExcavationLedger.of(layout))));
+                }
 
-                // #97: the boss's counter-item, planned here for the Mining Chest's reason -- only the
+                // The boss's counter-item, planned here for the Mining Chest's reason -- only the
                 // layout knows who the boss is.
                 // Secret rooms: which dead ends can take a hidden door. Worked out before the
-                // counter-item so it can prefer one of them (Mark, 2026-09-28).
+                // counter-item so it can prefer one of them.
                 Map<SecretRoomPlanner.RoomKey, SecretDoorway> hideable =
                         SecretRooms.hideable(layout, motifConfig);
                 Optional<CounterChestPlan> counterChest = CounterItemPlanner.plan(layout,
                         (floorIndex, room) -> hideable.containsKey(
                                 new SecretRoomPlanner.RoomKey(floorIndex, room.getId())));
-                counterChest.ifPresent(plan -> Dungeons.LOGGER.info(
+                counterChest.ifPresent(plan -> Dungeons.LOGGER.debug(
                         "[D2-COUNTER] boss {} -> floor {} room {} holds {}",
                         layout.getBoss(), plan.floorIndex(), plan.roomId(), plan.lootTable()));
 
@@ -1177,25 +1179,6 @@ public class DungeonStructure extends Structure {
                         }
                     }
                 }
-
-                // TEMP (Jul 24): "door into untouched terrain" investigation. Logs the
-                // full chunk range every piece's bounding box says it should touch, so
-                // it can be diffed against DungeonPiece's [D2-TOUCH] lines (every chunk
-                // that ACTUALLY got a postProcess call) to find a chunk that's expected
-                // but was silently skipped by vanilla's /place-into-already-generated-
-                // chunk handling. Remove once resolved.
-                int minCx = Integer.MAX_VALUE, maxCx = Integer.MIN_VALUE;
-                int minCz = Integer.MAX_VALUE, maxCz = Integer.MIN_VALUE;
-                for (StructurePiece p : allPieces) {
-                    BoundingBox bb = p.getBoundingBox();
-                    minCx = Math.min(minCx, bb.minX() >> 4);
-                    maxCx = Math.max(maxCx, bb.maxX() >> 4);
-                    minCz = Math.min(minCz, bb.minZ() >> 4);
-                    maxCz = Math.max(maxCz, bb.maxZ() >> 4);
-                }
-                Dungeons.LOGGER.warn(
-                        "[D2-EXPECT] anchor=({},{}) pieceCount={} expectedChunkRange=x[{}..{}] z[{}..{}]",
-                        emitAnchorX, emitAnchorZ, allPieces.size(), minCx, maxCx, minCz, maxCz);
 
                 allPieces.forEach(builder::addPiece);
             } catch (RuntimeException e) {
@@ -1691,7 +1674,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * The pool-parametrized form, so the boss room (#46) and the interior prefabs share one
+     * The pool-parametrized form, so the boss room and the interior prefabs share one
      * assembly path rather than becoming two copies that drift. Both are a single self-contained
      * piece at one Y anchor, so the depth and distance caps are the same for both.
      */
@@ -1859,7 +1842,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Paints the floors' mood biomes over this chunk's share of the piece boxes (#129). After every
+     * Paints the floors' mood biomes over this chunk's share of the piece boxes. After every
      * piece's {@code postProcess}, once per chunk; see {@link MotifBiomes}.
      */
     @Override

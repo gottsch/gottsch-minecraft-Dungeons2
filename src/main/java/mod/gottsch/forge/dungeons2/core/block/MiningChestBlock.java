@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The Mining Chest (backlog #7): an iron chest with dark-iron bands, on Treasure2's ironbound
+ * The Mining Chest: an iron chest with dark-iron bands, on Treasure2's ironbound
  * model.
  *
  * <p>A vanilla {@link ChestBlock} in every respect but the look, so the container, the lid

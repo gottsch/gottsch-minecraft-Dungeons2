@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A jamb up each side of every doorway on the wall, with an optional lintel across the top (#72).
+ * A jamb up each side of every doorway on the wall, with an optional lintel across the top.
  *
  * <h2>The first pattern the MAZE positions</h2>
  * <p>Every other wall pattern is drawn where the author says: a course at a row, pilasters at a

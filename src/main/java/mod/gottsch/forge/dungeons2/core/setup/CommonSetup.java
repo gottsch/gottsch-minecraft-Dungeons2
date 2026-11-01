@@ -123,9 +123,7 @@ public class CommonSetup {
 		// and #40/#41 where the same trap ate the rats). This runs after registration is complete,
 		// so it is the authoritative answer.
 		//
-		//   grep "D2-REGISTRY" run/logs/dungeons2.log
 		logRegistryPresence();
-//		Dungeons2Networking.register();
 
 		// Register structure piece types. The STRUCTURE_PIECE registry is frozen
 		// after bootstrap, so this must run on the synchronized work queue (Forge
@@ -146,7 +144,7 @@ public class CommonSetup {
 	}
 
 	/**
-	 * Attributes for the dungeon's mobs (backlog #40 / #41).
+	 * Attributes for the dungeon's mobs.
 	 *
 	 * <p>The rat uses GMM's own {@code createAttributes}; the giant rat has its own, because it is
 	 * the same class registered at a different size (see {@link DungeonsEntities}).</p>
@@ -176,7 +174,7 @@ public class CommonSetup {
 	 */
 	private static void wireGroundSlam() {
 		// A damage type of our own buys three things: a death message, correct attribution, and a
-		// hook the Boots of Shock Absorption (#97) can test for without knowing what hit the player.
+		// hook the Boots of Shock Absorption can test for without knowing what hit the player.
 		GroundSlamGoal.damageSource = mob -> new DamageSource(
 				mob.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
 						.getHolderOrThrow(GROUND_SLAM_DAMAGE_TYPE), mob);
@@ -305,7 +303,7 @@ public class CommonSetup {
 		// itself flavoured as "a zombie about 20% better", so a plain zombie is the direct substitute
 		// rather than a different mob entirely.
 		//
-		// NOT DD's weights any more (Mark, 2026-09-10): zombie 60 -> 30, spectator 20 -> 40. At DD's
+		// NOT DD's weights any more: zombie 60 -> 30, spectator 20 -> 40. At DD's
 		// 20 of 140 the Spectator was one summon in seven -- about six minutes of fighting in sight
 		// before one appeared -- and a summon is its ONLY route into the game (see
 		// MobSpawnExclusionTest.EXEMPT). Now 40 of 130, about one in three. The zombie is the one
@@ -413,7 +411,7 @@ public class CommonSetup {
 	 * <p>These two are separate mechanisms and it is easy to conflate them: this event only says
 	 * "on the ground, at a position the heightmap agrees is solid, subject to the usual mob rules".
 	 * What actually makes rats appear in a dungeon is the structure's {@code spawn_overrides}
-	 * (backlog #42), which is still empty &mdash; so as of this commit the rats exist, render and can
+	 *, which is still empty &mdash; so as of this commit the rats exist, render and can
 	 * be spawn-egged, but nothing spawns them naturally.</p>
 	 *
 	 * <p>{@code Mob::checkMobSpawnRules} rather than the monster variant, matching the other GMM
@@ -517,7 +515,7 @@ public class CommonSetup {
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
 				SpawnPlacementRegisterEvent.Operation.OR);
 		// Registered like the mini-bosses, and for the stronger version of their reason: nothing
-		// spawns a mimic ambiently or from a mob set (#99) -- it appears only where a container
+		// spawns a mimic ambiently or from a mob set -- it appears only where a container
 		// would have been. A placement rule is still what a spawn EGG goes through, and an egg is
 		// the only way to look at one without generating a dungeon.
 		event.register(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
@@ -574,8 +572,7 @@ public class CommonSetup {
 
 	/**
 	 * Reports whether #10's block, its block entity type and its marker are actually in the game's
-	 * registries. Logged at INFO deliberately -- a missing block entity type is a hard fault, not a
-	 * detail, and this is the line that says so without needing debug logging turned on.
+	 * registries, at debug level.
 	 */
 	private static void logRegistryPresence() {
 		java.util.List<String> report = new java.util.ArrayList<>();
@@ -589,6 +586,6 @@ public class CommonSetup {
 				new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, "mob_set_spawner");
 		report.add("mob_set_spawner: blockEntityType="
 				+ net.minecraftforge.registries.ForgeRegistries.BLOCK_ENTITY_TYPES.containsKey(spawner));
-		Dungeons.LOGGER.info("[D2-REGISTRY] {}", String.join("  |  ", report));
+		Dungeons.LOGGER.debug("[D2-REGISTRY] {}", String.join("  |  ", report));
 	}
 }

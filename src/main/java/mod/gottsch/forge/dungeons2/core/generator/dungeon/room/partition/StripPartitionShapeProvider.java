@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One straight run wall to wall, dividing the room in two, with a way through it. Backlog #74.
+ * One straight run wall to wall, dividing the room in two, with a way through it.
  *
  * <p>Where {@link CornerPartitionShapeProvider} makes a cell, this makes an
  * <strong>antechamber</strong>: you come in, and the rest of the room is on the far side of a grate.</p>

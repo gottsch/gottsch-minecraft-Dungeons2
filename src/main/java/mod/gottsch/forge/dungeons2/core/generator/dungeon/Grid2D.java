@@ -29,7 +29,6 @@ public class Grid2D extends Array2D<Cell> {
 
     public Grid2D(int width, int height) {
         super(Cell.class, width, height);
-//        cells = new Cell[width][height];
 
         // initialize ie add walls to the borders
         initialize(width, height);
@@ -42,10 +41,8 @@ public class Grid2D extends Array2D<Cell> {
     private void initialize(int width, int height) {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-//                cells[x][y] = new Cell(x, y);
                 put(x, y, new Cell(x, y));
                 if (x == 0 || x == width -1 || y == 0 || y == height -1) {
-//                    cells[x][y].setType(CellType.WALL);
                     get(x, y).setType(CellType.WALL);
                 }
             }
@@ -64,12 +61,9 @@ public class Grid2D extends Array2D<Cell> {
                 for (int y = 0; y < room.getHeight(); y++) {
                     // test for wall indexes
                     if (x ==0 || y == 0 || x == room.getWidth()-1 || y == room.getHeight()-1) {
-//                        cells[xOffset + x][yOffset + y].setType(CellType.WALL);
                         get(xOffset + x, yOffset + y).setType(CellType.WALL);
                     } else {
                         // else update tiles with the id of the room
-//                        cells[xOffset + x][yOffset + y].setType((CellType.ROOM));
-//                        cells[xOffset + x][yOffset + y].setRegionId((int)room.getId());
                         get(xOffset + x, yOffset + y).setType((CellType.ROOM));
                         get(xOffset + x, yOffset + y).setRegionId((int)room.getId());
                     }

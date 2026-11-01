@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * The per-cell data a {@code dungeons2:sarcophagus_marker} carries (#104).
+ * The per-cell data a {@code dungeons2:sarcophagus_marker} carries.
  *
  * <p>Every field is an override and absent means the {@code dungeons2:sarcophagus} processor
  * entry's, as on the other three markers: a template full of tombs states nothing, and one special

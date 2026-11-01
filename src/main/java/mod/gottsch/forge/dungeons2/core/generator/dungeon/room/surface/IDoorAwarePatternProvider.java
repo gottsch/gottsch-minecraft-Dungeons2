@@ -23,7 +23,7 @@ import net.minecraft.util.RandomSource;
 import java.util.Set;
 
 /**
- * A surface pattern that wants to know where this run's DOORWAYS are (#72).
+ * A surface pattern that wants to know where this run's DOORWAYS are.
  *
  * <h2>What was actually missing</h2>
  * <p>Less than it looked. {@code BasicWallGenerator} has had the room's doorways all along &mdash;

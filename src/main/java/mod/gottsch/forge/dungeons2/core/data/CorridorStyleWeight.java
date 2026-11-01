@@ -28,7 +28,7 @@ package mod.gottsch.forge.dungeons2.core.data;
  * "resolve where RegistryAccess is available, inject the value" shape as
  * {@code DungeonStackPlanner#withCorridorWidth}, one step wider.</p>
  *
- * <p>{@code descent} (#108) is geometry for the same reason {@code height} is: it decides how far
+ * <p>{@code descent} is geometry for the same reason {@code height} is: it decides how far
  * below the walking plane the piece's box reaches. {@code null} when the style does not sink.
  * {@code traps} (stage 3) likewise: a trench is dug below the floor. {@code null} for none.</p>
  *

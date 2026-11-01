@@ -57,7 +57,7 @@ import net.minecraft.util.StringRepresentable;
  * <p>Once #29 (the floor-height raise) and #3 (pits) land, a room's floor <em>plane</em> may sit
  * well above its lowest layer &mdash; a 20-high room with a 5-deep pit has one at relative Y 5 and
  * another at 0. <strong>This class keeps naming layer 0, and that is the intended behaviour, not a
- * limitation</strong> (Mark, 2026-08-26): in a pitted room the pit's own floor is the surface that
+ * limitation</strong>: in a pitted room the pit's own floor is the surface that
  * weathers on the floor's rules, and in a room with no pit it is the ordinary floor. Both are
  * floors somebody walks on.</p>
  *
@@ -126,7 +126,7 @@ import net.minecraft.util.StringRepresentable;
  * <h2>Scope: Dungeons2's own processor, NOT GottschCore's {@code AgingProcessor}</h2>
  * <p>This gate is <strong>not</strong> going into GottschCore's {@code AgingProcessor}, which is
  * shared by every mod depending on it and would carry the concept in front of authoring that has no
- * use for it (Mark, 2026-08-26). It belongs to {@link SurfaceAgingProcessor}, which is Dungeons2's.
+ * use for it. It belongs to {@link SurfaceAgingProcessor}, which is Dungeons2's.
  * </p>
  *
  * <p>Named by {@code classic_mud_weathering.json} since 2026-08-26 and by

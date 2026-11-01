@@ -21,7 +21,7 @@ import com.mojang.serialization.MapCodec;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pit.IPitShapeProvider;
 
 /**
- * The shape of a room's sunken pit &mdash; which interior cells are excavated. Backlog #3.
+ * The shape of a room's sunken pit &mdash; which interior cells are excavated.
  *
  * <p>Dispatched on {@code type} over {@link PitShapeRegistry}, with the shape's own fields nested
  * under {@code config}, exactly like the {@code floor}, {@code wall} and {@code ceiling} slots.
@@ -61,7 +61,7 @@ public interface PitShapePattern {
      * Whether this pit is HIDDEN under a floor that looks like any other, so a room that has one
      * still looks bare until the trap is sprung. The big-room rule (see {@code RoomSlots#resolve})
      * does not count a hidden pit as dressing the room, and never forces one: a 17x17 room over a
-     * false floor looks exactly like a 17x17 room with nothing in it (Mark, 2026-10-30).
+     * false floor looks exactly like a 17x17 room with nothing in it.
      */
     default boolean hidden() {
         return false;

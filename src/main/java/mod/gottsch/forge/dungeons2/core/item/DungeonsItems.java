@@ -37,7 +37,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * Spawn eggs for the dungeon's mobs (backlog #40 / #41).
+ * Spawn eggs for the dungeon's mobs.
  *
  * <p>They go in vanilla's {@code SPAWN_EGGS} tab rather than a Dungeons2 tab, because this mod does
  * not have one &mdash; nothing was registered into {@code Registration.ITEMS} before these two, so
@@ -393,7 +393,7 @@ public class DungeonsItems {
             () -> new SwordItem(Tiers.IRON, 5, -2.6F, new Item.Properties()));
 
     /**
-     * The mimics' eggs (#99). These need one MORE than the ordinary roster does, for the
+     * The mimics' eggs. These need one MORE than the ordinary roster does, for the
      * mini-bosses' reason taken further: a mimic is in no mob set and no spawn override, so short
      * of generating a dungeon and finding the one container in it that bites, the egg is the only
      * way to see one at all.
@@ -412,7 +412,7 @@ public class DungeonsItems {
                     new Item.Properties()));
 
     /**
-     * Backlog #97: the Stone Colossus's counter-item, and the first ARMOUR this mod registers.
+     * The Stone Colossus's counter-item, and the first ARMOUR this mod registers.
      *
      * <p>The behaviour is entirely {@code ShockAbsorptionEvent}'s; see {@link
      * BootsOfShockAbsorption} for why it is not in the item. Not craftable: found only in the
@@ -424,7 +424,7 @@ public class DungeonsItems {
             () -> new BootsOfShockAbsorption(new Item.Properties()));
 
     /**
-     * Backlog #97: the Beholder-kin's counter-item. Reflects eye-magic when raised; see {@link
+     * The Beholder-kin's counter-item. Reflects eye-magic when raised; see {@link
      * MirrorShield} and {@code MirrorShieldEvent}. Vanilla shield durability. Not craftable: found
      * only in the counter-item chest of about one Beholder or Death Tyrant dungeon in four.
      */
@@ -433,7 +433,7 @@ public class DungeonsItems {
             () -> new MirrorShield(new Item.Properties().durability(336)));
 
     /**
-     * Backlog #10: the item form of the spawner marker, so it can be placed by hand while authoring
+     * The item form of the spawner marker, so it can be placed by hand while authoring
      * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
      * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
      *
@@ -445,7 +445,7 @@ public class DungeonsItems {
             () -> new BlockItem(DungeonsBlocks.SPAWNER_MARKER.get(), new Item.Properties()));
 
     /**
-     * Backlog #48: the item form of the chest marker, for the same reason {@link #SPAWNER_MARKER}
+     * The item form of the chest marker, for the same reason {@link #SPAWNER_MARKER}
      * has one &mdash; a template author places it by hand.
      *
      * <p>It was missing until 2026-08-29. The block shipped visible and textured and its javadoc
@@ -460,7 +460,7 @@ public class DungeonsItems {
             () -> new BlockItem(DungeonsBlocks.CHEST_MARKER.get(), new Item.Properties()));
 
     /**
-     * Backlog #56: the item form of the pot marker. Same reason the other two markers have one
+     * The item form of the pot marker. Same reason the other two markers have one
      * &mdash; a template author places it by hand, and a block with no item is reachable only by
      * {@code /setblock}.
      */
@@ -469,7 +469,7 @@ public class DungeonsItems {
             () -> new BlockItem(DungeonsBlocks.POT_MARKER.get(), new Item.Properties()));
 
     /**
-     * #104: the item form of the tomb marker. Placed like a bed: the head goes one block further in
+     * The item form of the tomb marker. Placed like a bed: the head goes one block further in
      * the direction the author looks, which is the only way to set its facing by hand.
      */
     public static final RegistryObject<Item> SARCOPHAGUS_MARKER = Registration.ITEMS.register(
@@ -477,7 +477,7 @@ public class DungeonsItems {
             () -> new BlockItem(DungeonsBlocks.SARCOPHAGUS_MARKER.get(), new Item.Properties()));
 
     /**
-     * Backlog #7: the Mining Chest's item. Drawn from the static JSON copy of the banded model, so
+     * The Mining Chest's item. Drawn from the static JSON copy of the banded model, so
      * it needs no item renderer; in the world the block entity renderer draws it, lid and all.
      */
     public static final RegistryObject<Item> MINING_CHEST = Registration.ITEMS.register(
@@ -485,7 +485,7 @@ public class DungeonsItems {
             () -> new BlockItem(DungeonsBlocks.MINING_CHEST.get(), new Item.Properties()));
 
     /**
-     * #128: a Dungeon Map not yet started; used on a dungeon floor, it maps that floor. Copied from
+     * A Dungeon Map not yet started; used on a dungeon floor, it maps that floor. Copied from
      * a Dungeon Map onto an Empty Map with a coal (DungeonMapCopyRecipe), so the first map is always a find.
      */
     public static final RegistryObject<Item> BLANK_DUNGEON_MAP = Registration.ITEMS.register(

@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The authoring marker a template places where a chest should go. Backlog #48 step 3.
+ * The authoring marker a template places where a chest should go.
  *
  * <h2>Why it carries a block entity, unlike {@code spawner_marker}</h2>
  * <p>{@code SpawnerMarkerProcessor}'s note says a DATA marker could carry a free-text string and

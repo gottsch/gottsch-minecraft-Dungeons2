@@ -91,7 +91,7 @@ import mod.gottsch.forge.dungeons2.core.config.wall.WallPatternRegistry;
  * <h2>Anchoring</h2>
  * <p>{@link CourseAnchor#TOP} is not a convenience &mdash; it is required for the feature to work at
  * all. Crown molding is defined relative to the ceiling, and room height is
- * a {@code 5 + rand(6)} roll clamped into the footprint's {@code RoomHeightBand} (#51), so a course
+ * a {@code 5 + rand(6)} roll clamped into the footprint's {@code RoomHeightBand}, so a course
  * measured from the floor drifts away from the ceiling as rooms vary. A wall is only {@code height - 2} rows tall, i.e. <strong>3 to
  * 8</strong>; a course that resolves outside that range is simply not drawn, so a scheme carrying
  * both a plinth and a crown wants a {@code min_height} that leaves plain wall between them rather
@@ -599,7 +599,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
             // Inverted per-entry gates: RoomScheme#validate only ever reached the SLOT gate, so an
             // inverted gate on a pattern or a course was accepted and then fit no room -- the
             // pattern silently never drew. Found while giving ceiling patterns the same gates
-            // (backlog #24); it was latent on the wall side from the day per-course gates shipped.
+            //; it was latent on the wall side from the day per-course gates shipped.
             DataResult<SizeGate> patternGate = pattern.gate().validate("wall pattern '"
                     + pattern.pattern().getClass().getSimpleName() + "'");
             if (patternGate.error().isPresent()) {

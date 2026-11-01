@@ -38,14 +38,11 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
@@ -218,33 +215,6 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
         tag.putInt("AnchorZ", anchorZ);
     }
 
-    /** TEMP (Jul 24): dedup set for {@link #logChunkTouch}, one line per (piece, chunk). */
-    private static final java.util.Set<String> CHUNK_TOUCH_LOGGED =
-            java.util.concurrent.ConcurrentHashMap.newKeySet();
-
-    /**
-     * TEMP (Jul 24): "door into untouched terrain" investigation. Logs every chunk
-     * a procedural piece's {@code postProcess} is ACTUALLY invoked for, with that
-     * chunk's current status, so it can be diffed against {@code DungeonStructure}'s
-     * {@code [D2-EXPECT]} line (the full chunk range every piece's bounding box SAYS
-     * it should touch) to find a chunk that was silently skipped — i.e. {@code
-     * /place} not calling postProcess at all for a chunk that had already finished
-     * generating before the command ran. Remove once resolved.
-     */
-    protected void logChunkTouch(WorldGenLevel level, ChunkPos chunkPos, BoundingBox box) {
-        String key = getClass().getSimpleName() + "@anchor(" + anchorX + "," + anchorZ + ")@chunk("
-                + chunkPos.x + "," + chunkPos.z + ")";
-        if (!CHUNK_TOUCH_LOGGED.add(key)) {
-            return;
-        }
-        ChunkAccess chunk = level.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY, false);
-        Dungeons.LOGGER.warn(
-                "[D2-TOUCH] {} anchor=({},{}) chunk=({},{}) status={} box=[{}..{},{}..{},{}..{}]",
-                getClass().getSimpleName(), anchorX, anchorZ, chunkPos.x, chunkPos.z,
-                chunk == null ? "NULL" : chunk.getStatus(),
-                box.minX(), box.maxX(), box.minY(), box.maxY(), box.minZ(), box.maxZ());
-    }
-
     /** Resolves the stored motif string to an enum, defaulting to CLASSIC. */
     protected IDungeonMotif motif() {
         if (motifValue != null) {
@@ -261,7 +231,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
      * world to piece-local, clipped to the chunk {@code box}. Applies any
      * {@link BlockEntityData} for positions that actually landed inside the box.
      *
-     * @param stratum the depth band this piece is on (#45 step 4), which selects the processor
+     * @param stratum the depth band this piece is on, which selects the processor
      *                list it weathers from. Empty for every motif with no strata, which is the
      *                whole of the {@code MotifConfig.DEFAULT} path.
      */
@@ -350,24 +320,10 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
                 continue; // an undecorated plain block: nothing to apply, nothing to probe
             }
             applyBlockEntity(level, worldPos, p.getBlockEntityNbt());
-            // The same probe the marker processor keeps, for the same reason: a procedural spawner
-            // that works and one that was never planned look identical in game, so this is the only
-            // way to tell "the scheme never rolled it" from "it was placed and does nothing".
-            //
-            //   grep "D2-SPAWNER" run/logs/dungeons2.log
-            //
-            // INFO, not debug, and deliberately the only spawner line that is. The mod's own
-            // [logging] level ships at "info", so a debug probe is off for every user AND for the
-            // author until a config file is hand-edited -- which makes "an invisible feature needs
-            // a visible probe" (the lesson this line exists because of) false in practice. Cost is
-            // one line per spawner actually placed, single figures per dungeon; [D2-TOUCH] already
-            // writes an order of magnitude more than that at WARN. The per-tick and block-entity-
-            // creation lines stay at debug, because those fire on chunk load rather than on
-            // generation and would turn a walk through a finished dungeon into a log flood.
-            //
-            // A tomb (#104) takes its own line instead -- see probeTomb.
+            // A procedural spawner that works and one that was never planned look identical in
+            // game, so this line tells them apart. A tomb takes its own line: see probeTomb.
             if (!probeTomb(p, worldPos) && !probeMiningChest(p, worldPos) && !probeRack(p, worldPos)) {
-                Dungeons.LOGGER.info("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos,
+                Dungeons.LOGGER.debug("[D2-SPAWNER] {} at {} <- {}", p.getBlockId(), worldPos.toShortString(),
                         p.getBlockEntityNbt());
             }
         }
@@ -391,8 +347,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             return false;
         }
         if (RoomTombGenerator.HEAD.equals(p.getProperties().get(RoomTombGenerator.PART))) {
-            //   grep "D2-TOMB" run/logs/dungeons2.log
-            Dungeons.LOGGER.info("[D2-TOMB] {} at {} facing {} (floor {}, {})", p.getBlockId(),
+            Dungeons.LOGGER.debug("[D2-TOMB] {} at {} facing {} (floor {}, {})", p.getBlockId(),
                     worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING),
                     floorIndex, TombContents.Drawn.describe(data.getData()));
         }
@@ -408,9 +363,8 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
         if (!WeaponRackFiller.isRackPlan(p.getBlockEntityNbt())) {
             return false;
         }
-        //   grep "D2-RACK" run/logs/dungeons2.log
         Map<String, String> plan = p.getBlockEntityNbt().getData();
-        Dungeons.LOGGER.info("[D2-RACK] weapon rack at {} facing {} (floor {}) slot0={} slot1={}",
+        Dungeons.LOGGER.debug("[D2-RACK] weapon rack at {} facing {} (floor {}) slot0={} slot1={}",
                 worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING), floorIndex,
                 plan.get(RoomFurnitureGenerator.RACK_TABLE + 0),
                 plan.get(RoomFurnitureGenerator.RACK_TABLE + 1));
@@ -418,7 +372,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
     }
 
     /**
-     * The Mining Chest's probe (#7), in WORLD coordinates, for the tomb probe's reason: the generator
+     * The Mining Chest's probe, in WORLD coordinates, for the tomb probe's reason: the generator
      * plans in floor-local coordinates, so only this loop can say where the chest landed. True when
      * {@code p} is the Mining Chest.
      */
@@ -426,8 +380,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
         if (!RoomMiningChestGenerator.CHEST_ENTITY.equals(p.getBlockEntityNbt().getType())) {
             return false;
         }
-        //   grep "D2-MINING" run/logs/dungeons2.log
-        Dungeons.LOGGER.info("[D2-MINING] chest at {} facing {} (floor {}) holding {}",
+        Dungeons.LOGGER.debug("[D2-MINING] chest at {} facing {} (floor {}) holding {}",
                 worldPos.toShortString(), p.getProperties().get(RoomTombGenerator.FACING), floorIndex,
                 p.getBlockEntityNbt().getNbtValues().get(RoomMiningChestGenerator.ITEMS));
         return true;
@@ -480,7 +433,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
      * they read {@code straight} &mdash; which is what the whole piece read before
      * {@code settleJoinShapes} existed at all.</p>
      *
-     * <p>This replaces the blanket per-piece opt-out for rooms (#80). {@code DungeonCorridorPiece}
+     * <p>This replaces the blanket per-piece opt-out for rooms. {@code DungeonCorridorPiece}
      * still opts out entirely, and for a second reason that this does not address: corner rules
      * assume a rectangle with four runs, and a corridor wall winds.</p>
      */
@@ -655,7 +608,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
                 tag = blockEntity.saveWithFullMetadata();
             } catch (Exception incompleteEntity) {
                 Dungeons.LOGGER.debug("{} could not be saved before its data was applied at {} ({});"
-                        + " starting from an empty tag", blockEntity.getClass().getSimpleName(), pos,
+                        + " starting from an empty tag", blockEntity.getClass().getSimpleName(), pos.toShortString(),
                         incompleteEntity.toString());
                 tag = new CompoundTag();
             }
@@ -700,7 +653,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             scheduleLootRoll(level, pos, data);
         } catch (Exception e) {
             Dungeons.LOGGER.warn("Failed to apply block-entity data {} at {}: {}",
-                    data, pos, e.getMessage());
+                    data, pos.toShortString(), e.getMessage());
         }
     }
 

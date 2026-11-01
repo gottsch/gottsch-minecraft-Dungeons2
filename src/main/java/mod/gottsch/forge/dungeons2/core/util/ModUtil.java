@@ -91,11 +91,4 @@ public class ModUtil {
 		}
 	}
 
-//	public BlockState copy(BlockState state1, BlockState state2) {
-//        for (Property<?> property : state2.getProperties()) {
-//			if (state1.hasProperty(property)) {
-//				state1 = state1.setValue(property, state2.getValue(property));
-//			}
-//        }
-//	}
 }

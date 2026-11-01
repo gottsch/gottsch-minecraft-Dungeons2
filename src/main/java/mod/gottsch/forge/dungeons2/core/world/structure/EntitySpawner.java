@@ -116,7 +116,7 @@ public final class EntitySpawner {
 
         String lootTable = placement.getLootTable();
 
-        // A MIMIC takes its table by hand, and has to (#99). The round trip below writes the
+        // A MIMIC takes its table by hand, and has to. The round trip below writes the
         // vanilla "LootTable" key, which is the CONTAINER convention -- a Mob reads
         // "DeathLootTable" instead, so a mimic loaded from that tag would arrive with the chest's
         // reward silently dropped. gmm's Mimic exposes setLootTable for precisely this swap, and

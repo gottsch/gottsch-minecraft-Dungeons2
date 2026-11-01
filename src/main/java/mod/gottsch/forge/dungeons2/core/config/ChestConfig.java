@@ -49,7 +49,7 @@ import java.util.Optional;
  * is what stops a player re-rolling the same chest by reloading a save.</p>
  *
  * <h2>What is deliberately NOT here yet</h2>
- * <p>No Treasure2 opt-in. That is a <em>per marker</em> decision on the authored route (#48 step 3),
+ * <p>No Treasure2 opt-in. That is a <em>per marker</em> decision on the authored route,
  * because the case for it is the boss chest &mdash; a specific chest in a specific room, not a
  * property of every chest a scheme happens to roll. A procedural slot has no way to say "this one".</p>
  *

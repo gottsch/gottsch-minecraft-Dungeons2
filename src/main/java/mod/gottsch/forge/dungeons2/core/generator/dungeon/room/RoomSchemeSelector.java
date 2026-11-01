@@ -71,7 +71,7 @@ public final class RoomSchemeSelector {
      * <p>{@link #NONE}: secret schemes are dropped before the roll, like any failed gate &mdash;
      * every room but a hideable dead end. {@link #ALLOWED}: they compete by weight with everything
      * else that fits. {@link #FORCED}: ONLY they compete, which is how the dungeon's counter-item
-     * (#97) gets a secret room to sit in; if none fits, the ordinary set is rolled instead, and the
+     * gets a secret room to sit in; if none fits, the ordinary set is rolled instead, and the
      * planner that forced it has already checked one does.</p>
      */
     public enum SecretEligibility { NONE, ALLOWED, FORCED }

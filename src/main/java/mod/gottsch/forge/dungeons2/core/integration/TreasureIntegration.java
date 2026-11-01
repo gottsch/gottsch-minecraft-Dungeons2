@@ -29,7 +29,7 @@ import net.minecraftforge.fml.ModList;
 import java.util.Optional;
 
 /**
- * Every Treasure2 touchpoint in Dungeons2, in one file. Backlog #48 step 4.
+ * Every Treasure2 touchpoint in Dungeons2, in one file.
  *
  * <h2>Treasure2 is optional, and that dictates the shape of this class</h2>
  * <p>Dungeons2 compiles against Treasure2 {@code compileOnly} and declares it {@code mandatory=false}
@@ -136,7 +136,7 @@ public final class TreasureIntegration {
             // Treasure2-branded chest holding Dungeons2's idea of loot, which is the imitation this
             // whole route exists to avoid -- the point of asking Treasure2 is to get ITS chest, with
             // its chest block, its locks and its table. D2's table goes in as the SUPPLEMENTAL one
-            // (Mark, 2026-10-05): rolled only into the slots Treasure2's loot leaves empty, so it can
+            //: rolled only into the slots Treasure2's loot leaves empty, so it can
             // add to the chest but never displace what Treasure2 put there. Needs Treasure2 4.1.0.
             return Optional.ofNullable(mod.gottsch.forge.treasure2.api.TreasureApi.generateChest(
                     level, pos, random, facing,

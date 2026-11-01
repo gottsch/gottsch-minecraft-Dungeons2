@@ -345,7 +345,7 @@ public final class DungeonMaps {
         // a ladder first: it has a collision box, so it would otherwise read as wall. One that rises
         // past head height is the way up even when its foot is at or below the floor: the sewer
         // transition's ladder starts down in its pool, beside the ledge it is climbed from, and was
-        // drawn red (Mark, 2026-10-28). A ladder down has at most a top rung above the floor.
+        // drawn red. A ladder down has at most a top rung above the floor.
         if (climbable(level, x, y + 2, z)) {
             return STAIRS_UP;
         }
@@ -367,7 +367,7 @@ public final class DungeonMaps {
         }
         // a drop whose top is water or lava is a pool, not a pit: the sewer transition's pool lies a
         // block below its ledges, and drawn black it was neither readable nor something the ladder's
-        // halo could spread onto (Mark, 2026-10-28)
+        // halo could spread onto
         for (int down = 1; down >= -1; down--) {
             FluidState fluid = level.getFluidState(new BlockPos(x, y + down, z));
             // the tag for modded fluids, the vanilla fluid where no tags are bound (a unit test)
@@ -414,7 +414,7 @@ public final class DungeonMaps {
     /**
      * Spreads a way off the floor onto the floor and water pixels round its own, and nothing else.
      * Water counts: the sewer transition's ladder stands in its pool, and with floor alone only the
-     * ledge beside it took the colour (Mark, 2026-10-28).
+     * ledge beside it took the colour.
      */
     static void halo(MapItemSavedData data, int x, int z, byte colour) {
         int size = 1 << data.scale;

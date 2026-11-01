@@ -34,7 +34,7 @@ import net.minecraft.world.level.Level;
 /**
  * A Dungeon Map, an Empty Map and a coal make a Blank Dungeon Map, and the Dungeon Map comes back.
  *
- * <p>The only way to craft one (Mark, 2026-10-26): a map for every floor from an empty map and a
+ * <p>The only way to craft one: a map for every floor from an empty map and a
  * coal made the maps in chests, barrels and pots pointless. Copied from one you have found, the
  * first is still a find, and the rest - one for each floor below - are what it buys. Any Dungeon
  * Map serves, of any floor, drawn or not.</p>

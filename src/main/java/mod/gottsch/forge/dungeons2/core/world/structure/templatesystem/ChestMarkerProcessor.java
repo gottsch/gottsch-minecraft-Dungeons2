@@ -148,7 +148,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * would force an author to invent a table nothing draws from. Absent means an empty list, which
      * is the "every marker speaks for itself" configuration -- not a silent fallback to something.
      *
-     * <p><strong>The field was {@code loot_table}, a single id, until 2026-08-30</strong> (#61).
+     * <p><strong>The field was {@code loot_table}, a single id, until 2026-08-30</strong>.
      * Renamed rather than kept alongside the list: nothing shipped set it -- the one file that did,
      * {@code classic_chests.json}, was referenced by no pool and has been retired -- so there was no
      * compatibility to preserve, and two ways to say the same thing is what the closed schema exists
@@ -243,7 +243,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
                     TreasureIntegration.generateChest(level, current.pos(), facing, random,
                             rarity, ResourceLocation.tryParse(table));
             if (treasure.isPresent()) {
-                Dungeons.LOGGER.info("[D2-CHEST] {} -> treasure2 chest at {} (facing {}, rarity {},"
+                Dungeons.LOGGER.debug("[D2-CHEST] {} -> treasure2 chest at {} (facing {}, rarity {},"
                                 + " topped up from {})", markerBlock, current.pos().toShortString(),
                         facing, rarity == null ? "drawn by treasure2" : rarity, table);
                 return treasure.get();
@@ -264,16 +264,12 @@ public class ChestMarkerProcessor extends StructureProcessor {
         // the seed source so one template placed twice in a dungeon does not hold the same items.
         tag.putLong(LOOT_TABLE_SEED_TAG, lootSeed(current.pos()));
 
-        // INFO, not debug, and for the reason the spawner probe was promoted: the mod's [logging]
-        // level ships at "info", so a debug probe is off for every user AND for whoever is trying to
-        // verify the feature -- which is how this line came to be missing from a log that had 214
-        // [D2-SPAWNER] lines in it. One line per conversion, at the position it happened.
         // Facing and rotation are logged because the piece's rotation is NOT the chest's facing, and
         // only the second one is the thing worth checking. The piece rotation was inferable from the
         // vector between two markers at known template cells; the facing was inferable from nothing
         // at all, so verifying it meant walking to the chest. Printing both makes the transform
         // readable in one line: authored facing, rotation applied, facing that came out.
-        Dungeons.LOGGER.info("[D2-CHEST] {} -> {} at {} (table {}, marker facing {} after rot {} -> chest facing {})",
+        Dungeons.LOGGER.debug("[D2-CHEST] {} -> {} at {} (table {}, marker facing {} after rot {} -> chest facing {})",
                 markerBlock, chestBlock, current.pos().toShortString(), table,
                 // NOT the authored facing: StructureTemplate rotated it before we were handed it.
                 current.state().hasProperty(ChestMarkerBlock.FACING)

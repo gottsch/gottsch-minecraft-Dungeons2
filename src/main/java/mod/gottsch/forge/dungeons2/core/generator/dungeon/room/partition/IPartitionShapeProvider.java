@@ -20,7 +20,7 @@ package mod.gottsch.forge.dungeons2.core.generator.dungeon.room.partition;
 import net.minecraft.util.RandomSource;
 
 /**
- * A partition provider: where the interior wall runs, and where the way through it is. Backlog #74.
+ * A partition provider: where the interior wall runs, and where the way through it is.
  *
  * <p>The same split the pit and pillar slots make. <strong>The shape says WHERE; the entry says HOW
  * TALL and IN WHAT.</strong> Height and material are identical for every cell of a partition, so

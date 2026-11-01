@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Decides what one dungeon's Mining Chest holds and which room it stands in &mdash; backlog #7.
+ * Decides what one dungeon's Mining Chest holds and which room it stands in.
  *
  * <h2>Why this runs at emit time and not in the room</h2>
  * <p>The haul is a property of the <em>whole dungeon</em>: it is what the whole excavation destroyed.

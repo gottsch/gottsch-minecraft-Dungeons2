@@ -23,7 +23,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.core.data.CorridorDescent;
 
 /**
- * The datapack form of a corridor style's {@code descent} block (#108). The record itself is a
+ * The datapack form of a corridor style's {@code descent} block. The record itself is a
  * pure POJO in {@code core.data} so the planner can hold it; its codec lives on this side of the
  * fence.
  *

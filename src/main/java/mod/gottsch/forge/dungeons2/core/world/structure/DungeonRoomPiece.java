@@ -61,11 +61,11 @@ public class DungeonRoomPiece extends DungeonPiece {
 
     private RoomData room;
     /**
-     * The Mining Chest this room carries (#7), or null for every room but one in the dungeon. See
+     * The Mining Chest this room carries, or null for every room but one in the dungeon. See
      * {@link #withMiningHaul}.
      */
     private MiningHaul miningHaul;
-    /** The counter-item chest's loot table (#97), or null for every room but at most one. */
+    /** The counter-item chest's loot table, or null for every room but at most one. */
     private String counterLootTable;
     /** The dungeon's boss tier, on rooms above the boss only; null elsewhere. */
     private String bossTier;
@@ -74,7 +74,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     private boolean floorFiled;
     /** Where this room's hidden door would go, when it can be a secret room; else null. */
     private SecretDoorway secretDoorway;
-    /** The counter-item on this room's pedestal (#97), which forces it secret; else null. */
+    /** The counter-item on this room's pedestal, which forces it secret; else null. */
     private String counterItem;
 
     public DungeonRoomPiece(RoomData room, String motifValue, int floorY, int floorIndex,
@@ -89,10 +89,10 @@ public class DungeonRoomPiece extends DungeonPiece {
     }
 
     /**
-     * @param sinkOffset the floor's budget BELOW its walking plane (#29), which the box has to
+     * @param sinkOffset the floor's budget BELOW its walking plane, which the box has to
      *                   cover whether or not this room's scheme digs a pit into it &mdash; see
      *                   {@link #computeBox}
-     * @param ceilingBudget the floor's budget ABOVE its walking plane (#68), covered on exactly the
+     * @param ceilingBudget the floor's budget ABOVE its walking plane, covered on exactly the
      *                      same terms: a rising vault is rolled at render time, so the box is sized
      *                      to the budget rather than to the vault
      */
@@ -138,7 +138,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     }
 
     /**
-     * Puts the dungeon's counter-item (#97) on this room's pedestal and forces the room secret. Only
+     * Puts the dungeon's counter-item on this room's pedestal and forces the room secret. Only
      * ever set alongside {@link #withSecretDoorway}.
      */
     public DungeonRoomPiece withCounterItem(String counterItem) {
@@ -155,7 +155,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     }
 
     /**
-     * Hands this room the dungeon's Mining Chest (#7).
+     * Hands this room the dungeon's Mining Chest.
      *
      * <p>Set by {@code DungeonPieceEmitter} on exactly one piece per dungeon, from the plan
      * {@code MiningChestPlanner} made against the whole layout. A setter rather than a constructor
@@ -169,7 +169,7 @@ public class DungeonRoomPiece extends DungeonPiece {
     }
 
     /**
-     * Hands this room the dungeon's counter-item chest (#97), from {@code CounterItemPlanner}'s
+     * Hands this room the dungeon's counter-item chest, from {@code CounterItemPlanner}'s
      * plan &mdash; the same one-piece-singled-out shape as {@link #withMiningHaul}.
      */
     public DungeonRoomPiece withCounterLootTable(String counterLootTable) {
@@ -314,22 +314,21 @@ public class DungeonRoomPiece extends DungeonPiece {
     @Override
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
-        logChunkTouch(level, chunkPos, box);
         fileFloor(level);
-        // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
+        // The motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
         // so this is a no-op for everything shipped today. Build time, not plan time -- both
         // inputs are in hand right here and nothing needs serialising.
         MotifConfig motif = MotifConfigHelper.get(level.registryAccess(), motifValue);
-        // #45 step 4: asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
+        // Asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
         // projection has no band left to name. Same reason DungeonStructure asks it of the motif.
         Optional<String> stratum = motif.stratumNameFor(floorIndex);
         MotifConfig motifConfig = motif.forFloor(floorIndex);
-        // #3: how far this floor was sunk below its walking plane, which is the hard cap on any
+        // How far this floor was sunk below its walking plane, which is the hard cap on any
         // pit a scheme may dig. Read here rather than serialised -- it is a datapack value and a
         // reload should move it.
         var generationConfig = DungeonGenerationConfigHelper.get(level.registryAccess());
         int sinkOffset = generationConfig.sinkOffset();
-        // #68: and how much of this floor is left ABOVE the room, which is the cap on a rising
+        // And how much of this floor is left ABOVE the room, which is the cap on a rising
         // vault. Same reasoning as the line above -- a datapack value, read here rather than
         // serialised, so a reload moves it.
         int ceilingBudget = generationConfig.ceilingBudget();
@@ -365,14 +364,14 @@ public class DungeonRoomPiece extends DungeonPiece {
         return renderRoom(motifConfig, 0);
     }
 
-    /** As above, on a floor sunk {@code sinkOffset} below its walking plane (#3/#29). */
+    /** As above, on a floor sunk {@code sinkOffset} below its walking plane. */
     public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset) {
         return renderRoom(motifConfig, sinkOffset, 0);
     }
 
     /**
      * As above, on a floor that also owns {@code ceilingBudget} rows above its walking plane
-     * (#68) &mdash; the two halves of the same floor's budget, and the two things a scheme may
+     * &mdash; the two halves of the same floor's budget, and the two things a scheme may
      * spend: a pit downward, a rising vault upward.
      */
     public RoomPlacements renderRoom(MotifConfig motifConfig, int sinkOffset, int ceilingBudget) {

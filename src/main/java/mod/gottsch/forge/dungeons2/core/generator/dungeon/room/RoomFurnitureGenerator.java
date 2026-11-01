@@ -62,7 +62,7 @@ public final class RoomFurnitureGenerator {
 
     /** Vanilla's horizontal facing property; see {@link PropConfig.PropVariant} on {@code oriented}. */
     static final String FACING = "facing";
-    /** The one prop a mimic can pose as, and what it becomes (#99). */
+    /** The one prop a mimic can pose as, and what it becomes. */
     /** The two-block shape {@code tall} writes: a door's {@code half}. */
     static final String HALF = "half";
     static final String LOWER = "lower";
@@ -123,14 +123,14 @@ public final class RoomFurnitureGenerator {
             // model gmm ships. A crate or an anvil that stood up would need art that does not
             // exist, and silently turning one into a barrel would be worse than not swapping.
             //
-            // No loot table: a barrel is a prop and props carry no loot promise (#73), so this
+            // No loot table: a barrel is a prop and props carry no loot promise, so this
             // mimic drops whatever its type's own table says. The chest's swap is the one that has
             // a reward to preserve.
             if (BARREL.equals(variant.block()) && config.mimicChance() > 0.0D
                     && random.nextDouble() < config.mimicChance()) {
                 entities.add(new EntityPlacement(cell.getX(), floorY + 1, cell.getY(),
                         BARREL_MIMIC_ENTITY));
-                mod.gottsch.forge.dungeons2.Dungeons.LOGGER.info("[D2-PROP] PROC MIMIC at {}",
+                mod.gottsch.forge.dungeons2.Dungeons.LOGGER.debug("[D2-PROP] PROC MIMIC at {}",
                         new net.minecraft.core.BlockPos(cell.getX(), floorY + 1, cell.getY())
                                 .toShortString());
                 used.add(cell);

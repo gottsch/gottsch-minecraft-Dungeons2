@@ -99,7 +99,7 @@ public class DungeonStackPlanner {
 
     // Tunable later; for Phase 1 these are reasonable defaults.
     // Delegated, not copied. These and the datapack's defaults are the same number, and a second
-    // literal here is exactly the drift that made the old MIN_TRANSITION_HEIGHT wrong (#52).
+    // literal here is exactly the drift that made the old MIN_TRANSITION_HEIGHT wrong.
     private static final int DEFAULT_FLOOR_HEIGHT = DungeonGenerationConfig.DEFAULT_FLOOR_HEIGHT;
     private static final int DEFAULT_GAP_BETWEEN_FLOORS =
             DungeonGenerationConfig.DEFAULT_GAP_BETWEEN_FLOORS;
@@ -146,7 +146,7 @@ public class DungeonStackPlanner {
      */
     private List<RoomHeightBand> roomHeightBands = DungeonGenerationConfig.DEFAULT_ROOM_HEIGHT_BANDS;
     /**
-     * Footprint reserved for the bottom floor's terminal (boss) room &mdash; backlog #46. 7x7 is the
+     * Footprint reserved for the bottom floor's terminal (boss) room. 7x7 is the
      * synthetic placeholder the mod has always built there; an authored boss template will hand over
      * its own measured size instead.
      */
@@ -247,7 +247,7 @@ public class DungeonStackPlanner {
 
     /**
      * How far the walking plane sits up into its own floor slab &mdash; the depth a pit has to sink
-     * into (#3). See {@code DungeonGenerationConfig#DEFAULT_SINK_OFFSET}; 0 makes it arithmetically
+     * into. See {@code DungeonGenerationConfig#DEFAULT_SINK_OFFSET}; 0 makes it arithmetically
      * absent.
      */
     public DungeonStackPlanner withSinkOffset(int sinkOffset) {
@@ -328,7 +328,7 @@ public class DungeonStackPlanner {
      * before this existed.</p>
      */
     /**
-     * Supplies the boss-room assembler (#46). Absent &mdash; no {@code end_rooms} pool authored, or
+     * Supplies the boss-room assembler. Absent &mdash; no {@code end_rooms} pool authored, or
      * no Forge shell to assemble in &mdash; and the bottom floor's terminal room is built
      * procedurally exactly as it is today. Degrade toward generating, the convention every
      * missing-content path here follows.
@@ -426,7 +426,7 @@ public class DungeonStackPlanner {
     }
 
     /**
-     * Override the room-height taper (#51). Bands are matched in order against a room's long side;
+     * Override the room-height taper. Bands are matched in order against a room's long side;
      * see {@link RoomHeightBand}. The caller hands over an already-validated table &mdash;
      * {@code RoomHeightBand.LIST_CODEC} is where a mis-ordered or non-total one becomes a load
      * error &mdash; so there is deliberately no repair here that could turn a bad datapack into a
@@ -637,7 +637,7 @@ public class DungeonStackPlanner {
     private Map<String, TemplateLimit> templateLimits = Map.of();
 
     /**
-     * Assembles the authored boss room for the bottom floor's terminal slot &mdash; backlog #46.
+     * Assembles the authored boss room for the bottom floor's terminal slot.
      * {@link BossRoomAssembler}: the interior-room path's contract plus the dungeon's
      * {@link DungeonSize}, drawing from {@code end_rooms/<motif>/<size>/normal}. See that interface
      * for why the size had to become a parameter rather than stay implicit.
@@ -948,7 +948,7 @@ public class DungeonStackPlanner {
                 return Optional.empty();
             }
         }
-        // Backlog #50 -- drop the floors that would not fit above the world's floor.
+        // Drop the floors that would not fit above the world's floor.
         //
         // WHY IT IS HERE AND NOT AT THE ROLL. floorCount was rolled ~80 lines up, before floor 0's Y
         // was known: on the assembled-entrance path it comes from the entrance's own bottom door
@@ -975,7 +975,7 @@ public class DungeonStackPlanner {
         // because the alternative is a dungeon buried in bedrock, and because #29's proposed pitch
         // moves every threshold in this method upward.
         if (floorFloors[0] < safeBottom) {
-            Dungeons.LOGGER.info(
+            Dungeons.LOGGER.debug(
                     "[D2-DEPTH] declining to place: floor 0 would sit at Y={}, below the world"
                             + " floor {} plus {} clear of bedrock (surfaceY {})",
                     floorFloors[0], minBuildY, BEDROCK_MARGIN, surfaceY);
@@ -988,7 +988,7 @@ public class DungeonStackPlanner {
             // would be invisible to the one person who could act on it. This is rare by
             // construction -- it needs a low surface -- and one line when it happens is the
             // difference between "that dungeon is short" and knowing why.
-            Dungeons.LOGGER.info(
+            Dungeons.LOGGER.debug(
                     "[D2-DEPTH] floor count {} -> {} at floor0Y={} (pitch {}, world floor {},"
                             + " keeping {} clear of bedrock): the full stack would reach {}",
                     floorCount, Math.max(1, floorsThatFit), floorFloors[0], pitch(), minBuildY,
@@ -1163,7 +1163,7 @@ public class DungeonStackPlanner {
                         floorCeilings[0], entranceLocalFootprint, rollRotation(random));
         layout.setEntrance(entrance);
 
-        // Backlog #44: how many of each authored template the whole dungeon has committed. Per-floor
+        // How many of each authored template the whole dungeon has committed. Per-floor
         // counts live inside the loop below, so they reset with each floor.
         Map<String, Integer> templatesInDungeon = new HashMap<>();
 
@@ -1179,7 +1179,7 @@ public class DungeonStackPlanner {
             // planner doesn't have to auto-generate one (which often fails in small footprints
             // due to its hardcoded 5-attempt cap).
             Rectangle2D endFootprint;
-            // #46: set only when an authored boss template actually assembled AND was adopted. The
+            // Set only when an authored boss template actually assembled AND was adopted. The
             // role follows this rather than the floor index, which is what keeps #38's invariant
             // intact -- an attempted-but-failed boss room must leave a slot this mod still builds.
             BossSlot bossSlot = null;
@@ -1194,7 +1194,7 @@ public class DungeonStackPlanner {
                     layout.setBoss(boss);
                 } else {
                     // Bottom-floor terminal room. 7x7 synthetic by default; an authored boss
-                    // template hands over its own measured footprint instead (#46).
+                    // template hands over its own measured footprint instead.
                     endFootprint = placeAvoidingStart(footprint, terminalRoomWidth,
                             terminalRoomDepth, startFootprint, random);
                     if (endFootprint == null) {
@@ -1275,7 +1275,7 @@ public class DungeonStackPlanner {
                     if (probe.isEmpty()) {
                         continue;
                     }
-                    // #44: reject a capped template HERE, on the probe, rather than after
+                    // Reject a capped template HERE, on the probe, rather than after
                     // committing. The probe and the commit use the same assemblySeed and therefore
                     // draw the same prefab, so the identity is already known -- and rejecting now
                     // avoids staging a room in the Forge shell that would only be discarded, which
@@ -1489,7 +1489,7 @@ public class DungeonStackPlanner {
      * {@code mixSeed(seed, floorIndex)} unsalted.</p>
      */
     /**
-     * Whether one more copy of this template may be placed &mdash; backlog #44.
+     * Whether one more copy of this template may be placed.
      *
      * <p><strong>An unidentifiable template is unlimited, not blocked.</strong>
      * {@code rootElementId} comes back empty for an empty pool element, a feature element, or a
@@ -1545,7 +1545,7 @@ public class DungeonStackPlanner {
     private static final long CORRIDOR_DESCENT_SALT = 0xDE5CE27C0DD0L;
 
     /**
-     * #108: whether this corridor sinks into the floor's {@code sinkOffset} band, and if so every
+     * Whether this corridor sinks into the floor's {@code sinkOffset} band, and if so every
      * cell's depth.
      *
      * <p>Decided HERE, at plan time, for two reasons. The depth reaches the piece's bounding box,
@@ -1582,14 +1582,14 @@ public class DungeonStackPlanner {
                 }
             }
         }
-        // Junctions, turns and widened stretches stay level (Mark, 2026-09-28); only cells at most
-        // DESCENT_MAX_WIDTH across may sink (Mark, 2026-09-30).
+        // Junctions, turns and widened stretches stay level; only cells at most
+        // DESCENT_MAX_WIDTH across may sink.
         cd.setCellDepths(CorridorDescentField.compute(cd.getCells(), anchors, depth,
                 descent.run(), descent.landing(), DESCENT_MAX_WIDTH));
     }
 
     /**
-     * The widest a corridor may be, across, where it sinks (#108). A plain run comes out of the
+     * The widest a corridor may be, across, where it sinks. A plain run comes out of the
      * maze's dilation 2 cells wide, not {@link #corridorCells}: with {@code corridor_width} 3 the
      * cross-sections measure 1, 2 and 3 in roughly equal numbers, and the 3s are the stretches
      * dilation widened. The first cut passed {@code corridorCells} here and so let every 3-wide
@@ -1983,7 +1983,7 @@ public class DungeonStackPlanner {
             RoomRole role = room2D.isStart() ? RoomRole.START
                     : (room2D.isEnd()
                         ? (bottomFloor
-                            // #46: BOSS only when the authored template assembled AND was adopted.
+                            // BOSS only when the authored template assembled AND was adopted.
                             // TERMINAL otherwise -- see RoomRole, and #38 for what happens if a
                             // slot is marked covered when nothing covers it.
                             ? (bossAdopted ? RoomRole.BOSS : RoomRole.TERMINAL)
@@ -2137,7 +2137,7 @@ public class DungeonStackPlanner {
     }
 
     /**
-     * Rolls a room's interior height and tapers it by footprint &mdash; backlog #51.
+     * Rolls a room's interior height and tapers it by footprint.
      *
      * <p>This used to be {@code min(rolled, max(width, depth))}, a cap that <em>rose</em> with the
      * footprint, so the only rooms that could be tall were the big ones. That is the wrong way

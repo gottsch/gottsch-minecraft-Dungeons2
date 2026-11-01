@@ -37,7 +37,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 
 /**
- * Places a room scheme's tombs (#104): sealed {@code dungeonblocks} sarcophagi, each holding a loot
+ * Places a room scheme's tombs: sealed {@code dungeonblocks} sarcophagi, each holding a loot
  * table and a guardian for its first opening to choose between.
  *
  * <h2>Where a tomb stands</h2>

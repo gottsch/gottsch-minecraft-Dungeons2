@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  * {@code Products.P16}. {@code RoomScheme} has hit that wall three times now. The first two were
  * paid off by folding fields that were <em>already</em> a thing with a name &mdash;
  * {@link SizeGate} (the four size bounds) and {@link FloorRange} (the depth bounds). The
- * {@code props} slot (#73) took it back to exactly 16, and the {@code partition} slot (#74) would
+ * {@code props} slot took it back to exactly 16, and the {@code partition} slot would
  * not have compiled at all.</p>
  *
  * <p>So this fold is the structural one rather than another two-field rescue: <strong>ten of those
@@ -95,7 +95,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
                 partition, tombs, SlotOptions.empty());
     }
 
-    /** The shape before the {@code tombs} slot (#104): a room with nobody buried in it. */
+    /** The shape before the {@code tombs} slot: a room with nobody buried in it. */
     public RoomSlots(SlotOptions<FloorPatternEntry> floor, SlotOptions<WallPatternEntry> wall,
                      SlotOptions<CeilingPatternEntry> ceiling, SlotOptions<PotConfig> pots,
                      SlotOptions<PillarPatternEntry> pillars,
@@ -227,11 +227,11 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
 
     /**
      * {@link #resolve(int, int, int, RandomSource)}, and then the one rule the authored weights
-     * cannot express on their own: <strong>a big room may not be bare</strong> (Mark, 2026-10-30).
+     * cannot express on their own: <strong>a big room may not be bare</strong>.
      *
      * <h2>Why a rule and not more weight</h2>
      * <p>A bare room is a fine result in a small room and a bad one in a big room. The height taper
-     * (#51) makes every big procedural room LOW &mdash; 5 to 7 high once its long side passes 15
+     * makes every big procedural room LOW &mdash; 5 to 7 high once its long side passes 15
      * &mdash; and a 17x17 room 5 high with a flat ceiling and nothing standing in it is a lot of
      * floor to cross for nothing; the player heads straight for the nearest door. Each slot's
      * {@code none} weight is chosen for the rooms the scheme mostly dresses, which are small, and
@@ -246,7 +246,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
      * patterned floor under a flat ceiling is still an empty box, and so is one with a chandelier
      * in it. Nor does a HIDDEN pit ({@code PitShapePattern#hidden}): a false floor is the room's
      * own floor until it gives way, and the first room this rule shipped against was a 17x17 that
-     * looked bare over one (Mark, 2026-10-30). A hidden pit is never the one forced, either. And
+     * looked bare over one. A hidden pit is never the one forced, either. And
      * only a ceiling that changes the room's SHAPE counts, or is forced
      * ({@link CeilingPatternEntry#shapesCeiling}): a vault, an oculus, joists, a hanging ring. A
      * flush border or centre is paint, and a big chamber under a weathered ring of large bricks

@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Backlog #56: the authoring marker a template places where a pot might stand.
+ * The authoring marker a template places where a pot might stand.
  *
  * <h2>What it becomes</h2>
  * <p>Nothing, as a block. {@code PotMarkerProcessor} replaces the cell with air and spawns pot

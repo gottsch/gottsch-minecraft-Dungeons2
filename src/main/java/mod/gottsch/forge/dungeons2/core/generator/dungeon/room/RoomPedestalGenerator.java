@@ -38,7 +38,7 @@ import java.util.Set;
  * <p>Two ways to fill it, and the block entity reads either:</p>
  * <ul>
  *   <li><strong>{@code Item}</strong>, set outright, when this room holds the dungeon's counter-item
- *       (#97). The counter tables are CHEST tables &mdash; the item plus a filler roll &mdash; and a
+ *. The counter tables are CHEST tables &mdash; the item plus a filler roll &mdash; and a
  *       pedestal keeps only the first stack a table rolls, which for a chest table is whichever the
  *       shuffle put first. So the item goes on by id and never through a table.</li>
  *   <li><strong>{@code LootTable}</strong> + a non-zero {@code LootTableSeed}, from the scheme's

@@ -56,7 +56,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
                 computeBox(corridor, floorY, anchorX, anchorZ));
         this.corridor = corridor;
         if (corridor.isSunk()) {
-            // #108: where to /tp to see it -- the deepest cell, in world coords, standing height.
+            // Where to /tp to see it -- the deepest cell, in world coords, standing height.
             int[] depths = corridor.getCellDepths();
             int deepest = 0;
             for (int i = 1; i < depths.length; i++) {
@@ -64,7 +64,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
             }
             Coords2D low = corridor.getCells().get(deepest);
             BlockPos pos = new BlockPos(anchorX + low.getX(), floorY - depths[deepest] + 1, anchorZ + low.getY());
-            Dungeons.LOGGER.info("[D2-DESCENT] floor {} corridor {} ({}) sinks {} at {}", floorIndex,
+            Dungeons.LOGGER.debug("[D2-DESCENT] floor {} corridor {} ({}) sinks {} at {}", floorIndex,
                     corridor.getId(), corridor.getStyleName(), corridor.maxDepth(), pos.toShortString());
         }
         if (corridor.hasTrap()) {
@@ -72,7 +72,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
             Coords2D cell = corridor.getTrapCells().get(0);
             BlockPos pos = new BlockPos(anchorX + cell.getX(), floorY - corridor.depthAt(cell) + 1,
                     anchorZ + cell.getY());
-            Dungeons.LOGGER.info("[D2-CORRIDOR-TRAP] floor {} corridor {} {} ({} cells, floor {} below) at {}",
+            Dungeons.LOGGER.debug("[D2-CORRIDOR-TRAP] floor {} corridor {} {} ({} cells, floor {} below) at {}",
                     floorIndex, corridor.getId(), corridor.getTrapKind(), corridor.getTrapCells().size(),
                     corridor.getTrapFloorDepth(), pos.toShortString());
         }
@@ -91,7 +91,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
      * outside the piece's box is silently clipped by vanilla &mdash; so both read the height off
      * the same {@link CorridorData#getWallHeight()}, which the planner resolved from the motif.</p>
      *
-     * <p>#108: the box reaches down by the corridor's OWN deepest cell, not the floor's whole
+     * <p>The box reaches down by the corridor's OWN deepest cell, not the floor's whole
      * {@code sinkOffset} as a room's does. A room cannot size to its pit because the pit is rolled
      * at render time; a corridor's depths are planned, so it can, and a corridor that does not sink
      * keeps exactly the box it always had.</p>
@@ -119,7 +119,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
     /**
      * One full-height box per cell column this corridor occupies (floor, walls, doors), in world
      * coordinates. Its bounding box is the rectangle around all of them, which for a winding corridor
-     * takes in rooms and rock it never touches; {@code MotifBiomes} paints these instead (#129).
+     * takes in rooms and rock it never touches; {@code MotifBiomes} paints these instead.
      */
     public List<BoundingBox> cellBoxes() {
         List<Coords2D> cells = allCells(corridor);
@@ -177,12 +177,11 @@ public class DungeonCorridorPiece extends DungeonPiece {
     @Override
     public void postProcess(WorldGenLevel level, StructureManager structureManager, ChunkGenerator generator,
                             RandomSource random, BoundingBox box, ChunkPos chunkPos, BlockPos pos) {
-        logChunkTouch(level, chunkPos, box);
-        // #45: the motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
+        // The motif AS BUILT ON THIS FLOOR. A motif with no strata hands back itself,
         // so this is a no-op for everything shipped today. Build time, not plan time -- both
         // inputs are in hand right here and nothing needs serialising.
         MotifConfig motif = MotifConfigHelper.get(level.registryAccess(), motifValue);
-        // #45 step 4: asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
+        // Asked of the UNPROJECTED motif -- forFloor clears the strata table, so a
         // projection has no band left to name. Same reason DungeonStructure asks it of the motif.
         Optional<String> stratum = motif.stratumNameFor(floorIndex);
         MotifConfig motifConfig = motif.forFloor(floorIndex);

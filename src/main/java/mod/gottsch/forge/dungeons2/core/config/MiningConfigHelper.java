@@ -23,7 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * Static lookup helper for the {@link DungeonGenerationConfigRegistries#MINING_CONFIG} datapack
- * registry (#7).
+ * registry.
  *
  * @author Mark Gottschling on Aug 31, 2026
  */

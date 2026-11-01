@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Builds a room's {@code partition}: an interior wall, and the way through it. Backlog #74.
+ * Builds a room's {@code partition}: an interior wall, and the way through it.
  *
  * <h2>Interior-local in, floor-local out</h2>
  * <p>The shape works in interior-local cells &mdash; {@code (0, 0)} is floor-local

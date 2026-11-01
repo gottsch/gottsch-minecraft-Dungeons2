@@ -53,7 +53,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Backlog #56: turns an authored {@code dungeons2:pot_marker} into pot entities.
+ * Turns an authored {@code dungeons2:pot_marker} into pot entities.
  *
  * <h2>Why this cannot work the way the chest marker does</h2>
  * <p>{@code ChestMarkerProcessor} does its whole job in {@code processBlock}, because a chest is a
@@ -265,7 +265,7 @@ public class PotMarkerProcessor extends StructureProcessor {
         }
         List<Spot> spots = arrange(pos, count, width, canStand, taken, random);
         if (spots.size() < count && owner) {
-            Dungeons.LOGGER.info("[D2-POT] marker at {} rolled {} pot(s) but only {} fit on the free"
+            Dungeons.LOGGER.debug("[D2-POT] marker at {} rolled {} pot(s) but only {} fit on the free"
                     + " floor around it -- the rest are dropped", pos.toShortString(), count,
                     spots.size());
         }

@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * What a sealed tomb holds (#104): the loot it may spill, the guardian it may raise, and the
+ * What a sealed tomb holds: the loot it may spill, the guardian it may raise, and the
  * weights of the one roll DungeonBlocks makes between them.
  *
  * <h2>Dungeons2 writes the odds, DungeonBlocks rolls them</h2>

@@ -60,7 +60,7 @@ import java.util.Objects;
  * <h2>The material has to contrast, and in {@code classic} that is hard</h2>
  * <p>A field is texture, not relief: at {@code projection} 0 it is only visible if its block reads
  * differently from the wall. {@code classic} draws wall, floor and ceiling all from
- * {@code minecraft:stone_bricks} (Backlog #15), so a panel in anything close to that block is
+ * {@code minecraft:stone_bricks}, so a panel in anything close to that block is
  * invisible. Either pick a genuinely different block or give it a projection.</p>
  *
  * @author Mark Gottschling on Aug 6, 2026

@@ -18,7 +18,7 @@
 package mod.gottsch.forge.dungeons2.core.client;
 
 /**
- * The darkness a dungeon floor's fog closes in with (#129 step 3). Pure arithmetic and state, with
+ * The darkness a dungeon floor's fog closes in with. Pure arithmetic and state, with
  * no client classes, so it is testable headless; {@link DungeonFogEvents} feeds it the camera's
  * biome each frame.
  *
@@ -31,12 +31,11 @@ package mod.gottsch.forge.dungeons2.core.client;
  *
  * <p><strong>The colour is the biome's own, scaled by the tier, never vanilla's.</strong> Vanilla
  * darkens a biome's fog colour by the sun angle and the weather, even underground, so a dungeon's haze
- * would turn black at night (Mark, 2026-10-31).
+ * would turn black at night.
  *
  * <p><strong>No held-light push, deliberately.</strong> One was built (a torch moved the wall out
  * ~22 blocks) and removed the same day: in an unlit corridor what you see is block light, not fog,
- * so moving the wall changed nothing visible. Held light is left to a dynamic-lights mod (Mark,
- * 2026-10-26).
+ * so moving the wall changed nothing visible. Held light is left to a dynamic-lights mod.
  *
  * @author Mark Gottschling on 10/26/2026
  */

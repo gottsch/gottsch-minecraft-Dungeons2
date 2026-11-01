@@ -123,7 +123,7 @@ public final class CellDraw {
 
     /**
      * The next distinct cell, drawn past {@link #count()} if need be &mdash; for a caller that
-     * REJECTS some cells and wants the count met from the rest. The tombs (#104) are that caller: a
+     * REJECTS some cells and wants the count met from the rest. The tombs are that caller: a
      * tomb is two cells long and keeps a cell clear of its neighbours, so whether a cell can take one
      * depends on the tombs already placed, which no up-front filter can know. The spawners' "consume
      * a draw, claim nothing" is the other answer to a rejected cell, and the right one where the

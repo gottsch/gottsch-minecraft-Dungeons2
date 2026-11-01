@@ -61,7 +61,7 @@ public class AnnihilationRayRenderer extends EntityRenderer<AnnihilationRay> {
     private static final float GLOW_R = 0.35F, GLOW_G = 1.0F, GLOW_B = 0.25F;
     private static final float CORE_R = 0.85F, CORE_G = 1.0F, CORE_B = 0.8F;
     /**
-     * #97: silver-white while a Mirror Shield is turning the beam back -- the beam is now the
+     * Silver-white while a Mirror Shield is turning the beam back -- the beam is now the
      * player's, and nothing else changes colour when the reflection happens.
      */
     private static final float MIRROR_GLOW_R = 0.75F, MIRROR_GLOW_G = 0.85F, MIRROR_GLOW_B = 1.0F;

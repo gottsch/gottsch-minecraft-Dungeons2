@@ -145,7 +145,7 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
 
     /**
      * Writes a layer {@code rise} cells ABOVE the ceiling plane, opening the column beneath it
-     * &mdash; a vault that gains headroom instead of spending it (#68).
+     * &mdash; a vault that gains headroom instead of spending it.
      *
      * <h2>Why this is not just {@link #emitProjected} with a negative depth</h2>
      * <p>Arithmetically it very nearly is: {@code emitProjected} writes at {@code ceilingY - depth},
@@ -189,7 +189,7 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
     }
 
     /**
-     * Walls in the hollows a set of raised layers carved (#68), so they read as masonry from every
+     * Walls in the hollows a set of raised layers carved, so they read as masonry from every
      * side rather than opening onto whatever is behind them.
      *
      * <p>{@link #emitRaised} clears the column under each raised block and writes the block, and
@@ -211,7 +211,7 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
      * steps are inset from every wall, so the plane it carves is surrounded by plane. A BARREL runs
      * end wall to end wall, so its steps carve the plane cell right against that unwritten ring,
      * and the vault had a one-course slot along each end wall into whatever was behind: stone at
-     * one end, a cavern at the other (Mark, 2026-10-30). So in the plane row, a neighbour OUTSIDE
+     * one end, a cavern at the other. So in the plane row, a neighbour OUTSIDE
      * the surface is backed like any other.</p>
      *
      * @param layers each raised layer's plan and the rise it was emitted at, in emission order

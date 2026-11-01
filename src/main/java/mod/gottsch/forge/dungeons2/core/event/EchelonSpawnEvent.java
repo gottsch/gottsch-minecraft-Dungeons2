@@ -67,7 +67,7 @@ import java.util.OptionalInt;
  *       entity tag in {@code SpawnData}: a spawn entry with anything besides {@code id} makes
  *       vanilla skip {@code finalizeSpawn}, and a skeleton would come out of the cage without its
  *       bow.</li>
- *   <li><strong>Tomb guardian</strong> (#104): DungeonBlocks raises it with
+ *   <li><strong>Tomb guardian</strong>: DungeonBlocks raises it with
  *       {@code MobSpawnType.TRIGGERED} and no spawner, from code Dungeons2 does not run, so there is
  *       no call to wrap in {@link #during}. What there IS is the tomb itself: the guardian is
  *       finalized standing on it or beside it, while it is open and before it is emptied, and
@@ -173,7 +173,7 @@ public class EchelonSpawnEvent {
         }
         if (EchelonsIntegration.apply(mob, echelon.get(), difficulty.getAsInt())) {
             mob.getPersistentData().putString(SCALED_BY_MOTIF, origin.get().motif());
-            Dungeons.LOGGER.info("[D2-ECHELON] {} at {} floorIndex={} motif={} difficulty={}",
+            Dungeons.LOGGER.debug("[D2-ECHELON] {} at {} floorIndex={} motif={} difficulty={}",
                     net.minecraft.world.entity.EntityType.getKey(mob.getType()),
                     mob.blockPosition().toShortString(), origin.get().floorIndex(),
                     origin.get().motif(), difficulty.getAsInt());

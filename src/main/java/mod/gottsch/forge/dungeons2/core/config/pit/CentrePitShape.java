@@ -37,7 +37,7 @@ import java.util.Optional;
  * block per ring, so a 3x3 reaches two and stops however deep it is authored. 5x5 is the smallest
  * that descends three.</p>
  *
- * <h2>{@code centre_block} makes this a SUNKEN DAIS (backlog #86)</h2>
+ * <h2>{@code centre_block} makes this a SUNKEN DAIS</h2>
  * <p>An altar standing in the middle of the court, on its floor rather than in it. At the shallow
  * {@code depth: 1} a court is authored at for this &mdash; the inverted dais Mark asked for &mdash;
  * that puts the block's top flush with the room's own walking plane, so the player walks around a

@@ -208,7 +208,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /**
-     * #108: the stair that makes a one-block rise walkable, or {@code null} for none.
+     * The stair that makes a one-block rise walkable, or {@code null} for none.
      *
      * <p>It goes in the LOWER cell, one row above that cell's floor, facing the higher neighbour
      * &mdash; so its top is level with the higher cell's floor and nobody has to jump. The depth
@@ -261,7 +261,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      * {@code BasicFloorGenerator}'s room-floor split), {@code height-2} air blocks above, and a
      * ceiling block at {@code floorY+height-1} (the top of the corridor walls), closing the corridor.
      *
-     * <p>#108: the whole column drops by {@code depth} &mdash; floor, air, haunch and ceiling
+     * <p>The whole column drops by {@code depth} &mdash; floor, air, haunch and ceiling
      * together, so a sinking run reads as a tunnel going down rather than a trench with a tall roof
      * &mdash; and the rows between the lowered ceiling and the corridor's full top are filled solid,
      * the same fill a narrow cell's dropped ceiling gets. {@code riser} replaces the first air row.</p>
@@ -477,7 +477,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         boolean test(int x, int z);
     }
 
-    /** #108: a cell's depth below the walking plane; 0 for anything that is not a sunk corridor cell. */
+    /** A cell's depth below the walking plane; 0 for anything that is not a sunk corridor cell. */
     @FunctionalInterface
     private interface CellDepth {
         int at(int x, int z);
@@ -486,7 +486,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     /**
      * A wall column {@code height} blocks tall (Y = floorY .. floorY+height-1).
      *
-     * <p>#108: it reaches DOWN to the deepest corridor cell among its eight neighbours, so a sunk
+     * <p>It reaches DOWN to the deepest corridor cell among its eight neighbours, so a sunk
      * run is walled all the way to its floor, and its top stays put, since the shallowest neighbour
      * still needs it. Courses anchor to the floor of the cell the wall FACES, so a band steps down
      * with the passage it runs along rather than disappearing into the floor.</p>
@@ -617,7 +617,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
      *
      * <p>Unlike a room's false floor, a cell whose stone has no crumbling version does not leave the
      * whole trap open: a corridor floor is speckled, and nearly every trench would fail. It takes the
-     * trench's commonest crumbling block instead, the hidden moat's rule (#107): a slightly
+     * trench's commonest crumbling block instead, the hidden moat's rule: a slightly
      * different stone in a corridor that is already a patchwork.</p>
      */
     private static Map<Coords2D, String> lid(List<Coords2D> cells, int floorY, CellDepth depthOf,
@@ -835,7 +835,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
                 // Null unless the corridor authors a cell-local floor pattern; resolved once per
                 // render pass, like every other state here, rather than per cell.
                 motifConfig.corridor().cellFloor(),
-                // #108: the riser stair. Resolved from the floor's own (banded) motif, so a mud or
+                // The riser stair. Resolved from the floor's own (banded) motif, so a mud or
                 // deepslate band steps in its own material.
                 motifConfig.corridor().stepStateFor(style));
     }

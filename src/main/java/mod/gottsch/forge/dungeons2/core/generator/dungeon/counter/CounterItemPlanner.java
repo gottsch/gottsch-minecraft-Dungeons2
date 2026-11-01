@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Decides whether a dungeon hides its boss's counter-item, and in which room &mdash; backlog #97.
+ * Decides whether a dungeon hides its boss's counter-item, and in which room.
  *
  * <h2>The boss&rarr;counter-item table is built once, here</h2>
  * <p>{@link #COUNTER_TABLES} maps a boss entity id to the loot table of the chest that answers it.

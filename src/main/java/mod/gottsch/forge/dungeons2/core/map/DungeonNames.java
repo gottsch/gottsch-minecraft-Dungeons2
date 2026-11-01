@@ -41,7 +41,7 @@ public final class DungeonNames {
             "Wynn", "Corvald", "Esk", "Maudrin", "Halvard", "Sabeth", "Orrin", "Grimbold",
             "Edda", "Tamsin", "Varek", "Leofric", "Isolde", "Dunstan", "Rhoswen", "Cedric");
 
-    /** Prefixed to about a third of names (Mark, 2026-10-26): not all, or none of them stands out. */
+    /** Prefixed to about a third of names: not all, or none of them stands out. */
     static final List<String> ADJECTIVES = List.of(
             "Terrible", "Deathly", "Forsaken", "Forgotten", "Accursed", "Silent", "Sunken", "Bleak",
             "Hollow", "Blighted", "Dread", "Shrouded", "Wretched", "Grim", "Lost", "Drowned");

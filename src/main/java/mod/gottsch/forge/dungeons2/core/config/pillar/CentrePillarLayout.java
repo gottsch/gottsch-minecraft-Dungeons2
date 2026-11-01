@@ -40,7 +40,7 @@ import mod.gottsch.forge.dungeons2.core.generator.dungeon.room.pillar.IPillarPat
  * <p>The other three share {@link PillarLayoutPattern#RHYTHM} because they are each
  * {@code (spacing, inset)}. A lone column has nothing to be spaced from, so a {@code spacing} here
  * would be a field that reads as meaningful and does nothing &mdash; the exact class of silent
- * no-op the closed schema (#31) exists to reject. Authoring one is a load error naming the key.</p>
+ * no-op the closed schema exists to reject. Authoring one is a load error naming the key.</p>
  *
  * <p>{@code inset} keeps its meaning, but acts <strong>only as a veto</strong>: a room whose
  * interior cannot keep that much clearance draws no column at all rather than putting a pier where

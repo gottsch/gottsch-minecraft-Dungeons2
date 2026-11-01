@@ -63,7 +63,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Turns an authored {@code dungeons2:sarcophagus_marker} into a sealed two-block tomb (#104) &mdash;
+ * Turns an authored {@code dungeons2:sarcophagus_marker} into a sealed two-block tomb &mdash;
  * the authored twin of the {@code tombs} scheme slot.
  *
  * <h2>Why the work is in {@code finalizeProcessing}</h2>
@@ -240,9 +240,9 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
                     half(tomb, facing, BedPart.HEAD), headTag(drawn, origin)));
             claimed.add(headPos);
             if (owner) {
-                // INFO for the chest probe's reason. The facing logged is the AUTHORED one; the
+                // The facing logged is the AUTHORED one; the
                 // head's position is where the rotation shows.
-                Dungeons.LOGGER.info("[D2-TOMB] marker -> {} foot at {} head at {} (authored facing"
+                Dungeons.LOGGER.debug("[D2-TOMB] marker -> {} foot at {} head at {} (authored facing"
                                 + " {}, rot {}; {}{})", tombName, info.pos().toShortString(),
                         headPos.toShortString(), facing, rotation, drawn.describe(),
                         origin == null ? "" : ", scaled as floor "

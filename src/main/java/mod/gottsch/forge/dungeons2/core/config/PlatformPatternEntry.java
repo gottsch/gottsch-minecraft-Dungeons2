@@ -50,7 +50,7 @@ import mod.gottsch.forge.dungeons2.core.config.platform.PlatformLayoutRegistry;
  * is placed on the dais's centre, one row up. Authoring them separately would make the wrong thing
  * the easy thing.</p>
  *
- * <h2>{@code top_props}: the pots ON the dais (backlog #86)</h2>
+ * <h2>{@code top_props}: the pots ON the dais</h2>
  * <p>The same argument one step further. The {@code pots} slot places at the room's walking plane,
  * so a pot authored "on" a dais would be placed INSIDE the dais block and shatter as soon as the
  * chunk ticks; and the dais's cells are reported through {@link

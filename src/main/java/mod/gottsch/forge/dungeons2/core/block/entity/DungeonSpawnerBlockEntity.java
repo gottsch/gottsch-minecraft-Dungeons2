@@ -242,11 +242,8 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
      * </ul>
      *
      * <h2>DEBUG, and guarded by {@code isDebugEnabled()} rather than merely logged at DEBUG</h2>
-     * <p>It ran at INFO while it was being used, on the reasoning that a probe nobody can see is not
-     * a probe. It is not needed at that volume any more &mdash; it fires for every spawner in every
-     * dungeon &mdash; so it is DEBUG now, which is still visible in the development profile
-     * ({@code [logging] level} in {@code dungeons2-common.toml} ships at {@code debug}) and silent
-     * for a player.
+     * <p>It fires for every spawner in every dungeon, so it is DEBUG: visible when
+     * {@code [logging] level} in {@code dungeons2-common.toml} is {@code debug}, silent for a player.
      *
      * <p><strong>The guard is the part that matters.</strong> Dropping the level alone would keep
      * paying for the work: {@code LOGGER.debug(...)} evaluates its arguments before it decides to

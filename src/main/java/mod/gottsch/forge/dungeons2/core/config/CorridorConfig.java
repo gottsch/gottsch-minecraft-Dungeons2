@@ -78,7 +78,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                 courses, pattern, descent, stepBlock, Optional.empty());
     }
 
-    /** The pre-descent form (#108): a corridor that never sinks. */
+    /** The pre-descent form: a corridor that never sinks. */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
                           Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
                           List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
@@ -305,7 +305,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     // CellLocalFloorPattern by validate() below.
                     Codecs.strictOptionalFieldOf(FloorPatternRegistry.CODEC, "pattern")
                             .forGetter(CorridorConfig::pattern),
-                    // #108: the BASELINE style's descent -- used only when the motif authors no
+                    // The BASELINE style's descent -- used only when the motif authors no
                     // styles, exactly like height/profile above.
                     Codecs.strictOptionalFieldOf(CorridorDescentCodec.CODEC, "descent")
                             .forGetter(CorridorConfig::descent),
@@ -364,7 +364,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     + " -- a corridor stores only its style's name, so a duplicate makes its geometry "
                     + "depend on the order of the styles list");
         }
-        // #108: a sinking style has to be able to name its riser stair. Never invent one -- the
+        // A sinking style has to be able to name its riser stair. Never invent one -- the
         // archBlock rule -- because stone brick stairs in a deepslate corridor is the silent
         // fallthrough this config exists to prevent.
         for (CorridorStyle style : config.rollableStyles()) {
@@ -379,7 +379,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
     }
 
     /**
-     * The riser stair's block id for one style (#108), first found of: the style's
+     * The riser stair's block id for one style, first found of: the style's
      * {@code step_block}, its {@code arch_block}, the section's {@code step_block}, the section's
      * {@code arch_block}. Arch before section so a stratum band's own arch (mud brick, deepslate)
      * builds its risers without re-authoring them.

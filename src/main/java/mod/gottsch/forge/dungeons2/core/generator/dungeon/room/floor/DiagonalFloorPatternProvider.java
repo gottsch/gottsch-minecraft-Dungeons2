@@ -30,7 +30,7 @@ import java.util.Objects;
 
 /**
  * Alternating bands at 45 degrees &mdash; {@code checkerboard}'s diagonal partner, and the other
- * genuinely two-line pattern. Backlog #82.
+ * genuinely two-line pattern.
  *
  * <h2>The geometry</h2>
  * <p>A cell's band is {@code (x + z) / width}, and every other band takes the secondary block; a

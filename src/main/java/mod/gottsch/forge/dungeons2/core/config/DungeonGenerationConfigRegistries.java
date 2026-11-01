@@ -40,7 +40,7 @@ public class DungeonGenerationConfigRegistries {
             ResourceKey.createRegistryKey(new ResourceLocation(Dungeons.MOD_ID, "generation_config"));
 
     /**
-     * The Mining Chest's ore-payout table (#7). Entries live at
+     * The Mining Chest's ore-payout table. Entries live at
      * {@code data/dungeons2/dungeons2/mining_config/<name>.json}.
      *
      * <p>Its own registry rather than more fields on {@link #GENERATION_CONFIG}: that file is the

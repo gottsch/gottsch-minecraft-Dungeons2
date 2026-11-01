@@ -33,7 +33,7 @@ import net.minecraftforge.registries.RegistryObject;
  * {@link mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities} for the full
  * diagnosis, which is worth reading before adding anything here.</p>
  *
- * <p><strong>Phase 6 (backlog #43) removed {@code DEFERRED_DUNGEON_GENERATOR} on 2026-08-18</strong>,
+ * <p><strong>Phase 6 removed {@code DEFERRED_DUNGEON_GENERATOR} on 2026-08-18</strong>,
  * along with its block, block entity and the whole unregistered feature path it existed for. This
  * class stays because live content shares it &mdash; which is exactly the split #43 called for.</p>
  *
@@ -43,7 +43,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class DungeonsBlocks {
 
     /**
-     * Backlog #10: the invisible proximity mob-set spawner. Air-<em>like</em> in every respect that
+     * The invisible proximity mob-set spawner. Air-<em>like</em> in every respect that
      * matters to the player &mdash; not visible, not collidable, not targetable, no drops &mdash;
      * because the dungeon around it is the content and this is only a trigger.
      *
@@ -64,7 +64,7 @@ public class DungeonsBlocks {
             () -> new MobSetSpawnerBlock(MobSetSpawnerBlock.properties()));
 
     /**
-     * Backlog #10: the <strong>authoring</strong> marker. A template author places one of these; the
+     * The <strong>authoring</strong> marker. A template author places one of these; the
      * {@code dungeons2:spawner} processor swaps it for {@link #MOB_SET_SPAWNER} at placement, so it
      * is visible in the structure editor and gone in the finished dungeon.
      *
@@ -92,7 +92,7 @@ public class DungeonsBlocks {
                     .mapColor(MapColor.STONE).strength(3.0F).sound(SoundType.STONE).noLootTable()));
 
     /**
-     * Backlog #48 step 3: the chest authoring marker. Unlike {@link #SPAWNER_MARKER} this one has a
+     * The chest authoring marker. Unlike {@link #SPAWNER_MARKER} this one has a
      * block entity, because which loot table a chest draws is a per-cell decision and a template
      * holds several chests -- see {@link ChestMarkerBlock}.
      *
@@ -105,7 +105,7 @@ public class DungeonsBlocks {
                     .mapColor(MapColor.WOOD).strength(2.5F).sound(SoundType.WOOD).noLootTable()));
 
     /**
-     * Backlog #56: the pot authoring marker. Carries a block entity for the same reason
+     * The pot authoring marker. Carries a block entity for the same reason
      * {@link #CHEST_MARKER} does &mdash; how likely, how many, which variants, what loot and what
      * potion effects are all PER-MARKER decisions, and a template holds several markers saying
      * different things, where a codec field on the processor is per POOL.
@@ -121,7 +121,7 @@ public class DungeonsBlocks {
                     .sound(SoundType.STONE).noLootTable()));
 
     /**
-     * #104: the tomb authoring marker. One block standing at the tomb's FOOT, facing its head; the
+     * The tomb authoring marker. One block standing at the tomb's FOOT, facing its head; the
      * processor writes both halves. Carries a block entity for the other markers' reason &mdash;
      * what a tomb holds is a per-tomb decision &mdash; and is solid and visible for theirs.
      */
@@ -132,7 +132,7 @@ public class DungeonsBlocks {
                     .sound(SoundType.STONE).noLootTable()));
 
     /**
-     * Backlog #7: the Mining Chest, the one chest per dungeon that holds the estimated mining haul.
+     * The Mining Chest, the one chest per dungeon that holds the estimated mining haul.
      * Iron in feel as well as look -- metal sound, pickaxe-mined -- but it does not require the
      * correct tool, so like a wooden chest it always drops itself.
      */

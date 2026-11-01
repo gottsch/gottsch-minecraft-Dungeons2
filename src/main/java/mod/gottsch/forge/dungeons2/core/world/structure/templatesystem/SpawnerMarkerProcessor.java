@@ -55,7 +55,7 @@ import java.util.function.Supplier;
 
 /**
  * Swaps the authored {@code dungeons2:spawner_marker} block for Dungeons2's invisible mob-set
- * spawner, with the mob set attached. Backlog #10, Dungeons2 side.
+ * spawner, with the mob set attached.
  *
  * <h2>Why a marker BLOCK, and not the {@code d2:spawner} DATA marker the README used to document</h2>
  * <p>The first version of this matched a DATA structure block, on the reasoning that a processor
@@ -353,7 +353,6 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
         // produces cannot be seen, and a spawner that never fires looks exactly like a spawner
         // that was never placed. One line per conversion, at the position it happened.
         //
-        //   grep "D2-SPAWNER" run/logs/dungeons2.log
         //
         // Absent => the marker was never matched (wrong block id, or the template did not place).
         // Present but no mobs => look in run/logs/gottschcore.log instead: the block entity's own

@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * What the tombs hold at a given depth (#104) &mdash; the {@link ChestLootBand} shape, carrying a
+ * What the tombs hold at a given depth &mdash; the {@link ChestLootBand} shape, carrying a
  * whole {@link TombContents} instead of a loot list.
  *
  * <p>The motif owns it for the reason it owns the chest and mob bands: a crypt scheme is authored

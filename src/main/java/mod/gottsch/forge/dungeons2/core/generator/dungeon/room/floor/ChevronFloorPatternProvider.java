@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A run of chevrons &mdash; repeating V's pointing up the room's depth axis. Backlog #82.
+ * A run of chevrons &mdash; repeating V's pointing up the room's depth axis.
  *
  * <h2>The geometry, which is one line</h2>
  * <p>Every {@code spacing} rows the V restarts at the floor's centre column and its two arms walk

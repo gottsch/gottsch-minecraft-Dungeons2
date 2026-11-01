@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.Block;
 
 /**
  * Alternating bands at 45 degrees &mdash; {@link CheckerboardFloorPattern}'s diagonal partner, and
- * a pure function of {@code (x, z)} like it. Backlog #82.
+ * a pure function of {@code (x, z)} like it.
  *
  * <p>{@code width} is the band's thickness measured across the diagonal, so 1 is a pinstripe and 3
  * is a ribbon; {@code flipped} runs the bands the other way. Both blocks are required, as on the

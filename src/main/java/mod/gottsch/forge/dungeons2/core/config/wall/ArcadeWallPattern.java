@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A <strong>blind arcade</strong>: a run of arch outlines flat against the wall. Backlog #78.
+ * A <strong>blind arcade</strong>: a run of arch outlines flat against the wall.
  *
  * <p>Blind means the opening is not cut. The cells inside each outline are left untouched, so
  * whatever this composes over shows through them &mdash; which is what makes it decoration on a
@@ -102,7 +102,7 @@ public record ArcadeWallPattern(String block, Optional<String> stairBlock,
                                     Codec.intRange(ArcadeWallPatternProvider.MIN_WIDTH, 32), "width",
                                     ArcadeWallPatternProvider.DEFAULT_WIDTH)
                             .forGetter(ArcadeWallPattern::width),
-                    // Capped at 8, which is as tall as the taper (#51) lets a wall be -- a bigger
+                    // Capped at 8, which is as tall as the taper lets a wall be -- a bigger
                     // number could never mean more than 8 does, and would silently draw nothing.
                     Codecs.strictOptionalFieldOf(
                                     Codec.intRange(ArcadeWallPatternProvider.MIN_HEIGHT, 8), "height",

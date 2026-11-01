@@ -26,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Set;
 
 /**
- * The {@code pit} slot's shape types, dispatched on {@code type}. Backlog #3.
+ * The {@code pit} slot's shape types, dispatched on {@code type}.
  *
  * <p>The sixth of these registries and the plainest &mdash; one discriminator, and no vocabulary
  * shared with another slot, so there is no reason to look anywhere else before adding a shape. See
