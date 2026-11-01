@@ -115,7 +115,7 @@ public class ShockAbsorptionEvent {
             float raw = event.getAmount();
             event.setAmount(raw * SLAM_DAMAGE_MULTIPLIER);
             wear(victim);
-            // INFO: the effect is hard to judge by eye mid-fight, so the probe
+            // The effect is hard to judge by eye mid-fight, so the probe
             // says what the boots took off. One line per slam that lands on a wearer.
             Dungeons.LOGGER.debug("[D2-BOOTS] slam hit {} WITH boots: {} -> {} damage",
                     victim.getName().getString(), String.format("%.1f", raw),

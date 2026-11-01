@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.function.ToIntFunction;
 
 /**
- * Where a corridor trap's trench goes (#108 stage 3): straight across a plain, level stretch.
+ * Where a corridor trap's trench goes (the corridor descent): straight across a plain, level stretch.
  *
  * <p>A trench is {@code length} consecutive CROSS-SECTIONS of a straight run &mdash; the full width of
  * the corridor, so it cannot be walked round, only crossed. A position qualifies when:</p>

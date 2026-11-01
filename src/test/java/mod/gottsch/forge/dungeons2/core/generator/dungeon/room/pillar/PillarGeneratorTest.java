@@ -652,10 +652,10 @@ class PillarGeneratorTest {
         assertEquals(java.util.Arrays.toString(expected), java.util.Arrays.toString(actual));
     }
 
-    // ---------- #58: a column must not stand over a pit ----------
+    // ---------- the pit exclusion: a column must not stand over a pit ----------
 
     /**
-     * Backlog #58. A column is drawn from the walking plane <em>upward</em>, so one rolled onto a
+     * A column is drawn from the walking plane <em>upward</em>, so one rolled onto a
      * cell the pit excavated stands in mid-air over the hole.
      *
      * <h2>Ordering did not already prevent this</h2>
@@ -668,7 +668,7 @@ class PillarGeneratorTest {
      * <h2>The unguarded run is the point</h2>
      * <p>Asserting first that a column DOES land in the pit without the exclusion is what stops
      * this passing on a room where the layout never overlapped the pit to begin with &mdash; the
-     * trap #46's tautological test fell into.</p>
+     * trap the authored boss room's tautological test fell into.</p>
      */
     @Test
     void aColumnIsNotBuiltStandingOverAPit() {
@@ -709,7 +709,7 @@ class PillarGeneratorTest {
     }
 
     /**
-     * The no-exclusion overload must be exactly an empty exclusion set. This is what lets #58 ship
+     * The no-exclusion overload must be exactly an empty exclusion set. This is what lets the pit exclusion ship
      * without re-rolling a single existing seed: a room with no pit lays out as it always has.
      */
     @Test

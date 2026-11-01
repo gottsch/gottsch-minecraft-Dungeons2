@@ -34,13 +34,13 @@ import java.util.Optional;
  * An <strong>oculus</strong>: a lit shaft rising over the middle of the room.
  *
  * <h2>It is not a skylight, and that is the design</h2>
- * <p>No daylight. A shaft to the surface is a different claim entirely and this is a dungeon.
+ * <p>Deliberate: no daylight. A shaft to the surface is a different claim entirely and this is a dungeon.
  * What is built instead is a <strong>lamp at the top of the shaft with a grate under it</strong>: the
  * light passes through the grate, and what a player sees looking up is a lit grille with the source
  * hidden behind it, and a well of light on the floor. That reads as something that was built and lit,
  * not as a hole to the sky.</p>
  *
- * <h2>It is #68's machinery with the material swapped for air</h2>
+ * <h2>It is the rising vault's machinery with the material swapped for air</h2>
  * <p>The rising vault proved a ceiling pattern can excavate upward into the floor's own unspent
  * budget ({@code CeilingSurface#emitRaised} clears the column beneath a raised layer before writing
  * it). An oculus is that, with nothing in the column: two raised layers, one for the cap and one for
@@ -60,7 +60,7 @@ import java.util.Optional;
  *       check that, and a solid one gives a dark shaft with a lamp sealed above it.</li>
  *   <li>{@code size} &mdash; the shaft's side in cells, centred. Named {@code size} and not
  *       {@code radius} to match {@code centre}, which measures the same thing the same way; the
- *       backlog entry said radius and one convention is worth more than either word.</li>
+ *       first sketch said radius and one convention is worth more than either word.</li>
  *   <li>{@code depth} &mdash; how far the shaft rises, from {@value #MIN_DEPTH}. Two is the minimum
  *       for a reason, not a taste: at one the grate would land in the ceiling PLANE, which is a flush
  *       layer, and flush layers are written before the raised ones excavate &mdash; the grate would

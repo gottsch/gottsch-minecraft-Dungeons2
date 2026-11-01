@@ -522,7 +522,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
     }
 
     /**
-     * #108 stage 3: the corridor's trap, dug LAST so it overwrites the floor it cuts through.
+     * The corridor's trap, dug LAST so it overwrites the floor it cuts through.
      *
      * <p>Each trench cell is emptied from its floor down to the trench floor, which is laid in the
      * corridor's floor block. A {@code false_floor} is lidded at the walking plane with the crumbling

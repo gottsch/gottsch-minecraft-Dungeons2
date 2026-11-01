@@ -37,7 +37,7 @@ import java.util.TreeMap;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The footprint and height distribution of procedural rooms &mdash; the measurement backlog #51
+ * The footprint and height distribution of procedural rooms &mdash; the measurement the room-height taper
  * asked for before its design ("re-measure, do not reason"), and the one to re-run whenever the
  * taper or the size tiers move.
  *
@@ -47,13 +47,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * taper's shape decidable:</p>
  * <ul>
  *   <li><strong>the smallest procedural room is 7x7, not 5x5.</strong> Every dimension is odd and
- *       at least 7, so the "5x5 chimney" the backlog warned severing the coupling would let through
+ *       at least 7, so the "5x5 chimney" the plan warned severing the coupling would let through
  *       cannot occur &mdash; there is no 5x5;</li>
  *   <li>7x7 is <em>26%</em> of all rooms, which is why the old {@code max(width, depth)} cap piled
  *       31.6% of heights on exactly 7; and</li>
  *   <li>rooms with a long side of 10+ &mdash; 56% of them, including every 19x19 &mdash; were
  *       entirely <em>unconstrained</em> by the old rule. "Only big rooms can be tall" was literally
- *       true, and it is the half of the distribution a raised roll ceiling (#29) would have grown
+ *       true, and it is the half of the distribution a raised roll ceiling (the floor-height raise) would have grown
  *       into.</li>
  * </ul>
  *
@@ -115,7 +115,7 @@ class RoomHeightProbe {
             }
         }
 
-        System.out.println("=== #51 room height taper, " + rooms + " procedural rooms ===");
+        System.out.println("=== the room-height taper room height taper, " + rooms + " procedural rooms ===");
         System.out.println("short side : " + pct(shortSide, rooms));
         System.out.println("long side  : " + pct(longSide, rooms));
         System.out.println("height     : " + pct(height, rooms));

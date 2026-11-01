@@ -27,7 +27,7 @@ import java.util.Optional;
 
 /**
  * The {@code chests} scheme slot: how many chests a room gets, which block they are, and what they
- * hold. Backlog #48, the procedural route.
+ * hold. The procedural route.
  *
  * <h2>These are blocks with block-entity data, like the spawner slot &mdash; not entities</h2>
  * <p>Pots are the odd one out ({@code PotEntity} instances with per-entity loot tables); a chest is
@@ -53,7 +53,7 @@ import java.util.Optional;
  * because the case for it is the boss chest &mdash; a specific chest in a specific room, not a
  * property of every chest a scheme happens to roll. A procedural slot has no way to say "this one".</p>
  *
- * <p>Depth tiering IS here as of #48 step 2: see {@link ChestLootBand}, which follows
+ * <p>Depth tiering IS here now: see {@link ChestLootBand}, which follows
  * {@code MobSetBand}'s shape rather than inventing a second one.</p>
  *
  * @author Mark Gottschling on Aug 18, 2026
@@ -74,7 +74,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     }
 
     /**
-     * A chest slot that never bites. The default, deliberately: a pack that has not heard of #99
+     * A chest slot that never bites. The default, deliberately: a pack that has not heard of the mimics
      * must generate exactly what it did before, and "the author said nothing" has to mean "no
      * mimics" rather than a rate nobody chose.
      */
@@ -203,7 +203,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
             Codecs.strictOptionalFieldOf(LootTableEntry.CODEC.listOf(), "loot_tables")
                     .forGetter(ChestConfig::lootTables),
             ChestVariant.CODEC.listOf().fieldOf("variants").forGetter(ChestConfig::variants),
-            // #99. On the SLOT rather than on the motif, so a scheme can decide how dangerous its
+            // On the SLOT rather than on the motif, so a scheme can decide how dangerous its
             // own containers are -- a store room full of chests earns a higher rate than the one
             // chest in an alcove, and a treasury that promises the player something can set it to
             // zero outright. Rolled per chest, not per room.
@@ -215,7 +215,7 @@ public record ChestConfig(int minCount, int maxCount, Optional<List<LootTableEnt
     public static final Codec<ChestConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
-     * This slot with each variant's chest block resolved. #65 phase 6, and the last of the element
+     * This slot with each variant's chest block resolved. It is the last of the element
      * slots.
      *
      * <p>Only {@code variants[].block} is a block. {@code loot_table} names a loot table, and

@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #10: the authored marker block becomes the right block-entity tag.
+ * The authored marker block becomes the right block-entity tag.
  *
  * <h2>What is and is not covered, and why</h2>
  * <p>{@code processBlock} resolves {@code DungeonsBlocks.MOB_SET_SPAWNER}, a Forge
@@ -406,7 +406,7 @@ class SpawnerMarkerProcessorTest {
 
     /**
      * A load error, NOT a clamp -- the opposite of {@link #anOutOfRangeMarkerProbabilityIsClamped},
-     * and deliberately so. A datapack value is authored once and read by a human, so #31's posture
+     * and deliberately so. A datapack value is authored once and read by a human, so the closed-schema rule's posture
      * applies: say it is wrong rather than quietly meaning something else.
      */
     @Test
@@ -419,7 +419,7 @@ class SpawnerMarkerProcessorTest {
                 "probability below 0 must fail the load rather than clamp");
     }
 
-    // ---- Enemy Echelons depth stamp (Backlog #103) ----------------------------------------------
+    // ---- Enemy Echelons depth stamp (Enemy Echelons scaling) ----------------------------------------------
 
     private static CompoundTag stamped(Integer floorIndex, String motif) {
         CompoundTag marker = new CompoundTag();

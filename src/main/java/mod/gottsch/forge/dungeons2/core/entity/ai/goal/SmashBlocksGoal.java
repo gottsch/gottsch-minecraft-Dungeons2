@@ -206,7 +206,7 @@ public class SmashBlocksGoal extends Goal {
      * <p>They used to go on the SAME tick as {@code mob.swing()}, which is the tick the arm starts
      * MOVING: vanilla's swing runs six ticks from rest to the bottom of the arc, so the wall came
      * apart with the fist still up beside the mob's head and the swing then played through empty
-     * air. Four ticks puts the break near the bottom of the arc.</p>
+     * air. Deliberate: four ticks puts the break near the bottom of the arc.</p>
      *
      * <p>A mob with a real wind-up does not use this at all &mdash; it publishes its own wind-up
      * length and the blocks go on the tick the fist arrives. See {@link IBurstingMob}.</p>

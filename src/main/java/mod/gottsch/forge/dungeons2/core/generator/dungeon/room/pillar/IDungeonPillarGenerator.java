@@ -57,7 +57,7 @@ public interface IDungeonPillarGenerator {
      *
      * <p>The exclusion-taking form is the one an implementation has to write, deliberately: making
      * the no-exclusion form the abstract one would let a new generator be written without ever
-     * seeing the parameter, and #58 is exactly a fault of a generator not consulting something it
+     * seeing the parameter, and the pit exclusion is exactly a fault of a generator not consulting something it
      * should have.</p>
      */
     default void build(RoomData room, int floorY, IDungeonMotif motif, RandomSource random,

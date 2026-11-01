@@ -40,7 +40,7 @@ import java.util.List;
  * the only thing either end agrees on.</p>
  *
  * <h2>The tooltip is the teaching</h2>
- * <p>A player who finds these will not have read the backlog. The line names the attack in the
+ * <p>A player who finds these will not have read the source. The line names the attack in the
  * words the fight uses &mdash; the thing that slams the floor &mdash; rather than saying
  * "resistance to {@code dungeons2:ground_slam}", which is true and useless.</p>
  *

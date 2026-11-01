@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@code template_limits} &mdash; backlog #44's declaration half: how many times one authored
+ * {@code template_limits} &mdash; the template limits' declaration half: how many times one authored
  * template may be placed, and how two packs' limits compose.
  *
  * <p>The merge rule is the part worth pinning. It is deliberately the <strong>opposite</strong> of

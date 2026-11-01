@@ -180,7 +180,7 @@ public final class TestRegistries {
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.DECORATION_PROCESSOR_NAME), decorationType);
 
-        // #10's spawner marker. Registered here for the same reason as the two above -- without it
+        // The mob-set spawner's spawner marker. Registered here for the same reason as the two above -- without it
         // the shipped list stops decoding entirely and every test that touches weathering fails at
         // once, which is exactly what happened when this processor was first added to the JSON.
         StructureProcessorType<?>[] spawnerSelf = new StructureProcessorType<?>[1];
@@ -190,7 +190,7 @@ public final class TestRegistries {
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.SPAWNER_PROCESSOR_NAME), spawnerType);
 
-        // #48's chest marker. Same self-reference dance, and registered here for the same reason:
+        // The chest routing's chest marker. Same self-reference dance, and registered here for the same reason:
         // this class decodes EVERY shipped processor_list, so a type missing from this registry does
         // not fail one test -- it fails every test that builds a FakeWorldGenLevel, with a stack
         // that names the JSON rather than the missing type.
@@ -223,7 +223,7 @@ public final class TestRegistries {
                 new ResourceLocation(Dungeons.MOD_ID, Registration.DECORATION_SWEEP_PROCESSOR_NAME),
                 sweepType);
 
-        // #56's pot marker, which both shipped weathering lists name just before the sweep. Same
+        // The pot marker's pot marker, which both shipped weathering lists name just before the sweep. Same
         // reason as every type above -- and this one proved the comment on its own first try: adding
         // dungeons2:pot to the JSON without adding it here failed 60-odd tests at once with a stack
         // naming classic_mud_weathering.json rather than the missing type.
@@ -234,7 +234,7 @@ public final class TestRegistries {
         Registry.register(registry,
                 new ResourceLocation(Dungeons.MOD_ID, Registration.POT_PROCESSOR_NAME), potType);
 
-        // #104's tomb marker, which every shipped list names beside the chest's. Same reason as
+        // The sealed tombs' tomb marker, which every shipped list names beside the chest's. Same reason as
         // every type above.
         StructureProcessorType<?>[] tombSelf = new StructureProcessorType<?>[1];
         Codec<SarcophagusMarkerProcessor> tombCodec =

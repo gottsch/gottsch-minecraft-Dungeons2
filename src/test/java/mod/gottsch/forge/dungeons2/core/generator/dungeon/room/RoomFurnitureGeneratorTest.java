@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code props} slot's placement (#73). Pure data &mdash; a block id stays a string until the
+ * The {@code props} slot's placement (the props slot). Pure data &mdash; a block id stays a string until the
  * piece resolves it, so no Minecraft bootstrap is needed.
  *
  * <p>What is actually worth checking here is not "did it place something" but the four things that
@@ -76,7 +76,7 @@ class RoomFurnitureGeneratorTest {
     // ---- counts ---------------------------------------------------------------------------------
 
     /**
-     * #99, and the half that is easy to get wrong: the rate is on the SLOT but eligibility is on
+     * The mimics, and the half that is easy to get wrong: the rate is on the SLOT but eligibility is on
      * the BLOCK. Driven at 1.0 with a mixed variant list, so the only thing that can keep the
      * cauldron a cauldron is the block check.
      */

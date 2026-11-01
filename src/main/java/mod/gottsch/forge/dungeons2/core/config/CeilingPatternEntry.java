@@ -82,7 +82,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
      *
      * <p>What the big-room rule asks for (see {@code RoomSlots#resolve}). A flush border, centre,
      * cross or checkerboard is paint: on a weathered stone ceiling a ring of large bricks one cell
-     * in from the walls all but disappears, and a big room under one read as bare in game. Mark's list was "vault, barrel, double barrel, oculus" -- the ceilings you
+     * in from the walls all but disappears, and a big room under one read as bare in game. Deliberate: the list is "vault, barrel, double barrel, oculus" -- the ceilings you
      * notice walking in.</p>
      */
     public boolean shapesCeiling() {
@@ -161,7 +161,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                         + " bracket, and this entry has no bracket_block to turn; the beams"
                         + " themselves take their axis from the run");
             }
-            // #68. A layer hangs or it rises; it cannot do both, and a `depth` that silently picked
+            // A layer hangs or it rises; it cannot do both, and a `depth` that silently picked
             // one would hide the contradiction in the one place an author cannot see it -- the
             // authored file says 2 and 3 and the ceiling shows one of them. Rejecting is also what
             // keeps `depth()`'s sign convention an implementation detail rather than a rule an
@@ -345,7 +345,7 @@ public record CeilingPatternEntry(List<SurfacePatternEntry> patterns, SizeGate g
                         CeilingPatternRegistry.MAP_CODEC.forGetter(SurfacePatternEntry::pattern),
                         Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_PROJECTION),
                                 "projection", 0).forGetter(SurfacePatternEntry::projection),
-                        // #68. Bounded by MAX_RISE here; bounded again, and for real, by the floor's
+                        // Bounded by MAX_RISE here; bounded again, and for real, by the floor's
                         // own spare budget at render time -- see BasicCeilingGenerator.
                         Codecs.strictOptionalFieldOf(Codec.intRange(0, MAX_RISE),
                                 "rise", 0).forGetter(SurfacePatternEntry::rise),

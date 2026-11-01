@@ -40,7 +40,7 @@ import java.util.Optional;
 public record CeilingConfig(String ceiling, Optional<CeilingPatternEntry> pattern) {
 
     /**
-     * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 4.
+     * This section with any {@code $role} in its {@code pattern} resolved.
      *
      * <p>The SECOND place a {@link CeilingPatternEntry} lives, the other being a scheme's
      * {@code ceiling} slot. Phase 3 learned this the hard way on {@code FloorConfig}: converting a

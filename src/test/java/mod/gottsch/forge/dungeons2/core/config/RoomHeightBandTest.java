@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #51's table: {@link RoomHeightBand}'s codec, its order/totality validation, and the
+ * The room-height taper's table: {@link RoomHeightBand}'s codec, its order/totality validation, and the
  * matching rule.
  *
  * <p>The validation rules exist because both of the ways a table can be wrong are <em>silent</em>:
@@ -87,7 +87,7 @@ class RoomHeightBandTest {
 
     /**
      * Omitting the key keeps the taper rather than removing the cap. "Absent" must not mean "off":
-     * an uncapped roll is exactly the tall-box outcome #51 exists to prevent.
+     * an uncapped roll is exactly the tall-box outcome the room-height taper exists to prevent.
      */
     @Test
     void omittingTheKeyKeepsTheShippedTaper() {

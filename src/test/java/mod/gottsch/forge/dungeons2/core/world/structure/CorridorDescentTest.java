@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #108: corridors that sink into the floor's {@code sink_offset} band and come back up.
+ * Corridors that sink into the floor's {@code sink_offset} band and come back up.
  *
  * <p>The four things that must never break: doors are met LEVEL; no rise is taller than one block;
  * every rise carries a stair whose top is the higher cell's floor; and every block lands inside the

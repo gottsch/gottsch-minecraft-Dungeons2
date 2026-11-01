@@ -78,7 +78,7 @@ import java.util.Optional;
 public record PitPatternEntry(PitShapePattern shape, Optional<String> floorBlock, SizeGate gate) {
 
     /**
-     * This pit with its own {@code floor_block} and its shape's blocks resolved. #65 phase 6.
+     * This pit with its own {@code floor_block} and its shape's blocks resolved.
      *
      * <p>Two levels, because the paving is the entry's and the rim and the spikes are the shape's
      * &mdash; {@code floor_block} sits beside {@code type} rather than inside {@code config} for the

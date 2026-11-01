@@ -67,7 +67,7 @@ class CompositeFloorPatternProviderTest {
     }
 
     /**
-     * The pairing #75 exists for: a border ring, and a field one inset further in filling exactly
+     * The pairing the floor field exists for: a border ring, and a field one inset further in filling exactly
      * what the ring encloses.
      *
      * <p>Both measure {@code inset} from the room edge, so the field goes at {@code border inset +

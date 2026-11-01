@@ -211,14 +211,14 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
                             Codec.unboundedMap(Codec.STRING, TemplateLimit.CODEC),
                             "template_limits", Map.of())
                     .forGetter(MotifConfigFragment::templateLimits),
-            // #45. Replaced wholesale, like the two depth tables above and for the same reason: a
+            // Replaced wholesale, like the two depth tables above and for the same reason: a
             // progression from cobble to chiseled brick is one coherent whole, and two halves
             // spliced together is a curve nobody authored.
             Codecs.strictOptionalFieldOf(
                             Stratum.CODEC.listOf().flatXmap(Stratum::validate, Stratum::validate),
                             "strata_by_floor_index")
                     .forGetter(MotifConfigFragment::strataByFloorIndex),
-            // #65. MERGED BY KEY, like templateLimits and unlike the depth tables -- a palette is a
+            // MERGED BY KEY, like templateLimits and unlike the depth tables -- a palette is a
             // set of independent roles, so a fragment that names `ornament` must not wipe the base
             // pack's `shaft`. This is what lets an addon retune one material for a whole motif in a
             // file of its own.
@@ -229,16 +229,16 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
             // another is a balance nobody authored.
             Codecs.strictOptionalFieldOf(EchelonConfig.CODEC, "echelon")
                     .forGetter(MotifConfigFragment::echelon),
-            // #104. Replaced wholesale, like the other depth tables: what the dead hold from the
+            // Replaced wholesale, like the other depth tables: what the dead hold from the
             // entrance down is one progression, and two packs' halves spliced together are not.
             Codecs.strictOptionalFieldOf(
                             TombBand.CODEC.listOf().flatXmap(TombBand::validate, TombBand::validate),
                             "tomb_contents_by_floor_index")
                     .forGetter(MotifConfigFragment::tombContentsByFloorIndex),
-            // #129. One id, replaced by the last fragment that names one, like `echelon`.
+            // One id, replaced by the last fragment that names one, like `echelon`.
             Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "biome")
                     .forGetter(MotifConfigFragment::biome),
-            // #129 step 2. MERGED BY KEY, like template_limits: each entry is one prefab's own mood,
+            // MERGED BY KEY, like template_limits: each entry is one prefab's own mood,
             // so an addon can give its prefab one without restating the shipped entries.
             Codecs.strictOptionalFieldOf(Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC),
                             "template_biomes", Map.of())
@@ -348,7 +348,7 @@ public record MotifConfigFragment(Optional<WallConfig> wall, Optional<CeilingCon
 
     /**
      * Every {@code $role} a scheme names is declared by the palette that scheme will be painted
-     * with. #65 phase 2, and the check that lets the substitution itself stay silent.
+     * with. It is the check that lets the substitution itself stay silent.
      *
      * <h2>Per band, because the palette is</h2>
      * <p>A role is resolved against the motif's palette overlaid with the band's, so the same scheme

@@ -45,7 +45,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Backlog #10's content sweep: the shipped {@code mob_sets} name entities that exist, and every
+ * The mob-set spawner's content sweep: the shipped {@code mob_sets} name entities that exist, and every
  * {@code mob_set} a processor list references actually ships.
  *
  * <h2>Why this test rather than validation in the processor</h2>

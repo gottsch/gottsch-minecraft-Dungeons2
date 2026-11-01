@@ -1,7 +1,7 @@
 {
-  // #129: the mood biome painted over every floor's pieces; strata.json overrides it per band.
+  // The mood biome painted over every floor's pieces; strata.json overrides it per band.
   "biome": "dungeons2:stone_halls",
-  // #129 step 2: prefabs with a mood of their own, painted over their box instead of the band's.
+  // Prefabs with a mood of their own, painted over their box instead of the band's.
   "template_biomes": {
     "dungeons2:rooms/classic/11x11_sewer_1": "dungeons2:flooded_cistern",
     "dungeons2:rooms/classic/7x13_sewer_1": "dungeons2:flooded_cistern",
@@ -29,7 +29,7 @@
     "plinth_left": "dungeonblocks:left_large_stone_brick",
     "plinth_right": "dungeonblocks:right_large_stone_brick",
 
-    // Added 2026-09-16. These four were LITERAL block ids inside schemes.json patterns until a
+    // These four were LITERAL block ids inside schemes.json patterns until a
     // deepslate floor showed what that costs: a literal is unreachable by a band's palette, so the
     // band repainted the wall behind them and the pilasters stayed stone -- full height, on every
     // wall that rolled `panels`.
@@ -43,15 +43,15 @@
     // rather than for cobblestone, so a band can answer with whatever its own era crumbles into.
     "rubble": "minecraft:cobblestone",
     "rubble_stair": "minecraft:cobblestone_stairs",
-    // The bracket a `joists` ceiling rests its beams on. Added 2026-09-17 for the same reason as
+    // The bracket a `joists` ceiling rests its beams on. For the same reason as
     // the four above: it was a literal in schemes.json, so a deepslate floor kept SPRUCE corbels
     // under its beams against a deepslate wall. The beam itself stays a literal spruce log -- a
     // timber beam on a stone bracket is the intended reading, and the mud band does the same.
     "joist_bracket": "dungeonblocks:spruce_corbel_block",
-    // The door a `strip` partition leaves its gap as (#74). Distinct from the `door` SECTION, which
+    // The door a `strip` partition leaves its gap as (the partition slot). Distinct from the `door` SECTION, which
     // is the room's own doorway; this one is a material a wall pattern places.
     "door_block": "dungeonblocks:spruce_dungeon_door",
-    // The HIGH-CONTRAST inlay, added 2026-09-23. `inlay`/`inlay_alt` are the same mid-grey as the
+    // The HIGH-CONTRAST inlay. `inlay`/`inlay_alt` are the same mid-grey as the
     // stone bricks around them, so a pattern drawn in them only shows up close. `accent` is the
     // block a pattern uses when it is meant to be seen across the room: a different VALUE, not
     // just a different texture. A band answers with whatever contrasts with ITS base.
@@ -60,18 +60,18 @@
     // patterns between basalt and tuff. A role holds one block, so two looks need two roles. Up
     // here it is the same block as `accent`, and a stone room cannot tell them apart.
     "accent_alt": "minecraft:deepslate_bricks",
-    // #104: the tomb a `tombs` slot places. A role rather than a literal for the pilasters' reason
+    // The tomb a `tombs` slot places. A role rather than a literal for the pilasters' reason
     // above: the deepslate band answers with deepslate_sarcophagus, and a literal here would lay
     // stone tombs on a deepslate floor.
     "sarcophagus": "dungeonblocks:stone_sarcophagus",
     // The flat stone a FLOOR pattern sets into the paving: a border's corners, a cross, a
-    // checkerboard's or diagonal's second block. Added 2026-10-30 (Mark): the chamber's floor
+    // checkerboard's or diagonal's second block. The chamber's floor
     // border used `footing` for its corners, and `footing` is the base of a column -- so a big
     // chamber had a pillar base set flat into each corner of its floor, reading as an upside-down
     // column. One role per purpose: `footing` stands under a shaft; this lies in a floor.
     "floor_accent": "minecraft:chiseled_stone_bricks",
     // The course a rising vault springs from: the ring in the ceiling plane at its lip, and a
-    // double barrel's spine. Added 2026-10-30 (Mark), for `floor_accent`'s reason: every vault
+    // double barrel's spine. For `floor_accent`'s reason: every vault
     // used `inlay`, which is also every flush border and course trim, and the mud band's used
     // `footing`, a column's base. One role per purpose, so a band can give its vaults a springing
     // stone without repainting its trim or its columns. The same polished andesite as `inlay`.
@@ -136,7 +136,7 @@
     "narrow_height": 6,
     "profile": "arched",
     "arch_block": "minecraft:stone_brick_stairs",
-    // #108 stage 3: at most one trench trap per corridor, across a straight level run. Shared by
+    // At most one trench trap per corridor, across a straight level run. Shared by
     // every style below (a style may author its own). The bands in strata.json carry their own.
     "traps": { "chance": 0.25, "options": [
       { "kind": "false_floor", "weight": 2, "length": 2, "depth": 4, "spike_block": "minecraft:pointed_dripstone", "spike_properties": { "vertical_direction": "up" }, "spike_probability": 0.4 },
@@ -250,7 +250,7 @@
       ]
     }
   ],
-  // #104. What a sealed tomb holds, by depth -- chest_loot_by_floor_index's shape, carrying the
+  // What a sealed tomb holds, by depth -- chest_loot_by_floor_index's shape, carrying the
   // whole of a tomb's contents. DungeonBlocks rolls ONCE, on the first opening, between the loot,
   // the guardian and nothing, in proportion to the three weights; the table and the mob are drawn
   // per tomb at generation. A scheme's `tombs` slot overrides any key on its own.
@@ -458,7 +458,7 @@
           "weight": 2
         },
         // One animated mob or none, at ANY depth: bonus_mobs 0 keeps the band's +N off
-        // these two sets (2026-10-21, Mark).
+        // these two sets.
         {
           "mob_set": "dungeons2:classic_animated_armor",
           "weight": 2,
@@ -513,7 +513,7 @@
           "weight": 4
         },
         // One animated mob or none, at ANY depth: bonus_mobs 0 keeps the band's +N off
-        // these two sets (2026-10-21, Mark).
+        // these two sets.
         {
           "mob_set": "dungeons2:classic_animated_armor",
           "weight": 3,

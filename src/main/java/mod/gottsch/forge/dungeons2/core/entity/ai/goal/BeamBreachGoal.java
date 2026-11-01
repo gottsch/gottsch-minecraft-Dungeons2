@@ -54,7 +54,7 @@ import java.util.Set;
  *       {@link BeholderkinPursueGoal#PROXIMITY}, and the caster's body, swept straight toward it,
  *       runs into something before it could get that close. A {@link AnnihilationRay.Mode#TUNNEL}
  *       beam, bored to the caster's size so it can follow. <strong>An open door does not stop
- *       this</strong>: a Beholder is 3.5 tall and a dungeon doorway is two, so a
+ *       this</strong>, deliberately: a Beholder is 3.5 tall and a dungeon doorway is two, so a
  *       door is not a way through for it, and the sweep knows that because it is the caster's own
  *       body being swept.</li>
  *   <li><strong>Strike through a wall</strong> &mdash; the target is within reach but out of sight,

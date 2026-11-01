@@ -39,7 +39,7 @@ import java.util.Objects;
  * pattern an author is otherwise stuck with.</p>
  *
  * <h2>It is anchored to the room, not to the world</h2>
- * <p>This is the decision the backlog entry said to make before writing the provider, and it is
+ * <p>This is the decision to make before writing the provider, and it is
  * made the same way {@link CheckerboardFloorPatternProvider} already made it: the plan is computed
  * in floor-local {@code (x, z)} and the room's origin is added only when emitting. So every room
  * starts its first band at its own corner. Computing it in world coordinates would instead run one

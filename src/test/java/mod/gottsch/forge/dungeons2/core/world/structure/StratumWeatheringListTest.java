@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #45 step 4 &mdash; <strong>per-stratum weathering</strong>: the depth band a piece is on
+ * <strong>per-stratum weathering</strong>: the depth band a piece is on
  * selects the processor list it weathers from.
  *
  * <p>Two tiers: {@code dungeons2:<motif>_<stratum>_weathering}, then
@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <h2>Why this is worth a class of its own</h2>
  * <p>Every failure mode here is <strong>silent in game</strong>. A stratum whose list is misnamed
- * falls back to the motif's and simply looks un-aged; a stratum whose list omits the #10 spawner
+ * falls back to the motif's and simply looks un-aged; a stratum whose list omits the mob-set spawner spawner
  * processor leaves authored markers standing as markers; and a stratum list reaching for a processor
  * that decides across the whole block list would age each chunk of a piece differently. None of
  * those log anything.</p>
@@ -89,7 +89,7 @@ class StratumWeatheringListTest {
      * applies to either, and the helpers below accept both.
      *
      * <p>The mud stratum's alone until 2026-09-04, when `classic_weathering.json` migrated to it as
-     * well (backlog #15). Both remain shipped, so neither may be assumed.</p>
+     * well (the surface map). Both remain shipped, so neither may be assumed.</p>
      */
     private static final String SURFACE_AGING_TYPE = "dungeons2:surface_aging";
 
@@ -101,7 +101,7 @@ class StratumWeatheringListTest {
     private static final String POT_TYPE = "dungeons2:pot";
     private static final String SUPPORT_TYPE = "dungeons2:support_sweep";
     private static final String CHEST_TYPE = "dungeons2:chest";
-    /** #104; vetted as chunk-safe in {@code WeatheringProcessorListTest}. */
+    /** The sealed tombs; vetted as chunk-safe in {@code WeatheringProcessorListTest}. */
     private static final String SARCOPHAGUS_TYPE = "dungeons2:sarcophagus";
     private static final String HANGING_TYPE = "dungeons2:hanging_sweep";
 
@@ -149,7 +149,7 @@ class StratumWeatheringListTest {
 
     @Test
     void aStratumWithNoListOfItsOwnFallsBackToTheMotifs() {
-        // The ORDINARY case, and deliberately silent: a band usually only repaints, and #45 step 3
+        // The ORDINARY case, and deliberately silent: a band usually only repaints, and the strata
         // made the same call for the room-pool tier. A warning here would fire for every band that
         // is doing nothing wrong.
         FakeWorldGenLevel level = FakeWorldGenLevel.create();
@@ -168,7 +168,7 @@ class StratumWeatheringListTest {
 
     @Test
     void thereIsNoCrossMotifStratumTier() {
-        // #45 step 3's decision, applied to the same shape: stratum names are per-motif, so a
+        // The strata's decision, applied to the same shape: stratum names are per-motif, so a
         // classic_<stratum> fallback would hand another motif someone else's idea of a depth.
         FakeWorldGenLevel level = FakeWorldGenLevel.create();
 
@@ -325,7 +325,7 @@ class StratumWeatheringListTest {
     @Test
     void everyShippedWeatheringListCarriesTheSpawnerProcessor() {
         // The trap this closes is specific to step 4. A stratum's list REPLACES the motif's -- it
-        // has to, because a pool element names exactly one processor_list -- so the #10 spawner
+        // has to, because a pool element names exactly one processor_list -- so the mob-set spawner spawner
         // marker is not inherited. A stratum file that forgot it would leave authored
         // dungeons2:spawner_marker blocks on that depth as inert markers, with nothing logged.
         for (String file : weatheringFiles()) {
@@ -382,7 +382,7 @@ class StratumWeatheringListTest {
         //
         // Why it is a hazard at all: gravel and sand fall when the block below them turns to air.
         // These lists are applied to the ceiling as well as the wall and the floor, because a motif
-        // uses one block for all three (#15) and a processor only ever sees the block, never the
+        // uses one block for all three (the surface map) and a processor only ever sees the block, never the
         // surface. A falling block overhead rains debris onto the player, and the ONLY control was
         // the rate. dungeonblocks:rubble reads like gravel and does not fall, which is why it is
         // the terminus everywhere as of 2026-08-25.
@@ -557,7 +557,7 @@ class StratumWeatheringListTest {
     }
 
     /**
-     * Backlog #15 left one thing behind, <strong>and only where a geometric chain actually feeds a
+     * The surface map left one thing behind, <strong>and only where a geometric chain actually feeds a
      * rule entry</strong>. A {@code wall}, a {@code ceiling} and a {@code joist} are questions
      * about a cell's neighbours, so a {@code dungeons2:surface_aging} processor naming one of them
      * decides in {@code finalizeProcessing} instead of {@code processBlock}. Vanilla runs every

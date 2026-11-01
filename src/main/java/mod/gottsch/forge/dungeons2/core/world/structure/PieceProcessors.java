@@ -126,7 +126,7 @@ public final class PieceProcessors {
      * pair of files, which is the one thing this class exists to prevent.</p>
      *
      * <p>The cost is that a stratum's file must restate the processors that are not weathering at
-     * all &mdash; {@code dungeons2:decoration} and the #10 {@code dungeons2:spawner} marker. That
+     * all &mdash; {@code dungeons2:decoration} and the {@code dungeons2:spawner} marker. That
      * is deliberate: the file is really "this stratum's placement processors", and a stratum that
      * silently inherited a spawner it never named would be worse. See the header of
      * {@code classic_mud_weathering.json}.</p>

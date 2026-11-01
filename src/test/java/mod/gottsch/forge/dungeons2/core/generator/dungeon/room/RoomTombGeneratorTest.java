@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code tombs} slot (#104). What would be wrong here in a way nothing else notices: a tomb
+ * The {@code tombs} slot (the sealed tombs). What would be wrong here in a way nothing else notices: a tomb
  * with one half, a tomb generated open, a tomb whose foot is in a doorway, two tombs welded
  * together, and contents on the half DungeonBlocks does not read.
  */

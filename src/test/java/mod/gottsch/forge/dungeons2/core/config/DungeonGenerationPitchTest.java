@@ -70,7 +70,7 @@ class DungeonGenerationPitchTest {
 
     /**
      * The planner must not carry its own copy of the default. It used to, and a second literal for
-     * the same number is precisely what let {@code MIN_TRANSITION_HEIGHT} drift out of step in #52.
+     * the same number is precisely what let {@code MIN_TRANSITION_HEIGHT} drift out of step in the transition span guard.
      */
     @Test
     void thePlannerDefaultIsTheConfigDefault() {
@@ -174,7 +174,7 @@ class DungeonGenerationPitchTest {
     // ---------- the budget interaction ----------
 
     /**
-     * #51's bands are clamped into whatever the pitch leaves, not rejected in favour of the shipped
+     * The room-height taper's bands are clamped into whatever the pitch leaves, not rejected in favour of the shipped
      * table. The fallback was wrong in exactly this case: lower {@code floor_height} below 10 and
      * the shipped table does not fit either, so falling back to it hands the planner the table just
      * refused.
@@ -208,7 +208,7 @@ class DungeonGenerationPitchTest {
         assertEquals(9, only.clamp(5), "an inverted band would have produced nonsense here");
     }
 
-    // ---------- sinkOffset (#29 stage 1 / #3) ----------
+    // ---------- sinkOffset (the floor-height raise / the sunken pits) ----------
 
     /**
      * The default is 0 and 0 means "arithmetically absent" &mdash; the whole mechanism has to be a
@@ -268,7 +268,7 @@ class DungeonGenerationPitchTest {
 
     /**
      * The note beside the field is a documented key like {@code _comment}, not a stray one &mdash;
-     * the closed schema (#31) would otherwise reject the shipped file itself.
+     * the closed schema (the closed-schema rule) would otherwise reject the shipped file itself.
      */
     @Test
     void theSinkOffsetNoteIsAnAcceptedCommentKey() {

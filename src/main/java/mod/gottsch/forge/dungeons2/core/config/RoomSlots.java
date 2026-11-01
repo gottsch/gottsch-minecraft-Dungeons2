@@ -121,17 +121,16 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
             SlotOptions.field(PlatformPatternEntry.MAP_CODEC, "platforms").forGetter(RoomSlots::platforms),
             SlotOptions.field(SpawnerConfig.MAP_CODEC, "spawners").forGetter(RoomSlots::spawners),
             SlotOptions.field(ChestConfig.MAP_CODEC, "chests").forGetter(RoomSlots::chests),
-            // #3. Sits beside the surface slots rather than inside `floor` because it is not a
+            // Sits beside the surface slots rather than inside `floor` because it is not a
             // paving pattern: it changes the room's GEOMETRY, and it is bounded by the floor's
             // sink_offset budget rather than by anything a floor pattern knows.
             SlotOptions.field(PitPatternEntry.MAP_CODEC, "pit").forGetter(RoomSlots::pit),
-            // #73.
             SlotOptions.field(PropConfig.MAP_CODEC, "props").forGetter(RoomSlots::props),
-            // #74. The first slot that changes the SHAPE of the space a player moves through
+            // The first slot that changes the SHAPE of the space a player moves through
             // rather than the surfaces around it; see PartitionPatternEntry.
             SlotOptions.field(PartitionPatternEntry.MAP_CODEC, "partition")
                     .forGetter(RoomSlots::partition),
-            // #104. LAST, per the class note: appended, never inserted, so no existing scheme's
+            // LAST, per the class note: appended, never inserted, so no existing scheme's
             // option draws move.
             SlotOptions.field(TombConfig.MAP_CODEC, "tombs").forGetter(RoomSlots::tombs),
             // LAST, for the same reason.
@@ -227,7 +226,7 @@ public record RoomSlots(SlotOptions<FloorPatternEntry> floor,
 
     /**
      * {@link #resolve(int, int, int, RandomSource)}, and then the one rule the authored weights
-     * cannot express on their own: <strong>a big room may not be bare</strong>.
+     * cannot express on their own. Deliberate: <strong>a big room may not be bare</strong>.
      *
      * <h2>Why a rule and not more weight</h2>
      * <p>A bare room is a fine result in a small room and a bad one in a big room. The height taper

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * One corridor trap option (#108 stage 3): a trench across the full width of a straight run.
+ * One corridor trap option (the corridor descent): a trench across the full width of a straight run.
  *
  * <ul>
  *   <li>{@code kind} &mdash; {@link #HAZARD}, an open spiked trench you jump; or {@link #FALSE_FLOOR},

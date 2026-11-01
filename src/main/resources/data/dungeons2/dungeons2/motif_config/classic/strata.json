@@ -6,7 +6,7 @@
       "palette": {
         "shaft": "minecraft:spruce_log", "footing": "dungeonblocks:square_stone_brick",
         // The same square stone as `footing`, which is what this band's floor patterns laid
-        // before `floor_accent` existed (2026-10-30): mud floors look exactly as they did.
+        // before `floor_accent` existed: mud floors look exactly as they did.
         "floor_accent": "dungeonblocks:square_stone_brick",
         // And the same square stone for the two vaults that sprang from `footing`; this band's
         // other vaults name square_mud_brick literally and are unchanged.
@@ -145,7 +145,7 @@
             },
             { "weight": 3, "none": true }
           ],
-          // 2026-10-28 (Mark: the mud band is "a little boring"): plain had NO ceiling slot, and every
+          // Plain had NO ceiling slot, and every
           // room under 9 across is plain, so most of the band's ceilings were bare brick.
           "ceiling": [
             {
@@ -739,7 +739,7 @@
                 }
               ]
             },
-            // 2026-10-30 (Mark): both joists need 7 rows, so a low works room had no ceiling at all
+            // Both joists need 7 rows, so a low works room had no ceiling at all
             // and a big low one had nothing for the big-room rule to give it but a pit. A mud barrel
             // fills exactly that gap: max_height 6, so the taller rooms keep their timber.
             {
@@ -863,7 +863,7 @@
         },
         {
           "name": "mud_shrine", "weight": 4, "min_size": 9, "min_height": 7,
-          // #104: now and then one of the shrine's dead, head to the wall. min 0 / max 1 is "a tomb
+          // Now and then one of the shrine's dead, head to the wall. min 0 / max 1 is "a tomb
           // here sometimes" -- half the rooms. Its contents are the floor's tomb band.
           "tombs": {
             "min_count": 0,
@@ -1104,7 +1104,7 @@
         "springing_inlay": "minecraft:polished_deepslate",
         "plinth_left": "dungeonblocks:left_large_deepslate_brick",
         "plinth_right": "dungeonblocks:right_large_deepslate_brick",
-        // The four roles added to base.json's palette on 2026-09-16. Before they existed these were
+        // The four roles added to base.json's palette. Before they existed these were
         // literals in schemes.json and this band could not reach them -- a `panels` wall rolled
         // STONE pilasters against a deepslate wall, full height. Reported from a live floor 5.
         "pilaster": "dungeonblocks:deepslate_bricks_fluted_block",
@@ -1119,7 +1119,7 @@
         // Tuff for the broad patterns (checkerboards, stripes): mid grey, where basalt is close
         // enough to the deepslate that a whole checkerboard of it barely shows.
         "accent_alt": "minecraft:tuff",
-        // #104: the dead down here lie in deepslate.
+        // The dead down here lie in deepslate.
         "sarcophagus": "dungeonblocks:deepslate_sarcophagus"
       },
 

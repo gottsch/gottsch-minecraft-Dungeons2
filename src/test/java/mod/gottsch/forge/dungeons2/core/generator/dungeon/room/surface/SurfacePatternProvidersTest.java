@@ -435,7 +435,7 @@ class SurfacePatternProvidersTest {
     /**
      * {@code inward} is the value a {@code dungeonblocks} corbel wants: its model puts the post on
      * the far face and cantilevers the arm away from it, so the block faces off its wall into the
-     * room. Kept as an authored choice rather than assumed, because #25's family of inverted trim
+     * room. Kept as an authored choice rather than assumed, because the inverted-facing problem's family of inverted trim
      * models is exactly where reasoning about this has been wrong before.
      */
     @Test

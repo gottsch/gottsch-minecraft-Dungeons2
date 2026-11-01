@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 phase 5 &mdash; the {@code wall} slot reads a material role, and so do the two sections that
+ * The {@code wall} slot reads a material role, and so do the two sections that
  * hold wall content without being a scheme.
  *
  * <p>Deliberately last of the big four. Two of the ten fields belong to records that are

@@ -4,7 +4,7 @@
       "name": "plain",
       "weight": 4,
 
-      // 2026-10-29 (Mark: the stone rooms want more ceilings and pilasters, as the mud band got):
+      // The stone rooms want ceilings and pilasters, as the mud band has:
       // plain had NO wall or ceiling slot, so every plain room was bare above and around. Still the
       // plainest scheme -- a third of each slot is bare, more in small rooms where the gated options
       // drop out.
@@ -197,8 +197,8 @@
             "spike_probability": 0.6
           }
         },
-        // Grated sumps: dry, flooded, molten. Weight 1 each against the x3 weights above (2026-10-21,
-        // Mark: too many grate floors) -- 3 in 31 rooms of 9+, 3 in 18 of 7-8 (was 3 in 12 / 3 in 8).
+        // Grated sumps: dry, flooded, molten. Weight 1 each against the x3 weights above, or there are
+        // too many grate floors -- 3 in 31 rooms of 9+, 3 in 18 of 7-8.
         // Chamber floors start at index 1, so these never reach
         // the mud band (floor 0), whose timber shoring and dressing are not meant for iron.
         {
@@ -544,7 +544,7 @@
             { "block": "dungeonblocks:wall_ring", "weight": 1 }
           ]
         },
-        // Bones where they fell (added 2026-10-22). `bones` is drawn per pile, so no two need match;
+        // Bones where they fell. `bones` is drawn per pile, so no two need match;
         // waterlogged stated because some dungeonblocks defaults are true.
         {
           "weight": 2,
@@ -969,7 +969,7 @@
         { "weight": 2, "none": true },
         // Flagstones (Dungeon Blocks 3.1.0): a pattern three blocks square laid as one field.
         // The field writes tile 0 everywhere; dungeons2:pattern_tile, last in the processor list,
-        // lines each one up with the world. Weight 5 (was 2, 2026-10-22: a whole 5-floor dungeon
+        // lines each one up with the world. Weight 5 (was 2: a whole 5-floor dungeon
         // showed none) -- about 1 hall in 5. Hall only: a chamber's false floor lids itself with
         // the CRUMBLING twin of its floor, and there is no crumbling flagstone, so the pit would be
         // left as an open shaft -- a false floor that is not false.
@@ -1129,7 +1129,7 @@
             { "block": "dungeonblocks:bubbling_cauldron", "weight": 1, "oriented": false }
           ]
         },
-        // A guard post either side of a door (added 2026-10-22): a cheval de frise beside the
+        // A guard post either side of a door: a cheval de frise beside the
         // approach, never in it. `axis` drawn, so the pair is not always parallel.
         {
           "weight": 1,
@@ -1197,7 +1197,7 @@
       "chests": {
         "min_count": 0,
         "max_count": 1,
-        // #99. Low, because a hall's chest is not guaranteed in the first place -- a rate that
+        // Low, because a hall's chest is not guaranteed in the first place -- a rate that
         // bites often on a thing you rarely find makes finding one feel bad rather than tense.
         "mimic_chance": 0.04,
         "variants": [
@@ -1241,7 +1241,7 @@
       "min_floor_index": 1,
       "min_size": 7,
 
-      // A candle either side of each door, or in the corners (added 2026-10-22). UNLIT: a lit
+      // A candle either side of each door, or in the corners. UNLIT: a lit
       // candle is a light source, and a cage spawning a light-tested mob would sit dark-starved
       // in a room the generator lit for it. Lighting them is the player's move.
       "props": [
@@ -1504,7 +1504,7 @@
         { "weight": 3, "none": true }
       ],
 
-      // #104: now and then one of the shrine's dead, head to the wall. min 0 / max 1 is "a tomb
+      // Now and then one of the shrine's dead, head to the wall. min 0 / max 1 is "a tomb
       // here sometimes" -- half the rooms. Its contents are the floor's tomb band.
       "tombs": {
         "min_count": 0,
@@ -1527,13 +1527,13 @@
     },
 
     // ---------------------------------------------------------------------------------------------
-    // #104. The dead's own room: sealed sarcophagi in rows along the walls, heads to the wall, feet
+    // The dead's own room: sealed sarcophagi in rows along the walls, heads to the wall, feet
     // to the aisle -- `tombs` keeps a cell clear round each one. No spawners and no chests, on
     // purpose: the tombs ARE the encounter. Each holds the floor's grave goods or one of its dead,
     // and DungeonBlocks decides which when the lid first moves, so a crypt of four is a gamble four
     // times over. $sarcophagus is stone above and deepslate in the deepslate band.
     //
-    // min_floor_index 1 is a DESIGN gate, not #62's scaffolding: the entrance floor gets its odd
+    // min_floor_index 1 is a DESIGN gate, not the scheme floor gates' scaffolding: the entrance floor gets its odd
     // tomb from mud_shrine instead. min_size 9 leaves an aisle between two rows of tombs.
     // ---------------------------------------------------------------------------------------------
     {
@@ -1542,8 +1542,7 @@
       "min_floor_index": 1,
       "min_size": 9,
 
-      // Candles in the corners, or the bones of the ones who did not make it into a tomb (added
-      // 2026-10-22). A huge candle is `tall`: both halves, or it stands cut off at the wick. Unlit,
+      // Candles in the corners, or the bones of the ones who did not make it into a tomb. A huge candle is `tall`: both halves, or it stands cut off at the wick. Unlit,
       // as the shrine's: a lit candle would starve this room's cage.
       "props": [
         {
@@ -1696,7 +1695,7 @@
       // frame "more wall" from the corridor, and a flush course crossing the door's rows would stop
       // at the door. The motif's own wall pattern still runs, as it does round every door.
       //
-      // The dungeon's counter-item (#97), when there is one to hide, is put on THIS room's pedestal
+      // The dungeon's counter-item (the counter-items), when there is one to hide, is put on THIS room's pedestal
       // in place of the table below.
       "name": "secret_vault",
       "weight": 4,

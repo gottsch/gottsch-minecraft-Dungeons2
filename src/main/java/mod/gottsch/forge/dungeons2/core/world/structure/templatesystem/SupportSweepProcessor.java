@@ -135,7 +135,7 @@ public class SupportSweepProcessor extends StructureProcessor {
         this.nonstructural = nonstructural;
     }
 
-    /** Strict throughout, per backlog #31: an undeclared key is a load error, not a shrug. */
+    /** Strict throughout, per the closed-schema rule: an undeclared key is a load error, not a shrug. */
     public static Codec<SupportSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "ignore", BlockMatch.NONE)

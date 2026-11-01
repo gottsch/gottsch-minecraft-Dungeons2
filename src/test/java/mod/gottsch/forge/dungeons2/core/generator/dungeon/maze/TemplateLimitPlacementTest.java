@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #44's counting half: {@code template_limits} actually constrains how often a prefab is
+ * The template limits' counting half: {@code template_limits} actually constrains how often a prefab is
  * adopted, driven through the real {@link DungeonStackPlanner}.
  *
  * <h2>Why a counting assembler rather than assertions on the layout</h2>
@@ -62,7 +62,7 @@ class TemplateLimitPlacementTest {
      */
     private static final class CountingAssembler implements DungeonStackPlanner.RoomAssembler {
         private final List<String> committed = new ArrayList<>();
-        /** Every floorIndex the planner asked for -- #45 step 3's contract, see the test below. */
+        /** Every floorIndex the planner asked for -- the strata's contract, see the test below. */
         private final List<Integer> floorsAsked = new ArrayList<>();
         private final List<String> only;
 

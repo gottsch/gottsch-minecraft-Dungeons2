@@ -66,7 +66,7 @@ class CoursesWallPatternProviderTest {
 
     /**
      * The reason TOP exists. Room height still varies across 5..10 &mdash; which band of that a
-     * given footprint reaches is #51's taper &mdash; so a crown measured from the floor would drift
+     * given footprint reaches is the room-height taper &mdash; so a crown measured from the floor would drift
      * away from the ceiling; measured from the top it stays put.
      */
     @Test

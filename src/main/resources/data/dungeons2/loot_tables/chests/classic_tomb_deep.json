@@ -3,7 +3,7 @@
   "random_sequence": "dungeons2:chests/classic_tomb_deep",
   "pools": [
     {
-      "//": "GRAVE GOODS, floors 2 and below (#104). The deeper dead were buried richer: gold by the ingot, gems, and burial arms that were enchanted when they went into the ground. Still grave goods rather than a hoard -- the floor-4 band mixes classic_hoard in beside this for the prize.",
+      "//": "GRAVE GOODS, floors 2 and below (the sealed tombs). The deeper dead were buried richer: gold by the ingot, gems, and burial arms that were enchanted when they went into the ground. Still grave goods rather than a hoard -- the floor-4 band mixes classic_hoard in beside this for the prize.",
       "rolls": { "min": 3.0, "max": 5.0 },
       "entries": [
         { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 16,
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "//": "BOSS-TIER LORE (2026-10-22): The Sexton's Ledger, the small-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "//": "BOSS-TIER LORE: The Sexton's Ledger, the small-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "//": "BOSS-TIER LORE (2026-10-22): Brann's Account, the medium-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "//": "BOSS-TIER LORE: Brann's Account, the medium-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
@@ -59,7 +59,7 @@
       ]
     },
     {
-      "//": "BOSS-TIER LORE (2026-10-22): The Last Delve, the large-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "//": "BOSS-TIER LORE: The Last Delve, the large-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,

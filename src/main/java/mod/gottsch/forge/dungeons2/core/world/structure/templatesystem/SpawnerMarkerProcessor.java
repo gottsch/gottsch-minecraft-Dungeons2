@@ -246,7 +246,7 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 // Strict, unlike its neighbours: a misspelled value here would otherwise decode to
                 // Optional.empty() and the boss marker would quietly take the pool's ordinary set --
                 // a boss room whose boss is a skeleton, reported by nothing. The neighbours predate
-                // #31 and are left alone; see ChestMarkerProcessor's codec note.
+                // the closed-schema rule and are left alone; see ChestMarkerProcessor's codec note.
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "boss_mob_set")
                         .forGetter(p -> p.bossMobSet),
                 // In the codec, not merely a field, because the pinned list is written INLINE into
@@ -280,13 +280,13 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
                 //
                 // floatRange, not FLOAT, and so NOT clamped the way the marker's own NBT is: a
                 // datapack value is authored once and read by a human, so "probability": 5.0 should
-                // be a load error (#31's posture), whereas marker NBT arrives during worldgen where
+                // be a load error (the closed-schema rule's posture), whereas marker NBT arrives during worldgen where
                 // throwing is not an option.
                 //
                 // And STRICT, unlike the marker_block above: DFU's own optionalFieldOf(name,
                 // default) SWALLOWS a decode failure and hands back the default, so an out-of-range
                 // value there would silently read as 1.0 and the range check would be decorative.
-                // The neighbours predate #31 and are left alone; a new field does not get to.
+                // The neighbours predate the closed-schema rule and are left alone; a new field does not get to.
                 Codecs.strictOptionalFieldOf(Codec.floatRange(0.0F, 1.0F), "probability",
                         DEFAULT_PROBABILITY).forGetter(p -> p.probability),
                 // Same default and the same reason as the scheme slot's: every marker authored

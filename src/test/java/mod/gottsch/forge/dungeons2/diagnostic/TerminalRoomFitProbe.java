@@ -52,8 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * How big an authored boss room can be before the bottom floor stops fitting it &mdash; backlog
- * #46's step 1, which the entry says must be measured before anything is built.
+ * How big an authored boss room can be before the bottom floor stops fitting it.
+ * The authored boss room's step 1, which the entry says must be measured before anything is built.
  *
  * <h2>It is a geometric fit failure, and that was checked rather than assumed</h2>
  * <p>The obvious reading of a number like "15x15 places on 50% of SMALL seeds" is that
@@ -117,7 +117,7 @@ class TerminalRoomFitProbe {
             attempts.put(size, tried);
         }
 
-        System.out.println("=== #46 terminal-room fit: % of seeds that still PLAN AT ALL ===");
+        System.out.println("=== the authored boss room terminal-room fit: % of seeds that still PLAN AT ALL ===");
         System.out.println("(a failure here is not a missing boss room -- it is no dungeon)");
         StringBuilder header = new StringBuilder(String.format("%-8s", "tier"));
         for (int side : SIZES) {
@@ -156,12 +156,12 @@ class TerminalRoomFitProbe {
 
     /**
      * The number the table above cannot give: how often the <strong>shipped</strong> boss room is
-     * actually adopted &mdash; #46's hand-off step, run when {@code end_rooms} stopped being empty.
+     * actually adopted &mdash; the authored boss room's hand-off step, run when {@code end_rooms} stopped being empty.
      *
      * <h2>The table above asks a harsher question than the mod now asks</h2>
      * <p>{@code withTerminalRoomSize} <em>forces</em> the slot to a size, so a size that does not
-     * fit takes the whole plan down with it &mdash; that is the pre-#46 mechanism, and it is why
-     * the table is headed "% of seeds that still PLAN AT ALL". The assembler path added by #46 does
+     * fit takes the whole plan down with it &mdash; that is the pre-authored boss room mechanism, and it is why
+     * the table is headed "% of seeds that still PLAN AT ALL". The assembler path added by the authored boss room does
      * not work that way: {@code placeBossRoom} returns null when no draw fits, and the caller
      * reserves the ordinary synthetic terminal room instead. So the shipped 19x19 cannot delete a
      * dungeon, and the real question changed from "does it fit" to "how often do we get one".</p>
@@ -181,7 +181,7 @@ class TerminalRoomFitProbe {
                 "no end_rooms template ships, so there is nothing to measure -- if the pool was"
                         + " emptied again, this probe should go back to being a placeholder test");
 
-        System.out.println("=== #46 shipped boss room: adoption vs planning ===");
+        System.out.println("=== the authored boss room shipped boss room: adoption vs planning ===");
         for (int[] wd : shipped) {
             System.out.printf("template footprint %dx%d%n", wd[0], wd[1]);
             for (DungeonSize size : DungeonSize.values()) {
@@ -202,7 +202,7 @@ class TerminalRoomFitProbe {
                         size, 100.0 * planned / DUNGEONS, 100.0 * adopted / DUNGEONS);
 
                 // The invariant the assembler path exists to provide. Adoption is calibration and
-                // is allowed to be low; losing the DUNGEON is the failure #46 was careful to avoid,
+                // is allowed to be low; losing the DUNGEON is the failure the authored boss room was careful to avoid,
                 // and it is the one thing here that gates.
                 assertEquals(DUNGEONS, planned,
                         "a boss room that does not fit must degrade to the synthetic terminal room,"
@@ -214,11 +214,11 @@ class TerminalRoomFitProbe {
 
     /**
      * How often a boss room of each footprint is actually ADOPTED &mdash; the size sweep that
-     * decides whether authoring a second, smaller end room is worth it (#46's remaining question).
+     * decides whether authoring a second, smaller end room is worth it (the authored boss room's remaining question).
      *
      * <h2>Not the same question as {@link #measure()}</h2>
      * <p>{@code measure} forces the terminal slot to a size and reports whether the dungeon still
-     * PLANS, which is the pre-#46 mechanism and a harsher test. This drives the real
+     * PLANS, which is the pre-authored boss room mechanism and a harsher test. This drives the real
      * {@code placeBossRoom} path, where a footprint that does not fit degrades to the synthetic
      * terminal room instead of taking the plan down. The two disagree, and this one is what a
      * player experiences.</p>
@@ -229,7 +229,7 @@ class TerminalRoomFitProbe {
      */
     @org.junit.jupiter.api.Test
     void measureAdoptionByFootprint() {
-        System.out.println("=== #46 boss-room ADOPTION by footprint, through placeBossRoom ===");
+        System.out.println("=== the authored boss room boss-room ADOPTION by footprint, through placeBossRoom ===");
         System.out.printf("%-8s", "tier");
         int[] sides = {7, 9, 11, 13, 15, 17, 19};
         for (int side : sides) System.out.printf("%8s", side + "x" + side);

@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The surface gate, exercised a piece at a time -- which is the only way it can be, since
- * backlog #15 the processor decides in {@code finalizeProcessing} from the whole block list.
+ * The surface map the processor decides in {@code finalizeProcessing} from the whole block list.
  *
  * <p>{@code StratumWeatheringListTest} asserts the shipped JSON is shaped right; this asserts the
  * processor actually honours it. Both matter and neither implies the other &mdash; a gate that
@@ -216,7 +216,7 @@ class SurfaceAgingProcessorTest {
                 run(processor, Blocks.STONE_BRICKS.defaultBlockState(), 0));
     }
 
-    // ---------- backlog #15: the surfaces above the floor ----------
+    // ---------- the surface map: the surfaces above the floor ----------
 
     /**
      * A room reduced to what the classifier reads: a floor that insets by one (so the wall ring
@@ -279,7 +279,7 @@ class SurfaceAgingProcessorTest {
     }
 
     /**
-     * Backlog #45's blocker, in one test. A {@code spruce_log} beam may crumble to a gap because
+     * The strata's blocker, in one test. A {@code spruce_log} beam may crumble to a gap because
      * the shell above it stays intact; the identical block used as a post may not, because that
      * leaves whatever it carries floating. Both are {@link PieceSurface#ABOVE_FLOOR} and no rule
      * keyed on the block could tell them apart.

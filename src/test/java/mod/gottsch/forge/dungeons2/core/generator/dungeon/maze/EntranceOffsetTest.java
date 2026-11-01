@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #2: the entrance is placed at a rolled position within floor 0's grid rather than at its
+ * The entrance is placed at a rolled position within floor 0's grid rather than at its
  * centre.
  *
  * <h2>What actually moves</h2>

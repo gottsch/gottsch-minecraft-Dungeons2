@@ -43,7 +43,7 @@ public final class Codecs {
 
     /**
      * The sigil that marks a <strong>material role</strong> rather than a literal block id &mdash;
-     * {@code "block": "$shaft"}. #65's second half.
+     * {@code "block": "$shaft"}.
      *
      * <p>It goes on the <em>existing</em> key rather than a parallel {@code blockRole} one because
      * there are forty-nine block-valued fields across twenty-six records in this package; a parallel
@@ -60,7 +60,7 @@ public final class Codecs {
      * {@code $role} is a load error naming the field.
      *
      * <h2>Why the rejection has to land before any consumer does</h2>
-     * <p>Material roles arrive one record at a time (#65's phases), so there is an interval in which
+     * <p>Material roles arrive one record at a time (material roles' phases), so there is an interval in which
      * some fields resolve a role and some do not. A field that does not, left alone, hands
      * {@code "$shaft"} straight to {@code BlockStateCodec#blockOrNull}, which returns {@code null}
      * for anything that is not a resolvable id &mdash; and every caller reads {@code null} as

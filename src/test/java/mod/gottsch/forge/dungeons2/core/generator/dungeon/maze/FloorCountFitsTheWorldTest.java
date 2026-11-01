@@ -30,12 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #50: the floor stack stops at the world's floor.
+ * The floor stack stops at the world's floor.
  *
  * <p>{@code floorCount} is rolled from the size tier and nothing used to consult the world bottom,
  * so the stack simply marched down at {@code floorHeight + gapBetweenFloors} and landed wherever it
  * landed. At the shipped pitch of 12 that needed a surface around Y=9 to bite, which is why it was
- * never seen &mdash; but it is unguarded, not safe, and #29's proposed pitch of 19-22 brings the
+ * never seen &mdash; but it is unguarded, not safe, and the floor-height raise's proposed pitch of 19-22 brings the
  * threshold up into terrain that exists.</p>
  *
  * <p>Runs the real planner headlessly: it takes {@code surfaceY} as a plain int, so no world is

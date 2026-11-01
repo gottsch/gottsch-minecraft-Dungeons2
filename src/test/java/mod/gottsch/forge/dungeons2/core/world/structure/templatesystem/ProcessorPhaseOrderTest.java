@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  *
  * <h2>The question this answers</h2>
  * <p>Raised by Gottsch, 2026-09-04, on hearing that {@link SurfaceAgingProcessor} had moved into
- * {@code finalizeProcessing} for backlog #15: <em>"that means I lose the ability to do multi-step
+ * {@code finalizeProcessing} for the surface map: <em>"that means I lose the ability to do multi-step
  * aging using multiple processors"</em>. <strong>No &mdash; that much survives</strong>: two
  * {@code surface_aging} entries chain in either phase, which is what
  * {@link #oneSurfaceAgingProcessorFeedsTheNext} says. What is genuinely out of reach is narrower,
@@ -152,7 +152,7 @@ class ProcessorPhaseOrderTest {
     /**
      * <strong>The compatibility guarantee.</strong> Aging that asks nothing of the piece's geometry
      * stays in {@code processBlock}, so it still feeds a {@code minecraft:rule} after it exactly as
-     * it did before backlog #15. This is what lets {@code classic_weathering.json} move to
+     * it did before the surface map. This is what lets {@code classic_weathering.json} move to
      * {@code surface_aging} without giving up its rule entries.
      */
     @Test

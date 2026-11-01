@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The authored tomb route (#104). A vanilla CHEST stands in for the marker (it has the same
+ * The authored tomb route (the sealed tombs). A vanilla CHEST stands in for the marker (it has the same
  * {@code facing}), and a block built here stands in for the tomb: {@code facing}, {@code part} and
  * {@code open}, with its default taken from {@code stateDefinition.any()} -- which makes it OPEN,
  * exactly the trap the real block's constructor has to dodge. Built through the registry

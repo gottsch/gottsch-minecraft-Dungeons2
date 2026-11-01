@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "THE MINING CHEST'S PAYOUT TABLE -- backlog #7.",
+    "THE MINING CHEST'S PAYOUT TABLE -- the Mining Chest.",
     "",
     "A dungeon carved out of the stone destroys the ore that was in it. One chest per dungeon pays",
     "some of that back, so finding a big dungeon is not a net LOSS of ore. The haul is ESTIMATED",
@@ -8,12 +8,12 @@
     "off real blocks -- postProcess re-runs per chunk, so nothing counted at block-write time can be",
     "trusted. See MiningConfig for the full argument.",
     "",
-    "IT MUST NOT OUT-DO THE BOSS CHEST (Mark, 2026-08-31). It is a nice bonus. The strongest guard",
+    "IT MUST NOT OUT-DO THE BOSS CHEST. It is a nice bonus. The strongest guard",
     "is that it is a different KIND of reward -- raw material, no enchanted book, no diamond gear,",
     "no golden apple -- so classic_hoard wins on kind before any number is compared. The caps below",
     "and payoutFraction are the quantitative half.",
     "",
-    "MEASURED EXCAVATION, 24 seeds each (ExcavationLedger, 2026-08-31, AFTER SMALL's footprint was",
+    "MEASURED EXCAVATION, 24 seeds each (ExcavationLedger, AFTER SMALL's footprint was",
     "raised from 25-35 to 31-43):",
     "  SMALL   ~13,850 blocks  1.4 floors   floorY 24..46",
     "  MEDIUM  ~46,600 blocks  3.2 floors   floorY -20..46",

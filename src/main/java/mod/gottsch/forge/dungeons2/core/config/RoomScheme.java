@@ -633,7 +633,7 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
 
     /**
      * This scheme with every {@code $role} in its block fields replaced by the literal the palette
-     * in scope names. #65's second half, phase by phase.
+     * in scope names. Material roles' second half, phase by phase.
      *
      * <h2>One walk, two jobs</h2>
      * <p>{@code MotifConfig#forFloor} calls this to <em>substitute</em>; {@code MotifConfigFragment}
@@ -709,7 +709,7 @@ public record RoomScheme(String name, int weight, SizeGate gate, RoomSlots slots
      * it is the coarser filter, it is a single comparison against a value that does not vary within
      * a floor, and it is the one an author is more likely to have meant.</p>
      *
-     * <p>Combined with a cap on a template ({@code #44}) this is what a mini-boss is made of:
+     * <p>Combined with a cap on a template (the template limits) this is what a mini-boss is made of:
      * {@code min_floor_index} puts it deep, the cap makes it rare.</p>
      */
     public boolean fitsFloor(int floorIndex) {

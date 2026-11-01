@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The dark fog's arithmetic (#129 step 3): it eases rather than snaps, deeper is closer, and it
+ * The dark fog's arithmetic (the mood biomes): it eases rather than snaps, deeper is closer, and it
  * never reaches past vanilla's fog.
  *
  * @author Mark Gottschling on 10/26/2026

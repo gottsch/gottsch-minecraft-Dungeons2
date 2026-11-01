@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code partition} slot's schema (#74).
+ * The {@code partition} slot's schema (the partition slot).
  *
  * <p>Two things are worth a test here beyond the usual closed-schema sweep. The {@code block} field
  * is <strong>required</strong> where the pit's is not, and the reason is not symmetry: a pit with no
@@ -115,7 +115,7 @@ class PartitionPatternEntryTest {
     }
 
     /**
-     * Height is capped at 8, which is as tall as the taper (#51) lets a room's interior be. A bigger
+     * Height is capped at 8, which is as tall as the taper (the room-height taper) lets a room's interior be. A bigger
      * number could never mean more than 8 does, so it is rejected rather than silently clamped --
      * the clamp that DOES happen is against the actual room, which no codec can see.
      */

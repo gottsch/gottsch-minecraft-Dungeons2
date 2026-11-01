@@ -31,7 +31,7 @@ import java.util.Optional;
 /**
  * One straight run wall to wall, dividing the room in two, with a way through it.
  *
- * <p>The other half of what #74 asked for: "across a corner <em>or a strip of the room</em>". Where
+ * <p>The other half of what the partition slot asked for: "across a corner <em>or a strip of the room</em>". Where
  * {@link CornerPartitionShape} makes a cell, this makes an <strong>antechamber</strong> &mdash; you
  * come in, and the rest of the room is on the far side of a grate.</p>
  *

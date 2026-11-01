@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The chest depth axis. Backlog #48 step 2.
+ * The chest depth axis.
  *
  * <p>Mirrors {@code MobSetBand}'s behaviour deliberately, so these assertions are the same
  * assertions: bands open-ended downward, the deepest started band wins, and a scheme that names its

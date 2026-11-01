@@ -130,7 +130,7 @@ class ShippedGrowthEntitiesTest {
      * Every {@code "entity"} id named in a growth palette of the shipped processor lists.
      *
      * <p>Inside the {@code "blocks"} palettes only, since 2026-09-26: the tomb processor's
-     * {@code guardians} (#104) are the second {@code entity} key these files carry, and they name
+     * {@code guardians} (the sealed tombs) are the second {@code entity} key these files carry, and they name
      * vanilla mobs on purpose. A guardian is not grown; {@code ShippedTombsTest} sweeps those.</p>
      */
     private static Set<String> grownEntities() throws IOException {

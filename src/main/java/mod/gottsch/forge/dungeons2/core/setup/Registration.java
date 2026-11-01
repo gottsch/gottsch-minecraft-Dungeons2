@@ -354,9 +354,9 @@ public class Registration {
 		// registers NOTHING, silently and with no error. Do this before register(eventBus).
 		mod.gottsch.forge.dungeons2.core.entity.DungeonsEntities.register();
 		mod.gottsch.forge.dungeons2.core.item.DungeonsItems.register();
-		// Added 2026-08-14 with #10's mob-set spawner. Both of these holders had been registering
+		// Added 2026-08-14 with the mob-set spawner. Both of these holders had been registering
 		// nothing since they were written -- see DungeonsBlockEntities' javadoc, and note that
-		// backlog #43's "do not wire these up" advice was about the dead deferred-generator entry,
+		// The legacy-path removal's "do not wire these up" advice was about the dead deferred-generator entry,
 		// which is now sharing a holder with a live block.
 		mod.gottsch.forge.dungeons2.core.block.DungeonsBlocks.register();
 		mod.gottsch.forge.dungeons2.core.block.entity.DungeonsBlockEntities.register();

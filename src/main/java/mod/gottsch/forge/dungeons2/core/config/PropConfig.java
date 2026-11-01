@@ -262,7 +262,7 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
             Codecs.strictOptionalFieldOf(PropPlacement.CODEC, "placement", PropPlacement.AGAINST_WALL)
                     .forGetter(PropConfig::placement),
             PropVariant.CODEC.listOf().fieldOf("variants").forGetter(PropConfig::variants),
-            // #99, and it applies ONLY to a barrel variant -- see RoomFurnitureGenerator. A crate
+            // It applies ONLY to a barrel variant -- see RoomFurnitureGenerator. A crate
             // or an anvil that stood up and bit would need a model that does not exist, so the
             // rate is on the slot but the eligibility is on the block.
             Codecs.strictOptionalFieldOf(Codec.doubleRange(0.0D, 1.0D), "mimic_chance", NO_MIMICS)
@@ -273,7 +273,7 @@ public record PropConfig(int minCount, int maxCount, PropPlacement placement,
     public static final Codec<PropConfig> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
-     * This slot with each variant's block resolved against the palette in scope. #65's second half;
+     * This slot with each variant's block resolved against the palette in scope. Material roles' second half;
      * {@code placement} names a rule rather than a material, so there is nothing there for a role.
      */
     public PropConfig withRoles(UnaryOperator<String> resolver) {

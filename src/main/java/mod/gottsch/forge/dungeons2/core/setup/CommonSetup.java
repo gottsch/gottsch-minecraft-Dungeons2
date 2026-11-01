@@ -108,7 +108,7 @@ public class CommonSetup {
 	 * @param event
 	 */
 	public static void common(final FMLCommonSetupEvent event) {
-		// Advancement criteria (#129 follow-up). Vanilla's trigger map is a plain HashMap, so on the
+		// Advancement criteria (for the mood biomes). Vanilla's trigger map is a plain HashMap, so on the
 		// main thread rather than from the (parallel) mod constructor; datapacks load after this.
 		event.enqueueWork(mod.gottsch.forge.dungeons2.core.advancement.DungeonsTriggers::register);
 		wireRangedAttacks();
@@ -116,11 +116,11 @@ public class CommonSetup {
 		// add mod specific logging
 		Config.instance.addRollingFileAppender(Dungeons.MOD_ID);
 
-		// Backlog #10 diagnostic. Registration is the one thing about the mob-set spawner that
+		// Registration is the one thing about the mob-set spawner that
 		// cannot be observed from inside the game: the block is invisible, so "registered and
 		// working" and "block entity type missing" look identical, and a DeferredRegister holder
 		// that never class-loads registers NOTHING with no error at all (see DungeonsBlockEntities,
-		// and #40/#41 where the same trap ate the rats). This runs after registration is complete,
+		// and the rat and giant rat where the same trap ate the rats). This runs after registration is complete,
 		// so it is the authoritative answer.
 		//
 		logRegistryPresence();
@@ -303,7 +303,7 @@ public class CommonSetup {
 		// itself flavoured as "a zombie about 20% better", so a plain zombie is the direct substitute
 		// rather than a different mob entirely.
 		//
-		// NOT DD's weights any more: zombie 60 -> 30, spectator 20 -> 40. At DD's
+		// Deliberate: NOT DD's weights any more: zombie 60 -> 30, spectator 20 -> 40. At DD's
 		// 20 of 140 the Spectator was one summon in seven -- about six minutes of fighting in sight
 		// before one appeared -- and a summon is its ONLY route into the game (see
 		// MobSpawnExclusionTest.EXEMPT). Now 40 of 130, about one in three. The zombie is the one
@@ -571,7 +571,7 @@ public class CommonSetup {
 	}
 
 	/**
-	 * Reports whether #10's block, its block entity type and its marker are actually in the game's
+	 * Reports whether the mob-set spawner's block, its block entity type and its marker are actually in the game's
 	 * registries, at debug level.
 	 */
 	private static void logRegistryPresence() {

@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The RISING vault (#68): a ceiling treatment that reaches up into the floor's own unspent budget
+ * The RISING vault (the rising vault): a ceiling treatment that reaches up into the floor's own unspent budget
  * instead of hanging down into the room's headroom.
  *
  * <h2>What actually needs proving</h2>
@@ -200,7 +200,7 @@ class RisingVaultTest {
     void aRoomWhoseSchemeDoesNotRiseIsUntouchedByAllOfThis() {
         int ceilingY = FLOOR_Y + room().getHeight() - 1;
         // The regression that matters most: every shipped scheme authors rise 0, and every one of
-        // them must render exactly where it did before #68 even with a budget available.
+        // them must render exactly where it did before the rising vault even with a budget available.
         List<BlockPlacement> out = render(6,
                 new SurfacePatternEntry(new FieldCeilingPattern(VAULT_BLOCK, 1, Map.of())));
 

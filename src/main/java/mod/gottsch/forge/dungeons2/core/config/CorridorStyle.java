@@ -63,7 +63,7 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
                             Optional<CorridorDescent> descent, Optional<String> stepBlock,
                             Optional<CorridorTrap.Options> traps) {
 
-    /** The pre-traps form (#108 stage 3). */
+    /** The pre-traps form (the corridor descent). */
     public CorridorStyle(String name, int weight, int height, Profile profile,
                          Optional<String> archBlock, Optional<Integer> narrowHeight,
                          List<WallPatternEntry.CourseEntry> courses,
@@ -108,7 +108,7 @@ public record CorridorStyle(String name, int weight, int height, Profile profile
     }
 
     /**
-     * This style's {@code courses} with their roles resolved. #65 phase 5.
+     * This style's {@code courses} with their roles resolved.
      *
      * <p>A corridor holds a bare {@code List<CourseEntry>} rather than a whole
      * {@link WallPatternEntry}, which is the shape none of the earlier phases had to deal with: the

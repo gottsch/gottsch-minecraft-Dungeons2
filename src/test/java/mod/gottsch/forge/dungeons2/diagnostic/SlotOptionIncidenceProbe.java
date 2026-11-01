@@ -41,10 +41,10 @@ import java.util.Optional;
 /**
  * <strong>How often each slot OPTION actually draws, once a converted scheme is rolled.</strong>
  *
- * <p>A measurement, not an assertion &mdash; it prints and passes. This is the tool #65 asks for:
+ * <p>A measurement, not an assertion &mdash; it prints and passes. This is the tool material roles asks for:
  * once a slot holds alternatives, "scheme X appears in 3.7% of rooms" stops being a complete
  * sentence, because the scheme is now a distribution rather than a room. The number that matters is
- * per option, and the failure mode it exists to catch is the one the backlog names: a list with no
+ * per option, and the failure mode it exists to catch is the one the plan names: a list with no
  * {@code none} entry puts its treatment in <strong>100%</strong> of that scheme's rooms, which is
  * invisible until someone walks the dungeon. Band-level joists reached 55.9% that way and became
  * the mud band's look rather than a room type.</p>

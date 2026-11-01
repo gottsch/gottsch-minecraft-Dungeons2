@@ -90,7 +90,7 @@ class VanillaRuleChainingTest {
      * match</em>, testing every rule against the state it was handed rather than against the state a
      * previous rule produced. So authoring {@code A -> B} and {@code B -> C} as two rules in one
      * processor gives B, not C -- exactly what {@code AgingProcessor} does, and exactly the shape
-     * that left six rules dormant in the shipped file (Backlog #26).</p>
+     * that left six rules dormant in the shipped file (the unreachable aging rules).</p>
      */
     @Test
     void withinOneRuleProcessorTheRulesDoNotChain() {

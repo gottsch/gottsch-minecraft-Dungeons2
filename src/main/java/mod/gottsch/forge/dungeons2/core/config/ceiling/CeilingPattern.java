@@ -63,7 +63,7 @@ public interface CeilingPattern {
 
     /**
      * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
-     * scope names. #65 phase 4, and the exact counterpart of {@code FloorPattern#withRoles} --
+     * scope names. It is the exact counterpart of {@code FloorPattern#withRoles} --
      * including the reason it is a {@code default} rather than abstract: the registry is open to
      * other mods, so an abstract method would break every third-party pattern on upgrade, and the
      * default is safe because a field only carries a role when its codec is

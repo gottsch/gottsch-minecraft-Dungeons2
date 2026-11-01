@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Scheme inheritance (backlog #23): {@code extends}, {@code abstract}, and the two faults that can
+ * Scheme inheritance (scheme inheritance): {@code extends}, {@code abstract}, and the two faults that can
  * only be caught after the fragments have merged.
  *
  * <p>Pure codec and folding work &mdash; block ids stay strings until render time, so no Minecraft

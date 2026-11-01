@@ -43,7 +43,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * What the shipped ore table actually pays out, across sizes and seeds &mdash; backlog #7.
+ * What the shipped ore table actually pays out, across sizes and seeds.
  *
  * <h2>The table is numbers, and numbers need measuring</h2>
  * <p>Every rate in {@code mining_config/default.json} is a guess until a dungeon is planned against
@@ -102,7 +102,7 @@ class MiningHaulCalibrationTest {
      * Every {@code item} in the shipped table is a real item.
      *
      * <p>The item-registry twin of {@code ShippedBlockIdsTest}, and it exists for the same reason
-     * #13 did: a misspelled id does not fail to load, it produces a chest quietly missing one ore.
+     * The block-id sweep did: a misspelled id does not fail to load, it produces a chest quietly missing one ore.
      * The block sweep cannot cover these &mdash; an ore band names an ITEM, so it is classified into
      * that test's {@code NON_BLOCK_KEYS} and lands here instead.</p>
      */

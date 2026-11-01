@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <h2>Why this exists</h2>
  * <p>{@code EntrancePoolWiringTest} verifies the pools are wired; nothing verified that the chain
- * they wire <em>reaches</em>. That is backlog #52's lesson at the other end of the dungeon: an
+ * they wire <em>reaches</em>. That is the transition span guard's lesson at the other end of the dungeon: an
  * unwritten contract between the {@code .nbt} files and a constant, enforced by nothing. It matters
  * now because the entrance is the one chain whose bottom marker <strong>defines floor 0's walking
  * plane</strong> &mdash; a broken entrance is not a cosmetic fault, it is a dungeon with no way

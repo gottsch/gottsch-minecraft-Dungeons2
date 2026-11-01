@@ -33,7 +33,7 @@ import java.util.Optional;
  *
  * <p>Blind means the opening is not cut. The cells inside each outline are left untouched, so
  * whatever this composes over shows through them &mdash; which is what makes it decoration on a
- * wall rather than a hole in one. A recess is #76, and a different feature.</p>
+ * wall rather than a hole in one. A recess is the wall niche, and a different feature.</p>
  *
  * <h2>The fields</h2>
  * <ul>

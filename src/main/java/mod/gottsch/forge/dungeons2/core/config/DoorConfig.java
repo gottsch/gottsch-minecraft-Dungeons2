@@ -58,11 +58,11 @@ public record DoorConfig(String door, String lintel, String floor, double probab
     }
 
     /**
-     * This section's three materials with any {@code $role} resolved. #65 phase 7, and the only
+     * This section's three materials with any {@code $role} resolved. It is the only
      * section that had no {@code withRoles} at all before it -- it holds no pattern, just the door,
      * its lintel and the sill under it.
      *
-     * <p>#65 phase 7: the SHELL materials read a role too. Decided in by Mark on 2026-09-01, against
+     * <p>The SHELL materials read a role too. Deliberate, against
      * an earlier note that it might never be worth doing. Two reasons, and the second corrects the
      * reasoning behind that note: it would be odd for every other block field in the schema to take
      * a role and these not to, whether or not anyone uses it -- an author should not have to

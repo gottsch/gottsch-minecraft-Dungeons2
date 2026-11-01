@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Every marker processor must be reachable from every shipped weathering list. Backlog #61.
+ * Every marker processor must be reachable from every shipped weathering list.
  *
  * <h2>The failure this exists to make impossible</h2>
  * <p>A marker processor converts an authored block into the thing it stands for &mdash; a chest, a
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * walking to it.</p>
  *
  * <p>That is exactly what happened to {@code dungeons2:chest}. It shipped in a processor list of its
- * own, {@code dungeons2:classic_chests}, built for one throwaway test template during #48's in-game
+ * own, {@code dungeons2:classic_chests}, built for one throwaway test template during the chest routing's in-game
  * trip ({@code 0bc6a45}). The template was removed again ({@code 93baad8}) and the list stayed,
  * referenced by nothing, for eleven days &mdash; a whole feature reachable from no pool in the mod.
  * Nothing failed, because nothing was asking this question.</p>
@@ -80,7 +80,7 @@ class MarkerProcessorWiringTest {
             "dungeons2:spawner",
             "dungeons2:pot",
             "dungeons2:chest",
-            // #104. Its marker left standing is a tomb's foot with no tomb.
+            // Its marker left standing is a tomb's foot with no tomb.
             "dungeons2:sarcophagus");
 
     /** Every shipped list, checked against the directory by {@link #everyShippedListIsChecked}. */
@@ -90,7 +90,7 @@ class MarkerProcessorWiringTest {
             "classic_deepslate_weathering.json",
             "classic_entrance_weathering.json", "classic_mine_weathering.json",
             // The boss room's list (2026-09-03) is the smallest one that ships -- no decoration,
-            // no sweep, four aging rules. It is NOT exempt here and must not become so: #61 is
+            // no sweep, four aging rules. It is NOT exempt here and must not become so: the chest-marker wiring is
             // about a marker processor missing from a list a pool names, and a deliberately
             // minimal list is exactly where that omission is easiest to make and hardest to see.
             // One per DungeonSize tier since 2026-09-04: three near-identical lists differing

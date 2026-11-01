@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code partition} slot (#74). Pure data &mdash; a block id stays a string until the piece
+ * The {@code partition} slot (the partition slot). Pure data &mdash; a block id stays a string until the piece
  * resolves it, so no Minecraft bootstrap is needed.
  *
  * <p>A partition is the first thing that changes the SHAPE of the room, so the invariants worth

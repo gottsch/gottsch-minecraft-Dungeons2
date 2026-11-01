@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Reading a pool element's template id back out of it &mdash; backlog #44's prerequisite.
+ * Reading a pool element's template id back out of it &mdash; the template limits' prerequisite.
  *
  * <p>Nothing could cap a prefab room before this, because D2 never learned which prefab vanilla
  * handed it: {@code AssembledRoom} carried a footprint and the layout recorded a single constant

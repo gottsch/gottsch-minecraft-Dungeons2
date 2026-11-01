@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The floor `diagonal` type (#82): alternating bands at 45 degrees.
+ * The floor `diagonal` type (the chevron and diagonal floors): alternating bands at 45 degrees.
  *
  * <p>Two things here are decisions rather than arithmetic. The bands are computed in
  * <strong>floor-local</strong> coordinates, so each room starts its own banding at its own corner
@@ -177,7 +177,7 @@ class DiagonalFloorPatternProviderTest {
     }
 
     /**
-     * The anchoring decision the backlog entry asked for: local coordinates, so the banding belongs
+     * The anchoring decision the original plan asked for: local coordinates, so the banding belongs
      * to the room. Two rooms at different world positions draw identical floors rather than two
      * windows onto one dungeon-wide striped field.
      */

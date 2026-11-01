@@ -227,7 +227,7 @@ public record Stratum(int minFloorIndex, Optional<String> name, Optional<WallCon
             // declaring an empty map are the same statement, and an empty default says it.
             Codecs.strictOptionalFieldOf(Codecs.PALETTE, "palette", Map.of())
                     .forGetter(Stratum::palette),
-            // #129. The mood biome painted over this depth's pieces; absent falls through to the
+            // The mood biome painted over this depth's pieces; absent falls through to the
             // motif's own -- see MotifConfig#biomeFor.
             Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "biome").forGetter(Stratum::biome)
     ).apply(instance, Stratum::new))).flatXmap(Stratum::validateBand, Stratum::validateBand);

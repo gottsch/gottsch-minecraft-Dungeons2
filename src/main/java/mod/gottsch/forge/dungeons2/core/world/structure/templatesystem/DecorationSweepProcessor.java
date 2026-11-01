@@ -66,7 +66,7 @@ import java.util.function.Supplier;
  * piece north of it and the {@code 5x11_hallway_2} prefab south of it both write {@code z=1802}.
  * The northern piece rendered first, its decoration pass saw its own full-cube wall block there,
  * grew the mold against it &mdash; and then the prefab, authored and therefore rendered last
- * (backlog #18's standing rule), re-skinned the cell with the facade. Every input the processor
+ * (the shared-wall rule), re-skinned the cell with the facade. Every input the processor
  * validated was true when it ran and false by the time a player saw it. No amount of care inside a
  * piece-local processor can see this coming: the piece that breaks the support is a different
  * piece, running later, and it is the only one in a position to notice.
@@ -149,7 +149,7 @@ public class DecorationSweepProcessor extends StructureProcessor {
     /**
      * Every field defaults to {@link BlockMatch#NONE}, i.e. "sweep nothing of this kind". A motif
      * that turns a decoration behaviour off simply leaves the matching field out here. Strict
-     * throughout, per backlog #31: an undeclared key or a malformed value is a load error, not a
+     * throughout, per the closed-schema rule: an undeclared key or a malformed value is a load error, not a
      * silently ignored one.
      */
     public static Codec<DecorationSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {

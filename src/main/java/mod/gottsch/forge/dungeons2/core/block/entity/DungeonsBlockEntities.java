@@ -19,12 +19,12 @@ import net.minecraftforge.registries.RegistryObject;
  * no error &mdash; the identical trap {@code DungeonsEntities} hit during the rat work.
  * {@link Registration#init()} now touches both explicitly.</p>
  *
- * <h2>Backlog #43 said not to fix this. That advice was right, and is now spent</h2>
- * <p>#43's reasoning: wiring these up "would put a block with no model, no loot table and no display
+ * <h2>The legacy-path removal said not to fix this. That advice was right, and is now spent</h2>
+ * <p>The legacy-path removal's reasoning: wiring these up "would put a block with no model, no loot table and no display
  * name into the registry to serve a code path that does not run". True while the deferred-generator
- * type was the only occupant. #10's mob-set spawner is a live block that genuinely needs
+ * type was the only occupant. The mob-set spawner is a live block that genuinely needs
  * registering, so the holder had to be wired regardless &mdash; and <strong>Phase 6 then deleted the
- * dead entry outright (2026-08-18)</strong>, which is the resolution #43 asked for: the field and
+ * dead entry outright (2026-08-18)</strong>, which is the resolution the legacy-path removal asked for: the field and
  * its block go, this class stays because live content is in it.</p>
  *
  * @author Mark Gottschling on Oct 25, 2023
@@ -85,7 +85,7 @@ public class DungeonsBlockEntities {
 							DungeonsBlocks.POT_MARKER.get()).build(null));
 
 	/**
-	 * #104. Like the other three it carries no behaviour: it exists so a template can store a
+	 * Like the other three it carries no behaviour: it exists so a template can store a
 	 * tomb's contents per marker and {@code SarcophagusMarkerProcessor} can read them back.
 	 */
 	public static final RegistryObject<BlockEntityType<SarcophagusMarkerBlockEntity>> SARCOPHAGUS_MARKER =

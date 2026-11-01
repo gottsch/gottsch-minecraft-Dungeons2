@@ -3,7 +3,7 @@
   "random_sequence": "dungeons2:pedestals/classic_altar",
   "pools": [
     {
-      "//": "THE OFFERING on an altar room's pedestal (2026-10-24). One roll: a pedestal shows only the first stack its table gives. What a cult left on its altar -- gold, a gem, a book of its learning, a skull -- worth stopping for but a step below pedestals/secret, which is the prize for finding a hidden room. The rare entries (totem, wither skull, golden apple) keep the odd altar memorable.",
+      "//": "THE OFFERING on an altar room's pedestal. One roll: a pedestal shows only the first stack its table gives. What a cult left on its altar -- gold, a gem, a book of its learning, a skull -- worth stopping for but a step below pedestals/secret, which is the prize for finding a hidden room. The rare entries (totem, wither skull, golden apple) keep the odd altar memorable.",
       "rolls": 1.0,
       "entries": [
         { "type": "minecraft:item", "name": "minecraft:gold_ingot", "weight": 14,

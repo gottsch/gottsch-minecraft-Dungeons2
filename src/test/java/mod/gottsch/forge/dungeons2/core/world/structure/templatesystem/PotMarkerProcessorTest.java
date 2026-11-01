@@ -40,11 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The authored vocabulary a {@code dungeons2:pot_marker} carries &mdash; backlog #56.
+ * The authored vocabulary a {@code dungeons2:pot_marker} carries.
  *
  * <h2>What can and cannot be tested here</h2>
  * <p>Forge <strong>locks the block registry</strong> outside a running game, so the marker BLOCK and
- * its block entity cannot be constructed in a unit test at all &mdash; the trap the backlog entry
+ * its block entity cannot be constructed in a unit test at all &mdash; the trap the original plan
  * flagged before either marker was built, and the same one the fungus-growth entry describes. What
  * survives that is the part where the bugs actually live: the NBT the marker carries is read back by
  * plain static helpers on the processor, and those need no registry. They are package-private for

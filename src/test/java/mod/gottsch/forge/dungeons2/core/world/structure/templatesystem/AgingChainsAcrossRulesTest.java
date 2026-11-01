@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <h2>Why this is a test and not a claim</h2>
  * <p>The answer has been asserted from bytecode reading since Aug 04 2026, and repeated in the
- * backlog (#26), two memories and several file comments, without ever being executed. It was
+ * the plan, two memories and several file comments, without ever being executed. It was
  * challenged on 2026-08-05 with real in-game evidence: large stone brick had visibly weathered to
  * cobblestone in a corridor wall, which looks exactly like
  * {@code large_stone_brick -> mossy_large_stone_brick -> cobblestone} chaining across two rules.
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <h2>Vanilla blocks only, deliberately</h2>
  * <p>The real rules name {@code dungeonblocks:*} ids, and under a bare {@code Bootstrap} those
- * resolve to {@code minecraft:air} rather than failing (backlog #13) -- a rule keyed on air would
+ * resolve to {@code minecraft:air} rather than failing (the block-id sweep) -- a rule keyed on air would
  * make this test meaningless. Everything here is vanilla, and the question is about the processor's
  * control flow, not about any particular block.</p>
  *
@@ -142,7 +142,7 @@ class AgingChainsAcrossRulesTest {
 
         assertEquals(1600, outcomes.getOrDefault(mossy, 0),
                 "every block should stop at the FIRST rule's output; a cobblestone here would mean "
-                        + "the processor re-resolves what it just produced, and Backlog #26 plus "
+                        + "the processor re-resolves what it just produced, and the unreachable-rule notes plus "
                         + "several file comments are wrong: " + outcomes);
         assertEquals(0, outcomes.getOrDefault(cobble, 0),
                 "cobblestone is only reachable by matching the second rule against the first "

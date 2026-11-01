@@ -273,7 +273,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // What the volume slots must not build into: the pit's excavated cells and the partition's
         // run. One set rather than two parameters, because to a layout they are the same fact --
         // this cell is not available -- and a second parameter is one more thing a new generator can
-        // forget to ask for. (#58 is the entry for why asking has to be explicit at all.)
+        // forget to ask for. (A pit and a column once shared a cell because asking was not explicit.)
         Set<Coords2D> blockedFloorCells = new HashSet<>(pit);
         blockedFloorCells.addAll(partition);
 
@@ -291,7 +291,7 @@ public class BasicRoomGenerator implements IRoomGenerator {
         // interior air, and where a dais meets a column the column should be the thing standing on
         // it.
         //
-        // ORDER ALONE WAS NOT ENOUGH, exactly as it was not enough for the pit (#58 above), and
+        // ORDER ALONE WAS NOT ENOUGH, exactly as it was not enough for the pit (see above), and
         // this comment claimed more than the code did for the same reason. Running second only
         // makes the columns EXIST before the dais is planned; the dais still has to be told where
         // they are, and it was not -- it was handed the pit-and-partition set and nothing else. So

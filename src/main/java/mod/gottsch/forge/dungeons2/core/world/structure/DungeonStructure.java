@@ -200,7 +200,7 @@ public class DungeonStructure extends Structure {
      * that no transition chained).
      *
      * <p><strong>The continuation pools are named per chain, not per role</strong>
-     * (#11, 2026-08-14): {@code stairs_2/segment} and {@code stairs_2/top}, because
+     * (the per-chain transition pools): {@code stairs_2/segment} and {@code stairs_2/top}, because
      * their contents are specific to one authored staircase -- "the middle of
      * stairs_2", not "any middle". {@code shaft_bottom} keeps its role name on
      * purpose: it genuinely is the generic start pool, and unrelated transitions
@@ -235,7 +235,7 @@ public class DungeonStructure extends Structure {
      *
      * <p>{@code rooms/<motif>/<stratum>/normal}, tried ahead of {@link #roomStartPool}. Without it,
      * prefabs are ~20% of a dungeon's rooms and all baked stone brick, so a stone-brick prefab lands
-     * in a cobblestone floor 0 &mdash; #5's own "the rooms case is the weak one" problem in new
+     * in a cobblestone floor 0 &mdash; the pool fallback's weak case in new
      * clothes, except here the mismatch is guaranteed rather than merely possible.</p>
      */
     private static ResourceLocation roomStartPool(String motifValue, String stratum) {
@@ -271,13 +271,13 @@ public class DungeonStructure extends Structure {
     /**
      * The authored boss room for the bottom floor's terminal slot.
      *
-     * <p>A fourth pool category alongside entrance / transitions / rooms, resolving through #5's
+     * <p>A fourth pool category alongside entrance / transitions / rooms, resolving through the pool fallback's
      * fallback like the rest. <strong>Nothing ships one</strong>, deliberately: with no
      * {@code end_rooms} pool authored the resolver returns empty, the assembler returns empty, and
      * the planner builds the procedural terminal room exactly as it does today. Authoring the pool
      * is what turns the feature on.</p>
      *
-     * <p>Under #45 this is the one category that will <em>not</em> need a stratum tier: the terminal
+     * <p>Under the strata this is the one category that will <em>not</em> need a stratum tier: the terminal
      * slot is always on the bottom floor, which is always in the deepest stratum, so there is
      * exactly one stratum a boss room can ever be authored for. Stated here so nobody adds the
      * folder level for symmetry.</p>
@@ -384,7 +384,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Which room pool to use, with the stratum tier in front of #5's two.
+     * Which room pool to use, with the stratum tier in front of the pool fallback's two.
      *
      * <p>Three tiers: {@code rooms/<motif>/<stratum>/normal}, then {@code rooms/<motif>/normal},
      * then {@code rooms/classic/normal}. A motif with no strata, or a stratum that authors no rooms
@@ -415,7 +415,7 @@ public class DungeonStructure extends Structure {
     private static Optional<Holder.Reference<StructureTemplatePool>> resolveRoomStartPool(
             GenerationContext context, String motifValue, Optional<String> stratum) {
         if (stratum.isEmpty()) {
-            // Byte-for-byte the pre-#45 path, taken by every motif shipped today.
+            // Byte-for-byte the pre-strata path, taken by every motif shipped today.
             return resolveStartPool(context, motifValue, DungeonStructure::roomStartPool);
         }
         Registry<StructureTemplatePool> poolRegistry =
@@ -505,7 +505,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * Whether this motif (or {@code classic}, through #5's fallback) has any non-empty boss pool at
+     * Whether this motif (or {@code classic}, through the pool fallback) has any non-empty boss pool at
      * any tier. The switch for {@code withBossRoomAssembler}.
      *
      * <p>Non-emptiness is still the load-bearing half, for the reason the call site records: a
@@ -844,7 +844,7 @@ public class DungeonStructure extends Structure {
         // template. Keyed by world footprint so accepted groups can be picked out
         // once plan() has decided; see commitStagedTransitions.
         List<StagedTransition> stagedTransitions = new ArrayList<>();
-        // Constructed BEFORE the assembler that captures it, because #52's span check has to ask
+        // Constructed BEFORE the assembler that captures it, because the transition span check has to ask
         // the planner what pitch it is actually planning at. The `with*` knobs below still run
         // first in wall-clock terms -- the lambda only fires from inside plan() -- so reading
         // planner.pitch() there sees the configured value, not the default. Hand-copying the
@@ -855,7 +855,7 @@ public class DungeonStructure extends Structure {
         // Hoisted rather than resolved inline: the [D2-SCHEME] logging below needs the same
         // config, and a room's scheme roll must be read from the motif the planner actually ran
         // with or the log would name a scheme the room does not have. Hoisted ABOVE the assemblers
-        // as of #45 step 3, because the room assembler now reads the stratum table off it -- a pure
+        // because the room assembler now reads the stratum table off it -- a pure
         // registry lookup, so moving it earlier changes nothing but what can capture it.
         final MotifConfig motifConfig = MotifConfigHelper.get(context.registryAccess(), motifValue);
         DungeonStackPlanner.TransitionAssembler transitionAssembler = (worldX, worldY, worldZ, assemblySeed, commit) -> {
@@ -941,7 +941,7 @@ public class DungeonStructure extends Structure {
                     rgeo.worldFootprint(), rgeo.doorWorldCells(), rgeo.premadeWorldCells(),
                     // Which prefab vanilla actually drew. Read here because this is the only point
                     // that still holds the assembled pieces -- the planner receives geometry, and
-                    // the rendered piece is a footprint by then. Backlog #44 counts these.
+                    // the rendered piece is a footprint by then. The template limits count these.
                     PoolElementIds.locationsOf(assembled)));
         };
 
@@ -965,7 +965,7 @@ public class DungeonStructure extends Structure {
             if (rgeo == null) {
                 // No end_rooms pool authored is the normal case today, and it is silent on purpose:
                 // this category is optional content, unlike the entrance and transition pools whose
-                // absence #5 warns about because it breaks the dungeon structurally.
+                // absence the pool fallback warns about because it breaks the dungeon structurally.
                 return Optional.empty();
             }
             seatRoomOnWalkingPlane(assembled, rgeo, worldY, generationConfig.sinkOffset());
@@ -1440,7 +1440,7 @@ public class DungeonStructure extends Structure {
             (p.getY() >= splitY ? topPremade : bottomPremade).add(new Coords2D(p.getX(), p.getZ()));
         }
 
-        // #52. Measured across the DOOR markers only -- connector markers sit on a floor plane and
+        // Measured across the DOOR markers only -- connector markers sit on a floor plane and
         // would drag the span, and the piece volume is not the traverse at all (see
         // MAX_SPAN_OVERSHOOT_FACTOR). A single-ended assembly has no span to check.
         if (!topDoors.isEmpty() && !bottomDoors.isEmpty()) {
@@ -1458,7 +1458,7 @@ public class DungeonStructure extends Structure {
                         "[D2-SPAN] assembled transition spans {} between its door markers but the "
                                 + "floor pitch is {} at placementY={} -- it falls {} block(s) short and "
                                 + "the two floors will NOT connect. The authored templates need "
-                                + "re-cutting for this pitch; see backlog #52.",
+                                + "re-cutting for this pitch; see TransitionSpanTest.",
                         span, requiredPitch, placementY, requiredPitch - span);
             } else if (span > requiredPitch * MAX_SPAN_OVERSHOOT_FACTOR) {
                 Dungeons.LOGGER.warn(
@@ -1487,7 +1487,7 @@ public class DungeonStructure extends Structure {
      *
      * <p>Reads the ids through {@link PoolElementIds}, which goes via the element's own codec.
      * This used to scrape {@code toString()}; that was acceptable while the answer was only ever
-     * logged, and stopped being so once backlog #44 needed the same identity to make a generation
+     * logged, and stopped being so once the template limits needed the same identity to make a generation
      * decision. One mechanism now, so the log and the cap can never disagree about what a room
      * is.</p>
      */
@@ -1695,7 +1695,7 @@ public class DungeonStructure extends Structure {
     }
 
     /**
-     * The assembly itself, once a pool has been resolved. Split out by #45 step 3 so the interior
+     * The assembly itself, once a pool has been resolved. Split out so the interior
      * rooms can resolve through three tiers and the boss room through two without either growing a
      * second copy of the {@code addPieces} call.
      */

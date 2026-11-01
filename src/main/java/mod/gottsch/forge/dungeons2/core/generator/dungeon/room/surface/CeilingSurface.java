@@ -149,7 +149,7 @@ public record CeilingSurface(int originX, int originZ, int uSize, int vSize, int
      *
      * <h2>Why this is not just {@link #emitProjected} with a negative depth</h2>
      * <p>Arithmetically it very nearly is: {@code emitProjected} writes at {@code ceilingY - depth},
-     * so a negative depth already lands above the plane, and that is exactly what made #68 look
+     * so a negative depth already lands above the plane, and that is exactly what made the rising vault look
      * cheap. What it does not do is EXCAVATE. A projecting rib hangs into air the room generator has
      * already hollowed out; a rising vault reaches into cells that are still solid stone, and
      * &mdash; worse &mdash; the plane cell under it has just been paved with the ceiling's own base

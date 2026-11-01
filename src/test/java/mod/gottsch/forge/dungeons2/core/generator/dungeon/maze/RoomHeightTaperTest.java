@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #51: room height is tapered by footprint, and the taper's ceiling <em>falls</em> as the
+ * Room height is tapered by footprint, and the taper's ceiling <em>falls</em> as the
  * footprint grows.
  *
  * <p>The old rule was {@code min(5 + rand(6), max(width, depth))} &mdash; a cap that rose with the
@@ -128,7 +128,7 @@ class RoomHeightTaperTest {
 
     /**
      * The clamp-not-re-roll property: two different tables, same seed, identical geometry. This is
-     * what keeps existing worlds' layouts byte-identical across #51.
+     * what keeps existing worlds' layouts byte-identical across the room-height taper.
      */
     @Test
     void changingTheTableMovesHeightsAndNothingElse() {

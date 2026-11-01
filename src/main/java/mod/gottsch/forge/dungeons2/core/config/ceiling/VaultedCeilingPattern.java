@@ -45,7 +45,7 @@ import java.util.Optional;
  * <h2>This is the type; {@code field} is the primitive</h2>
  * <p>A rising vault is expressible as a stack of {@link FieldCeilingPattern} entries at increasing
  * {@code inset} and {@code rise} &mdash; that is exactly what this expands to, and the first cut of
- * #68 shipped only that. It is the wrong thing to make an author write. Three or four near-identical
+ * The rising vault shipped only that. It is the wrong thing to make an author write. Three or four near-identical
  * blocks per vault, with two numbers that must stay in step and an ORDER that silently matters (a
  * step authored out of sequence roofs the one above it), is a lot of ways to get a dome wrong. Here
  * the steps are one number.</p>
@@ -78,8 +78,8 @@ import java.util.Optional;
  *       <strong>Use a solid block, not stairs.</strong> Stairs belong on a HANGING vault, where the
  *       viewer sees their face and their underside; a rising vault's lip sits in the ceiling plane
  *       with the room's air below it, so the only face ever visible is the bottom one &mdash; a plain
- *       full square on a stair, which reads as a full block at best and as a backwards one at worst
- *. Accent the lip by MATERIAL rather than by shape.</li>
+ *       full square on a stair, which reads as a full block at best and as a backwards one at worst.
+ * Deliberate: accent the lip by MATERIAL rather than by shape.</li>
  *   <li>{@code crown_block} &mdash; optional distinct material for the topmost step. Absent, the
  *       crown is {@code block}.</li>
  *   <li>{@code orient} &mdash; turns the springing course only, default

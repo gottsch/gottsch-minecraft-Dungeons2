@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Backlog #10's content sweep, over the shipped {@code .nbt} templates.
+ * The mob-set spawner's content sweep, over the shipped {@code .nbt} templates.
  *
  * <p>Two invariants, and the second is the one that was learned the expensive way.</p>
  *
@@ -53,7 +53,7 @@ class ShippedSpawnerMarkerTest {
     private static final String STRUCTURE_BLOCK = "minecraft:structure_block";
 
     /**
-     * The spawner has a live consumer. Without this the whole #10 path could rot silently: every
+     * The spawner has a live consumer. Without this the whole the mob-set spawner path could rot silently: every
      * other test would still pass with no template exercising it, which is exactly the state the
      * feature was in on the day it was written.
      */

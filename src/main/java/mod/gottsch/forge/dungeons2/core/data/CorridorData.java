@@ -118,7 +118,7 @@ public class CorridorData {
     /** Lazily built from {@link #cellDepths}; transient. */
     private Map<Coords2D, Integer> depthIndex;
     /**
-     * #108 stage 3: the trench cells of this corridor's trap, empty for none. Planned, for the
+     * The trench cells of this corridor's trap, empty for none. Planned, for the
      * {@link #cellDepths} reason: the trench reaches below the floor and the box has to cover it.
      */
     private List<Coords2D> trapCells = new ArrayList<>();

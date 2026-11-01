@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 phase 3 &mdash; the {@code floor} slot reads a material role, across all five pattern types
+ * The {@code floor} slot reads a material role, across all five pattern types
  * that carry a block, and through {@code composite}'s nesting.
  *
  * <p>Second on purpose. {@code CompositeFloorPattern} holds other patterns, so it is the only place

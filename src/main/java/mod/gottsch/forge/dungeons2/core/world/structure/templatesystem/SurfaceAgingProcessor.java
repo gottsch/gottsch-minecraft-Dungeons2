@@ -87,7 +87,7 @@ import java.util.function.Supplier;
  * handed, so {@code PieceProcessors} gives it the whole piece unclipped, in authored order,
  * alongside {@code dungeons2:decoration}.</p>
  *
- * <h2>2026-09-04, backlog #15: which phase it ages in depends on its rules</h2>
+ * <h2>The surface map: which phase it ages in depends on its rules</h2>
  * <p>{@link PieceSurface} grew {@code wall}, {@code ceiling} and {@code joist}, none of which a
  * per-block gate can answer &mdash; they are questions about a cell's neighbours, and
  * {@code processBlock} sees one block at a time. So a processor whose rules ask a geometric

@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Backlog #6 and #11's guard: <strong>every jigsaw pool reference still points where it is supposed
+ * The entrance motif paths and the per-chain transition pools's guard: <strong>every jigsaw pool reference still points where it is supposed
  * to, per motif, in all three pool categories.</strong>
  *
  * <h2>This used to be EntrancePoolWiringTest, and the assumption it was built on was wrong</h2>
@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * the pool holding the mid segment and {@code stairs_2_mid} names the pool holding the top &mdash;
  * a three-link chain with its {@code pool} ids baked into compressed NBT, carrying the identical
  * fragility the entrance was given a test for, and it had none. Generalised 2026-08-14 while
- * renaming those pools (#11).</p>
+ * renaming those pools (the per-chain transition pools).</p>
  *
  * <h2>The failure mode this exists for</h2>
  * <p>Re-saving a template from a Structure Block writes back whatever the jigsaw block in that world
@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * id. The symptom is silent in both categories and differently bad in each: a broken entrance link
  * falls back to the synthetic layout and generates a dungeon with no built entrance, and a broken
  * transition link truncates a staircase partway between floors. Neither logs anything. That has
- * already happened once, on the entrance chain, during the #6 work. A broken link must be a build
+ * already happened once, on the entrance chain, during the entrance motif paths work. A broken link must be a build
  * failure.</p>
  *
  * <h2>What is deliberately not checked</h2>
@@ -152,7 +152,7 @@ class PoolWiringTest {
                     "/data/dungeons2/structures/rooms",
                     "/data/dungeons2/worldgen/template_pool/rooms",
                     "dungeons2:rooms/%s/", "dungeons2:rooms/%s/normal", false),
-            // #46's boss room. Registered here on 2026-08-29, when the first end_rooms template
+            // The authored boss room's boss room. Registered here on 2026-08-29, when the first end_rooms template
             // was authored and the pool stopped being empty -- until then EndRoomPoolPlaceholderTest
             // held the path and asserted the emptiness that kept the feature inert, and its whole
             // job was to fail at this moment and hand the category over.

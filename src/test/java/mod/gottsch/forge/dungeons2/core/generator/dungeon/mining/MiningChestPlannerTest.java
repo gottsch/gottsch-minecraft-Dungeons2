@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The Mining Chest plan itself &mdash; backlog #7: that it is deterministic, that it lands deep, and
+ * The Mining Chest plan itself &mdash; the Mining Chest: that it is deterministic, that it lands deep, and
  * that the two ways of getting nothing both work.
  *
  * @author Mark Gottschling on Aug 31, 2026

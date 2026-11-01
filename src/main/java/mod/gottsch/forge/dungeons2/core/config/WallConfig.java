@@ -55,10 +55,10 @@ import java.util.Optional;
 public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
 
     /**
-     * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 5, and the
+     * This section with any {@code $role} in its {@code pattern} resolved. It is the
      * third and last section to need one &mdash; the floor's and ceiling's came in phases 3 and 4.
      *
-<p>#65 phase 7: the SHELL materials read a role too. Decided in by Mark on 2026-09-01, against
+<p>The SHELL materials read a role too. Deliberate, against
      * an earlier note that it might never be worth doing. Two reasons, and the second corrects the
      * reasoning behind that note: it would be odd for every other block field in the schema to take
      * a role and these not to, whether or not anyone uses it -- an author should not have to
@@ -83,7 +83,7 @@ public record WallConfig(String wall, Optional<WallPatternEntry> pattern) {
     public static final Codec<WallConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codecs.BLOCK_ID_OR_ROLE.fieldOf("wall").forGetter(WallConfig::wall),
             // strictOptionalFieldOf: a malformed pattern is a load error, not silently the same as
-            // an absent one. See Codecs and #31.
+            // an absent one. See Codecs and the closed-schema rule.
             Codecs.strictOptionalFieldOf(WallPatternEntry.CODEC, "pattern")
                     .forGetter(WallConfig::pattern)
     ).apply(instance, WallConfig::new));

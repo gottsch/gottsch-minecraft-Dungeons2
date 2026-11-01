@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The worn path (#71): the one floor pattern generated from the room's own plan rather than authored
+ * The worn path (the worn path): the one floor pattern generated from the room's own plan rather than authored
  * cell by cell.
  *
  * <h2>What is actually at risk here</h2>

@@ -23,10 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * How much of a room's wall ring it shares with a <em>neighbouring room</em>, and by how much those
- * neighbours differ in height. Backlog #18.
+ * neighbours differ in height.
  *
  * <h2>Why both numbers, and why together</h2>
- * <p>The sharing rate decides whether #18 is worth acting on at all. The <strong>height</strong>
+ * <p>The sharing rate decides whether the shared-wall rule is worth acting on at all. The <strong>height</strong>
  * distribution decides which of the proposed fixes is safe: an ownership rule that splits a shared
  * wall by height ("the shorter room owns up to its ceiling, the taller room owns the rows above")
  * puts two rooms' trim on one physical wall. Wall courses can be anchored to {@code top}, so each
@@ -69,7 +69,7 @@ class SharedWallProbe {
         int sharedPairs = 0;
         int sameHeight = 0;
         Map<Integer, Integer> heightDeltas = new TreeMap<>();
-        // Backlog #18 follow-up: a prefab room's wall is authored, so losing it to a procedural
+        // The shared-wall rule follow-up: a prefab room's wall is authored, so losing it to a procedural
         // neighbour costs more than one procedural scheme losing to another.
         int prefabs = 0;
         int prefabsSharingWithProcedural = 0;

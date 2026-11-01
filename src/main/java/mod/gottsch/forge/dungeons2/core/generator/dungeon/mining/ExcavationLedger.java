@@ -27,7 +27,6 @@ import java.util.List;
 
 /**
  * How much stone a planned dungeon removes, and at what depths &mdash; the accounting half of
- * backlog #7.
  *
  * <p>Pure function of a {@link DungeonLayout}: no world, no randomness, no Minecraft imports. That
  * is the whole point. The tally has to be identical no matter which chunk generates first, and the
@@ -37,7 +36,7 @@ import java.util.List;
  * <p>Each is emitted with <em>its own</em> Y range rather than folded into a floor total, because
  * the ore table is keyed on depth and a floor is 20 blocks tall. A floor straddling Y 16 is half in
  * diamond country; collapsing it to a single number would make it all one or all the other. Rooms on
- * one floor also differ in height from each other (#51's taper), so even within a floor there is no
+ * one floor also differ in height from each other (the room-height taper), so even within a floor there is no
  * single Y range to collapse to.</p>
  *
  * <h2>What counts as excavated</h2>

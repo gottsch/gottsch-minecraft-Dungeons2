@@ -275,7 +275,7 @@ public class DungeonRoomPiece extends DungeonPiece {
         int maxX = anchorX + room.getOriginX() + room.getWidth();
         int maxZ = anchorZ + room.getOriginZ() + room.getDepth();
         int minY = floorY - Math.max(0, sinkOffset);
-        // #68, and the exact mirror of the sink above: the box covers the floor's whole budget over
+        // The rising vault, and the exact mirror of the sink above: the box covers the floor's whole budget over
         // the walking plane, not this room's ceiling, because a rising vault -- like a pit -- is
         // rolled from the scheme at render time and cannot be known here. max() rather than the
         // budget outright so a room somehow taller than its floor's budget still fits its own box.

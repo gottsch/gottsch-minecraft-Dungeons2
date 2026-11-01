@@ -156,7 +156,7 @@ public class DungeonsEntities {
      * model, which is the worse bug of the two. Keep them in step with GMM if DD re-sizes.</p>
      *
      * <p>Registered here rather than depended upon: {@code ddenizens} already registers both, but
-     * D2 does not depend on it and the dungeon's monsters are its own — the same call #40/#41 made
+     * D2 does not depend on it and the dungeon's monsters are its own — the same call the rat and giant rat made
      * for the rats. GMM is already a mandatory dependency, so this costs nothing new.</p>
      */
     public static final RegistryObject<EntityType<Shrieker>> SHRIEKER_ENTITY =
@@ -184,7 +184,7 @@ public class DungeonsEntities {
      * not a mob. Registering it would not compile, which is the only reason that mistake cannot be
      * made silently here.</p>
      *
-     * <p>GMM's {@code FrostSkeleton} is deliberately absent: it is cold-themed
+     * <p>Deliberate: GMM's {@code FrostSkeleton} is absent, because it is cold-themed
      * and the classic motif is not, so it waits for an ice motif to belong to. A different kind of
      * exclusion from the mini-bosses below &mdash; those are held back until their placement is
      * designed, this one until there is somewhere for it to fit.</p>

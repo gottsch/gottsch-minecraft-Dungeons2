@@ -41,7 +41,7 @@ import java.util.Set;
  * Places a room scheme's invisible mob-set spawners: picks cells, rolls a mob set per spawner, and
  * emits {@link BlockPlacement}s carrying {@link BlockEntityData}.
  *
- * <p>This is the procedural half of backlog #10. The authored half is
+ * <p>This is the procedural half of the mob-set spawner. The authored half is
  * {@code SpawnerMarkerProcessor}, which converts a marker block a template author placed; only a
  * template can carry that marker, so before this a procedurally-built room &mdash; most of a dungeon
  * &mdash; had no monsters of its own. Both halves produce the same block and the same block-entity

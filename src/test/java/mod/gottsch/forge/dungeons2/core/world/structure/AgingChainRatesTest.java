@@ -63,7 +63,7 @@ class AgingChainRatesTest {
             "/data/dungeons2/worldgen/processor_list/classic_weathering.json";
 
     /**
-     * Migrated from {@code dungeons2:aging} with the shipped file, 2026-09-04 (backlog #15).
+     * Migrated from {@code dungeons2:aging} with the shipped file, 2026-09-04 (the surface map).
      * {@code surface_aging} is a strict superset -- the same chains, plus a {@code surface} on each
      * rule -- and every rule in this file states {@code any}, so every rate asserted below is
      * unchanged. What the rates are composed FROM did not move.
@@ -96,7 +96,7 @@ class AgingChainRatesTest {
      *
      * <p>The budget the other sources are held to exists for one reason: {@code classic} uses
      * {@code minecraft:stone_bricks} for the wall, the floor <em>and</em> the ceiling, so a rule
-     * cannot be scoped to the surfaces where gravel is harmless (Backlog #15). Gravel in a ceiling
+     * cannot be scoped to the surfaces where gravel is harmless (the surface map). Gravel in a ceiling
      * rains debris; gravel in a wall does nothing.</p>
      *
      * <p>The large stone bricks are never a ceiling: {@code motif_config/classic/base.json} sets
@@ -127,7 +127,7 @@ class AgingChainRatesTest {
      *
      * <p>The deep-decay chains ended in {@code minecraft:gravel} until 2026-08-25, and its
      * <em>position</em> as the last stage was the only control there was: a ceiling made of it
-     * rains debris onto the player, and the ceiling is the same block as the wall (#15), so the
+     * rains debris onto the player, and the ceiling is the same block as the wall (the surface map), so the
      * rate was all that could be tuned. {@code dungeonblocks:rubble} reads the same and does not
      * fall, so the constraint is GONE rather than merely respected -- which is why this set is now
      * asserted absent from the output rather than held to a budget. See
@@ -418,7 +418,7 @@ class AgingChainRatesTest {
      * until 2026-08-25, and this note stands in its place so its deletion does not read as an
      * oversight and get "restored".
      *
-     * <p>The old rule: these chains apply to the wall, the floor and the ceiling alike (#15), so a
+     * <p>The old rule: these chains apply to the wall, the floor and the ceiling alike (the surface map), so a
      * hole that is welcome in a floor is the same rule as a hole in an outer wall &mdash; which
      * breaches the shell and lets the terrain's water into the room. <strong>Mark accepted that
      * consequence.</strong> If it leaves a hole, it leaves a hole; a breached ruin is the look and
@@ -479,7 +479,7 @@ class AgingChainRatesTest {
         // This was a BUDGET -- falling debris <= 1% for anything that can be a ceiling -- because
         // gravel was the terminus and its rate was the only lever available. Since 2026-08-25 the
         // terminus is dungeonblocks:rubble, which does not fall, so the budget would now pass on
-        // zero and assert nothing. A test that cannot fail is worse than no test (#46), so it
+        // zero and assert nothing. A test that cannot fail is worse than no test (the authored boss room), so it
         // asserts the stronger thing the swap actually bought: these chains produce NO falling
         // block at all.
         //
@@ -492,7 +492,7 @@ class AgingChainRatesTest {
                 assertEquals(0.0, rates.getOrDefault(block, 0.0), 0.0,
                         source + " decays to " + block + ", which falls when the block below it is"
                                 + " air. These chains are applied to the ceiling as well as the"
-                                + " wall and the floor (#15), and rubble replaced gravel exactly"
+                                + " wall and the floor (the surface map), and rubble replaced gravel exactly"
                                 + " so this could not happen -- use dungeonblocks:rubble");
             }
         }
@@ -519,9 +519,9 @@ class AgingChainRatesTest {
     }
 
     /**
-     * Backlog #37's timber chains, pinned the same way the stone budgets are.
+     * The timber weathering's timber chains, pinned the same way the stone budgets are.
      *
-     * <p><strong>Timber is the only material here whose air is free of the #15 problem</strong>,
+     * <p><strong>Timber is the only material here whose air is free of the surface map problem</strong>,
      * and that stayed true when the stone chains' air ban was lifted on 2026-08-25.
      * {@code classic} uses one block for wall, floor <em>and</em> ceiling, so a stone chain that
      * reaches air cannot tell a hole in a floor from a breach of the outer shell &mdash; Mark
@@ -587,7 +587,7 @@ class AgingChainRatesTest {
 
     /**
      * The stripped variants must not become aging sources. They appear in eight authored
-     * templates where the author chose them; a standalone rule would age that content too. #26 is
+     * templates where the author chose them; a standalone rule would age that content too. The unreachable aging rules is
      * the same trap seen from the other end &mdash; three rules believed dead were live precisely
      * because prefab palettes author their inputs.
      *

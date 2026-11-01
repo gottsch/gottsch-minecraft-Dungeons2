@@ -26,7 +26,6 @@ import java.util.Optional;
 
 /**
  * One entry in the room-height taper: the range of heights a room of a given footprint may have.
- * Backlog #51.
  *
  * <h2>What it replaced, and why the direction mattered</h2>
  * <p>{@code DungeonStackPlanner#pickRoomHeight} used to be
@@ -39,7 +38,7 @@ import java.util.Optional;
  *
  * <h2>The roll is clamped, not re-rolled</h2>
  * <p>{@code pickRoomHeight} still draws exactly {@code 5 + random.nextInt(6)} and then clamps the
- * result into the matched band. Same reasoning as #50's world-bottom clamp: one identical draw
+ * result into the matched band. Same reasoning as the world-bottom clamp: one identical draw
  * consumes an identical amount of the planner's stream, so the maze, the footprints and the
  * corridors of every existing seed stay byte-identical and only the heights move. Re-rolling
  * inside the band would have relayouted every dungeon in every existing world.</p>

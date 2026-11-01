@@ -103,7 +103,7 @@ versionRange="${gottschbooks_version_range}"
 ordering="AFTER"
 side="BOTH"
 
-# Treasure2 (treasure2) - OPTIONAL. Backlog #48: a chest marker can opt in to a real Treasure2 chest
+# Treasure2 (treasure2) - OPTIONAL. The chest routing: a chest marker can opt in to a real Treasure2 chest
 # per marker (the boss chest), and everything else falls back to this mod's own chest. mandatory=false
 # so the dungeon still generates without it, and AFTER for the same reason as the three above: the
 # API is called during worldgen, so Treasure2 must have registered by then. Compiled against

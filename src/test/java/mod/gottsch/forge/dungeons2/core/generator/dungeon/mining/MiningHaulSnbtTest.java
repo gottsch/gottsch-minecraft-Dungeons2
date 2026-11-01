@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The SNBT a {@link MiningHaul} emits, run through vanilla's own parser and container loader
- * &mdash; backlog #7.
+ *.
  *
  * <h2>Why this is its own test</h2>
  * <p>The haul travels to the world as <em>text</em>: {@code BlockEntityData#withNbt} holds SNBT

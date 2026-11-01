@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * What a tomb holds (#104): the band and slot codecs, the key-by-key override, and the NBT the two
+ * What a tomb holds (the sealed tombs): the band and slot codecs, the key-by-key override, and the NBT the two
  * routes write from one source.
  */
 class TombContentsTest {

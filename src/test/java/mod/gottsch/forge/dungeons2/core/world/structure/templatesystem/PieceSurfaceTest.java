@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Pins the one invariant {@link PieceSurface} rests on &mdash; <em>the floor, and only the floor,
  * is at piece-relative Y 0</em> &mdash; on <strong>both</strong> halves of the pipeline, because a
  * surface gate that held for procedural rooms and not for prefabs would decay the two sides of a
- * shared wall differently. Since backlog #15 it also pins what {@link PieceSurfaceMap} calls each
+ * shared wall differently. Since the surface map it also pins what {@link PieceSurfaceMap} calls each
  * part of a room, which is where every surface above the floor is decided.
  *
  * <p>The template half is worth having whatever happens to the gate: it is the only thing that
@@ -126,7 +126,7 @@ class PieceSurfaceTest {
         }
     }
 
-    // ---------- backlog #15: what the classifier calls each part of a room ----------
+    // ---------- the surface map: what the classifier calls each part of a room ----------
 
     /** The values a cell can actually be; {@code ANY} and {@code ABOVE_FLOOR} are unions of them. */
     private static final Set<PieceSurface> PRIMARIES = Set.of(
@@ -240,7 +240,7 @@ class PieceSurfaceTest {
     }
 
     /**
-     * <strong>The parity guard for #3 (pits).</strong> Layer 0 is the floor by decision, and a
+     * <strong>The parity guard for the sunken pits (pits).</strong> Layer 0 is the floor by decision, and a
      * template gets that for free because a pit sinks the template's own lowest layer. The
      * procedural half does not: its origin is {@code floorY}, so a pit dug below the floor would
      * put its floor at a NEGATIVE relative Y while layer 0 stayed the room floor &mdash; the

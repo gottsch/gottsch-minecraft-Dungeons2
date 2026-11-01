@@ -46,12 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * The other half of backlog #13: <strong>the block palettes inside the shipped {@code .nbt}
+ * The other half of the block-id sweep: <strong>the block palettes inside the shipped {@code .nbt}
  * templates</strong>.
  *
  * <h2>The blind spot this closes</h2>
  * <p>{@link ShippedBlockIdsTest} sweeps every shipped <em>JSON</em> file, and that is all it can do
- * &mdash; a structure template is gzipped NBT. #26 already caught this from the other end: the
+ * &mdash; a structure template is gzipped NBT. The unreachable aging rules already caught this from the other end: the
  * "nothing authors this block" analysis that declared six aging rules dead had consulted the JSON
  * and not the palettes, and three of the six turned out to be placed by prefabs. <em>"Nothing
  * authors this block" is a claim about two sources, and one of them is binary.</em></p>
@@ -73,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>{@code structure_void} is the intended stand-in: it means <em>leave whatever terrain is
  * here</em>, which is what a walled-off quadrant wants. Note the one place the two are genuinely
  * not equivalent &mdash; bedrock is solid unconditionally, {@code structure_void} is only as solid
- * as the terrain it leaves, so where a cave cuts through, it leaves the cave. That is #38's lesson
+ * as the terrain it leaves, so where a cave cuts through, it leaves the cave. That is the terminal-room guarantee's lesson
  * ("an unbuilt slot is not a hole, it is untouched terrain &mdash; until the terrain is a cave")
  * and it applies to any {@code structure_void} fill authored below cave depth.</p>
  *

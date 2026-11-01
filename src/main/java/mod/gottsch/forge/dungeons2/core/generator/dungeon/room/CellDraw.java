@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
 /**
  * Rolls how many cells a room slot gets, and hands them out one at a time, distinct.
  *
- * <p>Backlog #49. {@link RoomPropGenerator}, {@link RoomSpawnerGenerator} and
+ * <p>{@link RoomPropGenerator}, {@link RoomSpawnerGenerator} and
  * {@link RoomChestGenerator} each carried this same body: roll a count from an inclusive range,
  * clamp it to the number of eligible cells so a cramped room gets fewer of a thing rather than two
  * in one cell, then draw that many distinct cells. Three copies of a subtle loop in three files

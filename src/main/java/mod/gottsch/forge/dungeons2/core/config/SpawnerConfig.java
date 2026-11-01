@@ -32,7 +32,7 @@ import java.util.Optional;
  * room gets, which {@code mob_sets} they draw from, and the tuning the block entity needs.
  *
  * <h2>Why a scheme slot at all</h2>
- * <p>Backlog #10 shipped the spawner as a marker <em>block</em> converted by
+ * <p>The mob-set spawner shipped the spawner as a marker <em>block</em> converted by
  * {@code SpawnerMarkerProcessor} &mdash; which only an <strong>authored template</strong> can
  * contain. Procedural rooms, which are most of a dungeon, had no way to place one. This slot is the
  * procedural half: the room generator emits a {@code BlockPlacement} carrying
@@ -160,7 +160,7 @@ public record SpawnerConfig(int minCount, int maxCount, Optional<Integer> minMob
      * <p>Resolution happens here, at build time, rather than being stored on the floor by the
      * planner: it is a pure function of (motif, floorIndex) and both are already in hand where a
      * room is built, so plan-time storage would buy nothing and add a field to serialise. The
-     * <em>caps</em> of backlog #44 are the opposite case &mdash; they are stateful across rooms and
+     * <em>caps</em> of the template limits are the opposite case &mdash; they are stateful across rooms and
      * genuinely cannot be decided here.</p>
      */
     public SpawnerConfig resolvedAgainst(Optional<MobSetBand> band) {

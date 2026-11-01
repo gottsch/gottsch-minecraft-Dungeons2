@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The floor `field` type (#75): a filled rectangle at or inside an inset.
+ * The floor `field` type (the floor field): a filled rectangle at or inside an inset.
  *
  * <p>The thing actually worth pinning down is the relationship to {@code border}, because it is the
  * one an author will get wrong: both measure {@code inset} from the room edge, so a field and a

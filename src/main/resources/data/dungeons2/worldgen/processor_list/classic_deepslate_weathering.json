@@ -9,12 +9,12 @@
 // See PieceProcessors#weatheringList.
 //
 // THE COST OF THAT, and it is deliberate: everything below dungeons2:decoration is NOT
-// weathering and has no business differing by depth, yet it has to be restated -- backlog
-// #61. A stratum that silently inherited a spawner it never named would be worse than one
+// weathering and has no business differing by depth, yet it has to be restated.
+// A stratum that silently inherited a spawner it never named would be worse than one
 // that repeats itself. Those six processors are COPIED VERBATIM from classic_weathering
 // .json, with one exception noted at dungeons2:chest.
 //
-// Written 2026-09-16 with the first four authored deepslate rooms. Naming the band in
+// Naming the band in
 // strata.json is what switches this file on; before that it was unreachable and the band
 // weathered as stone.
 // ==================================================================================
@@ -27,10 +27,10 @@
       "rules": [
         // ---------------------------------------------------------------------------
         // A STRAIGHT MIRROR OF classic_weathering, rung for rung. A deep floor is a WET
-        // floor and its masonry has had the longest to grow something (Mark, 2026-09-16),
+        // floor and its masonry has had the longest to grow something,
         // so moss leads here exactly as it does up top.
         //
-        // This became possible on 2026-09-17, when dungeonblocks 3.0.0 was republished with
+        // This became possible, when dungeonblocks 3.0.0 was republished with
         // mossy_deepslate_bricks, mossy_deepslate_tiles, mossy_cobbled_deepslate (each with
         // its whole architectural family) and mossy_deepslate_brick_stairs. Before that the
         // four vanilla deepslate shapes had cracked as their only decay, which is the state
@@ -177,7 +177,7 @@
         },
 
         // ---------------------------------------------------------------------------
-        // TUFF, this band's $accent_alt (2026-09-23). One rung of moss, dungeonblocks'
+        // TUFF, this band's $accent_alt. One rung of moss, dungeonblocks'
         // mossy_tuff, and no air: it is laid in floors, where a hole is a pit.
         // ---------------------------------------------------------------------------
         {
@@ -190,7 +190,7 @@
 
         // ---------------------------------------------------------------------------
         // POLISHED BASALT. One rung of moss, then a hole -- dungeonblocks ships
-        // mossy_polished_basalt (2026-09-18) and nothing between it and air, so this is the
+        // mossy_polished_basalt and nothing between it and air, so this is the
         // whole chain. Basalt is a pillar, and AgingProcessor carries `axis` across with
         // every other shared property, so a vertical run stays vertical as it ages.
         // ---------------------------------------------------------------------------
@@ -231,7 +231,7 @@
             { "block": "minecraft:blackstone", "probability": 0.3 }
           ]
         },
-        // Polished blackstone PILLARS (added 2026-10-24): the plain block's one step above,
+        // Polished blackstone PILLARS: the plain block's one step above,
         // polished -> rough, onto the rough pillar twins.
         {
           "surface": "any",
@@ -403,7 +403,7 @@
         // genuinely fires (the cobblestone_stairs rim on a `centre` feature); the rest are
         // StratumWeatheringCoverageTest's over-report, kept because an authored prefab in
         // rooms/classic/deepslate/ weathers from THIS list and a template author may reach for
-        // any block. The spruce corbel joined them on 2026-09-17: a `joists` bracket is now the
+        // any block. The spruce corbel joined them: a `joists` bracket is now the
         // `joist_bracket` role, so this band answers it with deepslate_tiles_corbel_block below.
         // ---------------------------------------------------------------------------
         {
@@ -446,7 +446,7 @@
             { "block": "minecraft:dirt", "probability": 0.05 }
           ]
         },
-        // square_stone_brick_stairs (added 2026-10-21, 17x21_bridge_1): the stone_brick_stairs rules
+        // square_stone_brick_stairs (17x21_bridge_1): the stone_brick_stairs rules
         // above, line for line, with the mossy square stair as the moss stage.
         {
           "surface": "any",
@@ -496,7 +496,7 @@
             { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
           ]
         },
-        // Stone brick PILLARS (added 2026-10-24): the hall's columns and pilasters aged no stage at
+        // Stone brick PILLARS: the hall's columns and pilasters aged no stage at
         // all. The wall's own cracked / mossy rates, onto the pillar blocks' cracked / mossy twins;
         // the cobblestone stage has no pillar to go to, so it is dropped.
         {
@@ -561,7 +561,7 @@
         },
 
         // ---------------------------------------------------------------------------
-        // THE REST OF WHAT THE BAND ACTUALLY PLACES (2026-09-18). Everything below was found by
+        // THE REST OF WHAT THE BAND ACTUALLY PLACES. Everything below was found by
         // diffing the block ids inside rooms/classic/deepslate/**.nbt against the rules above --
         // 14 blocks the authored templates place that nothing in this file touched, so they
         // stood factory-fresh in a room where the masonry around them had aged three stages.
@@ -711,7 +711,7 @@
         // undead rule is classic_weathering's verbatim. dungeon_banner is the generic one and
         // takes the generic pair: soiled, then shredded.
         // The two outputs are a CHAIN, not alternatives: 0.6 then 0.4 is 60% worn at all (36%
-        // first stage, 24% second). Raised from 0.3/0.3 in every list 2026-10-24 -- 30% worn read
+        // first stage, 24% second). 30% worn read
         // as "1 in 8" in game.
         {
           "surface": "any",
@@ -729,7 +729,7 @@
             { "block": "dungeonblocks:bloodstained_undead_banner", "probability": 0.4 }
           ]
         },
-        // The faction banners the deepslate templates also carry (2026-10-24: Mark saw them hang
+        // The faction banners the deepslate templates also carry (or they hang
         // pristine). Same ladder as undead -- shredded, then bloodied -- since dungeonblocks
         // authors that pair for every faction.
         {
@@ -815,10 +815,9 @@
           ]
         },
         // ===================================================================================
-        // FIXTURES with no aged form (added 2026-10-21, 17x21_bridge_1). A gargoyle bust is a
+        // FIXTURES with no aged form (17x21_bridge_1). A gargoyle bust is a
         // single fixture, so like a chain link it goes straight to a gap, at the chain rate. It
-        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule (removed
-        // 2026-10-22): a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
+        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule: a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
         // block takes ONE of them -- a middle gone leaves the top hanging alone, half a cage. It is
         // a hanging_sweep member, so it still falls whole when the chain above it breaks.
         // ===================================================================================
@@ -846,7 +845,7 @@
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         },
-        // TUFF deep decay (added 2026-10-21) -- the same cobblestone -> rubble -> air chain stone
+        // TUFF deep decay -- the same cobblestone -> rubble -> air chain stone
         // bricks get, but slower. A second rule on one block is a FALLTHROUGH, reached only when
         // the moss rule missed (70%), so composed: cobblestone 7%, rubble 1.4%, air 0.35%.
         {
@@ -858,7 +857,7 @@
             { "block": "minecraft:air", "probability": 0.25 }
           ]
         },
-        // FLAGSTONES (Dungeon Blocks 3.1.0, added 2026-10-22). A floor, so NO air: a hole in a
+        // FLAGSTONES (Dungeon Blocks 3.1.0). A floor, so NO air: a hole in a
         // walking surface is a fall. Three rules on one block, each a FALLTHROUGH reached only when
         // the ones above missed: cracked 30%, mossy 30.1%, then the stone-brick deep decay at half
         // its first stage -- cobblestone 4%, dirt 1.2%, rubble 0.3%. The weathered twins carry the
@@ -887,7 +886,7 @@
             { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
-        // CRUMBLING floor stone (added 2026-10-22) -- a false floor's lid. Its own twins only, and
+        // CRUMBLING floor stone -- a false floor's lid. Its own twins only, and
         // NO deep decay: cobblestone or dirt would be a safe tile in the trap, and air a hole that
         // gives it away. Ages like the floor around it so the lid is not one unbroken patch of the
         // same cracked texture: cracked 30%, mossy 30.1% (a fallthrough); cobblestone mossy 30%.
@@ -916,12 +915,12 @@
     },
 
     // =========================================================================================
-    // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
+    // dungeons2:sarcophagus -- the sealed tombs. Turns an authored
     // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
     // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
     // head cell must be authored AIR, or the marker is removed with a [D2-TOMB] WARN.
     //
-    // BEFORE rubble_scatter and decoration (moved 2026-10-24): both fill authored AIR in
+    // BEFORE rubble_scatter and decoration: both fill authored AIR in
     // finalizeProcessing, and the head cell is authored air -- a cobweb or a scatter landing in
     // it refused the tomb and left the marker standing in game. Claiming the head first makes
     // them go round it.
@@ -1079,7 +1078,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:barrel_loot (added 2026-10-22) -- gives an authored template's barrel the barrel
+    // dungeons2:barrel_loot -- gives an authored template's barrel the barrel
     // table: mostly junk or nothing, now and then something good. A barrel whose NBT already names a
     // LootTable or holds Items is left as authored. The procedural twin is a barrel prop's
     // `loot_table` in the motif's schemes.
@@ -1088,7 +1087,7 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
-    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // dungeons2:pedestal_loot: a template pedestal placed into a LIVE chunk
     // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
     // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
     { "processor_type": "dungeons2:pedestal_loot" },

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 &mdash; the material-role palette: how it is declared, merged, overlaid and validated.
+ * The material-role palette: how it is declared, merged, overlaid and validated.
  *
  * <p>Phase 1 shipped the palette with <strong>no consumers</strong>, and put
  * {@link Codecs#BLOCK_ID} on every block field in reject mode to make that safe: roles arrived one

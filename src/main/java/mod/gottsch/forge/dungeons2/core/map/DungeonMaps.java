@@ -367,7 +367,7 @@ public final class DungeonMaps {
         }
         // a drop whose top is water or lava is a pool, not a pit: the sewer transition's pool lies a
         // block below its ledges, and drawn black it was neither readable nor something the ladder's
-        // halo could spread onto
+        // halo could spread onto.
         for (int down = 1; down >= -1; down--) {
             FluidState fluid = level.getFluidState(new BlockPos(x, y + down, z));
             // the tag for modded fluids, the vanilla fluid where no tags are bound (a unit test)

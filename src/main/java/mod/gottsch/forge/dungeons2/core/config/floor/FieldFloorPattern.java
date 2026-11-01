@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.Block;
  * Every cell at or inside {@code inset}, in one material &mdash; the filled counterpart of
  * {@link BorderFloorPattern}'s ring.
  *
- * <p>The ceiling has had this since #68, where a filled area is what a RISING vault is built from.
+ * <p>The ceiling has had this since the rising vault, where a filled area is what a RISING vault is built from.
  * The floor never did, so nothing could fill the panel a {@code border} frames: the nearest were a
  * {@link CrossFloorPattern} (a plus, not a panel) and a hand-sized {@code centre}, neither of which
  * follows the room's size.</p>

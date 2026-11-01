@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * How wide the corridor is where it sinks (#108). A measurement: it prints and passes.
+ * How wide the corridor is where it sinks (the corridor descent). A measurement: it prints and passes.
  *
  * <p>Width here is what a player sees across the corridor at that cell: the unbroken run of
  * corridor cells through it, across the direction of travel. Reported both as the SHORTER of the

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code props} slot's schema (#73).
+ * The {@code props} slot's schema (the props slot).
  *
  * <p>What is checked here is almost entirely the failure modes a lenient codec would let through:
  * this slot's whole vocabulary is four placement words and a list of block ids, so a typo is the

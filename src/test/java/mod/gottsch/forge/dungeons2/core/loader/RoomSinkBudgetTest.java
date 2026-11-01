@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>Both come off {@code DungeonGenerationConfig.DEFAULT}. Comparing against a hand-written 5 and
  * 15 would pass every room the day it was written and say nothing the day the pitch moves &mdash;
  * the fault {@code TransitionSpanTest} describes for its own hand-copied pitch, and the one that
- * left #29's backlog row claiming {@code sink_offset} was still 0 two days after it was 5.</p>
+ * left the floor-height raise's plan claiming {@code sink_offset} was still 0 two days after it was 5.</p>
  */
 class RoomSinkBudgetTest {
 
@@ -96,7 +96,7 @@ class RoomSinkBudgetTest {
                     JigsawChains.reachable(JigsawChains.templates(category.getKey()), category.getValue());
             if (shipped.isEmpty()) {
                 // An empty category is not this gate's business -- PoolWiringTest reports a pool
-                // that names nothing, and end_rooms was legitimately empty until #46 was authored.
+                // that names nothing, and end_rooms was legitimately empty until the authored boss room was authored.
                 continue;
             }
             // Only a template a `normal.json` names is a START. The middle pieces of a chain are

@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The extracted cell draw, backlog #49.
+ * The extracted cell draw, the cell draw.
  *
  * <p>The load-bearing test is {@link #matchesTheLoopItReplaced}. The three generators this was
  * pulled out of all draw from the same {@link RandomSource} the rest of a room's contents draw from,
@@ -161,7 +161,7 @@ class CellDrawTest {
     }
 
     /**
-     * #104's replacement draw: past the count, still distinct, until every candidate is gone -- and
+     * The sealed tombs' replacement draw: past the count, still distinct, until every candidate is gone -- and
      * the same draw as {@link CellDraw#next}, so a caller that rejects nothing gets the cells it
      * always would have.
      */

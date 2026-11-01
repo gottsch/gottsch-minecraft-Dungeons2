@@ -19,7 +19,7 @@ The two compositions that make these files hard to read by eye:
 `agings` is a live cell too: raise or lower it and the stages past the cap drop to zero, which is
 the truncation that is invisible in the JSON.
 
-AND THE PIPELINE (#64)
+AND THE PIPELINE (the processor pipeline model)
 ----------------------
 A processor list is CHAINED: entry N+1 sees entry N's output, so a block reaches an outcome by
 several paths and the totals compound BETWEEN entries. That cannot be a live formula off the
@@ -98,7 +98,7 @@ def rules_of(processor: dict) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------------------------
-# THE PIPELINE (#64). One Markov step per processor entry.
+# THE PIPELINE (the processor pipeline model). One Markov step per processor entry.
 #
 # The per-entry sheets above are correct and are not enough: a list is CHAINED, so entry N+1 sees
 # entry N's output. Three consequences the sheets cannot show, all of them from the Processor

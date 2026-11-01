@@ -175,7 +175,7 @@ class MotifWallPlinthTest {
         assertFalse(schemes.isEmpty(), "classic ships no schemes at all");
 
         for (RoomScheme scheme : schemes) {
-            // resolve() collapses the weighted slot alternatives (#65) to one treatment, so every
+            // resolve() collapses the weighted slot alternatives (material roles) to one treatment, so every
             // option has to be reachable to be checked -- hence the seed sweep rather than one draw.
             for (long seed = 0; seed < 64; seed++) {
                 RoomScheme resolved = scheme.resolve(SQUARE, SQUARE, HEIGHT, RandomSource.create(seed));

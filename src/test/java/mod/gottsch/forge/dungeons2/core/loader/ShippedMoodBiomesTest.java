@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * The mood biomes (#129) as shipped: each decodes as a vanilla biome, spawns nothing, has a name,
+ * The mood biomes (the mood biomes) as shipped: each decodes as a vanilla biome, spawns nothing, has a name,
  * and every biome a motif names is one that ships.
  *
  * <p>A biome that fails to decode is a datapack load error that only shows in game, and a motif
@@ -132,7 +132,7 @@ class ShippedMoodBiomesTest {
     }
 
     /**
-     * Every shipped mood biome sits in exactly one dark-fog tier (#129 step 3), and the tiers name
+     * Every shipped mood biome sits in exactly one dark-fog tier (the mood biomes), and the tiers name
      * nothing that does not ship. A biome in none would keep vanilla's fog distance in the dungeon.
      */
     @Test

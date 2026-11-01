@@ -37,14 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #46: an authored boss room takes the bottom floor's terminal slot, and when it cannot,
+ * An authored boss room takes the bottom floor's terminal slot, and when it cannot,
  * the slot stays a room this mod builds.
  *
  * <h2>The failure path is the interesting half</h2>
  * <p>Every other authored template here is opportunistic &mdash; a prefab room that does not place
  * just means one fewer prefab. This one is a <em>promise</em> to the player, which makes "what
  * happens when it fails" the part worth pinning. Marking the slot covered when nothing covers it
- * reintroduces backlog #38 exactly: the maze has already reserved the footprint and routed a door
+ * reintroduces the terminal-room guarantee exactly: the maze has already reserved the footprint and routed a door
  * into it, so the result is a door opening into unbuilt terrain &mdash; invisible in solid stone,
  * and a hole into a cave at bottom-floor depth, which is where it was found the first time.</p>
  *
@@ -124,7 +124,7 @@ class BossRoomPlacementTest {
     }
 
     /**
-     * The #38 guard. An assembler that never produces anything must leave the slot exactly as it is
+     * The the terminal-room guarantee guard. An assembler that never produces anything must leave the slot exactly as it is
      * today: TERMINAL, no templateId, built by this mod.
      */
     @Test
@@ -140,7 +140,7 @@ class BossRoomPlacementTest {
             RoomData room = endRoom(layout.get());
             assertNotNull(room, "the bottom floor lost its terminal slot when assembly failed");
             assertEquals(RoomRole.TERMINAL, room.getRole(),
-                    "a failed boss assembly marked the slot covered -- this is backlog #38 again");
+                    "a failed boss assembly marked the slot covered -- the terminal room would go unbuilt again");
             assertNull(room.getTemplateId(), "nothing assembled, so nothing may claim to cover it");
             assertTrue(room.getRole().isProcedurallyBuilt(),
                     "the fallback slot must be built by this mod or it is a door to nowhere");

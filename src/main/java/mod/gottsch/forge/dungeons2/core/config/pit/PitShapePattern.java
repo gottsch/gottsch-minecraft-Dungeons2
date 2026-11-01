@@ -46,7 +46,7 @@ public interface PitShapePattern {
 
     /**
      * This shape with any {@code $role} in its block fields replaced by the literal the palette in
-     * scope names. #65 phase 6, and a {@code default} for the same reason the floor, ceiling and
+     * scope names. It is a {@code default} for the same reason the floor, ceiling and
      * wall hooks are: the registry is open to other mods, and a field only carries a role when its
      * codec is {@code Codecs.BLOCK_ID_OR_ROLE}.
      *
@@ -60,7 +60,7 @@ public interface PitShapePattern {
     /**
      * Whether this pit is HIDDEN under a floor that looks like any other, so a room that has one
      * still looks bare until the trap is sprung. The big-room rule (see {@code RoomSlots#resolve})
-     * does not count a hidden pit as dressing the room, and never forces one: a 17x17 room over a
+     * does not count a hidden pit as dressing the room, and never forces one. Deliberate, because a 17x17 room over a
      * false floor looks exactly like a 17x17 room with nothing in it.
      */
     default boolean hidden() {

@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The authoring marker a template places where a spawner should go. Backlog #10, given a block
+ * The authoring marker a template places where a spawner should go, given a block
  * entity on 2026-09-03.
  *
  * <h2>Why it is a marker and not the spawner itself</h2>

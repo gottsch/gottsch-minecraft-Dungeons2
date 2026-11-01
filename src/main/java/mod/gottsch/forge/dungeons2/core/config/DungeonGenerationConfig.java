@@ -72,7 +72,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * The shipped floor-to-floor pitch, {@code floorHeight + gapBetweenFloors} = 12.
      *
      * <h2>Changing this is an AUTHORING decision, not a tuning one</h2>
-     * <p><strong>Raised to 20 on 2026-08-27</strong> (backlog #29 stage 2, Gottsch), for a pitch of
+     * <p><strong>Raised to 20 on 2026-08-27</strong> (the floor-height raise), for a pitch of
      * 22: a 15-block ceiling budget with a {@code sink_offset} of 5 underneath it for pits. The 15
      * is headroom for <strong>authored</strong> rooms &mdash; a template may be cut that tall and
      * now fits. {@code DungeonStackPlanner#pickRoomHeight} still caps a PROCEDURAL room at 10, and
@@ -89,7 +89,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * stretched, and the {@code stairs_2} chain lands only on multiples of 6. The entrance is the
      * same story from the other end &mdash; its bottom door marker <em>defines</em> floor 0's
      * walking plane, so a taller floor puts floor 0's ceiling above the entrance chamber's own.
-     * See backlog #52 and #29.</p>
+     * See the transition span guard and the floor-height raise.</p>
      *
      * <p>This is why the shipped file carries a {@code _comment} saying so: a pack author changing
      * a number needs the warning in front of them at that moment, not in a document they may not
@@ -113,7 +113,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * {@code floorHeight + gapBetweenFloors} &mdash; <strong>pit depth costs nothing in
      * descent</strong>, and no transition template has to change to allow pits. Raising
      * {@code gap_between_floors} to make room instead would lengthen every transition, which is the
-     * trap #3's original sketch fell into.</p>
+     * trap the sunken pits' original sketch fell into.</p>
      *
      * <p>The stone buffer is preserved rather than eaten: floor {@code i-1}'s pit bottom lands
      * exactly {@code gap_between_floors} blocks above floor {@code i}'s ceiling, because the stacking
@@ -121,7 +121,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      *
      * <p><strong>At the shipped {@code floor_height} of 10 this trades one-for-one against room
      * height</strong> &mdash; {@code sink_offset} 5 leaves rooms 5 high, which is the shortest a
-     * room can be. Pits become worth having once the pitch rises (#29 stage 2); until then the
+     * room can be. Pits become worth having once the pitch rises (the floor-height raise); until then the
      * machinery is here and switched off. Mark's worked numbers: {@code 20/5/2} gives rooms to 15,
      * pits to 5, and a transition drop of 22.</p>
      */
@@ -145,7 +145,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * a partition, and when its scheme's own roll drew none of them one is rolled again without
      * its {@code none}. See {@code RoomSlots#resolve} for the rule and why it exists.
      *
-     * <p><strong>11</strong>. First 13, after a 17x17 room five high came out
+     * <p><strong>11</strong>, deliberately. First 13, after a 17x17 room five high came out
      * with nothing but a floor pattern: fine as a {@code none} room if it were smaller, a waste of
      * space at that size. Lowered to 11 the same day after playing it. Every shipped scheme a room
      * that size can roll has a ceiling for it ({@code FeaturedRoomRuleTest}), so the rule always
@@ -200,7 +200,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
      * by, and what {@code DungeonStackPlanner} caps its height roll to.
      *
      * <p>Equal to {@code floor_height} until something sets {@link #sinkOffset}. Deriving it is the
-     * point of #29's stage 1: {@code DEFAULT_FLOOR_HEIGHT} and the height roll's own maximum are
+     * point of the floor-height raise: {@code DEFAULT_FLOOR_HEIGHT} and the height roll's own maximum are
      * both 10 <em>by coincidence</em>, and nothing anywhere asserted the invariant they encode
      * &mdash; that a room must never be taller than the floor holding it, or its ceiling punches
      * through {@code gap_between_floors} into the floor above.</p>
@@ -238,7 +238,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, 10000), "floor_cells_per_room_template",
                             DEFAULT.floorCellsPerRoomTemplate())
                             .forGetter(DungeonGenerationConfig::floorCellsPerRoomTemplate),
-                    // #51. Omitting the key keeps the shipped taper rather than removing the cap:
+                    // Omitting the key keeps the shipped taper rather than removing the cap:
                     // an uncapped roll puts a height-10 ceiling on a 19x19 room, which is the box
                     // this exists to prevent, so "absent" must not mean "off".
                     Codecs.strictOptionalFieldOf(RoomHeightBand.LIST_CODEC, "room_height_bands",
@@ -253,7 +253,7 @@ public record DungeonGenerationConfig(int corridorWidth, int floorCellsPerRoomTe
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, 8), "gap_between_floors",
                             DEFAULT_GAP_BETWEEN_FLOORS)
                             .forGetter(DungeonGenerationConfig::gapBetweenFloors),
-                    // #3/#29. Upper bound is floorHeight's own, since a range cannot name another
+                    // Upper bound is floorHeight's own, since a range cannot name another
                     // field; what actually constrains it is validateBudget below.
                     Codecs.strictOptionalFieldOf(Codec.intRange(0, 24), "sink_offset",
                             DEFAULT_SINK_OFFSET).forGetter(DungeonGenerationConfig::sinkOffset),

@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Backlog #52: a transition has to <em>reach</em>, and until now nothing checked that it did.
+ * A transition has to <em>reach</em>, and until now nothing checked that it did.
  *
  * <h2>The span is the traverse; the volume is not</h2>
  * <p>What must equal the floor-to-floor pitch is the distance between a transition's two
@@ -62,12 +62,12 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>The runtime check fires during worldgen, once, into a log, on whatever seed happened to
  * generate. This one fails the build the moment the planner's pitch and the shipped templates
  * disagree &mdash; which is exactly what happens the moment {@code floor_height} is raised for
- * backlog #29. Without it the symptom in game is a stairwell that ends in stone: the upper door
+ * Without it the symptom in game is a stairwell that ends in stone: the upper door
  * marker is handed to the maze as if it sat on the upper walking plane, and nothing downstream
  * re-checks it. No error, no log, no test.</p>
  *
  * <p>So: <strong>if you are here because this test went red after changing the floor height, it is
- * working.</strong> The templates named in the failure need re-cutting; see backlog #52 for which
+ * working.</strong> The templates named in the failure need re-cutting; see the transition span guard for which
  * of them can be stretched and which are monolithic.</p>
  */
 @org.junit.jupiter.api.Tag("release") // fully qualified: net.minecraft.nbt.Tag is imported below
@@ -277,7 +277,7 @@ class TransitionSpanTest {
     @Test
     void report() {
         int pitch = pitch();
-        System.out.println("=== #52 transition spans, planner pitch " + pitch + " ===");
+        System.out.println("=== transition spans, planner pitch " + pitch + " ===");
         Map<String, Template> shipped = reachable();
         templates().forEach((name, t) -> System.out.println("  " + name
                 + (shipped.containsKey(name) ? "" : "  [RETIRED -- in no pool]")

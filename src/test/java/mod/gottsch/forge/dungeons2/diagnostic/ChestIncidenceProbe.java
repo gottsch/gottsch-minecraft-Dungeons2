@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * How often a procedural room actually gets a chest, and which loot band the chests it gets draw
- * from. Backlog #48's missing measurement.
+ * from. The chest routing's missing measurement.
  *
  * <h2>Why the shipped config does not answer this</h2>
  * <p>Three of the eleven {@code classic} schemes carry a {@code chests} slot &mdash;

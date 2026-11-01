@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Places a room scheme's chests. Backlog #48, the procedural route.
+ * Places a room scheme's chests. The procedural route.
  *
  * <p>Structurally this is {@link RoomSpawnerGenerator}: roll a count, draw that many distinct
  * wall-adjacent cells without replacement (both via {@link CellDraw}), emit a block carrying block-entity data, and hand the
@@ -141,7 +141,7 @@ public final class RoomChestGenerator {
             String variant = pickVariant(variants, totalWeight, random);
             String table = pickTable(tables, totalTableWeight, random);
 
-            // #99. The roll happens AFTER the table is drawn, deliberately: the mimic carries the
+            // The roll happens AFTER the table is drawn, deliberately: the mimic carries the
             // very table the chest would have had, so killing it pays exactly what opening the
             // chest would have. That is why this is a swap and not a deletion -- the player loses
             // the free reward, not the reward.

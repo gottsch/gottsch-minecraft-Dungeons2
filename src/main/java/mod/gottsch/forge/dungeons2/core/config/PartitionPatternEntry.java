@@ -37,7 +37,7 @@ import java.util.function.UnaryOperator;
  * rather than the surfaces around it.</p>
  *
  * <h2>Why it is not the {@code props} slot</h2>
- * <p>A prison cell is not a room with barrels in it; it is a room with a wall inside it. #73 places
+ * <p>A prison cell is not a room with barrels in it; it is a room with a wall inside it. The props slot places
  * <em>objects</em> in cells and cares only that each is standing on floor. This needs a line, an
  * axis, a way through, and a height &mdash; and every cell it claims has to reach the {@code taken}
  * set, or a pot spawns inside the bars and a column grows through them.</p>
@@ -139,7 +139,7 @@ public record PartitionPatternEntry(PartitionShapePattern shape, String block,
     public static final Codec<PartitionPatternEntry> CODEC = Codecs.closed(MAP_CODEC);
 
     /**
-     * This partition with its block, its gap block and its shape's blocks resolved. #65's second
+     * This partition with its block, its gap block and its shape's blocks resolved. Material roles' second
      * half; neither shipped shape names a block, so in practice this is the entry's own two fields.
      */
     public PartitionPatternEntry withRoles(UnaryOperator<String> resolver) {

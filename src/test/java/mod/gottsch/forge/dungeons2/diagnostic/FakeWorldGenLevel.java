@@ -182,7 +182,7 @@ public final class FakeWorldGenLevel implements InvocationHandler {
      * {@code level.getChunk(pos).markPosForPostprocessing(pos)} for every block in
      * {@code SHAPE_CHECK_BLOCKS} &mdash; fences, walls, panes, doors and <em>iron bars</em>. The gap
      * went unnoticed for as long as it did only because no procedural room shipped such a block;
-     * the {@code partition} slot (#74) shipped iron bars and four tests went red at once with an
+     * the {@code partition} slot (the partition slot) shipped iron bars and four tests went red at once with an
      * NPE inside vanilla.</p>
      *
      * <p>One instance for every {@link ChunkPos}, deliberately. Nothing reads what is marked, so a

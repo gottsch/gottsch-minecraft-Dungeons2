@@ -115,7 +115,7 @@ def rule_blocks(processors):
                             decorated.add(entry)          # a bare id
                         elif "block" in entry:
                             decorated.add(entry["block"])  # weighted {block, weight}
-                        # else: a weighted {entity, weight}. #54 grows the Shrieker and the
+                        # else: a weighted {entity, weight}. The fungus growth grows the Shrieker and the
                         # Violet Fungus as MOBS, so the palette names an entity and there is no
                         # block to be covered or uncovered.
     return aged, decorated

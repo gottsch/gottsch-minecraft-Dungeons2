@@ -28,7 +28,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The authored chest route. Backlog #48 step 3.
+ * The authored chest route.
  *
  * <p>The marker block itself is not registered in a bare {@code Bootstrap}, so these exercise the
  * parts that do not need it: the loot-table precedence, the seed, and the two failure paths. That a
@@ -153,7 +153,7 @@ class ChestMarkerProcessorTest {
         assertNull(decoded.result().get().bossLootTable(marker(bossNbt())));
     }
 
-    /** A malformed value must be a load error, not a silent Optional.empty(). See #31. */
+    /** A malformed value must be a load error, not a silent Optional.empty(). See the closed-schema rule. */
     @Test
     void aMalformedBossTableIsALoadError() {
         DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
@@ -190,7 +190,7 @@ class ChestMarkerProcessorTest {
      * stack that named the JSON file rather than the field.</p>
      *
      * <p>Nothing caught it for as long as it existed because the single shipped entry, in
-     * {@code classic_chests.json}, always supplies the field. It surfaced only when #56's pot
+     * {@code classic_chests.json}, always supplies the field. It surfaced only when the pot marker's pot
      * processor copied the pattern and shipped an entry with no fields at all.</p>
      */
     @Test
@@ -220,7 +220,7 @@ class ChestMarkerProcessorTest {
     }
 
     /**
-     * The old single-id form must NOT decode. #61 renamed {@code loot_table} to a weighted
+     * The old single-id form must NOT decode. The chest-marker wiring renamed {@code loot_table} to a weighted
      * {@code loot_tables} list, and the whole value of the rename is that a pack still on the old
      * spelling is told so rather than quietly generating markers that resolve to nothing.
      */
@@ -309,7 +309,7 @@ class ChestMarkerProcessorTest {
         assertTrue(codec.parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).result().isPresent());
     }
 
-    /** The opt-in #48 step 4 will read. Present in the shape now so a template can carry it early. */
+    /** The opt-in the chest routing will read. Present in the shape now so a template can carry it early. */
     @Test
     void theTreasureFlagRoundTripsThroughTheBlockEntityTag() {
         CompoundTag nbt = new CompoundTag();

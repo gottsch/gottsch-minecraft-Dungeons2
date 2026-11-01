@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Which loot tables a chest draws from at a given depth. Backlog #48 step 2, and deliberately the
+ * Which loot tables a chest draws from at a given depth, and deliberately the
  * same shape as {@link MobSetBand} rather than a second one.
  *
  * <h2>Why the motif owns this and not the scheme</h2>

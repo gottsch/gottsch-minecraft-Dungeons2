@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 phase 4 &mdash; the {@code ceiling} and {@code platforms} slots read a material role.
+ * The {@code ceiling} and {@code platforms} slots read a material role.
  *
  * <p>This is the phase the dotted role name was designed for. A joist's {@code block} and its
  * {@code bracket_block} are a <strong>coordinated pair</strong> &mdash; the beam moves with the

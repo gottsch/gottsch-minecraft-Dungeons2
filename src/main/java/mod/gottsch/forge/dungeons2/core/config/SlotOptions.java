@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  * of which is rolled per room.
  *
  * <h2>Why the randomness lives in the COMBINATION, not in the values</h2>
- * <p>#65. A whole-room scheme is the unit of authoring, so the motif file grows linearly in the
+ * <p>A whole-room scheme is the unit of authoring, so the motif file grows linearly in the
  * number of rooms and every <em>combination</em> of treatments has to be written out by hand; ten
  * mud-band schemes were authored in two days. The obvious answer &mdash; a {@code random} scheme
  * type that rolls its own patterns &mdash; was rejected for two reasons worth not re-deriving:
@@ -108,7 +108,7 @@ public record SlotOptions<T>(List<Option<T>> options) {
         return (SlotOptions<T>) EMPTY;
     }
 
-    /** The pre-#65 shape: one treatment, drawn whenever its scheme is rolled and its gate fits. */
+    /** The shape before material roles: one treatment, drawn whenever its scheme is rolled and its gate fits. */
     public static <T> SlotOptions<T> of(T value) {
         return new SlotOptions<>(List.of(new Option<>(1, Optional.of(value))));
     }

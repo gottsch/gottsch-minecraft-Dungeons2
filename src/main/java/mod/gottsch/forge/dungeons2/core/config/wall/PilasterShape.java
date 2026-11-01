@@ -58,7 +58,7 @@ public record PilasterShape(String block, Optional<String> baseBlock, Optional<S
                             Optional<Map<String, String>> capProperties) {
 
     /**
-     * This strip with its three block fields resolved. #65 phase 5.
+     * This strip with its three block fields resolved.
      *
      * <p><strong>Shared by {@code pilasters} and {@code end_pilasters}</strong>, which is the whole
      * reason this record exists: the two types differ only in which columns they stand in, so a

@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The geometry of {@code dungeons2:arcade} (#78). Pure {@code (u, v)}, no room and no world, which
+ * The geometry of {@code dungeons2:arcade} (the blind arcade). Pure {@code (u, v)}, no room and no world, which
  * is the point of the {@code ISurfacePatternProvider} boundary.
  *
  * <p>Two things here are worth more than the cell counting. The <strong>shoulders</strong> are what
@@ -293,7 +293,7 @@ class ArcadeWallPatternProviderTest {
     }
 
     /**
-     * A height above 8 is rejected rather than silently drawing nothing: the taper (#51) caps a
+     * A height above 8 is rejected rather than silently drawing nothing: the taper (the room-height taper) caps a
      * wall at 8 rows, so a bigger number could never mean more than 8 does.
      */
     @Test

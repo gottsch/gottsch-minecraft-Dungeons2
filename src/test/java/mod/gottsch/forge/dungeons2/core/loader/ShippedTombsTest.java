@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Sweeps what the shipped tombs (#104) hold. Every one of these faults is silent in game: a typo'd
+ * Sweeps what the shipped tombs (the sealed tombs) hold. Every one of these faults is silent in game: a typo'd
  * table spills nothing, a typo'd guardian logs one WARN from DungeonBlocks and raises nothing, and
  * either tomb then looks exactly like one whose roll came up empty &mdash; which it is meant to do a
  * third of the time. The only place they can be told apart is here.
@@ -135,7 +135,7 @@ class ShippedTombsTest {
     /**
      * A {@code tombs} slot that names no contents of its own defers to the motif's band. With no
      * band either, the slot resolves to nothing and places no tomb at all -- the feature shipped and
-     * absent, the #61 shape.
+     * absent, the chest-marker wiring shape.
      */
     @Test
     void everySlotThatDefersHasABandToDeferTo() {

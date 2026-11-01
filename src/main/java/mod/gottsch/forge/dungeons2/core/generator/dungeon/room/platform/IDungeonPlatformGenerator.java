@@ -38,7 +38,7 @@ public interface IDungeonPlatformGenerator {
     /**
      * Append this room's daises to {@code out}, keeping clear of every cell in {@code excluded}.
      *
-     * <p><strong>{@code excluded} is the room's pit</strong> &mdash; backlog #58, the same argument
+     * <p><strong>{@code excluded} is the room's pit</strong> &mdash; the pit exclusion, the same argument
      * and the same reason as {@code IDungeonPillarGenerator#build}. A dais is all-or-nothing here
      * where a colonnade is per-cell: its whole footprint must be clear, so one overlapping a pit is
      * dropped entirely rather than built with a bite out of it. That asymmetry is not new &mdash; it

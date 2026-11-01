@@ -1,5 +1,5 @@
 // =============================================================================================
-// THE BOSS ROOM'S PROCESSOR LIST -- deliberately the BARE MINIMUM, 2026-09-03.
+// THE BOSS ROOM'S PROCESSOR LIST -- deliberately the BARE MINIMUM.
 //
 // WHY IT EXISTS: COBWEBS. A cobweb entangles whatever walks into it, and in a boss room that is
 // the boss and its escort -- so the dungeon's own decoration was fighting on the player's side in
@@ -22,7 +22,7 @@
 // like classic_weathering with two keys deleted, the honest move is a shared list plus a way to
 // subtract -- not two thousand lines that drift.
 //
-// THE THREE MARKER PROCESSORS ARE MANDATORY, not optional trimming -- backlog #61. A marker
+// THE THREE MARKER PROCESSORS ARE MANDATORY, not optional trimming -- the chest-marker wiring. A marker
 // processor missing from a list a pool names is an authored marker left standing in a finished
 // dungeon: a visible spawner-textured block where a spawner should be, a chest_marker where the
 // boss chest should be. StratumWeatheringListTest sweeps every *_weathering.json, which is what
@@ -62,7 +62,7 @@
             { "block": "minecraft:mossy_cobblestone", "probability": 0.3 }
           ]
         },
-        // Stone brick PILLARS (added 2026-10-24): the hall's columns and pilasters aged no stage at
+        // Stone brick PILLARS: the hall's columns and pilasters aged no stage at
         // all. The wall's own cracked / mossy rates, onto the pillar blocks' cracked / mossy twins;
         // the cobblestone stage has no pillar to go to, so it is dropped.
         {
@@ -96,7 +96,7 @@
             { "block": "minecraft:mossy_cobblestone_stairs", "probability": 0.3 }
           ]
         },
-        // square_stone_brick_stairs (added 2026-10-21, 17x21_bridge_1): the stone_brick_stairs rules
+        // square_stone_brick_stairs (17x21_bridge_1): the stone_brick_stairs rules
         // above, line for line, with the mossy square stair as the moss stage.
         {
           "block": "dungeonblocks:square_stone_brick_stairs",
@@ -139,7 +139,7 @@
         },
 
         // ===================================================================================
-        // CHAINS (added 2026-09-07). small_boss_1 hangs a six-cell run of
+        // CHAINS. small_boss_1 hangs a six-cell run of
         // dungeonblocks:swinging_chain over the middle of the room, which is the longest run in
         // any shipped template and the most visible object in the most visible room.
         //
@@ -189,10 +189,9 @@
           ]
         },
         // ===================================================================================
-        // FIXTURES with no aged form (added 2026-10-21, 17x21_bridge_1). A gargoyle bust is a
+        // FIXTURES with no aged form (17x21_bridge_1). A gargoyle bust is a
         // single fixture, so like a chain link it goes straight to a gap, at the chain rate. It
-        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule (removed
-        // 2026-10-22): a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
+        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule: a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
         // block takes ONE of them -- a middle gone leaves the top hanging alone, half a cage. It is
         // a hanging_sweep member, so it still falls whole when the chain above it breaks.
         // ===================================================================================
@@ -210,14 +209,14 @@
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         },
-        // TUFF (added 2026-10-21, 17x21_bridge_1): moss first, like stone bricks.
+        // TUFF (17x21_bridge_1): moss first, like stone bricks.
         {
           "block": "minecraft:tuff",
           "output_blocks": [
             { "block": "dungeonblocks:mossy_tuff", "probability": 0.3 }
           ]
         },
-        // TUFF deep decay (added 2026-10-21) -- the same cobblestone -> rubble -> air chain stone
+        // TUFF deep decay -- the same cobblestone -> rubble -> air chain stone
         // bricks get, but slower. A second rule on one block is a FALLTHROUGH, reached only when
         // the moss rule missed (70%), so composed: cobblestone 7%, rubble 1.4%, air 0.35%.
         // This list runs `agings: 2`, so here the chain stops at rubble and never reaches air.
@@ -229,7 +228,7 @@
             { "block": "minecraft:air", "probability": 0.25 }
           ]
         },
-        // FLAGSTONES (Dungeon Blocks 3.1.0, added 2026-10-22). A floor, so NO air: a hole in a
+        // FLAGSTONES (Dungeon Blocks 3.1.0). A floor, so NO air: a hole in a
         // walking surface is a fall. Three rules on one block, each a FALLTHROUGH reached only when
         // the ones above missed: cracked 30%, mossy 30.1%, then the stone-brick deep decay at half
         // its first stage -- cobblestone 4%, dirt 1.2%, rubble 0.3%. The weathered twins carry the
@@ -256,7 +255,7 @@
             { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
-        // CRUMBLING floor stone (added 2026-10-22) -- a false floor's lid. Its own twins only, and
+        // CRUMBLING floor stone -- a false floor's lid. Its own twins only, and
         // NO deep decay: cobblestone or dirt would be a safe tile in the trap, and air a hole that
         // gives it away. Ages like the floor around it so the lid is not one unbroken patch of the
         // same cracked texture: cracked 30%, mossy 30.1% (a fallthrough); cobblestone mossy 30%.
@@ -396,12 +395,12 @@
     },
 
     // =========================================================================================
-    // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
+    // dungeons2:sarcophagus -- the sealed tombs. Turns an authored
     // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
     // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
     // head cell must be authored AIR, or the marker is removed with a [D2-TOMB] WARN.
     //
-    // BEFORE rubble_scatter and decoration (moved 2026-10-24): both fill authored AIR in
+    // BEFORE rubble_scatter and decoration: both fill authored AIR in
     // finalizeProcessing, and the head cell is authored air -- a cobweb or a scatter landing in
     // it refused the tomb and left the marker standing in game. Claiming the head first makes
     // them go round it.
@@ -471,7 +470,7 @@
         "tags": ["minecraft:dirt"]
       },
 
-      // Weighted: the two `entity` entries are GMM mobs grown as if they were plants (#54), and
+      // Weighted: the two `entity` entries are GMM mobs grown as if they were plants (the fungus growth), and
       // unweighted they would be a quarter of everything that grows. At 3 against the mushrooms'
       // 10 they are about 9%. Kept here on purpose -- a Shrieker rooted in a boss room's decayed
       // corner is atmosphere, and unlike a cobweb it does not fight on the player's side.
@@ -504,7 +503,7 @@
     },
 
     // =========================================================================================
-    // The three marker processors. #61: mandatory in every list a pool names -- see the header.
+    // The three marker processors. The chest-marker wiring: mandatory in every list a pool names -- see the header.
     //
     // No pool-level defaults on the spawner or the chest, unlike classic_weathering: a boss room
     // has a handful of hand-placed markers and every one of them should say what it is. An
@@ -534,7 +533,7 @@
 
       // The Treasure2 rarity of the boss chest, when Treasure2 is installed and the marker set
       // `treasure: true`. One of these, evenly. Set per size tier here because only the pool
-      // knows the dungeon's size (Mark, 2026-10-05: small rare/epic, medium epic/legendary,
+      // knows the dungeon's size (small rare/epic, medium epic/legendary,
       // large legendary/mythical). D2's boss_loot_table above then tops up the empty slots.
       "treasure_rarities": ["treasure2:rare", "treasure2:epic"],
 
@@ -546,7 +545,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:barrel_loot (added 2026-10-22) -- gives an authored template's barrel the barrel
+    // dungeons2:barrel_loot -- gives an authored template's barrel the barrel
     // table: mostly junk or nothing, now and then something good. A barrel whose NBT already names a
     // LootTable or holds Items is left as authored. The procedural twin is a barrel prop's
     // `loot_table` in the motif's schemes.
@@ -555,7 +554,7 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
-    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // dungeons2:pedestal_loot: a template pedestal placed into a LIVE chunk
     // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
     // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
     { "processor_type": "dungeons2:pedestal_loot" },
@@ -615,7 +614,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:hanging_sweep (added 2026-09-07) -- cuts a chain run loose below the link the
+    // dungeons2:hanging_sweep -- cuts a chain run loose below the link the
     // aging above just ate, and takes the lantern on the end of it with it.
     //
     // It is the second half of the chain rules and neither half works alone. A template writes

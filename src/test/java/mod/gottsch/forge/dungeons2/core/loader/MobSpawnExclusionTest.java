@@ -127,7 +127,7 @@ class MobSpawnExclusionTest {
     }
 
     /**
-     * Nor may a tomb raise one (#104) -- the third route, and the one with no category to opt in
+     * Nor may a tomb raise one (the sealed tombs) -- the third route, and the one with no category to opt in
      * by. A tomb guardian is an ordinary mob scaled by its floor's echelon difficulty, where a boss
      * is anchored, pinned unscaled and tuned for the one fight a dungeon builds toward.
      */
@@ -262,7 +262,7 @@ class MobSpawnExclusionTest {
             // pure Java, invisible to every JSON-based check here. Not a mini-boss (16 HP, no boss
             // slot planned) -- just not yet folded into the ambient roster either.
             "spectator",
-            // The mimics (#99). Reachable, and by a route no JSON check here can see: a chest or a
+            // The mimics (the mimics). Reachable, and by a route no JSON check here can see: a chest or a
             // barrel that was going to be placed is swapped for one at PLAN time, in
             // RoomChestGenerator / RoomFurnitureGenerator. Same shape as spectator's exemption --
             // pure Java, invisible from the data. What must stay true of them is the opposite of

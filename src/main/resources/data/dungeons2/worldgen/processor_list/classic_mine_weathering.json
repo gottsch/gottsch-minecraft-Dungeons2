@@ -1,7 +1,6 @@
 // =================================================================================================
 // LIGHT weathering for the CLASSIC motif's MINE ENTRANCE (mine_top_1, mine_bottom_1), named by
-// template_pool/entrance/classic/surface_entrance.json and entrance/classic/mine_1.json
-// (Gottsch, 2026-10-27).
+// template_pool/entrance/classic/surface_entrance.json and entrance/classic/mine_1.json.
 //
 // WHY NOT classic_entrance_weathering. That list ruins a building: collapse by height takes most of
 // the top third to air. A mine is cut INTO rock, so there is no storey to fall, and what ages is the
@@ -21,7 +20,7 @@
 // grows exactly what the corridors below it grow.
 //
 // THE TAIL IS classic_weathering.json's, entry for entry (markers, sweeps, pattern_tile), because a
-// pool element names exactly ONE list and every marker processor must be in every list (#61).
+// pool element names exactly ONE list and every marker processor must be in every list (the chest-marker wiring).
 // Keep it in step by hand.
 // =================================================================================================
 {
@@ -46,7 +45,7 @@
             { "block": "minecraft:mossy_cobblestone_slab", "probability": 0.25 }
           ]
         },
-        // BONE PILES (2026-10-27). Author them by hand where the dead belong -- by the cart, at the
+        // BONE PILES. Author them by hand where the dead belong -- by the cart, at the
         // end of the track, in a side cut -- as dungeonblocks:bone_pile. This makes no two mines
         // alike: a third become skull piles (surface_aging carries `bones`, `facing` and
         // `waterlogged` across), then a quarter of what is left is gone. So of every authored pile,
@@ -67,7 +66,7 @@
         },
         // Copied from classic_boss_weathering_*.json: neither block is in the mine templates today,
         // but every list ages them so a flagstone or a false floor authored later weathers right.
-        // FLAGSTONES (Dungeon Blocks 3.1.0, added 2026-10-22). A floor, so NO air: a hole in a
+        // FLAGSTONES (Dungeon Blocks 3.1.0). A floor, so NO air: a hole in a
         // walking surface is a fall. Three rules on one block, each a FALLTHROUGH reached only when
         // the ones above missed: cracked 30%, mossy 30.1%, then the stone-brick deep decay at half
         // its first stage -- cobblestone 4%, dirt 1.2%, rubble 0.3%. The weathered twins carry the
@@ -97,7 +96,7 @@
             { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
-        // CRUMBLING floor stone (added 2026-10-22) -- a false floor's lid. Its own twins only, and
+        // CRUMBLING floor stone -- a false floor's lid. Its own twins only, and
         // NO deep decay: cobblestone or dirt would be a safe tile in the trap, and air a hole that
         // gives it away. Ages like the floor around it so the lid is not one unbroken patch of the
         // same cracked texture: cracked 30%, mossy 30.1% (a fallthrough); cobblestone mossy 30%.
@@ -267,7 +266,7 @@
       // the draw is one roll over the total. Weights matter here more than anywhere else in this
       // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
       // which is ground-cover frequency for something that is actually a monster. At 3 each against
-      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each, 2026-10-25).
+      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each).
       "floor_growth": {
         "probability": 0.35,
         "blocks": [

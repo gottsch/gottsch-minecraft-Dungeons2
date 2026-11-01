@@ -113,7 +113,7 @@ class StrictValueCodecTest {
      * A gate whose maximum is below its minimum fits no room, so the entry silently never draws --
      * indistinguishable at generation time from one that merely never came up. {@code RoomScheme}
      * validated the SLOT gates from the day they shipped, but never reached the per-entry ones, so
-     * this was latent on the wall side and arrived with the ceiling's (backlog #24).
+     * this was latent on the wall side and arrived with the ceiling's (the per-entry ceiling gates).
      */
     @Test
     void anInvertedGateOnAPatternIsALoadError() {

@@ -17,7 +17,7 @@
     "",
     "The cost is a couple of wasted draws per link. The benefit of the stairs_2 split is that a",
     "misspelled target fails LOUDLY (an empty pool) rather than by silently exhausting candidates;",
-    "see backlog #11. Worth revisiting if this chain grows.",
+    "see the per-chain transition pools. Worth revisiting if this chain grows.",
     "",
     "NOTE the typo `winding_staris_mid_bottom` above is real and is in the .nbt files -- it is",
     "spelled the same on both sides so it matches, but fix it on both or neither.",

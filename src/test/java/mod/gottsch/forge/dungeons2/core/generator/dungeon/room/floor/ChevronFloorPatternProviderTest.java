@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The floor `chevron` type (#82): repeating V's up the depth axis.
+ * The floor `chevron` type (the chevron and diagonal floors): repeating V's up the depth axis.
  *
  * <p>Two things are worth pinning down, because both are decisions rather than arithmetic: an arm
  * that walks off the edge of the floor is <strong>dropped, not clipped to the wall</strong> (a
@@ -197,7 +197,7 @@ class ChevronFloorPatternProviderTest {
     }
 
     /**
-     * The anchoring decision the backlog entry asked for, asserted where it is visible: the pattern
+     * The anchoring decision the original plan asked for, asserted where it is visible: the pattern
      * is planned in floor-local coordinates, so moving the room moves the whole chevron run with it
      * rather than sliding the room across a fixed field.
      */

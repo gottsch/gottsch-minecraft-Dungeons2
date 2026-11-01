@@ -37,7 +37,7 @@ import java.util.Optional;
  * is different in every room and cannot be authored at all. One line in a scheme frames every
  * opening in every room the scheme dresses.</p>
  *
- * <p>It is also the reason [#72] exists: a wall pattern is handed a size, a facing and a random and
+ * <p>It is also the reason doorway-aware wall runs exist: a wall pattern is handed a size, a facing and a random and
  * nothing else, so until the run could tell a pattern which of its columns are an opening, this was
  * unwritable. See {@code IDoorAwarePatternProvider}.</p>
  *

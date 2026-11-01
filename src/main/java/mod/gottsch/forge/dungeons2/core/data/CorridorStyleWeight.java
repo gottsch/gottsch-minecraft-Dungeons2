@@ -39,12 +39,12 @@ package mod.gottsch.forge.dungeons2.core.data;
 public record CorridorStyleWeight(String name, int weight, int height, CorridorDescent descent,
                                   CorridorTrap.Options traps) {
 
-    /** A style that never sinks: every style before #108. */
+    /** A style that never sinks: every style before the corridor descent. */
     public CorridorStyleWeight(String name, int weight, int height) {
         this(name, weight, height, null, null);
     }
 
-    /** A style with no traps (#108 stage 3). */
+    /** A style with no traps (the corridor descent). */
     public CorridorStyleWeight(String name, int weight, int height, CorridorDescent descent) {
         this(name, weight, height, descent, null);
     }

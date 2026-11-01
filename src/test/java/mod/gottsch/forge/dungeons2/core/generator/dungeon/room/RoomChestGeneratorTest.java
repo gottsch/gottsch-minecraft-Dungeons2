@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code chests} slot. Backlog #48.
+ * The {@code chests} slot.
  *
  * <p>Covers the three things that would be wrong in a way no other test would notice: a chest that
  * holds nothing, a chest a player can re-roll, and a chest standing where a pot is about to be
@@ -55,7 +55,7 @@ class RoomChestGeneratorTest {
     }
 
     /**
-     * #99. A mimic REPLACES the chest and INHERITS its table -- the two halves that make it a swap
+     * A mimic REPLACES the chest and INHERITS its table -- the two halves that make it a swap
      * rather than a deletion. If the block still went out there would be two rewards in one cell;
      * if the table did not follow, killing the thing that ate your chest would pay nothing, which
      * is the version a player would rightly call a bug.

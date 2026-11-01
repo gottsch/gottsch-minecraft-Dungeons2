@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * <strong>The rule and the palette have to agree, per band.</strong> Backlog #15 gave the timber
+ * <strong>The rule and the palette have to agree, per band.</strong> the surface map gave the timber
  * chain a {@code joist} gate, which is only ever as good as where the palette actually puts a
  * {@code minecraft:spruce_log}: a log the motif uses as a beam decays to a legible gap, and the
  * identical log used as a post would be left hanging. The gate now decides that <em>structurally</em>

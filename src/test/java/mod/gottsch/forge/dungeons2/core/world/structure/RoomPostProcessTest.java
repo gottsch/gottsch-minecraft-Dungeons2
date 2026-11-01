@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Drives real ROOM pieces through their real {@code postProcess}, against
- * {@link FakeWorldGenLevel} &mdash; the half of backlog #27 that was still open.
+ * {@link FakeWorldGenLevel} &mdash; the half of the postProcess coverage that was still open.
  *
  * <h2>Rooms were thought to be unreachable, and are not</h2>
  * <p>The standing note said a room piece cannot be driven headlessly because it spawns entities and
@@ -115,7 +115,7 @@ class RoomPostProcessTest {
     private static List<DungeonRoomPiece> pieces(DungeonLayout layout) {
         var generationConfig = DungeonGenerationConfigHelper.get(TestRegistries.get());
         int sinkOffset = generationConfig.sinkOffset();
-        // #68: and the budget ABOVE the walking plane, which is the other half of the same floor's
+        // And the budget ABOVE the walking plane, which is the other half of the same floor's
         // budget and the cap on a rising vault. Passing only the sink is what the emitter used to
         // do, and leaving it that way here would have this harness build a box the render then
         // writes outside of -- which is exactly what `aRoomNeverWritesOutsideItsOwnBox` reported
@@ -221,7 +221,7 @@ class RoomPostProcessTest {
      *
      * <p><strong>What this still guards, which is the part that has actually broken:</strong>
      * everything the unclipped pass owns -- geometry, trim, stair shapes, the scheme roll itself.
-     * #80's first fix silently gave up every mitre in the mod and no other assertion noticed.
+     * The chunk-seam fix's first fix silently gave up every mitre in the mod and no other assertion noticed.
      * Nothing in the exemption below would have hidden that.</p>
      *
      * <p><strong>Not guarded, and worth knowing:</strong> the clipped pass is sensitive to which
@@ -415,7 +415,7 @@ class RoomPostProcessTest {
     }
 
     /**
-     * Stairs in a room still get their corners mitred (#80).
+     * Stairs in a room still get their corners mitred (the chunk-seam fix).
      *
      * <p>This is the guard on the fix, not on the feature. {@code settleJoinShapes} is what turns a
      * {@code straight} stair at the corner of a cornice into an {@code inner_*}/{@code outer_*} one,
@@ -449,6 +449,6 @@ class RoomPostProcessTest {
             }
         }
         assertTrue(sawMitre, "no stair in any room settled into a corner shape -- rooms have "
-                + "stopped mitring entirely, which is what #80's first fix did by accident");
+                + "stopped mitring entirely, which is what the first chunk-seam fix did by accident");
     }
 }

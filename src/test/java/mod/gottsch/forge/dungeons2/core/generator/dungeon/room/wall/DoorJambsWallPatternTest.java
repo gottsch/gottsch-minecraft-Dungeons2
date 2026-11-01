@@ -54,10 +54,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Door-aware wall runs (#72) and the pattern that proves them.
+ * Door-aware wall runs (doorway-aware wall runs) and the pattern that proves them.
  *
- * <h2>What #72 actually was</h2>
- * <p>Less than the backlog entry claimed. {@code BasicWallGenerator} always had the room's doorways
+ * <h2>What doorway-aware wall runs actually was</h2>
+ * <p>Less than the original plan claimed. {@code BasicWallGenerator} always had the room's doorways
  * &mdash; it passes them to {@code WallSurface#emit} to blank the two door rows. What never reached
  * the PATTERN was the same set, because {@code ISurfacePatternProvider#plan} takes a size, a facing
  * and a random by design. So the work was a run-to-column mapping and an optional interface, not new

@@ -394,7 +394,7 @@ public record WallPatternEntry(List<PatternEntry> patterns, SizeGate gate) {
                               CourseAlternate alternate, SizeGate gate) {
 
         /**
-         * This course with its three block fields resolved. #65 phase 5.
+         * This course with its three block fields resolved.
          *
          * <p><strong>A {@code CourseEntry} has three homes</strong>, more than any other record in
          * the schema: inside a {@code courses} wall pattern, and directly on

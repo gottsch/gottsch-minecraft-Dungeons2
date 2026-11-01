@@ -57,11 +57,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #3: sunken pits, and the rule that bounds every one of them.
+ * Sunken pits, and the rule that bounds every one of them.
  *
  * <h2>The rule</h2>
  * <p><strong>A pit is dug out of the floor's own budget and never out of the gap between
- * floors.</strong> {@code sink_offset} (#29) is how much of {@code floor_height} sits below the
+ * floors.</strong> {@code sink_offset} (the floor-height raise) is how much of {@code floor_height} sits below the
  * walking plane, and a pit lives entirely in that; {@code gap_between_floors} is not available to it
  * at any authored depth. The clamp lives on {@link PitPatternEntry#depthWithin} rather than in a
  * codec because the two numbers are in different datapack registries &mdash; a pit is authored on a
@@ -347,7 +347,7 @@ class RoomPitTest {
         assertTrue(dug.contains(new Coords2D(5, 5)), "the centre of an 11-wide room");
     }
 
-    // ---------- the sunken dais (#86) ----------
+    // ---------- the sunken dais (the dais variants) ----------
 
     /**
      * The inverted dais: a court one block down with a centrepiece standing in the middle of it.

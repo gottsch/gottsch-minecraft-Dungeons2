@@ -243,7 +243,7 @@ class BandPatternDefaultsTest {
                 .result().orElseThrow().pattern().isPresent());
     }
 
-    /** A malformed pattern is a load error, not silently an absent one -- #31. */
+    /** A malformed pattern is a load error, not silently an absent one -- the closed-schema rule. */
     @Test
     void aMalformedBandPatternIsALoadError() {
         assertTrue(WallConfig.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(

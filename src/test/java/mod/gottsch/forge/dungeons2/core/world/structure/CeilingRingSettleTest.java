@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>An oriented ceiling ring resembles both: it is a rectangle with four runs, but at {@code inset}
  * greater than zero it hangs in open air with no wall behind it, which is the condition that breaks
- * the corridor case. Reasoning gave a confident answer either way, so the backlog entry for this
+ * the corridor case. Reasoning gave a confident answer either way, so the original plan for this
  * work said to check before writing any shape derivation. This is that check, and the answer is that
  * <strong>vanilla gets it right and no derivation is needed</strong> &mdash; the corner's neighbour
  * along the ring lies in its own {@code facing.getOpposite()} direction, which is exactly where

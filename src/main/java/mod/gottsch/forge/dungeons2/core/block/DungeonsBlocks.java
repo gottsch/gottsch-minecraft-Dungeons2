@@ -35,7 +35,7 @@ import net.minecraftforge.registries.RegistryObject;
  *
  * <p><strong>Phase 6 removed {@code DEFERRED_DUNGEON_GENERATOR} on 2026-08-18</strong>,
  * along with its block, block entity and the whole unregistered feature path it existed for. This
- * class stays because live content shares it &mdash; which is exactly the split #43 called for.</p>
+ * class stays because live content shares it &mdash; which is exactly the split the legacy-path removal called for.</p>
  *
  * @author Mark Gottschling Oct 25, 2023
  *

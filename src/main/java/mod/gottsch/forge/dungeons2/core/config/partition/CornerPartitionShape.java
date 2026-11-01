@@ -50,7 +50,7 @@ public record CornerPartitionShape(int width, int depth, Corner corner)
      *
      * <p>{@link #ANY} is the default and is a <strong>roll</strong>, not a fifth corner: a
      * procedural room has no reason to prefer one, and four schemes that differ only in a compass
-     * point is exactly the file growth #65 exists to stop. It is spelled out rather than left
+     * point is exactly the file growth material roles exists to stop. It is spelled out rather than left
      * implicit because "absent means random" and "absent means north-west" are both defensible and
      * a reader cannot tell from a codec which one it chose.</p>
      */

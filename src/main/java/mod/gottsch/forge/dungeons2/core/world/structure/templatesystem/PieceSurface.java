@@ -54,7 +54,7 @@ import net.minecraft.util.StringRepresentable;
  * the horizontal half of a processor's world, which vanilla rotates on the way out.</p>
  *
  * <h2>Layer 0 is the floor BY DECISION, including under a pit</h2>
- * <p>Once #29 (the floor-height raise) and #3 (pits) land, a room's floor <em>plane</em> may sit
+ * <p>With the raised floor height and sunken pits, a room's floor <em>plane</em> may sit
  * well above its lowest layer &mdash; a 20-high room with a 5-deep pit has one at relative Y 5 and
  * another at 0. <strong>This class keeps naming layer 0, and that is the intended behaviour, not a
  * limitation</strong>: in a pitted room the pit's own floor is the surface that
@@ -79,7 +79,7 @@ import net.minecraft.util.StringRepresentable;
  * {@code PieceSurfaceTest.proceduralRoomHasNothingBelowLayerZero} is the guard: it fails the day
  * a procedural placement drops below the origin.</p>
  *
- * <h2>2026-09-04, backlog #15: the three surfaces above the floor</h2>
+ * <h2>The surface map: the three surfaces above the floor</h2>
  * <p>This enum used to stop at {@link #ABOVE_FLOOR}, and said so at length: a ceiling is at
  * {@code height - 1}, and <strong>{@code processBlock} is never told the piece's height</strong>
  * &mdash; it sees one block, the piece origin, and a {@code StructurePlaceSettings} whose bounding
@@ -181,7 +181,7 @@ public enum PieceSurface implements StringRepresentable {
 
     /**
      * A beam: a cell that hangs with the piece's own ceiling still above it. What separates a
-     * ceiling joist from the post holding a roof up &mdash; backlog #45's mud-band
+     * ceiling joist from the post holding a roof up &mdash; the strata's mud-band
      * {@code spruce_log} rule was blocked on exactly this distinction, since both are
      * {@link #ABOVE_FLOOR} and only one may decay to a gap.
      */

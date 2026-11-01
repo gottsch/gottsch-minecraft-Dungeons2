@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * An <strong>L</strong> of bars fencing a rectangular cell off in one corner of the room. Backlog
- * #74, and the shape the entry was actually asking for: a prison cell.
+ * An <strong>L</strong> of bars fencing a rectangular cell off in one corner of the room.
+ * The shape the partition slot exists for: a prison cell.
  *
  * <h2>Why an L and not a diagonal</h2>
  * <p>"Cutting a corner off" reads as a diagonal, and a diagonal is the one thing this cannot be.

@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * The sweep backlog #13 asked for: <strong>every block id in every shipped datapack file names a
+ * The sweep the block-id sweep asked for: <strong>every block id in every shipped datapack file names a
  * block that exists.</strong>
  *
  * <h2>Why a typo cannot be caught anywhere else</h2>
@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>That is deliberate and is the whole design. The obvious alternative &mdash; sweep the keys we
  * know about &mdash; silently stops covering the next field somebody adds, which is precisely how
- * #13 sat half-done for two weeks. Adding {@code bracket_block} to the ceiling schema must not
+ * The block-id sweep sat half-done for two weeks. Adding {@code bracket_block} to the ceiling schema must not
  * quietly fall out of the sweep; here it fails until it is classified, which takes one line and one
  * decision.</p>
  *
@@ -103,7 +103,7 @@ class ShippedBlockIdsTest {
             // config schema to snake_case had to reach this list; an unclassified key fails this
             // test by design, which is what stopped that rename passing by omission.
             "bottom_block",
-            // #68/#70/#71, 2026-09-01. The rising vault's crown and springing course, the floor
+            // The rising vault/the gradient floor/the worn path, 2026-09-01. The rising vault's crown and springing course, the floor
             // gradient's two ends (its inner one is `centre_block`, already listed above for the
             // ceiling boss) and the worn path's material. All five are real block ids resolved
             // through BlockStateCodec, so a typo in one becomes AIR -- which for the vault means a
@@ -112,36 +112,36 @@ class ShippedBlockIdsTest {
             // dungeons2:rubble_scatter's scatter (2026-09-28). Resolved through BlockStateCodec; an
             // unresolved id makes the processor write nothing, so a typo is silent -- check it here.
             "scatter_block",
-            // #74: the partition slot. Its "block" key -- the run itself -- is already listed
+            // The partition slot. Its "block" key -- the run itself -- is already listed
             // above; this is what hangs in the way through.
             "gap_block",
             // The arcade partition's corbel courses and keystone. Its pier foot is `base_block`,
             // already listed above for the pillars.
             "corbel_block", "keystone_block",
-            // #77: the oculus. `cap_block` is already listed above (the pillars use it).
+            // The oculus. `cap_block` is already listed above (the pillars use it).
             "grate_block",
-            // #78: the blind arcade's springing course. Its `block` and `stair_block` are already
+            // The blind arcade's springing course. Its `block` and `stair_block` are already
             // listed above; this is the impost each arch sits on. It reached a shipped file only
             // when the mud band's hall started rolling an arcade, which is what this test is for.
             "impost_block",
-            // pit shapes (#3). floorBlock paves the sunken floor, rimBlock is the ring of stairs
+            // pit shapes (the sunken pits). floorBlock paves the sunken floor, rimBlock is the ring of stairs
             // around it, spikeBlock is the hazard shaft's stalagmite. All three are real block ids
-            // resolved through BlockStateCodec, so a typo becomes air (#13) unless swept here.
+            // resolved through BlockStateCodec, so a typo becomes air (the block-id sweep) unless swept here.
             "floor_block", "rim_block", "spike_block",
             // motif material sections
             "wall", "ceiling", "floor", "door", "lintel", "base", "alternate_base",
             "alternate_floor", "arch_block",
             // processor palettes, and vanilla's own block-state object
             "blocks", "Name",
-            // #48: the chest processor's target block, and a chests slot variant's block. Both are
+            // The chest processor's target block, and a chests slot variant's block. Both are
             // real block ids, so they are verified here rather than exempted.
             "chest_block",
-            // #10: the spawner processor's authored marker. A real block id, so it belongs here and
+            // The spawner processor's authored marker. A real block id, so it belongs here and
             // not in the exempt list -- the sweep verifies dungeons2: ids through our own
             // blockstate files exactly as it does dungeonblocks:, which is what makes a typo in it
             // a build failure rather than a marker that silently never matches.
             "marker_block",
-            // #104: the tomb the sarcophagus processor builds. A real dungeonblocks block; a typo
+            // The tomb the sarcophagus processor builds. A real dungeonblocks block; a typo
             // leaves every marker in the pool standing, with a WARN per piece.
             "sarcophagus_block");
 
@@ -168,12 +168,12 @@ class ShippedBlockIdsTest {
             // random draw to produce the one enchantment worth guaranteeing. Resolved from the
             // enchantment registry, so no more a block than `entity` is.
             "enchantments",
-            // Advancements and entity-type tags (#118, 2026-10-22): a parent advancement, a
+            // Advancements and entity-type tags (the lore books, 2026-10-22): a parent advancement, a
             // criterion trigger, the items an inventory_changed criterion waits for, a Gottsch
             // Books book id, the tab's background texture, and a tag entry's `id`. None names a
             // block; the advancement loader and the tag loader resolve them.
             "parent", "trigger", "items", "book", "background", "id",
-            // #10: a mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
+            // A mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
             // rather than from the block registry. ShippedMobSetsTest is what verifies it. ONE
             // entry since 2026-08-31: the marker processor and a scheme's spawners slot used to
             // spell it `mob_set` and `mobSet` respectively, and this list carried both.
@@ -190,12 +190,12 @@ class ShippedBlockIdsTest {
             // block TAGS -- the same class of typo, but resolved from datapacks rather than the
             // block registry, so out of scope here. Worth its own sweep if one ever bites.
             "tags",
-            // #48: loot table ids, resolved from the loot table registry -- the chest processor's
+            // Loot table ids, resolved from the loot table registry -- the chest processor's
             // pool-level default, the scheme slot's, and the chest loot band's, all one key since
             // the 2026-08-31 rename (they were `loot_table` and `lootTable`, listed twice here).
             // A sweep of these against the shipped loot_tables folder would be the chest
             // equivalent of ShippedMobSetsTest, and does not exist yet.
-            // #7: the Mining Chest's ore bands name ITEMS, not blocks -- a dungeon that ate a
+            // The Mining Chest's ore bands name ITEMS, not blocks -- a dungeon that ate a
             // diamond ore pays back a diamond. Resolved from the item registry, so out of scope
             // here and verified instead by MiningHaulCalibrationTest.everyOreBandNamesARealItem,
             // which is the item-registry equivalent of this sweep.
@@ -207,10 +207,10 @@ class ShippedBlockIdsTest {
             // does not exist without Treasure2; an unknown id is logged and Treasure2 draws.
             // BossTierWiringTest pins the shipped values.
             "treasure_rarities",
-            // #129: a motif's mood biome, and the sound events in the biome files themselves.
+            // A motif's mood biome, and the sound events in the biome files themselves.
             // ShippedMoodBiomesTest decodes both against their registries.
             "biome", "ambient_sound", "sound",
-            // #129 step 2: a prefab's own biome, filed under template_biomes by POSITION (its key is
+            // A prefab's own biome, filed under template_biomes by POSITION (its key is
             // a template id) -- see collect. ShippedMoodBiomesTest checks both sides.
             "template_biomes");
 
@@ -228,7 +228,7 @@ class ShippedBlockIdsTest {
     /**
      * One namespaced string found in one place, kept with enough context to be actionable.
      *
-     * <p>{@code palette} marks a value found inside a motif's {@code palette} object (#65). Those
+     * <p>{@code palette} marks a value found inside a motif's {@code palette} object (material roles). Those
      * are classified by <strong>position</strong> rather than by key name, because a palette's keys
      * are role names an author invents &mdash; {@code shaft}, {@code joist.beam} &mdash; and can
      * never be enumerated in {@link #BLOCK_KEYS}.</p>
@@ -321,7 +321,7 @@ class ShippedBlockIdsTest {
     }
 
     /**
-     * <strong>#65: a palette's values are swept, and the roles that name them are not.</strong>
+     * <strong>material roles: a palette's values are swept, and the roles that name them are not.</strong>
      *
      * <p>Driven from a literal rather than from shipped data, because nothing in {@code classic}
      * declares a palette yet &mdash; authoring that is phase 8. Without this the new behaviour would
@@ -375,7 +375,7 @@ class ShippedBlockIdsTest {
                         && f.value().startsWith("dungeonblocks:")),
                 "expected at least one dungeonblocks block id to be swept");
         assertTrue(all.stream().anyMatch(f -> f.file().contains("classic_weathering")),
-                "expected the weathering list to be swept -- it is the file #13 was raised about");
+                "expected the weathering list to be swept -- it is the file this sweep exists for");
     }
 
     // ---------- resolution ----------
@@ -466,10 +466,10 @@ class ShippedBlockIdsTest {
         return found;
     }
 
-    /** A map keyed by template id (#129); its values are reported under this key, not the id. */
+    /** A map keyed by template id (the mood biomes); its values are reported under this key, not the id. */
     private static final String TEMPLATE_BIOMES = "template_biomes";
 
-    /** The key a motif declares its material roles under. #65. */
+    /** The key a motif declares its material roles under. */
     private static final String PALETTE = "palette";
 
     /**
@@ -489,7 +489,7 @@ class ShippedBlockIdsTest {
             }
         } else if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
             String value = element.getAsString();
-            // A MATERIAL ROLE is not an id and is not swept (#65). The regex below already excludes
+            // A MATERIAL ROLE is not an id and is not swept (material roles). The regex below already excludes
             // it -- `$` is illegal in a ResourceLocation, which is the whole reason that sigil was
             // chosen -- but skipping it by name says so on purpose, so that loosening the regex
             // later cannot quietly start reporting every role as a block that does not exist.

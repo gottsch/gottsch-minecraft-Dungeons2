@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The Mining Chest's path from the plan to a block in the world &mdash; backlog #7.
+ * The Mining Chest's path from the plan to a block in the world.
  *
  * <p>{@code MiningChestPlannerTest} covers what the plan says; this covers everything downstream of
  * it: the emitter handing it to one piece, that piece carrying it through the NBT round trip, the
@@ -180,7 +180,7 @@ class MiningChestPlacementTest {
      *
      * <p><strong>Weaker since Oct 4, 2026, and why.</strong> This asserted a {@link ChestBlock} while
      * the Mining Chest was {@code minecraft:chest}. It is now {@code dungeons2:mining_chest}, which a
-     * bare {@code Bootstrap} does not register, so the id decodes to air here (backlog #13). What the
+     * bare {@code Bootstrap} does not register, so the id decodes to air here (the block-id sweep). What the
      * harness can still check is that the cell stays exactly that &mdash; a cobweb, a pot or a
      * weathered block landing in it would show &mdash; and the block itself is confirmed in game.</p>
      */
@@ -260,7 +260,7 @@ class MiningChestPlacementTest {
      */
     private static BlockPlacement miningChestPlacement(DungeonRoomPiece piece) {
         // forFloor, exactly as postProcess does. Without it this reads the UNPROJECTED motif, and
-        // on a floor carrying a stratum (#45) that is a different motif config -- a different
+        // on a floor carrying a stratum (the strata) that is a different motif config -- a different
         // scheme roll, and therefore a chest in a different cell. Cost the first run of this test:
         // the position asserted below was a cell the world had put a cobweb in, because the world
         // had built a different room.

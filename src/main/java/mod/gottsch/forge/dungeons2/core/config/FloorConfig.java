@@ -68,7 +68,7 @@ import java.util.Optional;
 public record FloorConfig(String base, String alternateBase, Optional<FloorPatternEntry> pattern) {
 
     /**
-     * This section with any {@code $role} in its {@code pattern} resolved. #65 phase 3.
+     * This section with any {@code $role} in its {@code pattern} resolved.
      *
      * <p>A {@link FloorPatternEntry} lives in <strong>two</strong> places &mdash; a scheme's
      * {@code floor} slot and this section's {@code pattern} &mdash; and converting the record made
@@ -102,7 +102,7 @@ public record FloorConfig(String base, String alternateBase, Optional<FloorPatte
             Codecs.BLOCK_ID_OR_ROLE.fieldOf("base").forGetter(FloorConfig::base),
             Codecs.BLOCK_ID_OR_ROLE.fieldOf("alternate_base").forGetter(FloorConfig::alternateBase),
             // strictOptionalFieldOf, not DFU's own: a malformed pattern must be a load error, not
-            // silently the same as an absent one. See Codecs and #31 -- a band that quietly lost
+            // silently the same as an absent one. See Codecs and the closed-schema rule -- a band that quietly lost
             // its paving would look exactly like a band that never asked for any.
             Codecs.strictOptionalFieldOf(FloorPatternEntry.CODEC, "pattern")
                     .forGetter(FloorConfig::pattern)

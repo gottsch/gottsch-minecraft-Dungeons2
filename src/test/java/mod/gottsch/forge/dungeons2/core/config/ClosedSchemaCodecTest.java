@@ -42,7 +42,7 @@ class ClosedSchemaCodecTest {
                         + parse(codec, json).error().map(DataResult.PartialResult::message).orElse(""));
     }
 
-    // ---- the misspellings named in the backlog ------------------------------------------------
+    // ---- the misspellings named in the plan ------------------------------------------------
 
     @Test
     void aMisspelledWidthOnAPanelIsALoadError() {

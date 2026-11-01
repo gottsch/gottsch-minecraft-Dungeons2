@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #108 stage 3: a trench trap across a corridor's straight, level run.
+ * A trench trap across a corridor's straight, level run.
  *
  * <p>What must hold: the trench spans the full width (it cannot be walked round); it is never near
  * a door, a junction or a stair; it is at least two deep and never below the floor's band; its every

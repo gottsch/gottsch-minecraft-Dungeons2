@@ -45,8 +45,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Swaps an authored {@code dungeons2:chest_marker} for a chest with loot. Backlog #48 step 3, the
- * authored half of the two routes #10 established.
+ * Swaps an authored {@code dungeons2:chest_marker} for a chest with loot: the
+ * authored half of the two routes the mob-set spawner established.
  *
  * <h2>Where the loot table comes from, in order</h2>
  * <ol>
@@ -160,18 +160,18 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * throws NPE out of the decode. So a processor list that took this entry's documented option
      * &mdash; omitting the field &mdash; crashed the whole list, with a stack naming the JSON file
      * rather than the field. Nothing caught it because the one shipped entry always supplied the
-     * field; it surfaced when #56's processor copied the pattern and shipped an entry with no fields
+     * field; it surfaced when the pot marker's processor copied the pattern and shipped an entry with no fields
      * at all. The list form below is immune by construction: its default is a real empty list, not
      * a null dressed as one.</p>
      *
      * <h2>Why every field here is {@code Codecs.strictOptionalFieldOf}</h2>
      * <p>DFU's own {@code optionalFieldOf(name, default)} swallows a decode FAILURE and hands back
      * the default, so it cannot tell "the author said nothing" from "the author said something
-     * malformed". On this processor that lenience produces #61's bug from the other direction: a
+     * malformed". On this processor that lenience produces the unwired-marker bug from the other direction: a
      * {@code loot_tables} whose value is misspelled or the wrong shape would silently become the
      * empty list, every marker would resolve to no table, and the whole template would generate with
      * marker blocks standing in it &mdash; reported by nothing louder than a WARN per chest. Strict
-     * makes it a load error naming the field, which is the {@code #31} closed-schema decision
+     * makes it a load error naming the field, which is the closed-schema rule
      * applied to a processor entry.</p>
      *
      * <p>{@code boss_loot_table} takes the {@code Optional} overload rather than a default, because

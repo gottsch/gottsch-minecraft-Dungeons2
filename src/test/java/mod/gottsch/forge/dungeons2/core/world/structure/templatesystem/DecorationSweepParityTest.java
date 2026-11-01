@@ -90,13 +90,13 @@ class DecorationSweepParityTest {
     };
 
     /**
-     * The guard on the guard, added 2026-08-30 with #61. A processor list on disk that
+     * The guard on the guard, added 2026-08-30 with the chest-marker wiring. A processor list on disk that
      * {@link #SHIPPED} does not name is a list nothing here checks, and the failure it hides is
      * silent in game &mdash; which is the whole premise of this class.
      *
      * <p>It is not hypothetical: {@code classic_entrance_weathering.json} shipped and was not
      * checked here for four days, for no reason other than that the array was written before the
-     * file existed. Exactly the shape of #61 itself, one directory over.</p>
+     * file existed. Exactly the shape of the chest-marker wiring itself, one directory over.</p>
      */
     @Test
     void everyShippedListIsChecked() {
@@ -228,7 +228,7 @@ class DecorationSweepParityTest {
     })
     void theSweepClaimsNoEntities(String resource) {
         // floor_growth's palette holds two `entity` entries -- GMM's Shrieker and Violet Fungus,
-        // grown as if they were plants (#54). They are MOBS: the sweep works on block states and
+        // grown as if they were plants (the fungus growth). They are MOBS: the sweep works on block states and
         // can neither see nor remove one, so naming them here would be a promise it cannot keep.
         JsonObject sweep = entry(resource, SWEEP_TYPE);
         if (sweep == null) {

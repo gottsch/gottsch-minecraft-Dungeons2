@@ -183,7 +183,7 @@ class DecorationOnRealRoomTest {
      *
      * <p>Only that source block, and deliberately so: the file's other chains name
      * {@code dungeonblocks:*} blocks, and an unregistered id decodes to {@code minecraft:air}
-     * under a bare bootstrap (backlog #13). Feeding those through would produce nonsense —
+     * under a bare bootstrap (the block-id sweep). Feeding those through would produce nonsense —
      * rules that match air and replace it. Stone bricks is all-vanilla, and is what
      * {@code BasicWallGenerator} builds with anyway.</p>
      */

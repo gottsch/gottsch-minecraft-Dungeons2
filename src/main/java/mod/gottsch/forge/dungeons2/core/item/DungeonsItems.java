@@ -452,7 +452,7 @@ public class DungeonsItems {
      * said "its author has to be able to see it while building", which was true and not the whole
      * requirement: with no {@code BlockItem} the only way to place one was {@code /setblock}, so it
      * could never be held, and its {@code facing} property could never be set by looking &mdash;
-     * {@code /setblock} takes the default. That is easy to miss precisely because #48 was finished
+     * {@code /setblock} takes the default. That is easy to miss precisely because the chest routing was finished
      * and confirmed in game: the feature worked, the authoring path was the awkward part.</p>
      */
     public static final RegistryObject<Item> CHEST_MARKER = Registration.ITEMS.register(

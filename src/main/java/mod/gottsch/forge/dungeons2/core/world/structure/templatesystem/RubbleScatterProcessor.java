@@ -107,7 +107,7 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
         this.maxDrop = maxDrop;
     }
 
-    /** Strict throughout, per backlog #31. */
+    /** Strict throughout, per the closed-schema rule. */
     public static Codec<RubbleScatterProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return RecordCodecBuilder.create(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "broken", BlockMatch.NONE)

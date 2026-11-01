@@ -49,14 +49,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * The dungeon's {@code spawn_overrides} (backlog #42) actually name things that exist.
+ * The dungeon's {@code spawn_overrides} (the spawn overrides) actually name things that exist.
  *
  * <h2>Why this needs its own test</h2>
  * <p>{@link ShippedBlockIdsTest} classifies {@code "type"} as a non-block key, so its sweep walks
  * straight past a spawn entry's entity id. And the failure mode is the familiar silent one: an
  * unknown id does not stop the structure loading, it just means nothing ever spawns there &mdash;
  * indistinguishable from "the spawn weights are too low" or "I did not look long enough". Exactly
- * #13's problem in a different registry.</p>
+ * The block-id sweep's problem in a different registry.</p>
  *
  * <h2>How a modded id is checked without a running game</h2>
  * <p>A bare {@code Bootstrap} has no Forge registries, so {@code dungeons2:rat} is not in

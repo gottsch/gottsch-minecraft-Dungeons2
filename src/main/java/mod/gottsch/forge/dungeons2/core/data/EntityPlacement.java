@@ -48,7 +48,7 @@ import java.util.List;
  * generalize when there is a second use, the same reasoning {@code FloorPatternEntry} applies to
  * its {@code type} discriminator.</p>
  *
- * <p>{@link #effects} is that second use, added for #56 &mdash; and it is still a named field
+ * <p>{@link #effects} is that second use, added for the pot marker &mdash; and it is still a named field
  * rather than the general NBT map, because it is not general: it is a list of authored
  * {@link PotionEffectSpec}s that {@code EntitySpawner} serialises through
  * {@code MobEffectInstance#save}. Handing it over as a raw tag would put the numeric-vs-namespaced

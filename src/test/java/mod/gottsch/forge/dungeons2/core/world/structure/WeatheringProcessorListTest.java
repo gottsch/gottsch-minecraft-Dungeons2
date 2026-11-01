@@ -76,7 +76,7 @@ class WeatheringProcessorListTest {
     /**
      * The aging processor's dispatch key as authored in the JSON.
      *
-     * <p>{@code dungeons2:surface_aging} since 2026-09-04 (backlog #15). It is a strict superset of
+     * <p>{@code dungeons2:surface_aging} since 2026-09-04 (the surface map). It is a strict superset of
      * {@code dungeons2:aging} -- the same chains, plus a {@code surface} on each rule -- and every
      * rule in this file states {@code any}, so nothing else in this class changed meaning. The
      * migration bought the ability to name a surface later without a second format change.</p>
@@ -86,7 +86,7 @@ class WeatheringProcessorListTest {
     /** The decoration processor's dispatch key as authored in the JSON. */
     private static final String DECORATION_TYPE = "dungeons2:decoration";
 
-    /** The spawner-marker processor's dispatch key as authored in the JSON (#10). */
+    /** The spawner-marker processor's dispatch key as authored in the JSON (the mob-set spawner). */
     private static final String SPAWNER_TYPE = "dungeons2:spawner";
 
     /** The decoration sweep's dispatch key as authored in the JSON. */
@@ -139,8 +139,8 @@ class WeatheringProcessorListTest {
                 "Expected the vanilla rule processor, the two aging processors (the main one and"
                         + " the joist-gated timber chain, which is separate because a geometric"
                         + " rule moves its whole processor into finalizeProcessing), decoration,"
-                        + " the decoration sweep, the hanging sweep, the #10 spawner marker, the"
-                        + " #56 pot marker, the #61 chest marker, the #104 sarcophagus marker, the"
+                        + " the decoration sweep, the hanging sweep, the spawner marker, the"
+                        + " the pot marker, the chest marker, the sarcophagus marker, the"
                         + " rubble scatter, the barrel and pedestal loot and, last, the pattern-tile"
                         + " fix-up");
 
@@ -201,7 +201,7 @@ class WeatheringProcessorListTest {
         // (dungeons2:aging, dungeons2:decoration). Anything else -- minecraft:capped, or
         // any other unmarked processor overriding finalizeProcessing -- would land in the
         // clipped pass and decide differently in each chunk the piece spans.
-        // dungeons2:spawner (#10) is marked LevelIndependentProcessor like the other two, and in
+        // dungeons2:spawner (the mob-set spawner) is marked LevelIndependentProcessor like the other two, and in
         // practice cannot fire on a procedural piece at all -- it matches structure blocks, which
         // only an authored template contains.
         //
@@ -211,10 +211,10 @@ class WeatheringProcessorListTest {
         // supported, so a piece spanning two chunks repairs on the pass that can see both sides and
         // does nothing on the pass that cannot -- never something different in each. It also cannot
         // meaningfully fire on a procedural piece: it only repairs damage done by a piece rendered
-        // AFTER the one that decorated, and the standing rule (#18) is that procedural pieces
+        // AFTER the one that decorated, and the standing rule (the shared-wall rule) is that procedural pieces
         // render first.
         //
-        // dungeons2:pot (#56) is vetted the same way dungeons2:spawner is, and a little more
+        // dungeons2:pot (the pot marker) is vetted the same way dungeons2:spawner is, and a little more
         // strongly. It is not marked LevelIndependentProcessor, so it lands in the clipped pass --
         // which is exactly where it wants to be, because clipping IS its deduplication: spawning an
         // entity is not idempotent the way writing a block is, so each chunk pass must spawn only
@@ -238,7 +238,7 @@ class WeatheringProcessorListTest {
         // rather than merely tolerable: a procedural room's blocks are grounded by the terrain and
         // the pieces around them exactly as a prefab's are.
         //
-        // dungeons2:chest (#61) is vetted exactly as dungeons2:pot is, minus the entity. It is not
+        // dungeons2:chest (the chest-marker wiring) is vetted exactly as dungeons2:pot is, minus the entity. It is not
         // marked LevelIndependentProcessor -- its Treasure2 branch reads the level -- so it lands
         // in the clipped pass, and clipping cannot make it decide differently: the table comes
         // either from the marker's own NBT or from a weighted draw seeded off the block's world
@@ -257,7 +257,7 @@ class WeatheringProcessorListTest {
         // It cannot fire on a procedural piece at all today: nothing procedural places a chain. The
         // day a scheme slot does, the above is what makes that safe rather than a new question.
         //
-        // dungeons2:sarcophagus (#104) is marked LevelIndependentProcessor, so it gets the whole
+        // dungeons2:sarcophagus (the sealed tombs) is marked LevelIndependentProcessor, so it gets the whole
         // piece unclipped -- which it needs, because a tomb is two cells and the head may sit across
         // a seam from the marker. It reads nothing from the level: the head cell is found in the
         // same block list, the contents come from the marker's NBT and a draw seeded from its

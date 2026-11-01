@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <h2>Why this is not {@code SchemeIncidenceTest}'s "no decoration drawn" figure</h2>
  * <p>That one asks whether a scheme's <em>slots</em> survived their gates, which reads 0%. It counts
  * a wall slot as drawn even when every course inside it gated out &mdash; the same slot-level
- * measurement gap noted against {@code hasTopCourse} in backlog #22. This walks down to the courses,
+ * measurement gap noted against {@code hasTopCourse} in the pillars. This walks down to the courses,
  * so a room whose only treatment is a cornice it is too short for counts as what it looks like in
  * game: empty.</p>
  *

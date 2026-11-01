@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The boss&rarr;counter-item chest plan (#97): gated on the boss, rolled at {@link
+ * The boss&rarr;counter-item chest plan (the counter-items): gated on the boss, rolled at {@link
  * CounterItemPlanner#CHANCE}, deterministic, and only ever in an ordinary procedural room.
  *
  * @author Mark Gottschling on Sep 24, 2026

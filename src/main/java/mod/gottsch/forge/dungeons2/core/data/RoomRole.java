@@ -62,14 +62,14 @@ package mod.gottsch.forge.dungeons2.core.data;
  */
 /*
  * <h2>Why BOSS and TERMINAL are two roles for one slot</h2>
- * <p>Backlog #46 promises the player an authored set-piece at the end of the descent, and a promise
+ * <p>The authored boss room promises the player an authored set-piece at the end of the descent, and a promise
  * is exactly what makes the failure path matter. Flipping the bottom floor's slot to a covered role
- * unconditionally would reintroduce #38 verbatim: if the boss template does not assemble, nothing
+ * unconditionally would reintroduce the terminal-room guarantee verbatim: if the boss template does not assemble, nothing
  * fills the slot and the maze has still routed a door into it.
  *
  * <p>So the role records <em>what actually happened</em> rather than what was intended. The template
  * assembled and was adopted, and the slot is {@code BOSS} and covered; anything else and it stays
- * {@code TERMINAL} and this mod builds it, which is precisely today's behaviour. That keeps #38's
+ * {@code TERMINAL} and this mod builds it, which is precisely today's behaviour. That keeps the terminal-room guarantee's
  * invariant exhaustive -- every slot is either covered by a real piece or built here -- and
  * {@code SlotCoverageTest} already asks that question.
  */

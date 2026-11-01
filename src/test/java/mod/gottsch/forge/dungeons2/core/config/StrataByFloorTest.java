@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #45's depth axis for the dungeon's <strong>shell</strong>: {@code strata_by_floor_index}
+ * The strata's depth axis for the dungeon's <strong>shell</strong>: {@code strata_by_floor_index}
  * bands, and {@link MotifConfig#forFloor}'s overlay of them.
  *
  * <p>Three properties carry the weight, and each exists to make a specific silent failure
@@ -240,7 +240,7 @@ class StrataByFloorTest {
                 "band 2 says nothing about the ceiling, so it takes the MOTIF's -- not band 0's mossy");
     }
 
-    /** #31's closed schema reaches this type too: a misspelled section is an error, not a no-op. */
+    /** The closed schema reaches this type too: a misspelled section is an error, not a no-op. */
     @Test
     void anUndeclaredKeyFailsToLoad() {
         DataResult<Stratum> result = Stratum.CODEC.parse(JsonOps.INSTANCE, json("""

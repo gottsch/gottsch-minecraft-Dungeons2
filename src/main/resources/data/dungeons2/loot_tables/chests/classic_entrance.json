@@ -3,7 +3,7 @@
   "random_sequence": "dungeons2:chests/classic_entrance",
   "pools": [
     {
-      "//": "The entrance chest (2026-10-22): the dungeon's introduction, once per player: only to someone who has never held it. Point a chest_marker in an entrance template at this table with /data merge block <x> <y> <z> {lootTable:\"dungeons2:chests/classic_entrance\"}.",
+      "//": "The entrance chest: the dungeon's introduction, once per player: only to someone who has never held it. Point a chest_marker in an entrance template at this table with /data merge block <x> <y> <z> {lootTable:\"dungeons2:chests/classic_entrance\"}.",
       "rolls": 1,
       "entries": [
         {

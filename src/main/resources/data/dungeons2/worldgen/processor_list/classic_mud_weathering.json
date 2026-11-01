@@ -1,4 +1,4 @@
-// Weathering for the CLASSIC motif's `mud` STRATUM -- backlog #45 step 4. Selected by the band's
+// Weathering for the CLASSIC motif's `mud` STRATUM -- the strata. Selected by the band's
 // `name` in motif_config/classic/strata.json: PieceProcessors looks for
 // dungeons2:<motif>_<stratum>_weathering and falls back to dungeons2:<motif>_weathering.
 //
@@ -7,10 +7,10 @@
 // names this file and the motif's never runs. Composing them here would give a procedural room
 // and the prefab beside it different rules from the same pair of files.
 //
-// The consequence is the duplication below: dungeons2:decoration and the #10 dungeons2:spawner
+// The consequence is the duplication below: dungeons2:decoration and dungeons2:spawner
 // marker are COPIED VERBATIM from classic_weathering.json, because they are not weathering and a
 // stratum has no reason to differ on them -- but a list that silently inherited a spawner it
-// never named would be worse than a copy. Keep them in step by hand; #47 rewrites both files.
+// never named would be worse than a copy. Keep them in step by hand; a later weathering pass rewrites both files.
 //
 // PROBABILITIES ARE CONDITIONAL, NOT ABSOLUTE, exactly as in classic_weathering.json -- read that
 // file's header for the arithmetic. It does not bite here, because mud_bricks has ONE chain.
@@ -51,7 +51,7 @@
         //
         // The paving frets rather than dissolves: cobble goes mossy first, then breaks up. Rubble
         // is dungeonblocks' non-falling gravel look-alike -- real gravel in a ceiling falls and
-        // litters the room below, which is why nothing here uses it (backlog #15).
+        // litters the room below, which is why nothing here uses it (the surface map).
         //
         //     cobblestone -> mossy_cobblestone -> rubble -> dirt
         //
@@ -60,13 +60,13 @@
         //
         //     mossy  22.5%      rubble  5.6%      dirt  1.9%
         //
-        // THE FLOOR MAY OPEN TOO, as of 2026-08-29 (Mark). This said NO AIR STAGE ON A FLOOR until
+        // THE FLOOR MAY OPEN TOO. This said NO AIR STAGE ON A FLOOR until
         // then, on the grounds that a hole in a wall is the look while one underfoot opens onto
-        // whatever terrain the dungeon was carved from. Mark's call is that a few are fine, the
-        // same call he made for the corridor arch on the same day: the harm those bars were really
+        // whatever terrain the dungeon was carved from. Deliberate: a few are fine, the
+        // same call made for the corridor arch on the same day: the harm those bars were really
         // guarding against was gravel FALLING through the hole and littering the floor, and that
-        // cause went away when dungeonblocks:rubble replaced gravel as the deep terminus on
-        // 2026-08-25. Water finding its way in is accepted.
+        // cause went away when dungeonblocks:rubble replaced gravel as the deep terminus.
+        // Water finding its way in is accepted.
         //
         // Only the DRY route carries it, and only at its third stage -- 0.56% of floor cobblestone,
         // pinned by StratumWeatheringListTest#theFloorWearsOnItsOwnSchedule so that moving it is a
@@ -89,8 +89,7 @@
             { "block": "minecraft:dirt", "probability": 0.25 }
           ]
         },
-        // THE SECOND ROUTE OFF THE SAME BLOCK, AND IT IS A FALLTHROUGH, NOT A FORK (Gottsch,
-        // 2026-08-29). SurfaceAgingProcessor tries a block's rules in AUTHORED ORDER against one
+        // THE SECOND ROUTE OFF THE SAME BLOCK, AND IT IS A FALLTHROUGH, NOT A FORK. SurfaceAgingProcessor tries a block's rules in AUTHORED ORDER against one
         // random seeded per position; a rule takes only if its FIRST stage hits, and a miss falls
         // through to the next. So this rule is only ever offered the 85% the route above declined,
         // and its authored number is not the share of floor it gets.
@@ -157,7 +156,7 @@
         // walls and the ceiling, and the floor chains above stop at dirt. What has not changed is
         // that a hole in an OUTER wall lets the terrain behind it in, water included.
         //
-        // MARK ACCEPTED THAT ON 2026-08-25: if it leaves a hole, it leaves a hole. A dungeon
+        // DELIBERATE: if it leaves a hole, it leaves a hole. A dungeon
         // breached by the ground around it is the look, and the occasional wet room is its price.
         // 1.35% is a taste decision, not a risk price.
         //
@@ -208,15 +207,14 @@
             { "block": "minecraft:air", "probability": 0.15 }
           ]
         },
-        // SIX RULES BELOW AND ABOVE CANNOT FIRE ON FLOOR 0 TODAY, AND THAT IS A DECISION (Mark,
-        // 2026-09-06). `square_mud_brick_stairs`, `mud_brick_slab`, the two
+        // SIX RULES BELOW AND ABOVE CANNOT FIRE ON FLOOR 0 TODAY, AND THAT IS A DECISION. `square_mud_brick_stairs`, `mud_brick_slab`, the two
         // `square_mud_brick_*facade_block`s, `large_bricks` and `bricks` have no rule-firing path
         // right now: the mud band's palette places `mud_bricks`, `square_mud_brick`,
         // `mud_brick_stairs`, `packed_mud` and `mossy_square_mud_brick`, and none of these six.
         //
         // They are KEPT, not deleted. The aging was written ahead of the palette for the full mud
         // vocabulary, and the palette is the half still expected to grow -- deleting the rules now
-        // would mean re-deriving them later from nothing. Do NOT report them as #26 "aging rules
+        // would mean re-deriving them later from nothing. Do NOT report them as "aging rules
         // that can never fire"; that sweep is for rules whose input the motif can never place, and
         // these are waiting on authoring that has not happened yet.
         //
@@ -252,7 +250,7 @@
         // palette: `archBlock` on a band is INERT for classic, because classic authors `styles` and
         // the arch lives inside the style the planner rolled. So the mud band gets mud floors and
         // ceilings with STONE-BRICK ARCHES, by design -- and until these rules existed, those
-        // arches were the only unweathered geometry on an otherwise aged floor. Backlog #45 step 4.
+        // arches were the only unweathered geometry on an otherwise aged floor.
         //
         // They age as STONE, not as mud. The blocks really are stone brick, and a stone arch that
         // crumbled to air the way the mud shapes above do would read as the wrong material failing.
@@ -283,7 +281,7 @@
             { "block": "minecraft:dirt", "probability": 0.05 }
           ]
         },
-        // square_stone_brick_stairs (added 2026-10-21, 17x21_bridge_1): the stone_brick_stairs rules
+        // square_stone_brick_stairs (17x21_bridge_1): the stone_brick_stairs rules
         // above, line for line, with the mossy square stair as the moss stage.
         {
           "surface": "any",
@@ -304,7 +302,7 @@
             { "block": "minecraft:dirt", "probability": 0.05 }
           ]
         },
-        // BANNERS (added 2026-10-24): the mud band's barracks carries dungeon_banner and orc_banner,
+        // BANNERS: the mud band's barracks carries dungeon_banner and orc_banner,
         // and this list aged no cloth at all. The deepslate list's ladders, verbatim.
         {
           "surface": "any",
@@ -402,15 +400,14 @@
         },
 
         // =====================================================================================
-        // #45 STEP 4, 2026-08-31. The band's schemes grew a stone-and-timber vocabulary on
-        // 2026-08-30/31 and this file had rules for none of it -- so a floor-0 room showed
+        // The strata, step 4. The band's schemes grew a stone-and-timber vocabulary
+        // and this file had rules for none of it -- so a floor-0 room showed
         // cracked, mossy, half-crumbled mud walls with pristine stone trim standing in front of
-        // them. Exactly #37's complaint, one band down. Measured: 11 of the 18 block ids the band
+        // them. Exactly the timber weathering's complaint, one band down. Measured: 11 of the 18 block ids the band
         // places had no rule here.
         //
         // ------------------------------------------------------------------------------------
-        // THE TIMBER IS DELIBERATELY ABSENT, AND THAT IS THE INTERESTING DECISION (Mark,
-        // 2026-08-31). There is NO minecraft:spruce_log rule in this file and there should not
+        // THE TIMBER IS DELIBERATELY ABSENT, AND THAT IS THE INTERESTING DECISION. There is NO minecraft:spruce_log rule in this file and there should not
         // be one.
         //
         // The mechanical problem came first. Classic ages spruce_log 15% straight to air, and its
@@ -422,7 +419,7 @@
         // would punch holes through the middle of a post, which hangs rather than reads as aged.
         //
         // NOTHING CAN SEPARATE THE TWO. PieceSurface offers `any`, `floor` and `above_floor`, and
-        // a post and a ceiling beam are both above_floor. That is #15 exactly, and it is why this
+        // a post and a ceiling beam are both above_floor. That is the surface map exactly, and it is why this
         // could not be solved with a rate.
         //
         // So the absence became the story instead: the mud stratum is the dungeon being reclaimed
@@ -431,8 +428,7 @@
         // reading that makes untouched timber correct rather than merely tolerable. Anything
         // spruce is new; anything stone is old.
         //
-        // BOTH CORBELS AGE, THE LOGS DO NOT -- the split is by ELEMENT, not by material (Mark,
-        // 2026-08-31). Written down because the material split is the obvious reading and it is
+        // BOTH CORBELS AGE, THE LOGS DO NOT -- the split is by ELEMENT, not by material. Written down because the material split is the obvious reading and it is
         // the wrong one: "anything spruce is new" would have spared the spruce bracket too.
         //
         // The line that actually matters is the one classic already draws between a bracket and a
@@ -457,7 +453,7 @@
             { "block": "minecraft:dirt", "probability": 0.15 }
           ]
         },
-        // Stone brick PILLARS (added 2026-10-24): the hall's columns and pilasters aged no stage at
+        // Stone brick PILLARS: the hall's columns and pilasters aged no stage at
         // all. The wall's own cracked / mossy rates, onto the pillar blocks' cracked / mossy twins;
         // the cobblestone stage has no pillar to go to, so it is dropped.
         {
@@ -547,7 +543,7 @@
         },
 
         // ------------------------------------------------------------------------------------
-        // CHAINS (added 2026-09-07). The mud band's hallways hang the same lantern runs the dry
+        // CHAINS. The mud band's hallways hang the same lantern runs the dry
         // ones do -- minecraft:chain under a dungeonblocks:dungeon_lantern -- and they weather at
         // the same 10% a link. One rate for the element, whatever band it is in, which is the
         // same call the corbel above makes.
@@ -560,7 +556,7 @@
         // `any`, unlike almost everything else in this file. A chain occupies the open cells
         // BELOW the ceiling, so it is neither a ceiling surface nor `above_floor` in any useful
         // sense, and nothing else in the dungeon is made of chain -- the block alone identifies
-        // the element, which is the #15 problem not applying for once.
+        // the element, which is the surface map problem not applying for once.
         //
         // swinging_chain is listed even though no mud template uses one yet: the two rules travel
         // together, and a rule for a block the band never places is inert, not wrong.
@@ -580,10 +576,9 @@
           ]
         },
         // ===================================================================================
-        // FIXTURES with no aged form (added 2026-10-21, 17x21_bridge_1). A gargoyle bust is a
+        // FIXTURES with no aged form (17x21_bridge_1). A gargoyle bust is a
         // single fixture, so like a chain link it goes straight to a gap, at the chain rate. It
-        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule (removed
-        // 2026-10-22): a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
+        // carries `facing`, so this processor, never minecraft:rule. NO gibbet rule: a gibbet is three blocks (part=top/middle/bottom) and a rule keyed on the
         // block takes ONE of them -- a middle gone leaves the top hanging alone, half a cage. It is
         // a hanging_sweep member, so it still falls whole when the chain above it breaks.
         // ===================================================================================
@@ -603,7 +598,7 @@
             { "block": "minecraft:air", "probability": 0.1 }
           ]
         },
-        // TUFF (added 2026-10-21, 17x21_bridge_1): moss first, like stone bricks.
+        // TUFF (17x21_bridge_1): moss first, like stone bricks.
         {
           "surface": "any",
           "block": "minecraft:tuff",
@@ -611,7 +606,7 @@
             { "block": "dungeonblocks:mossy_tuff", "probability": 0.3 }
           ]
         },
-        // TUFF deep decay (added 2026-10-21) -- the same cobblestone -> rubble -> air chain stone
+        // TUFF deep decay -- the same cobblestone -> rubble -> air chain stone
         // bricks get, but slower. A second rule on one block is a FALLTHROUGH, reached only when
         // the moss rule missed (70%), so composed: cobblestone 7%, rubble 1.4%, air 0.35%.
         {
@@ -623,7 +618,7 @@
             { "block": "minecraft:air", "probability": 0.25 }
           ]
         },
-        // FLAGSTONES (Dungeon Blocks 3.1.0, added 2026-10-22). A floor, so NO air: a hole in a
+        // FLAGSTONES (Dungeon Blocks 3.1.0). A floor, so NO air: a hole in a
         // walking surface is a fall. Three rules on one block, each a FALLTHROUGH reached only when
         // the ones above missed: cracked 30%, mossy 30.1%, then the stone-brick deep decay at half
         // its first stage -- cobblestone 4%, dirt 1.2%, rubble 0.3%. The weathered twins carry the
@@ -652,7 +647,7 @@
             { "block": "dungeonblocks:rubble", "probability": 0.25 }
           ]
         },
-        // CRUMBLING floor stone (added 2026-10-22) -- a false floor's lid. Its own twins only, and
+        // CRUMBLING floor stone -- a false floor's lid. Its own twins only, and
         // NO deep decay: cobblestone or dirt would be a safe tile in the trap, and air a hole that
         // gives it away. Ages like the floor around it so the lid is not one unbroken patch of the
         // same cracked texture: cracked 30%, mossy 30.1% (a fallthrough); cobblestone mossy 30%.
@@ -742,12 +737,12 @@
     },
 
     // =========================================================================================
-    // dungeons2:sarcophagus (added 2026-09-26) -- backlog #104. Turns an authored
+    // dungeons2:sarcophagus -- the sealed tombs. Turns an authored
     // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
     // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
     // head cell must be authored AIR, or the marker is removed with a [D2-TOMB] WARN.
     //
-    // BEFORE rubble_scatter and decoration (moved 2026-10-24): both fill authored AIR in
+    // BEFORE rubble_scatter and decoration: both fill authored AIR in
     // finalizeProcessing, and the head cell is authored air -- a cobweb or a scatter landing in
     // it refused the tomb and left the marker standing in game. Claiming the head first makes
     // them go round it.
@@ -859,7 +854,7 @@
       // the draw is one roll over the total. Weights matter here more than anywhere else in this
       // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
       // which is ground-cover frequency for something that is actually a monster. At 3 each against
-      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each, 2026-10-25).
+      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each).
       "floor_growth": {
         "probability": 0.35,
         "blocks": [
@@ -913,7 +908,7 @@
       //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
     },
     // =========================================================================================
-    // dungeons2:pot (added 2026-08-29) -- backlog #56. Turns an authored dungeons2:pot_marker into
+    // dungeons2:pot -- the pot marker. Turns an authored dungeons2:pot_marker into
     // pot ENTITIES and leaves air where the marker stood.
     //
     // BEFORE the sweep, deliberately. This processor's finalizeProcessing rewrites each marker cell
@@ -929,7 +924,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:chest (added 2026-08-30) -- backlog #61, wiring the #48 step 3 marker that had
+    // dungeons2:chest -- the chest-marker wiring, wiring the chest marker that had
     // been left reachable from nothing. Turns an authored dungeons2:chest_marker into a chest
     // holding a loot table, and is the authored twin of the `chests` scheme slot.
     //
@@ -937,7 +932,7 @@
     // pool ever referenced -- that list existed for one throwaway test template (0bc6a45) that was
     // removed again (93baad8), leaving the processor orphaned. Every room, entrance and transition
     // pool names a weathering list, so a marker processor that is not IN one is a marker block
-    // left standing in a finished dungeon. Same conclusion #56 reached for pots, same placement.
+    // left standing in a finished dungeon. Same conclusion the pot marker reached for pots, same placement.
     //
     // BEFORE the sweep, for the same reason the pot entry is: nothing it does should be judged
     // against ground a later pass is still going to change.
@@ -960,7 +955,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:barrel_loot (added 2026-10-22) -- gives an authored template's barrel the barrel
+    // dungeons2:barrel_loot -- gives an authored template's barrel the barrel
     // table: mostly junk or nothing, now and then something good. A barrel whose NBT already names a
     // LootTable or holds Items is left as authored. The procedural twin is a barrel prop's
     // `loot_table` in the motif's schemes.
@@ -969,13 +964,13 @@
       "processor_type": "dungeons2:barrel_loot",
       "loot_table": "dungeons2:barrels/classic"
     },
-    // dungeons2:pedestal_loot (added 2026-10-24): a template pedestal placed into a LIVE chunk
+    // dungeons2:pedestal_loot: a template pedestal placed into a LIVE chunk
     // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
     // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
     { "processor_type": "dungeons2:pedestal_loot" },
 
     // =========================================================================================
-    // dungeons2:decoration_sweep (added 2026-08-26) -- undoes the decoration above in cells a
+    // dungeons2:decoration_sweep -- undoes the decoration above in cells a
     // LATER piece is about to invalidate. It must come after dungeons2:decoration: it inspects
     // what that pass decided, and finalizeProcessing runs the list in order.
     //
@@ -984,7 +979,7 @@
     // off its only support. wall_growth's isFullCube guard is what should have stopped that, and
     // it did: the piece north of that wall row grew the mold against ITS OWN full-cube wall block,
     // and the 5x11_hallway_2 prefab south of it -- authored, and therefore rendered last, per the
-    // shared-wall rule in backlog #18 -- then re-skinned the same cell with the facade. The
+    // shared-wall rule -- then re-skinned the same cell with the facade. The
     // processor validated inputs that were true when it ran and false by the time anyone saw them.
     //
     // WHY IT CANNOT BE FIXED INSIDE dungeons2:decoration. The piece that breaks the support is a
@@ -1066,7 +1061,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:hanging_sweep (added 2026-09-07) -- cuts a chain run loose below the link the
+    // dungeons2:hanging_sweep -- cuts a chain run loose below the link the
     // aging above just ate, and takes the lantern on the end of it with it.
     //
     // It is the second half of the chain rules and neither half works alone. A template writes
@@ -1118,7 +1113,7 @@
     },
 
     // =========================================================================================
-    // dungeons2:spawner (Backlog #10, added 2026-08-14) -- swaps an authored
+    // dungeons2:spawner (the mob-set spawner) -- swaps an authored
     // dungeons2:spawner_marker block for the invisible dungeons2:mob_set_spawner, which spawns
     // this set when a player comes within `proximity` blocks.
     //
@@ -1141,7 +1136,7 @@
     // The two build the same block-entity tag; SpawnerTagParityTest is what keeps them agreeing,
     // so a field renamed here must be renamed there.
     //
-    // EVERY FIELD BELOW IS A DEFAULT AN INDIVIDUAL MARKER MAY OVERRIDE (2026-09-03). The marker
+    // EVERY FIELD BELOW IS A DEFAULT AN INDIVIDUAL MARKER MAY OVERRIDE. The marker
     // carries a block entity, so a template can state mobSetName / proximity / minMobs / maxMobs /
     // type on one cell with /data merge block and leave the rest of its markers on these values.
     // This entry used to say "one marker = one set, a block carries no free text" -- that was
@@ -1153,7 +1148,7 @@
     {
       "processor_type": "dungeons2:spawner",
       // Required -- a spawner with no set is a block that does nothing, and defaulting it would
-      // make that failure silent. Shipped set is the dungeon's own vermin (#40/#41).
+      // make that failure silent. Shipped set is the dungeon's own vermin (the rat and giant rat).
       "mob_set": "dungeons2:classic_vermin",
       // Defaults to dungeons2:spawner_marker; stated explicitly because it is the authored half
       // of this contract and a template author has to know what to place.

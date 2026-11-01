@@ -43,7 +43,7 @@ import javax.annotation.Nullable;
 
 /**
  * An <strong>invisible</strong> block whose block entity spawns a datapack-defined mob set when a
- * player comes near. Backlog #10's Dungeons2-side implementation of the {@code d2:spawner} marker.
+ * player comes near. The Dungeons2-side implementation of the {@code d2:spawner} marker.
  *
  * <h2>Why a block at all, rather than a vanilla spawner</h2>
  * <p>GottschCore's {@link ProximityMobSetSpawnerBlockEntity} is proximity-triggered and draws from
@@ -163,7 +163,7 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock implements Simple
                     DungeonsBlockEntities::mobSetSpawnerType, pos, state);
             blockEntity.setProximity(DEFAULT_PROXIMITY);
             // Once per block entity created, so cheap. Kept because "is the world even asking this
-            // block for an entity" was the question that finally narrowed #10, and a spawner that
+            // block for an entity" was the question that finally narrowed the fault, and a spawner that
             // works looks exactly like one that was never placed.
             Dungeons.LOGGER.debug("[D2-SPAWNER] newBlockEntity OK at {}", pos.toShortString());
             return blockEntity;
@@ -180,7 +180,7 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock implements Simple
                                                                   BlockEntityType<T> type) {
         // Server only: the spawn decision must happen once, authoritatively.
         //
-        // Kept deliberately bare. A first-tick diagnostic lived here while #10 was being debugged
+        // Kept deliberately bare. A first-tick diagnostic lived here while the mob-set spawner was being debugged
         // and was removed once it had done its job: it called pos.immutable() on every tick of
         // every spawner to key a seen-set, which is an allocation on a ticking path to serve a
         // question nobody is asking any more. If it is ever needed again, guard the whole block on

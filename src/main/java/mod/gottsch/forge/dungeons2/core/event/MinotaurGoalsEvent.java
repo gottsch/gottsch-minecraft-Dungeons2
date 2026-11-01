@@ -141,7 +141,7 @@ public class MinotaurGoalsEvent {
      * generic monster: giving up when it loses you is ordinary mob behaviour and gmm has no idea
      * what any consumer will use the mob for.</p>
      *
-     * <p>It is wrong <em>here</em>, where the Minotaur is a boss. A boss you can
+     * <p>Deliberate: it is wrong <em>here</em>, where the Minotaur is a boss. A boss you can
      * escape by stepping round a corner is not a boss, and it makes {@link SmashBlocksGoal} pointless
      * on top: the mob digs through a wall and then does not walk through the hole, because nothing is
      * driving it at a target it cannot see. So the override is D2's, not gmm's, exactly like the

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 phase 2 &mdash; the {@code pillars} slot reads a material role, and the walk that resolves it.
+ * The {@code pillars} slot reads a material role, and the walk that resolves it.
  *
  * <p>The first slot converted, chosen because it is the cheapest end-to-end proof: one record,
  * three fields, and a shipped scheme ({@code mud_timber_centre_pillar}) already shaped exactly like

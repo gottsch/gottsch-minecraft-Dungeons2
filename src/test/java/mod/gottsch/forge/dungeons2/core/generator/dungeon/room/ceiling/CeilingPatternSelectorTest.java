@@ -166,7 +166,7 @@ class CeilingPatternSelectorTest {
                 "the message should name the offending field: " + parsed.error().orElseThrow().message());
     }
 
-    // ---------- joists (backlog #36) ----------
+    // ---------- joists (the joists) ----------
 
     /** Flush (projection 0), so {@code plan()} is the layer under test rather than an empty one. */
     private static SurfacePatternEntry joists(Optional<String> bracket, SurfaceOrient orient) {
@@ -222,7 +222,7 @@ class CeilingPatternSelectorTest {
         ISurfacePatternProvider provider = CeilingPatternSelector.toProvider(
                 entry(joists(Optional.of("dungeonblocks:no_such_corbel"), SurfaceOrient.NONE)));
         // Bare beams, and specifically nothing hanging below them: an unknown id resolving to the
-        // block registry's default would hang a row of AIR under every run -- backlog #13's trap,
+        // block registry's default would hang a row of AIR under every run -- the block-id sweep's trap,
         // here in its most visible form. blockOrNull rejecting AIR is what stops it.
         assertInstanceOf(JoistSurfacePatternProvider.class, provider);
         SurfacePlan plan = provider.plan(5, 9, Direction.DOWN, RandomSource.create(0L));
@@ -487,7 +487,7 @@ class CeilingPatternSelectorTest {
                 entry(hanging("coffers", "minecraft:polished_andesite"))));
     }
 
-    // ---------- per-entry gates (backlog #24) ----------
+    // ---------- per-entry gates (the per-entry ceiling gates) ----------
 
     private static SurfacePatternEntry gated(String type, String block, int minSize) {
         return new SurfacePatternEntry(pattern(type, block), 0,

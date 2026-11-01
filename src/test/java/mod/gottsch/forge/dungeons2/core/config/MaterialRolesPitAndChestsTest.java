@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * #65 phase 6 &mdash; the {@code pit} and {@code chests} slots read a material role.
+ * The {@code pit} and {@code chests} slots read a material role.
  *
  * <p>The last of the element slots, and the smallest: five fields. With this,
  * <strong>every slot on a scheme that names a block reads a role</strong>. {@code pots} and

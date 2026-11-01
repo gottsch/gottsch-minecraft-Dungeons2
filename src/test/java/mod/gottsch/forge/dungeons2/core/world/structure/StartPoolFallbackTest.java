@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Backlog #5: a motif that has not authored a pool <strong>borrows the {@code classic} one</strong>
+ * A motif that has not authored a pool <strong>borrows the {@code classic} one</strong>
  * rather than degrading straight past it.
  *
  * <h2>Why this is worth a fallback, and it is not about looks</h2>
@@ -116,7 +116,7 @@ class StartPoolFallbackTest {
         }
     }
 
-    // ---------- #45 step 3: the stratum tier in front of the two above ----------
+    // ---------- the strata: the stratum tier in front of the two above ----------
 
     private static ResourceLocation chooseBanded(String motif, String stratum, String... shipped) {
         Set<ResourceLocation> exists = Set.of(shipped).stream()

@@ -52,7 +52,7 @@ class ShippedAdvancementsTest {
     private static final String LANG = "/assets/dungeons2/lang/en_us.json";
     /**
      * The non-vanilla criteria: D2's own (DungeonsTriggers), and Gottsch Books' book_read, which the
-     * lore books' advancements use (#118).
+     * lore books' advancements use (the lore books).
      */
     private static final Set<String> D2_TRIGGERS = Set.of("dungeons2:reached_floor", "gottschbooks:book_read");
 

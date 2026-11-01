@@ -68,7 +68,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                              Optional<FloorPattern> pattern, Optional<CorridorDescent> descent,
                              Optional<String> stepBlock, Optional<CorridorTrap.Options> traps) {
 
-    /** The pre-traps form (#108 stage 3). */
+    /** The pre-traps form (the corridor descent). */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
                           Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
                           List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
@@ -236,7 +236,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
     }
 
     /**
-     * This section's own {@code courses} and every style's, with their roles resolved. #65 phase 5.
+     * This section's own {@code courses} and every style's, with their roles resolved.
      *
      * <p>Two lists, because a corridor's courses may be authored on the section or on one of its
      * named styles, and a style is rolled per floor. See {@code CorridorStyle#withRoles} for why a
@@ -312,7 +312,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                     // The section-wide riser stair, and the fallback for any style that names none.
                     Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "step_block")
                             .forGetter(CorridorConfig::stepBlock),
-                    // #108 stage 3: the BASELINE style's traps, like descent above.
+                    // The BASELINE style's traps, like descent above.
                     Codecs.strictOptionalFieldOf(CorridorTrapCodec.CODEC, "traps")
                             .forGetter(CorridorConfig::traps)
             ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);

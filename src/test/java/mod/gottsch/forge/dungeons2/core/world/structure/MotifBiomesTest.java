@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Which cells {@link MotifBiomes} paints (#129): piece boxes only, clipped to the chunk, a pool
+ * Which cells {@link MotifBiomes} paints (the mood biomes): piece boxes only, clipped to the chunk, a pool
  * piece split by floor height, nothing above the dungeon's own pieces.
  *
  * @author Mark Gottschling on 10/26/2026
@@ -98,7 +98,7 @@ class MotifBiomesTest {
     }
 
     /**
-     * A prefab whose template has its own biome paints its whole box with it (#129 step 2), still
+     * A prefab whose template has its own biome paints its whole box with it (the mood biomes), still
      * under the dungeon-top cap; an unmapped prefab beside it keeps its floor's.
      */
     @Test

@@ -245,7 +245,7 @@ class BasicRoomGeneratorTest {
     }
 
     /**
-     * The {@code props} slot end to end (#73): a scheme's furniture reaches the BLOCK list, and the
+     * The {@code props} slot end to end (the props slot): a scheme's furniture reaches the BLOCK list, and the
      * pots placed afterwards route around it.
      *
      * <p>The second half is the one worth running through the real orchestrator. A prop is a solid

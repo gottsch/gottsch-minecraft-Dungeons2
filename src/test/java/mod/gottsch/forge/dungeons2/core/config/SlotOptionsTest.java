@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@link SlotOptions} &mdash; #65, a scheme slot holding weighted <em>alternatives</em> instead of
+ * {@link SlotOptions} &mdash; material roles, a scheme slot holding weighted <em>alternatives</em> instead of
  * one treatment.
  *
  * <p>The two halves that matter are pinned separately. The <strong>codec</strong> half has to keep

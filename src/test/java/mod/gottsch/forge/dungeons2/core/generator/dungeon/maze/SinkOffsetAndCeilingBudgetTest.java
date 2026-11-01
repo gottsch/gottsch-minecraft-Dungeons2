@@ -33,19 +33,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Backlog #29, stage 1: {@code sink_offset}, the derived {@code ceilingBudget}, and the invariant
+ * The floor-height raise, stage 1: {@code sink_offset}, the derived {@code ceilingBudget}, and the invariant
  * that was holding by coincidence.
  *
  * <h2>What sinkOffset is, in one line</h2>
  * <p>The walking plane sits {@code sink_offset} blocks UP into its own floor's slab, so the floor
- * owns {@code sink_offset} blocks below it &mdash; the room a pit has to sink into (#3). The budget
+ * owns {@code sink_offset} blocks below it &mdash; the room a pit has to sink into (the sunken pits). The budget
  * is bought from the ceiling, not from the descent: {@code ceilingBudget = floorHeight -
  * sinkOffset}, while {@code pitch = floorHeight + gapBetweenFloors} does not move.</p>
  *
  * <h2>Why the pitch not moving is the whole point</h2>
- * <p>#3's original sketch bounded pit depth by {@code gap_between_floors}. Raising THAT to make room
+ * <p>The sunken pits' original sketch bounded pit depth by {@code gap_between_floors}. Raising THAT to make room
  * lengthens every transition, and every shipped transition template is cut for a span of exactly 12
- * (#52). Buying the depth from the ceiling instead costs nothing in descent, so pits need no
+ * (the transition span guard). Buying the depth from the ceiling instead costs nothing in descent, so pits need no
  * template re-cut &mdash; which is what makes them separable from the floor-height raise rather
  * than blocked behind it.</p>
  *
@@ -86,7 +86,7 @@ class SinkOffsetAndCeilingBudgetTest {
     /**
      * The load-bearing property: <strong>the drop between walking planes never moves.</strong> Pit
      * depth is free in DESCENT, so a pack may sink its floors without re-cutting a single
-     * transition template &mdash; and this is the number a template has to span (#52).
+     * transition template &mdash; and this is the number a template has to span (the transition span guard).
      */
     @Test
     void theDropBetweenWalkingPlanesNeverMoves() {

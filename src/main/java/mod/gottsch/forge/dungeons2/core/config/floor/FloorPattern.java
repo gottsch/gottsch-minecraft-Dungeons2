@@ -59,7 +59,7 @@ public interface FloorPattern {
 
     /**
      * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
-     * scope names. #65 phase 3.
+     * scope names.
      *
      * <p><strong>A default rather than an abstract method, and that is an API decision.</strong>
      * {@link mod.gottsch.forge.dungeons2.core.config.floor.FloorPatternRegistry} is open to other

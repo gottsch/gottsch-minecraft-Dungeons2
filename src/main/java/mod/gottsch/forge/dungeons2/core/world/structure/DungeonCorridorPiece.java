@@ -68,7 +68,7 @@ public class DungeonCorridorPiece extends DungeonPiece {
                     corridor.getId(), corridor.getStyleName(), corridor.maxDepth(), pos.toShortString());
         }
         if (corridor.hasTrap()) {
-            // #108 stage 3: the first trench cell, standing height at the walking plane over it.
+            // The first trench cell, standing height at the walking plane over it.
             Coords2D cell = corridor.getTrapCells().get(0);
             BlockPos pos = new BlockPos(anchorX + cell.getX(), floorY - corridor.depthAt(cell) + 1,
                     anchorZ + cell.getY());

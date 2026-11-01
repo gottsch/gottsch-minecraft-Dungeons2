@@ -48,10 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The {@code oculus} (#77): a lit shaft over the middle of the room.
+ * The {@code oculus} (the oculus): a lit shaft over the middle of the room.
  *
  * <h2>What actually needs proving</h2>
- * <p>The geometry is #68's, already covered by {@code RisingVaultTest}. What is new, and what these
+ * <p>The geometry is the rising vault's, already covered by {@code RisingVaultTest}. What is new, and what these
  * tests are about, is the <strong>stack</strong>: a lamp at the top with a grate one row under it.
  * That comes entirely out of the order the two layers are added, because each raised layer clears
  * every row from the ceiling plane up to its own before writing itself &mdash; so cap-then-grate

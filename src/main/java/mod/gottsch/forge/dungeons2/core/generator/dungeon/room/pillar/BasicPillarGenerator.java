@@ -124,7 +124,7 @@ public class BasicPillarGenerator implements IDungeonPillarGenerator {
                 // left the interior, and the two set tests below are applied across the WHOLE
                 // footprint for the same reason.
                 //
-                // #58: `excluded` is the pit. A column drawn over an excavated cell would start
+                // `excluded` is the pit. A column drawn over an excavated cell would start
                 // at the walking plane with the hole beneath it, so it is dropped and the rest of
                 // the layout stands -- the same treatment, and the same set, as a doorway approach.
                 if (shaft.isEmpty() || shaft.stream().anyMatch(

@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Backlog #45 step 4: <strong>a stratum's weathering list has to cover the blocks its band
+ * <strong>a stratum's weathering list has to cover the blocks its band
  * places.</strong>
  *
  * <h2>The failure this exists to catch, which shipped and stood for two weeks</h2>
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code archBlock} on a band is inert for classic, because the arch lives inside the {@code styles}
  * entry the planner rolled &mdash; and no rule in the mud list mentioned {@code stone_brick_stairs}.
  * So the one stratum that was supposed to look the most weathered rendered its arches
- * <strong>pristine</strong>, on an otherwise fully aged floor. The backlog entry called that
+ * <strong>pristine</strong>, on an otherwise fully aged floor. The original plan called that
  * "backwards from the intent"; it was found by hand on 2026-09-06, and by then the mechanism had
  * been correct and the authoring wrong since 2026-08-23.</p>
  *
@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>The obvious test &mdash; "every block a band places must have an aging rule" &mdash; is wrong
  * and would fail immediately on seventeen blocks that are all correctly unaged: pots and barrels and
  * chests (containers, and pots are entities besides), braziers and glowstone (aging a light source
- * removes the light), doors (#14 kept lichen off them deliberately), dripstone and rubble (already
+ * removes the light), doors (the door lichen fix kept lichen off them deliberately), dripstone and rubble (already
  * the <em>output</em> of weathering, so a rule would be a second route on one block). Curating that
  * by hand would mean a list that has to be maintained forever and that silently rots.</p>
  *
@@ -109,11 +109,11 @@ class StratumWeatheringCoverageTest {
      * if a block is here because nobody got to it yet, it belongs in the failure list instead.
      */
     private static final Map<String, String> DELIBERATELY_UNAGED = Map.of(
-            // #45 step 4: in the mud band the timber is SHORING, not decoration -- it is what holds
+            // In the mud band the timber is SHORING, not decoration -- it is what holds
             // a wet, shallow cutting open, so it does not rot on the same curve the masonry does.
             // The motif list ages it only on the `joist` surface, which is a different element
             // entirely. Deleting this entry would ask for a rule that was refused on purpose.
-            "minecraft:spruce_log", "mud band timber is shoring, not decoration (#45 step 4)");
+            "minecraft:spruce_log", "mud band timber is shoring, not decoration (the strata)");
 
     // ---------- the sweep ----------
 

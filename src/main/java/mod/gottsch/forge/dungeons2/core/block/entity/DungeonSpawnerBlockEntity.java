@@ -67,7 +67,7 @@ import java.util.function.Supplier;
  * on a revisit &mdash; the exact shape of invisible failure this whole feature keeps producing.</p>
  *
  * <p>Subclassing here rather than adding the field to GottschCore keeps the change inside this repo.
- * Backlog #10's open half is a GottschCore base class designed against <em>two</em> consumers; a
+ * The open half of the mob-set spawner is a GottschCore base class designed against <em>two</em> consumers; a
  * field added now, for one consumer, would prejudge that design.</p>
  *
  * <h2>What floorIndex is for</h2>

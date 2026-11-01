@@ -29,8 +29,7 @@ hardcoded to `classic` (see `DungeonStructure.findGenerationPoint`) — this is 
 mechanism, ready for whenever motif selection varies for real. A missing themed pool degrades
 gracefully to plain procedural generation for that floor/room/transition, same as an empty pool
 always has; a smarter two-tier fallback (missing theme → shared/classic pool instead of straight
-to procedural) is a possible future phase, not implemented. **The entrance is parametrized too as
-of 2026-08-13** — `entrance/<motif>/surface_entrance.json` → `.../descent_ladder.json` →
+to procedural) is a possible future phase, not implemented. **The entrance is parametrized too** — `entrance/<motif>/surface_entrance.json` → `.../descent_ladder.json` →
 `.../descent.json`. It was the last one done because it is the only *chained* assembly: its pieces
 name each other's pools in fields baked into compressed NBT rather than in any JSON.
 
@@ -237,10 +236,10 @@ it never recurses into the dungeon. The terminal piece carries the `dungeons2:do
 (role 1 above) on its floor-0 walking plane — **their Y defines floor 0's walking plane** and
 their cells become the START room's `candidateDoorways`.
 
-**Worked example, the three-piece `classic` entrance chain (2026-07-30, confirmed in game):**
+**Worked example, the three-piece `classic` entrance chain:**
 each piece independently swappable later (e.g. a future `entrance_ladder_2` alternative in the
 same pool), unlike the monolithic two-piece pair it replaced (`surface_exit.nbt`/`descent_1.nbt`,
-which lingered unreferenced until they were deleted on 2026-08-13).
+since deleted).
 
 | Piece | Role | Joint | Name | Target Pool | Target Name |
 |---|---|---|---|---|---|
@@ -275,7 +274,7 @@ and chains **upward**; the terminal piece must land exactly at the *upper* floor
 matches how `ladder1.nbt`/`stairs_1.nbt` are already authored (built upward from their own floor
 at local Y=0) — don't flip this without re-authoring those templates.
 
-**A transition may sink below its doors (2026-10-26).** The chain is seated on its **lowest
+**A transition may sink below its doors.** The chain is seated on its **lowest
 `dungeons2:door`/`connector` marker**, not its local Y 0 — the same rule as prefab rooms. So a pit or
 sump authored under the bottom doors (`sewer_bottom_1`: doors at local y5 over a 5-deep sump) spends the
 floor's `sink_offset` budget (5); deeper than that logs `[D2-PREFAB] transition template ... carries N
@@ -296,7 +295,7 @@ is the sewer pit.
 
 Pools live under `data/dungeons2/worldgen/template_pool/transitions/<motif>/` (currently only
 `classic/` is authored; see the motif-naming note above). Every element uses
-`dungeons2:dry_single_pool_element` (backlog #130), not `minecraft:single_pool_element`: the vanilla
+`dungeons2:dry_single_pool_element` (the dry pool element), not `minecraft:single_pool_element`: the vanilla
 type waterlogs any stair or slab placed where the ground had water.
 
 | Pool | Role | Contents |
@@ -305,8 +304,7 @@ type waterlogs any stair or slab placed where the ground had water.
 | `dungeons2:transitions/<motif>/<chain>/segment` | optional, repeatable middle piece(s) | Down joint (mates to whatever sent the connection up) + up joint (continues further) — no doors, corridor/decoration between the two ends. Only needed once you're authoring segmented chains; doesn't need to exist otherwise. |
 | `dungeons2:transitions/<motif>/<chain>/top` | terminal piece | `dungeons2:door` candidates at the *upper* floor's level + one **downward** joint (mates to whatever's below it), no further upward connection. |
 
-**Continuation pools are named per chain, not per role** (backlog #11, renamed 2026-08-14 from
-`shaft_segment`/`shaft_top`). A middle pool's contents are specific to one authored staircase — it
+**Continuation pools are named per chain, not per role** (not `shaft_segment`/`shaft_top`). A middle pool's contents are specific to one authored staircase — it
 means "the middle of `stairs_2`", not "any middle" — so a second chain sharing the name would
 describe neither. Vanilla would not *mis*-assemble in that case (`canAttach` requires the source's
 `target` to equal the candidate's `name`, so a foreign segment is simply rejected), but every
@@ -398,7 +396,7 @@ bounding box's min corner off the position it was asked for — all four shipped
 displaced 6 blocks west and/or north in three of the four rotations — so the planner has to
 measure the displacement before it can reserve anything. Measuring only works if re-anchoring
 the prefab translates it and changes nothing else, which `terrain_matching` would break.
-(Before this was measured, 2026-07-30, **44% of all prefab room slots were being silently
+(Before this was measured, **44% of all prefab room slots were being silently
 dropped** and covered by procedural fill.)
 
 Add real content by creating `data/dungeons2/worldgen/template_pool/rooms/<motif>/normal.json`
@@ -407,7 +405,7 @@ no outgoing joint) plus the `.nbt` files it references — nothing else needs to
 mechanism already reads whatever pool entries exist. `classic/normal.json` is the only one
 authored today.
 
-### Boss room pool (`end_rooms/<motif>/`) — backlog #46
+### Boss room pool (`end_rooms/<motif>/`) — the authored boss room
 
 The bottom floor's final room. Same shape as the room pool above — one pool, no chaining, one Y
 anchor — but with two differences that matter.
@@ -878,7 +876,7 @@ before weathering (the weathering processor list already produces the stone_bric
 → cobblestone → dirt → gravel spread, and pre-baking a second block here both duplicated it and
 skipped the deeper decay stages).
 
-**The exception, added 2026-09-09: a CELL-LOCAL floor pattern.** `speckle` and `checkerboard`
+**The exception: a CELL-LOCAL floor pattern.** `speckle` and `checkerboard`
 answer for a cell from that cell alone, so they need no rectangle and a corridor may carry one as
 `corridor.pattern`. Anything else is a **load error** naming the type, rather than a quiet skip that
 leaves an author staring at a plain passage. It is the floor's version of the exception corridors
@@ -1806,7 +1804,7 @@ already covers the whole family, and DungeonBlocks ships `dungeonblocks:corbels`
 ### Why there is a sweep as well as a decoration pass
 
 Decoration is a **piece-local** decision, and a wall can belong to two pieces. Rooms and
-corridors share walls on purpose (backlog #18), and the standing rule is that anything
+corridors share walls on purpose (the shared-wall rule), and the standing rule is that anything
 authored renders *after* anything generated. So this sequence is legal and does happen:
 
 1. the generated piece renders, its decoration pass sees its own full-cube wall block, and
@@ -1815,7 +1813,7 @@ authored renders *after* anything generated. So this sequence is legal and does 
 
 The growth's support test was correct when it ran and wrong by the time anyone saw it — the
 mold ends up clinging to a quarter slab with 12/16 of a block of air behind its quad. That
-was the 2026-08-26 report, at `-38 1 1801`.
+has been seen in a real dungeon.
 
 `dungeons2:decoration_sweep` closes it from the only side that can see it. It runs in
 `finalizeProcessing`, which happens **before** the piece's blocks are written, so it can
@@ -1939,7 +1937,7 @@ the weathering list, so every authored prefab ages by default.
 ## DATA structure-block markers — **DO NOT USE ANY OF THESE**
 
 > **A DATA structure block cannot work in a Dungeons2 template, and it fails destructively.**
-> Established 2026-08-14, the expensive way. Every authored piece is placed as a **jigsaw pool
+> Every authored piece is placed as a **jigsaw pool
 > element**, and `SinglePoolElement.getSettings` installs `BlockIgnoreProcessor.STRUCTURE_BLOCK`
 > *before* appending the pool's own `processors`. That processor returns `null` for a structure
 > block, which **removes it from the placement list** rather than replacing it. Nothing then writes
@@ -1968,7 +1966,7 @@ was, and had to be redone as a marker **block** — see below.
 processor that swaps it, and give it a `BlockItem` so it can be placed by hand. That is what
 `dungeons2:spawner_marker` does, and it is the only shape that survives jigsaw placement.
 
-## The mob-set spawner (backlog #10, 2026-08-14)
+## The mob-set spawner (the mob-set spawner)
 
 **Place a `dungeons2:spawner_marker` block on a floor cell.** It is a normal solid block that looks
 like a vanilla spawner, it has an item (`/give @s dungeons2:spawner_marker`, or find it in the
@@ -1985,7 +1983,7 @@ hall's aisle, on the walking plane.
 the motif's processor list (`worldgen/processor_list/classic_weathering.json`), and the shipped one
 is `dungeons2:classic_vermin` — the dungeon's own rats.
 
-**A single marker may override any of that, per cell.** Since 2026-09-03 the marker carries a block
+**A single marker may override any of that, per cell.** The marker carries a block
 entity, like `chest_marker` and `pot_marker` do, so one template can name its own set and trigger
 distance without a second marker block. Place the marker, then point at it and:
 
@@ -2001,13 +1999,13 @@ would leave a boss room that can never be re-armed.
 
 Every key is optional and every one that is absent falls through to the processor entry, so an
 ordinary marker still states nothing. **Except the counts:** the processor entry has no
-`min_mobs`/`max_mobs` (removed 2026-09-17), so an absent `minMobs`/`maxMobs` falls through to the
+`min_mobs`/`max_mobs`, so an absent `minMobs`/`maxMobs` falls through to the
 drawn mob set's own `count` — tune a set's crowd size there, not per marker. The keys are `mobSetName`, `proximity`, `minMobs`, `maxMobs`
 and `type` (`proximity` or `vanilla`) — spelled exactly as the finished spawner's own block-entity
 tag, so `/data get block` reads the same names before and after placement. A malformed value logs a
 `[D2-SPAWNER]` WARN and falls back to the pool rather than throwing on a worldgen thread.
 
-**A boss spawner may also carry `pinnedMob`, and you never author it.** Since 2026-09-10 a dungeon's
+**A boss spawner may also carry `pinnedMob`, and you never author it.** A dungeon's
 boss is drawn when the dungeon is PLANNED (so loot placed long before the fight can depend on it), and
 the draw reaches the boss marker's spawner as `pinnedMob` **beside** the tier's `mobSetName`, never
 in place of it. The spawner honours the pin only while that set still offers the mob; otherwise it
@@ -2076,7 +2074,7 @@ set lets one spawn roll it twice. The marker route never gets a band bonus.
 > worldgen, so "not loaded yet" and "does not exist" are indistinguishable there. A misspelled set
 > is a build failure instead of a silent no-op spawner.
 
-## Flagstones and other pattern tiles (Dungeon Blocks 3.1.0, 2026-10-22)
+## Flagstones and other pattern tiles (Dungeon Blocks 3.1.0)
 
 `dungeonblocks:flagstones` is one slice of a pattern three blocks square, and which slice is its
 `tile` property, worked out from the block's **world** position. Author a flagstone floor however
@@ -2087,7 +2085,7 @@ is fixed the same way, as long as it is a `PatternTileBlock`. Every list ages `f
 `cracked_flagstones` and `mossy_flagstones` (and, rarely, cobblestone, dirt or rubble; never air,
 since it is a floor), so author plain flagstones and let the list wear them.
 
-## The sarcophagus marker (backlog #104, 2026-09-26)
+## The sarcophagus marker (the sealed tombs)
 
 **Place a `dungeons2:sarcophagus_marker` where a sealed tomb's FOOT goes**, facing its head — place
 it by hand like a bed, looking the way the tomb should lie (`/give @s dungeons2:sarcophagus_marker`,
@@ -2114,7 +2112,7 @@ set, `guardian` wins. A set that isn't loaded, or has no mob that can be drawn, 
 processor list's guardians and logs a `[D2-TOMB]` warning.
 DungeonBlocks makes the one roll between loot, guardian and nothing when the tomb is first opened.
 
-**The marker cannot choose the block.** There is no `sarcophagusBlock` key yet (Backlog #115), so a
+**The marker cannot choose the block.** There is no `sarcophagusBlock` key yet (the sarcophagus block override), so a
 room that wants a different stone from its pool's list has to change the list, which changes every
 marker tomb in that pool.
 

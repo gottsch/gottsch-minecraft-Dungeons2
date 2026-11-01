@@ -56,7 +56,7 @@ public interface WallPattern {
 
     /**
      * This pattern with any {@code $role} in its block fields replaced by the literal the palette in
-     * scope names. #65 phase 5, and a {@code default} for the same reason the floor and ceiling
+     * scope names. It is a {@code default} for the same reason the floor and ceiling
      * hooks are: {@code WallPatternRegistry} is open to other mods, so an abstract method would
      * break every third-party pattern on upgrade, and a field only carries a role when its codec is
      * {@code Codecs.BLOCK_ID_OR_ROLE}.

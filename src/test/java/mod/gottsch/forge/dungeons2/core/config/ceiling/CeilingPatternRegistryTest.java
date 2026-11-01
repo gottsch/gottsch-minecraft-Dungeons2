@@ -159,7 +159,7 @@ class CeilingPatternRegistryTest {
     }
 
     /**
-     * Backlog #28b: the ceiling's projection bound is its OWN, no longer
+     *: the ceiling's projection bound is its OWN, no longer
      * {@code WallPatternEntry.MAX_PROJECTION}. A wall course caps at 2 because past one cell it
      * stops reading as trim and starts reading as a ledge at head height; a ceiling ring hangs at
      * the room's edge where nobody walks, and a deep one reads as a dome, which is the feature.
@@ -172,7 +172,7 @@ class CeilingPatternRegistryTest {
     @Test
     void theCeilingsProjectionBoundIsIndependentOfTheWalls() {
         assertTrue(CeilingPatternEntry.MAX_PROJECTION > WallPatternEntry.MAX_PROJECTION,
-                "the ceiling bound must be its own; sharing the wall's is what #28b undid");
+                "the ceiling bound must be its own; sharing the wall's was the fault");
 
         assertEquals(4, decode("{\"type\": \"dungeons2:border\", \"projection\": 4,"
                 + " \"config\": {\"block\": \"" + BLOCK + "\"}}").projection(),

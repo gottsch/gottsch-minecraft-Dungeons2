@@ -140,7 +140,7 @@ public class DungeonStackPlanner {
     private int entranceDrop = DEFAULT_ENTRANCE_DROP;
     private int minBuildY = DEFAULT_MIN_BUILD_Y;
     /**
-     * #51's room-height taper. Defaults to the shipped table rather than to "uncapped", because an
+     * The room-height taper. Defaults to the shipped table rather than to "uncapped", because an
      * uncapped roll is the tall-box outcome the taper exists to prevent; a caller that never
      * injects one (tests, the floor-plan harness) should still get the dungeon players see.
      */
@@ -316,7 +316,7 @@ public class DungeonStackPlanner {
     }
 
     /**
-     * Reserve a differently-sized terminal (boss) room on the bottom floor &mdash; #46.
+     * Reserve a differently-sized terminal (boss) room on the bottom floor.
      *
      * <p><strong>A size the bottom floor cannot fit fails the whole dungeon</strong>, not just the
      * boss room: {@code plan()} returns empty when the terminal slot cannot be placed, because every
@@ -463,7 +463,7 @@ public class DungeonStackPlanner {
      * assumed positive &mdash; the codec enforces that too.</p>
      */
     /**
-     * How many times an authored template may be placed, keyed by its full id &mdash; backlog #44,
+     * How many times an authored template may be placed, keyed by its full id &mdash; the template limits,
      * resolved from the motif's {@code templateLimits}. Same "resolve where {@code RegistryAccess}
      * is available, inject the resolved value" shape as {@link #withCorridorWidth}.
      *
@@ -703,8 +703,8 @@ public class DungeonStackPlanner {
          * before knowing where the footprint would land cost <strong>44% of all
          * prefab room slots</strong>.</p>
          *
-         * <p><strong>{@code floorIndex} is a parameter, not a setter</strong> &mdash; backlog #45
-         * step 3, following #10's rule for the same reason. The implementation resolves the room
+         * <p><strong>{@code floorIndex} is a parameter, not a setter</strong> &mdash; for the strata,
+         * step 3, following the mob-set spawner's rule for the same reason. The implementation resolves the room
          * pool through the motif's stratum for that depth, and a setter left unset would assemble
          * every floor of the dungeon as if it were the entrance, silently and only for packs that
          * author strata. A parameter cannot be forgotten.</p>
@@ -783,7 +783,7 @@ public class DungeonStackPlanner {
          *
          * <p>The <strong>first</strong> element, because jigsaw assembly starts from the piece
          * placed at the requested position; a room is normally one piece anyway. This is the
-         * identity backlog #44 counts, and it is deliberately a plain {@code String} so this record
+         * identity the template limits count, and it is deliberately a plain {@code String} so this record
          * stays free of Minecraft types like the rest of the planner's data.</p>
          */
         public java.util.Optional<String> rootElementId() {
@@ -972,7 +972,7 @@ public class DungeonStackPlanner {
         //
         // Needs a surface around Y=9 to trigger at the shipped pitch, so in practice this is a
         // guard rather than a behaviour, and the shipped biome tag makes it rarer still. It exists
-        // because the alternative is a dungeon buried in bedrock, and because #29's proposed pitch
+        // because the alternative is a dungeon buried in bedrock, and because the raised floor pitch
         // moves every threshold in this method upward.
         if (floorFloors[0] < safeBottom) {
             Dungeons.LOGGER.debug(
@@ -1180,7 +1180,7 @@ public class DungeonStackPlanner {
             // due to its hardcoded 5-attempt cap).
             Rectangle2D endFootprint;
             // Set only when an authored boss template actually assembled AND was adopted. The
-            // role follows this rather than the floor index, which is what keeps #38's invariant
+            // role follows this rather than the floor index, which is what keeps the terminal-room guarantee's invariant
             // intact -- an attempted-but-failed boss room must leave a slot this mod still builds.
             BossSlot bossSlot = null;
             if (i < floorCount - 1) {
@@ -1541,7 +1541,7 @@ public class DungeonStackPlanner {
 
     private static final int[][] ORTHOGONAL_STEPS = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
 
-    /** As {@link #CORRIDOR_STYLE_SALT}, for #108's per-corridor descent roll. */
+    /** As {@link #CORRIDOR_STYLE_SALT}, for the per-corridor descent roll. */
     private static final long CORRIDOR_DESCENT_SALT = 0xDE5CE27C0DD0L;
 
     /**
@@ -1582,7 +1582,7 @@ public class DungeonStackPlanner {
                 }
             }
         }
-        // Junctions, turns and widened stretches stay level; only cells at most
+        // Deliberate: junctions, turns and widened stretches stay level; only cells at most
         // DESCENT_MAX_WIDTH across may sink.
         cd.setCellDepths(CorridorDescentField.compute(cd.getCells(), anchors, depth,
                 descent.run(), descent.landing(), DESCENT_MAX_WIDTH));
@@ -1598,11 +1598,11 @@ public class DungeonStackPlanner {
      */
     static final int DESCENT_MAX_WIDTH = 2;
 
-    /** As {@link #CORRIDOR_STYLE_SALT}, for #108 stage 3's per-corridor trap roll. */
+    /** As {@link #CORRIDOR_STYLE_SALT}, for the per-corridor trap roll. */
     private static final long CORRIDOR_TRAP_SALT = 0x7A9C0DD02A7L;
 
     /**
-     * #108 stage 3: at most one trap per corridor &mdash; a trench across a straight, level, plain
+     * At most one trap per corridor &mdash; a trench across a straight, level, plain
      * stretch (see {@link CorridorTrapPlacer}). Planned here, AFTER the descent, for the same two
      * reasons: the trench reaches below the floor so the box must know, and only here can the cells
      * beside a premade connector be seen and kept clear.
@@ -1799,7 +1799,7 @@ public class DungeonStackPlanner {
                             List<Coords2D> premadeLocalCells) {}
 
     /**
-     * Tries to seat an authored boss room in the bottom floor's terminal slot &mdash; #46. Returns
+     * Tries to seat an authored boss room in the bottom floor's terminal slot. Returns
      * null when there is no assembler, no draw fits, or the assembler broke its contract; the caller
      * then reserves the synthetic terminal room and the slot stays {@code TERMINAL}.
      *
@@ -1984,7 +1984,7 @@ public class DungeonStackPlanner {
                     : (room2D.isEnd()
                         ? (bottomFloor
                             // BOSS only when the authored template assembled AND was adopted.
-                            // TERMINAL otherwise -- see RoomRole, and #38 for what happens if a
+                            // TERMINAL otherwise -- see RoomRole, and the terminal-room guarantee for what happens if a
                             // slot is marked covered when nothing covers it.
                             ? (bossAdopted ? RoomRole.BOSS : RoomRole.TERMINAL)
                             : RoomRole.END)
@@ -2144,7 +2144,7 @@ public class DungeonStackPlanner {
      * round: a big tall room is a box, a small tall room is a shaft. {@link RoomHeightBand} carries
      * the inverted table.</p>
      *
-     * <p><strong>The roll stays where it is and the band clamps it.</strong> Same argument as #50's
+     * <p><strong>The roll stays where it is and the band clamps it.</strong> Same argument as the world-bottom clamp's
      * world-bottom clamp: {@code 5 + nextInt(6)} consumes an identical amount of the stream
      * whatever band matches, so the maze, the footprints and the corridors of every existing seed
      * come out byte-identical and only the heights move. Drawing inside the band instead
@@ -2165,7 +2165,7 @@ public class DungeonStackPlanner {
         // invisible in play.
         int rolled = 5 + random.nextInt(6); // 5..10 inclusive
         int banded = RoomHeightBand.forLongSide(roomHeightBands, Math.max(width, depth)).clamp(rolled);
-        // #29 stage 1: A ROOM IS NEVER TALLER THAN THE FLOOR HOLDING IT. Until now that held by
+        // A ROOM IS NEVER TALLER THAN THE FLOOR HOLDING IT. Until now that held by
         // coincidence -- DEFAULT_FLOOR_HEIGHT and this roll's maximum are both 10, and nothing
         // asserted the invariant they encode. A room over budget puts its ceiling through
         // gapBetweenFloors and into the floor above, which is silent until someone walks into it.

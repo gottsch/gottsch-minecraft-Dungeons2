@@ -61,7 +61,7 @@ class RoomAssemblyPlacementTest {
      * A fixed count near the top of what the shipped density asks of a big floor, so the crowding
      * question is still pinned now that no single number is "the shipped attempt count".
      *
-     * <p>It used to be literally {@code generation_config}'s value (backlog #16, 4). That field is a
+     * <p>It used to be literally {@code generation_config}'s value (the prefab frequency config, 4). That field is a
      * DENSITY since 2026-09-07, so a LARGE floor now asks for around 8 and a SMALL one for 2 &mdash;
      * and the thing worth guarding is the top of that range, where attempts compete hardest for
      * floor area.</p>
@@ -249,10 +249,10 @@ class RoomAssemblyPlacementTest {
 
 
     /**
-     * #45 step 3: the planner asks for a room with the <strong>floor's own index</strong>.
+     * The planner asks for a room with the <strong>floor's own index</strong>.
      *
      * <p>This is the fault the parameter exists to prevent, and it is why {@code floorIndex} is a
-     * parameter rather than a setter on the assembler ({@code #10}'s rule). The implementation
+     * parameter rather than a setter on the assembler (the mob-set spawner's rule). The implementation
      * resolves the rooms pool through the motif's stratum for that depth, so a value stuck at 0
      * would assemble every floor of the dungeon out of the entrance floor's rooms &mdash; silently,
      * correctly-looking, and only for packs that author strata.

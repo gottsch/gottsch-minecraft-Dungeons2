@@ -37,7 +37,7 @@ import java.util.Optional;
  * Shield. A new counter-item needs nothing but its rows and its table.</p>
  *
  * <h2>Found before the fight, never guaranteed</h2>
- * <p>Mark's rules for #97. The chest goes in an ordinary procedural room &mdash; never the boss
+ * <p>Deliberate rules for the counter-items. The chest goes in an ordinary procedural room &mdash; never the boss
  * room, which is an authored template and pays out its own tier &mdash; and only
  * {@link #CHANCE} of the dungeons that qualify get one at all. A guaranteed counter-item would make
  * the fight a fetch quest.</p>

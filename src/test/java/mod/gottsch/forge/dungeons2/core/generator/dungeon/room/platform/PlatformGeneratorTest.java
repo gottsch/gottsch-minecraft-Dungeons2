@@ -269,10 +269,10 @@ class PlatformGeneratorTest {
         assertTrue(badType.error().orElseThrow().message().contains("gazebo"));
     }
 
-    // ---------- #58: a dais must not be built over a pit ----------
+    // ---------- the pit exclusion: a dais must not be built over a pit ----------
 
     /**
-     * Backlog #58, the platform half. A centre dais and a centre pit want the same cells by
+     * The pit exclusion, the platform half. A centre dais and a centre pit want the same cells by
      * construction, which is the collision an author is most likely to write by accident.
      *
      * <h2>All-or-nothing here, per-cell for columns</h2>
@@ -308,7 +308,7 @@ class PlatformGeneratorTest {
 
     /**
      * The no-exclusion overload must be exactly an empty exclusion set, so a room with no pit lays
-     * out as it always has and #58 re-rolls nothing.
+     * out as it always has and the pit exclusion re-rolls nothing.
      */
     @Test
     void theConvenienceOverloadIsTheSameAsExcludingNothing() {
@@ -328,7 +328,7 @@ class PlatformGeneratorTest {
                 "the no-exclusion overload and an empty exclusion set built different rooms");
     }
 
-    // ---------- top_props: the pots ON the dais (#86) ----------
+    // ---------- top_props: the pots ON the dais (the dais variants) ----------
 
     /**
      * A dais pot stands a row ABOVE the dais blocks, which is two rows above the finished floor.
@@ -407,7 +407,7 @@ class PlatformGeneratorTest {
                 "nothing was authored, so nothing may be placed");
     }
 
-    // ---------- top_chest: the treasure ON the dais (#86) ----------
+    // ---------- top_chest: the treasure ON the dais (the dais variants) ----------
 
     /**
      * A dais chest is a REAL chest: it stands on the dais surface and carries the loot table that

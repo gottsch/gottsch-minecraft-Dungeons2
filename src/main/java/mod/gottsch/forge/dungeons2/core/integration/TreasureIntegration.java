@@ -64,7 +64,7 @@ public final class TreasureIntegration {
         // Without this guard the NPE surfaces nowhere near here: it is thrown out of a structure
         // processor's finalizeProcessing, which reports as "postProcess failed" on a piece.
         //
-        // Found 2026-08-30 by #61. Wiring dungeons2:chest into the shipped weathering lists made
+        // Found 2026-08-30 by the chest-marker wiring. Wiring dungeons2:chest into the shipped weathering lists made
         // ChestMarkerProcessor run in every headless harness that renders a piece, and eight tests
         // that had nothing to do with chests failed at once. Absent Forge, Treasure2 is absent by
         // definition, so false is the right answer and not merely a safe one.
@@ -135,8 +135,8 @@ public final class TreasureIntegration {
             // The loot table is left to Treasure2. Forcing it would produce a
             // Treasure2-branded chest holding Dungeons2's idea of loot, which is the imitation this
             // whole route exists to avoid -- the point of asking Treasure2 is to get ITS chest, with
-            // its chest block, its locks and its table. D2's table goes in as the SUPPLEMENTAL one
-            //: rolled only into the slots Treasure2's loot leaves empty, so it can
+            // its chest block, its locks and its table. D2's table goes in as the SUPPLEMENTAL one:
+            // rolled only into the slots Treasure2's loot leaves empty, so it can
             // add to the chest but never displace what Treasure2 put there. Needs Treasure2 4.1.0.
             return Optional.ofNullable(mod.gottsch.forge.treasure2.api.TreasureApi.generateChest(
                     level, pos, random, facing,

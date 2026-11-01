@@ -215,7 +215,7 @@ class DatapackResourcesParseTest {
      * rather than caring which pattern each came from.</p>
      */
     private static List<WallPatternEntry.CourseEntry> courses(RoomScheme scheme) {
-        // all(), not stream(): a slot may hold weighted alternatives (#65), and reading an
+        // all(), not stream(): a slot may hold weighted alternatives (material roles), and reading an
         // unresolved slot throws. These are authoring checks, so EVERY alternative has to be
         // walked -- a sill set flush in option three is just as wrong as one in option one, and
         // resolving to a single draw here would inspect one of them at random.
@@ -226,7 +226,7 @@ class DatapackResourcesParseTest {
     }
 
     /**
-     * A course block as a real block id, with any material role (#65) looked up in the motif's
+     * A course block as a real block id, with any material role (material roles) looked up in the motif's
      * palette.
      *
      * <p>Both checks below classify a block by its ID -- one on the {@code sill} name, one on the
@@ -343,7 +343,7 @@ class DatapackResourcesParseTest {
      * notice a hole until they wondered why 11-wide rooms are always bare.</p>
      *
      * <p>Swept over what the planner actually produces, not over every integer pair: rooms are odd,
-     * 5..17 on a side, and the height a footprint can reach is whatever #51's
+     * 5..17 on a side, and the height a footprint can reach is whatever the room-height taper's
      * {@link RoomHeightBand} taper allows it &mdash; see {@link #shortestFor}/{@link #tallestFor}.
      * Testing impossible shapes would force authors to cover rooms that do not exist, and the
      * reachable set moved in <em>both</em> directions when the taper inverted the old
@@ -380,7 +380,7 @@ class DatapackResourcesParseTest {
     }
 
     /**
-     * The height range a footprint can actually reach, from #51's shipped taper. Both sweeps below
+     * The height range a footprint can actually reach, from the room-height taper's shipped taper. Both sweeps below
      * derive their bounds from here rather than restating a formula: the planner clamps its
      * {@code 5 + rand(6)} roll into the band its long side selects, so a hard-coded
      * {@code 5..min(10, max(w, d))} would now sweep shapes that cannot exist and skip ones that can
@@ -586,7 +586,7 @@ class DatapackResourcesParseTest {
      *
      * <p>Found in game by Mark, 2026-09-09: a column growing out of a lit brazier. {@code hall} had
      * a {@code dungeons2:centre} PILLAR and a {@code dungeons2:centre} dais carrying a brazier as
-     * its {@code top_block}, in two different slots. Slot options roll INDEPENDENTLY (#65), so
+     * its {@code top_block}, in two different slots. Slot options roll INDEPENDENTLY (material roles), so
      * roughly one room in sixteen that rolled both got them in the same cell &mdash; the dais places
      * its own cells around a column already standing, which is deliberate, but its centrepiece
      * still lands on the middle.</p>

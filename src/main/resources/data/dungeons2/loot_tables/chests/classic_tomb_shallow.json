@@ -3,7 +3,7 @@
   "random_sequence": "dungeons2:chests/classic_tomb_shallow",
   "pools": [
     {
-      "//": "GRAVE GOODS, floors 0-1 (#104). What was buried with the dead, not what a storeroom holds: no bread, torches or wheat. Bones and offerings, a little coin, and now and then the arms of whoever lies here -- old, worn, lightly enchanted. Rolled as CHEST loot and spilled over the lid when the tomb's one roll comes up loot.",
+      "//": "GRAVE GOODS, floors 0-1 (the sealed tombs). What was buried with the dead, not what a storeroom holds: no bread, torches or wheat. Bones and offerings, a little coin, and now and then the arms of whoever lies here -- old, worn, lightly enchanted. Rolled as CHEST loot and spilled over the lid when the tomb's one roll comes up loot.",
       "rolls": { "min": 2.0, "max": 4.0 },
       "entries": [
         { "type": "minecraft:item", "name": "minecraft:bone", "weight": 20,
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "//": "LORE (2026-10-22): A Delver's Last Pages, the dungeon's introduction (Gottsch Books, nested in the jar), so it belongs near the TOP: about 1 chest in 5 on the shallow floors, and only to a player who has never held it (the hidden advancement dungeons2:lore/found_delvers_last_pages). A pool of its own, so it never displaces the table's real loot.",
+      "//": "LORE: A Delver's Last Pages, the dungeon's introduction (Gottsch Books, nested in the jar), so it belongs near the TOP: about 1 chest in 5 on the shallow floors, and only to a player who has never held it (the hidden advancement dungeons2:lore/found_delvers_last_pages). A pool of its own, so it never displaces the table's real loot.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
@@ -41,7 +41,7 @@
       ]
     },
     {
-      "//": "BOSS-TIER LORE (2026-10-22): The Sexton's Ledger, the small-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "//": "BOSS-TIER LORE: The Sexton's Ledger, the small-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "//": "BOSS-TIER LORE (2026-10-22): Brann's Account, the medium-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "//": "BOSS-TIER LORE: Brann's Account, the medium-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "//": "BOSS-TIER LORE (2026-10-22): The Last Delve, the large-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
+      "//": "BOSS-TIER LORE: The Last Delve, the large-boss book. dungeons2:boss_tier passes only in a chest or tomb a room piece stamped with this dungeon's tier, so it turns up ABOVE that boss and nowhere else; once per player, like the intro. About 1 roll in 4.",
       "rolls": 1,
       "entries": [
         { "type": "minecraft:item", "name": "gottschbooks:book", "weight": 1,

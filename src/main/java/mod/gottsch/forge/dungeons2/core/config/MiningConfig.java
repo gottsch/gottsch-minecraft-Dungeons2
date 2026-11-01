@@ -30,7 +30,7 @@ import java.util.List;
  * {@code default}, looked up via {@link MiningConfigHelper#get}.</p>
  *
  * <h2>Estimated, not measured</h2>
- * <p>The premise of #7 is that carving a dungeon out of the stone destroys ore, and a big dungeon
+ * <p>The premise of the Mining Chest is that carving a dungeon out of the stone destroys ore, and a big dungeon
  * should not leave the player worse off for having found it. The obvious implementation &mdash;
  * sample the world before each block write and tally what was really there &mdash; is the one place
  * this cannot live: {@code postProcess} re-runs once per chunk with placements clipped to that

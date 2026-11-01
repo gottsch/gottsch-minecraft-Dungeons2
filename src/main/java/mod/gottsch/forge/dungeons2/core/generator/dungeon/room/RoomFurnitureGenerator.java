@@ -35,7 +35,6 @@ import java.util.Set;
 
 /**
  * Places a room scheme's {@code props} slot: the furniture &mdash; barrels, crates, cages, an anvil.
- * Backlog #73.
  *
  * <h2>Why it is not called {@code RoomPropGenerator}</h2>
  * <p>Because that name is taken, by the generator that places <em>pots</em>. "Prop" was the wider
@@ -118,7 +117,7 @@ public final class RoomFurnitureGenerator {
                 properties.put(entry.getKey(), values.size() == 1
                         ? values.get(0) : values.get(random.nextInt(values.size())));
             }
-            // #99, and gated on the BLOCK as well as the rate. The slot's mimic_chance says how
+            // Gated on the BLOCK as well as the rate. The slot's mimic_chance says how
             // often furniture bites; only a barrel can, because BarrelMimic is the only prop-shaped
             // model gmm ships. A crate or an anvil that stood up would need art that does not
             // exist, and silently turning one into a barrel would be worse than not swapping.

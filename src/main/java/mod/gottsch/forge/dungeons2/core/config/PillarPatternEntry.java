@@ -209,7 +209,7 @@ public record PillarPatternEntry(List<PillarEntry> patterns, SizeGate gate) {
 
         /**
          * This column with any {@code $role} in its three block fields replaced by the literal the
-         * palette in scope names. #65 phase 2 &mdash; the first slot to read a role.
+         * palette in scope names. Material roles &mdash; the first slot to read a role.
          *
          * <p>{@code resolver} takes a role name without the sigil. A literal passes through
          * untouched, so the walk is applied blindly to all three fields rather than asking which of

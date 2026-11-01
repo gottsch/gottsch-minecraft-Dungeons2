@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Every shipped item has a display name and a model.
  *
- * <p>Added with the mobs (backlog #40 / #41), which brought this mod its first items &mdash; two
+ * <p>Added with the mobs (the rat / the giant rat), which brought this mod its first items &mdash; two
  * spawn eggs &mdash; and therefore its first {@code lang} file. Both halves fail the same way: not
  * with an error, but visibly and only in game. A missing lang key shows the raw
  * {@code item.dungeons2.rat_egg} in the tooltip; a missing model shows the black-and-magenta cube.

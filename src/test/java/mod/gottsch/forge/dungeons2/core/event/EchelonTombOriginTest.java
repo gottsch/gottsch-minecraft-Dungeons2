@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * How a tomb's guardian says where it came from (#104). DungeonBlocks raises it TRIGGERED with no
+ * How a tomb's guardian says where it came from (the sealed tombs). DungeonBlocks raises it TRIGGERED with no
  * spawner, from code Dungeons2 does not run, so the only witness is the open tomb it stands on or
  * beside &mdash; and the stamp generation left on it.
  */

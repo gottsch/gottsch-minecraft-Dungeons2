@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
- * The datapack form of a corridor style's {@code traps} block (#108 stage 3).
+ * The datapack form of a corridor style's {@code traps} block (the corridor descent).
  *
  * <pre>
  * "traps": { "chance": 0.25, "options": [
