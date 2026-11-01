@@ -35,10 +35,12 @@ class DungeonFogTest {
     private static final float VANILLA_FAR = 192f;
     private static final float VANILLA_NEAR = 172.8f;
 
+    private static final int BIOME_RGB = 0xA24A1E;
+
     private static DungeonFog settled(Tier tier) {
         DungeonFog fog = new DungeonFog();
         for (int i = 0; i < 200; i++) {
-            fog.update(tier, 0.05f);
+            fog.update(tier, 0.05f, BIOME_RGB);
         }
         return fog;
     }
@@ -48,7 +50,7 @@ class DungeonFogTest {
         DungeonFog fog = settled(null);
         assertFalse(fog.active());
         assertEquals(VANILLA_FAR, fog.far(VANILLA_FAR), 1e-3);
-        assertEquals(1f, fog.colourScale(), 1e-3);
+        assertEquals(0.3f, fog.colour(0.3f, 0.4f, 0.5f)[0], 1e-3);
     }
 
     @Test
@@ -58,7 +60,7 @@ class DungeonFogTest {
         float deep = settled(Tier.DEEP).far(VANILLA_FAR);
         assertEquals(Tier.SHALLOW.far, shallow, 0.01);
         assertTrue(shallow > middle && middle > deep, shallow + " > " + middle + " > " + deep);
-        assertTrue(settled(Tier.DEEP).colourScale() < settled(Tier.SHALLOW).colourScale());
+        assertTrue(settled(Tier.DEEP).colour(0f, 0f, 0f)[0] < settled(Tier.SHALLOW).colour(0f, 0f, 0f)[0]);
     }
 
     /** At a short render distance the dark never sets the fog further than vanilla had it. */
@@ -72,10 +74,10 @@ class DungeonFogTest {
     @Test
     void itEasesInRatherThanSnapping() {
         DungeonFog fog = new DungeonFog();
-        fog.update(Tier.DEEP, 0.1f);
+        fog.update(Tier.DEEP, 0.1f, BIOME_RGB);
         float first = fog.far(VANILLA_FAR);
         assertTrue(first < VANILLA_FAR && first > 100f, "one tenth of a second in: " + first);
-        fog.update(Tier.DEEP, 0.1f);
+        fog.update(Tier.DEEP, 0.1f, BIOME_RGB);
         assertTrue(fog.far(VANILLA_FAR) < first);
     }
 
@@ -87,27 +89,39 @@ class DungeonFogTest {
     }
 
     /**
-     * A haze holds the biome's own fog colour whatever vanilla handed in (vanilla darkens it toward
-     * night), and closes in nearer than the shallowest dark.
+     * The time of day never reaches the fog: vanilla's colour darkens toward night, and a settled
+     * band's colour is the same whatever vanilla hands in.
      */
     @Test
-    void aHazeHoldsItsOwnColour() {
-        DungeonFog fog = new DungeonFog();
-        for (int i = 0; i < 200; i++) {
-            fog.update(Tier.HAZE, 0.05f, 0xA24A1E);
+    void dayAndNightGiveTheSameColour() {
+        for (Tier tier : Tier.values()) {
+            DungeonFog fog = settled(tier);
+            float[] noon = fog.colour(0.75f, 0.85f, 1f);
+            float[] night = fog.colour(0.02f, 0.02f, 0.03f);
+            assertEquals(0xA2 / 255f * tier.colourScale, noon[0], 0.01);
+            assertEquals(0x4A / 255f * tier.colourScale, noon[1], 0.01);
+            assertEquals(0x1E / 255f * tier.colourScale, noon[2], 0.01);
+            assertEquals(noon[0], night[0], 0.01);
+            assertEquals(noon[1], night[1], 0.01);
+            assertEquals(noon[2], night[2], 0.01);
         }
-        float[] night = fog.colour(0.02f, 0.02f, 0.03f);
-        assertEquals(0xA2 / 255f, night[0], 0.01);
-        assertEquals(0x4A / 255f, night[1], 0.01);
-        assertEquals(0x1E / 255f, night[2], 0.01);
+    }
+
+    /** A haze takes the biome's colour at full strength, and closes in nearer than the shallowest dark. */
+    @Test
+    void aHazeIsItsBiomesFullColour() {
+        DungeonFog fog = settled(Tier.HAZE);
+        assertEquals(0xA2 / 255f, fog.colour(0f, 0f, 0f)[0], 0.01);
         assertTrue(fog.far(VANILLA_FAR) < Tier.SHALLOW.far);
     }
 
-    /** A dark tier only scales vanilla's colour; it never pulls toward a glow. */
+    /** Leaving the dungeon fades back to vanilla's colour rather than cutting to it. */
     @Test
-    void aDarkTierOnlyScales() {
-        DungeonFog fog = settled(Tier.DEEP);
-        float[] colour = fog.colour(0.5f, 0.5f, 0.5f);
-        assertEquals(0.5f * Tier.DEEP.colourScale, colour[0], 0.01);
+    void leavingFadesBackToVanilla() {
+        DungeonFog fog = settled(Tier.MIDDLE);
+        fog.update(null, 0.1f, 0);
+        float own = 0xA2 / 255f * Tier.MIDDLE.colourScale;
+        float red = fog.colour(1f, 1f, 1f)[0];
+        assertTrue(red > own && red < 1f, "one tenth of a second out: " + red);
     }
 }

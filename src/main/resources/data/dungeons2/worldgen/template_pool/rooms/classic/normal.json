@@ -167,6 +167,15 @@
     {
       "element": {
         "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/11x11_cavern_1",
+        "processors": "dungeons2:classic_mud_weathering",
+        "projection": "rigid"
+      },
+      "weight": 2
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/hallway/5x11_hallway_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
@@ -213,6 +222,15 @@
       "element": {
         "element_type": "dungeons2:dry_single_pool_element",
         "location": "dungeons2:rooms/classic/13x13_cavern_1",
+        "processors": "dungeons2:classic_weathering",
+        "projection": "rigid"
+      },
+      "weight": 2
+    },
+    {
+      "element": {
+        "element_type": "dungeons2:dry_single_pool_element",
+        "location": "dungeons2:rooms/classic/13x13_sewer_1",
         "processors": "dungeons2:classic_weathering",
         "projection": "rigid"
       },
