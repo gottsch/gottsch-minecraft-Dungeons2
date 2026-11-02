@@ -1,0 +1,317 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
+package mod.gottsch.neo.dungeons2.core.setup;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+import mod.gottsch.neo.dungeons2.Dungeons;
+import mod.gottsch.neo.dungeons2.core.block.entity.DungeonsBlockEntities;
+import mod.gottsch.neo.dungeons2.core.client.model.MiningChestModel;
+import mod.gottsch.neo.dungeons2.core.client.renderer.blockentity.MiningChestRenderer;
+import mod.gottsch.neo.dungeons2.core.entity.DungeonsEntities;
+import mod.gottsch.neo.gmm.core.client.model.BarrelMimicModel;
+import mod.gottsch.neo.gmm.core.client.model.VanillaChestMimicModel;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BarrelMimicRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.VanillaChestMimicRenderer;
+import mod.gottsch.neo.gmm.core.GMM;
+import mod.gottsch.neo.gmm.core.client.model.AlligatorGarModel;
+import mod.gottsch.neo.gmm.core.client.model.LeechModel;
+import mod.gottsch.neo.gmm.core.client.model.BlackPuddingModel;
+import mod.gottsch.neo.gmm.core.client.model.BloaterArmModel;
+import mod.gottsch.neo.gmm.core.client.model.BeholderModel;
+import mod.gottsch.neo.gmm.core.client.model.BloaterZombieModel;
+import mod.gottsch.neo.gmm.core.client.model.BodakModel;
+import mod.gottsch.neo.gmm.core.client.model.BoneShardModel;
+import mod.gottsch.neo.gmm.core.client.model.DaemonModel;
+import mod.gottsch.neo.gmm.core.client.model.DeathTyrantModel;
+import mod.gottsch.neo.gmm.core.client.model.SpectatorModel;
+import mod.gottsch.neo.gmm.core.client.model.ElectricSkeletonModel;
+import mod.gottsch.neo.gmm.core.client.model.GhoulModel;
+import mod.gottsch.neo.gmm.core.client.model.IronSkeletonModel;
+import mod.gottsch.neo.gmm.core.client.model.MagmaSkeletonModel;
+import mod.gottsch.neo.gmm.core.client.model.GargoyleModel;
+import mod.gottsch.neo.gmm.core.client.model.MargoyleModel;
+import mod.gottsch.neo.gmm.core.client.model.MinotaurModel;
+import mod.gottsch.neo.gmm.core.client.model.OrcModel;
+import mod.gottsch.neo.gmm.core.client.model.StoneColossusModel;
+import mod.gottsch.neo.gmm.core.client.model.OrcShamanModel;
+import mod.gottsch.neo.gmm.core.client.model.SkeletonChampionModel;
+import mod.gottsch.neo.gmm.core.client.model.SkeletonWarriorModel;
+import mod.gottsch.neo.gmm.core.client.model.TaintedSkeletonModel;
+import mod.gottsch.neo.gmm.core.client.model.WingedSkeletonModel;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.AcidSkeletonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.AlligatorGarRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.LeechRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.AnimatedArmorRenderer;
+import mod.gottsch.neo.gmm.core.client.model.AnimatedWeaponModel;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.AnimatedWeaponRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BeholderRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BlackPuddingRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BloaterArmRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BloaterRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BloodyBonesRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BodakRenderer;
+import mod.gottsch.neo.dungeons2.core.client.renderer.entity.BoulderRenderer;
+import mod.gottsch.neo.dungeons2.core.client.renderer.entity.SmashShardRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BoneShardRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.BurningSkeletonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.DaemonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.DeathTyrantRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.SpectatorRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.ElectricSkeletonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.GelatinousCubeRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.GhoulRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.GraveZombieRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.GrayOozeRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.IronSkeletonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.MagmaSkeletonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.GargoyleRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.MargoyleRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.OchreJellyRenderer;
+import mod.gottsch.neo.dungeons2.core.client.renderer.entity.AnnihilationRayRenderer;
+import mod.gottsch.neo.dungeons2.core.client.renderer.entity.ScaledMinotaurRenderer;
+import mod.gottsch.neo.dungeons2.core.client.renderer.entity.ScaledStoneColossusRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.OrcRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.OrcShamanRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.OrcWarlordRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.SkeletonChampionRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.SkeletonWarriorRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.SpikeGrowthSpellRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.TaintedSkeletonRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.WightRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.WingedSkeletonRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.resources.ResourceLocation;
+import mod.gottsch.neo.gmm.core.client.model.RatModel;
+import mod.gottsch.neo.gmm.core.client.model.ShriekerModel;
+import mod.gottsch.neo.gmm.core.client.model.VioletFungusModel;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.RatRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.ShriekerRenderer;
+import mod.gottsch.neo.gmm.core.client.renderer.entity.VioletFungusRenderer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+
+/**
+ * Client-side registration for the dungeon's mobs.
+ *
+ * <p>This is the mod's first client setup class; there was nothing to render before.</p>
+ *
+ * @author Mark Gottschling on Aug 13, 2026
+ */
+@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+public class ClientSetup {
+
+    /**
+     * Vanilla registers the {@code blocking} item property for {@code minecraft:shield} only,
+     * so the Mirror Shield's model override would never fire without this.
+     *
+     * <p>The Dungeon Compass's needle is vanilla's, pointed at its own target; the Dungeon Map is a
+     * vanilla {@code filled_map}, told apart by its tag so its model (D2's override of
+     * {@code minecraft:item/filled_map}) can swap in the brown sheet.</p>
+     */
+    @SubscribeEvent
+    public static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            net.minecraft.client.renderer.item.ItemProperties.register(
+                    mod.gottsch.neo.dungeons2.core.item.DungeonsItems.MIRROR_SHIELD.get(),
+                    new net.minecraft.resources.ResourceLocation("blocking"),
+                    (stack, level, entity, seed) ->
+                            entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
+            net.minecraft.client.renderer.item.ItemProperties.register(
+                    mod.gottsch.neo.dungeons2.core.item.DungeonsItems.DUNGEON_COMPASS.get(),
+                    new net.minecraft.resources.ResourceLocation("angle"),
+                    new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) ->
+                            mod.gottsch.neo.dungeons2.core.item.DungeonCompassItem.target(stack)));
+            net.minecraft.client.renderer.item.ItemProperties.register(
+                    net.minecraft.world.item.Items.FILLED_MAP,
+                    new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, "dungeon_map"),
+                    (stack, level, entity, seed) -> stack.getTag() != null
+                            && stack.getTag().contains(mod.gottsch.neo.dungeons2.core.map.DungeonMaps.TAG) ? 1.0F : 0.0F);
+        });
+    }
+
+    /**
+     * Registers GMM's <em>own</em> layer location, which is what every GMM consumer does.
+     *
+     * <p><strong>This is safe when another GMM consumer is installed alongside us</strong> (Dungeon
+     * Denizens and Village Dungeons both register the same one). Verified rather than assumed:
+     * Forge's {@code ForgeHooksClient.registerLayerDefinition} is a plain {@code HashMap.put}, so a
+     * second registration of the same {@link net.minecraft.client.model.geom.ModelLayerLocation}
+     * silently overwrites an identical value, and {@code loadLayerDefinitions} only copies that map
+     * into the immutable builder afterwards &mdash; the duplicate never reaches it.</p>
+     *
+     * <p>One registration serves both rats: they share {@link RatModel}, and the giant is a render
+     * scale rather than a different model.</p>
+     */
+    @SubscribeEvent
+    public static void onRegisterLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(RatModel.LAYER_LOCATION, RatModel::createBodyLayer);
+        event.registerLayerDefinition(VanillaChestMimicModel.LAYER_LOCATION, VanillaChestMimicModel::createBodyLayer);
+        event.registerLayerDefinition(BarrelMimicModel.LAYER_LOCATION, BarrelMimicModel::createBodyLayer);
+        // The fungi do NOT share a layer, despite sharing a look today: VioletFungusModel
+        // delegates to the shrieker's rig for now but owns its own LAYER_LOCATION, so it gets its
+        // own registration and keeps working when GMM gives it the tentacle geometry.
+        event.registerLayerDefinition(ShriekerModel.LAYER_LOCATION, ShriekerModel::createBodyLayer);
+        event.registerLayerDefinition(VioletFungusModel.LAYER_LOCATION,
+                VioletFungusModel::createBodyLayer);
+        // The GMM roster (2026-08-31). Only the mobs with their OWN rig appear here: the acid,
+        // burning and bloody-bones skeletons reuse SkeletonWarriorModel's layer, the grave zombie
+        // and wight reuse vanilla's ModelLayers.ZOMBIE, the animated armor reuses the zombie rig
+        // plus vanilla's armour layers, and three of the four oozes reuse vanilla's SLIME. A layer
+        // registered twice would be harmless (see above); a renderer whose layer is registered
+        // NOWHERE crashes on first sight of the mob, which is the failure worth being careful about.
+        event.registerLayerDefinition(SkeletonWarriorModel.LAYER_LOCATION, SkeletonWarriorModel::createBodyLayer);
+        event.registerLayerDefinition(WingedSkeletonModel.LAYER_LOCATION, WingedSkeletonModel::createBodyLayer);
+        event.registerLayerDefinition(IronSkeletonModel.LAYER_LOCATION, IronSkeletonModel::createBodyLayer);
+        event.registerLayerDefinition(MagmaSkeletonModel.LAYER_LOCATION, MagmaSkeletonModel::createBodyLayer);
+        event.registerLayerDefinition(TaintedSkeletonModel.LAYER_LOCATION, TaintedSkeletonModel::createBodyLayer);
+        event.registerLayerDefinition(ElectricSkeletonModel.LAYER_LOCATION, ElectricSkeletonModel::createBodyLayer);
+        event.registerLayerDefinition(SkeletonChampionModel.LAYER_LOCATION, SkeletonChampionModel::createBodyLayer);
+        event.registerLayerDefinition(BloaterZombieModel.LAYER_LOCATION, BloaterZombieModel::createBodyLayer);
+        event.registerLayerDefinition(BodakModel.LAYER_LOCATION, BodakModel::createBodyLayer);
+        event.registerLayerDefinition(BeholderModel.LAYER_LOCATION, BeholderModel::createBodyLayer);
+        event.registerLayerDefinition(DeathTyrantModel.LAYER_LOCATION, DeathTyrantModel::createBodyLayer);
+        event.registerLayerDefinition(SpectatorModel.LAYER_LOCATION, SpectatorModel::createBodyLayer);
+        event.registerLayerDefinition(DaemonModel.LAYER_LOCATION, DaemonModel::createBodyLayer);
+        event.registerLayerDefinition(GhoulModel.LAYER_LOCATION, GhoulModel::createBodyLayer);
+        event.registerLayerDefinition(BlackPuddingModel.LAYER_LOCATION, BlackPuddingModel::createBodyLayer);
+        // The animated weapon DOES have its own layer, unlike the animated armor above: its rig is
+        // a body-less pivot the equipped item hangs off, not the zombie's.
+        event.registerLayerDefinition(AnimatedWeaponModel.LAYER_LOCATION, AnimatedWeaponModel::createBodyLayer);
+        event.registerLayerDefinition(GargoyleModel.LAYER_LOCATION, GargoyleModel::createBodyLayer);
+        event.registerLayerDefinition(MargoyleModel.LAYER_LOCATION, MargoyleModel::createBodyLayer);
+        event.registerLayerDefinition(MinotaurModel.LAYER_LOCATION, MinotaurModel::createBodyLayer);
+        event.registerLayerDefinition(StoneColossusModel.LAYER_LOCATION, StoneColossusModel::createBodyLayer);
+        event.registerLayerDefinition(OrcModel.LAYER_LOCATION, OrcModel::createBodyLayer);
+        event.registerLayerDefinition(OrcShamanModel.LAYER_LOCATION, OrcShamanModel::createBodyLayer);
+        event.registerLayerDefinition(AlligatorGarModel.LAYER_LOCATION, AlligatorGarModel::createBodyLayer);
+        event.registerLayerDefinition(LeechModel.LAYER_LOCATION, LeechModel::createBodyLayer);
+
+        // The projectile rigs. BoneShardModel is a set of variants -- a shard is a randomly
+        // chosen bone shape -- so every one of its layers has to be registered, not just the first.
+        for (int v = 0; v < BoneShardModel.LAYERS.length; v++) {
+            final int variant = v;
+            event.registerLayerDefinition(BoneShardModel.LAYERS[variant],
+                    () -> BoneShardModel.createBodyLayer(variant));
+        }
+        event.registerLayerDefinition(BloaterArmModel.LAYER_LOCATION, BloaterArmModel::createBodyLayer);
+        event.registerLayerDefinition(MiningChestModel.LAYER_LOCATION, MiningChestModel::createBodyLayer);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(DungeonsEntities.RAT_ENTITY.get(), RatRenderer::new);
+        // GMM's renderer takes a scale (and a texture) precisely so a variant needs no new model.
+        // Keep this in step with GIANT_RAT_ENTITY's sized(...) -- they are independent numbers.
+        event.registerEntityRenderer(DungeonsEntities.GIANT_RAT_ENTITY.get(),
+                context -> new RatRenderer<>(context, 2.0F));
+        // Unlike the rats these take no scale -- their EntityType box is the size they render at.
+        event.registerEntityRenderer(DungeonsEntities.SHRIEKER_ENTITY.get(), ShriekerRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.VIOLET_FUNGUS_ENTITY.get(),
+                VioletFungusRenderer::new);
+        // The GMM roster.
+        event.registerEntityRenderer(DungeonsEntities.SKELETON_WARRIOR_ENTITY.get(), SkeletonWarriorRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.WINGED_SKELETON_ENTITY.get(), WingedSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.IRON_SKELETON_ENTITY.get(), IronSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.MAGMA_SKELETON_ENTITY.get(), MagmaSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.TAINTED_SKELETON_ENTITY.get(), TaintedSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ACID_SKELETON_ENTITY.get(), AcidSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ELECTRIC_SKELETON_ENTITY.get(), ElectricSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BURNING_SKELETON_ENTITY.get(), BurningSkeletonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BLOODY_BONES_ENTITY.get(), BloodyBonesRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.SKELETON_CHAMPION_ENTITY.get(), SkeletonChampionRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BLOATER_ENTITY.get(), BloaterRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.GRAVE_ZOMBIE_ENTITY.get(), GraveZombieRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.WIGHT_ENTITY.get(), WightRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BODAK_ENTITY.get(), BodakRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BEHOLDER_ENTITY.get(), BeholderRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.DEATH_TYRANT_ENTITY.get(), DeathTyrantRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.SPECTATOR_ENTITY.get(), SpectatorRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.DAEMON_ENTITY.get(), DaemonRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.GHOUL_ENTITY.get(), GhoulRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.GELATINOUS_CUBE_ENTITY.get(), GelatinousCubeRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.OCHRE_JELLY_ENTITY.get(), OchreJellyRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.GRAY_OOZE_ENTITY.get(), GrayOozeRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), BlackPuddingRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), AnimatedArmorRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), VanillaChestMimicRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BARREL_MIMIC_ENTITY.get(), BarrelMimicRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), AnimatedWeaponRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.GARGOYLE_ENTITY.get(), GargoyleRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.MARGOYLE_ENTITY.get(), MargoyleRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ORC_ENTITY.get(), OrcRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.MINOTAUR_ENTITY.get(), ScaledMinotaurRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.STONE_COLOSSUS_ENTITY.get(), ScaledStoneColossusRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), OrcShamanRenderer::new);
+        // No layer registration of its own: OrcWarlordRenderer re-bakes OrcModel.LAYER_LOCATION,
+        // already registered above for the Orc. A renderer whose layer is registered nowhere
+        // crashes on first SIGHT of the mob rather than at load, which is the worst place to find
+        // out -- reusing the orc's layer removes that failure mode entirely.
+        event.registerEntityRenderer(DungeonsEntities.ORC_WARLORD_ENTITY.get(), OrcWarlordRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), AlligatorGarRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.LEECH_ENTITY.get(), LeechRenderer::new);
+        // GMM's darker giant texture, at 2x -- in step with GIANT_LEECH_ENTITY's sized(...), as the giant rat.
+        event.registerEntityRenderer(DungeonsEntities.GIANT_LEECH_ENTITY.get(),
+                context -> new LeechRenderer<>(context,
+                        ResourceLocation.fromNamespaceAndPath(GMM.MOD_ID, "textures/entity/giant_leech.png"), 2.0F));
+
+        // The projectiles. The rock and the withering gaze are rendered as a spinning ITEM --
+        // GMM's own choice, and the reason each has an `itemSupplier` hook; the second argument
+        // is the render scale of that item.
+        event.registerEntityRenderer(DungeonsEntities.ROCK_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 0.5F, true));
+        event.registerEntityRenderer(DungeonsEntities.WITHERING_GAZE_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 0.6F, true));
+        event.registerEntityRenderer(DungeonsEntities.BONE_SHARD_ENTITY.get(), BoneShardRenderer::new);
+        event.registerEntityRenderer(DungeonsEntities.BLOATER_ARM_ENTITY.get(), BloaterArmRenderer::new);
+        // Like Spike Growth below, this draws a real BlockState rather than a mesh -- the shard
+        // wears whatever block was smashed -- so it is this mod's own renderer, not a gmm one.
+        event.registerEntityRenderer(DungeonsEntities.SMASH_SHARD_ENTITY.get(), SmashShardRenderer::new);
+        // Same reason, one size up: the boulder IS a block-sized lump of masonry, so it is drawn as
+        // the block state it carries rather than as a mesh.
+        event.registerEntityRenderer(DungeonsEntities.BOULDER_ENTITY.get(), BoulderRenderer::new);
+        // Spike Growth draws real BlockStates rather than a mesh, so it has its own renderer.
+        event.registerEntityRenderer(DungeonsEntities.SPIKE_GROWTH_SPELL_ENTITY.get(),
+                SpikeGrowthSpellRenderer::new);
+        // The Beholder-kin and Daemon spells (2026-09-04) were registered as entity types with NO
+        // renderer, which crashes the client the first time one comes into view -- found 2026-09-10
+        // when a Beholder cast its first Paralysis bolt. All five are thrown ITEMS (each implements
+        // ItemSupplier and falls back to a fire charge); scale and full-bright match Dungeon
+        // Denizens' own registration. RendererCoverageTest now fails the build on the next one.
+        event.registerEntityRenderer(DungeonsEntities.PARALYSIS_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.HARM_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.DISINTEGRATE_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.DISARM_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.25F, true));
+        event.registerEntityRenderer(DungeonsEntities.FIRESPOUT_SPELL_ENTITY.get(),
+                provider -> new ThrownItemRenderer<>(provider, 1.5F, true));
+        // No layer to register: the beam is raw additive quads, not a model.
+        event.registerEntityRenderer(DungeonsEntities.ANNIHILATION_RAY_ENTITY.get(),
+                AnnihilationRayRenderer::new);
+
+        // ChestBlock renders as ENTITYBLOCK_ANIMATED, so without this the Mining Chest
+        // is invisible in the world.
+        event.registerBlockEntityRenderer(DungeonsBlockEntities.MINING_CHEST.get(), MiningChestRenderer::new);
+    }
+
+    private ClientSetup() {}
+}

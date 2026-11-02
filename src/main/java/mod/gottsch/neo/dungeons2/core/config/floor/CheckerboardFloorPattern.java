@@ -1,0 +1,87 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
+package mod.gottsch.neo.dungeons2.core.config.floor;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import mod.gottsch.neo.dungeons2.core.config.Codecs;
+import mod.gottsch.neo.dungeons2.core.config.FloorConfig;
+import mod.gottsch.neo.dungeons2.core.generator.dungeon.room.floor.CheckerboardFloorPatternProvider;
+import mod.gottsch.neo.dungeons2.core.generator.dungeon.room.floor.IDungeonFloorGenerator;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+
+/** Regular alternation of two blocks, a pure function of {@code (x, z)}. Both blocks required. */
+public record CheckerboardFloorPattern(String primaryBlock, String secondaryBlock)
+        implements FloorPattern, CellLocalFloorPattern {
+
+    public static final String NAME = "checkerboard";
+
+    /** See {@link FloorPattern#withRoles}. */
+    @Override
+    public FloorPattern withRoles(java.util.function.UnaryOperator<String> resolver) {
+        String resolvedPrimaryBlock = Codecs.resolveRole(primaryBlock, resolver);
+        String resolvedSecondaryBlock = Codecs.resolveRole(secondaryBlock, resolver);
+        if (resolvedPrimaryBlock.equals(primaryBlock)
+                && resolvedSecondaryBlock.equals(secondaryBlock)) {
+            return this;
+        }
+        return new CheckerboardFloorPattern(resolvedPrimaryBlock, resolvedSecondaryBlock);
+    }
+
+
+    public static final MapCodec<CheckerboardFloorPattern> CODEC = Codecs.closedMap(
+            RecordCodecBuilder.mapCodec(instance -> instance.group(
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("primary_block").forGetter(CheckerboardFloorPattern::primaryBlock),
+                    Codecs.BLOCK_ID_OR_ROLE.fieldOf("secondary_block").forGetter(CheckerboardFloorPattern::secondaryBlock)
+            ).apply(instance, CheckerboardFloorPattern::new)));
+
+    @Override
+    public MapCodec<? extends FloorPattern> codec() {
+        return CODEC;
+    }
+
+    /**
+     * Cell-local, but on WORLD coordinates rather than the room-local ones the room provider uses
+     * -- see {@link CellLocalFloorPattern}. In a corridor that keeps the phase continuous along the
+     * whole run instead of restarting at each segment.
+     */
+    @Override
+    public CellFloor cellFloor() {
+        Block primary = FloorPatterns.block(primaryBlock);
+        Block secondary = FloorPatterns.block(secondaryBlock);
+        if (!FloorPatterns.allResolve(primary, secondary)) {
+            return null;
+        }
+        BlockState primaryState = primary.defaultBlockState();
+        BlockState secondaryState = secondary.defaultBlockState();
+        // floorMod, not %: a corridor runs into negative coordinates, where % would flip the phase
+        // at the origin and leave a visible seam there.
+        return (x, z, random) -> Math.floorMod(x + z, 2) == 0 ? primaryState : secondaryState;
+    }
+
+    @Override
+    public IDungeonFloorGenerator generator(FloorConfig config) {
+        Block primary = FloorPatterns.block(primaryBlock);
+        Block secondary = FloorPatterns.block(secondaryBlock);
+        return FloorPatterns.allResolve(primary, secondary)
+                ? new CheckerboardFloorPatternProvider(primary, secondary)
+                : PlainFloorPattern.INSTANCE.generator(config);
+    }
+}

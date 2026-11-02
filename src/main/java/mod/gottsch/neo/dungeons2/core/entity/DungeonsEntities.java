@@ -1,0 +1,931 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
+package mod.gottsch.neo.dungeons2.core.entity;
+
+import mod.gottsch.neo.dungeons2.core.setup.Registration;
+import mod.gottsch.neo.gmm.core.entity.monster.AlligatorGar;
+import mod.gottsch.neo.gmm.core.entity.monster.Leech;
+import mod.gottsch.neo.gmm.core.entity.monster.BlackPudding;
+import mod.gottsch.neo.gmm.core.entity.monster.beholderkin.Beholder;
+import mod.gottsch.neo.gmm.core.entity.monster.mimic.BarrelMimic;
+import mod.gottsch.neo.gmm.core.entity.monster.mimic.VanillaChestMimic;
+import mod.gottsch.neo.gmm.core.entity.monster.beholderkin.DeathTyrant;
+import mod.gottsch.neo.gmm.core.entity.monster.beholderkin.Spectator;
+import mod.gottsch.neo.gmm.core.entity.monster.Daemon;
+import mod.gottsch.neo.gmm.core.entity.monster.GelatinousCube;
+import mod.gottsch.neo.gmm.core.entity.monster.GrayOoze;
+import mod.gottsch.neo.gmm.core.entity.monster.OchreJelly;
+import mod.gottsch.neo.gmm.core.entity.monster.Minotaur;
+import mod.gottsch.neo.gmm.core.entity.monster.Orc;
+import mod.gottsch.neo.gmm.core.entity.monster.StoneColossus;
+import mod.gottsch.neo.gmm.core.entity.monster.gargoyle.Gargoyle;
+import mod.gottsch.neo.gmm.core.entity.monster.OrcShaman;
+import mod.gottsch.neo.dungeons2.core.entity.projectile.AnnihilationRay;
+import mod.gottsch.neo.dungeons2.core.entity.projectile.Boulder;
+import mod.gottsch.neo.dungeons2.core.entity.projectile.SmashShard;
+import mod.gottsch.neo.gmm.core.entity.monster.OrcWarlord;
+import mod.gottsch.neo.gmm.core.entity.monster.construct.AnimatedArmor;
+import mod.gottsch.neo.gmm.core.entity.monster.construct.AnimatedWeapon;
+import mod.gottsch.neo.gmm.core.entity.monster.gargoyle.Margoyle;
+import mod.gottsch.neo.gmm.core.entity.monster.ghoul.Ghoul;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.AcidSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.BloodyBones;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.BurningSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.ElectricSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.IronSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.MagmaSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.SkeletonChampion;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.SkeletonWarrior;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.TaintedSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.skeleton.WingedSkeleton;
+import mod.gottsch.neo.gmm.core.entity.monster.zombie.Bloater;
+import mod.gottsch.neo.gmm.core.entity.monster.zombie.Bodak;
+import mod.gottsch.neo.gmm.core.entity.monster.zombie.GraveZombie;
+import mod.gottsch.neo.gmm.core.entity.monster.zombie.Wight;
+import mod.gottsch.neo.gmm.core.entity.projectile.BloaterArm;
+import mod.gottsch.neo.gmm.core.entity.projectile.BoneShard;
+import mod.gottsch.neo.gmm.core.entity.projectile.DisarmSpell;
+import mod.gottsch.neo.gmm.core.entity.projectile.DisintegrateSpell;
+import mod.gottsch.neo.gmm.core.entity.projectile.HarmSpell;
+import mod.gottsch.neo.gmm.core.entity.projectile.ParalysisSpell;
+import mod.gottsch.neo.gmm.core.entity.projectile.Rock;
+import mod.gottsch.neo.gmm.core.entity.projectile.FireSpoutSpell;
+import mod.gottsch.neo.gmm.core.entity.projectile.SpikeGrowthSpell;
+import mod.gottsch.neo.gmm.core.entity.projectile.WitheringGazeSpell;
+import mod.gottsch.neo.gmm.core.entity.monster.Rat;
+import mod.gottsch.neo.gmm.core.entity.monster.plant.Shrieker;
+import mod.gottsch.neo.gmm.core.entity.monster.plant.VioletFungus;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Monster;
+import net.neoforged.neoforge.registries.DeferredHolder;
+
+/**
+ * The dungeon's mobs.
+ *
+ * <h2>GMM is a library; this mod does the registering</h2>
+ * <p>gottsch's Monster Manual ships the mob classes, models, renderers and textures and
+ * <strong>registers nothing</strong> &mdash; that is the design, not an omission. The consuming mod
+ * registers what it wants under its own namespace, which is why these are {@code dungeons2:rat} and
+ * {@code dungeons2:giant_rat} rather than {@code gmm:} ids. {@code Dungeon-Denizens} and
+ * {@code Village-Dungeons} are the other two consumers; the shape below follows Village Dungeons,
+ * which is the most recent.</p>
+ *
+ * <h2>Why the giant rat is not a subclass</h2>
+ * <p>A subclass buys nothing here. The giant rat differs from the rat in exactly two ways &mdash;
+ * how big its hitbox is and how hard it hits &mdash; and both are data on the {@link EntityType} and
+ * the {@link AttributeSupplier}, not behaviour. Village Dungeons registers its own giant rat the
+ * same way, on {@code Rat::new}; it subclasses only where behaviour actually changes (its
+ * {@code InfectedRat} overrides {@code doHurtTarget} to apply poison and {@code canBeAffected} to be
+ * immune to it). <strong>Subclass when there is behaviour to override, not to make a variant.</strong>
+ * Giving the giant rat its own goals later is the point at which that changes.</p>
+ *
+ * @author Mark Gottschling on Aug 13, 2026
+ */
+public class DungeonsEntities {
+
+    public static final String RAT = "rat";
+    public static final String GIANT_RAT = "giant_rat";
+
+    /**
+     * GMM's rat at its own size. {@code Rat.WIDTH} (0.8) is deliberately wider than the model so
+     * that a player can actually hit something this flat &mdash; do not "correct" it to match the
+     * art.
+     */
+    public static final DeferredHolder<EntityType<Rat>> RAT_ENTITY =
+            Registration.ENTITIES.register(RAT,
+                    () -> EntityType.Builder.of(Rat::new, MobCategory.MONSTER)
+                            .sized(Rat.WIDTH, Rat.HEIGHT)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(true)
+                            .build(RAT));
+
+    /**
+     * Twice the height, and rendered at twice the scale (see {@code ClientSetup}).
+     *
+     * <p><strong>The hitbox and the render scale are two independent numbers</strong> and have to be
+     * kept in step by hand; a mismatch is the classic giant-mob bug, where the model clips through
+     * walls or the hitbox cannot be hit. The width is left alone because it is already over-sized
+     * for hittability.</p>
+     *
+     * <p>0.8 x 0.5 fits the narrowest corridor a datapack can configure (width 1, height 5), so this
+     * cannot wedge in a passage.</p>
+     */
+    public static final DeferredHolder<EntityType<Rat>> GIANT_RAT_ENTITY =
+            Registration.ENTITIES.register(GIANT_RAT,
+                    () -> EntityType.Builder.of(Rat::new, MobCategory.MONSTER)
+                            .sized(Rat.WIDTH, Rat.HEIGHT * 2)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(true)
+                            .build(GIANT_RAT));
+
+    public static final String SHRIEKER = "shrieker";
+    public static final String VIOLET_FUNGUS = "violet_fungus";
+
+    /**
+     * The fungi, placed by the weathering pass rather than spawned (see {@code FungusGrowth}).
+     *
+     * <h2>They are mobs that behave like plants, and that is the whole reason they fit here</h2>
+     * <p>Both are {@code GMMMonster}s, but neither moves: they root themselves on spawn and never
+     * path. That is what makes them placeable as <em>growth</em> — a tuft of something on a patch of
+     * decayed dirt — where an ordinary monster would wander off the cell that justified it.</p>
+     *
+     * <h2>Sized from Dungeon Denizens, deliberately</h2>
+     * <p>{@code 1.3 x 0.85} is the box DD arrived at from the rebuilt Blockbench rig, and it is
+     * <strong>wider than one block</strong> on purpose. That matters here in a way it does not in a
+     * cave: growth lands on any dirt cell, including one against a wall, so a fungus can visually
+     * overlap the wall beside it. That is cosmetic — these have no collision to speak of and no AI
+     * to get stuck — and narrowing the box to fit the grid would make the hitbox disagree with the
+     * model, which is the worse bug of the two. Keep them in step with GMM if DD re-sizes.</p>
+     *
+     * <p>Registered here rather than depended upon: {@code ddenizens} already registers both, but
+     * D2 does not depend on it and the dungeon's monsters are its own — the same call the rat and giant rat made
+     * for the rats. GMM is already a mandatory dependency, so this costs nothing new.</p>
+     */
+    public static final DeferredHolder<EntityType<Shrieker>> SHRIEKER_ENTITY =
+            Registration.ENTITIES.register(SHRIEKER,
+                    () -> EntityType.Builder.of(Shrieker::new, MobCategory.MONSTER)
+                            .sized(1.3F, 0.85F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SHRIEKER));
+
+    /** See {@link #SHRIEKER_ENTITY}; GMM currently shares the shrieker's rig for this one. */
+    public static final DeferredHolder<EntityType<VioletFungus>> VIOLET_FUNGUS_ENTITY =
+            Registration.ENTITIES.register(VIOLET_FUNGUS,
+                    () -> EntityType.Builder.of(VioletFungus::new, MobCategory.MONSTER)
+                            .sized(1.3F, 0.85F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(VIOLET_FUNGUS));
+
+    /**
+     * GMM's skeleton family &mdash; eleven of them, not twelve.
+     *
+     * <p>{@code BowSkeleton} looks like one of them in the package listing and is
+     * <strong>abstract</strong>: it is the ranged base class the Iron and Magma skeletons extend,
+     * not a mob. Registering it would not compile, which is the only reason that mistake cannot be
+     * made silently here.</p>
+     *
+     * <p>Deliberate: GMM's {@code FrostSkeleton} is absent, because it is cold-themed
+     * and the classic motif is not, so it waits for an ice motif to belong to. A different kind of
+     * exclusion from the mini-bosses below &mdash; those are held back until their placement is
+     * designed, this one until there is somewhere for it to fit.</p>
+     *
+     * <p>Sizes, tracking ranges and {@code fireImmune} are Dungeon Denizens' numbers verbatim. They
+     * are not arbitrary &mdash; each was fitted to its rebuilt Blockbench rig &mdash; and the same
+     * mob should read the same in any pack carrying both mods.</p>
+     */
+    public static final String SKELETON_WARRIOR = "skeleton_warrior";
+    public static final String WINGED_SKELETON = "winged_skeleton";
+    public static final String IRON_SKELETON = "iron_skeleton";
+    public static final String MAGMA_SKELETON = "magma_skeleton";
+    public static final String TAINTED_SKELETON = "tainted_skeleton";
+    public static final String ACID_SKELETON = "acid_skeleton";
+    public static final String ELECTRIC_SKELETON = "electric_skeleton";
+    public static final String BURNING_SKELETON = "burning_skeleton";
+    public static final String BLOODY_BONES = "bloody_bones";
+    public static final String SKELETON_CHAMPION = "skeleton_champion";
+
+    public static final DeferredHolder<EntityType<SkeletonWarrior>> SKELETON_WARRIOR_ENTITY =
+            Registration.ENTITIES.register(SKELETON_WARRIOR,
+                    () -> EntityType.Builder.of(SkeletonWarrior::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SKELETON_WARRIOR));
+
+    public static final DeferredHolder<EntityType<WingedSkeleton>> WINGED_SKELETON_ENTITY =
+            Registration.ENTITIES.register(WINGED_SKELETON,
+                    () -> EntityType.Builder.of(WingedSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.75F, 1.95F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(WINGED_SKELETON));
+
+    public static final DeferredHolder<EntityType<IronSkeleton>> IRON_SKELETON_ENTITY =
+            Registration.ENTITIES.register(IRON_SKELETON,
+                    () -> EntityType.Builder.of(IronSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.63F, 2.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(IRON_SKELETON));
+
+    public static final DeferredHolder<EntityType<MagmaSkeleton>> MAGMA_SKELETON_ENTITY =
+            Registration.ENTITIES.register(MAGMA_SKELETON,
+                    () -> EntityType.Builder.of(MagmaSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.63F, 2.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(MAGMA_SKELETON));
+
+
+    public static final DeferredHolder<EntityType<TaintedSkeleton>> TAINTED_SKELETON_ENTITY =
+            Registration.ENTITIES.register(TAINTED_SKELETON,
+                    () -> EntityType.Builder.of(TaintedSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.7F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(TAINTED_SKELETON));
+
+    public static final DeferredHolder<EntityType<AcidSkeleton>> ACID_SKELETON_ENTITY =
+            Registration.ENTITIES.register(ACID_SKELETON,
+                    () -> EntityType.Builder.of(AcidSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ACID_SKELETON));
+
+    public static final DeferredHolder<EntityType<ElectricSkeleton>> ELECTRIC_SKELETON_ENTITY =
+            Registration.ENTITIES.register(ELECTRIC_SKELETON,
+                    () -> EntityType.Builder.of(ElectricSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ELECTRIC_SKELETON));
+
+    public static final DeferredHolder<EntityType<BurningSkeleton>> BURNING_SKELETON_ENTITY =
+            Registration.ENTITIES.register(BURNING_SKELETON,
+                    () -> EntityType.Builder.of(BurningSkeleton::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(BURNING_SKELETON));
+
+    public static final DeferredHolder<EntityType<BloodyBones>> BLOODY_BONES_ENTITY =
+            Registration.ENTITIES.register(BLOODY_BONES,
+                    () -> EntityType.Builder.of(BloodyBones::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BLOODY_BONES));
+
+    public static final DeferredHolder<EntityType<SkeletonChampion>> SKELETON_CHAMPION_ENTITY =
+            Registration.ENTITIES.register(SKELETON_CHAMPION,
+                    () -> EntityType.Builder.of(SkeletonChampion::new, MobCategory.MONSTER)
+                            .sized(0.72F, 2.39F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SKELETON_CHAMPION));
+
+    /**
+     * The zombie family. Three of the four are registered but never spawned &mdash; see
+     * {@link #MINI_BOSSES}.
+     */
+    public static final String BLOATER = "bloater";
+    public static final String GRAVE_ZOMBIE = "grave_zombie";
+    public static final String WIGHT = "wight";
+    public static final String BODAK = "bodak";
+
+    public static final DeferredHolder<EntityType<Bloater>> BLOATER_ENTITY =
+            Registration.ENTITIES.register(BLOATER,
+                    () -> EntityType.Builder.of(Bloater::new, MobCategory.MONSTER)
+                            .sized(0.7F, 2.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BLOATER));
+
+    public static final DeferredHolder<EntityType<GraveZombie>> GRAVE_ZOMBIE_ENTITY =
+            Registration.ENTITIES.register(GRAVE_ZOMBIE,
+                    () -> EntityType.Builder.of(GraveZombie::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GRAVE_ZOMBIE));
+
+    public static final DeferredHolder<EntityType<Wight>> WIGHT_ENTITY =
+            Registration.ENTITIES.register(WIGHT,
+                    () -> EntityType.Builder.of(Wight::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(WIGHT));
+
+    public static final DeferredHolder<EntityType<Bodak>> BODAK_ENTITY =
+            Registration.ENTITIES.register(BODAK,
+                    () -> EntityType.Builder.of(Bodak::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.95F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BODAK));
+
+    /**
+     * The Beholder-kin. Registered but never spawned ambiently &mdash; see {@link #MINI_BOSSES}.
+     * Dimensions/tracking match Dungeon Denizens' own registration exactly.
+     */
+    public static final String BEHOLDER = "beholder";
+    public static final String DEATH_TYRANT = "death_tyrant";
+
+    public static final DeferredHolder<EntityType<Beholder>> BEHOLDER_ENTITY =
+            Registration.ENTITIES.register(BEHOLDER,
+                    () -> EntityType.Builder.of(Beholder::new, MobCategory.MONSTER)
+                            .sized(2.25F, 3.5F)
+                            .clientTrackingRange(8)
+                            .setTrackingRange(20)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(BEHOLDER));
+
+    public static final DeferredHolder<EntityType<DeathTyrant>> DEATH_TYRANT_ENTITY =
+            Registration.ENTITIES.register(DEATH_TYRANT,
+                    () -> EntityType.Builder.of(DeathTyrant::new, MobCategory.MONSTER)
+                            .sized(2.25F, 3.5F)
+                            .clientTrackingRange(8)
+                            .setTrackingRange(20)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(DEATH_TYRANT));
+
+    /** The Beholder-kin's weakest member -- a common summon target, not a boss in its own right. */
+    public static final String SPECTATOR = "spectator";
+
+    public static final DeferredHolder<EntityType<Spectator>> SPECTATOR_ENTITY =
+            Registration.ENTITIES.register(SPECTATOR,
+                    () -> EntityType.Builder.of(Spectator::new, MobCategory.MONSTER)
+                            .sized(0.84375F, 1.21875F)
+                            .clientTrackingRange(8)
+                            .setTrackingRange(20)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SPECTATOR));
+
+    /**
+     * Registered but never spawned ambiently, like the other four -- see {@link #MINI_BOSSES}. Also
+     * the rare summon both Beholder and DeathTyrant can call in.
+     */
+    public static final String DAEMON = "daemon";
+
+    public static final DeferredHolder<EntityType<Daemon>> DAEMON_ENTITY =
+            Registration.ENTITIES.register(DAEMON,
+                    () -> EntityType.Builder.of(Daemon::new, MobCategory.MONSTER)
+                            .sized(1F, 3F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
+                            .build(DAEMON));
+
+    /**
+     * The ghoul. GMM's {@code SewerGhoul} is deliberately absent: Mark is reserving it for a Sewer
+     * dungeon mod, and a mob that appears in two of his mods under two ids is a mob players will
+     * report as a duplicate.
+     */
+    public static final String GHOUL = "ghoul";
+
+    public static final DeferredHolder<EntityType<Ghoul>> GHOUL_ENTITY =
+            Registration.ENTITIES.register(GHOUL,
+                    () -> EntityType.Builder.of(Ghoul::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.68F)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .setTrackingRange(20)
+                            .build(GHOUL));
+
+    /**
+     * The oozes. Cubic hitboxes, and all four are slow &mdash; they are a corridor problem rather
+     * than a chase, which is what makes them read as a dungeon hazard.
+     */
+    public static final String GELATINOUS_CUBE = "gelatinous_cube";
+    public static final String OCHRE_JELLY = "ochre_jelly";
+    public static final String GRAY_OOZE = "gray_ooze";
+    public static final String BLACK_PUDDING = "black_pudding";
+
+    public static final DeferredHolder<EntityType<GelatinousCube>> GELATINOUS_CUBE_ENTITY =
+            Registration.ENTITIES.register(GELATINOUS_CUBE,
+                    () -> EntityType.Builder.of(GelatinousCube::new, MobCategory.MONSTER)
+                            .sized(1.1F, 1.1F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GELATINOUS_CUBE));
+
+    public static final DeferredHolder<EntityType<OchreJelly>> OCHRE_JELLY_ENTITY =
+            Registration.ENTITIES.register(OCHRE_JELLY,
+                    () -> EntityType.Builder.of(OchreJelly::new, MobCategory.MONSTER)
+                            .sized(0.85F, 0.85F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(OCHRE_JELLY));
+
+    public static final DeferredHolder<EntityType<GrayOoze>> GRAY_OOZE_ENTITY =
+            Registration.ENTITIES.register(GRAY_OOZE,
+                    () -> EntityType.Builder.of(GrayOoze::new, MobCategory.MONSTER)
+                            .sized(0.9F, 0.9F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GRAY_OOZE));
+
+    public static final DeferredHolder<EntityType<BlackPudding>> BLACK_PUDDING_ENTITY =
+            Registration.ENTITIES.register(BLACK_PUDDING,
+                    () -> EntityType.Builder.of(BlackPudding::new, MobCategory.MONSTER)
+                            .sized(0.9F, 0.9F)
+                            .clientTrackingRange(15)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BLACK_PUDDING));
+
+    /** Constructs, the margoyle, and the orcs. */
+    public static final String ANIMATED_ARMOR = "animated_armor";
+    public static final String ANIMATED_WEAPON = "animated_weapon";
+    public static final String GARGOYLE = "gargoyle";
+    public static final String MARGOYLE = "margoyle";
+    public static final String MINOTAUR = "minotaur";
+    public static final String ORC = "orc";
+    public static final String ORC_SHAMAN = "orc_shaman";
+    /**
+     * The large tier's bruiser boss. Dormant scenery until approached, and big enough that it
+     * never leaves the room it wakes in -- see the Stone Colossus plan.
+     */
+    public static final String STONE_COLOSSUS = "stone_colossus";
+    /**
+     * The warband's chief. A mini-boss like the Champion it is modelled on -- registered, egg-able,
+     * and reachable only through the boss room's spawner marker, never ambiently. See
+     * {@link #MINI_BOSSES}.
+     */
+    public static final String ORC_WARLORD = "orc_warlord";
+
+    /**
+     * The two mimics. Registered, egg-able and <strong>in no mob set and no spawn
+     * override</strong> &mdash; a mimic exists only where a container would have been, so the swap
+     * that puts one there is the only route in. Naming one in a mob set would put a chest-shaped
+     * ambush in the middle of a floor with no chest anywhere near it, which reads as a bug.
+     */
+    public static final String VANILLA_CHEST_MIMIC = "vanilla_chest_mimic";
+    /** See {@link #VANILLA_CHEST_MIMIC}. */
+    public static final String BARREL_MIMIC = "barrel_mimic";
+
+    /**
+     * Dungeon Denizens' dimensions verbatim (1x1), so the same mob reads the same in a pack
+     * carrying both -- and because a mimic that is not exactly a block wide gives itself away
+     * standing next to a real chest, which is the entire point of the disguise.
+     */
+    public static final DeferredHolder<EntityType<VanillaChestMimic>> VANILLA_CHEST_MIMIC_ENTITY =
+            Registration.ENTITIES.register(VANILLA_CHEST_MIMIC,
+                    () -> EntityType.Builder.of(VanillaChestMimic::new, MobCategory.MONSTER)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(VANILLA_CHEST_MIMIC));
+
+    /** See {@link #VANILLA_CHEST_MIMIC_ENTITY}; the same base disguised as a barrel. */
+    public static final DeferredHolder<EntityType<BarrelMimic>> BARREL_MIMIC_ENTITY =
+            Registration.ENTITIES.register(BARREL_MIMIC,
+                    () -> EntityType.Builder.of(BarrelMimic::new, MobCategory.MONSTER)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(BARREL_MIMIC));
+
+    public static final DeferredHolder<EntityType<AnimatedArmor>> ANIMATED_ARMOR_ENTITY =
+            Registration.ENTITIES.register(ANIMATED_ARMOR,
+                    () -> EntityType.Builder.of(AnimatedArmor::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.99F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ANIMATED_ARMOR));
+
+    /**
+     * The masterless blade. Unlike the {@link #ANIMATED_ARMOR_ENTITY} beside it this one has no
+     * wielder to pose as, so it has no dormant/ambush state and reads as an ordinary hostile --
+     * it is in the procedural and ambient routes both, not held back like the mini-bosses.
+     *
+     * <p>0.75 cubed rather than the sword-sized 0.5 the model actually measures: Dungeon Denizens
+     * shipped the smaller box first and it combined with the erratic hover into an unreasonably
+     * small click target. Transcribed from that mod's {@code ANIMATED_WEAPON_TYPE}.</p>
+     */
+    public static final DeferredHolder<EntityType<AnimatedWeapon>> ANIMATED_WEAPON_ENTITY =
+            Registration.ENTITIES.register(ANIMATED_WEAPON,
+                    () -> EntityType.Builder.of(AnimatedWeapon::new, MobCategory.MONSTER)
+                            .sized(0.75F, 0.75F)
+                            .clientTrackingRange(10)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ANIMATED_WEAPON));
+
+    /**
+     * The margoyle's smaller kin, and the reason {@code gargoyles.json} could not resolve: that set
+     * has named {@code dungeons2:gargoyle} since it was written, but nothing registered it, so the
+     * spawner rolled an id that was not there -- spawning nothing and logging nothing. Transcribed
+     * from Dungeon Denizens' {@code GARGOYLE_TYPE}, as the margoyle beside it was.
+     */
+    public static final DeferredHolder<EntityType<Gargoyle>> GARGOYLE_ENTITY =
+            Registration.ENTITIES.register(GARGOYLE,
+                    () -> EntityType.Builder.of(Gargoyle::new, MobCategory.MONSTER)
+                            .sized(0.75F, 1.75F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GARGOYLE));
+
+    public static final DeferredHolder<EntityType<Margoyle>> MARGOYLE_ENTITY =
+            Registration.ENTITIES.register(MARGOYLE,
+                    () -> EntityType.Builder.of(Margoyle::new, MobCategory.MONSTER)
+                            .sized(0.9F, 2.1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(MARGOYLE));
+
+    /**
+     * The height GMM's Minotaur rig was authored at, feet to horn tips. Transcribed from Dungeon
+     * Denizens' {@code MINOTAUR_TYPE}, and the baseline {@link #MINOTAUR_MODEL_SCALE} measures
+     * against -- NOT the size this mod renders it at.
+     */
+    public static final float MINOTAUR_RIG_HEIGHT = 2.2F;
+
+    /**
+     * How tall the Minotaur actually stands here (Mark, 2026-09-09: "slightly bigger, but less than
+     * 3 blocks tall").
+     *
+     * <p><strong>Under 3 is a hard ceiling, not a preference.</strong> Corridors are 7 high and
+     * rooms 5 to 10, so headroom is not the constraint -- but a mob needs its full height in clear
+     * blocks to path, and this is already over the 2 blocks a doorway opens (see
+     * {@code BasicDoorGenerator}: sill, two open rows, lintel). Going past 3 would start costing
+     * clearance the dungeon does not have anywhere.</p>
+     */
+    public static final float MINOTAUR_HEIGHT = 2.6F;
+
+    /**
+     * Applied by {@code ScaledMinotaurRenderer}. DERIVED so the model and the hitbox cannot drift:
+     * change {@link #MINOTAUR_HEIGHT} and the render follows.
+     */
+    public static final float MINOTAUR_MODEL_SCALE = MINOTAUR_HEIGHT / MINOTAUR_RIG_HEIGHT;
+
+    /**
+     * 1.0 wide rather than the ~1.25 the shoulders and horns measure: a hitbox over 1.0 cannot path
+     * a 1-block corridor, and a dungeon brute
+     * that cannot follow the player down a hallway is not a threat. <strong>The width does not
+     * scale with the height</strong> for that reason -- {@link #MINOTAUR_MODEL_SCALE} widens the
+     * rig and this stays at 1.0, which widens a gap that already existed rather than creating one.
+     *
+     * <p>On {@link #MINI_BOSSES} pending a placement decision -- registered and egg-able, in neither
+     * spawner route.</p>
+     */
+    public static final DeferredHolder<EntityType<Minotaur>> MINOTAUR_ENTITY =
+            Registration.ENTITIES.register(MINOTAUR,
+                    () -> EntityType.Builder.of(Minotaur::new, MobCategory.MONSTER)
+                            .sized(1.0F, MINOTAUR_HEIGHT)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(MINOTAUR));
+
+    /**
+     * The height the Stone Colossus rig was authored at: 44 model pixels, feet to the top of the
+     * helmet. The baseline {@link #STONE_COLOSSUS_MODEL_SCALE} measures against -- NOT the size
+     * this mod draws it at.
+     */
+    public static final float STONE_COLOSSUS_RIG_HEIGHT = 2.75F;
+
+    /**
+     * Seven blocks, and the whole design rests on it. A doorway is two clear blocks
+     * ({@code BasicDoorGenerator}: sill, two open rows, lintel) and a corridor leaves four, so
+     * <strong>nothing this tall walks out of the room it wakes in</strong> -- which is why the
+     * colossus is an arena boss that breaks the doorway rather than a pursuer.
+     *
+     * <p>Its eyes sit at 0.85 x this, ~5.95, well above a two-block doorway: a player standing in
+     * the doorway can see its legs while it cannot see them. That blind spot is what the wall
+     * burst exists to answer; if this height changes, re-check that reasoning.</p>
+     */
+    public static final float STONE_COLOSSUS_HEIGHT = 7.0F;
+
+    /**
+     * Applied by {@code ScaledStoneColossusRenderer}. DERIVED so the model and the hitbox cannot
+     * drift: change {@link #STONE_COLOSSUS_HEIGHT} and the render follows.
+     */
+    public static final float STONE_COLOSSUS_MODEL_SCALE =
+            STONE_COLOSSUS_HEIGHT / STONE_COLOSSUS_RIG_HEIGHT;
+
+    /**
+     * 1.8 wide against a rig that measures ~1.91 across the shoulders -- the same
+     * rig-wider-than-box relationship the {@link #MINOTAUR_ENTITY} has, and for the same reason:
+     * the box is what the mob has to fit through, not what it looks like. At 1.8 the opening the
+     * wall burst carves is 2 block columns (3 when it straddles a boundary), and vanilla melee
+     * reach, which scales with width, comes out around 3.6 blocks.
+     *
+     * <p>On {@link #MINI_BOSSES}: reachable through a boss room's spawner marker, never ambiently.</p>
+     */
+    public static final float STONE_COLOSSUS_WIDTH = 1.8F;
+
+    public static final DeferredHolder<EntityType<StoneColossus>> STONE_COLOSSUS_ENTITY =
+            Registration.ENTITIES.register(STONE_COLOSSUS,
+                    () -> EntityType.Builder.of(StoneColossus::new, MobCategory.MONSTER)
+                            .sized(STONE_COLOSSUS_WIDTH, STONE_COLOSSUS_HEIGHT)
+                            .clientTrackingRange(16)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(STONE_COLOSSUS));
+
+    /**
+     * Under 1.0, NOT 1.0. Vanilla paths a mob as {@code floor(width + 1)} cells wide, so a 1.0-wide
+     * orc is planned as 2 wide and stalls short of a 1-cell doorway -- it can neither walk through
+     * nor reach the door to break it. 0.9 paths as 1 wide. Shared by the whole
+     * warband: the Orc, the Orc Warlord and the Orc Shaman.
+     */
+    public static final float ORC_WIDTH = 0.9F;
+
+    public static final DeferredHolder<EntityType<Orc>> ORC_ENTITY =
+            Registration.ENTITIES.register(ORC,
+                    () -> EntityType.Builder.of(Orc::new, MobCategory.MONSTER)
+                            .sized(ORC_WIDTH, 1.99F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ORC));
+
+    /**
+     * Sized as an Orc, NOT 1.2x. The 1.2x is a RENDER scale in {@code OrcWarlordRenderer}; growing
+     * the hitbox to match would wedge the chief in the doorways his own warband walks through, and
+     * a boss that cannot leave its room is worse than one that looks slightly small for its
+     * silhouette. Same call {@code SkeletonChampion} makes.
+     */
+    public static final DeferredHolder<EntityType<OrcWarlord>> ORC_WARLORD_ENTITY =
+            Registration.ENTITIES.register(ORC_WARLORD,
+                    () -> EntityType.Builder.of(OrcWarlord::new, MobCategory.MONSTER)
+                            .sized(ORC_WIDTH, 1.99F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ORC_WARLORD));
+
+    public static final DeferredHolder<EntityType<OrcShaman>> ORC_SHAMAN_ENTITY =
+            Registration.ENTITIES.register(ORC_SHAMAN,
+                    () -> EntityType.Builder.of(OrcShaman::new, MobCategory.MONSTER)
+                            .sized(ORC_WIDTH, 1.99F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ORC_SHAMAN));
+
+    public static final String ALLIGATOR_GAR = "alligator_gar";
+
+    /**
+     * A water ambush predator, for the water rooms Mark is authoring (2026-08-31).
+     *
+     * <p>The only mob in this roster that is not registered {@code ON_GROUND} &mdash; see
+     * {@code CommonSetup}. Flat and wide rather than tall: {@code 0.6 x 0.4} is a fish lying in
+     * water, and like the rat's box it is wider than the art so that a player can hit something
+     * that low. {@code setTrackingRange(20)} is GMM's own value and is what lets it notice a player
+     * across a flooded room rather than only at the water's edge.</p>
+     */
+    public static final DeferredHolder<EntityType<AlligatorGar>> ALLIGATOR_GAR_ENTITY =
+            Registration.ENTITIES.register(ALLIGATOR_GAR,
+                    () -> EntityType.Builder.of(AlligatorGar::new, MobCategory.MONSTER)
+                            .sized(0.6F, 0.4F)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .setTrackingRange(20)
+                            .build(ALLIGATOR_GAR));
+
+    public static final String LEECH = "leech";
+    public static final String GIANT_LEECH = "giant_leech";
+
+    /**
+     * The second water mob (2026-10-25): it attaches to a player who wades in and stops them healing
+     * until it comes off. Registered like the gar ({@code IN_WATER} in {@code CommonSetup}).
+     *
+     * <p>Two tiers of one class, the rat / giant rat way. {@code Leech.tier()} reads the tier back off
+     * the registered height, so {@code HEIGHT * 2} is not cosmetic here: it is what makes the giant
+     * ignore armour, drain and slow. The width stays {@code Leech.WIDTH}; the swimming box is GMM's.</p>
+     */
+    public static final DeferredHolder<EntityType<Leech>> LEECH_ENTITY =
+            Registration.ENTITIES.register(LEECH,
+                    () -> EntityType.Builder.of(Leech::new, MobCategory.MONSTER)
+                            .sized(Leech.WIDTH, Leech.HEIGHT)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(LEECH));
+
+    /** Rendered at 2x in {@code ClientSetup} -- keep that in step with this {@code sized(...)}. */
+    public static final DeferredHolder<EntityType<Leech>> GIANT_LEECH_ENTITY =
+            Registration.ENTITIES.register(GIANT_LEECH,
+                    () -> EntityType.Builder.of(Leech::new, MobCategory.MONSTER)
+                            .sized(Leech.WIDTH, Leech.HEIGHT * 2)
+                            .clientTrackingRange(8)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(GIANT_LEECH));
+
+    /**
+     * The projectiles and spells the roster's mobs throw &mdash; and the reason they have to be here.
+     *
+     * <h2>A GMM mob's ranged attack is opt-in, and silently absent if you skip it</h2>
+     * <p>Several of the mobs above carry a {@code public static} hook GMM leaves null: {@code Orc
+     * .projectileLauncher}, {@code OrcShaman}/{@code Bodak}/{@code Beholder}/{@code DeathTyrant}/
+     * {@code Spectator.spellCaster}, {@code Daemon.fireSpoutLauncher},
+     * {@code BloodyBones}/{@code TaintedSkeleton.shardFactory}, {@code Bloater.armFactory}. Each is
+     * guarded by a null check, so a consumer that registers the
+     * mob and stops there gets a mob that <strong>compiles, spawns, renders and never uses its
+     * signature attack</strong> &mdash; no warning, no crash. The same library-registers-nothing
+     * design as the mobs themselves, one level down, and far easier to miss.</p>
+     *
+     * <p>So these entity types exist to give those hooks something to throw; {@code CommonSetup}
+     * wires them. {@code MobCategory.MISC}: they are projectiles, and putting them in MONSTER would
+     * enter them into the mob cap.</p>
+     */
+    public static final String BONE_SHARD = "bone_shard";
+    public static final String BLOATER_ARM = "bloater_arm";
+    public static final String SMASH_SHARD = "smash_shard";
+    public static final String BOULDER = "boulder";
+    public static final String ROCK = "rock";
+    public static final String SPIKE_GROWTH_SPELL = "spike_growth_spell";
+    public static final String WITHERING_GAZE_SPELL = "withering_gaze_spell";
+    public static final String PARALYSIS_SPELL = "paralysis_spell";
+    public static final String HARM_SPELL = "harm_spell";
+    public static final String DISINTEGRATE_SPELL = "disintegrate_spell";
+    public static final String DISARM_SPELL = "disarm_spell";
+    public static final String FIRESPOUT_SPELL = "firespout_spell";
+    public static final String ANNIHILATION_RAY = "annihilation_ray";
+
+    /** The shrapnel Bloody Bones and the Tainted Skeleton throw. */
+    public static final DeferredHolder<EntityType<BoneShard>> BONE_SHARD_ENTITY =
+            Registration.ENTITIES.register(BONE_SHARD,
+                    () -> EntityType.Builder.<BoneShard>of(BoneShard::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(4)
+                            .updateInterval(20)
+                            .build(BONE_SHARD));
+
+    /** The limbs a Bloater ruptures into on death. */
+    public static final DeferredHolder<EntityType<BloaterArm>> BLOATER_ARM_ENTITY =
+            Registration.ENTITIES.register(BLOATER_ARM,
+                    () -> EntityType.Builder.<BloaterArm>of(BloaterArm::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(4)
+                            .updateInterval(20)
+                            .build(BLOATER_ARM));
+
+    /**
+     * The masonry chips {@code SmashBlocksGoal} throws off a wall it is breaking.
+     *
+     * <p>The shard itself is gmm's {@code BoneShard} in stone &mdash; same rig, physics, damage and
+     * despawn. Tracking range matches it too; {@code updateInterval} does not, and that is the one
+     * deliberate difference: the bone shard's 20 is far too coarse for something thrown a couple of
+     * blocks, and at 20 the client was told where a shard was about as often as it existed.</p>
+     */
+    public static final DeferredHolder<EntityType<SmashShard>> SMASH_SHARD_ENTITY =
+            Registration.ENTITIES.register(SMASH_SHARD,
+                    () -> EntityType.Builder.<SmashShard>of(SmashShard::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(4)
+                            .updateInterval(2)
+                            .build(SMASH_SHARD));
+
+    /**
+     * The Stone Colossus's thrown lump of the room.
+     *
+     * <p>{@code noSave}, like the Annihilation Ray: it lives about two seconds and a rock frozen in
+     * mid-air across a world reload would be scenery nobody threw. Tracked further than a shard
+     * because the whole point of it is being seen coming from across a room.</p>
+     */
+    public static final DeferredHolder<EntityType<Boulder>> BOULDER_ENTITY =
+            Registration.ENTITIES.register(BOULDER,
+                    () -> EntityType.Builder.<Boulder>of(Boulder::new, MobCategory.MISC)
+                            .sized(0.85F, 0.85F)
+                            .noSave()
+                            .clientTrackingRange(8)
+                            .updateInterval(2)
+                            .build(BOULDER));
+
+    /** The Orc's thrown rock. */
+    public static final DeferredHolder<EntityType<Rock>> ROCK_ENTITY =
+            Registration.ENTITIES.register(ROCK,
+                    () -> EntityType.Builder.<Rock>of(Rock::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(ROCK));
+
+    /** The Orc Shaman's spell. */
+    public static final DeferredHolder<EntityType<SpikeGrowthSpell>> SPIKE_GROWTH_SPELL_ENTITY =
+            Registration.ENTITIES.register(SPIKE_GROWTH_SPELL,
+                    () -> EntityType.Builder.<SpikeGrowthSpell>of(SpikeGrowthSpell::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(SPIKE_GROWTH_SPELL));
+
+    /** The Bodak's withering gaze. */
+    public static final DeferredHolder<EntityType<WitheringGazeSpell>> WITHERING_GAZE_SPELL_ENTITY =
+            Registration.ENTITIES.register(WITHERING_GAZE_SPELL,
+                    () -> EntityType.Builder.<WitheringGazeSpell>of(WitheringGazeSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(WITHERING_GAZE_SPELL));
+
+    /**
+     * Beholder/DeathTyrant's spell kit, ported from Dungeon Denizens. Sizing/tracking matches DD's
+     * own registration exactly. Each is drawn as a thrown ITEM whose art {@code CommonSetup} wires
+     * through the spell's {@code itemSupplier} (2026-09-10; before that, a fire charge each) &mdash;
+     * see {@code DungeonsItems.PARALYSIS_SPELL_ITEM}.
+     */
+    public static final DeferredHolder<EntityType<ParalysisSpell>> PARALYSIS_SPELL_ENTITY =
+            Registration.ENTITIES.register(PARALYSIS_SPELL,
+                    () -> EntityType.Builder.<ParalysisSpell>of(ParalysisSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(PARALYSIS_SPELL));
+
+    public static final DeferredHolder<EntityType<HarmSpell>> HARM_SPELL_ENTITY =
+            Registration.ENTITIES.register(HARM_SPELL,
+                    () -> EntityType.Builder.<HarmSpell>of(HarmSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(HARM_SPELL));
+
+    public static final DeferredHolder<EntityType<DisintegrateSpell>> DISINTEGRATE_SPELL_ENTITY =
+            Registration.ENTITIES.register(DISINTEGRATE_SPELL,
+                    () -> EntityType.Builder.<DisintegrateSpell>of(DisintegrateSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(DISINTEGRATE_SPELL));
+
+    public static final DeferredHolder<EntityType<DisarmSpell>> DISARM_SPELL_ENTITY =
+            Registration.ENTITIES.register(DISARM_SPELL,
+                    () -> EntityType.Builder.<DisarmSpell>of(DisarmSpell::new, MobCategory.MISC)
+                            .sized(1F, 1F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(DISARM_SPELL));
+
+    /** Daemon's fire-spout arc. */
+    public static final DeferredHolder<EntityType<FireSpoutSpell>> FIRESPOUT_SPELL_ENTITY =
+            Registration.ENTITIES.register(FIRESPOUT_SPELL,
+                    () -> EntityType.Builder.<FireSpoutSpell>of(FireSpoutSpell::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(12)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .build(FIRESPOUT_SPELL));
+
+    /**
+     * The Beholder and Death Tyrant's annihilation ray &mdash; this mod's own spell, not a gmm one.
+     *
+     * <p>{@code noSave}: a beam is a second and a half of light, and one reloaded without its caster
+     * would have nothing to hang from. {@code updateInterval(1)}: its position is the caster's eye
+     * and the culling box is built from it, so a coarse interval would cull a beam still on screen.
+     * The renderer does not read that position for the beam's own ends &mdash; see
+     * {@code AnnihilationRayRenderer}.</p>
+     */
+    public static final DeferredHolder<EntityType<AnnihilationRay>> ANNIHILATION_RAY_ENTITY =
+            Registration.ENTITIES.register(ANNIHILATION_RAY,
+                    () -> EntityType.Builder.<AnnihilationRay>of(AnnihilationRay::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .noSave()
+                            .fireImmune()
+                            .clientTrackingRange(8)
+                            .updateInterval(1)
+                            .build(ANNIHILATION_RAY));
+
+    /**
+     * The mobs that are registered but must never be reached by the dungeon's <em>ambient</em>
+     * routes (Mark, 2026-08-31: "none of the small nor big bosses are in either spawners").
+     *
+     * <p>Placement is a per-mob decision made through a {@code category: "boss"} mob set
+     * ({@code small_dungeon_boss.json}, {@code medium_dungeon_boss.json},
+     * {@code large_dungeon_boss.json}) rather than the procedural mob sets or the structure's
+     * ambient {@code spawn_overrides} &mdash; Bodak, Skeleton Champion, Beholder and DeathTyrant are
+     * placed that way as of 2026-09-04. Wight and Daemon are not placed anywhere yet, reachable only
+     * by spawn egg, {@code /summon}, and (Daemon only) as Beholder/DeathTyrant's rare summon. Declared
+     * here rather than left as an absence in two JSON files,
+     * because "this mob is missing from the mob sets" and "this mob is deliberately excluded" look
+     * identical in a datapack. {@code MobSpawnExclusionTest} reads this list and fails the build if
+     * any of them turns up in a non-boss mob set or in the structure's spawn overrides.</p>
+     */
+    public static final java.util.List<String> MINI_BOSSES =
+            java.util.List.of(SKELETON_CHAMPION, WIGHT, BODAK, BEHOLDER, DEATH_TYRANT, DAEMON,
+                    ORC_WARLORD, MINOTAUR, STONE_COLOSSUS);
+
+    /** Twice the rat's health and damage; same speed, so it is a threat rather than a chase. */
+    public static AttributeSupplier.Builder createGiantRatAttributes() {
+        return Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 16.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.25D)
+                .add(Attributes.ATTACK_DAMAGE, 2.0D);
+    }
+
+    /**
+     * Forces this class to load so its {@code static} fields actually reach the
+     * {@code DeferredRegister}.
+     *
+     * <p>A {@code DeferredRegister} collects an entry when the {@link RegistryObject} field
+     * initialises, which only happens when the holding class is first touched. A registry class that
+     * nothing references before the registry events fire silently registers <em>nothing</em>, with no
+     * error &mdash; so {@code Registration.init()} calls this rather than relying on some other code
+     * path happening to mention the class first.</p>
+     */
+    public static void register() {
+        // Intentionally empty -- calling it is the point.
+    }
+
+    private DungeonsEntities() {}
+}

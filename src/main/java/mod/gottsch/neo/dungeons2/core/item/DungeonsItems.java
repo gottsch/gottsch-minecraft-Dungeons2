@@ -1,0 +1,564 @@
+/*
+ * This file is part of  Dungeons2.
+ * Copyright (c) 2026 Mark Gottschling (gottsch)
+ *
+ * Dungeons2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Dungeons2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Dungeons2.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
+package mod.gottsch.neo.dungeons2.core.item;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+import mod.gottsch.neo.dungeons2.Dungeons;
+import mod.gottsch.neo.dungeons2.core.entity.DungeonsEntities;
+import mod.gottsch.neo.dungeons2.core.setup.Registration;
+import mod.gottsch.neo.gottschbooks.api.BookItem;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import mod.gottsch.neo.dungeons2.core.block.DungeonsBlocks;
+import net.minecraft.world.item.BlockItem;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.DeferredHolder;
+
+/**
+ * Spawn eggs for the dungeon's mobs.
+ *
+ * <p>They go in vanilla's {@code SPAWN_EGGS} tab rather than a Dungeons2 tab, because this mod does
+ * not have one &mdash; nothing was registered into {@code Registration.ITEMS} before these two, so
+ * inventing a creative tab to hold exactly two eggs would be the larger change. Vanilla's egg tab is
+ * where a player looks for an egg anyway.</p>
+ *
+ * @author Mark Gottschling on Aug 13, 2026
+ */
+@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+public class DungeonsItems {
+
+    public static final DeferredHolder<Item> RAT_EGG = Registration.ITEMS.register(
+            DungeonsEntities.RAT + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.RAT_ENTITY, 0x5a4a3f, 0x2e2620, new Item.Properties()));
+
+    public static final DeferredHolder<Item> GIANT_RAT_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GIANT_RAT + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GIANT_RAT_ENTITY, 0x3d3128, 0x1c1712, new Item.Properties()));
+
+    /**
+     * The fungi get spawn eggs and their markers deliberately do not.
+     *
+     * <p>The two are opposite cases. An egg is worth having for a mob nothing spawns naturally --
+     * it is the only way to look at one without generating a dungeon and finding decayed dirt. The
+     * fungi themselves are never placed by hand: the weathering pass names them directly in its
+     * growth palette and {@code dungeons2:decoration} spawns them, so there is no authoring
+     * workflow and no marker block to give an item to.</p>
+     *
+     * <p>Colours match Dungeon Denizens', so the same mob reads the same in any pack carrying both.</p>
+     */
+    public static final DeferredHolder<Item> SHRIEKER_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SHRIEKER + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.SHRIEKER_ENTITY, 0x8f4f8f, 0xc9a24a,
+                    new Item.Properties()));
+
+    /** See {@link #SHRIEKER_EGG}. */
+    public static final DeferredHolder<Item> VIOLET_FUNGUS_EGG = Registration.ITEMS.register(
+            DungeonsEntities.VIOLET_FUNGUS + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.VIOLET_FUNGUS_ENTITY, 0x6e2878, 0x231528,
+                    new Item.Properties()));
+
+    /**
+     * A spawn egg for every mob in the GMM roster, <strong>including the three that nothing
+     * spawns</strong>.
+     *
+     * <p>The mini-bosses need one more than the rest do, not less: they are excluded from the mob
+     * sets and the structure's spawn overrides, so an egg is the only way to look at one at all.
+     * That is the same argument the fungi's eggs are here on.</p>
+     *
+     * <p>Colours are Dungeon Denizens' verbatim, so the same mob reads the same in any pack carrying
+     * both mods.</p>
+     */
+    public static final DeferredHolder<Item> SKELETON_WARRIOR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SKELETON_WARRIOR + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.SKELETON_WARRIOR_ENTITY, 0xf5f6d2, 0xcdc3bb,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> WINGED_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.WINGED_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.WINGED_SKELETON_ENTITY, 0xe2ded0, 0x8a8478,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> IRON_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.IRON_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.IRON_SKELETON_ENTITY, 0xc8c8d0, 0x6e6e78,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> MAGMA_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.MAGMA_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.MAGMA_SKELETON_ENTITY, 0x4b0000, 0xff7900,
+                    new Item.Properties()));
+
+
+    public static final DeferredHolder<Item> TAINTED_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.TAINTED_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.TAINTED_SKELETON_ENTITY, 0xa8a596, 0x8a1420,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ACID_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ACID_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ACID_SKELETON_ENTITY, 0xb2e278, 0x2c4e1c,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ELECTRIC_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ELECTRIC_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ELECTRIC_SKELETON_ENTITY, 0x2d3a6e, 0xf5e642,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> BURNING_SKELETON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BURNING_SKELETON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BURNING_SKELETON_ENTITY, 0x1c1512, 0xffb02e,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> BLOODY_BONES_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BLOODY_BONES + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BLOODY_BONES_ENTITY, 0xe8e0d0, 0x8a1420,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> SKELETON_CHAMPION_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SKELETON_CHAMPION + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.SKELETON_CHAMPION_ENTITY, 0xc9c9c9, 0x17171a,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> BLOATER_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BLOATER + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BLOATER_ENTITY, 0x6c8a2c, 0x3a4a1e,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> GRAVE_ZOMBIE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GRAVE_ZOMBIE + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GRAVE_ZOMBIE_ENTITY, 0x8b5a2b, 0x3e2711,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> WIGHT_EGG = Registration.ITEMS.register(
+            DungeonsEntities.WIGHT + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.WIGHT_ENTITY, 0xced1d6, 0x2a2c33,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> BODAK_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BODAK + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BODAK_ENTITY, 0x6b6a63, 0x2b2a26,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> BEHOLDER_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BEHOLDER + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BEHOLDER_ENTITY, 0x4a2e1a, 0xd4b896,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> DEATH_TYRANT_EGG = Registration.ITEMS.register(
+            DungeonsEntities.DEATH_TYRANT + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.DEATH_TYRANT_ENTITY, 0x2a2a2e, 0x7fd936,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> SPECTATOR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.SPECTATOR + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.SPECTATOR_ENTITY, 0x344133, 0xabb685,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> DAEMON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.DAEMON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.DAEMON_ENTITY, 0xff0000, 0xff8c00,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> GHOUL_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GHOUL + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GHOUL_ENTITY, 0x9fc2b8, 0x4f5b56,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> GELATINOUS_CUBE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GELATINOUS_CUBE + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GELATINOUS_CUBE_ENTITY, 0x9adfc7, 0x5fae95,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> OCHRE_JELLY_EGG = Registration.ITEMS.register(
+            DungeonsEntities.OCHRE_JELLY + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.OCHRE_JELLY_ENTITY, 0xadb83d, 0x5f6b1f,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> GRAY_OOZE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GRAY_OOZE + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GRAY_OOZE_ENTITY, 0x7d8a8f, 0x4a5459,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> BLACK_PUDDING_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BLACK_PUDDING + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BLACK_PUDDING_ENTITY, 0x2b1d33, 0x5e456b,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ANIMATED_ARMOR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ANIMATED_ARMOR + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ANIMATED_ARMOR_ENTITY, 0xc0c0c8, 0x4a4a52,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ANIMATED_WEAPON_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ANIMATED_WEAPON + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ANIMATED_WEAPON_ENTITY, 0xa8adb5, 0xc9a227,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> MARGOYLE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.MARGOYLE + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.MARGOYLE_ENTITY, 0x7f7f7f, 0x5a6d41,
+                    new Item.Properties()));
+
+    /** Dungeon Denizens' colours for the same mob, so it reads the same in a pack with either. */
+    public static final DeferredHolder<Item> GARGOYLE_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GARGOYLE + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GARGOYLE_ENTITY, 0x6d6d81, 0x373b41,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> MINOTAUR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.MINOTAUR + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.MINOTAUR_ENTITY, 0x8a4a34, 0xe8e2d2,
+                    new Item.Properties()));
+
+    /** Weathered blue-grey stone against the gem blue, the two colours the model reads as. */
+    public static final DeferredHolder<Item> STONE_COLOSSUS_EGG = Registration.ITEMS.register(
+            DungeonsEntities.STONE_COLOSSUS + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.STONE_COLOSSUS_ENTITY, 0x6c7a81, 0x3abae4,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ORC_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ORC + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ORC_ENTITY, 0x6b8e4e, 0x3f5c2c,
+                    new Item.Properties()));
+
+    // The warband green of ORC_EGG's primary, over the warlord's oxblood -- the egg reads as
+    // "an orc, but the red one", which is exactly what the mob is.
+    public static final DeferredHolder<Item> ORC_WARLORD_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ORC_WARLORD + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ORC_WARLORD_ENTITY, 0x5d6b4a, 0x6b1f22,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ORC_SHAMAN_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ORC_SHAMAN + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ORC_SHAMAN_ENTITY, 0x6b8e4e, 0x4b2e83,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> ALLIGATOR_GAR_EGG = Registration.ITEMS.register(
+            DungeonsEntities.ALLIGATOR_GAR + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.ALLIGATOR_GAR_ENTITY, 0x4a5c3a, 0x8f9f6b,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> LEECH_EGG = Registration.ITEMS.register(
+            DungeonsEntities.LEECH + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.LEECH_ENTITY, 0x3b2f2a, 0x6e1a1a,
+                    new Item.Properties()));
+
+    public static final DeferredHolder<Item> GIANT_LEECH_EGG = Registration.ITEMS.register(
+            DungeonsEntities.GIANT_LEECH + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.GIANT_LEECH_ENTITY, 0x241c19, 0x8a1c1c,
+                    new Item.Properties()));
+
+    /**
+     * The two projectiles that render as a spinning <em>item</em> rather than a model, and the
+     * items they render as.
+     *
+     * <p>GMM's {@code Rock} and {@code WitheringGazeSpell} each expose an {@code itemSupplier} hook
+     * and fall back to a FIRE CHARGE when it is unset &mdash; a working projectile that looks like a
+     * fireball. These give them their real look; {@code CommonSetup.wireRangedAttacks} hands them
+     * over.</p>
+     *
+     * <p><strong>They are not craftable, obtainable or in any creative tab</strong> &mdash; nothing
+     * registers a recipe and nothing adds them to a tab. They exist only to be the texture on a
+     * thrown entity, which is the same job Dungeon Denizens' rock item does.</p>
+     *
+     * <p><strong>Both textures live in GMM and are referenced across the namespace</strong>
+     * ({@code gmm:item/rock}, {@code gmm:item/withering_gaze_spell}) rather than copied here. gmm is
+     * a hard dependency, so they are always present.</p>
+     *
+     * <p>The rock's texture was moved INTO gmm on 2026-08-31 (Mark's call) for exactly this reason.
+     * It had only ever existed in Dungeon Denizens, so the first version of this file copied it &mdash;
+     * which would have meant every consumer of GMM's Rock carrying its own duplicate of the same art,
+     * with nothing keeping them in step. The art belongs with the projectile that throws it; the
+     * gaze's texture was already there and is the precedent.</p>
+     */
+    public static final DeferredHolder<Item> ROCK_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.ROCK, () -> new Item(new Item.Properties()));
+
+    /** See {@link #ROCK_ITEM}. */
+    public static final DeferredHolder<Item> WITHERING_GAZE_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.WITHERING_GAZE_SPELL, () -> new Item(new Item.Properties()));
+
+    /**
+     * The Beholder-kin spells' in-flight art (2026-09-10), until then fire charges &mdash; which
+     * made the shield rule unreadable: a player cannot learn "orbs go through your shield, fire does
+     * not" when everything looks like fire. Same arrangement as {@link #ROCK_ITEM}: the textures are
+     * GMM's ({@code gmm:item/<name>}, moved there from Dungeon Denizens, where Paralysis was
+     * {@code slow.png}), and these items exist only to carry them onto the thrown entity.
+     *
+     * <p>Fire Spout has no item on purpose. It IS fire, so GMM's fire-charge fallback is its right
+     * look, and it sits on the blockable side of the rule.</p>
+     */
+    public static final DeferredHolder<Item> PARALYSIS_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.PARALYSIS_SPELL, () -> new Item(new Item.Properties()));
+    /** See {@link #PARALYSIS_SPELL_ITEM}. */
+    public static final DeferredHolder<Item> HARM_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.HARM_SPELL, () -> new Item(new Item.Properties()));
+    /** See {@link #PARALYSIS_SPELL_ITEM}. */
+    public static final DeferredHolder<Item> DISINTEGRATE_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.DISINTEGRATE_SPELL, () -> new Item(new Item.Properties()));
+    /** See {@link #PARALYSIS_SPELL_ITEM}. */
+    public static final DeferredHolder<Item> DISARM_SPELL_ITEM = Registration.ITEMS.register(
+            DungeonsEntities.DISARM_SPELL, () -> new Item(new Item.Properties()));
+
+
+    /**
+     * The Minotaur's signature greataxe, and the first item in this mod that a player can actually
+     * <em>use</em>. Everything else registered here is a spawn egg, a marker's {@link BlockItem}, or
+     * one of the two projectile textures ({@link #ROCK_ITEM}) that exist only to be drawn on a
+     * thrown entity and are in no tab at all.
+     *
+     * <p>It is the whole of the {@code gmm:minotaur/weapons} pool rather than one option among
+     * several: gmm ships no default for that tag precisely so a consumer's entry becomes the pool.
+     * See {@code Minotaur#populateDefaultEquipmentSlots}.</p>
+     *
+     * <p>Stats and texture match Dungeon Denizens' item of the same name, so the same weapon reads
+     * the same in a pack carrying both. Unlike the rock, the texture is <strong>not</strong> shared
+     * across the namespace &mdash; each mod carries its own copy, because neither is a dependency of
+     * the other and gmm, which both do depend on, owns no items.</p>
+     */
+    public static final DeferredHolder<Item> MINOTAUR_AXE = Registration.ITEMS.register(
+            "minotaur_axe",
+            () -> new AxeItem(Tiers.IRON, 7F, -3.4F, new Item.Properties()));
+
+    /**
+     * The warband's low end, and half of the {@code gmm:orc/weapons} pool.
+     *
+     * <p>Dungeon Denizens' pool verbatim &mdash; {@code iron_sword}, {@code iron_axe}, club, spiked
+     * club &mdash; so an orc reads the same in a pack carrying either mod. The two vanilla entries
+     * need no item here; these two do, because gmm registers no items of its own and D2 does not
+     * depend on DD (nor DD on D2). Same reasoning, and the same duplicated-texture consequence, as
+     * {@link #MINOTAUR_AXE}: each mod carries its own copy of the art.</p>
+     *
+     * <p>Wood tier on purpose. The pool is deliberately uneven &mdash; a club is a bad weapon and an
+     * iron axe is a good one &mdash; because gmm draws from it uniformly per orc, so the spread is
+     * what makes one orc in a warband more dangerous than the next. Flattening it to four
+     * comparable weapons would remove the only variation the mob has.</p>
+     *
+     * <p>Not a {@code Club} class: DD has one and has deprecated it, since an item that only changes
+     * damage numbers does not need a subclass.</p>
+     */
+    public static final DeferredHolder<Item> CLUB = Registration.ITEMS.register(
+            "club",
+            () -> new SwordItem(Tiers.WOOD, 4, -3.0F, new Item.Properties()));
+
+    /** The club with nails in it. See {@link #CLUB}; one more damage, same swing. */
+    public static final DeferredHolder<Item> SPIKED_CLUB = Registration.ITEMS.register(
+            "spiked_club",
+            () -> new SwordItem(Tiers.WOOD, 5, -3.0F, new Item.Properties()));
+
+    /**
+     * The Orc Warlord's blade, and the whole of the {@code gmm:orc_warlord/weapons} pool.
+     *
+     * <p>gmm's {@code ORC_WARLORD_WEAPONS} javadoc describes iron/diamond/netherite axes as a
+     * shipped default, but gmm carries no tag files at all &mdash; it is a library that registers
+     * nothing, items included &mdash; so in practice the pool is empty until a consumer fills it,
+     * exactly as with {@code gmm:minotaur/weapons}. This entry is therefore the pool, not one
+     * option among several, and the chief is armed with it every time. Should gmm ever ship that
+     * default, {@code "replace": false} means the cleaver joins it rather than replacing it.</p>
+     *
+     * <p>A {@link SwordItem}, not an {@link AxeItem} like the {@link #MINOTAUR_AXE}: the cleaver is
+     * a blade, and a warlord who could also strip logs reads wrong. Stats sit deliberately under
+     * the Minotaur's greataxe &mdash; less damage, a faster swing &mdash; because the warlord's
+     * threat is the warband he rallies, not the single hit. Iron tier keeps the drop from
+     * out-classing what a player at boss-room depth is likely carrying; his 0.15 mainhand drop
+     * chance is set in {@code OrcWarlord#populateDefaultEquipmentSlots}.</p>
+     *
+     * <p>Unlike the Minotaur's axe this has no Dungeon Denizens counterpart to match &mdash; the
+     * Orc Warlord is a gmm/D2 mob with no DD equivalent, so there is nothing to keep in parity.</p>
+     */
+    public static final DeferredHolder<Item> ORC_WARLORD_CLEAVER = Registration.ITEMS.register(
+            "orc_warlord_cleaver",
+            () -> new SwordItem(Tiers.IRON, 5, -2.6F, new Item.Properties()));
+
+    /**
+     * The mimics' eggs. These need one MORE than the ordinary roster does, for the
+     * mini-bosses' reason taken further: a mimic is in no mob set and no spawn override, so short
+     * of generating a dungeon and finding the one container in it that bites, the egg is the only
+     * way to see one at all.
+     *
+     * <p>Dungeon Denizens' colours verbatim, so the same mob reads the same in a pack with both.</p>
+     */
+    public static final DeferredHolder<Item> VANILLA_CHEST_MIMIC_EGG = Registration.ITEMS.register(
+            DungeonsEntities.VANILLA_CHEST_MIMIC + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY, 0x8f691d, 0x2f3a24,
+                    new Item.Properties()));
+
+    /** See {@link #VANILLA_CHEST_MIMIC_EGG}. */
+    public static final DeferredHolder<Item> BARREL_MIMIC_EGG = Registration.ITEMS.register(
+            DungeonsEntities.BARREL_MIMIC + "_egg",
+            () -> new DeferredSpawnEggItem(DungeonsEntities.BARREL_MIMIC_ENTITY, 0x9f854d, 0x54452c,
+                    new Item.Properties()));
+
+    /**
+     * The Stone Colossus's counter-item, and the first ARMOUR this mod registers.
+     *
+     * <p>The behaviour is entirely {@code ShockAbsorptionEvent}'s; see {@link
+     * BootsOfShockAbsorption} for why it is not in the item. Not craftable: found only in the
+     * counter-item chest {@code CounterItemPlanner} hides in about one Stone Colossus dungeon in
+     * four, before the boss.</p>
+     */
+    public static final DeferredHolder<Item> BOOTS_OF_SHOCK_ABSORPTION = Registration.ITEMS.register(
+            "boots_of_shock_absorption",
+            () -> new BootsOfShockAbsorption(new Item.Properties()));
+
+    /**
+     * The Beholder-kin's counter-item. Reflects eye-magic when raised; see {@link
+     * MirrorShield} and {@code MirrorShieldEvent}. Vanilla shield durability. Not craftable: found
+     * only in the counter-item chest of about one Beholder or Death Tyrant dungeon in four.
+     */
+    public static final DeferredHolder<Item> MIRROR_SHIELD = Registration.ITEMS.register(
+            "mirror_shield",
+            () -> new MirrorShield(new Item.Properties().durability(336)));
+
+    /**
+     * The item form of the spawner marker, so it can be placed by hand while authoring
+     * a room template. Without it the block exists but {@code /give} cannot name it and it cannot be
+     * put in a hotbar &mdash; only {@code /setblock} reaches a block with no item.
+     *
+     * <p>In {@code FUNCTIONAL_BLOCKS} beside the vanilla spawner and structure blocks, which is
+     * where someone building a dungeon template would look for it.</p>
+     */
+    public static final DeferredHolder<Item> SPAWNER_MARKER = Registration.ITEMS.register(
+            "spawner_marker",
+            () -> new BlockItem(DungeonsBlocks.SPAWNER_MARKER.get(), new Item.Properties()));
+
+    /**
+     * The item form of the chest marker, for the same reason {@link #SPAWNER_MARKER}
+     * has one &mdash; a template author places it by hand.
+     *
+     * <p>It was missing until 2026-08-29. The block shipped visible and textured and its javadoc
+     * said "its author has to be able to see it while building", which was true and not the whole
+     * requirement: with no {@code BlockItem} the only way to place one was {@code /setblock}, so it
+     * could never be held, and its {@code facing} property could never be set by looking &mdash;
+     * {@code /setblock} takes the default. That is easy to miss precisely because the chest routing was finished
+     * and confirmed in game: the feature worked, the authoring path was the awkward part.</p>
+     */
+    public static final DeferredHolder<Item> CHEST_MARKER = Registration.ITEMS.register(
+            "chest_marker",
+            () -> new BlockItem(DungeonsBlocks.CHEST_MARKER.get(), new Item.Properties()));
+
+    /**
+     * The item form of the pot marker. Same reason the other two markers have one
+     * &mdash; a template author places it by hand, and a block with no item is reachable only by
+     * {@code /setblock}.
+     */
+    public static final DeferredHolder<Item> POT_MARKER = Registration.ITEMS.register(
+            "pot_marker",
+            () -> new BlockItem(DungeonsBlocks.POT_MARKER.get(), new Item.Properties()));
+
+    /**
+     * The item form of the tomb marker. Placed like a bed: the head goes one block further in
+     * the direction the author looks, which is the only way to set its facing by hand.
+     */
+    public static final DeferredHolder<Item> SARCOPHAGUS_MARKER = Registration.ITEMS.register(
+            "sarcophagus_marker",
+            () -> new BlockItem(DungeonsBlocks.SARCOPHAGUS_MARKER.get(), new Item.Properties()));
+
+    /**
+     * The Mining Chest's item. Drawn from the static JSON copy of the banded model, so
+     * it needs no item renderer; in the world the block entity renderer draws it, lid and all.
+     */
+    public static final DeferredHolder<Item> MINING_CHEST = Registration.ITEMS.register(
+            "mining_chest",
+            () -> new BlockItem(DungeonsBlocks.MINING_CHEST.get(), new Item.Properties()));
+
+    /**
+     * A Dungeon Map not yet started; used on a dungeon floor, it maps that floor. Copied from
+     * a Dungeon Map onto an Empty Map with a coal (DungeonMapCopyRecipe), so the first map is always a find.
+     */
+    public static final DeferredHolder<Item> BLANK_DUNGEON_MAP = Registration.ITEMS.register(
+            "blank_dungeon_map",
+            () -> new BlankDungeonMapItem(new Item.Properties()));
+
+    /** Points to the nearest dungeon. Loot only: boss and secret chests. */
+    public static final DeferredHolder<Item> DUNGEON_COMPASS = Registration.ITEMS.register(
+            "dungeon_compass",
+            () -> new DungeonCompassItem(new Item.Properties().stacksTo(1)));
+
+    /**
+     * The Delver's Companion, the mod's own Gottsch Books manual. Announced on first join rather than
+     * given (its server entry); its entries unlock with the advancements, and hovering a dungeon item
+     * with it carried opens the entry that explains it. Named by {@code book.dungeons2.delvers_companion}.
+     */
+    public static final DeferredHolder<Item> DELVERS_COMPANION = Registration.ITEMS.register(
+            "delvers_companion",
+            () -> new BookItem(new Item.Properties().stacksTo(1),
+                    ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, "delvers_companion")));
+
+    @SubscribeEvent
+    public static void addItemsToTab(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+            // EVERY registered spawn egg, found by type rather than listed by name.
+            //
+            // This was four hand-written accept() calls until 2026-09-08, and by then thirty-five
+            // eggs were registered -- so thirty-one of them, the Minotaur and the Orc Warlord among
+            // them, existed, had models, had lang entries, and could be /give'n, but appeared in no
+            // tab at all. Nothing failed and nothing logged; the list was simply written when there
+            // were four mobs and never grown with the roster.
+            //
+            // A list that has to be edited in a second place every time a mob is added will drift
+            // again, and the eggs are exactly the items where that is expensive: for the
+            // mini-bosses, which are excluded from every mob set and spawn override, the egg is the
+            // ONLY way to see the mob at all.
+            //
+            // DeferredRegister keeps its entries in insertion order, so the tab reads in
+            // declaration order -- rats, fungi, skeletons, and so on -- which groups the families
+            // the way the file does.
+            Registration.ITEMS.getEntries().stream()
+                    .map(RegistryObject::get)
+                    .filter(item -> item instanceof DeferredSpawnEggItem)
+                    .forEach(egg -> event.accept(egg, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
+        }
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(BLANK_DUNGEON_MAP.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(DUNGEON_COMPASS.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(DELVERS_COMPANION.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            event.accept(MINOTAUR_AXE.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(ORC_WARLORD_CLEAVER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(SPIKED_CLUB.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            // Armour lives in COMBAT in 1.20.1 -- there is no separate armour tab to put it in.
+            event.accept(BOOTS_OF_SHOCK_ABSORPTION.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(MIRROR_SHIELD.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(SPAWNER_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(CHEST_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(POT_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(SARCOPHAGUS_MARKER.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(MINING_CHEST.get(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+    }
+
+    /** See {@link DungeonsEntities#register()} -- same class-loading reason. */
+    public static void register() {
+        // Intentionally empty.
+    }
+
+    private DungeonsItems() {}
+}

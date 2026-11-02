@@ -1,0 +1,319 @@
+package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
+
+import mod.gottsch.neo.dungeons2.core.block.entity.ChestMarkerBlockEntity;
+import mod.gottsch.neo.dungeons2.core.config.ChestConfig;
+import net.minecraft.SharedConstants;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * The authored chest route.
+ *
+ * <p>The marker block itself is not registered in a bare {@code Bootstrap}, so these exercise the
+ * parts that do not need it: the loot-table precedence, the seed, and the two failure paths. That a
+ * marker block matches at all is what {@code ShippedBlockIdsTest} and an in-game visit cover.</p>
+ */
+class ChestMarkerProcessorTest {
+
+    @BeforeAll
+    static void bootstrap() {
+        SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
+    }
+
+    private static StructureTemplate.StructureBlockInfo marker(CompoundTag nbt) {
+        // Blocks.CHEST stands in for the marker: the processor is asked about a block it was not
+        // configured to match, which is the "leave it alone" path.
+        return new StructureTemplate.StructureBlockInfo(new BlockPos(3, 4, 5),
+                Blocks.CHEST.defaultBlockState(), nbt);
+    }
+
+    private static ChestMarkerProcessor processor(String poolTable) {
+        return new ChestMarkerProcessor(
+                poolTable == null ? List.of() : List.of(new ChestConfig.LootTableEntry(poolTable, 1)),
+                ResourceLocation.parse("dungeons2:chest_marker"),
+                ResourceLocation.parse("minecraft:chest"));
+    }
+
+    /**
+     * A block that is not the configured marker must come back untouched -- byte for byte the same
+     * object, since a processor that rebuilt every block it saw would be rewriting whole templates.
+     */
+    @Test
+    void aBlockThatIsNotTheMarkerIsUntouched() {
+        StructureTemplate.StructureBlockInfo info = marker(null);
+        assertSame(info, processor("dungeons2:chests/classic_shallow")
+                .processBlock(null, BlockPos.ZERO, BlockPos.ZERO, info, info,
+                        new StructurePlaceSettings()));
+    }
+
+    /** The seed must never be 0: vanilla reads 0 as "roll fresh on open". */
+    @Test
+    void theLootSeedIsNeverZero() {
+        assertNotEquals(0L, ChestMarkerProcessor.lootSeed(BlockPos.ZERO));
+        assertNotEquals(0L, ChestMarkerProcessor.lootSeed(new BlockPos(12, 70, -40)));
+    }
+
+    /**
+     * Two markers at different positions must not share a seed, or a template placed twice in one
+     * dungeon holds the same items both times.
+     */
+    @Test
+    void twoPositionsGiveDifferentSeeds() {
+        assertNotEquals(ChestMarkerProcessor.lootSeed(new BlockPos(1, 2, 3)),
+                ChestMarkerProcessor.lootSeed(new BlockPos(3, 2, 1)));
+    }
+
+    // ---- the boss rung (2026-09-04) ------------------------------------------------------------
+    //
+    // The tier's table, claimed by `boss: true` and nothing else. The one rung where the POOL
+    // outranks the marker: the flag declares a role and asks to be told the value, because only
+    // the pool knows which size of dungeon drew this room.
+
+    private static final ResourceLocation BOSS_TABLE =
+            ResourceLocation.parse("dungeons2:chests/classic_boss_large");
+
+    private static ChestMarkerProcessor tiered() {
+        return new ChestMarkerProcessor(
+                List.of(new ChestConfig.LootTableEntry("dungeons2:chests/classic_shallow", 1)),
+                Optional.of(BOSS_TABLE),
+                ResourceLocation.parse("dungeons2:chest_marker"),
+                ResourceLocation.parse("minecraft:chest"));
+    }
+
+    /** The reported bug in one assertion: the tier's table, not the template's. */
+    @Test
+    void aBossMarkerTakesTheTiersTable() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        assertTrue(ChestMarkerProcessor.isBossMarker(marker(nbt)));
+        assertEquals(BOSS_TABLE.toString(), tiered().bossLootTable(marker(nbt)));
+    }
+
+    /**
+     * A boss marker that ALSO names a table still takes the tier's -- inverted from every other
+     * field here, and the reason BossRoomAuthoringTest rejects such a template outright: an
+     * authored id that the pool silently overrides is how the next author concludes the tier lives
+     * on the template.
+     */
+    @Test
+    void theTierOutranksAnAuthoredTableOnABossMarker() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        nbt.putString(ChestMarkerBlockEntity.LOOT_TABLE, "dungeons2:chests/classic_boss_small");
+        assertEquals(BOSS_TABLE.toString(), tiered().bossLootTable(marker(nbt)));
+    }
+
+    /** An ordinary marker in a tiered pool is untouched by the boss rung. */
+    @Test
+    void anOrdinaryMarkerIsNotTheBoss() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(ChestMarkerBlockEntity.LOOT_TABLE, "dungeons2:chests/classic_hoard");
+        assertNull(tiered().bossLootTable(marker(nbt)));
+        assertNull(tiered().bossLootTable(marker(null)),
+                "a cell with no block entity at all is the normal case, not a boss");
+    }
+
+    /** A boss marker in a pool that declares no tier falls through rather than failing. */
+    @Test
+    void aBossMarkerInAnUntieredPoolFallsThrough() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        assertNull(processor("dungeons2:chests/classic_shallow").bossLootTable(marker(nbt)));
+    }
+
+    /** Absent means absent: the Optional overload, not DFU's optionalFieldOf(name, null) NPE. */
+    @Test
+    void anEntryWithNoBossTableDecodes() {
+        DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"));
+        assertTrue(decoded.result().isPresent(),
+                "boss_loot_table must be genuinely optional: " + decoded.error().orElse(null));
+        assertNull(decoded.result().get().bossLootTable(marker(bossNbt())));
+    }
+
+    /** A malformed value must be a load error, not a silent Optional.empty(). See the closed-schema rule. */
+    @Test
+    void aMalformedBossTableIsALoadError() {
+        DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE,
+                        JsonParser.parseString("{\"boss_loot_table\": \"NOT AN ID\"}"));
+        assertTrue(decoded.error().isPresent(),
+                "a misspelled boss table must name the field and fail the pack, not decode to"
+                        + " empty and hand the boss the ordinary weighted default");
+    }
+
+    private static CompoundTag bossNbt() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.BOSS, true);
+        return nbt;
+    }
+
+    /** The per-cell table is the whole reason the marker carries a block entity. */
+    @Test
+    void aMarkersOwnTableIsReadOffItsNbt() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(ChestMarkerBlockEntity.LOOT_TABLE, "dungeons2:chests/classic_hoard");
+        assertEquals("dungeons2:chests/classic_hoard", nbt.getString(ChestMarkerBlockEntity.LOOT_TABLE));
+        assertTrue(nbt.contains(ChestMarkerBlockEntity.LOOT_TABLE));
+    }
+
+    /**
+     * The codec must decode an entry that omits {@code loot_table} &mdash; which the field is
+     * documented as allowing, and which it did not actually allow until 2026-08-29.
+     *
+     * <h2>Why a null default is not "absent is null"</h2>
+     * <p>{@code optionalFieldOf(name, null)} hands DFU a null default, and DFU wraps a default in
+     * {@code Optional.of} on the absent path. So omitting the field &mdash; the documented option
+     * &mdash; threw NPE out of the decode and took the whole processor list with it, reporting a
+     * stack that named the JSON file rather than the field.</p>
+     *
+     * <p>Nothing caught it for as long as it existed because the single shipped entry, in
+     * {@code classic_chests.json}, always supplies the field. It surfaced only when the pot marker's pot
+     * processor copied the pattern and shipped an entry with no fields at all.</p>
+     */
+    @Test
+    void theProcessorDecodesWithNoLootTable() {
+        DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"processor_type\": \"dungeons2:chest\"}"));
+
+        assertTrue(result.result().isPresent(),
+                "an entry naming no loot_tables must decode -- it falls back to each marker's own"
+                        + " table: " + result.error().map(Object::toString).orElse(""));
+    }
+
+    /** The field still works when it IS supplied, which is what every shipped entry does. */
+    @Test
+    void theProcessorStillDecodesWithALootTable() {
+        DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"processor_type\": \"dungeons2:chest\","
+                                + " \"loot_tables\": ["
+                                + "   {\"loot_table\": \"dungeons2:chests/classic_shallow\","
+                                + "    \"weight\": 9},"
+                                + "   {\"loot_table\": \"dungeons2:chests/classic_deep\"}]}"));
+
+        assertTrue(result.result().isPresent(),
+                result.error().map(Object::toString).orElse(""));
+    }
+
+    /**
+     * The old single-id form must NOT decode. The chest-marker wiring renamed {@code loot_table} to a weighted
+     * {@code loot_tables} list, and the whole value of the rename is that a pack still on the old
+     * spelling is told so rather than quietly generating markers that resolve to nothing.
+     */
+    @Test
+    void theRetiredSingleIdFormIsRejected() {
+        DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
+                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                        "{\"processor_type\": \"dungeons2:chest\","
+                                + " \"loot_tables\": \"dungeons2:chests/classic_shallow\"}"));
+
+        assertTrue(result.error().isPresent(),
+                "a bare id where the list belongs must fail to decode, not be read as something");
+    }
+
+    /**
+     * The draw the pool-level default performs. A weight of 0 cannot be authored (the codec's range
+     * starts at 1), so this pins the shape that CAN be: an overwhelming weight wins essentially
+     * always, and a single-entry list is unconditional.
+     */
+    @Test
+    void theWeightedDrawHonoursTheWeights() {
+        List<ChestConfig.LootTableEntry> tables = List.of(
+                new ChestConfig.LootTableEntry("dungeons2:chests/classic_shallow", 1),
+                new ChestConfig.LootTableEntry("dungeons2:chests/classic_deep", 999));
+
+        int deep = 0;
+        RandomSource random = RandomSource.create(42L);
+        for (int i = 0; i < 200; i++) {
+            if ("dungeons2:chests/classic_deep".equals(ChestConfig.LootTableEntry.pick(tables, random))) {
+                deep++;
+            }
+        }
+        assertTrue(deep > 190, "a 999:1 weighting drew the rare table " + (200 - deep) + " times in 200");
+
+        assertEquals("dungeons2:chests/classic_hoard",
+                ChestConfig.LootTableEntry.pick(
+                        List.of(new ChestConfig.LootTableEntry("dungeons2:chests/classic_hoard", 1)),
+                        RandomSource.create(1L)));
+    }
+
+    /**
+     * An empty list draws nothing rather than throwing or inventing a table -- the configuration a
+     * pool takes when every marker names its own, and the path that leaves the marker standing with
+     * a WARN.
+     */
+    @Test
+    void anEmptyListDrawsNothing() {
+        assertNull(ChestConfig.LootTableEntry.pick(List.of(), RandomSource.create(1L)));
+    }
+
+    // ---- Treasure2 rarity tiers (2026-10-05) ----------------------------------------------------
+
+    private static ChestMarkerProcessor withRarities(List<ResourceLocation> rarities) {
+        return new ChestMarkerProcessor(List.of(), Optional.empty(),
+                ResourceLocation.parse("dungeons2:chest_marker"), ResourceLocation.parse("minecraft:chest"),
+                rarities);
+    }
+
+    /** No rarities named means Treasure2 draws its own: null, not an invented default. */
+    @Test
+    void noTreasureRaritiesLetsTreasure2Draw() {
+        assertNull(withRarities(List.of()).pickTreasureRarity(RandomSource.create(1L)));
+    }
+
+    /** Both of a tier's rarities come up, and nothing else does. */
+    @Test
+    void theRarityDrawCoversTheTierAndOnlyTheTier() {
+        List<ResourceLocation> tier = List.of(ResourceLocation.parse("treasure2:legendary"),
+                ResourceLocation.parse("treasure2:mythical"));
+        ChestMarkerProcessor processor = withRarities(tier);
+        java.util.Set<ResourceLocation> seen = new java.util.HashSet<>();
+        RandomSource random = RandomSource.create(7L);
+        for (int i = 0; i < 100; i++) {
+            seen.add(processor.pickTreasureRarity(random));
+        }
+        assertEquals(java.util.Set.copyOf(tier), seen);
+    }
+
+    /** The field decodes from JSON, and is optional. */
+    @Test
+    void treasureRaritiesDecode() {
+        var codec = ChestMarkerProcessor.codec(() -> null);
+        DataResult<ChestMarkerProcessor> withField = codec.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                "{\"treasure_rarities\": [\"treasure2:rare\", \"treasure2:epic\"]}"));
+        assertTrue(withField.result().isPresent(), withField.error().map(Object::toString).orElse(""));
+        assertTrue(codec.parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).result().isPresent());
+    }
+
+    /** The opt-in the chest routing will read. Present in the shape now so a template can carry it early. */
+    @Test
+    void theTreasureFlagRoundTripsThroughTheBlockEntityTag() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean(ChestMarkerBlockEntity.TREASURE, true);
+        assertTrue(nbt.getBoolean(ChestMarkerBlockEntity.TREASURE));
+    }
+}
