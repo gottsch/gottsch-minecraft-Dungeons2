@@ -143,9 +143,9 @@ public class ShockAbsorptionEvent {
 
     @SubscribeEvent
     public static void onEffect(MobEffectEvent.Applicable event) {
-        if (event.getEffectInstance().getEffect() == MobEffects.MOVEMENT_SLOWDOWN
+        if (event.getEffectInstance().is(MobEffects.MOVEMENT_SLOWDOWN)
                 && wasSlammedThisTick(event.getEntity())) {
-            event.setResult(net.neoforged.bus.api.Event.Result.DENY);
+            event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
             Dungeons.LOGGER.debug("[D2-BOOTS] slam slowness on {}: BLOCKED",
                     event.getEntity().getName().getString());
         }

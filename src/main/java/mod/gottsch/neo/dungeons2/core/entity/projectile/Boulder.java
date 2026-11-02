@@ -103,8 +103,8 @@ public class Boulder extends ThrowableProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(DATA_BLOCK_STATE, Block.getId(Blocks.COBBLESTONE.defaultBlockState()));
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_BLOCK_STATE, Block.getId(Blocks.COBBLESTONE.defaultBlockState()));
     }
 
     @Override

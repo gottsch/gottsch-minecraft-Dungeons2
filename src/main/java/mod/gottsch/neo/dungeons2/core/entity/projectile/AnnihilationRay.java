@@ -637,10 +637,10 @@ public class AnnihilationRay extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(DATA_OWNER, -1);
-        this.entityData.define(DATA_END, new Vector3f());
-        this.entityData.define(DATA_REFLECTING, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_OWNER, -1);
+        builder.define(DATA_END, new Vector3f());
+        builder.define(DATA_REFLECTING, false);
     }
 
     /** A beam is a moment, not a thing: a chunk unloading mid-burn ends it. */

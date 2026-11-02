@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.event;
 
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import net.minecraft.core.BlockPos;
@@ -49,7 +50,7 @@ public class BossWebTearEvent {
     private static final double REACH = 0.3D;
 
     @SubscribeEvent
-    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+    public static void onLivingTick(EntityTickEvent.Pre event) {
         if (!(event.getEntity() instanceof Mob mob) || mob.level().isClientSide() || !mob.isAlive()
                 || !MiniBossAnchorEvent.isMiniBoss(mob)) {
             return;

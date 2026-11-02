@@ -80,10 +80,10 @@ public class SmashShard extends AbstractArrow {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_VARIANT, (byte) 0);
-        this.entityData.define(DATA_SCALE, 1.0F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_VARIANT, (byte) 0);
+        builder.define(DATA_SCALE, 1.0F);
     }
 
     public void setVariant(byte variant) {
