@@ -23,10 +23,9 @@ import mod.gottsch.neo.dungeons2.core.config.MotifConfigRegistries;
 import mod.gottsch.neo.dungeons2.core.setup.CommonSetup;
 import mod.gottsch.neo.dungeons2.core.setup.Registration;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,14 +44,13 @@ public class Dungeons {
 	/**
 	 *
 	 */
-	public Dungeons() {
-		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
+	public Dungeons(IEventBus eventBus, ModContainer container) {
+		container.registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
 
 		// register the deferred registries
-        Registration.init();
+        Registration.init(eventBus);
 
 		// Register the setup method for modloading
-		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		eventBus.addListener(CommonSetup::common);
 		eventBus.register(DungeonGenerationConfigRegistries.class);
 		eventBus.register(MotifConfigRegistries.class);

@@ -109,7 +109,7 @@ public class DungeonsEntities {
      * that a player can actually hit something this flat &mdash; do not "correct" it to match the
      * art.
      */
-    public static final DeferredHolder<EntityType<Rat>> RAT_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Rat>> RAT_ENTITY =
             Registration.ENTITIES.register(RAT,
                     () -> EntityType.Builder.of(Rat::new, MobCategory.MONSTER)
                             .sized(Rat.WIDTH, Rat.HEIGHT)
@@ -128,7 +128,7 @@ public class DungeonsEntities {
      * <p>0.8 x 0.5 fits the narrowest corridor a datapack can configure (width 1, height 5), so this
      * cannot wedge in a passage.</p>
      */
-    public static final DeferredHolder<EntityType<Rat>> GIANT_RAT_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Rat>> GIANT_RAT_ENTITY =
             Registration.ENTITIES.register(GIANT_RAT,
                     () -> EntityType.Builder.of(Rat::new, MobCategory.MONSTER)
                             .sized(Rat.WIDTH, Rat.HEIGHT * 2)
@@ -159,7 +159,7 @@ public class DungeonsEntities {
      * D2 does not depend on it and the dungeon's monsters are its own — the same call the rat and giant rat made
      * for the rats. GMM is already a mandatory dependency, so this costs nothing new.</p>
      */
-    public static final DeferredHolder<EntityType<Shrieker>> SHRIEKER_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Shrieker>> SHRIEKER_ENTITY =
             Registration.ENTITIES.register(SHRIEKER,
                     () -> EntityType.Builder.of(Shrieker::new, MobCategory.MONSTER)
                             .sized(1.3F, 0.85F)
@@ -168,7 +168,7 @@ public class DungeonsEntities {
                             .build(SHRIEKER));
 
     /** See {@link #SHRIEKER_ENTITY}; GMM currently shares the shrieker's rig for this one. */
-    public static final DeferredHolder<EntityType<VioletFungus>> VIOLET_FUNGUS_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<VioletFungus>> VIOLET_FUNGUS_ENTITY =
             Registration.ENTITIES.register(VIOLET_FUNGUS,
                     () -> EntityType.Builder.of(VioletFungus::new, MobCategory.MONSTER)
                             .sized(1.3F, 0.85F)
@@ -204,7 +204,7 @@ public class DungeonsEntities {
     public static final String BLOODY_BONES = "bloody_bones";
     public static final String SKELETON_CHAMPION = "skeleton_champion";
 
-    public static final DeferredHolder<EntityType<SkeletonWarrior>> SKELETON_WARRIOR_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<SkeletonWarrior>> SKELETON_WARRIOR_ENTITY =
             Registration.ENTITIES.register(SKELETON_WARRIOR,
                     () -> EntityType.Builder.of(SkeletonWarrior::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.95F)
@@ -212,7 +212,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(SKELETON_WARRIOR));
 
-    public static final DeferredHolder<EntityType<WingedSkeleton>> WINGED_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<WingedSkeleton>> WINGED_SKELETON_ENTITY =
             Registration.ENTITIES.register(WINGED_SKELETON,
                     () -> EntityType.Builder.of(WingedSkeleton::new, MobCategory.MONSTER)
                             .sized(0.75F, 1.95F)
@@ -220,7 +220,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(WINGED_SKELETON));
 
-    public static final DeferredHolder<EntityType<IronSkeleton>> IRON_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<IronSkeleton>> IRON_SKELETON_ENTITY =
             Registration.ENTITIES.register(IRON_SKELETON,
                     () -> EntityType.Builder.of(IronSkeleton::new, MobCategory.MONSTER)
                             .sized(0.63F, 2.1F)
@@ -228,7 +228,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(IRON_SKELETON));
 
-    public static final DeferredHolder<EntityType<MagmaSkeleton>> MAGMA_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<MagmaSkeleton>> MAGMA_SKELETON_ENTITY =
             Registration.ENTITIES.register(MAGMA_SKELETON,
                     () -> EntityType.Builder.of(MagmaSkeleton::new, MobCategory.MONSTER)
                             .sized(0.63F, 2.1F)
@@ -238,7 +238,7 @@ public class DungeonsEntities {
                             .build(MAGMA_SKELETON));
 
 
-    public static final DeferredHolder<EntityType<TaintedSkeleton>> TAINTED_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<TaintedSkeleton>> TAINTED_SKELETON_ENTITY =
             Registration.ENTITIES.register(TAINTED_SKELETON,
                     () -> EntityType.Builder.of(TaintedSkeleton::new, MobCategory.MONSTER)
                             .sized(0.7F, 1.99F)
@@ -246,7 +246,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(TAINTED_SKELETON));
 
-    public static final DeferredHolder<EntityType<AcidSkeleton>> ACID_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<AcidSkeleton>> ACID_SKELETON_ENTITY =
             Registration.ENTITIES.register(ACID_SKELETON,
                     () -> EntityType.Builder.of(AcidSkeleton::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.99F)
@@ -254,7 +254,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ACID_SKELETON));
 
-    public static final DeferredHolder<EntityType<ElectricSkeleton>> ELECTRIC_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<ElectricSkeleton>> ELECTRIC_SKELETON_ENTITY =
             Registration.ENTITIES.register(ELECTRIC_SKELETON,
                     () -> EntityType.Builder.of(ElectricSkeleton::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.99F)
@@ -262,7 +262,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ELECTRIC_SKELETON));
 
-    public static final DeferredHolder<EntityType<BurningSkeleton>> BURNING_SKELETON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<BurningSkeleton>> BURNING_SKELETON_ENTITY =
             Registration.ENTITIES.register(BURNING_SKELETON,
                     () -> EntityType.Builder.of(BurningSkeleton::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.99F)
@@ -271,7 +271,7 @@ public class DungeonsEntities {
                             .fireImmune()
                             .build(BURNING_SKELETON));
 
-    public static final DeferredHolder<EntityType<BloodyBones>> BLOODY_BONES_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<BloodyBones>> BLOODY_BONES_ENTITY =
             Registration.ENTITIES.register(BLOODY_BONES,
                     () -> EntityType.Builder.of(BloodyBones::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.99F)
@@ -279,7 +279,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(BLOODY_BONES));
 
-    public static final DeferredHolder<EntityType<SkeletonChampion>> SKELETON_CHAMPION_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<SkeletonChampion>> SKELETON_CHAMPION_ENTITY =
             Registration.ENTITIES.register(SKELETON_CHAMPION,
                     () -> EntityType.Builder.of(SkeletonChampion::new, MobCategory.MONSTER)
                             .sized(0.72F, 2.39F)
@@ -296,7 +296,7 @@ public class DungeonsEntities {
     public static final String WIGHT = "wight";
     public static final String BODAK = "bodak";
 
-    public static final DeferredHolder<EntityType<Bloater>> BLOATER_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Bloater>> BLOATER_ENTITY =
             Registration.ENTITIES.register(BLOATER,
                     () -> EntityType.Builder.of(Bloater::new, MobCategory.MONSTER)
                             .sized(0.7F, 2.1F)
@@ -304,7 +304,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(BLOATER));
 
-    public static final DeferredHolder<EntityType<GraveZombie>> GRAVE_ZOMBIE_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<GraveZombie>> GRAVE_ZOMBIE_ENTITY =
             Registration.ENTITIES.register(GRAVE_ZOMBIE,
                     () -> EntityType.Builder.of(GraveZombie::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.95F)
@@ -312,7 +312,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(GRAVE_ZOMBIE));
 
-    public static final DeferredHolder<EntityType<Wight>> WIGHT_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Wight>> WIGHT_ENTITY =
             Registration.ENTITIES.register(WIGHT,
                     () -> EntityType.Builder.of(Wight::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.95F)
@@ -320,7 +320,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(WIGHT));
 
-    public static final DeferredHolder<EntityType<Bodak>> BODAK_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Bodak>> BODAK_ENTITY =
             Registration.ENTITIES.register(BODAK,
                     () -> EntityType.Builder.of(Bodak::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.95F)
@@ -335,7 +335,7 @@ public class DungeonsEntities {
     public static final String BEHOLDER = "beholder";
     public static final String DEATH_TYRANT = "death_tyrant";
 
-    public static final DeferredHolder<EntityType<Beholder>> BEHOLDER_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Beholder>> BEHOLDER_ENTITY =
             Registration.ENTITIES.register(BEHOLDER,
                     () -> EntityType.Builder.of(Beholder::new, MobCategory.MONSTER)
                             .sized(2.25F, 3.5F)
@@ -345,7 +345,7 @@ public class DungeonsEntities {
                             .fireImmune()
                             .build(BEHOLDER));
 
-    public static final DeferredHolder<EntityType<DeathTyrant>> DEATH_TYRANT_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<DeathTyrant>> DEATH_TYRANT_ENTITY =
             Registration.ENTITIES.register(DEATH_TYRANT,
                     () -> EntityType.Builder.of(DeathTyrant::new, MobCategory.MONSTER)
                             .sized(2.25F, 3.5F)
@@ -358,7 +358,7 @@ public class DungeonsEntities {
     /** The Beholder-kin's weakest member -- a common summon target, not a boss in its own right. */
     public static final String SPECTATOR = "spectator";
 
-    public static final DeferredHolder<EntityType<Spectator>> SPECTATOR_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Spectator>> SPECTATOR_ENTITY =
             Registration.ENTITIES.register(SPECTATOR,
                     () -> EntityType.Builder.of(Spectator::new, MobCategory.MONSTER)
                             .sized(0.84375F, 1.21875F)
@@ -373,7 +373,7 @@ public class DungeonsEntities {
      */
     public static final String DAEMON = "daemon";
 
-    public static final DeferredHolder<EntityType<Daemon>> DAEMON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Daemon>> DAEMON_ENTITY =
             Registration.ENTITIES.register(DAEMON,
                     () -> EntityType.Builder.of(Daemon::new, MobCategory.MONSTER)
                             .sized(1F, 3F)
@@ -389,7 +389,7 @@ public class DungeonsEntities {
      */
     public static final String GHOUL = "ghoul";
 
-    public static final DeferredHolder<EntityType<Ghoul>> GHOUL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Ghoul>> GHOUL_ENTITY =
             Registration.ENTITIES.register(GHOUL,
                     () -> EntityType.Builder.of(Ghoul::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.68F)
@@ -407,7 +407,7 @@ public class DungeonsEntities {
     public static final String GRAY_OOZE = "gray_ooze";
     public static final String BLACK_PUDDING = "black_pudding";
 
-    public static final DeferredHolder<EntityType<GelatinousCube>> GELATINOUS_CUBE_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<GelatinousCube>> GELATINOUS_CUBE_ENTITY =
             Registration.ENTITIES.register(GELATINOUS_CUBE,
                     () -> EntityType.Builder.of(GelatinousCube::new, MobCategory.MONSTER)
                             .sized(1.1F, 1.1F)
@@ -415,7 +415,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(GELATINOUS_CUBE));
 
-    public static final DeferredHolder<EntityType<OchreJelly>> OCHRE_JELLY_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<OchreJelly>> OCHRE_JELLY_ENTITY =
             Registration.ENTITIES.register(OCHRE_JELLY,
                     () -> EntityType.Builder.of(OchreJelly::new, MobCategory.MONSTER)
                             .sized(0.85F, 0.85F)
@@ -423,7 +423,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(OCHRE_JELLY));
 
-    public static final DeferredHolder<EntityType<GrayOoze>> GRAY_OOZE_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<GrayOoze>> GRAY_OOZE_ENTITY =
             Registration.ENTITIES.register(GRAY_OOZE,
                     () -> EntityType.Builder.of(GrayOoze::new, MobCategory.MONSTER)
                             .sized(0.9F, 0.9F)
@@ -431,7 +431,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(GRAY_OOZE));
 
-    public static final DeferredHolder<EntityType<BlackPudding>> BLACK_PUDDING_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<BlackPudding>> BLACK_PUDDING_ENTITY =
             Registration.ENTITIES.register(BLACK_PUDDING,
                     () -> EntityType.Builder.of(BlackPudding::new, MobCategory.MONSTER)
                             .sized(0.9F, 0.9F)
@@ -474,7 +474,7 @@ public class DungeonsEntities {
      * carrying both -- and because a mimic that is not exactly a block wide gives itself away
      * standing next to a real chest, which is the entire point of the disguise.
      */
-    public static final DeferredHolder<EntityType<VanillaChestMimic>> VANILLA_CHEST_MIMIC_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<VanillaChestMimic>> VANILLA_CHEST_MIMIC_ENTITY =
             Registration.ENTITIES.register(VANILLA_CHEST_MIMIC,
                     () -> EntityType.Builder.of(VanillaChestMimic::new, MobCategory.MONSTER)
                             .sized(1.0F, 1.0F)
@@ -483,7 +483,7 @@ public class DungeonsEntities {
                             .build(VANILLA_CHEST_MIMIC));
 
     /** See {@link #VANILLA_CHEST_MIMIC_ENTITY}; the same base disguised as a barrel. */
-    public static final DeferredHolder<EntityType<BarrelMimic>> BARREL_MIMIC_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<BarrelMimic>> BARREL_MIMIC_ENTITY =
             Registration.ENTITIES.register(BARREL_MIMIC,
                     () -> EntityType.Builder.of(BarrelMimic::new, MobCategory.MONSTER)
                             .sized(1.0F, 1.0F)
@@ -491,7 +491,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(BARREL_MIMIC));
 
-    public static final DeferredHolder<EntityType<AnimatedArmor>> ANIMATED_ARMOR_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<AnimatedArmor>> ANIMATED_ARMOR_ENTITY =
             Registration.ENTITIES.register(ANIMATED_ARMOR,
                     () -> EntityType.Builder.of(AnimatedArmor::new, MobCategory.MONSTER)
                             .sized(0.6F, 1.99F)
@@ -508,7 +508,7 @@ public class DungeonsEntities {
      * shipped the smaller box first and it combined with the erratic hover into an unreasonably
      * small click target. Transcribed from that mod's {@code ANIMATED_WEAPON_TYPE}.</p>
      */
-    public static final DeferredHolder<EntityType<AnimatedWeapon>> ANIMATED_WEAPON_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<AnimatedWeapon>> ANIMATED_WEAPON_ENTITY =
             Registration.ENTITIES.register(ANIMATED_WEAPON,
                     () -> EntityType.Builder.of(AnimatedWeapon::new, MobCategory.MONSTER)
                             .sized(0.75F, 0.75F)
@@ -522,7 +522,7 @@ public class DungeonsEntities {
      * spawner rolled an id that was not there -- spawning nothing and logging nothing. Transcribed
      * from Dungeon Denizens' {@code GARGOYLE_TYPE}, as the margoyle beside it was.
      */
-    public static final DeferredHolder<EntityType<Gargoyle>> GARGOYLE_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Gargoyle>> GARGOYLE_ENTITY =
             Registration.ENTITIES.register(GARGOYLE,
                     () -> EntityType.Builder.of(Gargoyle::new, MobCategory.MONSTER)
                             .sized(0.75F, 1.75F)
@@ -530,7 +530,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(GARGOYLE));
 
-    public static final DeferredHolder<EntityType<Margoyle>> MARGOYLE_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Margoyle>> MARGOYLE_ENTITY =
             Registration.ENTITIES.register(MARGOYLE,
                     () -> EntityType.Builder.of(Margoyle::new, MobCategory.MONSTER)
                             .sized(0.9F, 2.1F)
@@ -573,7 +573,7 @@ public class DungeonsEntities {
      * <p>On {@link #MINI_BOSSES} pending a placement decision -- registered and egg-able, in neither
      * spawner route.</p>
      */
-    public static final DeferredHolder<EntityType<Minotaur>> MINOTAUR_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Minotaur>> MINOTAUR_ENTITY =
             Registration.ENTITIES.register(MINOTAUR,
                     () -> EntityType.Builder.of(Minotaur::new, MobCategory.MONSTER)
                             .sized(1.0F, MINOTAUR_HEIGHT)
@@ -618,7 +618,7 @@ public class DungeonsEntities {
      */
     public static final float STONE_COLOSSUS_WIDTH = 1.8F;
 
-    public static final DeferredHolder<EntityType<StoneColossus>> STONE_COLOSSUS_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<StoneColossus>> STONE_COLOSSUS_ENTITY =
             Registration.ENTITIES.register(STONE_COLOSSUS,
                     () -> EntityType.Builder.of(StoneColossus::new, MobCategory.MONSTER)
                             .sized(STONE_COLOSSUS_WIDTH, STONE_COLOSSUS_HEIGHT)
@@ -634,7 +634,7 @@ public class DungeonsEntities {
      */
     public static final float ORC_WIDTH = 0.9F;
 
-    public static final DeferredHolder<EntityType<Orc>> ORC_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Orc>> ORC_ENTITY =
             Registration.ENTITIES.register(ORC,
                     () -> EntityType.Builder.of(Orc::new, MobCategory.MONSTER)
                             .sized(ORC_WIDTH, 1.99F)
@@ -648,7 +648,7 @@ public class DungeonsEntities {
      * a boss that cannot leave its room is worse than one that looks slightly small for its
      * silhouette. Same call {@code SkeletonChampion} makes.
      */
-    public static final DeferredHolder<EntityType<OrcWarlord>> ORC_WARLORD_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<OrcWarlord>> ORC_WARLORD_ENTITY =
             Registration.ENTITIES.register(ORC_WARLORD,
                     () -> EntityType.Builder.of(OrcWarlord::new, MobCategory.MONSTER)
                             .sized(ORC_WIDTH, 1.99F)
@@ -656,7 +656,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(ORC_WARLORD));
 
-    public static final DeferredHolder<EntityType<OrcShaman>> ORC_SHAMAN_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<OrcShaman>> ORC_SHAMAN_ENTITY =
             Registration.ENTITIES.register(ORC_SHAMAN,
                     () -> EntityType.Builder.of(OrcShaman::new, MobCategory.MONSTER)
                             .sized(ORC_WIDTH, 1.99F)
@@ -675,7 +675,7 @@ public class DungeonsEntities {
      * that low. {@code setTrackingRange(20)} is GMM's own value and is what lets it notice a player
      * across a flooded room rather than only at the water's edge.</p>
      */
-    public static final DeferredHolder<EntityType<AlligatorGar>> ALLIGATOR_GAR_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<AlligatorGar>> ALLIGATOR_GAR_ENTITY =
             Registration.ENTITIES.register(ALLIGATOR_GAR,
                     () -> EntityType.Builder.of(AlligatorGar::new, MobCategory.MONSTER)
                             .sized(0.6F, 0.4F)
@@ -695,7 +695,7 @@ public class DungeonsEntities {
      * the registered height, so {@code HEIGHT * 2} is not cosmetic here: it is what makes the giant
      * ignore armour, drain and slow. The width stays {@code Leech.WIDTH}; the swimming box is GMM's.</p>
      */
-    public static final DeferredHolder<EntityType<Leech>> LEECH_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Leech>> LEECH_ENTITY =
             Registration.ENTITIES.register(LEECH,
                     () -> EntityType.Builder.of(Leech::new, MobCategory.MONSTER)
                             .sized(Leech.WIDTH, Leech.HEIGHT)
@@ -704,7 +704,7 @@ public class DungeonsEntities {
                             .build(LEECH));
 
     /** Rendered at 2x in {@code ClientSetup} -- keep that in step with this {@code sized(...)}. */
-    public static final DeferredHolder<EntityType<Leech>> GIANT_LEECH_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Leech>> GIANT_LEECH_ENTITY =
             Registration.ENTITIES.register(GIANT_LEECH,
                     () -> EntityType.Builder.of(Leech::new, MobCategory.MONSTER)
                             .sized(Leech.WIDTH, Leech.HEIGHT * 2)
@@ -744,7 +744,7 @@ public class DungeonsEntities {
     public static final String ANNIHILATION_RAY = "annihilation_ray";
 
     /** The shrapnel Bloody Bones and the Tainted Skeleton throw. */
-    public static final DeferredHolder<EntityType<BoneShard>> BONE_SHARD_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<BoneShard>> BONE_SHARD_ENTITY =
             Registration.ENTITIES.register(BONE_SHARD,
                     () -> EntityType.Builder.<BoneShard>of(BoneShard::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
@@ -753,7 +753,7 @@ public class DungeonsEntities {
                             .build(BONE_SHARD));
 
     /** The limbs a Bloater ruptures into on death. */
-    public static final DeferredHolder<EntityType<BloaterArm>> BLOATER_ARM_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<BloaterArm>> BLOATER_ARM_ENTITY =
             Registration.ENTITIES.register(BLOATER_ARM,
                     () -> EntityType.Builder.<BloaterArm>of(BloaterArm::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
@@ -769,7 +769,7 @@ public class DungeonsEntities {
      * deliberate difference: the bone shard's 20 is far too coarse for something thrown a couple of
      * blocks, and at 20 the client was told where a shard was about as often as it existed.</p>
      */
-    public static final DeferredHolder<EntityType<SmashShard>> SMASH_SHARD_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<SmashShard>> SMASH_SHARD_ENTITY =
             Registration.ENTITIES.register(SMASH_SHARD,
                     () -> EntityType.Builder.<SmashShard>of(SmashShard::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F)
@@ -784,7 +784,7 @@ public class DungeonsEntities {
      * mid-air across a world reload would be scenery nobody threw. Tracked further than a shard
      * because the whole point of it is being seen coming from across a room.</p>
      */
-    public static final DeferredHolder<EntityType<Boulder>> BOULDER_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Boulder>> BOULDER_ENTITY =
             Registration.ENTITIES.register(BOULDER,
                     () -> EntityType.Builder.<Boulder>of(Boulder::new, MobCategory.MISC)
                             .sized(0.85F, 0.85F)
@@ -794,7 +794,7 @@ public class DungeonsEntities {
                             .build(BOULDER));
 
     /** The Orc's thrown rock. */
-    public static final DeferredHolder<EntityType<Rock>> ROCK_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<Rock>> ROCK_ENTITY =
             Registration.ENTITIES.register(ROCK,
                     () -> EntityType.Builder.<Rock>of(Rock::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
@@ -803,7 +803,7 @@ public class DungeonsEntities {
                             .build(ROCK));
 
     /** The Orc Shaman's spell. */
-    public static final DeferredHolder<EntityType<SpikeGrowthSpell>> SPIKE_GROWTH_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<SpikeGrowthSpell>> SPIKE_GROWTH_SPELL_ENTITY =
             Registration.ENTITIES.register(SPIKE_GROWTH_SPELL,
                     () -> EntityType.Builder.<SpikeGrowthSpell>of(SpikeGrowthSpell::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
@@ -812,7 +812,7 @@ public class DungeonsEntities {
                             .build(SPIKE_GROWTH_SPELL));
 
     /** The Bodak's withering gaze. */
-    public static final DeferredHolder<EntityType<WitheringGazeSpell>> WITHERING_GAZE_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<WitheringGazeSpell>> WITHERING_GAZE_SPELL_ENTITY =
             Registration.ENTITIES.register(WITHERING_GAZE_SPELL,
                     () -> EntityType.Builder.<WitheringGazeSpell>of(WitheringGazeSpell::new, MobCategory.MISC)
                             .sized(1F, 1F)
@@ -826,7 +826,7 @@ public class DungeonsEntities {
      * through the spell's {@code itemSupplier} (2026-09-10; before that, a fire charge each) &mdash;
      * see {@code DungeonsItems.PARALYSIS_SPELL_ITEM}.
      */
-    public static final DeferredHolder<EntityType<ParalysisSpell>> PARALYSIS_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<ParalysisSpell>> PARALYSIS_SPELL_ENTITY =
             Registration.ENTITIES.register(PARALYSIS_SPELL,
                     () -> EntityType.Builder.<ParalysisSpell>of(ParalysisSpell::new, MobCategory.MISC)
                             .sized(1F, 1F)
@@ -834,7 +834,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(PARALYSIS_SPELL));
 
-    public static final DeferredHolder<EntityType<HarmSpell>> HARM_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<HarmSpell>> HARM_SPELL_ENTITY =
             Registration.ENTITIES.register(HARM_SPELL,
                     () -> EntityType.Builder.<HarmSpell>of(HarmSpell::new, MobCategory.MISC)
                             .sized(1F, 1F)
@@ -842,7 +842,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(HARM_SPELL));
 
-    public static final DeferredHolder<EntityType<DisintegrateSpell>> DISINTEGRATE_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<DisintegrateSpell>> DISINTEGRATE_SPELL_ENTITY =
             Registration.ENTITIES.register(DISINTEGRATE_SPELL,
                     () -> EntityType.Builder.<DisintegrateSpell>of(DisintegrateSpell::new, MobCategory.MISC)
                             .sized(1F, 1F)
@@ -850,7 +850,7 @@ public class DungeonsEntities {
                             .setShouldReceiveVelocityUpdates(false)
                             .build(DISINTEGRATE_SPELL));
 
-    public static final DeferredHolder<EntityType<DisarmSpell>> DISARM_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<DisarmSpell>> DISARM_SPELL_ENTITY =
             Registration.ENTITIES.register(DISARM_SPELL,
                     () -> EntityType.Builder.<DisarmSpell>of(DisarmSpell::new, MobCategory.MISC)
                             .sized(1F, 1F)
@@ -859,7 +859,7 @@ public class DungeonsEntities {
                             .build(DISARM_SPELL));
 
     /** Daemon's fire-spout arc. */
-    public static final DeferredHolder<EntityType<FireSpoutSpell>> FIRESPOUT_SPELL_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<FireSpoutSpell>> FIRESPOUT_SPELL_ENTITY =
             Registration.ENTITIES.register(FIRESPOUT_SPELL,
                     () -> EntityType.Builder.<FireSpoutSpell>of(FireSpoutSpell::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
@@ -876,7 +876,7 @@ public class DungeonsEntities {
      * The renderer does not read that position for the beam's own ends &mdash; see
      * {@code AnnihilationRayRenderer}.</p>
      */
-    public static final DeferredHolder<EntityType<AnnihilationRay>> ANNIHILATION_RAY_ENTITY =
+    public static final DeferredHolder<EntityType<?>, EntityType<AnnihilationRay>> ANNIHILATION_RAY_ENTITY =
             Registration.ENTITIES.register(ANNIHILATION_RAY,
                     () -> EntityType.Builder.<AnnihilationRay>of(AnnihilationRay::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F)

@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RendererCoverageTest {
 
     private static final Path SOURCES = Paths.get("src/main/java/mod/gottsch/neo/dungeons2/core");
-    private static final Pattern REGISTERED = Pattern.compile("DeferredHolder<EntityType<[^>]+>>\\s+(\\w+)\\s*=");
+    private static final Pattern REGISTERED = Pattern.compile("DeferredHolder<EntityType<?>, EntityType<[^>]+>>\\s+(\\w+)\\s*=");
     private static final Pattern RENDERED = Pattern.compile("registerEntityRenderer\\(\\s*DungeonsEntities\\.(\\w+)\\.get\\(\\)");
 
     @Test

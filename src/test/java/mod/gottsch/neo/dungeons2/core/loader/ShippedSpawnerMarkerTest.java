@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class ShippedSpawnerMarkerTest {
 
-    private static final String STRUCTURES = "/data/dungeons2/structures";
+    private static final String STRUCTURES = "/data/dungeons2/structure";
     private static final String STRUCTURE_BLOCK = "minecraft:structure_block";
 
     /**

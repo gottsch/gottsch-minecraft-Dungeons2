@@ -81,7 +81,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class ShippedTemplateBlocksTest {
 
-    private static final String TEMPLATE_ROOT = "/data/dungeons2/structures";
+    private static final String TEMPLATE_ROOT = "/data/dungeons2/structure";
 
     /** Where a modded block proves it exists without a running game &mdash; see {@link ShippedBlockIdsTest}. */
     private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";

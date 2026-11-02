@@ -41,7 +41,7 @@ public class DungeonsBlockEntities {
 	 * <p>Built with the {@code Supplier} constructor rather than the eager one so the type is
 	 * resolved on demand instead of during its own registration.</p>
 	 */
-	public static final DeferredHolder<BlockEntityType<DungeonSpawnerBlockEntity>> MOB_SET_SPAWNER =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DungeonSpawnerBlockEntity>> MOB_SET_SPAWNER =
 			Registration.BLOCK_ENTITIES.register("mob_set_spawner",
 					() -> BlockEntityType.Builder.of(
 									(pos, state) -> new DungeonSpawnerBlockEntity(
@@ -61,7 +61,7 @@ public class DungeonsBlockEntities {
 	 * Carries no behaviour -- it exists so a template can store per-marker
 	 * fields and {@code ChestMarkerProcessor} can read them back during placement.
 	 */
-	public static final DeferredHolder<BlockEntityType<ChestMarkerBlockEntity>> CHEST_MARKER =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChestMarkerBlockEntity>> CHEST_MARKER =
 			Registration.BLOCK_ENTITIES.register("chest_marker",
 					() -> BlockEntityType.Builder.of(ChestMarkerBlockEntity::new,
 							DungeonsBlocks.CHEST_MARKER.get()).build(null));
@@ -71,7 +71,7 @@ public class DungeonsBlockEntities {
 	 * same reason as the other two: which set, how many and how far are PER MARKER decisions, and a
 	 * codec field on the processor is per POOL. See {@link SpawnerMarkerBlockEntity}.
 	 */
-	public static final DeferredHolder<BlockEntityType<SpawnerMarkerBlockEntity>> SPAWNER_MARKER =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SpawnerMarkerBlockEntity>> SPAWNER_MARKER =
 			Registration.BLOCK_ENTITIES.register("spawner_marker",
 					() -> BlockEntityType.Builder.of(SpawnerMarkerBlockEntity::new,
 							DungeonsBlocks.SPAWNER_MARKER.get()).build(null));
@@ -80,7 +80,7 @@ public class DungeonsBlockEntities {
 	 * Like {@link #CHEST_MARKER} it carries no behaviour: it exists so a template can
 	 * store per-marker fields and {@code PotMarkerProcessor} can read them back during placement.
 	 */
-	public static final DeferredHolder<BlockEntityType<PotMarkerBlockEntity>> POT_MARKER =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PotMarkerBlockEntity>> POT_MARKER =
 			Registration.BLOCK_ENTITIES.register("pot_marker",
 					() -> BlockEntityType.Builder.of(PotMarkerBlockEntity::new,
 							DungeonsBlocks.POT_MARKER.get()).build(null));
@@ -89,13 +89,13 @@ public class DungeonsBlockEntities {
 	 * Like the other three it carries no behaviour: it exists so a template can store a
 	 * tomb's contents per marker and {@code SarcophagusMarkerProcessor} can read them back.
 	 */
-	public static final DeferredHolder<BlockEntityType<SarcophagusMarkerBlockEntity>> SARCOPHAGUS_MARKER =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SarcophagusMarkerBlockEntity>> SARCOPHAGUS_MARKER =
 			Registration.BLOCK_ENTITIES.register("sarcophagus_marker",
 					() -> BlockEntityType.Builder.of(SarcophagusMarkerBlockEntity::new,
 							DungeonsBlocks.SARCOPHAGUS_MARKER.get()).build(null));
 
 	/** The Mining Chest. A vanilla chest entity under its own type, for its own renderer. */
-	public static final DeferredHolder<BlockEntityType<MiningChestBlockEntity>> MINING_CHEST =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MiningChestBlockEntity>> MINING_CHEST =
 			Registration.BLOCK_ENTITIES.register("mining_chest",
 					() -> BlockEntityType.Builder.of(MiningChestBlockEntity::new,
 							DungeonsBlocks.MINING_CHEST.get()).build(null));

@@ -59,7 +59,7 @@ public class DungeonsBlocks {
      * {@link MobSetSpawnerBlock#getShape} makes it un-targetable, which together is the whole of
      * what {@code air()} was there for.</p>
      */
-    public static final DeferredHolder<Block> MOB_SET_SPAWNER = Registration.BLOCKS.register(
+    public static final DeferredHolder<Block, Block> MOB_SET_SPAWNER = Registration.BLOCKS.register(
             "mob_set_spawner",
             () -> new MobSetSpawnerBlock(MobSetSpawnerBlock.properties()));
 
@@ -86,7 +86,7 @@ public class DungeonsBlocks {
      * is why the mob set became a codec field on the processor in the first place, was only ever
      * true of a block with no block entity &mdash; see {@link SpawnerMarkerBlock}.</p>
      */
-    public static final DeferredHolder<Block> SPAWNER_MARKER = Registration.BLOCKS.register(
+    public static final DeferredHolder<Block, Block> SPAWNER_MARKER = Registration.BLOCKS.register(
             "spawner_marker",
             () -> new SpawnerMarkerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE).strength(3.0F).sound(SoundType.STONE).noLootTable()));
@@ -99,7 +99,7 @@ public class DungeonsBlocks {
      * <p>Solid and visible for the same reason the spawner marker is: it must survive to the
      * processor, and its author has to be able to see it while building.</p>
      */
-    public static final DeferredHolder<Block> CHEST_MARKER = Registration.BLOCKS.register(
+    public static final DeferredHolder<Block, Block> CHEST_MARKER = Registration.BLOCKS.register(
             "chest_marker",
             () -> new ChestMarkerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD).strength(2.5F).sound(SoundType.WOOD).noLootTable()));
@@ -114,7 +114,7 @@ public class DungeonsBlocks {
      * building. Unlike the chest marker it has no {@code FACING}: a pot's rotation is rolled, so
      * the property would look meaningful and do nothing.</p>
      */
-    public static final DeferredHolder<Block> POT_MARKER = Registration.BLOCKS.register(
+    public static final DeferredHolder<Block, Block> POT_MARKER = Registration.BLOCKS.register(
             "pot_marker",
             () -> new PotMarkerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_ORANGE).strength(2.5F)
@@ -125,7 +125,7 @@ public class DungeonsBlocks {
      * processor writes both halves. Carries a block entity for the other markers' reason &mdash;
      * what a tomb holds is a per-tomb decision &mdash; and is solid and visible for theirs.
      */
-    public static final DeferredHolder<Block> SARCOPHAGUS_MARKER = Registration.BLOCKS.register(
+    public static final DeferredHolder<Block, Block> SARCOPHAGUS_MARKER = Registration.BLOCKS.register(
             "sarcophagus_marker",
             () -> new SarcophagusMarkerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE).strength(2.5F)
@@ -136,7 +136,7 @@ public class DungeonsBlocks {
      * Iron in feel as well as look -- metal sound, pickaxe-mined -- but it does not require the
      * correct tool, so like a wooden chest it always drops itself.
      */
-    public static final DeferredHolder<Block> MINING_CHEST = Registration.BLOCKS.register(
+    public static final DeferredHolder<Block, Block> MINING_CHEST = Registration.BLOCKS.register(
             "mining_chest",
             () -> new MiningChestBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.METAL).strength(3.0F).sound(SoundType.METAL)));

@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class PieceSurfaceTest {
 
-    private static final String TEMPLATE_ROOT = "/data/dungeons2/structures";
+    private static final String TEMPLATE_ROOT = "/data/dungeons2/structure";
 
     /**
      * Categories whose layer 0 is legitimately not a floor slab: a stairwell's is a partly-open

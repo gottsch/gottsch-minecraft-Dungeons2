@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class ShippedAdvancementsTest {
 
-    private static final String ROOT = "/data/dungeons2/advancements";
+    private static final String ROOT = "/data/dungeons2/advancement";
     private static final String LANG = "/assets/dungeons2/lang/en_us.json";
     /**
      * The non-vanilla criteria: D2's own (DungeonsTriggers), and Gottsch Books' book_read, which the
