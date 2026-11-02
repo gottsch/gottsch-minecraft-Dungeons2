@@ -32,6 +32,7 @@ import mod.gottsch.neo.gmm.core.entity.monster.mimic.BarrelMimic;
 import mod.gottsch.neo.gmm.core.entity.monster.mimic.VanillaChestMimic;
 import mod.gottsch.neo.gmm.core.entity.ai.goal.CastSpellGoal;
 import mod.gottsch.neo.gmm.core.entity.ai.goal.GroundSlamGoal;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -90,7 +91,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
-import net.neoforged.neoforge.event.entity.SpawnPlacementRegisterEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -420,155 +421,155 @@ public class CommonSetup {
 	 * governed by the structure, not by whether the player happens to have lit the room.</p>
 	 */
 	@SubscribeEvent
-	public static void onRegisterSpawnPlacements(SpawnPlacementRegisterEvent event) {
-		event.register(DungeonsEntities.RAT_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+	public static void onRegisterSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+		event.register(DungeonsEntities.RAT_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.GIANT_RAT_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.GIANT_RAT_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// Registered for the same reason the rats' are -- this says where one is ALLOWED to stand,
 		// not what spawns one. Nothing spawns these naturally: the weathering pass places them
 		// directly (FungusGrowth), which bypasses spawn placement entirely. The registration still
 		// earns its keep for a spawn egg and for /summon.
-		event.register(DungeonsEntities.SHRIEKER_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.SHRIEKER_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.VIOLET_FUNGUS_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.VIOLET_FUNGUS_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 
 		// The GMM roster. ON_GROUND for everything that walks; the Winged Skeleton is the one
 		// flyer, and NO_RESTRICTIONS is what lets it be placed in the air rather than only on a
 		// solid block it would then have to leave.
 		// Mob::checkMobSpawnRules throughout, for the reason given above: a structure-scoped
 		// spawn should be governed by the structure and not by whether the room is lit.
-		event.register(DungeonsEntities.SKELETON_WARRIOR_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.SKELETON_WARRIOR_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.WINGED_SKELETON_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.WINGED_SKELETON_ENTITY.get(), SpawnPlacementTypes.NO_RESTRICTIONS,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.IRON_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.IRON_SKELETON_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// The two fire-immune skeletons may also stand on lava -- see DungeonSpawnPlacements.
 		event.register(DungeonsEntities.MAGMA_SKELETON_ENTITY.get(), DungeonSpawnPlacements.ON_GROUND_OR_LAVA,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.TAINTED_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.TAINTED_SKELETON_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.ACID_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.ACID_SKELETON_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.ELECTRIC_SKELETON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.ELECTRIC_SKELETON_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		event.register(DungeonsEntities.BURNING_SKELETON_ENTITY.get(), DungeonSpawnPlacements.ON_GROUND_OR_LAVA,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.BLOODY_BONES_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.BLOODY_BONES_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.SKELETON_CHAMPION_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.SKELETON_CHAMPION_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.BLOATER_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.BLOATER_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.GRAVE_ZOMBIE_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.GRAVE_ZOMBIE_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.WIGHT_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.WIGHT_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.BODAK_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.BODAK_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// NO_RESTRICTIONS, like the Winged Skeleton -- both hover rather than stand on solid ground.
-		event.register(DungeonsEntities.BEHOLDER_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+		event.register(DungeonsEntities.BEHOLDER_ENTITY.get(), SpawnPlacementTypes.NO_RESTRICTIONS,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.DEATH_TYRANT_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.DEATH_TYRANT_ENTITY.get(), SpawnPlacementTypes.NO_RESTRICTIONS,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.SPECTATOR_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.SPECTATOR_ENTITY.get(), SpawnPlacementTypes.NO_RESTRICTIONS,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// ON_GROUND, unlike the Beholder-kin above -- Daemon is a GMMMonster (walks), not a FlyingMob.
-		event.register(DungeonsEntities.DAEMON_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.DAEMON_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.GHOUL_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.GHOUL_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.GELATINOUS_CUBE_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.GELATINOUS_CUBE_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.OCHRE_JELLY_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.OCHRE_JELLY_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.GRAY_OOZE_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.GRAY_OOZE_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.BLACK_PUDDING_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// Registered like the mini-bosses, and for the stronger version of their reason: nothing
 		// spawns a mimic ambiently or from a mob set -- it appears only where a container
 		// would have been. A placement rule is still what a spawn EGG goes through, and an egg is
 		// the only way to look at one without generating a dungeon.
-		event.register(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.VANILLA_CHEST_MIMIC_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.BARREL_MIMIC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.BARREL_MIMIC_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.ANIMATED_ARMOR_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// NO_RESTRICTIONS, like the Winged Skeleton and the Beholder-kin -- the animated weapon
 		// hovers rather than stands, so requiring a solid block under it would only place it
 		// somewhere it immediately leaves.
-		event.register(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), SpawnPlacements.Type.NO_RESTRICTIONS,
+		event.register(DungeonsEntities.ANIMATED_WEAPON_ENTITY.get(), SpawnPlacementTypes.NO_RESTRICTIONS,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.MARGOYLE_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.MARGOYLE_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.ORC_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.ORC_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// Registered like the other mini-bosses even though nothing spawns it ambiently -- same
 		// reasoning as the block below.
-		event.register(DungeonsEntities.MINOTAUR_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.MINOTAUR_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// Registered like the other mini-bosses even though nothing spawns it ambiently:
 		// MiniBossAnchorEvent restricts it by registry id, and a placement rule is what a
 		// spawn EGG and the spawner marker both go through.
-		event.register(DungeonsEntities.ORC_WARLORD_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+		event.register(DungeonsEntities.ORC_WARLORD_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), SpawnPlacements.Type.ON_GROUND,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.ORC_SHAMAN_ENTITY.get(), SpawnPlacementTypes.ON_GROUND,
 				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 
 		// The gar is the one water mob, so it is the one exception to both defaults above. IN_WATER
 		// rather than ON_GROUND (vanilla's own placement type checks the block IS water), and
 		// OCEAN_FLOOR rather than MOTION_BLOCKING_NO_LEAVES -- the latter heightmap stops at the water
 		// SURFACE, so a gar placed against it would be asked to stand on top of the pool.
-		event.register(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), SpawnPlacements.Type.IN_WATER,
+		event.register(DungeonsEntities.ALLIGATOR_GAR_ENTITY.get(), SpawnPlacementTypes.IN_WATER,
 				Heightmap.Types.OCEAN_FLOOR, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 		// The leeches are water mobs too, for the same reasons.
-		event.register(DungeonsEntities.LEECH_ENTITY.get(), SpawnPlacements.Type.IN_WATER,
+		event.register(DungeonsEntities.LEECH_ENTITY.get(), SpawnPlacementTypes.IN_WATER,
 				Heightmap.Types.OCEAN_FLOOR, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
-		event.register(DungeonsEntities.GIANT_LEECH_ENTITY.get(), SpawnPlacements.Type.IN_WATER,
+				RegisterSpawnPlacementsEvent.Operation.OR);
+		event.register(DungeonsEntities.GIANT_LEECH_ENTITY.get(), SpawnPlacementTypes.IN_WATER,
 				Heightmap.Types.OCEAN_FLOOR, Mob::checkMobSpawnRules,
-				SpawnPlacementRegisterEvent.Operation.OR);
+				RegisterSpawnPlacementsEvent.Operation.OR);
 	}
 
 	/**
