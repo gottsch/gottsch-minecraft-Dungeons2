@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.setup;
 
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.Codec;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.world.structure.DungeonStructure;
@@ -153,7 +154,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<AgingProcessor>> AGING_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(AGING_PROCESSOR_NAME, () -> {
-				Codec<AgingProcessor> codec = AgingProcessor.codec(() -> Registration.AGING_PROCESSOR.get());
+				MapCodec<AgingProcessor> codec = AgingProcessor.codec(() -> Registration.AGING_PROCESSOR.get());
 				return () -> codec;
 			});
 
@@ -167,7 +168,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<SpawnerMarkerProcessor>> SPAWNER_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(SPAWNER_PROCESSOR_NAME, () -> {
-				Codec<SpawnerMarkerProcessor> codec =
+				MapCodec<SpawnerMarkerProcessor> codec =
 						SpawnerMarkerProcessor.codec(() -> Registration.SPAWNER_PROCESSOR.get());
 				return () -> codec;
 			});
@@ -211,7 +212,7 @@ public class Registration {
 	/** Neighbour-aware decoration (cobwebs, clustering wall growth). See {@link DecorationProcessor}. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<DecorationProcessor>> DECORATION_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(DECORATION_PROCESSOR_NAME, () -> {
-				Codec<DecorationProcessor> codec =
+				MapCodec<DecorationProcessor> codec =
 						DecorationProcessor.codec(() -> Registration.DECORATION_PROCESSOR.get());
 				return () -> codec;
 			});
@@ -226,7 +227,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<SurfaceAgingProcessor>> SURFACE_AGING_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(SURFACE_AGING_PROCESSOR_NAME, () -> {
-				Codec<SurfaceAgingProcessor> codec =
+				MapCodec<SurfaceAgingProcessor> codec =
 						SurfaceAgingProcessor.codec(() -> Registration.SURFACE_AGING_PROCESSOR.get());
 				return () -> codec;
 			});
@@ -243,7 +244,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<DecorationSweepProcessor>> DECORATION_SWEEP_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(DECORATION_SWEEP_PROCESSOR_NAME, () -> {
-				Codec<DecorationSweepProcessor> codec =
+				MapCodec<DecorationSweepProcessor> codec =
 						DecorationSweepProcessor.codec(() -> Registration.DECORATION_SWEEP_PROCESSOR.get());
 				return () -> codec;
 			});
@@ -264,7 +265,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<SupportSweepProcessor>> SUPPORT_SWEEP_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(SUPPORT_SWEEP_PROCESSOR_NAME, () -> {
-				Codec<SupportSweepProcessor> codec =
+				MapCodec<SupportSweepProcessor> codec =
 						SupportSweepProcessor.codec(() -> Registration.SUPPORT_SWEEP_PROCESSOR.get());
 				return () -> codec;
 			});
@@ -338,7 +339,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<HangingSweepProcessor>> HANGING_SWEEP_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(HANGING_SWEEP_PROCESSOR_NAME, () -> {
-				Codec<HangingSweepProcessor> codec =
+				MapCodec<HangingSweepProcessor> codec =
 						HangingSweepProcessor.codec(() -> Registration.HANGING_SWEEP_PROCESSOR.get());
 				return () -> codec;
 			});

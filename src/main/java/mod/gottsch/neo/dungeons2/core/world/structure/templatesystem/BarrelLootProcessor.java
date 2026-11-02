@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.gottschcore.world.gen.structure.templatesystem.LevelIndependentProcessor;
 import net.minecraft.core.BlockPos;
@@ -58,8 +59,8 @@ public class BarrelLootProcessor extends StructureProcessor implements LevelInde
         this.type = type;
     }
 
-    public static Codec<BarrelLootProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<BarrelLootProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 ResourceLocation.CODEC.fieldOf("loot_table").forGetter(p -> p.lootTable)
         ).apply(instance, table -> new BarrelLootProcessor(table, type)));
     }

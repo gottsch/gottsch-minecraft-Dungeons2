@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.gottschcore.json.StrictCodecs;
@@ -134,8 +135,8 @@ public class HangingSweepProcessor extends StructureProcessor {
     }
 
     /** Strict throughout, per the closed-schema rule: an undeclared key is a load error, not a shrug. */
-    public static Codec<HangingSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<HangingSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "hanging", BlockMatch.NONE)
                         .forGetter(processor -> processor.hanging)
         ).apply(instance, hanging -> new HangingSweepProcessor(type, hanging)));

@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.generator.dungeon.BlockStateCodec;
@@ -108,8 +109,8 @@ public class RubbleScatterProcessor extends StructureProcessor implements LevelI
     }
 
     /** Strict throughout, per the closed-schema rule. */
-    public static Codec<RubbleScatterProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<RubbleScatterProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "broken", BlockMatch.NONE)
                         .forGetter(p -> p.broken),
                 StrictCodecs.strictOptionalFieldOf(Codec.STRING, "scatter_block", DEFAULT_SCATTER)

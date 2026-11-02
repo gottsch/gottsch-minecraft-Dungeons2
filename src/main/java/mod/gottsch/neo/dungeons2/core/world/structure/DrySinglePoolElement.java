@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
+import com.mojang.serialization.MapCodec;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -52,7 +53,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  */
 public class DrySinglePoolElement extends SinglePoolElement {
 
-    public static final Codec<DrySinglePoolElement> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    public static final MapCodec<DrySinglePoolElement> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             templateCodec(), processorsCodec(), projectionCodec()
     ).apply(instance, DrySinglePoolElement::new));
 

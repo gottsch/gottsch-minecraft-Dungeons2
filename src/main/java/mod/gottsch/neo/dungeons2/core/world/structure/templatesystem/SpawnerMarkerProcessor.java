@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.block.entity.DungeonSpawnerBlockEntity;
@@ -240,8 +241,8 @@ public class SpawnerMarkerProcessor extends StructureProcessor implements LevelI
      * and defaulting it would make that failure silent. The tuning knobs default, because they have
      * defensible values and most authors will never set them.
      */
-    public static Codec<SpawnerMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        Codec<SpawnerMarkerProcessor> codec = RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<SpawnerMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        MapCodec<SpawnerMarkerProcessor> codec = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 ResourceLocation.CODEC.fieldOf("mob_set").forGetter(p -> p.mobSet),
                 // Strict, unlike its neighbours: a misspelled value here would otherwise decode to
                 // Optional.empty() and the boss marker would quietly take the pool's ordinary set --

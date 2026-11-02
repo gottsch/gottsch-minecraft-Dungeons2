@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.forge.dungeonblocks.core.block.PatternTileBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LevelReader;
@@ -68,7 +69,7 @@ public class PatternTileProcessor extends StructureProcessor {
     }
 
     /** No fields: the entry is just {@code {"processor_type": "dungeons2:pattern_tile"}}. */
-    public static Codec<PatternTileProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+    public static MapCodec<PatternTileProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return Codec.unit(() -> new PatternTileProcessor(type));
     }
 

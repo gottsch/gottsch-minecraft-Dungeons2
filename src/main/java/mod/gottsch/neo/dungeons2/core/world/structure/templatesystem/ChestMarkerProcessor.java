@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.block.ChestMarkerBlock;
@@ -184,8 +185,8 @@ public class ChestMarkerProcessor extends StructureProcessor {
      * size tier because only the pool knows the dungeon's size. Empty lets Treasure2 draw its own,
      * which is what a pool outside {@code end_rooms} gets.</p>
      */
-    public static Codec<ChestMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<ChestMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codecs.strictOptionalFieldOf(ChestConfig.LootTableEntry.CODEC.listOf(),
                         "loot_tables", List.of()).forGetter(p -> p.lootTables),
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "boss_loot_table")

@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block.entity;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -85,8 +86,8 @@ public class ChestMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(LOOT_TABLE)) {
             this.lootTable = tag.getString(LOOT_TABLE);
         }
@@ -99,8 +100,8 @@ public class ChestMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         // Written back so a marker placed and configured in a dev world survives being saved into a
         // structure .nbt -- which is the only way these fields are ever authored.
         if (lootTable != null && !lootTable.isEmpty()) {

@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.generator.dungeon.door.HiddenDoors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -64,7 +65,7 @@ public class PedestalLootProcessor extends StructureProcessor {
         this.type = type;
     }
 
-    public static Codec<PedestalLootProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+    public static MapCodec<PedestalLootProcessor> codec(Supplier<StructureProcessorType<?>> type) {
         return Codec.unit(() -> new PedestalLootProcessor(type));
     }
 

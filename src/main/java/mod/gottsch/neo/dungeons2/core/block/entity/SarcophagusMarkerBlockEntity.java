@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block.entity;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -77,8 +78,8 @@ public class SarcophagusMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(LOOT_TABLE, Tag.TAG_STRING)) {
             this.lootTable = tag.getString(LOOT_TABLE);
         }
@@ -107,8 +108,8 @@ public class SarcophagusMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         // Only what was stated, so an unconfigured marker saves no opinions into the template.
         if (lootTable != null && !lootTable.isEmpty()) {
             tag.putString(LOOT_TABLE, lootTable);

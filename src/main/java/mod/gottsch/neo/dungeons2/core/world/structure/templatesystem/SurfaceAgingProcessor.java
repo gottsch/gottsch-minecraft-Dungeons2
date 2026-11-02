@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.gottschcore.json.StrictCodecs;
 import mod.gottsch.neo.gottschcore.world.gen.structure.templatesystem.AgingStage;
@@ -169,8 +170,8 @@ public class SurfaceAgingProcessor extends StructureProcessor implements LevelIn
             Set.of(PieceSurface.WALL, PieceSurface.CEILING, PieceSurface.JOIST);
 
     /** See {@code Registration} for the codec/type registration idiom. */
-    public static Codec<SurfaceAgingProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<SurfaceAgingProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(Codec.INT, "agings", 1)
                         .forGetter(processor -> processor.agings),
                 SurfaceAgingRule.CODEC.listOf().fieldOf("rules")

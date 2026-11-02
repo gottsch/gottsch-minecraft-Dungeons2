@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.Codec;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.config.CorridorConfig;
@@ -128,7 +129,7 @@ import java.util.Set;
  */
 public class DungeonStructure extends Structure {
 
-    public static final Codec<DungeonStructure> CODEC = simpleCodec(DungeonStructure::new);
+    public static final MapCodec<DungeonStructure> CODEC = simpleCodec(DungeonStructure::new);
 
     /**
      * Phase 4b entrance assembly parameters. The start pool is the surface

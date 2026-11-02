@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.gottschcore.json.StrictCodecs;
@@ -152,8 +153,8 @@ public class DecorationSweepProcessor extends StructureProcessor {
      * throughout, per the closed-schema rule: an undeclared key or a malformed value is a load error, not a
      * silently ignored one.
      */
-    public static Codec<DecorationSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<DecorationSweepProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "growth", BlockMatch.NONE)
                         .forGetter(p -> p.growth),
                 StrictCodecs.strictOptionalFieldOf(BlockMatch.CODEC, "webs", BlockMatch.NONE)

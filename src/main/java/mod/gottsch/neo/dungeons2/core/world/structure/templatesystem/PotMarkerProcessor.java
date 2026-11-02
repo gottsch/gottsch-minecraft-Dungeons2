@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.block.entity.PotMarkerBlockEntity;
@@ -122,8 +123,8 @@ public class PotMarkerProcessor extends StructureProcessor {
      * the JSON file rather than the field. That is not hypothetical &mdash; it is what the first
      * version of this codec did, and it failed 60 tests the moment an entry omitted both fields.</p>
      */
-    public static Codec<PotMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<PotMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 ResourceLocation.CODEC.optionalFieldOf("marker_block", DEFAULT_MARKER_BLOCK)
                         .forGetter(p -> p.markerBlock),
                 ResourceLocation.CODEC.optionalFieldOf("loot_table")

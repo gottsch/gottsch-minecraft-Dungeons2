@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.block.entity;
 
 import mod.gottsch.neo.dungeons2.core.data.PotionEffectSpec;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -98,8 +99,8 @@ public class PotMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(PROBABILITY)) {
             this.probability = Math.max(0.0F, Math.min(1.0F, tag.getFloat(PROBABILITY)));
         }
@@ -152,8 +153,8 @@ public class PotMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         // Written back so a marker configured in a dev world survives being saved into a structure
         // .nbt -- the only way these fields are ever authored. Defaults are omitted rather than
         // written, so an unconfigured marker carries no tag at all.

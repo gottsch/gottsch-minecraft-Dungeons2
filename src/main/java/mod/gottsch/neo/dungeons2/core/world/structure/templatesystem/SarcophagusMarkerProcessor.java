@@ -18,6 +18,7 @@
 package mod.gottsch.neo.dungeons2.core.world.structure.templatesystem;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.block.entity.SarcophagusMarkerBlockEntity;
@@ -136,8 +137,8 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
      * Every field optional. The contents keys are {@link TombContents}' own, flat on the entry,
      * so an entry reads exactly like a motif's tomb band.
      */
-    public static Codec<SarcophagusMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return RecordCodecBuilder.create(instance -> instance.group(
+    public static MapCodec<SarcophagusMarkerProcessor> codec(Supplier<StructureProcessorType<?>> type) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "marker_block",
                         DEFAULT_MARKER_BLOCK).forGetter(p -> p.markerBlock),
                 Codecs.strictOptionalFieldOf(ResourceLocation.CODEC, "sarcophagus_block",

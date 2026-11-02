@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block.entity;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -165,8 +166,8 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(MOB_SET_NAME)) {
             this.mobSetName = tag.getString(MOB_SET_NAME);
         }
@@ -216,8 +217,8 @@ public class SpawnerMarkerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         // Only what was actually stated. Writing back a default would turn "the pool decides" into
         // "this marker decided, and happened to agree", which survives into the saved .nbt and can
         // never be undone by changing the processor entry.

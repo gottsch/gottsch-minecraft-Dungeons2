@@ -27,6 +27,7 @@ import mod.gottsch.neo.gottschcore.random.RandomHelper;
 import mod.gottsch.neo.gottschcore.size.IntegerRange;
 import mod.gottsch.neo.gottschcore.spatial.ICoords;
 import mod.gottsch.neo.gottschcore.util.SpawnUtil;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -113,8 +114,8 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(FLOOR_INDEX)) {
             this.floorIndex = tag.getInt(FLOOR_INDEX);
         }
@@ -138,11 +139,11 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
      * is what a block entity is supposed to be.</p>
      */
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         if (getMobSizeRange() == null) {
             setMobSizeRange(new IntegerRange(1, 1));
         }
-        super.saveAdditional(tag);
+        super.saveAdditional(tag, registries);
         tag.putInt(FLOOR_INDEX, floorIndex);
         if (pinnedMob != null) {
             tag.putString(PINNED_MOB, pinnedMob.toString());
