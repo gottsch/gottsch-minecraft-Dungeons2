@@ -23,7 +23,7 @@ version="${mod_version}" #mandatory
 displayName="Dungeons2" #mandatory
 
 # A URL to query for updates for this mod. See the JSON update specification <here>
-updateJSONURL="https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/1.20.1-main/update.json" #optional
+updateJSONURL="https://raw.githubusercontent.com/gottsch/gottsch-minecraft-Dungeons2/1.21.1-main/update.json" #optional
 
 # A URL for the "homepage" for this mod, displayed in the mod UI
 displayURL="https://www.curseforge.com/minecraft/mc-mods/dungeons2" #optional
@@ -43,11 +43,11 @@ description=""
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.dungeons2]] #optional
 # the modid of the dependency
-modId="forge" #mandatory
+modId="neoforge" #mandatory
 # Does this dependency have to exist - if not, ordering below must be specified
-mandatory=true #mandatory
+type="required" #mandatory
 # The version range of the dependency
-versionRange="${forge_version_range}" #mandatory
+versionRange="${neo_version_range}" #mandatory
 # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
 ordering="NONE"
 # Side this dependency is applied on - BOTH, CLIENT or SERVER
@@ -55,7 +55,7 @@ side="BOTH"
 # Here's another dependency
 [[dependencies.dungeons2]]
 modId="minecraft"
-mandatory=true
+type="required"
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
 versionRange="${minecraft_version_range}"
 ordering="NONE"
@@ -71,49 +71,44 @@ side="BOTH"
 # its libraries; Village Dungeons uses BEFORE for all of its. Either is fine -- MIXING them is not.
 [[dependencies.dungeons2]]
 modId="gottschcore"
-mandatory=true
+type="required"
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
-versionRange="[2.9.0,3.0.0)"
+versionRange="${gottschcore_version_range}"
 ordering="AFTER"
 side="BOTH"
 [[dependencies.dungeons2]]
 modId="dungeonblocks"
-mandatory=true
+type="required"
 # 3.1.0: the flagstone pattern tiles (PatternTileBlock), skull pile and large candles.
-versionRange="[3.1.0,4.0.0)"
+versionRange="${dungeonblocks_version_range}"
 ordering="AFTER"
 side="BOTH"
 # gottsch's Monster Manual (gmm) - shared mob base-class/asset library; it registers nothing, this
 # mod registers dungeons2:rat / dungeons2:giant_rat from its classes. See the ordering note above.
 [[dependencies.dungeons2]]
 modId="gmm"
-mandatory=true
+type="required"
 # 1.1.0 is where the Shrieker and Violet Fungus became unpushable. This mod grows them as floor
 # decoration, so on 1.0.1 they can be shoved off their square -- degraded rather than broken, but
 # not worth shipping. Keep in step with build.gradle.
-versionRange="[1.1.0,2.0.0)"
+versionRange="${gmm_version_range}"
 ordering="AFTER"
 side="BOTH"
 # Gottsch Books - lore books found in dungeon loot. Nested in this jar (jarJar), so players need not
 # install it; mandatory because a loot table naming gottschbooks:book cannot load without it.
 [[dependencies.dungeons2]]
 modId="gottschbooks"
-mandatory=true
+type="required"
 versionRange="${gottschbooks_version_range}"
 ordering="AFTER"
 side="BOTH"
 
 # Treasure2 (treasure2) - OPTIONAL. The chest routing: a chest marker can opt in to a real Treasure2 chest
-# per marker (the boss chest), and everything else falls back to this mod's own chest. mandatory=false
+# per marker (the boss chest), and everything else falls back to this mod's own chest. type="optional"
 # so the dungeon still generates without it, and AFTER for the same reason as the three above: the
 # API is called during worldgen, so Treasure2 must have registered by then. Compiled against
 # compileOnly, so every call site is guarded by ModList.get().isLoaded("treasure2").
-[[dependencies.dungeons2]]
-modId="treasure2"
-mandatory=false
-versionRange="[4.1.0,5.0.0)"
-ordering="AFTER"
-side="BOTH"
+# TODO port: treasure2 (optional) dependency restored when the integration is ported
 
 # Enemy Echelons API (eechelonsapi) - OPTIONAL. Mobs from this mod's spawners are scaled by DUNGEON
 # DEPTH (the motif's `echelon` block x the depth band's `difficulty`) through Dungeons2's OWN echelon
@@ -123,9 +118,4 @@ side="BOTH"
 # 1.1.0 floor (2026-10-29): EE 1.1.0 reads the datapack exclusion data/dungeons2/echelons/exclusions/
 # dungeons2.json, which keeps EVERY other echelon config (SMB's catch_all included) off this mod's mobs.
 # Older EE ignores the file, so it is the floor, not a hard break.
-[[dependencies.dungeons2]]
-modId="eechelonsapi"
-mandatory=false
-versionRange="[1.1.0,2.0.0)"
-ordering="NONE"
-side="BOTH"
+# TODO port: eechelonsapi (optional) dependency restored when the integration is ported
