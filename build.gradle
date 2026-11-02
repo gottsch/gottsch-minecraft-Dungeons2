@@ -29,10 +29,16 @@ repositories {
 
 // TODO port: optional integrations (Treasure2, Enemy Echelons API) are not ported yet; their
 // classes are excluded from compilation until neo builds of those APIs exist. See PORT-NOTES.md.
+// Excluded by absolute file, not by pattern: a pattern would also drop the same-named stubs.
+def portExcluded = [
+        'src/main/java/mod/gottsch/neo/dungeons2/core/integration/TreasureIntegration.java',
+        'src/main/java/mod/gottsch/neo/dungeons2/core/integration/EchelonsIntegration.java',
+].collect { file(it) }
 sourceSets.main.java {
-    exclude 'mod/gottsch/neo/dungeons2/core/integration/TreasureIntegration.java'
-    exclude 'mod/gottsch/neo/dungeons2/core/integration/EchelonsIntegration.java'
+    exclude { element -> portExcluded.contains(element.file) }
 }
+// compile stubs (isLoaded() == false) standing in for the excluded integration facades
+sourceSets.main.java.srcDir 'src/main/stubs/java'
 sourceSets.test.java {
     exclude 'mod/gottsch/neo/dungeons2/core/integration/TreasureIntegrationTest.java'
 }
