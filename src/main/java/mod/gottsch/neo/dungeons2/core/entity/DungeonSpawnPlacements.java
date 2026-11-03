@@ -20,9 +20,11 @@ package mod.gottsch.neo.dungeons2.core.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.SpawnPlacementType;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.NaturalSpawner;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Spawn placement types this mod adds to vanilla's four.
@@ -40,8 +42,9 @@ import net.minecraft.world.level.NaturalSpawner;
  * {@code Mob#checkSpawnObstruction} refuses any box holding liquid; and not for anything that
  * burns.</p>
  *
- * <p>The type is created as the class loads, which Forge's extensible enum allows at any point
- * before it is used; {@code CommonSetup}'s placement registration is the first use.</p>
+ * <p>On 1.21 a placement type is a plain {@link SpawnPlacementType} implementation (vanilla's are
+ * the constants in {@link SpawnPlacementTypes}), so nothing has to be created or registered before
+ * {@code CommonSetup}'s placement registration uses it.</p>
  *
  * @author Mark Gottschling on Oct 24, 2026
  */
@@ -49,16 +52,15 @@ public final class DungeonSpawnPlacements {
 
     private DungeonSpawnPlacements() {}
 
-    public static final SpawnPlacements.Type ON_GROUND_OR_LAVA = SpawnPlacements.Type.create(
-            "DUNGEONS2_ON_GROUND_OR_LAVA", DungeonSpawnPlacements::onGroundOrLava);
+    public static final SpawnPlacementType ON_GROUND_OR_LAVA = DungeonSpawnPlacements::onGroundOrLava;
 
-    static boolean onGroundOrLava(LevelReader level, BlockPos pos, EntityType<?> type) {
-        return NaturalSpawner.canSpawnAtBody(SpawnPlacements.Type.ON_GROUND, level, pos, type)
+    static boolean onGroundOrLava(LevelReader level, BlockPos pos, @Nullable EntityType<?> type) {
+        return SpawnPlacementTypes.ON_GROUND.isSpawnPositionOk(level, pos, type)
                 || overLava(level, pos, type);
     }
 
     /** An empty two-cell column standing on lava. */
-    static boolean overLava(LevelReader level, BlockPos pos, EntityType<?> type) {
+    static boolean overLava(LevelReader level, BlockPos pos, @Nullable EntityType<?> type) {
         BlockPos above = pos.above();
         return level.getFluidState(pos.below()).is(FluidTags.LAVA)
                 && NaturalSpawner.isValidEmptySpawnBlock(level, pos, level.getBlockState(pos),

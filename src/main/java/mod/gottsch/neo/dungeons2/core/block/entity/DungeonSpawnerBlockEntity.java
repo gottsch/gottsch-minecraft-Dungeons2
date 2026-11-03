@@ -38,6 +38,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.SpawnPlacementType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
@@ -287,7 +288,7 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
                         mob.id(), mob.weight());
                 continue;
             }
-            SpawnPlacements.Type placement = SpawnPlacements.getPlacementType(type.get());
+            SpawnPlacementType placement = SpawnPlacements.getPlacementType(type.get());
             // Walked once, reporting both the count and a witness cell.
             BlockPos witness = null;
             int ok = 0;
@@ -295,7 +296,7 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
                 for (int dy = -PROBE_RADIUS; dy <= PROBE_RADIUS; dy++) {
                     for (int dz = -PROBE_RADIUS; dz <= PROBE_RADIUS; dz++) {
                         BlockPos candidate = pos.offset(dx, dy, dz);
-                        if (NaturalSpawner.isSpawnPositionOk(placement, level, candidate,
+                        if (placement.isSpawnPositionOk(level, candidate,
                                 type.get())) {
                             ok++;
                             if (ok == 1) {

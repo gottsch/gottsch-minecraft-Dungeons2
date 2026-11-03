@@ -28,8 +28,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.SpawnPlacementType;
 import net.minecraft.world.entity.SpawnPlacements;
-import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.biome.Biome;
 
 /**
@@ -76,8 +76,8 @@ public class ModUtil {
 
 				boolean isSpawned = false;
 				if (!WorldInfo.isClientSide(level)) {
-					SpawnPlacements.Type placement = SpawnPlacements.getPlacementType(entityType);
-					if (NaturalSpawner.isSpawnPositionOk(placement, level, spawnCoords.toPos(), entityType)) {
+					SpawnPlacementType placement = SpawnPlacements.getPlacementType(entityType);
+					if (placement.isSpawnPositionOk(level, spawnCoords.toPos(), entityType)) {
 						mob.setPos((double)spawnX, (double)spawnY, (double)spawnZ);
 						level.addFreshEntityWithPassengers(mob);
 						isSpawned = true;
