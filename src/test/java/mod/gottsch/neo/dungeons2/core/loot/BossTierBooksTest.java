@@ -96,7 +96,7 @@ class BossTierBooksTest {
                         found++;
                         assertTrue(text.contains("dungeons2:lore/found_" + book),
                                 table + ": the " + tier + " pool is not gated on its own book");
-                        assertTrue(text.contains("dungeons2:" + book + "\\\""),
+                        assertTrue(text.contains("\"gottschbooks:book\":\"dungeons2:" + book + "\""),
                                 table + ": the " + tier + " pool hands out the wrong book");
                     }
                 }

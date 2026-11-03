@@ -170,6 +170,13 @@ class ShippedBlockIdsTest {
             // Books book id, the tab's background texture, and a tag entry's `id`. None names a
             // block; the advancement loader and the tag loader resolve them.
             "parent", "trigger", "items", "book", "background", "id",
+            // The same book id as a 1.21 DATA COMPONENT, in a loot table's minecraft:set_components
+            // (which replaced Forge's set_nbt on the NeoForge port). The component type is the key.
+            "gottschbooks:book",
+            // A minecraft:loot_table entry's table id: 1.21 renamed the key from `name` to `value`.
+            // Generic as a key, but when it was added (2026-11-02) the counter tables were its only
+            // namespaced use, and a block id put under it later would still have to pass a codec.
+            "value",
             // A mob set id, resolved from GottschCore's MobSetDataRegistry at datapack reload
             // rather than from the block registry. ShippedMobSetsTest is what verifies it. ONE
             // entry since 2026-08-31: the marker processor and a scheme's spawners slot used to

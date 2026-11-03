@@ -199,6 +199,23 @@ Then the suite failed to start at all, and once it ran, 22 tests failed. What ea
   - `build.gradle` uses `${X_version}`
   - the shipped `neoforge.mods.toml` declares `X_version_range`
 
+### Found in the first in-game run (2026-11-02)
+- **Seven loot tables failed to load**, so their chests rolled nothing:
+  - the 19 Gottsch Books entries used Forge's `minecraft:set_nbt`, and now use `minecraft:set_components` with `{"gottschbooks:book": "<id>"}`
+  - the two counter tables' `minecraft:loot_table` entries now say `value`, not `name`
+
+  The new `ShippedLootTablesDecodeTest` decodes every table with `LootTable.DIRECT_CODEC`; the old loot tests only read the JSON by hand.
+- **No corner (angle) cobwebs.** This was a GottschCore bug, fixed in GottschCore. On 1.20.5+, `BlockState.hasProperty` is an identity check, because the properties sit in a reference map. `DecorationProcessor` looked for `BlockStateProperties.FACING`, and DungeonBlocks' `AngleCobwebBlock` is a GottschCore `FacingBlock` with its own `IFacingBlock.FACING`, so no web ever got a facing. It now looks the property up by name. Dungeons2 needs GottschCore 2.10.0 republished to mavenLocal to pick up the fix.
+- **Brazier embers showed the missing-model cube.** This was a DungeonBlocks bug, fixed in DungeonBlocks: `forge_data` → `neoforge_data` in `brazier_embers_block.json`.
+- **The `has_structure/dungeon` biome tag** listed `#forge:is_*` and pre-1.21 `#c:` names, all optional and so silently matching nothing. It now lists the NeoForge `c:is_*` tags.
+- **Pot markers in 22 templates named entities that do not exist** (on either loader; this predates the port). Each was skipped with "Unknown entity id in placement". Fixed by rewriting the NBT strings:
+  - `clay_pot` ×21 → `pot`
+  - `clay_stone_pot` ×1 → `pot`
+  - `blue_stone_pot` ×6 → `blue_pot`
+  - `red_stone_pot` ×6 → `red_pot`
+
+  The new `ShippedTemplateBlocksTest.everyTemplateEntityIdExists` walks every template's NBT for `entity` ids and checks each against the entity registry.
+
 ## Exact next steps (local)
 1. ~~Publish the libraries; compile main~~ (done locally).
 2. ~~Fix the test compile errors and run `./gradlew test`~~ (done: 1,890 pass).

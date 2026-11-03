@@ -763,7 +763,7 @@
         //     the same call the dark iron ladder makes.
         //   * dungeonblocks:dungeon_lantern -- dungeons2:hanging_sweep takes it when the chain
         //     above it goes, and classic_weathering ages no lantern either.
-        //   * dungeonblocks:clay_pot / stone_pot -- ENTITIES, owned by dungeons2:pot.
+        //   * dungeonblocks:pot / stone_pot -- ENTITIES, owned by dungeons2:pot.
         //   * dungeons2:door / pot_marker / pots -- markers, consumed by their own processors.
         //   * minecraft:stripped_dark_oak_log / stripped_spruce_log -- see the timber note above.
 

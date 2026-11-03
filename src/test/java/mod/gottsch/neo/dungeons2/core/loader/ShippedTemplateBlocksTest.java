@@ -160,6 +160,52 @@ class ShippedTemplateBlocksTest {
         }
     }
 
+    /**
+     * Every {@code entity} id a template's block entities carry (a pot marker's variants, for one)
+     * names a registered entity type. An unknown one is skipped at generation with only a log line
+     * &mdash; 16 templates' pot markers named {@code dungeonblocks:clay_pot}, which never existed
+     * (the plain clay pot is {@code dungeonblocks:pot}), until the NeoForge port's first in-game run.
+     */
+    @Test
+    void everyTemplateEntityIdExists() {
+        List<String> bad = new ArrayList<>();
+        int checked = 0;
+        for (Path file : templateFiles()) {
+            List<String> ids = new ArrayList<>();
+            collectEntityIds(read(file), ids);
+            for (String id : ids) {
+                checked++;
+                ResourceLocation location = ResourceLocation.tryParse(id);
+                if (location == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(location)) {
+                    bad.add(file.getFileName() + " -> " + id);
+                }
+            }
+        }
+        assertTrue(checked > 0, "no entity ids found in any template -- the walk is reading nothing");
+        if (!bad.isEmpty()) {
+            fail("shipped templates name " + bad.size() + " entity id(s) that do not exist:\n  "
+                    + String.join("\n  ", bad));
+        }
+    }
+
+    /** Every string under a key named {@code entity}, anywhere in the tag. */
+    private static void collectEntityIds(Tag tag, List<String> out) {
+        if (tag instanceof CompoundTag compound) {
+            for (String key : compound.getAllKeys()) {
+                Tag child = compound.get(key);
+                if ("entity".equals(key) && child.getId() == Tag.TAG_STRING) {
+                    out.add(child.getAsString());
+                } else {
+                    collectEntityIds(child, out);
+                }
+            }
+        } else if (tag instanceof ListTag list) {
+            for (Tag child : list) {
+                collectEntityIds(child, out);
+            }
+        }
+    }
+
     /** Both sweeps above pass vacuously if the templates are not being found or not being read. */
     @Test
     void theSweepFindsTheShippedTemplates() {
