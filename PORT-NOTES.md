@@ -76,20 +76,33 @@ its network policy blocked `maven.neoforged.net` (403 at the egress proxy) and M
 | File | Why | Replacement |
 |---|---|---|
 | `src/main/java/.../core/integration/TreasureIntegration.java` | Treasure2 has no NeoForge API to compile against (`compileOnly` dropped) | `src/main/stubs/java/.../integration/TreasureIntegration.java`: same public API, `isLoaded()==false`, no-ops |
-| `src/main/java/.../core/integration/EchelonsIntegration.java` | The Enemy Echelons API neo port is 1.0.0; D2 needs 1.1.0 | `src/main/stubs/java/.../integration/EchelonsIntegration.java`: same, no-op |
 | `src/test/java/.../core/integration/TreasureIntegrationTest.java` | Tests the excluded facade | none |
 
 How the exclusion works in `build.gradle`:
-- The two facades are excluded **by absolute file** (`portExcluded`). A pattern exclude would also drop the same-named stubs.
-- The stubs come in through `sourceSets.main.java.srcDir 'src/main/stubs/java'`.
+- The Treasure2 facade is excluded **by absolute file** (`portExcluded`). A pattern exclude would also drop the same-named stub.
+- The stub comes in through `sourceSets.main.java.srcDir 'src/main/stubs/java'`.
 
-The originals are unchanged apart from the package sed. Only their private `Delegate` classes name `mod.gottsch.forge.treasure2.*` / `mod.gottsch.forge.eechelonsapi.*`, and those FQNs still need updating to whatever package the neo APIs ship.
+`TreasureIntegration` is unchanged apart from the package sed. Only its private `Delegate` class names `mod.gottsch.forge.treasure2.*`, and those FQNs still need updating to whatever package the neo API ships.
 
 Callers that now get the stubs:
 - `ChestMarkerProcessor`
-- `MobRange`
-- `EchelonSpawnEvent`
-- `BossTierWiringTest`, `ChestMarkerProcessorTest` and `DependencyFloorsAgreeTest`, which mention treasure2/eechelonsapi. `DependencyFloorsAgreeTest` now checks the `gradle.properties` pairs (see "Tests"); its id map already lists both, so restoring the integrations only needs their `_version`/`_version_range` properties.
+- `BossTierWiringTest` and `ChestMarkerProcessorTest`, which mention treasure2. `DependencyFloorsAgreeTest` checks the `gradle.properties` pairs (see "Tests"); its id map already lists treasure2, so restoring that integration only needs its `_version`/`_version_range` properties.
+
+### Enemy Echelons restored (2026-11-03)
+The `EchelonsIntegration` stub and its `portExcluded` entry are gone, and the real facade compiles against the Enemy Echelons API **1.1.0** for NeoForge (`gottsch:eechelonsapi-neoforge-1.21.1:1.1.0`, branch `1.21.1-api-feature/1.1.0` of `gottsch-minecraft-neoforge-EnemyEchelons`).
+- `gradle.properties`: `eechelonsapi_version=1.1.0` and `eechelonsapi_version_range=[1.1.0,2.0.0)`. The API dropped its `1.21.1-` version prefix at 1.1.0, and NeoForge sorts `1.1.0` below `1.21.1-1.0.0`, so the range has to be in the new form.
+- `build.gradle`: `compileOnly`, plus dev-only `localRuntime` lines for EE and Jade (`curse.maven:jade-324717:7545219`, the build Treasure2 uses), so `runClient` has EE present and Jade shows the scaled hearts and armor. `localRuntime` only feeds `runtimeClasspath`, so the unit tests still run with EE absent. Comment both lines out to check the EE-absent case in game.
+- `neoforge.mods.toml`: an `eechelonsapi` block, `type="optional"`, `ordering="NONE"`.
+- `Delegate` FQNs: `mod.gottsch.forge.eechelonsapi.*` → `mod.gottsch.neoforge.eechelons.*`. Nothing else changed. API 1.1.0 has `hasDifficultyCapability`, and `getDifficulty` returns `Integer` (it unboxes). Before 1.1.0, the NeoForge API's `apply` was a no-op on a freshly spawned mob, so 1.1.0 really is the floor.
+- `EchelonSpawnEvent` and `MobRange` now reach the real facade. `EchelonConfigTest`'s EE-absent asserts still hold in the unit tests, because EE is compileOnly.
+- Checked in game (2026-11-03): an Acid Skeleton from a dungeon spawner had `"eechelonsapi:difficulty": 3` (32 HP from a base of 20 with `hp_factor` 0.2). Still to check: bosses get pinned at 0, and the exclusion file `data/dungeons2/echelons/exclusions/dungeons2.json` keeps other echelon configs off.
+- `difficultyOf` now checks `EnemyEchelonsApi.hasDifficulty`, not `hasDifficultyCapability`, before reading. On NeoForge, `getDifficulty` *creates* the attachment at -1, so a plain read, such as a Jade lookup, wrote `-1` into the NBT of any mob it looked at. The results are unchanged: unset is still empty. `difficultyNameOf` is new.
+
+### Jade "Echelon" line (2026-11-03, NeoForge only so far)
+- `core/integration/jade/DungeonsJadePlugin` (`@WailaPlugin`) and `EchelonJadeProvider` (uid `dungeons2:echelon`) add "Echelon: N", or "Echelon: N (Name)", to the tooltip of a mob EE has scaled. The server reads the difficulty through `EchelonsIntegration` and sends it with Jade's server data, because the attachment is server-only. The line shows nothing without EE.
+- Jade is `compileOnly` (plus the dev `localRuntime`). Only Jade loads the `@WailaPlugin` class, so no other guard is needed. The lang keys are `config.jade.plugin_dungeons2.echelon`, `jade.dungeons2.echelon` and `jade.dungeons2.echelon_named`.
+- The Jade API shapes were checked with javap against Jade 15.10.5+neoforge (`7545219`). Not yet compiled.
+- **TODO Forge 1.20.1:** back-port it. See `C:\Development\claude\minecraft\forge\dungeons2\1.20.1\dungeons2-forge-1.20.1-JadeEchelonBackport-Nov03.md`.
 
 Dungeon Map is **not excluded yet**, but it is a known rework (see below).
 
@@ -166,7 +179,7 @@ Fixed locally, by category. All API shapes were checked with `javap` against
 - **Echelon scaling:** spawns from an entity-owned spawner (e.g. a spawner minecart) now get no origin, where Forge read the `BaseSpawner`. Cage spawners are unchanged.
 - **Dungeon Map name:** it now uses `ITEM_NAME`, so it isn't italic and an anvil rename still wins. The map's tint and its "dungeon_map" item property should still show.
 - **Waterlogging:** dry pool elements must not waterlog trim. Vanilla elements still do, as on 1.20.1.
-- **Mining Chest:** open one and check the stacks have their full counts (e.g. 64 coal, not 1). The SNBT fix is unit-tested through `ContainerHelper`, but the chest itself is only placed in game.
+- ~~**Mining Chest:** open one and check the stacks have their full counts (e.g. 64 coal, not 1). The SNBT fix is unit-tested through `ContainerHelper`, but the chest itself is only placed in game.~~ Works (2026-11-03).
 
 ### Tests: 0 compile errors (was 137); `./gradlew test` passes 1,890, skips 2
 The 137 compile errors were mechanical:
@@ -216,13 +229,22 @@ Then the suite failed to start at all, and once it ran, 22 tests failed. What ea
 
   The new `ShippedTemplateBlocksTest.everyTemplateEntityIdExists` walks every template's NBT for `entity` ids and checks each against the entity registry.
 
+### Second in-game run (2026-11-03): the fixes above hold
+- No missing textures or models.
+- Corner cobwebs generate.
+- Pots appear.
+- Mining Chest: works.
+- Echelon scaling (cage spawner, EE present): works. An Acid Skeleton had difficulty 3. See "Enemy Echelons restored".
+
+The other in-game checks listed above (Mirror Shield, boots, Echelon scaling from an entity-owned spawner, bosses pinned at 0, map name, waterlogging) and books in chests have not been reported yet.
+
 ## Exact next steps (local)
 1. ~~Publish the libraries; compile main~~ (done locally).
 2. ~~Fix the test compile errors and run `./gradlew test`~~ (done: 1,890 pass).
 3. Run `./gradlew probes` and `./gradlew releaseCheck`, which `test` excludes. They have not been run on NeoForge yet.
-4. Port the integrations once neo APIs exist:
+4. Port the Treasure2 integration once its neo API exists (Enemy Echelons is done, see "Enemy Echelons restored"):
    - delete the stubs and the `portExcluded` entries
    - update the `Delegate` FQNs
    - restore the `compileOnly` lines and the mods.toml optional dependency blocks
    - re-include `TreasureIntegrationTest`
-5. In-game: load once, confirm the `.nbt` templates DataFix, and generate a dungeon with Treasure2/EE absent.
+5. ~~In-game: load once, confirm the `.nbt` templates DataFix, and generate a dungeon with Treasure2/EE absent~~ (done 2026-11-03). Still to check: the list under "Check in game", and books in chests.

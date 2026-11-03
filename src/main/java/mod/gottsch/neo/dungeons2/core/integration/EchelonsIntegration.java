@@ -24,6 +24,7 @@ import net.neoforged.fml.ModList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -57,7 +58,7 @@ public final class EchelonsIntegration {
     /** Whether the Enemy Echelons API is installed. Safe to call unconditionally. */
     public static boolean isLoaded() {
         // Null outside a running game -- see TreasureIntegration#isLoaded, which learned it the
-        // hard way. Absent Forge, EE is absent by definition.
+        // hard way. Absent NeoForge, EE is absent by definition.
         ModList list = ModList.get();
         return list != null && list.isLoaded(EECHELONSAPI);
     }
@@ -95,6 +96,14 @@ public final class EchelonsIntegration {
         return Delegate.difficultyOf(mob);
     }
 
+    /** The difficulty name EE has recorded on {@code mob}, or empty when unnamed or EE is absent. */
+    public static Optional<String> difficultyNameOf(Mob mob) {
+        if (!isLoaded() || mob == null) {
+            return Optional.empty();
+        }
+        return Delegate.difficultyNameOf(mob);
+    }
+
     /** The half that names EE types. Never touched unless {@link #isLoaded()} passed. */
     private static final class Delegate {
 
@@ -104,41 +113,52 @@ public final class EchelonsIntegration {
          * one without anything having to invalidate the old.
          */
         private static final Map<EchelonConfig,
-                mod.gottsch.forge.eechelonsapi.core.registry.EchelonRegistry> REGISTRIES =
+                mod.gottsch.neoforge.eechelons.core.registry.EchelonRegistry> REGISTRIES =
                 new ConcurrentHashMap<>();
 
         private Delegate() {}
 
         static boolean apply(Mob mob, EchelonConfig config, int difficulty) {
-            if (!mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.hasDifficultyCapability(mob)) {
+            if (!mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.hasDifficultyCapability(mob)) {
                 return false;
             }
-            mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.apply(
+            mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.apply(
                     REGISTRIES.computeIfAbsent(config, Delegate::registryFor), mob, difficulty);
             // Read back rather than assumed: EE silently declines a mob whose difficulty was
             // already set, and one its registry has no config for (our blacklist) comes back at 0.
-            return mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.getDifficulty(mob) == difficulty;
+            return mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.getDifficulty(mob) == difficulty;
         }
 
         /**
          * An EMPTY registry, on purpose: EE answers "no config for this mob" by setting difficulty
          * 0 and applying nothing, which is exactly a pin. No factor table to get wrong.
          */
-        private static mod.gottsch.forge.eechelonsapi.core.registry.EchelonRegistry unscaled;
+        private static mod.gottsch.neoforge.eechelons.core.registry.EchelonRegistry unscaled;
 
         static void pinUnscaled(Mob mob) {
             if (unscaled == null) {
-                unscaled = mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.customRegistry();
+                unscaled = mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.customRegistry();
             }
-            mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.apply(unscaled, mob, 0);
+            mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.apply(unscaled, mob, 0);
         }
 
         static OptionalInt difficultyOf(Mob mob) {
-            if (!mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.hasDifficultyCapability(mob)) {
+            // hasDifficulty, not hasDifficultyCapability: on NeoForge getDifficulty() CREATES the
+            // attachment (at -1) on a mob EE never touched, and a read -- ex. every Jade lookup --
+            // must not write that into the mob's NBT.
+            if (!mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.hasDifficulty(mob)) {
                 return OptionalInt.empty();
             }
-            int difficulty = mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.getDifficulty(mob);
+            int difficulty = mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.getDifficulty(mob);
             return difficulty < 0 ? OptionalInt.empty() : OptionalInt.of(difficulty);
+        }
+
+        static Optional<String> difficultyNameOf(Mob mob) {
+            // same reason as difficultyOf: check before reading, or the read creates the attachment
+            if (!mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.hasDifficultyName(mob)) {
+                return Optional.empty();
+            }
+            return mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.getDifficultyName(mob);
         }
 
         /**
@@ -153,10 +173,10 @@ public final class EchelonsIntegration {
          * only, so a factor on this private one would never be read; {@code EchelonSpawnEvent}
          * scales XP itself.</p>
          */
-        private static mod.gottsch.forge.eechelonsapi.core.registry.EchelonRegistry registryFor(
+        private static mod.gottsch.neoforge.eechelons.core.registry.EchelonRegistry registryFor(
                 EchelonConfig config) {
-            mod.gottsch.forge.eechelonsapi.core.config.EchelonConfigsHolder.Config ee =
-                    new mod.gottsch.forge.eechelonsapi.core.config.EchelonConfigsHolder.Config();
+            mod.gottsch.neoforge.eechelons.core.config.EchelonConfigsHolder.Config ee =
+                    new mod.gottsch.neoforge.eechelons.core.config.EchelonConfigsHolder.Config();
             ee.setId("dungeons2:depth");
             ee.setHpFactor(config.hpFactor());
             ee.setDamageFactor(config.damageFactor());
@@ -172,12 +192,12 @@ public final class EchelonsIntegration {
             ee.setMobWhitelist(new ArrayList<>());
             ee.setDimensions(new ArrayList<>(List.of(".")));
 
-            mod.gottsch.forge.eechelonsapi.core.config.EchelonConfigsHolder.DifficultyEntry zero =
-                    new mod.gottsch.forge.eechelonsapi.core.config.EchelonConfigsHolder.DifficultyEntry();
+            mod.gottsch.neoforge.eechelons.core.config.EchelonConfigsHolder.DifficultyEntry zero =
+                    new mod.gottsch.neoforge.eechelons.core.config.EchelonConfigsHolder.DifficultyEntry();
             zero.setDifficulty(0);
             zero.setWeight(1.0D);
-            mod.gottsch.forge.eechelonsapi.core.config.EchelonConfigsHolder.Echelon everywhere =
-                    new mod.gottsch.forge.eechelonsapi.core.config.EchelonConfigsHolder.Echelon();
+            mod.gottsch.neoforge.eechelons.core.config.EchelonConfigsHolder.Echelon everywhere =
+                    new mod.gottsch.neoforge.eechelons.core.config.EchelonConfigsHolder.Echelon();
             everywhere.setId("dungeons2:depth");
             // Wider than any build height, but not MIN/MAX_VALUE: interval code that does max + 1
             // would overflow, and nothing here is worth finding out.
@@ -186,8 +206,8 @@ public final class EchelonsIntegration {
             everywhere.setHistogram(new ArrayList<>(List.of(zero)));
             ee.setEchelons(new ArrayList<>(List.of(everywhere)));
 
-            mod.gottsch.forge.eechelonsapi.core.registry.EchelonRegistry registry =
-                    mod.gottsch.forge.eechelonsapi.api.EnemyEchelonsApi.customRegistry();
+            mod.gottsch.neoforge.eechelons.core.registry.EchelonRegistry registry =
+                    mod.gottsch.neoforge.eechelons.api.EnemyEchelonsApi.customRegistry();
             registry.register(ee);
             return registry;
         }

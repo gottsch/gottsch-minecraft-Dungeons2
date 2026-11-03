@@ -27,12 +27,11 @@ repositories {
     }
 }
 
-// TODO port: optional integrations (Treasure2, Enemy Echelons API) are not ported yet; their
-// classes are excluded from compilation until neo builds of those APIs exist. See PORT-NOTES.md.
-// Excluded by absolute file, not by pattern: a pattern would also drop the same-named stubs.
+// TODO port: the Treasure2 integration is not ported yet; its class is excluded from compilation
+// until a neo build of that API exists. See PORT-NOTES.md. (Enemy Echelons was restored with API 1.1.0.)
+// Excluded by absolute file, not by pattern: a pattern would also drop the same-named stub.
 def portExcluded = [
         'src/main/java/mod/gottsch/neo/dungeons2/core/integration/TreasureIntegration.java',
-        'src/main/java/mod/gottsch/neo/dungeons2/core/integration/EchelonsIntegration.java',
 ].collect { file(it) }
 sourceSets.main.java {
     exclude { element -> portExcluded.contains(element.file) }
@@ -110,8 +109,22 @@ dependencies {
         }
     }
 
-    // TODO port: Treasure2 (compileOnly) and Enemy Echelons API (compileOnly, needs 1.1.0) - not
-    // ported for this pass. Dev-only runtime mods (Terralith, Stronger Mobs Below) dropped.
+    // Enemy Echelons API - OPTIONAL soft dependency: every EE reference lives in EchelonsIntegration's
+    // nested Delegate, reached only once ModList says `eechelonsapi` is loaded.
+    compileOnly "gottsch:eechelonsapi-neoforge-${minecraft_version}:${eechelonsapi_version}"
+
+    // Jade - OPTIONAL. integration/jade/DungeonsJadePlugin adds an "Echelon: N" line to a mob's
+    // tooltip. Only Jade loads that class (by its @WailaPlugin annotation), so compileOnly is enough.
+    compileOnly "curse.maven:jade-324717:7545219"
+
+    // DEV ONLY: EE and Jade in runClient, to check that spawner mobs get scaled (Jade shows their
+    // echelon, hearts and armor). localRuntime feeds runtimeClasspath only, so the unit tests still
+    // see EE absent. Comment both out to check the EE-absent case in game.
+    localRuntime "gottsch:eechelonsapi-neoforge-${minecraft_version}:${eechelonsapi_version}"
+    localRuntime "curse.maven:jade-324717:7545219"
+
+    // TODO port: Treasure2 (compileOnly) - not ported for this pass. Dev-only runtime mods
+    // (Terralith, Stronger Mobs Below) dropped.
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -246,7 +259,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             gottschcore_version_range  : gottschcore_version_range,
             dungeonblocks_version_range: dungeonblocks_version_range,
             gmm_version_range          : gmm_version_range,
-            gottschbooks_version_range : gottschbooks_version_range
+            gottschbooks_version_range : gottschbooks_version_range,
+            eechelonsapi_version_range : eechelonsapi_version_range
     ]
     inputs.properties replaceProperties
     expand replaceProperties

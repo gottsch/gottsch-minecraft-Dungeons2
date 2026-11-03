@@ -118,4 +118,9 @@ side="BOTH"
 # 1.1.0 floor (2026-10-29): EE 1.1.0 reads the datapack exclusion data/dungeons2/echelons/exclusions/
 # dungeons2.json, which keeps EVERY other echelon config (SMB's catch_all included) off this mod's mobs.
 # Older EE ignores the file, so it is the floor, not a hard break.
-# TODO port: eechelonsapi (optional) dependency restored when the integration is ported
+[[dependencies.dungeons2]]
+modId="eechelonsapi"
+type="optional"
+versionRange="${eechelonsapi_version_range}"
+ordering="NONE"
+side="BOTH"
