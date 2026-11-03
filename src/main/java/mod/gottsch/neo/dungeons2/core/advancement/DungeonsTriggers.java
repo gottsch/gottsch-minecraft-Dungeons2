@@ -17,22 +17,32 @@
  */
 package mod.gottsch.neo.dungeons2.core.advancement;
 
-import net.minecraft.advancements.CriteriaTriggers;
+import mod.gottsch.neo.dungeons2.Dungeons;
+import net.minecraft.advancements.CriterionTrigger;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Dungeons2's own advancement criteria. Registered from the mod constructor, before any datapack
- * (and so any advancement naming them) loads; vanilla has no Forge registry for these.
+ * Dungeons2's own advancement criteria. Registered through a deferred register on the
+ * {@code trigger_type} registry, which NeoForge fills before any datapack (and so any advancement
+ * naming them) loads.
  *
  * @author Mark Gottschling on 10/26/2026
  */
 public final class DungeonsTriggers {
 
-    public static final ReachedFloorTrigger REACHED_FLOOR = CriteriaTriggers.register(new ReachedFloorTrigger());
+    private static final DeferredRegister<CriterionTrigger<?>> TRIGGERS =
+            DeferredRegister.create(Registries.TRIGGER_TYPE, Dungeons.MOD_ID);
+
+    public static final DeferredHolder<CriterionTrigger<?>, ReachedFloorTrigger> REACHED_FLOOR =
+            TRIGGERS.register("reached_floor", ReachedFloorTrigger::new);
 
     private DungeonsTriggers() {}
 
-    /** Loads this class, which is what registers the triggers. */
-    public static void register() {
-        // the static initializer does the work
+    /** Called from the mod constructor (via Registration.init). */
+    public static void register(IEventBus eventBus) {
+        TRIGGERS.register(eventBus);
     }
 }

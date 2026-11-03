@@ -17,16 +17,14 @@
  */
 package mod.gottsch.neo.dungeons2.core.advancement;
 
-import com.google.gson.JsonObject;
-import mod.gottsch.neo.dungeons2.Dungeons;
-import net.minecraft.advancements.critereon.AbstractCriterionTriggerInstance;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
-import net.minecraft.advancements.critereon.DeserializationContext;
-import net.minecraft.advancements.critereon.SerializationContext;
+import net.minecraft.advancements.critereon.EntityPredicate;
 import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.GsonHelper;
+
+import java.util.Optional;
 
 /**
  * {@code dungeons2:reached_floor}: the player is standing on a dungeon level at least
@@ -39,37 +37,22 @@ import net.minecraft.util.GsonHelper;
  */
 public class ReachedFloorTrigger extends SimpleCriterionTrigger<ReachedFloorTrigger.TriggerInstance> {
 
-    static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, "reached_floor");
-
     @Override
-    public ResourceLocation getId() {
-        return ID;
-    }
-
-    @Override
-    protected TriggerInstance createInstance(JsonObject json, ContextAwarePredicate player,
-                                             DeserializationContext context) {
-        return new TriggerInstance(player, GsonHelper.getAsInt(json, "min_floor", 0));
+    public Codec<TriggerInstance> codec() {
+        return TriggerInstance.CODEC;
     }
 
     /** {@code floorIndex}: the level the player is on, 0 at the entrance. */
     public void trigger(ServerPlayer player, int floorIndex) {
-        this.trigger(player, instance -> floorIndex >= instance.minFloor);
+        this.trigger(player, instance -> floorIndex >= instance.minFloor());
     }
 
-    public static class TriggerInstance extends AbstractCriterionTriggerInstance {
-        private final int minFloor;
+    public record TriggerInstance(Optional<ContextAwarePredicate> player, int minFloor)
+            implements SimpleCriterionTrigger.SimpleInstance {
 
-        public TriggerInstance(ContextAwarePredicate player, int minFloor) {
-            super(ID, player);
-            this.minFloor = minFloor;
-        }
-
-        @Override
-        public JsonObject serializeToJson(SerializationContext context) {
-            JsonObject json = super.serializeToJson(context);
-            json.addProperty("min_floor", minFloor);
-            return json;
-        }
+        public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
+                Codec.INT.optionalFieldOf("min_floor", 0).forGetter(TriggerInstance::minFloor)
+        ).apply(instance, TriggerInstance::new));
     }
 }

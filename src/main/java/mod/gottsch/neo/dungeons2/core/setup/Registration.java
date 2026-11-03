@@ -378,6 +378,7 @@ public class Registration {
 		BLOCK_ENTITIES.register(eventBus);
 		ENTITIES.register(eventBus);
 		PARTICLES.register(eventBus);
+		mod.gottsch.neo.dungeons2.core.advancement.DungeonsTriggers.register(eventBus);
 		STRUCTURE_TYPES.register(eventBus);
 		STRUCTURE_PROCESSORS.register(eventBus);
 		POOL_ELEMENT_TYPES.register(eventBus);

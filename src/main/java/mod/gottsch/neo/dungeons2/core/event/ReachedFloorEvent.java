@@ -49,6 +49,6 @@ public final class ReachedFloorEvent {
             return;
         }
         DungeonFloorIndex.get(level).floorAt(player.blockPosition())
-                .ifPresent(floor -> DungeonsTriggers.REACHED_FLOOR.trigger(player, floor.floorIndex()));
+                .ifPresent(floor -> DungeonsTriggers.REACHED_FLOOR.get().trigger(player, floor.floorIndex()));
     }
 }
