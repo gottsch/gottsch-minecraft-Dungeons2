@@ -4,18 +4,19 @@ import mod.gottsch.neo.dungeons2.core.map.DungeonMaps;
 import mod.gottsch.neo.dungeons2.core.map.FloorMapStamp;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.NonNullList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.player.StackedContents;
-import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DungeonMapCopyRecipeTest {
 
     private static final DungeonMapCopyRecipe RECIPE =
-            new DungeonMapCopyRecipe(ResourceLocation.fromNamespaceAndPath("dungeons2", "blank_dungeon_map"), CraftingBookCategory.MISC);
+            new DungeonMapCopyRecipe(CraftingBookCategory.MISC);
 
     @BeforeAll
     static void bootstrap() {
@@ -72,47 +73,18 @@ class DungeonMapCopyRecipeTest {
 
     private static ItemStack dungeonMap() {
         ItemStack stack = new ItemStack(Items.FILLED_MAP);
-        stack.getOrCreateTag().putInt("map", 7);
-        stack.getOrCreateTag().put(DungeonMaps.TAG, new FloorMapStamp(1, 9, 0, 0, 40, 40, null).save());
+        stack.set(DataComponents.MAP_ID, new MapId(7));
+        CustomData.update(DataComponents.CUSTOM_DATA, stack,
+                tag -> tag.put(DungeonMaps.TAG, new FloorMapStamp(1, 9, 0, 0, 40, 40, null).save()));
         return stack;
     }
 
-    private static CraftingContainer grid(ItemStack... stacks) {
-        Grid grid = new Grid();
+    /** A 3x3 crafting grid filled from the top-left, with no menu behind it. */
+    private static CraftingInput grid(ItemStack... stacks) {
+        List<ItemStack> items = new ArrayList<>(Collections.nCopies(9, ItemStack.EMPTY));
         for (int i = 0; i < stacks.length; i++) {
-            grid.setItem(i, stacks[i]);
+            items.set(i, stacks[i]);
         }
-        return grid;
-    }
-
-    /** A 3x3 crafting grid with no menu behind it. */
-    private static class Grid extends SimpleContainer implements CraftingContainer {
-        Grid() {
-            super(9);
-        }
-
-        @Override
-        public int getWidth() {
-            return 3;
-        }
-
-        @Override
-        public int getHeight() {
-            return 3;
-        }
-
-        @Override
-        public List<ItemStack> getItems() {
-            List<ItemStack> items = new ArrayList<>();
-            for (int i = 0; i < getContainerSize(); i++) {
-                items.add(getItem(i));
-            }
-            return items;
-        }
-
-        @Override
-        public void fillStackedContents(StackedContents contents) {
-            getItems().forEach(contents::accountStack);
-        }
+        return CraftingInput.of(3, 3, items);
     }
 }

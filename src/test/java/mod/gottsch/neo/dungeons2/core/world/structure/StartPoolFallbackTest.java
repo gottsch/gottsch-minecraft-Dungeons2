@@ -61,7 +61,7 @@ class StartPoolFallbackTest {
 
     private static ResourceLocation choose(String motif, String... shipped) {
         Set<ResourceLocation> exists = Set.of(shipped).stream()
-                .map(ResourceLocation::new).collect(java.util.stream.Collectors.toSet());
+                .map(ResourceLocation::parse).collect(java.util.stream.Collectors.toSet());
         return DungeonStructure.chooseStartPool(motif, ROOMS, exists::contains);
     }
 
@@ -120,7 +120,7 @@ class StartPoolFallbackTest {
 
     private static ResourceLocation chooseBanded(String motif, String stratum, String... shipped) {
         Set<ResourceLocation> exists = Set.of(shipped).stream()
-                .map(ResourceLocation::new).collect(java.util.stream.Collectors.toSet());
+                .map(ResourceLocation::parse).collect(java.util.stream.Collectors.toSet());
         return DungeonStructure.chooseRoomStartPool(motif,
                 java.util.Optional.ofNullable(stratum), exists::contains);
     }

@@ -58,35 +58,35 @@ class BossPinTest {
 
     @Test
     void aPinnedBossSurvivesTheCodecAndLeavesTheSetAlone() {
-        Codec<SpawnerMarkerProcessor> codec = SpawnerMarkerProcessor.codec(() -> null);
+        Codec<SpawnerMarkerProcessor> codec = SpawnerMarkerProcessor.codec(() -> null).codec();
         SpawnerMarkerProcessor pinned = new SpawnerMarkerProcessor(
                 ResourceLocation.fromNamespaceAndPath("dungeons2", "classic_undead"), Optional.of(MEDIUM),
                 SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 20.0D, SpawnerConfig.Kind.PROXIMITY)
                 .withBossMob(BEHOLDER);
 
         JsonElement json = codec.encodeStart(JsonOps.INSTANCE, pinned)
-                .getOrThrow(false, err -> fail("encode: " + err));
+                .getOrThrow(err -> new AssertionError("encode: " + err));
         assertEquals(BEHOLDER.toString(), json.getAsJsonObject().get("boss_mob").getAsString());
         assertEquals(MEDIUM.toString(), json.getAsJsonObject().get("boss_mob_set").getAsString(),
                 "pinning must not replace the set the tier assigned");
 
         SpawnerMarkerProcessor back = codec.parse(JsonOps.INSTANCE, json)
-                .getOrThrow(false, err -> fail("decode: " + err));
+                .getOrThrow(err -> new AssertionError("decode: " + err));
         assertEquals(Optional.of(BEHOLDER), back.bossMob());
         assertEquals(Optional.of(MEDIUM), back.bossMobSet());
     }
 
     @Test
     void anUnpinnedListStillDecodesWithNoPin() {
-        Codec<SpawnerMarkerProcessor> codec = SpawnerMarkerProcessor.codec(() -> null);
+        Codec<SpawnerMarkerProcessor> codec = SpawnerMarkerProcessor.codec(() -> null).codec();
         SpawnerMarkerProcessor plain = new SpawnerMarkerProcessor(
                 ResourceLocation.fromNamespaceAndPath("dungeons2", "classic_undead"), Optional.of(MEDIUM),
                 SpawnerMarkerProcessor.DEFAULT_MARKER_BLOCK, 20.0D, SpawnerConfig.Kind.PROXIMITY);
         JsonElement json = codec.encodeStart(JsonOps.INSTANCE, plain)
-                .getOrThrow(false, err -> fail("encode: " + err));
+                .getOrThrow(err -> new AssertionError("encode: " + err));
         assertFalse(json.getAsJsonObject().has("boss_mob"), "an unpinned list must not grow the field");
         assertEquals(Optional.empty(), codec.parse(JsonOps.INSTANCE, json)
-                .getOrThrow(false, err -> fail("decode: " + err)).bossMob());
+                .getOrThrow(err -> new AssertionError("decode: " + err)).bossMob());
     }
 
     @Test

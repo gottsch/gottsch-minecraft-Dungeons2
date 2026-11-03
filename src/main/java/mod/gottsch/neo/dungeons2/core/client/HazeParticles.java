@@ -43,7 +43,7 @@ import org.joml.Vector3f;
  *
  * @author Mark Gottschling on 10/26/2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID, value = Dist.CLIENT)
 public final class HazeParticles {
 
     /** How far round the player particles appear, in blocks. */

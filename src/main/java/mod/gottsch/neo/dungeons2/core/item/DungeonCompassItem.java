@@ -17,6 +17,9 @@
  */
 package mod.gottsch.neo.dungeons2.core.item;
 
+import java.util.Optional;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponents;
 import mod.gottsch.neo.dungeons2.core.world.DungeonLocator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -75,9 +78,11 @@ public class DungeonCompassItem extends Item {
         }
         BlockPos from = entity.blockPosition();
         String dimension = level.dimension().location().toString();
-        CompoundTag tag = stack.getTagElement(TAG);
-        if (tag != null && dimension.equals(tag.getString(DIMENSION)) && tag.contains(SEARCHED_FROM)) {
-            BlockPos last = NbtUtils.readBlockPos(tag.getCompound(SEARCHED_FROM));
+        CompoundTag tag = compassTag(stack);
+        Optional<BlockPos> searchedFrom = tag == null ? Optional.empty()
+                : NbtUtils.readBlockPos(tag, SEARCHED_FROM);
+        if (tag != null && dimension.equals(tag.getString(DIMENSION)) && searchedFrom.isPresent()) {
+            BlockPos last = searchedFrom.get();
             long dx = from.getX() - last.getX();
             long dz = from.getZ() - last.getZ();
             if (dx * dx + dz * dz < (long) RESEARCH_DISTANCE * RESEARCH_DISTANCE) {
@@ -89,7 +94,14 @@ public class DungeonCompassItem extends Item {
         fresh.put(SEARCHED_FROM, NbtUtils.writeBlockPos(from));
         DungeonLocator.nearest(serverLevel, from, MAX_RINGS)
                 .ifPresent(pos -> fresh.put(TARGET, NbtUtils.writeBlockPos(pos)));
-        stack.addTagElement(TAG, fresh);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, root -> root.put(TAG, fresh));
+    }
+
+    /** This compass's own compound inside the stack's custom data, or null before its first search. */
+    @Nullable
+    private static CompoundTag compassTag(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data != null && data.contains(TAG) ? data.copyTag().getCompound(TAG) : null;
     }
 
     /** A re-search rewrites the tag; without this the held compass would bob every 32 blocks. */
@@ -101,21 +113,22 @@ public class DungeonCompassItem extends Item {
     /** Where the needle points, or null to spin. Read on the client from the synced stack. */
     @Nullable
     public static GlobalPos target(ItemStack stack) {
-        CompoundTag tag = stack.getTagElement(TAG);
-        if (tag == null || !tag.contains(TARGET)) {
+        CompoundTag tag = compassTag(stack);
+        if (tag == null) {
             return null;
         }
         ResourceLocation dimension = ResourceLocation.tryParse(tag.getString(DIMENSION));
         if (dimension == null) {
             return null;
         }
-        BlockPos pos = NbtUtils.readBlockPos(tag.getCompound(TARGET));
-        return GlobalPos.of(ResourceKey.create(Registries.DIMENSION, dimension), pos);
+        return NbtUtils.readBlockPos(tag, TARGET)
+                .map(pos -> GlobalPos.of(ResourceKey.create(Registries.DIMENSION, dimension), pos))
+                .orElse(null);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        String key = stack.getTagElement(TAG) != null && target(stack) == null
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        String key = compassTag(stack) != null && target(stack) == null
                 ? "tooltip.dungeons2.dungeon_compass.none" : "tooltip.dungeons2.dungeon_compass";
         tooltip.add(Component.translatable(key).withStyle(ChatFormatting.GRAY));
     }

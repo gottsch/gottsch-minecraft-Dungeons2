@@ -21,6 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.Lifecycle;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.config.MotifConfigFragment;
@@ -168,13 +169,13 @@ public final class TestRegistries {
         // the codec factories take Supplier<StructureProcessorType<?>>, and threading a wildcard
         // through a type parameter costs more unchecked casts than the duplication saves.
         StructureProcessorType<?>[] agingSelf = new StructureProcessorType<?>[1];
-        Codec<AgingProcessor> agingCodec = AgingProcessor.codec(() -> agingSelf[0]);
+        MapCodec<AgingProcessor> agingCodec = AgingProcessor.codec(() -> agingSelf[0]);
         StructureProcessorType<AgingProcessor> agingType = () -> agingCodec;
         agingSelf[0] = agingType;
         Registry.register(registry, aging, agingType);
 
         StructureProcessorType<?>[] decorationSelf = new StructureProcessorType<?>[1];
-        Codec<DecorationProcessor> decorationCodec = DecorationProcessor.codec(() -> decorationSelf[0]);
+        MapCodec<DecorationProcessor> decorationCodec = DecorationProcessor.codec(() -> decorationSelf[0]);
         StructureProcessorType<DecorationProcessor> decorationType = () -> decorationCodec;
         decorationSelf[0] = decorationType;
         Registry.register(registry,
@@ -184,7 +185,7 @@ public final class TestRegistries {
         // the shipped list stops decoding entirely and every test that touches weathering fails at
         // once, which is exactly what happened when this processor was first added to the JSON.
         StructureProcessorType<?>[] spawnerSelf = new StructureProcessorType<?>[1];
-        Codec<SpawnerMarkerProcessor> spawnerCodec = SpawnerMarkerProcessor.codec(() -> spawnerSelf[0]);
+        MapCodec<SpawnerMarkerProcessor> spawnerCodec = SpawnerMarkerProcessor.codec(() -> spawnerSelf[0]);
         StructureProcessorType<SpawnerMarkerProcessor> spawnerType = () -> spawnerCodec;
         spawnerSelf[0] = spawnerType;
         Registry.register(registry,
@@ -195,7 +196,7 @@ public final class TestRegistries {
         // not fail one test -- it fails every test that builds a FakeWorldGenLevel, with a stack
         // that names the JSON rather than the missing type.
         StructureProcessorType<?>[] chestSelf = new StructureProcessorType<?>[1];
-        Codec<ChestMarkerProcessor> chestCodec = ChestMarkerProcessor.codec(() -> chestSelf[0]);
+        MapCodec<ChestMarkerProcessor> chestCodec = ChestMarkerProcessor.codec(() -> chestSelf[0]);
         StructureProcessorType<ChestMarkerProcessor> chestType = () -> chestCodec;
         chestSelf[0] = chestType;
         Registry.register(registry,
@@ -206,7 +207,7 @@ public final class TestRegistries {
         // does not fail one test -- it fails every test that builds a FakeWorldGenLevel, with a
         // stack that names the JSON rather than the missing type.
         StructureProcessorType<?>[] surfaceAgingSelf = new StructureProcessorType<?>[1];
-        Codec<SurfaceAgingProcessor> surfaceAgingCodec =
+        MapCodec<SurfaceAgingProcessor> surfaceAgingCodec =
                 SurfaceAgingProcessor.codec(() -> surfaceAgingSelf[0]);
         StructureProcessorType<SurfaceAgingProcessor> surfaceAgingType = () -> surfaceAgingCodec;
         surfaceAgingSelf[0] = surfaceAgingType;
@@ -216,7 +217,7 @@ public final class TestRegistries {
 
         // The decoration sweep, which every shipped list names right after dungeons2:decoration.
         StructureProcessorType<?>[] sweepSelf = new StructureProcessorType<?>[1];
-        Codec<DecorationSweepProcessor> sweepCodec = DecorationSweepProcessor.codec(() -> sweepSelf[0]);
+        MapCodec<DecorationSweepProcessor> sweepCodec = DecorationSweepProcessor.codec(() -> sweepSelf[0]);
         StructureProcessorType<DecorationSweepProcessor> sweepType = () -> sweepCodec;
         sweepSelf[0] = sweepType;
         Registry.register(registry,
@@ -228,7 +229,7 @@ public final class TestRegistries {
         // dungeons2:pot to the JSON without adding it here failed 60-odd tests at once with a stack
         // naming classic_mud_weathering.json rather than the missing type.
         StructureProcessorType<?>[] potSelf = new StructureProcessorType<?>[1];
-        Codec<PotMarkerProcessor> potCodec = PotMarkerProcessor.codec(() -> potSelf[0]);
+        MapCodec<PotMarkerProcessor> potCodec = PotMarkerProcessor.codec(() -> potSelf[0]);
         StructureProcessorType<PotMarkerProcessor> potType = () -> potCodec;
         potSelf[0] = potType;
         Registry.register(registry,
@@ -237,7 +238,7 @@ public final class TestRegistries {
         // The sealed tombs' tomb marker, which every shipped list names beside the chest's. Same reason as
         // every type above.
         StructureProcessorType<?>[] tombSelf = new StructureProcessorType<?>[1];
-        Codec<SarcophagusMarkerProcessor> tombCodec =
+        MapCodec<SarcophagusMarkerProcessor> tombCodec =
                 SarcophagusMarkerProcessor.codec(() -> tombSelf[0]);
         StructureProcessorType<SarcophagusMarkerProcessor> tombType = () -> tombCodec;
         tombSelf[0] = tombType;
@@ -250,7 +251,7 @@ public final class TestRegistries {
         // adding it here failed a dozen unrelated tests with "could not read
         // classic_entrance_weathering.json" and nothing pointing at the missing type.
         StructureProcessorType<?>[] supportSelf = new StructureProcessorType<?>[1];
-        Codec<SupportSweepProcessor> supportCodec =
+        MapCodec<SupportSweepProcessor> supportCodec =
                 SupportSweepProcessor.codec(() -> supportSelf[0]);
         StructureProcessorType<SupportSweepProcessor> supportType = () -> supportCodec;
         supportSelf[0] = supportType;
@@ -263,7 +264,7 @@ public final class TestRegistries {
         // adding it to the six JSONs without adding it here failed 98 tests with "could not read
         // classic_boss_weathering_large.json" and nothing anywhere naming the missing type.
         StructureProcessorType<?>[] hangingSelf = new StructureProcessorType<?>[1];
-        Codec<HangingSweepProcessor> hangingCodec =
+        MapCodec<HangingSweepProcessor> hangingCodec =
                 HangingSweepProcessor.codec(() -> hangingSelf[0]);
         StructureProcessorType<HangingSweepProcessor> hangingType = () -> hangingCodec;
         hangingSelf[0] = hangingType;
@@ -273,7 +274,7 @@ public final class TestRegistries {
 
         // The rubble scatter, which every shipped list names right after its aging. Same reason.
         StructureProcessorType<?>[] rubbleSelf = new StructureProcessorType<?>[1];
-        Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> rubbleCodec =
+        MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> rubbleCodec =
                 mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor
                         .codec(() -> rubbleSelf[0]);
         StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> rubbleType =
@@ -286,7 +287,7 @@ public final class TestRegistries {
         // The pattern-tile fix-up, LAST in every shipped list (2026-10-22). Same reason, same toll:
         // without it here every test that decodes a list fails on "could not read".
         StructureProcessorType<?>[] tileSelf = new StructureProcessorType<?>[1];
-        Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> tileCodec =
+        MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> tileCodec =
                 mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor
                         .codec(() -> tileSelf[0]);
         StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> tileType =
@@ -297,7 +298,7 @@ public final class TestRegistries {
                 tileType);
 
         StructureProcessorType<?>[] barrelSelf = new StructureProcessorType<?>[1];
-        Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> barrelCodec =
+        MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> barrelCodec =
                 mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor.codec(() -> barrelSelf[0]);
         StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> barrelType = () -> barrelCodec;
         barrelSelf[0] = barrelType;
@@ -306,7 +307,7 @@ public final class TestRegistries {
                 barrelType);
 
         StructureProcessorType<?>[] pedestalSelf = new StructureProcessorType<?>[1];
-        Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> pedestalCodec =
+        MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> pedestalCodec =
                 mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor.codec(() -> pedestalSelf[0]);
         StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> pedestalType = () -> pedestalCodec;
         pedestalSelf[0] = pedestalType;
@@ -332,7 +333,7 @@ public final class TestRegistries {
             registry.register(
                     ResourceKey.create(MotifConfigRegistries.MOTIF_CONFIG,
                             ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, id)),
-                    fragment, Lifecycle.stable());
+                    fragment, net.minecraft.core.RegistrationInfo.BUILT_IN);
         }
         return registry.freeze();
     }
@@ -351,7 +352,7 @@ public final class TestRegistries {
             String id = relativeId(root, file);
             T value = decode(file, json -> codec.parse(ops, json));
             registry.register(ResourceKey.create(key, ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, id)),
-                    value, Lifecycle.stable());
+                    value, net.minecraft.core.RegistrationInfo.BUILT_IN);
         }
         return registry.freeze();
     }
@@ -365,7 +366,7 @@ public final class TestRegistries {
                     StructureProcessorType.DIRECT_CODEC.parse(ops, json));
             registry.register(
                     ResourceKey.create(Registries.PROCESSOR_LIST, ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, id)),
-                    list, Lifecycle.stable());
+                    list, net.minecraft.core.RegistrationInfo.BUILT_IN);
         }
         return registry.freeze();
     }
@@ -402,7 +403,7 @@ public final class TestRegistries {
             JsonElement json = parseLenient(reader);
             // getOrThrow, not .result(): a shipped file that no longer decodes is a real failure and
             // the message is the only thing that says which file and why.
-            return decoder.apply(json).getOrThrow(false, error -> {
+            return decoder.apply(json).getOrThrow(error -> {
                 throw new IllegalStateException("could not decode " + file + ": " + error);
             });
         } catch (Exception e) {

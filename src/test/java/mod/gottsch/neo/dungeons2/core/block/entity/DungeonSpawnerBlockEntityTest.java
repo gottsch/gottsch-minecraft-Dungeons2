@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the wrong difficulty, forever. A save that throws would leave the spawner with none of its
  * configuration at all, which looks exactly like a room that never had one.</p>
  *
- * <p>{@code saveAdditional} / {@code load} directly rather than {@code saveWithFullMetadata}:
+ * <p>{@code saveAdditional} / {@code loadAdditional} directly rather than {@code saveWithFullMetadata}:
  * that one resolves the block-entity type's registry key and throws for an unregistered type, and
  * Forge's {@code DeferredRegister} does not run in a unit test. The field round trip is the subject
  * here, and it lives below the metadata layer.</p>
@@ -68,7 +68,9 @@ class DungeonSpawnerBlockEntityTest {
         Bootstrap.bootStrap();
 
         ((MappedRegistry<Block>) BuiltInRegistries.BLOCK).unfreeze();
-        MobSetSpawnerBlock block = new MobSetSpawnerBlock(MobSetSpawnerBlock.properties());
+        // 1.21: a BlockEntityType allocates an intrusive holder too
+        ((MappedRegistry<BlockEntityType<?>>) BuiltInRegistries.BLOCK_ENTITY_TYPE).unfreeze();
+        MobSetSpawnerBlock block = new MobSetSpawnerBlock(MobSetSpawnerBlock.defaultProperties());
         state = block.defaultBlockState();
         type = BlockEntityType.Builder.of(
                 (pos, blockState) -> new DungeonSpawnerBlockEntity(() -> type, pos, blockState),
@@ -91,10 +93,10 @@ class DungeonSpawnerBlockEntityTest {
         original.setFloorIndex(4);
 
         CompoundTag tag = new CompoundTag();
-        original.saveAdditional(tag);
+        original.saveAdditional(tag, null);
 
         DungeonSpawnerBlockEntity loaded = spawner();
-        loaded.load(tag);
+        loaded.loadAdditional(tag, null);
         assertEquals(4, loaded.getFloorIndex());
     }
 
@@ -112,11 +114,11 @@ class DungeonSpawnerBlockEntityTest {
         generated.putInt(DungeonSpawnerBlockEntity.FLOOR_INDEX, 2);
 
         DungeonSpawnerBlockEntity spawner = spawner();
-        spawner.load(generated);
+        spawner.loadAdditional(generated, null);
         assertEquals(2, spawner.getFloorIndex());
 
         CompoundTag resaved = new CompoundTag();
-        spawner.saveAdditional(resaved);
+        spawner.saveAdditional(resaved, null);
         assertEquals(2, resaved.getInt(DungeonSpawnerBlockEntity.FLOOR_INDEX),
                 "the floor index did not survive the round trip a chunk unload makes -- which is"
                         + " the entire reason this subclass exists rather than a plain tag key");
@@ -133,7 +135,7 @@ class DungeonSpawnerBlockEntityTest {
     void aFreshSpawnerCanBeSavedWithoutThrowing() {
         DungeonSpawnerBlockEntity spawner = spawner();
         CompoundTag tag = new CompoundTag();
-        assertDoesNotThrow(() -> spawner.saveAdditional(tag));
+        assertDoesNotThrow(() -> spawner.saveAdditional(tag, null));
         assertTrue(tag.contains("minMobs"), "the parent's own fields should still be written");
     }
 }

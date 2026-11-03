@@ -199,7 +199,7 @@ class MaterialRolePaletteTest {
         DataResult<A> result = parse(codec, json);
         assertTrue(result.result().isPresent(),
                 () -> "every block field accepts a role since phase 7, but this did not: "
-                        + result.error().map(DataResult.PartialResult::message).orElse("")
+                        + result.error().map(DataResult.Error::message).orElse("")
                         + " -- " + json);
     }
 

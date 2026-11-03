@@ -264,7 +264,7 @@ class StructureSpawnOverridesTest {
                         .parse(JsonOps.INSTANCE, spawn);
                 assertTrue(decoded.result().isPresent(),
                         () -> "vanilla rejects this spawn entry: "
-                                + decoded.error().map(DataResult.PartialResult::message).orElse("")
+                                + decoded.error().map(DataResult.Error::message).orElse("")
                                 + " -- " + entry
                                 + ". These keys belong to Minecraft, not to this mod's schema.");
             }

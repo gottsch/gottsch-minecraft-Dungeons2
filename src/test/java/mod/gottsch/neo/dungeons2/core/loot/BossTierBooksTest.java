@@ -4,7 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import mod.gottsch.neo.dungeons2.diagnostic.MotifConfigs;
 import mod.gottsch.neo.dungeons2.core.data.DungeonLayout;
 import mod.gottsch.neo.dungeons2.core.data.DungeonSize;
@@ -30,7 +31,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -68,10 +68,9 @@ class BossTierBooksTest {
     /** A typo'd tier would be a book that never drops anywhere, so it fails the load instead. */
     @Test
     void anUnknownTierIsALoadError() {
-        BossTierCondition.Serializer serializer = new BossTierCondition.Serializer();
-        assertEquals("small", serializer.deserialize(json("{\"tier\":\"small\"}"), null).tier());
-        assertThrows(JsonSyntaxException.class,
-                () -> serializer.deserialize(json("{\"tier\":\"huge\"}"), null));
+        Codec<BossTierCondition> codec = BossTierCondition.CODEC.codec();
+        assertEquals("small", codec.parse(JsonOps.INSTANCE, json("{\"tier\":\"small\"}")).getOrThrow().tier());
+        assertTrue(codec.parse(JsonOps.INSTANCE, json("{\"tier\":\"huge\"}")).error().isPresent());
     }
 
     /** Book text, server entry, lang, both advancements, and a gated pool in every table. */

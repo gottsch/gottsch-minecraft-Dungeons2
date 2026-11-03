@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block;
 
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.block.entity.ChestMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -60,6 +61,13 @@ public class ChestMarkerBlock extends BaseEntityBlock {
 
     public static final net.minecraft.world.level.block.state.properties.DirectionProperty FACING =
             HorizontalDirectionalBlock.FACING;
+
+    public static final MapCodec<ChestMarkerBlock> CODEC = simpleCodec(ChestMarkerBlock::new);
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
 
     public ChestMarkerBlock(Properties properties) {
         super(properties);

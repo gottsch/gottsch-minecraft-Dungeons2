@@ -34,6 +34,7 @@ import mod.gottsch.neo.dungeons2.diagnostic.TestRegistries;
 import mod.gottsch.neo.gottschcore.spatial.Coords;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -178,11 +179,11 @@ class MiningChestPlacementTest {
      * placement goes through {@code safePlaceAll}, the weathering processor list and the decoration
      * sweep before anything is written.</p>
      *
-     * <p><strong>Weaker since Oct 4, 2026, and why.</strong> This asserted a {@link ChestBlock} while
-     * the Mining Chest was {@code minecraft:chest}. It is now {@code dungeons2:mining_chest}, which a
-     * bare {@code Bootstrap} does not register, so the id decodes to air here (the block-id sweep). What the
-     * harness can still check is that the cell stays exactly that &mdash; a cobweb, a pot or a
-     * weathered block landing in it would show &mdash; and the block itself is confirmed in game.</p>
+     * <p><strong>Weaker from Oct 4, 2026 until the NeoForge port.</strong> This asserted a
+     * {@link ChestBlock} while the Mining Chest was {@code minecraft:chest}. It then became
+     * {@code dungeons2:mining_chest}, which a bare Forge {@code Bootstrap} did not register, so the id
+     * decoded to air and the test could only check the cell stayed air. NeoForge's unit-test runner
+     * loads the mod, so the cell is asserted to hold the Mining Chest itself again.</p>
      */
     @Test
     void nothingElseWritesIntoTheChestCell() {
@@ -203,9 +204,10 @@ class MiningChestPlacementTest {
 
             BlockPos pos = new BlockPos(ANCHOR_X + intended.getX(), intended.getY(),
                     ANCHOR_Z + intended.getZ());
-            assertTrue(level.blockAt(pos).isAir(),
+            assertEquals("dungeons2:mining_chest",
+                    BuiltInRegistries.BLOCK.getKey(level.blockAt(pos).getBlock()).toString(),
                     "seed " + seed + ": the Mining Chest's cell at " + pos.toShortString()
-                            + " was overwritten with " + level.blockAt(pos));
+                            + " holds " + level.blockAt(pos));
             checked++;
         }
         assertTrue(checked > 0, "no seed produced a Mining Chest, so this test proved nothing");

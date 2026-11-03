@@ -218,8 +218,8 @@ class DecorationOnRealRoomTest {
             filtered.add("agings", agings);
             filtered.add("rules", stoneBrickRules);
 
-            return SurfaceAgingProcessor.codec(NO_TYPE).parse(JsonOps.INSTANCE, filtered)
-                    .getOrThrow(false, msg -> {
+            return SurfaceAgingProcessor.codec(NO_TYPE).codec().parse(JsonOps.INSTANCE, filtered)
+                    .getOrThrow(msg -> {
                         throw new AssertionError("aging rules failed to decode: " + msg);
                     });
         } catch (Exception e) {

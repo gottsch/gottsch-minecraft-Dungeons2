@@ -138,7 +138,7 @@ class PillarMeetsVaultTest {
         String json = SCHEME.formatted(SHAFT, CAP, ceiling);
         MotifConfigFragment fragment = MotifConfigFragment.CODEC
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
-                .getOrThrow(false, error -> {
+                .getOrThrow(error -> {
                     throw new AssertionError("the fixture no longer decodes: " + error);
                 });
         MotifConfig motif = MotifConfigFragment.resolve(List.of(fragment));

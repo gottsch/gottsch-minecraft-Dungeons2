@@ -147,7 +147,7 @@ class ChestMarkerProcessorTest {
     @Test
     void anEntryWithNoBossTableDecodes() {
         DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}"));
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString("{}"));
         assertTrue(decoded.result().isPresent(),
                 "boss_loot_table must be genuinely optional: " + decoded.error().orElse(null));
         assertNull(decoded.result().get().bossLootTable(marker(bossNbt())));
@@ -157,7 +157,7 @@ class ChestMarkerProcessorTest {
     @Test
     void aMalformedBossTableIsALoadError() {
         DataResult<ChestMarkerProcessor> decoded = ChestMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE,
+                .codec().parse(JsonOps.INSTANCE,
                         JsonParser.parseString("{\"boss_loot_table\": \"NOT AN ID\"}"));
         assertTrue(decoded.error().isPresent(),
                 "a misspelled boss table must name the field and fail the pack, not decode to"
@@ -196,7 +196,7 @@ class ChestMarkerProcessorTest {
     @Test
     void theProcessorDecodesWithNoLootTable() {
         DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString(
                         "{\"processor_type\": \"dungeons2:chest\"}"));
 
         assertTrue(result.result().isPresent(),
@@ -208,7 +208,7 @@ class ChestMarkerProcessorTest {
     @Test
     void theProcessorStillDecodesWithALootTable() {
         DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString(
                         "{\"processor_type\": \"dungeons2:chest\","
                                 + " \"loot_tables\": ["
                                 + "   {\"loot_table\": \"dungeons2:chests/classic_shallow\","
@@ -227,7 +227,7 @@ class ChestMarkerProcessorTest {
     @Test
     void theRetiredSingleIdFormIsRejected() {
         DataResult<ChestMarkerProcessor> result = ChestMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString(
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString(
                         "{\"processor_type\": \"dungeons2:chest\","
                                 + " \"loot_tables\": \"dungeons2:chests/classic_shallow\"}"));
 
@@ -303,10 +303,10 @@ class ChestMarkerProcessorTest {
     @Test
     void treasureRaritiesDecode() {
         var codec = ChestMarkerProcessor.codec(() -> null);
-        DataResult<ChestMarkerProcessor> withField = codec.parse(JsonOps.INSTANCE, JsonParser.parseString(
+        DataResult<ChestMarkerProcessor> withField = codec.codec().parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"treasure_rarities\": [\"treasure2:rare\", \"treasure2:epic\"]}"));
         assertTrue(withField.result().isPresent(), withField.error().map(Object::toString).orElse(""));
-        assertTrue(codec.parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).result().isPresent());
+        assertTrue(codec.codec().parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).result().isPresent());
     }
 
     /** The opt-in the chest routing will read. Present in the shape now so a template can carry it early. */

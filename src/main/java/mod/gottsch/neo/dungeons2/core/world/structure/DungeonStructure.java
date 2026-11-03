@@ -17,6 +17,9 @@
  */
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
+import net.minecraft.world.level.levelgen.structure.pools.DimensionPadding;
+import net.minecraft.world.level.levelgen.structure.pools.alias.PoolAliasLookup;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.Codec;
 import mod.gottsch.neo.dungeons2.Dungeons;
@@ -555,8 +558,10 @@ public class DungeonStructure extends Structure {
         return RETAGGED_POOLS.computeIfAbsent(new RetagKey(donorId, processors), key -> {
             RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, context.registryAccess());
             Tag encoded = StructureTemplatePool.DIRECT_CODEC.encodeStart(ops, donor)
-                    .getOrThrow(false, err -> Dungeons.LOGGER.error(
-                            "could not encode boss pool for re-tagging: {}", err));
+                    .getOrThrow(err -> {
+                        Dungeons.LOGGER.error("could not encode boss pool for re-tagging: {}", err);
+                        return new IllegalStateException(err);
+                    });
             if (encoded instanceof CompoundTag pool
                     && pool.get("elements") instanceof ListTag elements) {
                 for (Tag entry : elements) {
@@ -568,8 +573,10 @@ public class DungeonStructure extends Structure {
                 }
             }
             return StructureTemplatePool.DIRECT_CODEC.parse(ops, encoded)
-                    .getOrThrow(false, err -> Dungeons.LOGGER.error(
-                            "could not decode re-tagged boss pool: {}", err));
+                    .getOrThrow(err -> {
+                        Dungeons.LOGGER.error("could not decode re-tagged boss pool: {}", err);
+                        return new IllegalStateException(err);
+                    });
         });
     }
 
@@ -668,8 +675,10 @@ public class DungeonStructure extends Structure {
                                                 ResourceLocation mob) {
         RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, context.registryAccess());
         Tag encoded = StructureTemplatePool.DIRECT_CODEC.encodeStart(ops, pool)
-                .getOrThrow(false, err -> Dungeons.LOGGER.error(
-                        "could not encode boss pool for pinning: {}", err));
+                .getOrThrow(err -> {
+                        Dungeons.LOGGER.error("could not encode boss pool for pinning: {}", err);
+                        return new IllegalStateException(err);
+                    });
         if (encoded instanceof CompoundTag root && root.get("elements") instanceof ListTag elements) {
             for (Tag entry : elements) {
                 if (!(entry instanceof CompoundTag pair
@@ -693,8 +702,10 @@ public class DungeonStructure extends Structure {
             }
         }
         return StructureTemplatePool.DIRECT_CODEC.parse(ops, encoded)
-                .getOrThrow(false, err -> Dungeons.LOGGER.error(
-                        "could not decode pinned boss pool: {}", err));
+                .getOrThrow(err -> {
+                        Dungeons.LOGGER.error("could not decode pinned boss pool: {}", err);
+                        return new IllegalStateException(err);
+                    });
     }
 
     /**
@@ -1294,7 +1305,8 @@ public class DungeonStructure extends Structure {
                 position,
                 false,                     // useExpansionHack
                 Optional.empty(),          // projectStartToHeightmap: Y controlled via position
-                ENTRANCE_MAX_DISTANCE);
+                ENTRANCE_MAX_DISTANCE,
+                PoolAliasLookup.EMPTY, DimensionPadding.ZERO, LiquidSettings.APPLY_WATERLOGGING);
 
         return stub.map(s -> s.getPiecesBuilder().build().pieces()).orElse(List.of());
     }
@@ -1321,7 +1333,8 @@ public class DungeonStructure extends Structure {
                 position,
                 false,
                 Optional.empty(),
-                TRANSITION_MAX_DISTANCE);
+                TRANSITION_MAX_DISTANCE,
+                PoolAliasLookup.EMPTY, DimensionPadding.ZERO, LiquidSettings.APPLY_WATERLOGGING);
 
         return stub.map(s -> s.getPiecesBuilder().build().pieces()).orElse(List.of());
     }
@@ -1711,7 +1724,8 @@ public class DungeonStructure extends Structure {
                 position,
                 false,
                 Optional.empty(),
-                ROOM_MAX_DISTANCE);
+                ROOM_MAX_DISTANCE,
+                PoolAliasLookup.EMPTY, DimensionPadding.ZERO, LiquidSettings.APPLY_WATERLOGGING);
 
         return stub.map(s -> s.getPiecesBuilder().build().pieces()).orElse(List.of());
     }

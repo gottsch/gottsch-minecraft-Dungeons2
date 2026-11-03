@@ -102,8 +102,8 @@ class AgingChainsAcrossRulesTest {
                 }
                 """;
         return AgingProcessor.codec(NO_TYPE)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
-                .getOrThrow(false, msg -> {
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString(json))
+                .getOrThrow(msg -> {
                     throw new AssertionError("rules failed to decode: " + msg);
                 });
     }
@@ -182,7 +182,7 @@ class AgingChainsAcrossRulesTest {
     @Test
     void oneRuleCanReachCobblestoneOnItsOwn() {
         AgingProcessor processor = AgingProcessor.codec(NO_TYPE)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString("""
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString("""
                         {
                           "agings": 3,
                           "rules": [
@@ -196,7 +196,7 @@ class AgingChainsAcrossRulesTest {
                           ]
                         }
                         """))
-                .getOrThrow(false, msg -> {
+                .getOrThrow(msg -> {
                     throw new AssertionError(msg);
                 });
 

@@ -61,7 +61,7 @@ public class BlankDungeonMapItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.dungeons2.blank_dungeon_map").withStyle(ChatFormatting.GRAY));
     }
 

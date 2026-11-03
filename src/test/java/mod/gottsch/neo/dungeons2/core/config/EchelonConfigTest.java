@@ -53,7 +53,7 @@ class EchelonConfigTest {
 
     @Test
     void absentDifficultyMeansNoOpinion() {
-        MobSetBand band = parse(MobSetBand.CODEC, "{" + SETS + "}").getOrThrow(false, e -> {});
+        MobSetBand band = parse(MobSetBand.CODEC, "{" + SETS + "}").getOrThrow();
         assertTrue(band.difficulty().isEmpty());
         assertEquals(OptionalInt.empty(), band.drawDifficulty(RandomSource.create(1L)),
                 "a band with no difficulty must leave the mob to SMB, not scale it to 0");
@@ -62,7 +62,7 @@ class EchelonConfigTest {
     @Test
     void aPlainNumberIsOneFixedDifficulty() {
         MobSetBand band = parse(MobSetBand.CODEC, "{" + SETS + ",\"difficulty\":3}")
-                .getOrThrow(false, e -> {});
+                .getOrThrow();
         assertEquals(List.of(new MobSetBand.DifficultyEntry(3, 1)), band.difficulty());
         assertEquals(OptionalInt.of(3), band.drawDifficulty(RandomSource.create(1L)));
     }
@@ -71,14 +71,14 @@ class EchelonConfigTest {
     @Test
     void zeroIsADifficultyNotAnAbsence() {
         MobSetBand band = parse(MobSetBand.CODEC, "{" + SETS + ",\"difficulty\":0}")
-                .getOrThrow(false, e -> {});
+                .getOrThrow();
         assertEquals(OptionalInt.of(0), band.drawDifficulty(RandomSource.create(1L)));
     }
 
     @Test
     void aWeightedListDrawsEveryEntry() {
         MobSetBand band = parse(MobSetBand.CODEC, "{" + SETS + ",\"difficulty\":["
-                + "{\"difficulty\":2,\"weight\":3},{\"difficulty\":4}]}").getOrThrow(false, e -> {});
+                + "{\"difficulty\":2,\"weight\":3},{\"difficulty\":4}]}").getOrThrow();
         RandomSource random = RandomSource.create(7L);
         Set<Integer> seen = new HashSet<>();
         for (int i = 0; i < 200; i++) {
@@ -101,10 +101,10 @@ class EchelonConfigTest {
     void difficultyRoundTripsInTheShapeItWasWritten() {
         for (String difficulty : List.of("3", "[{\"difficulty\":2,\"weight\":3},{\"difficulty\":4,\"weight\":1}]")) {
             MobSetBand band = parse(MobSetBand.CODEC, "{" + SETS + ",\"difficulty\":" + difficulty + "}")
-                    .getOrThrow(false, e -> {});
-            JsonElement encoded = MobSetBand.CODEC.encodeStart(JsonOps.INSTANCE, band).getOrThrow(false, e -> {});
+                    .getOrThrow();
+            JsonElement encoded = MobSetBand.CODEC.encodeStart(JsonOps.INSTANCE, band).getOrThrow();
             assertEquals(JsonParser.parseString(difficulty), encoded.getAsJsonObject().get("difficulty"));
-            assertEquals(band, MobSetBand.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow(false, e -> {}));
+            assertEquals(band, MobSetBand.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
         }
     }
 
@@ -112,7 +112,7 @@ class EchelonConfigTest {
 
     @Test
     void everyFactorDefaultsToZero() {
-        EchelonConfig config = parse(EchelonConfig.CODEC, "{\"hp_factor\":0.2}").getOrThrow(false, e -> {});
+        EchelonConfig config = parse(EchelonConfig.CODEC, "{\"hp_factor\":0.2}").getOrThrow();
         assertEquals(0.2D, config.hpFactor());
         assertEquals(0.0D, config.damageFactor());
         assertEquals(0.0D, config.speedFactor());
@@ -136,7 +136,7 @@ class EchelonConfigTest {
     @Test
     void xpScalesPerStepAndCaps() {
         EchelonConfig config = parse(EchelonConfig.CODEC, "{\"xp_factor\":0.5,\"max_xp\":12}")
-                .getOrThrow(false, e -> {});
+                .getOrThrow();
         assertEquals(5, config.scaleXp(5, 0));
         assertEquals(10, config.scaleXp(5, 2));
         assertEquals(12, config.scaleXp(5, 4), "capped by max_xp");
@@ -145,7 +145,7 @@ class EchelonConfigTest {
     // ---- merge -----------------------------------------------------------------------------
 
     private static MotifConfigFragment echelonFragment(String json) {
-        return parse(MotifConfigFragment.CODEC, "{\"echelon\":" + json + "}").getOrThrow(false, e -> {});
+        return parse(MotifConfigFragment.CODEC, "{\"echelon\":" + json + "}").getOrThrow();
     }
 
     @Test
@@ -162,7 +162,7 @@ class EchelonConfigTest {
     void aFragmentWithoutEchelonKeepsTheEarlierOne() {
         MotifConfig merged = MotifConfigFragment.resolve(List.of(
                 echelonFragment("{\"hp_factor\":0.2}"),
-                parse(MotifConfigFragment.CODEC, "{}").getOrThrow(false, e -> {})));
+                parse(MotifConfigFragment.CODEC, "{}").getOrThrow()));
         assertEquals(0.2D, merged.echelon().orElseThrow().hpFactor());
     }
 
@@ -173,7 +173,7 @@ class EchelonConfigTest {
      */
     @Test
     void theEchelonBlockSurvivesEveryPerFloorProjection() {
-        EchelonConfig echelon = parse(EchelonConfig.CODEC, "{\"hp_factor\":0.2}").getOrThrow(false, e -> {});
+        EchelonConfig echelon = parse(EchelonConfig.CODEC, "{\"hp_factor\":0.2}").getOrThrow();
         Stratum band = new Stratum(0, Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty());
         MotifConfig stratified = new MotifConfig(WallConfig.DEFAULT, CeilingConfig.DEFAULT,
@@ -196,7 +196,7 @@ class EchelonConfigTest {
     void theIntegrationIsInertWithoutEe() {
         assertFalse(EchelonsIntegration.isLoaded());
         assertFalse(EchelonsIntegration.apply(null,
-                parse(EchelonConfig.CODEC, "{}").getOrThrow(false, e -> {}), 2));
+                parse(EchelonConfig.CODEC, "{}").getOrThrow(), 2));
         assertEquals(OptionalInt.empty(), EchelonsIntegration.difficultyOf(null));
     }
 }

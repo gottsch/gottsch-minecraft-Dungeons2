@@ -1009,7 +1009,7 @@
             "weight": 10
           },
           {
-            "block": "minecraft:grass",
+            "block": "minecraft:short_grass",
             "weight": 10
           },
           {
@@ -1122,7 +1122,7 @@
           "minecraft:brown_mushroom",
           "minecraft:red_mushroom",
           "minecraft:moss_carpet",
-          "minecraft:grass",
+          "minecraft:short_grass",
           "minecraft:fern",
           "minecraft:dead_bush"
         ]

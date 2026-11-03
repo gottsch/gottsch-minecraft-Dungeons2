@@ -279,7 +279,7 @@ class TerminalRoomFitProbe {
         List<int[]> out = new ArrayList<>();
         for (Path file : walkResource("/data/dungeons2/structure/end_rooms")) {
             try (InputStream in = Files.newInputStream(file)) {
-                CompoundTag tag = NbtIo.readCompressed(in);
+                CompoundTag tag = NbtIo.readCompressed(in, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
                 var size = tag.getList("size", Tag.TAG_INT);
                 out.add(new int[] {size.getInt(0), size.getInt(2)});
             } catch (Exception unreadable) {

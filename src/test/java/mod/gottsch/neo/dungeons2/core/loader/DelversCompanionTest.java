@@ -155,7 +155,7 @@ class DelversCompanionTest {
             return;
         }
         String constant = "\"" + id.substring("dungeons2:".length()) + "\"";
-        Path source = Paths.get("src/main/java" + ENTITIES);
+        Path source = mod.gottsch.neo.dungeons2.diagnostic.ProjectFiles.path("src/main/java" + ENTITIES);
         if (!read(source).contains(constant)) {
             bad.add(name + ": entity " + id + " is not registered in DungeonsEntities");
         }

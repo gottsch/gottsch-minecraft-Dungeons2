@@ -63,9 +63,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * BEFORE throughout; this mod now uses AFTER throughout.
  *
  * <h2>How it can check other mods</h2>
- * <p>Every mod jar carries its own {@code META-INF/mods.toml}, and the dependency jars are on the
- * test classpath &mdash; so {@code ClassLoader.getResources} enumerates all of them, ours included,
- * and the real graph can be built. That is the whole point: a cycle is never visible in one file.</p>
+ * <p>Every mod jar carries its own {@code META-INF/neoforge.mods.toml} ({@code mods.toml} on Forge),
+ * and the dependency jars are on the test classpath &mdash; so {@code ClassLoader.getResources}
+ * enumerates all of them, ours included, and the real graph can be built. That is the whole point:
+ * a cycle is never visible in one file.</p>
  *
  * @author Mark Gottschling on Aug 13, 2026
  */
@@ -166,8 +167,9 @@ class ModLoadOrderTest {
         for (String toml : allModsTomls()) {
             if ("dungeons2".equals(declaringMod(toml))) {
                 Map<String, String> dependencies = parseDependencies(toml);
-                // forge/minecraft are always NONE and are not interesting here.
+                // neoforge/minecraft are always NONE and are not interesting here.
                 dependencies.remove("forge");
+                dependencies.remove("neoforge");
                 dependencies.remove("minecraft");
                 return dependencies;
             }
@@ -231,7 +233,7 @@ class ModLoadOrderTest {
         List<String> tomls = new ArrayList<>();
         try {
             Enumeration<URL> resources =
-                    ModLoadOrderTest.class.getClassLoader().getResources("META-INF/mods.toml");
+                    ModLoadOrderTest.class.getClassLoader().getResources("META-INF/neoforge.mods.toml");
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 try (InputStream in = url.openStream()) {

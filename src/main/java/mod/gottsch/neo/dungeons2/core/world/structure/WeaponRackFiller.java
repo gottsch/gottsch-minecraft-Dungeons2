@@ -17,6 +17,8 @@
  */
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import mod.gottsch.forge.dungeonblocks.core.block.WeaponRackBlock;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.config.WeaponRackConfig;
@@ -29,7 +31,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.storage.loot.LootDataType;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -110,7 +111,7 @@ public final class WeaponRackFiller {
             if (weapon.isEmpty()) {
                 continue;
             }
-            CompoundTag item = weapon.save(new CompoundTag());
+            CompoundTag item = (CompoundTag) weapon.save(server.registryAccess());
             item.putByte(SLOT, (byte) slot);
             items.add(item);
         }
@@ -120,8 +121,11 @@ public final class WeaponRackFiller {
     /** The first rackable item {@code table} rolls, or {@link ItemStack#EMPTY}. */
     private static ItemStack roll(ServerLevel server, BlockPos pos, String table, long seed) {
         ResourceLocation id = ResourceLocation.tryParse(table);
+        // 1.21 hands back LootTable.EMPTY for a table that does not exist, never null
         Optional<LootTable> lootTable = id == null ? Optional.empty()
-                : server.getServer().getLootData().getElementOptional(LootDataType.TABLE, id);
+                : Optional.of(server.getServer().reloadableRegistries()
+                        .getLootTable(ResourceKey.create(Registries.LOOT_TABLE, id)))
+                        .filter(found -> found != LootTable.EMPTY);
         if (lootTable.isEmpty()) {
             if (MISSING_TABLES.add(table)) {
                 Dungeons.LOGGER.warn("[D2-RACK] loot table {} does not exist; its rack slots stay"

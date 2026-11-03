@@ -21,10 +21,14 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.util.datafix.DataFixers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -82,9 +86,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ShippedTemplateBlocksTest {
 
     private static final String TEMPLATE_ROOT = "/data/dungeons2/structure";
-
-    /** Where a modded block proves it exists without a running game &mdash; see {@link ShippedBlockIdsTest}. */
-    private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";
 
     /**
      * Blocks that only ever mean "I was still drawing this". Kept as a set rather than a single
@@ -198,20 +199,24 @@ class ShippedTemplateBlocksTest {
         }
     }
 
+    /**
+     * Read and data-fixed to the current version, the way {@code StructureTemplateManager} loads a
+     * template in game. Templates saved on 1.20.1 still say {@code minecraft:grass}, which 1.20.3
+     * renamed to {@code short_grass}; the game fixes it on load, so the sweep must too.
+     */
     private static CompoundTag read(Path file) {
         try (InputStream in = Files.newInputStream(file)) {
-            return NbtIo.readCompressed(in);
+            CompoundTag tag = NbtIo.readCompressed(in, NbtAccounter.unlimitedHeap());
+            return DataFixTypes.STRUCTURE.updateToCurrentVersion(DataFixers.getDataFixer(), tag,
+                    NbtUtils.getDataVersion(tag, 500));
         } catch (IOException unreadable) {
             throw new UncheckedIOException("could not read template " + file, unreadable);
         }
     }
 
+    /** The mods are loaded under NeoForge's unit-test runner &mdash; see {@link ShippedBlockIdsTest}. */
     private static boolean exists(ResourceLocation id) {
-        if ("minecraft".equals(id.getNamespace())) {
-            return BuiltInRegistries.BLOCK.containsKey(id);
-        }
-        return ShippedTemplateBlocksTest.class.getResource(
-                String.format(BLOCKSTATE_DIR, id.getNamespace(), id.getPath())) != null;
+        return BuiltInRegistries.BLOCK.containsKey(id);
     }
 
     private static List<Path> templateFiles() {

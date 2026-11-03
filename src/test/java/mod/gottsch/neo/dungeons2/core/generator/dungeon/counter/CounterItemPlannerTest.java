@@ -106,7 +106,7 @@ class CounterItemPlannerTest {
     void everyCounterTableShips() {
         for (String table : CounterItemPlanner.COUNTER_TABLES.values()) {
             String[] id = table.split(":");
-            Path path = Path.of("src/main/resources/data", id[0], "loot_table", id[1] + ".json");
+            Path path = mod.gottsch.neo.dungeons2.diagnostic.ProjectFiles.path("src/main/resources/data", id[0], "loot_table", id[1] + ".json");
             assertTrue(Files.exists(path), "missing loot table " + path);
         }
     }

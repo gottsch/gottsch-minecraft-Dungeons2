@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -50,8 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class RendererCoverageTest {
 
-    private static final Path SOURCES = Paths.get("src/main/java/mod/gottsch/neo/dungeons2/core");
-    private static final Pattern REGISTERED = Pattern.compile("DeferredHolder<EntityType<?>, EntityType<[^>]+>>\\s+(\\w+)\\s*=");
+    private static final Path SOURCES = mod.gottsch.neo.dungeons2.diagnostic.ProjectFiles.path("src/main/java/mod/gottsch/neo/dungeons2/core");
+    private static final Pattern REGISTERED = Pattern.compile("DeferredHolder<EntityType<\\?>, EntityType<[^>]+>>\\s+(\\w+)\\s*=");
     private static final Pattern RENDERED = Pattern.compile("registerEntityRenderer\\(\\s*DungeonsEntities\\.(\\w+)\\.get\\(\\)");
 
     @Test

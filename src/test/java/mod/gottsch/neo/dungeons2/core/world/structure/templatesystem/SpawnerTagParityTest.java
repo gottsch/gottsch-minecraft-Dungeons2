@@ -150,8 +150,8 @@ class SpawnerTagParityTest {
         minimal.addProperty("mob_set", MOB_SET);
         minimal.addProperty("proximity", 12.0D);
         CompoundTag authored = SpawnerMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE, minimal)
-                .getOrThrow(false, error -> {
+                .codec().parse(JsonOps.INSTANCE, minimal)
+                .getOrThrow(error -> {
                     throw new AssertionError("the processor's own minimal form no longer decodes: "
                             + error);
                 })
@@ -178,7 +178,7 @@ class SpawnerTagParityTest {
         JsonObject noProximity = new JsonObject();
         noProximity.addProperty("mob_set", MOB_SET);
         assertTrue(SpawnerMarkerProcessor.codec(() -> null)
-                        .parse(JsonOps.INSTANCE, noProximity).error().isPresent(),
+                        .codec().parse(JsonOps.INSTANCE, noProximity).error().isPresent(),
                 "the marker processor grew a proximity default again");
 
         assertTrue(SpawnerConfig.CODEC

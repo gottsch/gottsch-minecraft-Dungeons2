@@ -747,7 +747,7 @@ class RoomPitTest {
         var ok = PitShapeRegistry.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"type\": \"dungeons2:grate\", \"config\": {\"grate_block\":"
                         + " \"dungeonblocks:dark_iron_grate\", \"size\": 2, \"liquid\": \"lava\"}}"));
-        GratePitShape shape = (GratePitShape) ok.getOrThrow(false, msg -> {});
+        GratePitShape shape = (GratePitShape) ok.getOrThrow();
         assertEquals(Liquid.LAVA, shape.liquid());
         assertEquals(2, shape.size());
         assertEquals(GratePitShape.DEFAULT_DEPTH, shape.depth());

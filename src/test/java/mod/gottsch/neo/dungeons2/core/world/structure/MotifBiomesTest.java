@@ -190,7 +190,7 @@ class MotifBiomesTest {
                     { "min_floor_index": 1 },
                     { "min_floor_index": 3, "biome": "test:bottom" }
                   ]
-                }""")).getOrThrow(false, message -> { throw new AssertionError(message); });
+                }""")).getOrThrow(message -> { throw new AssertionError(message); });
         MotifConfig motif = MotifConfigFragment.resolve(List.of(fragment));
         assertEquals(Optional.of(ResourceLocation.parse("test:top")), motif.biomeFor(0));
         assertEquals(Optional.of(ResourceLocation.parse("test:motif")), motif.biomeFor(1));

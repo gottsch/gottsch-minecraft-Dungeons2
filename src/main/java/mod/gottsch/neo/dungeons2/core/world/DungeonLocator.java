@@ -32,7 +32,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.StructureCheckResult;
@@ -149,7 +149,7 @@ public final class DungeonLocator {
 
     private static boolean generates(ServerLevel level, StructureManager structures, StructureSet set, ChunkPos chunk) {
         for (StructureSet.StructureSelectionEntry entry : set.structures()) {
-            StructureCheckResult result = structures.checkStructurePresence(chunk, entry.structure().value(), false);
+            StructureCheckResult result = structures.checkStructurePresence(chunk, entry.structure().value(), set.placement(), false);
             if (result == StructureCheckResult.START_PRESENT) {
                 return true;
             }

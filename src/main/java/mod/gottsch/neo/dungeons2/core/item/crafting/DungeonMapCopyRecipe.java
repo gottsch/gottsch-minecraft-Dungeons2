@@ -17,6 +17,8 @@
  */
 package mod.gottsch.neo.dungeons2.core.item.crafting;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.crafting.CraftingInput;
 import mod.gottsch.neo.dungeons2.core.item.DungeonsItems;
 import mod.gottsch.neo.dungeons2.core.map.DungeonMaps;
 import mod.gottsch.neo.dungeons2.core.setup.Registration;
@@ -51,17 +53,17 @@ import net.minecraft.world.level.Level;
  */
 public class DungeonMapCopyRecipe extends CustomRecipe {
 
-    public DungeonMapCopyRecipe(ResourceLocation id, CraftingBookCategory category) {
-        super(id, category);
+    public DungeonMapCopyRecipe(CraftingBookCategory category) {
+        super(category);
     }
 
     /** Exactly one Dungeon Map, one Empty Map and one coal, anywhere in the grid, and nothing else. */
     @Override
-    public boolean matches(CraftingContainer container, Level level) {
+    public boolean matches(CraftingInput container, Level level) {
         int maps = 0;
         int blanks = 0;
         int coals = 0;
-        for (int i = 0; i < container.getContainerSize(); i++) {
+        for (int i = 0; i < container.size(); i++) {
             ItemStack stack = container.getItem(i);
             if (stack.isEmpty()) {
                 continue;
@@ -80,15 +82,15 @@ public class DungeonMapCopyRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingContainer container, RegistryAccess registryAccess) {
+    public ItemStack assemble(CraftingInput container, HolderLookup.Provider registries) {
         return new ItemStack(DungeonsItems.BLANK_DUNGEON_MAP.get());
     }
 
     /** The Dungeon Map stays in the grid. */
     @Override
-    public NonNullList<ItemStack> getRemainingItems(CraftingContainer container) {
+    public NonNullList<ItemStack> getRemainingItems(CraftingInput container) {
         NonNullList<ItemStack> remaining = super.getRemainingItems(container);
-        for (int i = 0; i < container.getContainerSize(); i++) {
+        for (int i = 0; i < container.size(); i++) {
             ItemStack stack = container.getItem(i);
             if (DungeonMaps.stampOf(stack) != null) {
                 remaining.set(i, stack.copyWithCount(1));

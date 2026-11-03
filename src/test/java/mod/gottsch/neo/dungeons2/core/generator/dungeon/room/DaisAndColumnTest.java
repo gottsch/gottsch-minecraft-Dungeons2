@@ -134,7 +134,7 @@ class DaisAndColumnTest {
         String json = MOTIF_HEAD + schemeJson + MOTIF_TAIL;
         MotifConfigFragment fragment = MotifConfigFragment.CODEC
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
-                .getOrThrow(false, error -> {
+                .getOrThrow(error -> {
                     throw new AssertionError("the fixture no longer decodes: " + error);
                 });
         return MotifConfigFragment.resolve(List.of(fragment));

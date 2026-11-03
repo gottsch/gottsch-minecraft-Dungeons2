@@ -164,13 +164,13 @@ public class SarcophagusMarkerProcessor extends StructureProcessor implements Le
             List<StructureTemplate.StructureBlockInfo> processedBlocks,
             StructurePlaceSettings settings) {
 
-        Block marker = BuiltInRegistries.BLOCK.getValue(markerBlock);
+        Block marker = BuiltInRegistries.BLOCK.get(markerBlock);
         if (marker == null || marker == Blocks.AIR
                 || processedBlocks.stream().noneMatch(info -> info.state().is(marker))) {
             return super.finalizeProcessing(level, piecePos, originalPos, blocks, processedBlocks,
                     settings);
         }
-        Block tomb = BuiltInRegistries.BLOCK.getValue(sarcophagusBlock);
+        Block tomb = BuiltInRegistries.BLOCK.get(sarcophagusBlock);
         BlockState tombState = tomb == null ? null : tomb.defaultBlockState();
         if (tomb == null || tomb == Blocks.AIR || !isTombShaped(tombState)) {
             // A pack pointing at a block that is not a two-block tomb gets markers, not half-tombs.

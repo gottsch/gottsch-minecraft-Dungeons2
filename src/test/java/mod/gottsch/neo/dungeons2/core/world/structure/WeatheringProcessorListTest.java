@@ -21,6 +21,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.JsonOps;
 import mod.gottsch.neo.dungeons2.core.setup.Registration;
 import mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.SurfaceAgingProcessor;
@@ -147,7 +148,7 @@ class WeatheringProcessorListTest {
         for (var element : processors) {
             JsonObject processor = element.getAsJsonObject();
             String type = processor.get("processor_type").getAsString();
-            Codec<? extends StructureProcessor> codec = switch (type) {
+            MapCodec<? extends StructureProcessor> codec = switch (type) {
                 case "minecraft:rule" -> RuleProcessor.CODEC;
                 case AGING_TYPE -> SurfaceAgingProcessor.codec(NO_TYPE);
                 case DECORATION_TYPE -> DecorationProcessor.codec(NO_TYPE);
@@ -167,7 +168,7 @@ class WeatheringProcessorListTest {
                 case "dungeons2:pedestal_loot" -> mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor.codec(NO_TYPE);
                 default -> throw new AssertionError("Unhandled processor_type " + type);
             };
-            codec.parse(JsonOps.INSTANCE, processor).getOrThrow(false, msg -> {
+            codec.codec().parse(JsonOps.INSTANCE, processor).getOrThrow(msg -> {
                 throw new AssertionError(type + " failed to decode: " + msg);
             });
         }

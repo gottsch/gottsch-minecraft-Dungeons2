@@ -299,7 +299,7 @@ public record SlotOptions<T>(List<Option<T>> options) {
             public <U> DataResult<Pair<SlotOptions<T>, U>> decode(DynamicOps<U> ops, U input) {
                 if (ops.getStream(input).result().isPresent()) {
                     return list.decode(ops, input)
-                            .flatMap(pair -> validate(pair.getFirst())
+                            .flatMap(pair -> SlotOptions.validate(pair.getFirst())
                                     .map(options -> Pair.of(options, pair.getSecond())));
                 }
                 return single.decode(ops, input)

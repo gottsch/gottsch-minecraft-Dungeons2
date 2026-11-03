@@ -74,7 +74,7 @@ public class MiningChestRenderer implements BlockEntityRenderer<MiningChestBlock
         model.getLid().xRot = -(openness * (float) Math.PI / 2.0F);
 
         model.renderToBuffer(poseStack, MATERIAL.buffer(bufferSource, RenderType::entitySolid),
-                combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                combinedLight, combinedOverlay);
         poseStack.popPose();
     }
 

@@ -17,6 +17,8 @@
  */
 package mod.gottsch.neo.dungeons2.core.block;
 
+import net.minecraft.world.level.block.BaseEntityBlock;
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.block.entity.DungeonSpawnerBlockEntity;
 import mod.gottsch.neo.dungeons2.core.block.entity.DungeonsBlockEntities;
@@ -110,6 +112,13 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock implements Simple
      */
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
+    public static final MapCodec<MobSetSpawnerBlock> CODEC = simpleCodec(MobSetSpawnerBlock::new);
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
+
     public MobSetSpawnerBlock(Properties properties) {
         super(properties);
         // Explicitly false. stateDefinition.any() resolves every unnamed boolean to TRUE, so a
@@ -144,7 +153,7 @@ public class MobSetSpawnerBlock extends AbstractProximityBlock implements Simple
      * <p><strong>No {@code air()}</strong> &mdash; kept off deliberately, though it was never the
      * bug it was once blamed for. See {@link #getShape}.</p>
      */
-    public static Properties properties() {
+    public static Properties defaultProperties() {
         return Properties.of().noCollission().noLootTable().noOcclusion().instabreak();
     }
 

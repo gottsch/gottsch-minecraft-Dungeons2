@@ -77,8 +77,7 @@ public class SmashShardRenderer extends EntityRenderer<SmashShard> {
         }
         BoneShardModel model = this.models[Math.floorMod(entity.getVariant(), this.models.length)];
         VertexConsumer vertexConsumer = buffer.getBuffer(model.renderType(TEXTURE));
-        model.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY,
-                1.0F, 1.0F, 1.0F, 1.0F);
+        model.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
         poseStack.popPose();
         super.render(entity, yaw, partialTick, poseStack, buffer, packedLight);
     }

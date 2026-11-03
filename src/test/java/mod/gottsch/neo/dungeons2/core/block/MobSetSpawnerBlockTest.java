@@ -95,7 +95,7 @@ class MobSetSpawnerBlockTest {
         Bootstrap.bootStrap();
 
         ((MappedRegistry<Block>) BuiltInRegistries.BLOCK).unfreeze();
-        block = new MobSetSpawnerBlock(MobSetSpawnerBlock.properties());
+        block = new MobSetSpawnerBlock(MobSetSpawnerBlock.defaultProperties());
     }
 
     private static MobSetSpawnerBlock block() {
@@ -130,7 +130,7 @@ class MobSetSpawnerBlockTest {
         MobSetSpawnerBlock block = block();
         BlockState state = block.defaultBlockState();
 
-        assertEquals(RenderShape.INVISIBLE, block.getRenderShape(state),
+        assertEquals(RenderShape.INVISIBLE, state.getRenderShape(),
                 "BaseEntityBlock gives invisibility -- air() was never needed for it");
         assertTrue(state.getCollisionShape(null, null).isEmpty(),
                 "the player must walk through it");
@@ -166,7 +166,7 @@ class MobSetSpawnerBlockTest {
                 "must be a LiquidBlockContainer: it is the ONLY branch of FlowingFluid.canHoldFluid"
                         + " that does not fall through to !blocksMotion(), and falling through means"
                         + " spreadTo replaces the spawner (and its block entity) with water");
-        assertTrue(spawner.canPlaceLiquid(null, BlockPos.ZERO, state, Fluids.WATER),
+        assertTrue(spawner.canPlaceLiquid(null, null, BlockPos.ZERO, state, Fluids.WATER),
                 "must accept water, so spreadTo calls placeLiquid and flips WATERLOGGED instead of"
                         + " destroying the block");
     }

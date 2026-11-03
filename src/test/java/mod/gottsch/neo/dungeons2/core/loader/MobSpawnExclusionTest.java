@@ -357,7 +357,7 @@ class MobSpawnExclusionTest {
      */
     private static String sourceOf(String relativePath) {
         try {
-            return Files.readString(Paths.get(relativePath), StandardCharsets.UTF_8);
+            return Files.readString(mod.gottsch.neo.dungeons2.diagnostic.ProjectFiles.path(relativePath), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new IllegalStateException("could not read " + relativePath
                     + " -- this test runs from the project root", e);

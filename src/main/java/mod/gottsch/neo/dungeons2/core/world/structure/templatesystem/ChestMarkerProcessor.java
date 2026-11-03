@@ -389,7 +389,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
     /** The chest state, facing where the marker faced, rotated by the placement. */
     private BlockState chestState(StructureTemplate.StructureBlockInfo current,
                                   StructurePlaceSettings settings) {
-        var block = BuiltInRegistries.BLOCK.getValue(chestBlock);
+        var block = BuiltInRegistries.BLOCK.get(chestBlock);
         if (block == null || block == Blocks.AIR) {
             return null;
         }
@@ -421,7 +421,7 @@ public class ChestMarkerProcessor extends StructureProcessor {
     }
 
     private boolean isChestMarker(StructureTemplate.StructureBlockInfo current) {
-        var block = BuiltInRegistries.BLOCK.getValue(markerBlock);
+        var block = BuiltInRegistries.BLOCK.get(markerBlock);
         return block != null && current.state().is(block);
     }
 

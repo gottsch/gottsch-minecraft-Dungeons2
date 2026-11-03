@@ -96,7 +96,7 @@ class ChestLootBandTest {
                 + "{\"loot_table\": \"d2:shallow\"}]}";
         ChestLootBand band = ChestLootBand.CODEC
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
-                .getOrThrow(false, err -> { throw new AssertionError(err); });
+                .getOrThrow(err -> { throw new AssertionError(err); });
         assertEquals(2, band.minFloorIndex());
         assertEquals(2, band.lootTables().size());
         assertEquals(8, band.lootTables().get(0).weight());

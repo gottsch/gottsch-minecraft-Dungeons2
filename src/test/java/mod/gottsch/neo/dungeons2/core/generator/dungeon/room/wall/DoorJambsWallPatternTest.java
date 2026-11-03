@@ -228,6 +228,6 @@ class DoorJambsWallPatternTest {
     @Test
     void theBuiltInSetIncludesIt() {
         assertTrue(WallPatternRegistry.ids().contains(
-                new net.minecraft.resources.ResourceLocation("dungeons2", "door_jambs")));
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dungeons2", "door_jambs")));
     }
 }

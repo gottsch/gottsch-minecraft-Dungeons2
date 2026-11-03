@@ -176,7 +176,7 @@ public class AnnihilationRayRenderer extends EntityRenderer<AnnihilationRay> {
 
     private static void vertex(VertexConsumer consumer, Matrix4f pose, Vec3 at,
                                float r, float g, float b, float a) {
-        consumer.vertex(pose, (float) at.x, (float) at.y, (float) at.z).color(r, g, b, a).endVertex();
+        consumer.addVertex(pose, (float) at.x, (float) at.y, (float) at.z).setColor(r, g, b, a);
     }
 
     /** Unused: the beam is untextured. {@code EntityRenderer} requires an answer. */

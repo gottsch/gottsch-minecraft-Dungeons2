@@ -28,6 +28,7 @@ import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockIgnoreProcessor;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -96,10 +97,11 @@ class JigsawStripsStructureBlocksTest {
                 .apply(StructureTemplatePool.Projection.RIGID);
 
         Method getSettings = SinglePoolElement.class.getDeclaredMethod(
-                "getSettings", Rotation.class, BoundingBox.class, boolean.class);
+                "getSettings", Rotation.class, BoundingBox.class, LiquidSettings.class, boolean.class);
         getSettings.setAccessible(true);
         StructurePlaceSettings settings =
-                (StructurePlaceSettings) getSettings.invoke(element, Rotation.NONE, BoundingBox.infinite(), false);
+                (StructurePlaceSettings) getSettings.invoke(element, Rotation.NONE, BoundingBox.infinite(),
+                        LiquidSettings.APPLY_WATERLOGGING, false);
 
         boolean strips = false;
         for (StructureProcessor processor : settings.getProcessors()) {

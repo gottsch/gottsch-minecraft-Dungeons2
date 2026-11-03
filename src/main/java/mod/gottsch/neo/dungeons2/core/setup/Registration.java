@@ -95,23 +95,23 @@ public class Registration {
 	/** A boss tier's lore book only in the chests of a dungeon with that tier's boss. */
 	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.storage.loot.predicates.LootItemConditionType, net.minecraft.world.level.storage.loot.predicates.LootItemConditionType> BOSS_TIER_CONDITION =
 			LOOT_CONDITIONS.register("boss_tier", () -> new net.minecraft.world.level.storage.loot.predicates.LootItemConditionType(
-					new mod.gottsch.neo.dungeons2.core.loot.BossTierCondition.Serializer()));
+					mod.gottsch.neo.dungeons2.core.loot.BossTierCondition.CODEC));
 
 	/*
 	 * loot function types (vanilla registry) -- referenced by loot table JSONs via "function".
 	 */
-	public static final DeferredRegister<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> LOOT_FUNCTIONS =
+	public static final DeferredRegister<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<?>> LOOT_FUNCTIONS =
 			DeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, Dungeons.MOD_ID);
 
 	/** Marks a lore book found the moment it rolls, so only one chest gives it to each player. */
-	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType, net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> GRANT_ADVANCEMENT_FUNCTION =
-			LOOT_FUNCTIONS.register("grant_advancement", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType(
-					new mod.gottsch.neo.dungeons2.core.loot.GrantAdvancementFunction.Serializer()));
+	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<?>, net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<mod.gottsch.neo.dungeons2.core.loot.GrantAdvancementFunction>> GRANT_ADVANCEMENT_FUNCTION =
+			LOOT_FUNCTIONS.register("grant_advancement", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<>(
+					mod.gottsch.neo.dungeons2.core.loot.GrantAdvancementFunction.CODEC));
 
 	/** Turns a rolled item into a Dungeon Map of the chest's own floor. */
-	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType, net.minecraft.world.level.storage.loot.functions.LootItemFunctionType> DUNGEON_MAP_FUNCTION =
-			LOOT_FUNCTIONS.register("dungeon_map", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType(
-					new mod.gottsch.neo.dungeons2.core.loot.DungeonMapFunction.Serializer()));
+	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<?>, net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<mod.gottsch.neo.dungeons2.core.loot.DungeonMapFunction>> DUNGEON_MAP_FUNCTION =
+			LOOT_FUNCTIONS.register("dungeon_map", () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<>(
+					mod.gottsch.neo.dungeons2.core.loot.DungeonMapFunction.CODEC));
 
 	/*
 	 * recipe serializers (vanilla registry) -- referenced by recipe JSONs via "type".
@@ -179,7 +179,7 @@ public class Registration {
 	/** Turns an authored {@code dungeons2:chest_marker} into a chest with loot. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor>> CHEST_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(CHEST_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.ChestMarkerProcessor
 								.codec(() -> Registration.CHEST_PROCESSOR.get());
 				return () -> codec;
@@ -191,7 +191,7 @@ public class Registration {
 	/** Turns an authored {@code dungeons2:pot_marker} into pot entities. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor>> POT_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(POT_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PotMarkerProcessor
 								.codec(() -> Registration.POT_PROCESSOR.get());
 				return () -> codec;
@@ -203,7 +203,7 @@ public class Registration {
 	/** Turns an authored {@code dungeons2:sarcophagus_marker} into a sealed two-block tomb. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor>> SARCOPHAGUS_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(SARCOPHAGUS_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.SarcophagusMarkerProcessor
 								.codec(() -> Registration.SARCOPHAGUS_PROCESSOR.get());
 				return () -> codec;
@@ -276,7 +276,7 @@ public class Registration {
 	/** Rubble at the foot of a wall weathering broke. See {@code RubbleScatterProcessor}. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor>> RUBBLE_SCATTER_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(RUBBLE_SCATTER_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.RubbleScatterProcessor
 								.codec(() -> Registration.RUBBLE_SCATTER_PROCESSOR.get());
 				return () -> codec;
@@ -292,7 +292,7 @@ public class Registration {
 	 */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor>> PATTERN_TILE_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(PATTERN_TILE_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PatternTileProcessor
 								.codec(() -> Registration.PATTERN_TILE_PROCESSOR.get());
 				return () -> codec;
@@ -304,7 +304,7 @@ public class Registration {
 	/** Stocks an authored template's empty barrel with a loot table. See {@code BarrelLootProcessor}. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor>> BARREL_LOOT_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(BARREL_LOOT_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.BarrelLootProcessor
 								.codec(() -> Registration.BARREL_LOOT_PROCESSOR.get());
 				return () -> codec;
@@ -316,7 +316,7 @@ public class Registration {
 	/** Makes a template's pedestal roll its table in a live chunk. See {@code PedestalLootProcessor}. */
 	public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor>> PEDESTAL_LOOT_PROCESSOR =
 			STRUCTURE_PROCESSORS.register(PEDESTAL_LOOT_PROCESSOR_NAME, () -> {
-				Codec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> codec =
+				MapCodec<mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor> codec =
 						mod.gottsch.neo.dungeons2.core.world.structure.templatesystem.PedestalLootProcessor
 								.codec(() -> Registration.PEDESTAL_LOOT_PROCESSOR.get());
 				return () -> codec;
@@ -375,11 +375,13 @@ public class Registration {
 
 		BLOCKS.register(eventBus);
 		ITEMS.register(eventBus);
+		mod.gottsch.neo.dungeons2.core.item.DungeonsArmorMaterials.register(eventBus);
 		BLOCK_ENTITIES.register(eventBus);
 		ENTITIES.register(eventBus);
 		PARTICLES.register(eventBus);
 		mod.gottsch.neo.dungeons2.core.advancement.DungeonsTriggers.register(eventBus);
 		STRUCTURE_TYPES.register(eventBus);
+		mod.gottsch.neo.dungeons2.core.world.structure.StructurePieces.register(eventBus);
 		STRUCTURE_PROCESSORS.register(eventBus);
 		POOL_ELEMENT_TYPES.register(eventBus);
 		LOOT_CONDITIONS.register(eventBus);

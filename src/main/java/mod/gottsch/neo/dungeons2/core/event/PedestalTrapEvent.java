@@ -58,7 +58,7 @@ import java.util.Optional;
  * <h2>One shot</h2>
  * <p>The flag is removed as it fires, so putting the prize back and taking it again does nothing.</p>
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class PedestalTrapEvent {
 
     /** Ticks before the inner ring starts to shake: the item is in hand, then the floor goes. */
@@ -183,7 +183,7 @@ public class PedestalTrapEvent {
         return counts.entrySet().stream()
                 .max(java.util.Map.Entry.comparingByValue())
                 .map(java.util.Map.Entry::getKey)
-                .orElseGet(() -> BuiltInRegistries.BLOCK.getValue(
+                .orElseGet(() -> BuiltInRegistries.BLOCK.get(
                         ResourceLocation.parse("dungeonblocks:crumbling_stone_bricks")));
     }
 
@@ -191,8 +191,8 @@ public class PedestalTrapEvent {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         return Optional.ofNullable(id)
                 .flatMap(key -> CrumblingFloors.forFloor(key.toString()))
-                .map(ResourceLocation::new)
+                .map(ResourceLocation::parse)
                 .filter(BuiltInRegistries.BLOCK::containsKey)
-                .map(BuiltInRegistries.BLOCK::getValue);
+                .map(BuiltInRegistries.BLOCK::get);
     }
 }

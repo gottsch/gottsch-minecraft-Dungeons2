@@ -861,7 +861,7 @@
           { "block": "minecraft:brown_mushroom", "weight": 10 },
           { "block": "minecraft:red_mushroom", "weight": 10 },
           { "block": "minecraft:moss_carpet", "weight": 10 },
-          { "block": "minecraft:grass", "weight": 10 },
+          { "block": "minecraft:short_grass", "weight": 10 },
           { "block": "minecraft:fern", "weight": 10 },
           { "block": "minecraft:dead_bush", "weight": 10 },
           { "entity": "dungeons2:shrieker", "weight": 3 },
@@ -1040,7 +1040,7 @@
           "minecraft:brown_mushroom",
           "minecraft:red_mushroom",
           "minecraft:moss_carpet",
-          "minecraft:grass",
+          "minecraft:short_grass",
           "minecraft:fern",
           "minecraft:dead_bush"
         ]

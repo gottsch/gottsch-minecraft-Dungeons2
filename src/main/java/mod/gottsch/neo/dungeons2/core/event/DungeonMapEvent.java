@@ -40,7 +40,7 @@ import java.util.List;
  *
  * @author Mark Gottschling on 10/25/2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class DungeonMapEvent {
 
     /** Either hand, as a vanilla map draws in either. */

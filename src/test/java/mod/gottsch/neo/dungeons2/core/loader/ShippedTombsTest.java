@@ -267,7 +267,7 @@ class ShippedTombsTest {
     private static String tableProblem(String id) {
         ResourceLocation location = ResourceLocation.parse(id);
         URL url = ShippedTombsTest.class.getResource("/data/" + location.getNamespace()
-                + "/loot_tables/" + location.getPath() + ".json");
+                + "/loot_table/" + location.getPath() + ".json");
         if (url == null) {
             return location.getNamespace().equals("dungeons2") ? "no such table ships" : null;
         }

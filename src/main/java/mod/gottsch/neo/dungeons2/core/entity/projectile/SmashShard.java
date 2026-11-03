@@ -72,11 +72,17 @@ public class SmashShard extends AbstractArrow {
     }
 
     public SmashShard(EntityType<? extends SmashShard> entityType, LivingEntity shooter, Level level) {
-        super(entityType, shooter, level);
+        super(entityType, shooter, level, ItemStack.EMPTY, null);
         this.pickup = Pickup.DISALLOWED;
         if (!level.isClientSide) {
             this.setVariant((byte) this.random.nextInt(VARIANTS));
         }
+    }
+
+    /** Never picked up (see {@link Pickup#DISALLOWED}), so there is nothing to hand back. */
+    @Override
+    protected ItemStack getDefaultPickupItem() {
+        return ItemStack.EMPTY;
     }
 
     @Override

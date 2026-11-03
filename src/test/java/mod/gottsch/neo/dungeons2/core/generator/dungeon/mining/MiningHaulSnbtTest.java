@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,8 +51,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * well-formed one with an {@code int} where vanilla wants a {@code byte} &mdash; is not a compile
  * error, not a load error, and not a crash. It is an empty chest, discovered by a player.</p>
  *
- * <p>That is not hypothetical here. {@code Slot} and {@code Count} are both {@code byte}s in a
- * vanilla container tag, and {@code BlockEntityData}'s own documentation records a real bug of
+ * <p>That is not hypothetical here. {@code Slot} is a {@code byte} in a vanilla container tag and
+ * the 1.21 item codec reads a lowercase {@code int} {@code count} (the pre-1.20.5 {@code Count}
+ * byte is ignored, and every stack then loads as one item &mdash; which this test caught on the
+ * NeoForge port), and {@code BlockEntityData}'s own documentation records a real bug of
  * exactly this shape one layer up: {@code proximity} stored as a string and read back as 0.</p>
  *
  * @author Mark Gottschling on Aug 31, 2026
@@ -74,7 +77,7 @@ class MiningHaulSnbtTest {
      * {@code ContainerHelper.loadAllItems}, the very code a chest block entity uses.
      *
      * <p>Going through the real loader rather than reading the tag by hand is the point: it is what
-     * would catch {@code Count} as an int, since a tag that parses can still load as an empty
+     * would catch a wrongly named or typed count, since a tag that parses can still load as an empty
      * container.</p>
      *
      * <p>Asserted on the container's CONTENTS rather than on particular slots, because the slots are
@@ -159,7 +162,7 @@ class MiningHaulSnbtTest {
                         + " arrangement would not survive the NBT round trip");
     }
 
-    /** A count over one stack is split across slots, because vanilla's Count is a byte. */
+    /** A count over one stack is split across slots, at a full stack of 64. */
     @Test
     void aCountOverAStackIsSplitAcrossSlots() throws Exception {
         MiningHaul haul = new MiningHaul(List.of(new MiningHaul.Stack("minecraft:coal", 150)));
@@ -169,7 +172,7 @@ class MiningHaulSnbtTest {
         // Which slot holds which fill is shuffled, so the counts are asserted as a multiset.
         List<Integer> counts = new ArrayList<>();
         for (int i = 0; i < items.size(); i++) {
-            counts.add((int) items.getCompound(i).getByte("Count"));
+            counts.add(items.getCompound(i).getInt("count"));
         }
         counts.sort(null);
         assertEquals(List.of(22, 64, 64), counts, "150 coal should split 64 + 64 + 22");
@@ -177,18 +180,19 @@ class MiningHaulSnbtTest {
     }
 
     /**
-     * Slot and Count are BYTES, not ints.
+     * Slot is a BYTE and count is the 1.21 codec's lowercase INT.
      *
      * <p>Asserted on the tag type itself rather than on the value, because the values agree either
-     * way and only the type is wrong. This is the assertion that fails if the {@code b} suffixes are
-     * ever dropped from the emitted text.</p>
+     * way and only the type is wrong. This is the assertion that fails if the {@code b} suffix is
+     * ever dropped from the slot, or the count goes back to the old {@code Count} byte.</p>
      */
     @Test
-    void slotAndCountAreBytes() throws Exception {
+    void theSlotAndCountTagTypesAreVanillas() throws Exception {
         ListTag items = parse(new MiningHaul(List.of(new MiningHaul.Stack("minecraft:redstone", 5))));
         CompoundTag entry = items.getCompound(0);
         assertEquals(Tag.TAG_BYTE, entry.get("Slot").getId(), "Slot must be a byte");
-        assertEquals(Tag.TAG_BYTE, entry.get("Count").getId(), "Count must be a byte");
+        assertNotNull(entry.get("count"), "count must be the lowercase 1.21 key");
+        assertEquals(Tag.TAG_INT, entry.get("count").getId(), "count must be an int");
         assertEquals(Tag.TAG_STRING, entry.get("id").getId(), "id must be a string");
     }
 
@@ -222,7 +226,7 @@ class MiningHaulSnbtTest {
         CompoundTag tag = TagParser.parseTag("{Items:" + haul.itemsSnbt() + "}");
         NonNullList<ItemStack> contents =
                 NonNullList.withSize(MiningHaul.CHEST_SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, contents);
+        ContainerHelper.loadAllItems(tag, contents, net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY));
         return contents;
     }
 

@@ -309,7 +309,7 @@ class PieceSurfaceTest {
 
     private static CompoundTag read(Path file) {
         try (InputStream in = Files.newInputStream(file)) {
-            return NbtIo.readCompressed(in);
+            return NbtIo.readCompressed(in, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
         } catch (IOException unreadable) {
             throw new UncheckedIOException("could not read template " + file, unreadable);
         }

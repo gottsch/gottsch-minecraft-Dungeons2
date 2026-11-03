@@ -43,7 +43,7 @@ import net.neoforged.fml.common.Mod;
  *
  * @author Mark Gottschling on 10/25/2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class BossWebTearEvent {
 
     /** How far past its own box a boss reaches for a web: the next step it is about to take. */

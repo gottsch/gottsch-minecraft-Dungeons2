@@ -49,7 +49,7 @@ class TombContentsTest {
 
     @Test
     void aBandDecodesInTheShippedShape() {
-        TombBand decoded = band(SHALLOW).getOrThrow(false, message -> {});
+        TombBand decoded = band(SHALLOW).getOrThrow();
         assertEquals(0, decoded.minFloorIndex());
         assertEquals(2, decoded.contents().guardians().orElseThrow().size());
         assertEquals(1, decoded.contents().guardians().orElseThrow().get(1).weight(),
@@ -84,7 +84,7 @@ class TombContentsTest {
 
     @Test
     void theTableMustStartAtZeroAndNoStartMayRepeat() {
-        TombBand zero = band(SHALLOW).getOrThrow(false, message -> {});
+        TombBand zero = band(SHALLOW).getOrThrow();
         TombBand two = new TombBand(2, zero.contents());
         assertTrue(TombBand.validate(List.of(zero, two)).result().isPresent());
         assertTrue(TombBand.validate(List.of(two)).error().isPresent(), "floor 0 uncovered");
@@ -96,7 +96,7 @@ class TombContentsTest {
 
     @Test
     void overTakesEachKeyOnItsOwn() {
-        TombContents under = band(SHALLOW).getOrThrow(false, message -> {}).contents();
+        TombContents under = band(SHALLOW).getOrThrow().contents();
         TombContents over = new TombContents(Optional.empty(),
                 Optional.of(List.of(new TombContents.GuardianEntry("minecraft:husk", 1))),
                 Optional.empty(), Optional.of(9), Optional.empty());
@@ -126,7 +126,7 @@ class TombContentsTest {
     /** The marker route's NBT, typed as DungeonBlocks reads it. */
     @Test
     void theTagTypesEveryField() {
-        CompoundTag tag = band(SHALLOW).getOrThrow(false, message -> {}).contents()
+        CompoundTag tag = band(SHALLOW).getOrThrow().contents()
                 .draw(RandomSource.create(4L)).tag();
         assertEquals(Tag.TAG_STRING, tag.getTagType(TombContents.Drawn.LOOT_TABLE));
         assertEquals(Tag.TAG_LONG, tag.getTagType(TombContents.Drawn.LOOT_TABLE_SEED));
@@ -143,7 +143,7 @@ class TombContentsTest {
      */
     @Test
     void theProbePrintsFromTheWrittenDataWhatTheDrawSays() {
-        TombContents.Drawn drawn = band(SHALLOW).getOrThrow(false, message -> {}).contents()
+        TombContents.Drawn drawn = band(SHALLOW).getOrThrow().contents()
                 .draw(RandomSource.create(2L));
         Map<String, String> written = new java.util.LinkedHashMap<>();
         drawn.fields().forEach((key, value) -> written.put(key, String.valueOf(value)));
@@ -182,7 +182,7 @@ class TombContentsTest {
         RoomScheme scheme = RoomScheme.CODEC.parse(JsonOps.INSTANCE, json("""
                 { "name": "crypt",
                   "tombs": { "variants": [ { "block": "$sarcophagus" } ] } }"""))
-                .getOrThrow(false, message -> {});
+                .getOrThrow();
         TombConfig tombs = scheme.tombs().value().orElseThrow();
         assertEquals(0, tombs.minCount());
         assertEquals(1, tombs.maxCount());

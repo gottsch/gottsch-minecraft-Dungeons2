@@ -42,7 +42,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
-import net.neoforged.neoforge.event.entity.living.LivingAttackEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 
@@ -66,7 +66,7 @@ import net.neoforged.fml.common.Mod;
  *
  * @author Mark Gottschling on Sep 24, 2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class MirrorShieldEvent {
 
     /** Persisted across death, so the lesson is taught once per player, not once per life. */
@@ -81,7 +81,7 @@ public class MirrorShieldEvent {
                 || !MirrorShield.isReflecting(target, bolt.position())) {
             return;
         }
-        event.setImpactResult(ProjectileImpactEvent.ImpactResult.SKIP_ENTITY);
+        event.setCanceled(true); // NeoForge: cancelling skips the hit, as Forge's SKIP_ENTITY did
         if (target.level().isClientSide) {
             return;
         }
@@ -121,11 +121,11 @@ public class MirrorShieldEvent {
     public static void wear(LivingEntity entity) {
         ItemStack shield = entity.getUseItem();
         InteractionHand hand = entity.getUsedItemHand();
-        shield.hurtAndBreak(1, entity, e -> e.broadcastBreakEvent(hand));
+        shield.hurtAndBreak(1, entity, LivingEntity.getSlotForHand(hand));
     }
 
     @SubscribeEvent
-    public static void onAttack(LivingAttackEvent event) {
+    public static void onAttack(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof Player player) || player.level().isClientSide
                 || !player.isBlocking() || player.getUseItem().getItem() instanceof MirrorShield) {
             return;

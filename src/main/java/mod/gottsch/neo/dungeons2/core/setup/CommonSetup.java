@@ -26,7 +26,6 @@ import mod.gottsch.neo.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.neo.dungeons2.core.entity.projectile.AnnihilationRay;
 import mod.gottsch.neo.dungeons2.core.item.DungeonsItems;
 import mod.gottsch.neo.dungeons2.core.enums.DungeonMotif;
-import mod.gottsch.neo.dungeons2.core.world.structure.StructurePieces;
 import mod.gottsch.neo.dungeons2.core.entity.ai.SlamRimCollapse;
 import mod.gottsch.neo.gmm.core.entity.monster.mimic.BarrelMimic;
 import mod.gottsch.neo.gmm.core.entity.monster.mimic.VanillaChestMimic;
@@ -123,11 +122,6 @@ public class CommonSetup {
 		// so it is the authoritative answer.
 		//
 		logRegistryPresence();
-
-		// Register structure piece types. The STRUCTURE_PIECE registry is frozen
-		// after bootstrap, so this must run on the synchronized work queue (Forge
-		// unfreezes the vanilla registries there).
-		event.enqueueWork(StructurePieces::register);
 
 		Dungeons.LOGGER.info("common setup complete");
 		Dungeons.LOGGER.debug("initializing dimensional generated registries");
@@ -577,14 +571,14 @@ public class CommonSetup {
 		java.util.List<String> report = new java.util.ArrayList<>();
 		for (String name : java.util.List.of("mob_set_spawner", "spawner_marker")) {
 			net.minecraft.resources.ResourceLocation id =
-					new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, name);
+					net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, name);
 			report.add(name + ": block="
-					+ net.minecraft.core.registries.BuiltInRegistries.BLOCKS.containsKey(id));
+					+ net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(id));
 		}
 		net.minecraft.resources.ResourceLocation spawner =
-				new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, "mob_set_spawner");
+				net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, "mob_set_spawner");
 		report.add("mob_set_spawner: blockEntityType="
-				+ net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPES.containsKey(spawner));
+				+ net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPE.containsKey(spawner));
 		Dungeons.LOGGER.debug("[D2-REGISTRY] {}", String.join("  |  ", report));
 	}
 }

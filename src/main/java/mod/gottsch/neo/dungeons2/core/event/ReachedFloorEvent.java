@@ -34,7 +34,7 @@ import net.neoforged.fml.common.Mod;
  *
  * @author Mark Gottschling on 10/26/2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public final class ReachedFloorEvent {
 
     private static final int INTERVAL = 20;

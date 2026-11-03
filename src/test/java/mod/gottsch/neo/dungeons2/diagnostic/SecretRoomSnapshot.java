@@ -91,7 +91,7 @@ class SecretRoomSnapshot {
                         .append(b.getBlockId()).append(' ').append(b.getProperties().toString()
                                 .replace(" ", "")).append('\n');
             }
-            Path file = Path.of("build/secret-room.jsonl");
+            Path file = ProjectFiles.path("build/secret-room.jsonl");
             Files.writeString(file, sb.toString());
             System.out.println("[secret snapshot] " + file.toAbsolutePath() + " seed " + seed);
             return;

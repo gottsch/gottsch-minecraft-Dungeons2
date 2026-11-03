@@ -61,7 +61,7 @@ public class DungeonsBlocks {
      */
     public static final DeferredHolder<Block, Block> MOB_SET_SPAWNER = Registration.BLOCKS.register(
             "mob_set_spawner",
-            () -> new MobSetSpawnerBlock(MobSetSpawnerBlock.properties()));
+            () -> new MobSetSpawnerBlock(MobSetSpawnerBlock.defaultProperties()));
 
     /**
      * The <strong>authoring</strong> marker. A template author places one of these; the

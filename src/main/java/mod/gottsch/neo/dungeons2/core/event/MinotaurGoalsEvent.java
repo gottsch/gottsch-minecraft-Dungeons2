@@ -52,7 +52,7 @@ import java.util.List;
  *
  * @author Mark Gottschling on Sep 7, 2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class MinotaurGoalsEvent {
 
     /**

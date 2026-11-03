@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.world;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -67,7 +68,7 @@ public class BossRoomRegistry extends SavedData {
     private final List<BoundingBox> rooms = new ArrayList<>();
 
     public static BossRoomRegistry get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(BossRoomRegistry::load, BossRoomRegistry::new, NAME);
+        return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(BossRoomRegistry::new, BossRoomRegistry::load, null), NAME);
     }
 
     /**
@@ -124,7 +125,7 @@ public class BossRoomRegistry extends SavedData {
         return this.rooms.size();
     }
 
-    public static BossRoomRegistry load(CompoundTag tag) {
+    public static BossRoomRegistry load(CompoundTag tag, HolderLookup.Provider registries) {
         BossRoomRegistry data = new BossRoomRegistry();
         for (Tag entry : tag.getList(ROOMS_TAG, Tag.TAG_INT_ARRAY)) {
             int[] b = ((net.minecraft.nbt.IntArrayTag) entry).getAsIntArray();
@@ -136,7 +137,7 @@ public class BossRoomRegistry extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (BoundingBox room : this.rooms) {
             list.add(new net.minecraft.nbt.IntArrayTag(new int[] {

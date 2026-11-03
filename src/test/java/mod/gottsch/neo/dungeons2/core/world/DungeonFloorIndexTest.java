@@ -56,7 +56,7 @@ class DungeonFloorIndexTest {
         DungeonFloorIndex index = new DungeonFloorIndex();
         index.add(UPPER);
         index.add(LOWER);
-        DungeonFloorIndex loaded = DungeonFloorIndex.load(index.save(new CompoundTag()));
+        DungeonFloorIndex loaded = DungeonFloorIndex.load(index.save(new CompoundTag(), null), null);
 
         assertEquals(2, loaded.size());
         FloorMapStamp upper = loaded.floorAt(new BlockPos(130, 41, 230)).orElseThrow();

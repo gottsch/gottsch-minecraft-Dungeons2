@@ -93,7 +93,7 @@ import java.util.stream.Collectors;
  *
  * @author Mark Gottschling on Sep 7, 2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class BossRoomProtectionEvent {
 
     /**

@@ -96,7 +96,7 @@ public final class RoomPedestalGenerator {
         }
         BlockEntityData data = new BlockEntityData(PEDESTAL_ENTITY);
         if (counterItem != null) {
-            data.withNbt("Item", "{id:\"" + counterItem + "\",Count:1b}");
+            data.withNbt("Item", "{id:\"" + counterItem + "\",count:1}");
         } else {
             data.with(RoomChestGenerator.LOOT_TABLE, ChestConfig.LootTableEntry.pick(tables, random))
                     .with(RoomChestGenerator.LOOT_TABLE_SEED,

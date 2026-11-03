@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.entity.projectile;
 
+import net.minecraft.world.level.Explosion;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.entity.DungeonsEntities;
 import mod.gottsch.neo.dungeons2.core.event.MirrorShieldEvent;
@@ -655,7 +656,7 @@ public class AnnihilationRay extends Entity {
     }
 
     @Override
-    public boolean ignoreExplosion() {
+    public boolean ignoreExplosion(Explosion explosion) {
         return true;
     }
 

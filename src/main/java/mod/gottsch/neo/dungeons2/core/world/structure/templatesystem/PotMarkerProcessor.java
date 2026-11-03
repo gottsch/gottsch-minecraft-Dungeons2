@@ -154,7 +154,7 @@ public class PotMarkerProcessor extends StructureProcessor {
             List<StructureTemplate.StructureBlockInfo> processedBlocks,
             StructurePlaceSettings settings) {
 
-        var marker = BuiltInRegistries.BLOCK.getValue(markerBlock);
+        var marker = BuiltInRegistries.BLOCK.get(markerBlock);
         if (marker == null) {
             return super.finalizeProcessing(level, piecePos, originalPos, blocks, processedBlocks,
                     settings);

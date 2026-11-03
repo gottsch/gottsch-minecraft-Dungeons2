@@ -441,7 +441,7 @@ class PoolWiringTest {
 
     private static CompoundTag readTemplate(Path file) {
         try (InputStream in = Files.newInputStream(file)) {
-            return NbtIo.readCompressed(in);
+            return NbtIo.readCompressed(in, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
         } catch (IOException unreadable) {
             throw new UncheckedIOException("could not read " + file, unreadable);
         }

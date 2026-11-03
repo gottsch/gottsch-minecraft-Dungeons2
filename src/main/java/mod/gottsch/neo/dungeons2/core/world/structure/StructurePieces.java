@@ -18,24 +18,26 @@
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
 import mod.gottsch.neo.dungeons2.Dungeons;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Holds and registers the {@link StructurePieceType}s for the Phase 3 dungeon
  * pieces.
  *
  * <p>The type objects are plain lambdas created at class-load time, so they are
- * usable as a piece's {@code type} argument even before {@link #register()} runs
- * (handy for unit tests, which never run the mod lifecycle). {@link #register()}
- * only inserts them into {@link BuiltInRegistries#STRUCTURE_PIECE} so the vanilla
+ * usable as a piece's {@code type} argument even before {@link #register(IEventBus)} runs
+ * (handy for unit tests, which never run the mod lifecycle). Registration only
+ * inserts them into {@link BuiltInRegistries#STRUCTURE_PIECE} so the vanilla
  * save/load dispatcher can resolve each piece by id.</p>
  *
- * <p>The {@code STRUCTURE_PIECE} registry is frozen after bootstrap, so
- * {@link #register()} must run inside the Forge common-setup work queue (which
- * unfreezes the vanilla registries) &mdash; see {@code CommonSetup}.</p>
+ * <p>On Forge this was a {@code Registry.register} inside common setup's
+ * {@code enqueueWork}, which unfroze the vanilla registries. NeoForge does not unfreeze
+ * them there (the mod failed to load with "Registry is already frozen"), so the
+ * existing type objects go through a {@link DeferredRegister} instead.</p>
  *
  * @author Mark Gottschling on Jun 16, 2026
  */
@@ -50,15 +52,17 @@ public final class StructurePieces {
     public static final StructurePieceType DOOR =
             (context, tag) -> new DungeonDoorPiece(context, tag);
 
-    /** Registers all piece types. Call from common setup's enqueued work. */
-    public static void register() {
-        register("dungeon_room", ROOM);
-        register("dungeon_corridor", CORRIDOR);
-        register("dungeon_door", DOOR);
-        Dungeons.LOGGER.debug("registered dungeon structure piece types");
+    private static final DeferredRegister<StructurePieceType> PIECES =
+            DeferredRegister.create(Registries.STRUCTURE_PIECE, Dungeons.MOD_ID);
+
+    static {
+        PIECES.register("dungeon_room", () -> ROOM);
+        PIECES.register("dungeon_corridor", () -> CORRIDOR);
+        PIECES.register("dungeon_door", () -> DOOR);
     }
 
-    private static void register(String name, StructurePieceType type) {
-        Registry.register(BuiltInRegistries.STRUCTURE_PIECE, ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, name), type);
+    /** Registers all piece types. Call from {@code Registration.init}. */
+    public static void register(IEventBus eventBus) {
+        PIECES.register(eventBus);
     }
 }

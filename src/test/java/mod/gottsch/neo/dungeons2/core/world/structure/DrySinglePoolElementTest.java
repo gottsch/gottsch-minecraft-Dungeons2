@@ -25,6 +25,7 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
 import org.junit.jupiter.api.Test;
@@ -65,9 +66,9 @@ class DrySinglePoolElementTest {
                 Holder.direct(new StructureProcessorList(List.of())),
                 StructureTemplatePool.Projection.RIGID);
         StructurePlaceSettings settings = element.getSettings(Rotation.NONE,
-                new BoundingBox(0, 0, 0, 15, 15, 15), false);
-        assertFalse(settings.shouldKeepLiquids(),
-                "keepLiquids on would waterlog any stair or slab placed where the ground had water");
+                new BoundingBox(0, 0, 0, 15, 15, 15), LiquidSettings.APPLY_WATERLOGGING, false);
+        assertFalse(settings.shouldApplyWaterlogging(),
+                "waterlogging on would waterlog any stair or slab placed where the ground had water");
         // still everything vanilla's single element installs
         assertFalse(settings.getProcessors().isEmpty());
     }

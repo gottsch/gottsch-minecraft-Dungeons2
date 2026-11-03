@@ -27,7 +27,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.bus.api.EventPriority;
@@ -77,7 +77,7 @@ import java.util.WeakHashMap;
  *
  * @author Mark Gottschling on Sep 14, 2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class ShockAbsorptionEvent {
 
     /**
@@ -100,7 +100,7 @@ public class ShockAbsorptionEvent {
      * cancelled either way -- a slam that is absorbed still hits.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
-    public static void onHurt(LivingHurtEvent event) {
+    public static void onHurt(LivingIncomingDamageEvent event) {
         LivingEntity victim = event.getEntity();
         boolean slam = event.getSource().is(CommonSetup.GROUND_SLAM_DAMAGE_TYPE);
         if (!isWearingBoots(victim)) {
@@ -171,7 +171,7 @@ public class ShockAbsorptionEvent {
     /** Absorbing a slam costs the boots something. Falls do not -- vanilla already charges for those. */
     private static void wear(LivingEntity entity) {
         ItemStack boots = entity.getItemBySlot(EquipmentSlot.FEET);
-        boots.hurtAndBreak(1, entity, e -> e.broadcastBreakEvent(EquipmentSlot.FEET));
+        boots.hurtAndBreak(1, entity, EquipmentSlot.FEET);
     }
 
     private ShockAbsorptionEvent() {}

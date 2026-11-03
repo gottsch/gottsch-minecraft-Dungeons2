@@ -156,7 +156,7 @@ class ShippedMobConfigTest {
     }
 
     private static String sourceOf(String path) {
-        try (InputStream in = Files.newInputStream(Paths.get(path))) {
+        try (InputStream in = Files.newInputStream(mod.gottsch.neo.dungeons2.diagnostic.ProjectFiles.path(path))) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new IllegalStateException("could not read " + path, e);

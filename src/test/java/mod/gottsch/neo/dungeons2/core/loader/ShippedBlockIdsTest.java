@@ -60,16 +60,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  * ({@code BlockIds}), which is the right behaviour for a shared library, but a warning in a log is
  * not a build failure &mdash; this is.</p>
  *
- * <h2>How modded ids are checked without a running game</h2>
- * <p>A bare {@code Bootstrap.bootStrap()} has no Forge registries, so <strong>every</strong>
- * {@code dungeonblocks:} id resolves to air here and a registry check would pass everything. That is
- * exactly why the offline check that existed before this test validated nothing: it was asking the
- * registry a question the registry could not answer.</p>
- *
- * <p>So modded ids are checked against a different source of truth: <strong>the blockstate files in
- * the {@code dungeonblocks} jar</strong>, which is on the test classpath as a real dependency. Every
- * registered block has one, they are named for the block, and they ship in the artifact. It is an
- * indirect check, and it is the only one available without launching Minecraft.</p>
+ * <h2>How modded ids are checked</h2>
+ * <p>On Forge a bare {@code Bootstrap.bootStrap()} had no mod registries, so modded ids were
+ * checked against the blockstate files in the {@code dungeonblocks} jar instead. NeoForge's unit-test
+ * runner starts FML and loads every mod on the classpath, so {@code BuiltInRegistries.BLOCK} now
+ * holds the real {@code dungeonblocks:} blocks and is asked directly. (The blockstate lookup also
+ * stopped working: under FML each mod is its own module, and {@code Class.getResource} only searches
+ * the caller's.)</p>
  *
  * <h2>The part that keeps this from going stale</h2>
  * <p>The sweep classifies by <strong>key name</strong>: {@link #BLOCK_KEYS} hold block ids,
@@ -215,7 +212,6 @@ class ShippedBlockIdsTest {
             "template_biomes");
 
     /** Where a modded block proves it exists, absent a running game. See the class notes. */
-    private static final String BLOCKSTATE_DIR = "/assets/%s/blockstates/%s.json";
 
     private static final String DATA_ROOT = "/data/dungeons2";
 
@@ -309,15 +305,13 @@ class ShippedBlockIdsTest {
             }
             ResourceLocation id = ResourceLocation.tryParse(found.value());
             if (id != null && !"minecraft".equals(id.getNamespace())
-                    && ShippedBlockIdsTest.class.getResource(
-                            String.format(BLOCKSTATE_DIR, id.getNamespace(), "")) == null
-                    && !hasBlockstates(id.getNamespace())) {
+                    && !hasBlocks(id.getNamespace())) {
                 unverifiable.add(id.getNamespace());
             }
         }
         assertTrue(unverifiable.isEmpty(),
-                "no blockstate assets on the test classpath for namespace(s) " + unverifiable
-                        + " -- add the mod as a test dependency, or this test is not checking its ids");
+                "no registered blocks for namespace(s) " + unverifiable
+                        + " -- add the mod as a dependency, or this test is not checking its ids");
     }
 
     /**
@@ -381,44 +375,26 @@ class ShippedBlockIdsTest {
     // ---------- resolution ----------
 
     private static boolean exists(ResourceLocation id) {
-        if ("minecraft".equals(id.getNamespace())) {
-            return BuiltInRegistries.BLOCK.containsKey(id);
-        }
-        return ShippedBlockIdsTest.class.getResource(
-                String.format(BLOCKSTATE_DIR, id.getNamespace(), id.getPath())) != null;
+        return BuiltInRegistries.BLOCK.containsKey(id);
     }
 
-    private static boolean hasBlockstates(String namespace) {
-        // Any one known-good id proves the assets are on the classpath; the sweep itself will have
-        // reported the individual misses.
-        return ShippedBlockIdsTest.class.getResource("/assets/" + namespace) != null;
+    private static boolean hasBlocks(String namespace) {
+        // Any one registered block proves the mod loaded; the sweep itself will have reported the
+        // individual misses.
+        return BuiltInRegistries.BLOCK.keySet().stream().anyMatch(key -> key.getNamespace().equals(namespace));
     }
 
     /** Nothing clever: the closest few real ids by edit distance, which is enough to spot a typo. */
     private static String suggestion(ResourceLocation id) {
-        List<String> candidates = "minecraft".equals(id.getNamespace())
-                ? BuiltInRegistries.BLOCK.keySet().stream().map(ResourceLocation::getPath).toList()
-                : blockstateNames(id.getNamespace());
+        List<String> candidates = BuiltInRegistries.BLOCK.keySet().stream()
+                .filter(key -> key.getNamespace().equals(id.getNamespace()))
+                .map(ResourceLocation::getPath)
+                .toList();
         List<String> nearest = candidates.stream()
                 .sorted(Comparator.comparingInt(candidate -> distance(id.getPath(), candidate)))
                 .limit(3)
                 .toList();
         return nearest.isEmpty() ? "(no such block)" : "(no such block; did you mean " + nearest + "?)";
-    }
-
-    private static List<String> blockstateNames(String namespace) {
-        URL url = ShippedBlockIdsTest.class.getResource("/assets/" + namespace + "/blockstates");
-        if (url == null) {
-            return List.of();
-        }
-        try (Stream<Path> files = Files.list(Paths.get(url.toURI()))) {
-            return files.map(path -> path.getFileName().toString())
-                    .filter(name -> name.endsWith(".json"))
-                    .map(name -> name.substring(0, name.length() - ".json".length()))
-                    .toList();
-        } catch (IOException | URISyntaxException | RuntimeException unreadable) {
-            return List.of();
-        }
     }
 
     private static int distance(String a, String b) {

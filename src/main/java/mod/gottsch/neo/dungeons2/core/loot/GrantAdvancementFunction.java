@@ -17,15 +17,13 @@
  */
 package mod.gottsch.neo.dungeons2.core.loot;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
+import net.minecraft.advancements.AdvancementHolder;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.setup.Registration;
-import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
@@ -56,7 +54,7 @@ import java.util.Set;
 public record GrantAdvancementFunction(ResourceLocation advancement) implements LootItemFunction {
 
     @Override
-    public LootItemFunctionType getType() {
+    public LootItemFunctionType<GrantAdvancementFunction> getType() {
         return Registration.GRANT_ADVANCEMENT_FUNCTION.get();
     }
 
@@ -68,7 +66,7 @@ public record GrantAdvancementFunction(ResourceLocation advancement) implements 
     @Override
     public ItemStack apply(ItemStack stack, LootContext context) {
         if (context.getParamOrNull(LootContextParams.THIS_ENTITY) instanceof ServerPlayer player) {
-            Advancement found = player.server.getAdvancements().getAdvancement(this.advancement);
+            AdvancementHolder found = player.server.getAdvancements().get(this.advancement);
             if (found != null) {
                 AdvancementProgress progress = player.getAdvancements().getOrStartProgress(found);
                 for (String criterion : progress.getRemainingCriteria()) {
@@ -79,16 +77,7 @@ public record GrantAdvancementFunction(ResourceLocation advancement) implements 
         return stack;
     }
 
-    /** JSON only, which is what a 1.20.1 loot function is read with. */
-    public static class Serializer implements net.minecraft.world.level.storage.loot.Serializer<GrantAdvancementFunction> {
-        @Override
-        public void serialize(JsonObject json, GrantAdvancementFunction function, JsonSerializationContext context) {
-            json.addProperty("advancement", function.advancement().toString());
-        }
-
-        @Override
-        public GrantAdvancementFunction deserialize(JsonObject json, JsonDeserializationContext context) {
-            return new GrantAdvancementFunction(ResourceLocation.parse(GsonHelper.getAsString(json, "advancement")));
-        }
-    }
+    public static final MapCodec<GrantAdvancementFunction> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            ResourceLocation.CODEC.fieldOf("advancement").forGetter(GrantAdvancementFunction::advancement)
+    ).apply(instance, GrantAdvancementFunction::new));
 }

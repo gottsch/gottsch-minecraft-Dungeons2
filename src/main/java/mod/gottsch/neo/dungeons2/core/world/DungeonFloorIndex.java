@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.world;
 
+import net.minecraft.core.HolderLookup;
 import mod.gottsch.neo.dungeons2.core.map.FloorMapStamp;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -66,7 +67,7 @@ public class DungeonFloorIndex extends SavedData {
     private final List<FloorMapStamp> floors = new ArrayList<>();
 
     public static DungeonFloorIndex get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(DungeonFloorIndex::load, DungeonFloorIndex::new, NAME);
+        return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(DungeonFloorIndex::new, DungeonFloorIndex::load, null), NAME);
     }
 
     /** Files a floor, unless it is already filed. Server thread only. */
@@ -102,7 +103,7 @@ public class DungeonFloorIndex extends SavedData {
                 && a.maxX() == b.maxX() && a.maxZ() == b.maxZ();
     }
 
-    public static DungeonFloorIndex load(CompoundTag tag) {
+    public static DungeonFloorIndex load(CompoundTag tag, HolderLookup.Provider registries) {
         DungeonFloorIndex data = new DungeonFloorIndex();
         for (Tag entry : tag.getList(FLOORS_TAG, Tag.TAG_COMPOUND)) {
             FloorMapStamp floor = FloorMapStamp.load((CompoundTag) entry);
@@ -114,7 +115,7 @@ public class DungeonFloorIndex extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (FloorMapStamp floor : this.floors) {
             list.add(floor.save());

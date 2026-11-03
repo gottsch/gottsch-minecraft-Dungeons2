@@ -341,7 +341,8 @@ public class DungeonsItems {
      */
     public static final DeferredHolder<Item, Item> MINOTAUR_AXE = Registration.ITEMS.register(
             "minotaur_axe",
-            () -> new AxeItem(Tiers.IRON, 7F, -3.4F, new Item.Properties()));
+            () -> new AxeItem(Tiers.IRON, new Item.Properties()
+                    .attributes(AxeItem.createAttributes(Tiers.IRON, 7F, -3.4F))));
 
     /**
      * The warband's low end, and half of the {@code gmm:orc/weapons} pool.
@@ -362,12 +363,14 @@ public class DungeonsItems {
      */
     public static final DeferredHolder<Item, Item> CLUB = Registration.ITEMS.register(
             "club",
-            () -> new SwordItem(Tiers.WOOD, 4, -3.0F, new Item.Properties()));
+            () -> new SwordItem(Tiers.WOOD, new Item.Properties()
+                    .attributes(SwordItem.createAttributes(Tiers.WOOD, 4, -3.0F))));
 
     /** The club with nails in it. See {@link #CLUB}; one more damage, same swing. */
     public static final DeferredHolder<Item, Item> SPIKED_CLUB = Registration.ITEMS.register(
             "spiked_club",
-            () -> new SwordItem(Tiers.WOOD, 5, -3.0F, new Item.Properties()));
+            () -> new SwordItem(Tiers.WOOD, new Item.Properties()
+                    .attributes(SwordItem.createAttributes(Tiers.WOOD, 5, -3.0F))));
 
     /**
      * The Orc Warlord's blade, and the whole of the {@code gmm:orc_warlord/weapons} pool.
@@ -391,7 +394,8 @@ public class DungeonsItems {
      */
     public static final DeferredHolder<Item, Item> ORC_WARLORD_CLEAVER = Registration.ITEMS.register(
             "orc_warlord_cleaver",
-            () -> new SwordItem(Tiers.IRON, 5, -2.6F, new Item.Properties()));
+            () -> new SwordItem(Tiers.IRON, new Item.Properties()
+                    .attributes(SwordItem.createAttributes(Tiers.IRON, 5, -2.6F))));
 
     /**
      * The mimics' eggs. These need one MORE than the ordinary roster does, for the
@@ -528,7 +532,7 @@ public class DungeonsItems {
             // declaration order -- rats, fungi, skeletons, and so on -- which groups the families
             // the way the file does.
             Registration.ITEMS.getEntries().stream()
-                    .map(RegistryObject::get)
+                    .map(DeferredHolder::get)
                     .filter(item -> item instanceof DeferredSpawnEggItem)
                     .forEach(egg -> event.accept(egg, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
         }

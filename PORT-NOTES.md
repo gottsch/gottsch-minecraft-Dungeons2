@@ -1,19 +1,19 @@
 # Dungeons2 3.0.0 → NeoForge 1.21.1: port notes
 
 Branch `1.21.1-feature/3.0.0`, cut from the 3.0.0 release commit `b12b081` (tip of `1.20.1-main`).
-This was a budgeted first pass in a cloud session. **Nothing has been compiled yet.** The session's
-network policy blocked `maven.neoforged.net` (403 at the egress proxy) and Maven Central returned 429s,
-so Gradle could not download NeoForge/MDG or publish the libraries. Every change below was made by
-script and by reading the source. None of it has been checked by `javac`.
+Milestones 1 and 2 were a budgeted first pass in a cloud session, which could not compile anything:
+its network policy blocked `maven.neoforged.net` (403 at the egress proxy) and Maven Central returned
+429s. Milestone 3 was then done locally (2026-11-02) against the real NeoForge 21.1.117 jar.
+**Main and tests compile, and `./gradlew test` passes: 1,890 tests, 0 failures, 2 skipped** (see "Tests").
 
 ## Milestones
 
 | # | Milestone | State |
 |---|---|---|
-| 1 | Build skeleton (MDG) | **Done, but `./gradlew dependencies` not run** (blocked) |
+| 1 | Build skeleton (MDG) | **Done**; dependencies resolve locally |
 | 2 | Mechanical pass | **Done** |
-| 3 | Compile | **Not started** (no compiler). Some categories were fixed ahead of time by script (see below) |
-| 4 | Tests | Not started |
+| 3 | Compile (main) | **Done**: 169 errors → 0 (local) |
+| 4 | Tests | **Done**: 137 compile errors → 0; 1,890 pass (local, 2026-11-02) |
 | 5 | PORT-NOTES.md | This file |
 
 ### 1. Build skeleton
@@ -89,7 +89,7 @@ Callers that now get the stubs:
 - `ChestMarkerProcessor`
 - `MobRange`
 - `EchelonSpawnEvent`
-- `BossTierWiringTest`, `ChestMarkerProcessorTest` and `DependencyFloorsAgreeTest`, which mention treasure2/eechelonsapi. `DependencyFloorsAgreeTest` pins the mods.toml ranges against build.gradle, so **expect it to fail until it reads `neoforge.mods.toml` and the new property names**.
+- `BossTierWiringTest`, `ChestMarkerProcessorTest` and `DependencyFloorsAgreeTest`, which mention treasure2/eechelonsapi. `DependencyFloorsAgreeTest` now checks the `gradle.properties` pairs (see "Tests"); its id map already lists both, so restoring the integrations only needs their `_version`/`_version_range` properties.
 
 Dungeon Map is **not excluded yet**, but it is a known rework (see below).
 
@@ -108,54 +108,104 @@ Taken from each library's `gradle.properties` / `build.gradle` on its port branc
 - D2 itself uses 2.10.0, and Gradle will pick the higher version on D2's classpath.
 
 ## Compile error counts
-**Unknown.** No compile has run. Static inventory of what is still unported in `src/main/java` (grep hits / files):
 
-| Category | Hits/files | Examples | Notes |
-|---|---|---|---|
-| Dungeon Map (MapId component, `MapItem.create`, `MapDecorationTypes`, item NBT) | ~15 / 5 | `core/map/DungeonMaps.java`, `BlankDungeonMapItem.java`, `ClientSetup.java` (ItemProperties on `stack.getTag()`), `DungeonMapCopyRecipe.java` (`CraftingContainer` → `CraftingInput`) | Real rework. If it is costly, exclude it like the integrations |
-| Item NBT → `DataComponents.CUSTOM_DATA` | 5 / 2 | `DungeonMaps`, `ClientSetup` | part of Dungeon Map |
-| Loot tables → `ResourceKey<LootTable>` / `reloadableRegistries().getLootTable` | ~4 / 3 | `WeaponRackFiller.java` (`getLootData`), `EntitySpawner.java`, `ChestMarkerProcessor` | |
-| `appendHoverText(stack, TooltipContext, list, flag)` | 5 / 4 | `MirrorShield.java`, `BlankDungeonMapItem.java` | |
-| `ItemStack.of(tag)` / `stack.save(tag)` → `parse/save(provider)` | 2 / 2 | `EntitySpawner`, `WeaponRackFiller` | |
-| `finalizeSpawn` (no tag arg; `MobSpawnType` → `EventHooks.finalizeMobSpawn`) | 1 / 1 | `EntitySpawner` | |
-| `LivingHurtEvent` / `LivingAttackEvent` → `LivingIncomingDamageEvent` / `LivingDamageEvent.Pre` | 4 / 3 | `ShockAbsorptionEvent`, `MirrorShieldEvent` | **semantics differ, so review by hand** |
-| Explosion/ProjectileImpact event API | 5 / 2 | `BossRoomProtectionEvent`, `MirrorShieldEvent` | `ProjectileImpactEvent` is no longer cancelable that way; `ExplosionEvent.Detonate` OK |
-| `SimpleCriterionTrigger` (codec-based `TriggerInstance`) | 5 / 1 | `ReachedFloorTrigger` | |
-| Recipe serializer / `CraftingContainer` → `CraftingInput` | 6 / 2 | `DungeonMapCopyRecipe`, `Registration` | |
-| `Attributes.*` are `Holder<Attribute>` | 3 / 1 | `DungeonsEntities` | |
-| `MobEffects.*` are `Holder<MobEffect>` | 3 / 3 | `DungeonFogEvents`, `ShockAbsorptionEvent` | `hasEffect(holder)` is fine |
-| `PieceBeardifierModifier` | 2 / 1 | `DungeonPiece` | Check it still exists in neo 21.1 (`net.neoforged.neoforge.common.world`) |
-| `DataPackRegistryEvent` / `AddReloadListenerEvent` | 6 / 3 | `MotifConfigRegistries`, `DungeonGenerationConfigRegistries` | Probably only the event bus wiring changes |
-| Client events (`EntityRenderersEvent`, `ViewportEvent`) | 6 / 2 | `ClientSetup`, `DungeonFogEvents` | Usually `bus = MOD` and `value = Dist.CLIENT` on `@EventBusSubscriber` |
-| `EventHooks.onEntityDestroyBlock` | 1 / 1 | `AnnihilationRay` | Check the signature with javap |
-| `DeferredSpawnEggItem` ctor (Supplier of `EntityType<? extends Mob>`) | 1 file | `DungeonsItems` (or wherever the eggs register) | |
-| `StructureProcessor.processBlock` / `finalizeProcessing` signatures | 12 files | `templatesystem/*Processor` | unchanged in 1.21, I believe, so check |
-| `Structure.findGenerationPoint`/`StructureType` | 2 | `DungeonStructure`, `Registration` | `StructureType` is now a `MapCodec` lambda: `() -> CODEC` |
-| Test-side: headless `WorldGenLevel` stub, loader tests reading shipped JSON | ? | `src/test/...` | Rebuild against 1.21.1; leave it for later if it is large |
+### Main: 0 (was 169 at the first real compile)
+Fixed locally, by category. All API shapes were checked with `javap` against
+`build/moddev/artifacts/neoforge-21.1.117-merged.jar`.
+- **Events:**
+  - `bus = Bus.FORGE` dropped (GAME is the default)
+  - `LivingAttackEvent`/`LivingHurtEvent` → `LivingIncomingDamageEvent`
+  - `MobSpawnEvent.FinalizeSpawn` → `FinalizeSpawnEvent`, whose `getSpawner()` is now `Either<BlockEntity, Entity>`
+  - `ProjectileImpactEvent` `SKIP_ENTITY` → `setCanceled(true)`
+  - `hurtAndBreak(n, entity, EquipmentSlot)`
+- **Registries:**
+  - Forge's `getValue` → `get`
+  - singular `BuiltInRegistries` names
+  - `MOB_EFFECT.getHolder(id)` for `MobEffectInstance`
+- **Armour:** `DungeonsArmorMaterials` is now a `DeferredRegister<ArmorMaterial>` holder (`ArmorMaterial` is a record on 1.21). Its durability moved to the item: `Properties.durability(BOOTS_DURABILITY)`.
+- **Weapons:** `SwordItem`/`AxeItem` take `Properties.attributes(X.createAttributes(tier, dmg, speed))`.
+- **Loot:**
+  - the three JSON `Serializer`s → `MapCodec CODEC`s (`BossTierCondition` still rejects an unknown tier, now via `Codec.validate`)
+  - `LootItemFunctionType<T>`
+  - `reloadableRegistries().getLootTable(ResourceKey)`, with `LootTable.EMPTY` treated as missing
+  - `AdvancementHolder`
+- **Blocks:**
+  - `codec()` on the five `BaseEntityBlock`s
+  - `MobSetSpawnerBlock.properties()` → `defaultProperties()`, because it clashed with the new `BlockBehaviour.properties()`
+- **Block entities and saved data:**
+  - `SavedData.Factory` and `save/load(tag, Provider)`
+  - `saveWithFullMetadata(provider)` / `loadWithComponents`
+  - `ItemStack.save(provider)`
+- **Worldgen:**
+  - `JigsawPlacement.addPieces(..., PoolAliasLookup.EMPTY, DimensionPadding.ZERO, LiquidSettings.APPLY_WATERLOGGING)`
+  - `checkStructurePresence(..., set.placement(), false)`
+  - `chunk.status.ChunkStatus`
+  - `DataResult.getOrThrow(Function)`
+  - `MapCodec.unit`
+  - processors registered with `MapCodec`
+- **`DrySinglePoolElement`:** now passes `LiquidSettings.IGNORE_WATERLOGGING` to vanilla, which 1.20.5 added for exactly this, and forces it in `getSettings`. The JSON shape is unchanged.
+- **Rendering:**
+  - `Model.renderToBuffer(..., int color)`
+  - `ModelPart.render(..., color)`
+  - `VertexConsumer.addVertex(...).setColor(...)`, with no `endVertex`
+- **Entities:**
+  - `getDefaultGravity()` returns a double
+  - `ignoreExplosion(Explosion)`
+  - `AbstractArrow(type, owner, level, ItemStack.EMPTY, null)` plus `getDefaultPickupItem()`
+- **Dungeon Map and compass:** ported, not excluded.
+  - `MapId` and `setMapData(id, MapItemSavedData.load(tag, provider))`
+  - `DataComponents.MAP_ID` / `MAP_COLOR` / `ITEM_NAME`
+  - the stamp lives in `CUSTOM_DATA`; the compass's compound too, with `NbtUtils.readBlockPos(tag, key)`
+  - `PathType` replaces `BlockPathTypes`
+  - `DungeonMapCopyRecipe` takes a `CraftingInput`
+- `SlotOptions`: the call to its own static `validate` now has to be qualified. The anonymous `Codec` had started resolving to DFU's new `Codec#validate`.
 
-Expect the usual long tail beyond these:
-- `@EventBusSubscriber(bus = Bus.FORGE)` → drop `bus` (GAME is the default)
-- `Event.Result` removals
-- `level.getServer().getLootData()`
-- `BlockEntityType.Builder.build(null)`
-- `ResourceLocation.parse` misfires
-- `GottschCore` API renames between 2.9.0 (Forge) and 2.10.0 (neo)
+**Check in game, because the semantics may differ from Forge:**
+- **Mirror Shield reflection:** a cancelled `ProjectileImpactEvent` should leave the bolt flying for `reflect()` to turn.
+- **Boots of Shock Absorption:** `LivingIncomingDamageEvent` fires before armour, as Forge's `LivingHurtEvent` did. Check that the `[D2-BOOTS]` debug lines still show the cut.
+- **Echelon scaling:** spawns from an entity-owned spawner (e.g. a spawner minecart) now get no origin, where Forge read the `BaseSpawner`. Cage spawners are unchanged.
+- **Dungeon Map name:** it now uses `ITEM_NAME`, so it isn't italic and an anvil rename still wins. The map's tint and its "dungeon_map" item property should still show.
+- **Waterlogging:** dry pool elements must not waterlog trim. Vanilla elements still do, as on 1.20.1.
+- **Mining Chest:** open one and check the stacks have their full counts (e.g. 64 coal, not 1). The SNBT fix is unit-tested through `ContainerHelper`, but the chest itself is only placed in game.
+
+### Tests: 0 compile errors (was 137); `./gradlew test` passes 1,890, skips 2
+The 137 compile errors were mechanical:
+- `getOrThrow(false, ...)` → `getOrThrow()` / `getOrThrow(Function)`
+- `.codec().parse` on processor `MapCodec`s
+- `CraftingInput.of(3, 3, items)` replaces the test's `CraftingContainer` grid
+- `NbtIo.readCompressed(in, NbtAccounter.unlimitedHeap())`
+- `RegistrationInfo.BUILT_IN` for `register` (`MappedRegistry`'s constructor still takes a `Lifecycle`)
+- `DataResult.Error::message`
+- the provider forms of `save`/`load`/`loadAllItems`
+
+Then the suite failed to start at all, and once it ran, 22 tests failed. What each turned out to be:
+
+**Real bugs in the port (main source):**
+- **`StructurePieces` crashed mod loading** with "Registry is already frozen". Forge unfroze the vanilla registries inside `enqueueWork`; NeoForge does not. The piece types now go through a `DeferredRegister` that hands back the existing constants, registered from `Registration.init`. This would have crashed the game on startup.
+- **The Mining Chest would have held one of each item.** `MiningHaul.itemsSnbt()` wrote the pre-1.20.5 `Count:Nb`, and the 1.21 item codec reads a lowercase int `count`, defaulting to 1. It now writes `count:N`. The pedestal item in `RoomPedestalGenerator` was changed the same way (it was 1 anyway). `MiningHaulSnbtTest` caught it and now asserts the 1.21 key and type.
+- **`minecraft:grass` was renamed `minecraft:short_grass` in 1.20.3.** It appeared 16 times across the eight `classic_*weathering` processor lists, where it would have become air. All changed. One template (`mud/13x17_1.nbt`, DataVersion 3465) also names it, but the game data-fixes templates on load, so that one is fine.
+
+**Tests that assumed Forge's test environment:**
+- **Working directory.** MDG's runner starts the game with `--gameDir .` in `build/minecraft-junit`, so tests reading `src/...`, `build.gradle` or `build/...` by relative path failed. The new `diagnostic/ProjectFiles.path(...)` walks up to `settings.gradle`; seven call sites use it.
+- **The mods are loaded now.** On Forge a bare `Bootstrap` registered no mod blocks, so tests checked modded ids against the blockstate files in the DungeonBlocks jar. Under FML each mod is its own module, and `Class.getResource` stopped seeing another mod's assets. `ShippedBlockIdsTest` and `ShippedTemplateBlocksTest` now ask `BuiltInRegistries.BLOCK`, which is stronger. `MiningChestPlacementTest` gets its original assertion back: the cell holds `dungeons2:mining_chest`, not just air.
+- **`ShippedTemplateBlocksTest`** now data-fixes each template the way `StructureTemplateManager` does before sweeping the palette.
+- **Two tests building a `BlockEntityType`** also unfreeze `BLOCK_ENTITY_TYPE`, because on 1.21 it takes an intrusive holder too.
+- **`ModLoadOrderTest`** reads `META-INF/neoforge.mods.toml` and ignores `neoforge` as it did `forge`.
+- **1.21 folder names:** `structure/` and `loot_table/` in `ShippedMoodBiomesTest` and `ShippedTombsTest`.
+- **`JigsawStripsStructureBlocksTest`** reflects the 4-argument `getSettings` (with `LiquidSettings`). `DrySinglePoolElementTest` asserts `shouldApplyWaterlogging()`.
+- **`RendererCoverageTest`'s regex** had an unescaped `?` in `EntityType<?>`, so it matched nothing. It is now `<\?>`.
+- **`DependencyFloorsAgreeTest` was rewritten.** On NeoForge, `build.gradle` and the toml both read `gradle.properties`. The test now checks:
+  - each sibling's `X_version` and `X_version_range` floors agree, with two-part ranges such as `[1.3,2.0)` treated as `1.3.0`
+  - `build.gradle` uses `${X_version}`
+  - the shipped `neoforge.mods.toml` declares `X_version_range`
 
 ## Exact next steps (local)
-1. Publish the libraries to mavenLocal, GottschCore first. Use `-Pgottschcore_version=2.10.0` for DungeonBlocks and gmm if 2.7.0 isn't in mavenLocal.
-
-   ```bash
-   cd ../gottsch-minecraft-neoforged-GottschCore && ./gradlew publishToMavenLocal -x test
-   ```
-
-   Then the same in DungeonBlocks, Monster Manual and Gottsch Books. Confirm the coordinates in `~/.m2/repository/gottsch/`.
-2. In D2, run `./gradlew dependencies --configuration compileClasspath | grep gottsch` and fix any coordinate in `build.gradle`.
-3. Run `./gradlew compileJava 2>&1 | grep -c error:` to get the baseline count. Group the errors with `grep 'error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -40`.
-4. Work through the table above, biggest and most mechanical first. If Dungeon Map is expensive, exclude its 5 files the same way as the integrations and note it.
-5. Fix `DependencyFloorsAgreeTest`, which reads `mods.toml` and the build.gradle version strings. Then run `./gradlew compileTestJava test`. The planner/POJO tests should pass unchanged; any difference is a port bug.
-6. Port the integrations once neo APIs exist:
+1. ~~Publish the libraries; compile main~~ (done locally).
+2. ~~Fix the test compile errors and run `./gradlew test`~~ (done: 1,890 pass).
+3. Run `./gradlew probes` and `./gradlew releaseCheck`, which `test` excludes. They have not been run on NeoForge yet.
+4. Port the integrations once neo APIs exist:
    - delete the stubs and the `portExcluded` entries
    - update the `Delegate` FQNs
    - restore the `compileOnly` lines and the mods.toml optional dependency blocks
    - re-include `TreasureIntegrationTest`
-7. In-game: load once, confirm the `.nbt` templates DataFix, and generate a dungeon with Treasure2/EE absent.
+5. In-game: load once, confirm the `.nbt` templates DataFix, and generate a dungeon with Treasure2/EE absent.

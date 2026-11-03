@@ -95,7 +95,7 @@ public final class BlockStateCodec {
      * for that property.</p>
      */
     public static BlockState resolve(BlockPlacement placement) {
-        Block block = BuiltInRegistries.BLOCK.getValue(ResourceLocation.parse(placement.getBlockId()));
+        Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(placement.getBlockId()));
         if (block == null || block == Blocks.AIR) {
             return block == null ? Blocks.AIR.defaultBlockState() : block.defaultBlockState();
         }
@@ -127,7 +127,7 @@ public final class BlockStateCodec {
         }
         Block block;
         try {
-            block = BuiltInRegistries.BLOCK.getValue(ResourceLocation.parse(id.trim()));
+            block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id.trim()));
         } catch (RuntimeException malformed) {
             return null;
         }

@@ -17,6 +17,11 @@
  */
 package mod.gottsch.neo.dungeons2.core.map;
 
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.item.component.MapItemColor;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponents;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -39,7 +44,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 import javax.annotation.Nullable;
@@ -136,7 +140,7 @@ public final class DungeonMaps {
 
     /** A blank Dungeon Map of this floor, with its data registered in the level. */
     public static ItemStack create(ServerLevel level, FloorMapStamp stamp) {
-        int id = level.getFreeMapId();
+        MapId id = level.getFreeMapId();
         CompoundTag dataTag = new CompoundTag();
         dataTag.putString("dimension", level.dimension().location().toString());
         dataTag.putInt("xCenter", stamp.centerX());
@@ -147,26 +151,27 @@ public final class DungeonMaps {
         dataTag.putBoolean("locked", true);
         // load() rather than createFresh(): createFresh snaps the centre to vanilla's map grid, which
         // would cut a floor that straddles a grid line in two
-        level.setMapData(MapItem.makeKey(id), MapItemSavedData.load(dataTag));
+        level.setMapData(id, MapItemSavedData.load(dataTag, level.registryAccess()));
 
         ItemStack stack = new ItemStack(Items.FILLED_MAP);
-        stack.getOrCreateTag().putInt("map", id);
-        stack.getOrCreateTag().put(TAG, stamp.save());
-        stack.getOrCreateTagElement("display").putInt("MapColor", MAP_TINT);
+        stack.set(DataComponents.MAP_ID, id);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.put(TAG, stamp.save()));
+        stack.set(DataComponents.MAP_COLOR, new MapItemColor(MAP_TINT));
         Component name = stamp.hasDungeon()
                 ? Component.translatable("map.dungeons2.dungeon_map.named",
                         DungeonNames.nameFor(stamp.dungeonX(), stamp.dungeonZ()), stamp.floorIndex() + 1)
                 : Component.translatable("map.dungeons2.dungeon_map", stamp.floorIndex() + 1);
-        stack.setHoverName(name.copy().withStyle(style -> style.withItalic(false)));
+        // ITEM_NAME rather than a custom name: it is not drawn italic, and an anvil rename still wins
+        stack.set(DataComponents.ITEM_NAME, name);
         return stack;
     }
 
     /** The floor a stack maps, or null if it is not a Dungeon Map. */
     @Nullable
     public static FloorMapStamp stampOf(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return stack.is(Items.FILLED_MAP) && tag != null && tag.contains(TAG)
-                ? FloorMapStamp.load(tag.getCompound(TAG)) : null;
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return stack.is(Items.FILLED_MAP) && data != null && data.contains(TAG)
+                ? FloorMapStamp.load(data.copyTag().getCompound(TAG)) : null;
     }
 
     /** Draws the floor around a player holding this Dungeon Map. Server side. */
@@ -395,9 +400,9 @@ public final class DungeonMaps {
         if (state.getBlock() instanceof DoorBlock) {
             return true;
         }
-        BlockPathTypes type = state.getBlockPathType(level, pos, null);
-        return type == BlockPathTypes.DOOR_WOOD_CLOSED || type == BlockPathTypes.DOOR_IRON_CLOSED
-                || type == BlockPathTypes.DOOR_OPEN;
+        PathType type = state.getBlockPathType(level, pos, null);
+        return type == PathType.DOOR_WOOD_CLOSED || type == PathType.DOOR_IRON_CLOSED
+                || type == PathType.DOOR_OPEN;
     }
 
     /** Paints the pixel holding block column (x, z), unless it already shows a way off the floor. */

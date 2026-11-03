@@ -160,7 +160,7 @@ class ShippedMoodBiomesTest {
             for (var entry : json.getAsJsonObject().getAsJsonObject("template_biomes").entrySet()) {
                 mapped++;
                 ResourceLocation template = ResourceLocation.parse(entry.getKey());
-                String nbt = "/data/" + template.getNamespace() + "/structures/" + template.getPath() + ".nbt";
+                String nbt = "/data/" + template.getNamespace() + "/structure/" + template.getPath() + ".nbt";
                 if (ShippedMoodBiomesTest.class.getResource(nbt) == null) {
                     bad.add(file.getFileName() + ": no template " + entry.getKey());
                 }
@@ -182,7 +182,7 @@ class ShippedMoodBiomesTest {
         List<MotifConfigFragment> fragments = new ArrayList<>();
         for (Path file : files(CONFIG_ROOT + "/classic")) {
             fragments.add(MotifConfigFragment.CODEC.parse(JsonOps.INSTANCE, read(file))
-                    .getOrThrow(false, message -> fail(file.getFileName() + ": " + message)));
+                    .getOrThrow(message -> new AssertionError(file.getFileName() + ": " + message)));
         }
         MotifConfig classic = MotifConfigFragment.resolve(fragments);
         assertEquals(Optional.of(ResourceLocation.parse("dungeons2:mud_crypts")), classic.biomeFor(0));

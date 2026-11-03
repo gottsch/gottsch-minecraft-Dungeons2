@@ -88,8 +88,8 @@ public class MiningChestModel extends Model {
 
     @Override
     public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight,
-                               int packedOverlay, float red, float green, float blue, float alpha) {
-        main.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        lid.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+                               int packedOverlay, int color) {
+        main.render(poseStack, buffer, packedLight, packedOverlay, color);
+        lid.render(poseStack, buffer, packedLight, packedOverlay, color);
     }
 }

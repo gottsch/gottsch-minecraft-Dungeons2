@@ -17,15 +17,14 @@
  */
 package mod.gottsch.neo.dungeons2.core.loot;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Codec;
 import mod.gottsch.neo.dungeons2.core.data.DungeonSize;
 import mod.gottsch.neo.dungeons2.core.setup.Registration;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
@@ -102,22 +101,15 @@ public record BossTierCondition(String tier) implements LootItemCondition {
         return blockEntity != null && tier.equals(blockEntity.getPersistentData().getString(KEY));
     }
 
-    /** JSON only, which is what a 1.20.1 loot condition is read with. */
-    public static class Serializer implements net.minecraft.world.level.storage.loot.Serializer<BossTierCondition> {
-        @Override
-        public void serialize(JsonObject json, BossTierCondition condition, JsonSerializationContext context) {
-            json.addProperty("tier", condition.tier());
-        }
-
-        @Override
-        public BossTierCondition deserialize(JsonObject json, JsonDeserializationContext context) {
-            String tier = GsonHelper.getAsString(json, "tier");
-            // A typo would be a book that never drops anywhere, with no error -- so it is one.
-            if (!TIERS.contains(tier)) {
-                throw new JsonSyntaxException("dungeons2:boss_tier: unknown tier '" + tier
-                        + "', expected one of " + TIERS);
-            }
-            return new BossTierCondition(tier);
-        }
-    }
+    /**
+     * A typo'd tier would be a book that never drops anywhere, with no error -- so the codec
+     * refuses it.
+     */
+    public static final MapCodec<BossTierCondition> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.STRING.validate(tier -> TIERS.contains(tier)
+                            ? DataResult.success(tier)
+                            : DataResult.error(() -> "dungeons2:boss_tier: unknown tier '" + tier
+                                    + "', expected one of " + TIERS))
+                    .fieldOf("tier").forGetter(BossTierCondition::tier)
+    ).apply(instance, BossTierCondition::new));
 }

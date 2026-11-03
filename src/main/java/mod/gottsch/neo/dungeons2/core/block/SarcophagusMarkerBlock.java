@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block;
 
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.block.entity.SarcophagusMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -55,6 +56,13 @@ public class SarcophagusMarkerBlock extends BaseEntityBlock {
 
     /** Foot to head, as on the sarcophagus. */
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+
+    public static final MapCodec<SarcophagusMarkerBlock> CODEC = simpleCodec(SarcophagusMarkerBlock::new);
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
 
     public SarcophagusMarkerBlock(Properties properties) {
         super(properties);

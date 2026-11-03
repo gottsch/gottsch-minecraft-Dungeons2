@@ -17,6 +17,8 @@
  */
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
+import java.util.Optional;
 import com.mojang.serialization.MapCodec;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
@@ -43,7 +45,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * pass waterlogs those beside a water source. A prefab dug through wet rock came out with water in
  * half its trim. No processor can stop it: it happens after processing. With {@code keepLiquids}
  * off, a block is waterlogged only if the template saved it so, and authored water is placed as
- * any other block. (1.20.5 added {@code liquid_settings} for this; 1.20.1 has nothing.)
+ * any other block. (1.20.5 added {@code liquid_settings} for this; the element forces {@code IGNORE_WATERLOGGING} so the JSON can stay vanilla 1.20.1's shape.)
  *
  * <p>The JSON is vanilla's single element exactly ({@code location}, {@code processors},
  * {@code projection}), so {@code PoolElementIds}, {@code template_limits} and
@@ -60,12 +62,14 @@ public class DrySinglePoolElement extends SinglePoolElement {
     protected DrySinglePoolElement(Either<ResourceLocation, StructureTemplate> template,
                                    Holder<StructureProcessorList> processors,
                                    StructureTemplatePool.Projection projection) {
-        super(template, processors, projection);
+        super(template, processors, projection, Optional.of(LiquidSettings.IGNORE_WATERLOGGING));
     }
 
     @Override
-    protected StructurePlaceSettings getSettings(Rotation rotation, BoundingBox box, boolean keepJigsaws) {
-        return super.getSettings(rotation, box, keepJigsaws).setKeepLiquids(false);
+    protected StructurePlaceSettings getSettings(Rotation rotation, BoundingBox box,
+                                                 LiquidSettings liquidSettings, boolean keepJigsaws) {
+        // whatever the structure asks for, this element never takes on the world's water
+        return super.getSettings(rotation, box, LiquidSettings.IGNORE_WATERLOGGING, keepJigsaws);
     }
 
     @Override

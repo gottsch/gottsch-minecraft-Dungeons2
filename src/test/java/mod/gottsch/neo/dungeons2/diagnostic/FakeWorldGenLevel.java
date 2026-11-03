@@ -227,7 +227,7 @@ public final class FakeWorldGenLevel implements InvocationHandler {
                 .mobSpawnSettings(MobSpawnSettings.EMPTY)
                 .generationSettings(BiomeGenerationSettings.EMPTY)
                 .build();
-        registry.register(Biomes.PLAINS, placeholder, Lifecycle.stable());
+        registry.register(Biomes.PLAINS, placeholder, net.minecraft.core.RegistrationInfo.BUILT_IN);
         return registry;
     }
 

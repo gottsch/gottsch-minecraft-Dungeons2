@@ -98,11 +98,13 @@ public record MiningHaul(List<Stack> stacks) {
         String[] bySlot = new String[CHEST_SLOTS];
         for (int i = 0; i < fills.size(); i++) {
             Stack fill = fills.get(i);
-            // Slot and Count are BYTES in a vanilla container tag, not ints. A plain integer decodes
-            // to the wrong tag type and the item silently does not appear -- the stringified-value
-            // trap BlockEntityData's own doc warns about, one layer down.
+            // Slot is a BYTE in a vanilla container tag, not an int. A plain integer decodes to the
+            // wrong tag type and the item silently does not appear -- the stringified-value trap
+            // BlockEntityData's own doc warns about, one layer down. The count is the 1.21 item
+            // codec's lowercase int "count": the pre-1.20.5 "Count" byte is ignored by that codec,
+            // and every stack then loads as ONE item.
             bySlot[slots[i]] = "{Slot:" + slots[i] + "b,id:\"" + fill.item()
-                    + "\",Count:" + fill.count() + "b}";
+                    + "\",count:" + fill.count() + "}";
         }
 
         StringBuilder snbt = new StringBuilder("[");

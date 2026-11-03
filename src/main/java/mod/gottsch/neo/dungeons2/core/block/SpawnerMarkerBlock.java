@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block;
 
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.block.entity.SpawnerMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -56,6 +57,13 @@ import org.jetbrains.annotations.Nullable;
  * @author Mark Gottschling on Sep 3, 2026
  */
 public class SpawnerMarkerBlock extends BaseEntityBlock {
+
+    public static final MapCodec<SpawnerMarkerBlock> CODEC = simpleCodec(SpawnerMarkerBlock::new);
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
 
     public SpawnerMarkerBlock(Properties properties) {
         super(properties);

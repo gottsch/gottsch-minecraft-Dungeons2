@@ -53,7 +53,7 @@ class DungeonMapScanTest {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         ((MappedRegistry<Block>) BuiltInRegistries.BLOCK).unfreeze();
-        hiddenDoor = new HiddenDoorBlock(BlockBehaviour.Properties.copy(Blocks.STONE_BRICKS));
+        hiddenDoor = new HiddenDoorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE_BRICKS));
     }
 
     @Test
@@ -128,7 +128,7 @@ class DungeonMapScanTest {
         tag.putByte("scale", (byte) 1);
         tag.putBoolean("locked", true);
         net.minecraft.world.level.saveddata.maps.MapItemSavedData data =
-                net.minecraft.world.level.saveddata.maps.MapItemSavedData.load(tag);
+                net.minecraft.world.level.saveddata.maps.MapItemSavedData.load(tag, net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY));
         // pixel (64,64) holds blocks 0..1; its neighbours hold 2..3 and -2..-1
         DungeonMaps.paint(data, 2, 0, DungeonMaps.FLOOR);
         DungeonMaps.paint(data, -2, 0, DungeonMaps.WALL);

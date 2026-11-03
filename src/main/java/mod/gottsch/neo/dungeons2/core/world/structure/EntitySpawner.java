@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.world.structure;
 
+import net.minecraft.core.Holder;
 import mod.gottsch.neo.gmm.core.entity.monster.mimic.Mimic;
 import mod.gottsch.neo.dungeons2.Dungeons;
 import mod.gottsch.neo.dungeons2.core.data.EntityPlacement;
@@ -105,7 +106,7 @@ public final class EntitySpawner {
             BlockPos pos = BlockPos.containing(mob.getX(), mob.getY(), mob.getZ());
             try {
                 mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos),
-                        MobSpawnType.STRUCTURE, null, null);
+                        MobSpawnType.STRUCTURE, null);
             } catch (Exception e) {
                 // Degrade rather than abort, the same convention an unresolved id gets: a mob with
                 // default attributes is a worse dungeon, an exception here is a dead chunk.
@@ -178,14 +179,15 @@ public final class EntitySpawner {
         ListTag list = new ListTag();
         for (PotionEffectSpec spec : specs) {
             ResourceLocation id = ResourceLocation.tryParse(spec.effect());
-            MobEffect effect = id == null ? null : BuiltInRegistries.MOB_EFFECT.getValue(id);
+            Holder<MobEffect> effect = id == null ? null
+                    : BuiltInRegistries.MOB_EFFECT.getHolder(id).orElse(null);
             if (effect == null) {
                 Dungeons.LOGGER.warn("Unknown mob effect '{}' on {} -- skipped", spec.effect(),
                         placement.getEntityId());
                 continue;
             }
             list.add(new MobEffectInstance(effect, spec.duration(), spec.amplifier())
-                    .save(new CompoundTag()));
+                    .save());
         }
         if (list.isEmpty()) {
             return null;

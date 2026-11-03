@@ -122,7 +122,7 @@ class ShippedMotifConfigTest {
 
         MotifConfigFragment fragment = MotifConfigFragment.CODEC
                 .parse(JsonOps.INSTANCE, read(strata))
-                .getOrThrow(false, message -> fail("strata.json does not decode: " + message));
+                .getOrThrow(message -> new AssertionError("strata.json does not decode: " + message));
 
         assertTrue(fragment.strataByFloorIndex().isPresent(),
                 "strata.json should carry strata_by_floor_index");

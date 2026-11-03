@@ -130,7 +130,7 @@ public class BossRoomRegistryTest {
         registry.add(new BoundingBox(0, 60, 0, 15, 70, 20));
         registry.add(new BoundingBox(100, 60, 100, 115, 70, 120));
 
-        BossRoomRegistry loaded = BossRoomRegistry.load(registry.save(new CompoundTag()));
+        BossRoomRegistry loaded = BossRoomRegistry.load(registry.save(new CompoundTag(), null), null);
 
         assertEquals(2, loaded.size());
         assertEquals(new BoundingBox(0, 60, 0, 15, 70, 20),

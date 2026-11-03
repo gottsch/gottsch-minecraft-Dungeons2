@@ -144,7 +144,7 @@ class MotifWallPlinthTest {
                 + "{\"block\": \"minecraft:polished_andesite\"}]}}]}}";
         WallConfig substitute = WallConfig.CODEC
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
-                .getOrThrow(false, error -> {
+                .getOrThrow(error -> {
                     throw new AssertionError("the stand-in config no longer decodes: " + error);
                 });
 
@@ -283,7 +283,7 @@ class MotifWallPlinthTest {
                 + " \"properties\": {\"half\": \"top\"}}]}}]}}";
         WallConfig crown = WallConfig.CODEC
                 .parse(JsonOps.INSTANCE, JsonParser.parseString(json))
-                .getOrThrow(false, error -> {
+                .getOrThrow(error -> {
                     throw new AssertionError("the crown config no longer decodes: " + error);
                 });
 

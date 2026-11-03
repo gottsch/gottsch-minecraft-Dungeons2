@@ -379,7 +379,7 @@ class SpawnerMarkerProcessorTest {
 
     private static DataResult<SpawnerMarkerProcessor> decode(String json) {
         return SpawnerMarkerProcessor.codec(() -> null)
-                .parse(JsonOps.INSTANCE, JsonParser.parseString(json));
+                .codec().parse(JsonOps.INSTANCE, JsonParser.parseString(json));
     }
 
     /** Absent means certain, which is what keeps every shipped processor list working untouched. */

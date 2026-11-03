@@ -64,7 +64,7 @@ import net.neoforged.fml.common.Mod;
  *
  * @author Mark Gottschling on Sep 3, 2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class MiniBossAnchorEvent {
 
     /**

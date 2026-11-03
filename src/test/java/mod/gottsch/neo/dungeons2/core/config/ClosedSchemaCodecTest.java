@@ -39,7 +39,7 @@ class ClosedSchemaCodecTest {
     private static <A> void decodes(Codec<A> codec, String json) {
         assertTrue(parse(codec, json).result().isPresent(),
                 () -> "expected this to decode, but it failed: "
-                        + parse(codec, json).error().map(DataResult.PartialResult::message).orElse(""));
+                        + parse(codec, json).error().map(DataResult.Error::message).orElse(""));
     }
 
     // ---- the misspellings named in the plan ------------------------------------------------

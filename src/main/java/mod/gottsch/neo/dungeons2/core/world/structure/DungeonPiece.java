@@ -605,7 +605,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             // actually carries, so the entity's in-memory defaults survive.
             CompoundTag tag;
             try {
-                tag = blockEntity.saveWithFullMetadata();
+                tag = blockEntity.saveWithFullMetadata(level.registryAccess());
             } catch (Exception incompleteEntity) {
                 Dungeons.LOGGER.debug("{} could not be saved before its data was applied at {} ({});"
                         + " starting from an empty tag", blockEntity.getClass().getSimpleName(), pos.toShortString(),
@@ -648,7 +648,7 @@ public abstract class DungeonPiece extends StructurePiece implements PieceBeardi
             }
             stampBossTier(tag, data);
             stampFloorMap(tag, data);
-            blockEntity.load(tag);
+            blockEntity.loadWithComponents(tag, level.registryAccess());
             blockEntity.setChanged();
             scheduleLootRoll(level, pos, data);
         } catch (Exception e) {

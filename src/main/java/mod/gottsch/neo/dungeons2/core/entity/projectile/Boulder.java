@@ -108,7 +108,7 @@ public class Boulder extends ThrowableProjectile {
     }
 
     @Override
-    protected float getGravity() {
+    protected double getDefaultGravity() {
         return GRAVITY;
     }
 

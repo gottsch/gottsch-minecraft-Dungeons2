@@ -17,9 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.loot;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.map.DungeonMaps;
 import mod.gottsch.neo.dungeons2.core.map.FloorMapStamp;
 import mod.gottsch.neo.dungeons2.core.setup.Registration;
@@ -59,7 +57,7 @@ import java.util.Set;
 public class DungeonMapFunction implements LootItemFunction {
 
     @Override
-    public LootItemFunctionType getType() {
+    public LootItemFunctionType<DungeonMapFunction> getType() {
         return Registration.DUNGEON_MAP_FUNCTION.get();
     }
 
@@ -106,15 +104,6 @@ public class DungeonMapFunction implements LootItemFunction {
         return FloorMapStamp.load(blockEntity.getPersistentData().getCompound(FloorMapStamp.KEY));
     }
 
-    /** JSON only, which is what a 1.20.1 loot function is read with. It has no fields. */
-    public static class Serializer implements net.minecraft.world.level.storage.loot.Serializer<DungeonMapFunction> {
-        @Override
-        public void serialize(JsonObject json, DungeonMapFunction function, JsonSerializationContext context) {
-        }
-
-        @Override
-        public DungeonMapFunction deserialize(JsonObject json, JsonDeserializationContext context) {
-            return new DungeonMapFunction();
-        }
-    }
+    /** It has no fields. */
+    public static final MapCodec<DungeonMapFunction> CODEC = MapCodec.unit(DungeonMapFunction::new);
 }

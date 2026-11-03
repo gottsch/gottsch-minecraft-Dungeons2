@@ -92,6 +92,8 @@ class EchelonTombOriginTest {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         ((MappedRegistry<Block>) BuiltInRegistries.BLOCK).unfreeze();
+        // 1.21: a BlockEntityType allocates an intrusive holder too
+        ((MappedRegistry<BlockEntityType<?>>) BuiltInRegistries.BLOCK_ENTITY_TYPE).unfreeze();
         tomb = new TombStandIn();
         type = BlockEntityType.Builder.<BlockEntity>of((pos, state) -> null, tomb).build(null);
     }

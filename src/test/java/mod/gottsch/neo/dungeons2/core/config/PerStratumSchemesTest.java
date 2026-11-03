@@ -179,7 +179,7 @@ class PerStratumSchemesTest {
     private static MotifConfig resolve(List<String> problems, String json) {
         MotifConfigFragment fragment = MotifConfigFragment.CODEC
                 .parse(JsonOps.INSTANCE, GSON.fromJson(json, JsonElement.class))
-                .getOrThrow(false, message -> {
+                .getOrThrow(message -> {
                     throw new AssertionError(message);
                 });
         return MotifConfigFragment.resolve(List.of(fragment), problems::add);

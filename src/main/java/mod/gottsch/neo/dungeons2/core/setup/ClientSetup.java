@@ -130,19 +130,19 @@ public class ClientSetup {
         event.enqueueWork(() -> {
             net.minecraft.client.renderer.item.ItemProperties.register(
                     mod.gottsch.neo.dungeons2.core.item.DungeonsItems.MIRROR_SHIELD.get(),
-                    new net.minecraft.resources.ResourceLocation("blocking"),
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace("blocking"),
                     (stack, level, entity, seed) ->
                             entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
             net.minecraft.client.renderer.item.ItemProperties.register(
                     mod.gottsch.neo.dungeons2.core.item.DungeonsItems.DUNGEON_COMPASS.get(),
-                    new net.minecraft.resources.ResourceLocation("angle"),
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace("angle"),
                     new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) ->
                             mod.gottsch.neo.dungeons2.core.item.DungeonCompassItem.target(stack)));
             net.minecraft.client.renderer.item.ItemProperties.register(
                     net.minecraft.world.item.Items.FILLED_MAP,
-                    new net.minecraft.resources.ResourceLocation(Dungeons.MOD_ID, "dungeon_map"),
-                    (stack, level, entity, seed) -> stack.getTag() != null
-                            && stack.getTag().contains(mod.gottsch.neo.dungeons2.core.map.DungeonMaps.TAG) ? 1.0F : 0.0F);
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Dungeons.MOD_ID, "dungeon_map"),
+                    (stack, level, entity, seed) -> mod.gottsch.neo.dungeons2.core.map.DungeonMaps.stampOf(stack) != null
+                            ? 1.0F : 0.0F);
         });
     }
 

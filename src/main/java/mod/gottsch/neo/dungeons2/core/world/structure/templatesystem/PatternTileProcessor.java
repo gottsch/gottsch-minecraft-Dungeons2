@@ -70,7 +70,7 @@ public class PatternTileProcessor extends StructureProcessor {
 
     /** No fields: the entry is just {@code {"processor_type": "dungeons2:pattern_tile"}}. */
     public static MapCodec<PatternTileProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return Codec.unit(() -> new PatternTileProcessor(type));
+        return MapCodec.unit(() -> new PatternTileProcessor(type));
     }
 
     @Override

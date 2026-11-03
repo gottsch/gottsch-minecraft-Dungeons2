@@ -36,7 +36,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
-import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
+import com.mojang.datafixers.util.Either;
+import net.minecraft.world.entity.Entity;
+import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -95,7 +97,7 @@ import java.util.OptionalInt;
  *
  * @author Mark Gottschling on Sep 23, 2026
  */
-@EventBusSubscriber(modid = Dungeons.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dungeons.MOD_ID)
 public class EchelonSpawnEvent {
 
     /** Compound key in a vanilla cage's Forge persistent data. */
@@ -146,7 +148,7 @@ public class EchelonSpawnEvent {
     }
 
     @SubscribeEvent
-    public static void onFinalizeSpawn(MobSpawnEvent.FinalizeSpawn event) {
+    public static void onFinalizeSpawn(FinalizeSpawnEvent event) {
         if (event.getLevel().isClientSide() || !EchelonsIntegration.isLoaded()) {
             return;
         }
@@ -254,9 +256,10 @@ public class EchelonSpawnEvent {
                 && state.getValue(BlockStateProperties.OPEN);
     }
 
-    private static Optional<Origin> originOf(BaseSpawner spawner) {
+    private static Optional<Origin> originOf(Either<BlockEntity, Entity> spawner) {
+        // NeoForge hands over the spawner's owner, not the BaseSpawner: a block entity for a cage
         if (spawner != null) {
-            return stampedOrigin(spawner.getSpawnerBlockEntity());
+            return spawner.left().flatMap(EchelonSpawnEvent::stampedOrigin);
         }
         return Optional.ofNullable(CURRENT.get());
     }

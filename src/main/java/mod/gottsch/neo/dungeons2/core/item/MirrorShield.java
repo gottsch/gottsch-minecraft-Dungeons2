@@ -74,7 +74,7 @@ public class MirrorShield extends ShieldItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip,
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip,
                                 TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.dungeons2.mirror_shield")
                 .withStyle(ChatFormatting.GRAY));

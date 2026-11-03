@@ -66,7 +66,7 @@ public class PedestalLootProcessor extends StructureProcessor {
     }
 
     public static MapCodec<PedestalLootProcessor> codec(Supplier<StructureProcessorType<?>> type) {
-        return Codec.unit(() -> new PedestalLootProcessor(type));
+        return MapCodec.unit(() -> new PedestalLootProcessor(type));
     }
 
     @Override

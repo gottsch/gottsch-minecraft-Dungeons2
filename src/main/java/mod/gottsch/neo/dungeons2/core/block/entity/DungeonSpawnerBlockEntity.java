@@ -115,7 +115,7 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains(FLOOR_INDEX)) {
             this.floorIndex = tag.getInt(FLOOR_INDEX);
@@ -274,7 +274,7 @@ public class DungeonSpawnerBlockEntity extends ProximityMobSetSpawnerBlockEntity
                         + " cellFluid={}",
                 pos.toShortString(), setName, data.isPresent(),
                 range == null ? "null" : "(" + range.getMin() + ".." + range.getMax() + ")",
-                pinnedMob, BuiltInRegistries.FLUIDS.getKey(level.getFluidState(pos).getType()));
+                pinnedMob, BuiltInRegistries.FLUID.getKey(level.getFluidState(pos).getType()));
 
         if (data.isEmpty()) {
             // Nothing more to say: execute()'s ifPresent will not run, so the mob list, the

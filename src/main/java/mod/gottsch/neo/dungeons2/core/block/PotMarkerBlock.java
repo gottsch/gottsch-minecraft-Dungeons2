@@ -17,6 +17,7 @@
  */
 package mod.gottsch.neo.dungeons2.core.block;
 
+import com.mojang.serialization.MapCodec;
 import mod.gottsch.neo.dungeons2.core.block.entity.PotMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -50,6 +51,13 @@ import org.jetbrains.annotations.Nullable;
  * @author Mark Gottschling on Aug 29, 2026
  */
 public class PotMarkerBlock extends BaseEntityBlock {
+
+    public static final MapCodec<PotMarkerBlock> CODEC = simpleCodec(PotMarkerBlock::new);
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
 
     public PotMarkerBlock(Properties properties) {
         super(properties);
