@@ -9,4 +9,4 @@ Dungeons lie about as far apart as villages, in almost every overworld biome. Al
 
 Explore somewhere new. A dungeon only generates in land that hasn't been generated yet.
 
-> In a hurry? `/locate structure dungeons2:dungeon` finds the nearest one, if you're allowed to use it.
+> In a hurry? `/locate structure #dungeons2:dungeons` finds the nearest one, if you're allowed to use it.

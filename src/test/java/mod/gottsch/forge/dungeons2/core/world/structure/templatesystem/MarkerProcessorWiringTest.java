@@ -99,7 +99,8 @@ class MarkerProcessorWiringTest {
             // player who never rolled a large dungeon.
             "classic_boss_weathering_small.json",
             "classic_boss_weathering_medium.json",
-            "classic_boss_weathering_large.json");
+            "classic_boss_weathering_large.json",
+            "catacombs_weathering.json");
 
     @Test
     void everyShippedListCarriesEveryMarkerProcessor() {

@@ -70,7 +70,7 @@ class MobSpawnExclusionTest {
                     "orc_warlord", "minotaur", "stone_colossus");
 
     private static final String MOB_SETS = "/data/dungeons2/mob_sets";
-    private static final String STRUCTURE = "/data/dungeons2/worldgen/structure/dungeon.json";
+    private static final String STRUCTURES = "/data/dungeons2/worldgen/structure";
     private static final String ENTITIES_SOURCE =
             "src/main/java/mod/gottsch/forge/dungeons2/core/entity/DungeonsEntities.java";
 
@@ -111,15 +111,10 @@ class MobSpawnExclusionTest {
     /** Nor may the structure's ambient population. This is the natural-spawn route. */
     @Test
     void noSpawnOverrideContainsAMiniBoss() {
-        JsonObject overrides = readResource(STRUCTURE).getAsJsonObject()
-                .getAsJsonObject("spawn_overrides");
         List<String> found = new ArrayList<>();
-        for (String category : overrides.keySet()) {
-            for (JsonElement wrapped : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
-                String id = wrapped.getAsJsonObject().get("type").getAsString();
-                if (isMiniBoss(id)) {
-                    found.add(category + " -> " + id);
-                }
+        for (String id : spawnOverrideIds()) {
+            if (isMiniBoss(id)) {
+                found.add(id);
             }
         }
         assertTrue(found.isEmpty(),
@@ -214,13 +209,7 @@ class MobSpawnExclusionTest {
                 named.add(wrapped.getAsJsonObject().get("id").getAsString());
             }
         }
-        JsonObject overrides = readResource(STRUCTURE).getAsJsonObject()
-                .getAsJsonObject("spawn_overrides");
-        for (String category : overrides.keySet()) {
-            for (JsonElement wrapped : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
-                named.add(wrapped.getAsJsonObject().get("type").getAsString());
-            }
-        }
+        named.addAll(spawnOverrideIds());
 
         JsonObject lang = readResource("/assets/dungeons2/lang/en_us.json").getAsJsonObject();
         List<String> unreachable = new ArrayList<>();
@@ -294,14 +283,9 @@ class MobSpawnExclusionTest {
                 }
             }
         }
-        JsonObject overrides = readResource(STRUCTURE).getAsJsonObject()
-                .getAsJsonObject("spawn_overrides");
-        for (String category : overrides.keySet()) {
-            for (JsonElement wrapped : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
-                String id = wrapped.getAsJsonObject().get("type").getAsString();
-                if (isMimic(id)) {
-                    found.add("spawn_overrides/" + category + " -> " + id);
-                }
+        for (String id : spawnOverrideIds()) {
+            if (isMimic(id)) {
+                found.add("spawn_overrides -> " + id);
             }
         }
         assertTrue(found.isEmpty(), "a mimic is named by a spawner route. It must appear only where"
@@ -319,15 +303,33 @@ class MobSpawnExclusionTest {
                 && MINI_BOSSES.contains(id.substring("dungeons2:".length()));
     }
 
+    /** Every entity named by the {@code spawn_overrides} of every motif's structure. */
+    private static List<String> spawnOverrideIds() {
+        List<String> ids = new ArrayList<>();
+        for (Path file : jsonFiles(STRUCTURES)) {
+            JsonObject overrides = read(file).getAsJsonObject().getAsJsonObject("spawn_overrides");
+            for (String category : overrides.keySet()) {
+                for (JsonElement wrapped : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
+                    ids.add(wrapped.getAsJsonObject().get("type").getAsString());
+                }
+            }
+        }
+        return ids;
+    }
+
     private static List<Path> mobSetFiles() {
+        return jsonFiles(MOB_SETS);
+    }
+
+    private static List<Path> jsonFiles(String resourceDir) {
         try {
-            Path dir = Paths.get(MobSpawnExclusionTest.class.getResource(MOB_SETS).toURI());
+            Path dir = Paths.get(MobSpawnExclusionTest.class.getResource(resourceDir).toURI());
             try (Stream<Path> files = Files.walk(dir)) {
                 return files.filter(f -> f.toString().endsWith(".json"))
                         .sorted(Comparator.comparing(Path::toString)).toList();
             }
         } catch (Exception e) {
-            throw new IllegalStateException("could not list " + MOB_SETS, e);
+            throw new IllegalStateException("could not list " + resourceDir, e);
         }
     }
 

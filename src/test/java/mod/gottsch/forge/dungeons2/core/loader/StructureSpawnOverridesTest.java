@@ -69,7 +69,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class StructureSpawnOverridesTest {
 
-    private static final String STRUCTURE = "/data/dungeons2/worldgen/structure/dungeon.json";
+    /** One structure per motif. Each owns its spawn list, so each is checked. */
+    private static final List<String> STRUCTURES = List.of(
+            "/data/dungeons2/worldgen/structure/dungeon.json",
+            "/data/dungeons2/worldgen/structure/catacombs.json");
     private static final String LANG = "/assets/dungeons2/lang/en_us.json";
 
     /** {@code StructureSpawnOverride.BoundingBoxType} -- the only two values that decode. */
@@ -97,7 +100,7 @@ class StructureSpawnOverridesTest {
             }
         }
         if (!bad.isEmpty()) {
-            fail(bad.size() + " spawn entry(s) in dungeon.json name an entity that does not exist:\n  "
+            fail(bad.size() + " spawn entry(s) in the structures name an entity that does not exist:\n  "
                     + String.join("\n  ", bad));
         }
     }
@@ -106,15 +109,16 @@ class StructureSpawnOverridesTest {
     void everyCategoryAndBoundingBoxDecodes() {
         Set<String> categories = Arrays.stream(MobCategory.values())
                 .map(MobCategory::getName).collect(Collectors.toSet());
-        JsonObject overrides = overrides();
-        for (String category : overrides.keySet()) {
-            assertTrue(categories.contains(category),
-                    "'" + category + "' is not a MobCategory -- the structure will fail to decode."
-                            + " Valid: " + categories);
-            String boundingBox = overrides.getAsJsonObject(category).get("bounding_box").getAsString();
-            assertTrue(BOUNDING_BOX_TYPES.contains(boundingBox),
-                    "bounding_box '" + boundingBox + "' for category '" + category
-                            + "' is not one of " + BOUNDING_BOX_TYPES);
+        for (JsonObject overrides : overrides()) {
+            for (String category : overrides.keySet()) {
+                assertTrue(categories.contains(category),
+                        "'" + category + "' is not a MobCategory -- the structure will fail to decode."
+                                + " Valid: " + categories);
+                String boundingBox = overrides.getAsJsonObject(category).get("bounding_box").getAsString();
+                assertTrue(BOUNDING_BOX_TYPES.contains(boundingBox),
+                        "bounding_box '" + boundingBox + "' for category '" + category
+                                + "' is not one of " + BOUNDING_BOX_TYPES);
+            }
         }
     }
 
@@ -255,43 +259,49 @@ class StructureSpawnOverridesTest {
      */
     @Test
     void everySpawnEntryDecodesThroughVanillasOwnCodec() {
-        JsonObject overrides = overrides();
-        for (String category : overrides.keySet()) {
-            for (JsonElement entry : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
-                JsonObject spawn = entry.getAsJsonObject().deepCopy();
-                spawn.addProperty("type", "minecraft:zombie");
-                DataResult<?> decoded = MobSpawnSettings.SpawnerData.CODEC
-                        .parse(JsonOps.INSTANCE, spawn);
-                assertTrue(decoded.result().isPresent(),
-                        () -> "vanilla rejects this spawn entry: "
-                                + decoded.error().map(DataResult.PartialResult::message).orElse("")
-                                + " -- " + entry
-                                + ". These keys belong to Minecraft, not to this mod's schema.");
+        for (JsonObject overrides : overrides()) {
+            for (String category : overrides.keySet()) {
+                for (JsonElement entry : overrides.getAsJsonObject(category).getAsJsonArray("spawns")) {
+                    JsonObject spawn = entry.getAsJsonObject().deepCopy();
+                    spawn.addProperty("type", "minecraft:zombie");
+                    DataResult<?> decoded = MobSpawnSettings.SpawnerData.CODEC
+                            .parse(JsonOps.INSTANCE, spawn);
+                    assertTrue(decoded.result().isPresent(),
+                            () -> "vanilla rejects this spawn entry: "
+                                    + decoded.error().map(DataResult.PartialResult::message).orElse("")
+                                    + " -- " + entry
+                                    + ". These keys belong to Minecraft, not to this mod's schema.");
+                }
             }
         }
     }
 
     private static List<Spawn> spawns() {
         List<Spawn> spawns = new ArrayList<>();
-        JsonObject overrides = overrides();
-        for (String category : overrides.keySet()) {
-            JsonArray entries = overrides.getAsJsonObject(category).getAsJsonArray("spawns");
-            for (JsonElement entry : entries) {
-                JsonObject spawn = entry.getAsJsonObject();
-                spawns.add(new Spawn(category,
-                        spawn.get("type").getAsString(),
-                        spawn.get("weight").getAsInt(),
-                        spawn.get("minCount").getAsInt(),
-                        spawn.get("maxCount").getAsInt()));
+        for (JsonObject overrides : overrides()) {
+            for (String category : overrides.keySet()) {
+                JsonArray entries = overrides.getAsJsonObject(category).getAsJsonArray("spawns");
+                for (JsonElement entry : entries) {
+                    JsonObject spawn = entry.getAsJsonObject();
+                    spawns.add(new Spawn(category,
+                            spawn.get("type").getAsString(),
+                            spawn.get("weight").getAsInt(),
+                            spawn.get("minCount").getAsInt(),
+                            spawn.get("maxCount").getAsInt()));
+                }
             }
         }
         return spawns;
     }
 
-    private static JsonObject overrides() {
-        JsonObject structure = read(STRUCTURE);
-        assertTrue(structure.has("spawn_overrides"), STRUCTURE + " has no spawn_overrides");
-        return structure.getAsJsonObject("spawn_overrides");
+    private static List<JsonObject> overrides() {
+        List<JsonObject> overrides = new ArrayList<>();
+        for (String resource : STRUCTURES) {
+            JsonObject structure = read(resource);
+            assertTrue(structure.has("spawn_overrides"), resource + " has no spawn_overrides");
+            overrides.add(structure.getAsJsonObject("spawn_overrides"));
+        }
+        return overrides;
     }
 
     private static JsonObject lang() {

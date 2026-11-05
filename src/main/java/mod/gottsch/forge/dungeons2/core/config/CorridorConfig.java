@@ -44,8 +44,8 @@ import java.util.Set;
  * <p>Corridors deliberately have no <em>floor or ceiling</em> pattern list &mdash; a border ring or
  * checkerboard needs a room-sized rectangle, and a corridor is a 1-3 cell wide run. The
  * {@code floor}/{@code alternate_floor} pair is rolled per cell at the same 45/55 split
- * {@code BasicFloorGenerator} uses for rooms. Corridor <em>walls</em> come from
- * {@link WallConfig}, shared with rooms, and can carry {@code courses} &mdash; horizontal bands are
+ * {@code BasicFloorGenerator} uses for rooms. Corridor <em>walls</em> come from {@link WallConfig},
+ * shared with rooms, unless {@code wall} names a block of their own, and can carry {@code courses} &mdash; horizontal bands are
  * the one wall treatment that needs no rectangle, since a band sits at a constant row and simply
  * runs along whatever the wall does.</p>
  *
@@ -66,7 +66,18 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                              Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
                              List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
                              Optional<FloorPattern> pattern, Optional<CorridorDescent> descent,
-                             Optional<String> stepBlock, Optional<CorridorTrap.Options> traps) {
+                             Optional<String> stepBlock, Optional<CorridorTrap.Options> traps,
+                             Optional<String> wall) {
+
+    /** The pre-wall form: walls shared with the rooms. */
+    public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
+                          Profile profile, Optional<String> archBlock, Optional<Integer> narrowHeight,
+                          List<CorridorStyle> styles, List<WallPatternEntry.CourseEntry> courses,
+                          Optional<FloorPattern> pattern, Optional<CorridorDescent> descent,
+                          Optional<String> stepBlock, Optional<CorridorTrap.Options> traps) {
+        this(floor, alternateFloor, ceiling, height, profile, archBlock, narrowHeight, styles,
+                courses, pattern, descent, stepBlock, traps, Optional.empty());
+    }
 
     /** The pre-traps form (the corridor descent). */
     public CorridorConfig(String floor, String alternateFloor, String ceiling, int height,
@@ -266,11 +277,12 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
         Optional<String> resolvedArch = Codecs.resolveRole(archBlock, resolver);
         Optional<String> resolvedStep = Codecs.resolveRole(stepBlock, resolver);
         Optional<CorridorTrap.Options> resolvedTraps = CorridorTrapCodec.withRoles(traps, resolver);
+        Optional<String> resolvedWall = Codecs.resolveRole(wall, resolver);
         Optional<FloorPattern> resolvedPattern = pattern.map(p -> p.withRoles(resolver));
         if (resolvedCourses == courses && resolvedStyles == null && resolvedFloor.equals(floor)
                 && resolvedAlternate.equals(alternateFloor) && resolvedCeiling.equals(ceiling)
                 && resolvedArch.equals(archBlock) && resolvedStep.equals(stepBlock)
-                && resolvedTraps == traps
+                && resolvedTraps == traps && resolvedWall.equals(wall)
                 // Identity, not equals: FloorPattern#withRoles contracts to return `this` when
                 // nothing changed, and this runs on the per-piece path.
                 && resolvedPattern.orElse(null) == pattern.orElse(null)) {
@@ -279,7 +291,7 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
         return new CorridorConfig(resolvedFloor, resolvedAlternate, resolvedCeiling, height,
                 profile, resolvedArch, narrowHeight,
                 resolvedStyles == null ? styles : List.copyOf(resolvedStyles), resolvedCourses,
-                resolvedPattern, descent, resolvedStep, resolvedTraps);
+                resolvedPattern, descent, resolvedStep, resolvedTraps, resolvedWall);
     }
 
     public static final Codec<CorridorConfig> CODEC = RecordCodecBuilder.<CorridorConfig>create(instance ->
@@ -314,7 +326,10 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
                             .forGetter(CorridorConfig::stepBlock),
                     // The BASELINE style's traps, like descent above.
                     Codecs.strictOptionalFieldOf(CorridorTrapCodec.CODEC, "traps")
-                            .forGetter(CorridorConfig::traps)
+                            .forGetter(CorridorConfig::traps),
+                    // Absent: the corridor shares the rooms' wall block.
+                    Codecs.strictOptionalFieldOf(Codecs.BLOCK_ID_OR_ROLE, "wall")
+                            .forGetter(CorridorConfig::wall)
             ).apply(instance, CorridorConfig::new)).flatXmap(CorridorConfig::validate, CorridorConfig::validate);
 
     /**
@@ -423,6 +438,11 @@ public record CorridorConfig(String floor, String alternateFloor, String ceiling
 
     public BlockState ceilingState() {
         return BlockStateCodec.block(ceiling, Blocks.STONE_BRICKS);
+    }
+
+    /** The corridor's own wall block, or {@code roomWall} if it authors none. */
+    public BlockState wallState(BlockState roomWall) {
+        return wall.map(id -> BlockStateCodec.block(id, roomWall.getBlock())).orElse(roomWall);
     }
 
     /**

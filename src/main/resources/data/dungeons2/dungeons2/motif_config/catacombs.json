@@ -1,37 +1,47 @@
 {
   "biome": "dungeons2:stone_halls",
   "wall": {
-    "wall": "minecraft:bricks"
+    "wall": "dungeonblocks:ossuary_bricks"
   },
+  "ceiling": {
+    "ceiling": "dungeonblocks:ossuary_bricks"
+  },
+  "floor": {
+    "base": "dungeonblocks:grave_slab_pavement",
+    "alternate_base": "dungeonblocks:grave_slab_pavement"
+  },
+  "door": {
+    "door": "dungeonblocks:dark_oak_dungeon_door",
+    "lintel": "dungeonblocks:square_ossuary_brick",
+    "floor": "dungeonblocks:grave_slab_pavement",
+    "probability": 0.5
+  },
+  // Dug rather than built: hewn tufa, with the bones walled into it as courses. Both styles are flat
+  // until the corridor blocks have stairs to arch and descend with.
   "corridor": {
-    "floor": "minecraft:cobblestone",
-    "alternate_floor": "minecraft:bricks",
-    "ceiling": "minecraft:bricks",
-    "pattern": {
-      "type": "dungeons2:speckle",
-      "config": {
-        "secondary_block": "minecraft:cracked_stone_bricks",
-        "probability": 0.1
-      }
-    },
-    "height": 7,
-    "narrow_height": 6,
-    "profile": "arched",
-    "arch_block": "minecraft:brick_stairs",
+    "floor": "dungeonblocks:knucklebone_paving",
+    "alternate_floor": "dungeonblocks:knucklebone_paving",
+    "ceiling": "dungeonblocks:hewn_tufa",
+    "wall": "dungeonblocks:hewn_tufa",
+    "height": 6,
+    "profile": "flat",
     "styles": [
       {
-        "name": "vaulted",
+        "name": "bone_gallery",
         "weight": 3,
-        "height": 7,
-        "narrow_height": 6,
-        "profile": "arched",
-        "arch_block": "minecraft:brick_stairs"
+        "height": 6,
+        "profile": "flat",
+        "courses": [
+          { "block": "dungeonblocks:jumbled_femurs", "anchor": "bottom", "offset": 0 },
+          { "block": "dungeonblocks:packed_skulls", "anchor": "bottom", "offset": 1 }
+        ]
       },
       {
-        "name": "cramped",
+        "name": "plain_tunnel",
         "weight": 2,
         "height": 6,
-        "profile": "flat"
+        "profile": "flat",
+        "courses": []
       }
     ]
   }

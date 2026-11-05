@@ -817,8 +817,8 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
 
     /**
      * Resolves the floor / wall / air / ceiling block states once per build call. The corridor has
-     * its own floor pair and ceiling ({@code CorridorConfig}) but shares the room's wall block
-     * ({@code WallConfig}), matching the pre-merge {@code block_provider} split.
+     * its own floor pair and ceiling ({@code CorridorConfig}) and shares the room's wall block
+     * ({@code WallConfig}) unless it names its own {@code wall}.
      *
      * <p>Only the arch is per {@link CorridorStyle}: a style varies a floor's corridor
      * <em>geometry</em>, not what it is built of, so two floors of the same motif read as the same
@@ -828,7 +828,7 @@ public class BasicCorridorGenerator implements ICorridorGenerator {
         return new Palette(
                 motifConfig.corridor().floorState(),
                 motifConfig.corridor().alternateFloorState(),
-                motifConfig.wall().wallState(),
+                motifConfig.corridor().wallState(motifConfig.wall().wallState()),
                 Blocks.AIR.defaultBlockState(),
                 motifConfig.corridor().ceilingState(),
                 motifConfig.corridor().archStateFor(style),

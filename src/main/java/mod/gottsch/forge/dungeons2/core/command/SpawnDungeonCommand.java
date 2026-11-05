@@ -15,6 +15,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -67,9 +68,22 @@ import java.util.Locale;
  */
 public class SpawnDungeonCommand {
 
-    /** The structure this command places. Registered from {@code worldgen/structure/dungeon.json}. */
+    /** The structure this command places by default. Registered from {@code worldgen/structure/dungeon.json}. */
     private static final ResourceKey<Structure> DUNGEON = ResourceKey.create(
             Registries.STRUCTURE, new ResourceLocation(Dungeons.MOD_ID, "dungeon"));
+
+    /**
+     * The structure to place for a forced motif, so that it brings that motif's {@code spawn_overrides}.
+     * Classic's is {@code dungeon}, and a motif with no structure of its own uses that too.
+     */
+    private static ResourceKey<Structure> structureFor(Registry<Structure> structures, String motif) {
+        if (motif == null || motif.equals(DungeonMotif.CLASSIC.getValue())) {
+            return DUNGEON;
+        }
+        ResourceKey<Structure> own = ResourceKey.create(
+                Registries.STRUCTURE, new ResourceLocation(Dungeons.MOD_ID, motif));
+        return structures.containsKey(own) ? own : DUNGEON;
+    }
 
     private static final SuggestionProvider<CommandSourceStack> SIZES = (context, builder) ->
             SharedSuggestionProvider.suggest(
@@ -131,13 +145,12 @@ public class SpawnDungeonCommand {
                 return 0;
             }
 
-            Holder.Reference<Structure> structure = level.registryAccess()
-                    .registryOrThrow(Registries.STRUCTURE)
-                    .getHolder(DUNGEON)
-                    .orElse(null);
+            Registry<Structure> structures = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
+            ResourceKey<Structure> structureKey = structureFor(structures, motif);
+            Holder.Reference<Structure> structure = structures.getHolder(structureKey).orElse(null);
             if (structure == null) {
                 source.sendFailure(Component.literal(
-                        "Structure " + DUNGEON.location() + " is not registered -- is the datapack loaded?"));
+                        "Structure " + structureKey.location() + " is not registered -- is the datapack loaded?"));
                 return 0;
             }
 

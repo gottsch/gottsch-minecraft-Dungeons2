@@ -1,0 +1,412 @@
+// The CATACOMBS motif's placement processors (dungeons2:<motif>_weathering, see PieceProcessors).
+// A motif with no list at all runs NO processors, so procedural Catacombs pieces came out with
+// every pattern tile on slice 0 and no cobwebs or growth.
+//
+// FOR NOW this is classic's list from the sarcophagus entry down, under a FIRST-GUESS aging pass:
+// only the cracked and mossy twins DungeonBlocks 3.2.0 has, at low rates and nothing broken.
+// Real Catacombs weathering (bone rubble, the bands, the pavings) is still to be authored.
+// The loot tables, tomb guardians and spawner set below are classic's placeholders until
+// Catacombs has its own. Only templates reach the marker processors, and Catacombs has none yet.
+{
+  "processors": [
+    {
+      // Full cubes only, with no properties to carry, but dungeons2:aging keeps the chain shape
+      // the rest of the mod uses. Two chains on ossuary bricks are alternatives: cracked 15%,
+      // then mossy 15% of what is left. Stairs have no twins yet, so they do not age.
+      // Hewn tufa waits for mossy_hewn_tufa to be in a published DungeonBlocks jar: an unknown id ages to AIR.
+      "processor_type": "dungeons2:aging",
+      "agings": 1,
+      "rules": [
+        { "block": "dungeonblocks:ossuary_bricks",
+          "output_blocks": [ { "block": "dungeonblocks:cracked_ossuary_bricks", "probability": 0.15 } ] },
+        { "block": "dungeonblocks:ossuary_bricks",
+          "output_blocks": [ { "block": "dungeonblocks:mossy_ossuary_bricks", "probability": 0.15 } ] }
+      ]
+    },
+    // =========================================================================================
+    // dungeons2:sarcophagus -- the sealed tombs. Turns an authored
+    // dungeons2:sarcophagus_marker (the tomb's FOOT, facing its head) into a sealed two-block
+    // dungeonblocks sarcophagus, and is the authored twin of the `tombs` scheme slot. The marker's
+    // head cell must be authored AIR, or the marker is removed with a [D2-TOMB] WARN.
+    //
+    // BEFORE rubble_scatter and decoration: both fill authored AIR in
+    // finalizeProcessing, and the head cell is authored air -- a cobweb or a scatter landing in
+    // it refused the tomb and left the marker standing in game. Claiming the head first makes
+    // them go round it.
+    //
+    // The contents are this LIST's, because a processor is handed no floorIndex: pools are per
+    // stratum, so this is how an authored tomb gets its depth's dead.
+    // This list governs floors 1-3, so it is one
+    // blend of base.json's floor-0 and floor-2 bands, leaning deep: two of those three floors
+    // are deep ones.
+    // A marker's own lootTable / guardian / weights win over these, key by key.
+    // DungeonBlocks rolls loot vs guardian vs nothing once, on the first opening.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:sarcophagus",
+      // Stone, matching base.json's $sarcophagus for the same floors (back from the
+      // deepslate stopgap: the deepslate layer's rooms have their own list, which
+      // names deepslate). Reaches only templates in pools that name this list -- procedural
+      // crypts take $sarcophagus from the motif, not this. A per-marker override is the sarcophagus block override.
+      "sarcophagus_block": "dungeonblocks:stone_sarcophagus",
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_tomb_deep", "weight": 2 },
+        { "loot_table": "dungeons2:chests/classic_tomb_shallow", "weight": 1 }
+      ],
+      "guardians": [
+        { "entity": "dungeons2:grave_zombie", "weight": 4 },
+        { "entity": "dungeons2:skeleton_warrior", "weight": 4 },
+        { "entity": "dungeons2:ghoul", "weight": 2 },
+        { "entity": "minecraft:zombie", "weight": 2 },
+        { "entity": "minecraft:skeleton", "weight": 2 },
+        { "entity": "dungeons2:bloody_bones", "weight": 1 }
+      ],
+      "loot_weight": 3, "guardian_weight": 3, "empty_weight": 4
+    },
+    {
+      // Follows the aging above. Nothing ages into a broken block yet, so it never fires; it is
+      // here so a hole authored later gets its rubble.
+      "processor_type": "dungeons2:rubble_scatter",
+      "broken": { "blocks": [ "minecraft:air", "dungeonblocks:rubble", "dungeonblocks:mossy_rubble" ] },
+      "scatter_block": "dungeonblocks:rubble_scatter",
+      "probability": 0.5
+    },
+    {
+      // dungeons2:decoration -- the NEIGHBOUR-aware pass. Everything above decides one
+      // block at a time; this one decides from a block's surroundings, which is what
+      // cobwebs (air with a wall beside it) and creeping growth need.
+      //
+      // Its probabilities are ABSOLUTE, not conditional -- one roll per candidate
+      // position, unlike the rule/aging chains above.
+      //
+      // It only ever writes into a cell the piece itself places as AIR (bar underwater
+      // growth, which replaces the piece's own water). Nothing here can touch terrain.
+      "processor_type": "dungeons2:decoration",
+
+      // Air with at least one horizontally adjacent solid block. Corners and wall faces
+      // web up; the middle of a room stays clear.
+      "cobwebs": {
+        "probability": 0.02,
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // The angle webs are a DIFFERENT behaviour, not more entries in the palette above.
+      // They are modelled as a triangular sheet gathering into the angle where two
+      // surfaces meet and tapering away from it, so they need a wall AND a floor or
+      // ceiling -- one halfway up a bare wall has nothing to gather into and reads as a
+      // sheet hanging in mid-air. Both surfaces must be full cubes for the same reason
+      // wall growth needs one; the processor works out the facing from the neighbours,
+      // and picks the junction with the block's `half` (top = ceiling, bottom = floor).
+      //
+      // Higher than the plain web's rate on purpose: this fires on far fewer cells --
+      // only wall/floor and wall/ceiling junctions -- so 0.02 here would be nearly
+      // invisible.
+      "corner_cobwebs": {
+        "probability": 0.06,
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+
+      // Growth in the air beside a wall, attached to the wall's face. "probability" is
+      // the chance with nothing already growing next to the spot; each of the 6
+      // neighbours that IS growth adds "bonus", capped at "max", and the spot inherits
+      // its neighbour's species. That's what makes it spread in patches rather than an
+      // even speckle -- turn "bonus" up for bigger, blotchier patches. Blocks should be
+      // multiface (glow-lichen-like) to take a face; anything else is placed as-is.
+      "wall_growth": {
+        "probability": 0.04,
+        "bonus": 0.22,
+        "max": 0.55,
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // What counts as dirt for floor_growth/hanging_growth below. Classic dungeons are
+      // not authored with dirt -- this catches the dirt the AGING processor above makes
+      // out of decayed stairs, which is exactly where a tuft of growth belongs.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+      // On top of a dirt block, where the cell above it is air. All single-block plants that
+      // survive in the dark: mushrooms need darkness, and grass/fern/moss only need light to
+      // SPREAD, not to stay put, so none of these pop off in an unlit dungeon.
+      // (No tall_grass or large_fern -- those are two blocks high and only the lower half
+      // would be placed.)
+      //
+      // The two "entity" entries are MOBS grown as if they were plants. GMM's Shrieker and Violet
+      // Fungus root themselves and never move, so a patch of decayed dirt is exactly where they
+      // belong -- and dungeons2:decoration spawns them from its finalizeProcessing pass, which has
+      // a real ServerLevelAccessor and the chunk box to dedupe against. No marker block involved.
+      //
+      // THE PALETTE IS WEIGHTED. An entry is either a bare id (weight 1) or {block, weight}, and
+      // the draw is one roll over the total. Weights matter here more than anywhere else in this
+      // file: unweighted, the two fungi were 2 of 8 entries -- a QUARTER of everything that grows,
+      // which is ground-cover frequency for something that is actually a monster. At 3 each against
+      // the mushrooms' 10 they are 6 of 66, about 9% (raised from 1 each).
+      "floor_growth": {
+        "probability": 0.35,
+        "blocks": [
+          { "block": "minecraft:brown_mushroom", "weight": 10 },
+          { "block": "minecraft:red_mushroom", "weight": 10 },
+          { "block": "minecraft:moss_carpet", "weight": 10 },
+          { "block": "minecraft:grass", "weight": 10 },
+          { "block": "minecraft:fern", "weight": 10 },
+          { "block": "minecraft:dead_bush", "weight": 10 },
+          { "entity": "dungeons2:shrieker", "weight": 3 },
+          { "entity": "dungeons2:violet_fungus", "weight": 3 }
+        ]
+      },
+      // Underneath a dirt block, where the cell below it is air.
+      "hanging_growth": {
+        "probability": 0.3,
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // Architectural blocks that delete themselves once the wall behind them is gone --
+      // a corbel or ledge left hanging in the air after what it was bracketed onto
+      // crumbled away. Structural, so no probability: it either has a wall or it doesn't.
+      //
+      // A block with a "facing" property is held up from BEHIND and by nothing else: it
+      // GIVES support to what sits on top of it, it doesn't TAKE support from there, nor
+      // from below, nor from whatever happens to sit beside it. Only the neighbour at
+      // facing.getOpposite() is consulted.
+      //
+      // Deliberately generous otherwise, since a false positive deletes authored
+      // architecture: any non-air block behind counts (a ledge mounted on a stair or on
+      // another ledge stays put), and so does a neighbour that simply isn't part of this
+      // piece -- absent means "nothing placed here", not "nothing is here".
+      //
+      // It follows that this fires only where weathering actually produced air, so how
+      // often you see it is really a property of the aging rules above.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      },
+
+      // Water standing on a solid floor becomes seagrass. Only the piece's OWN water: the
+      // sewer rooms, the well and stairs_1 author it. Aquifer water that seeps in after
+      // generation is not in the block list and gets nothing.
+      "underwater_growth": {
+        "probability": 0.15,
+        "blocks": ["minecraft:seagrass"]
+      }
+      // Lily pads on the air above water are available but OFF:
+      //   "floating_growth":   { "probability": 0.02, "blocks": ["minecraft:lily_pad"] }
+    },
+    // =========================================================================================
+    // dungeons2:pot -- the pot marker. Turns an authored dungeons2:pot_marker into
+    // pot ENTITIES and leaves air where the marker stood.
+    //
+    // BEFORE the sweep, deliberately. This processor's finalizeProcessing rewrites each marker cell
+    // to air; decoration_sweep's job is to remove decoration left unsupported by a cell that is now
+    // empty, so it has to run after the cell empties or it sweeps against stale ground.
+    //
+    // No loot_table or variant here: those are pool-level fallbacks for markers that name none of
+    // their own, and every marker is expected to. A marker that resolves to no variant logs
+    // [D2-POT] and spawns nothing rather than guessing a pot.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:pot"
+    },
+
+    // =========================================================================================
+    // dungeons2:chest -- the chest-marker wiring, wiring the chest marker that had
+    // been left reachable from nothing. Turns an authored dungeons2:chest_marker into a chest
+    // holding a loot table, and is the authored twin of the `chests` scheme slot.
+    //
+    // WHY IT IS HERE AND NOT IN ITS OWN LIST. It shipped in dungeons2:classic_chests, which no
+    // pool ever referenced -- that list existed for one throwaway test template (0bc6a45) that was
+    // removed again (93baad8), leaving the processor orphaned. Every room, entrance and transition
+    // pool names a weathering list, so a marker processor that is not IN one is a marker block
+    // left standing in a finished dungeon. Same conclusion the pot marker reached for pots, same placement.
+    //
+    // BEFORE the sweep, for the same reason the pot entry is: nothing it does should be judged
+    // against ground a later pass is still going to change.
+    //
+    // Unlike the pot entry this one DOES carry a pool-level default, because "an ordinary chest
+    // with ordinary dungeon loot" is a meaningful thing to want and a pot's variant is not -- a
+    // pot with no variant has no appearance to fall back on. A marker's own `lootTable` NBT still
+    // wins over this; the list is what a template full of ordinary chests relies on.
+    //
+    // The weights are one blend for the whole motif, NOT a depth band. A StructureProcessor is
+    // handed no floorIndex, so unlike the procedural route this cannot follow
+    // chestLootByFloorIndex; a template that wants depth-correct loot names the table on the
+    // marker. The blend leans shallow because most floors of most dungeons are.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:chest",
+      "loot_tables": [
+        { "loot_table": "dungeons2:chests/classic_shallow", "weight": 6 },
+        { "loot_table": "dungeons2:chests/classic_deep", "weight": 3 },
+        { "loot_table": "dungeons2:chests/classic_hoard", "weight": 1 }
+      ]
+    },
+
+    // =========================================================================================
+    // dungeons2:barrel_loot -- gives an authored template's barrel the barrel
+    // table: mostly junk or nothing, now and then something good. A barrel whose NBT already names a
+    // LootTable or holds Items is left as authored. The procedural twin is a barrel prop's
+    // `loot_table` in the motif's schemes.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:barrel_loot",
+      "loot_table": "dungeons2:barrels/classic"
+    },
+    // dungeons2:pedestal_loot: a template pedestal placed into a LIVE chunk
+    // (/d2-generate, /place) never rolled its LootTable -- its block entity loaded before the
+    // table was written. Schedules the roll; a no-op in ordinary generation. See the class doc.
+    { "processor_type": "dungeons2:pedestal_loot" },
+
+    // =========================================================================================
+    // dungeons2:decoration_sweep -- undoes the decoration above in cells a
+    // LATER piece is about to invalidate. It must come after dungeons2:decoration: it inspects
+    // what that pass decided, and finalizeProcessing runs the list in order.
+    //
+    // THE DEFECT. Found at -38 1 1801: a dungeonblocks:mold with south=true clinging to a
+    // polished_andesite_quarter_facade_block -- a quarter slab, so the quad hung 12/16 of a block
+    // off its only support. wall_growth's isFullCube guard is what should have stopped that, and
+    // it did: the piece north of that wall row grew the mold against ITS OWN full-cube wall block,
+    // and the 5x11_hallway_2 prefab south of it -- authored, and therefore rendered last, per the
+    // shared-wall rule -- then re-skinned the same cell with the facade. The
+    // processor validated inputs that were true when it ran and false by the time anyone saw them.
+    //
+    // WHY IT CANNOT BE FIXED INSIDE dungeons2:decoration. The piece that breaks the support is a
+    // DIFFERENT piece running later; at growth time the facade does not exist yet, and a
+    // piece-local processor is forbidden from reading the world anyway. Only the breaking piece is
+    // in a position to notice, which is why this is a second entry rather than another rule.
+    //
+    // WHAT IT TOUCHES. Only cells this piece does NOT itself write (anything it writes is about to
+    // be overwritten regardless), only blocks named below, and only when the support test that
+    // placed them now fails. Anything it cannot see counts as supported -- a false positive
+    // deletes somebody's architecture, a false negative is one mold quad that outstayed its
+    // welcome.
+    //
+    // EVERY FIELD MIRRORS ONE dungeons2:decoration BEHAVIOUR and must name the same blocks it
+    // does; a processor cannot see its siblings in the list, so the pairing is by convention and
+    // pinned by DecorationSweepParityTest, which reads both entries out of this file.
+    // (No underwater_growth counterpart: seagrass only replaces water the piece authored on its
+    // own floor, so no later piece is placed to undercut it. floating_growth is off above.)
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:decoration_sweep",
+
+      // wall_growth. Multiface, so this repairs FACE BY FACE: a patch wrapping a corner keeps the
+      // faces whose walls survived and loses only the dead one. Air when nothing is left.
+      "growth": {
+        "blocks": [
+          "minecraft:glow_lichen",
+          "dungeonblocks:lichen",
+          "dungeonblocks:mold"
+        ]
+      },
+
+      // cobwebs -- needs one horizontally adjacent solid block. Mostly a no-op in practice: a
+      // facade still passes isSolid, so only a neighbour turning to AIR strands a plain web.
+      "webs": {
+        "blocks": ["minecraft:cobweb"]
+      },
+
+      // corner_cobwebs -- the pickier pair. Needs a full-cube wall behind its facing AND the
+      // full-cube floor or ceiling its `half` names, exactly as maybeCornerCobweb required.
+      "corner_webs": {
+        "blocks": [
+          "dungeonblocks:angle_cobweb_1",
+          "dungeonblocks:angle_cobweb_2"
+        ]
+      },
+
+      // Must be the same match as dungeons2:decoration's `dirt` -- it is what floor_growth and
+      // hanging_growth below are tested against.
+      "dirt": {
+        "tags": ["minecraft:dirt"]
+      },
+
+      // floor_growth, minus the two entity entries: a Shrieker or a Violet Fungus is a MOB, and a
+      // block sweep neither sees nor removes one.
+      "floor_growth": {
+        "blocks": [
+          "minecraft:brown_mushroom",
+          "minecraft:red_mushroom",
+          "minecraft:moss_carpet",
+          "minecraft:grass",
+          "minecraft:fern",
+          "minecraft:dead_bush"
+        ]
+      },
+      "hanging_growth": {
+        "blocks": ["minecraft:hanging_roots"]
+      },
+
+      // The same corbels and ledges the `unsupported` rule clears, re-tested once the neighbouring
+      // piece has had its say: a ledge keeps whatever is behind its facing, and goes when that
+      // turns to air.
+      "unsupported": {
+        "tags": [
+          "dungeonblocks:corbels",
+          "dungeonblocks:ledges"
+        ]
+      }
+    },
+
+    // =========================================================================================
+    // dungeons2:spawner (the mob-set spawner) -- swaps an authored
+    // dungeons2:spawner_marker block for the invisible dungeons2:mob_set_spawner, which spawns
+    // this set when a player comes within `proximity` blocks.
+    //
+    // IT MATCHES A BLOCK, NOT A `d2:spawner` DATA MARKER, and that is not a preference.
+    // SinglePoolElement.getSettings installs BlockIgnoreProcessor.STRUCTURE_BLOCK BEFORE
+    // appending this list, and that processor returns null for a structure block -- REMOVING it
+    // rather than replacing it. A pool processor never sees one. The observed symptom was neither
+    // a spawner nor a visible structure block but the terrain the dungeon was carved out of,
+    // because the cell was never written at all. See JigsawStripsStructureBlocksTest.
+    //
+    // WHY IT LIVES IN THE WEATHERING LIST, despite not weathering anything: a pool element names
+    // exactly ONE processor_list, and all four pools already name this one. Splitting it would
+    // mean every pool JSON growing a second reference and every future motif remembering both.
+    // The file is really "the classic motif's placement processors"; the name predates having
+    // any that were not weathering.
+    //
+    // IT ONLY EVER FIRES ON AUTHORED TEMPLATES, since nothing procedural places the marker.
+    // A procedural room reaches the same spawner through the motif config's `spawners` scheme
+    // slot instead (RoomSpawnerGenerator -> BlockEntityData -> DungeonPiece.applyBlockEntity).
+    // The two build the same block-entity tag; SpawnerTagParityTest is what keeps them agreeing,
+    // so a field renamed here must be renamed there.
+    //
+    // EVERY FIELD BELOW IS A DEFAULT AN INDIVIDUAL MARKER MAY OVERRIDE. The marker
+    // carries a block entity, so a template can state mobSetName / proximity / minMobs / maxMobs /
+    // type on one cell with /data merge block and leave the rest of its markers on these values.
+    // This entry used to say "one marker = one set, a block carries no free text" -- that was
+    // wrong: a structure template stores block-entity NBT PER CELL and hands it to a processor as
+    // current.nbt(), which is how dungeons2:chest had been reading a per-marker loot table all
+    // along. A second marker block via `marker_block` still works and is still the right answer
+    // when a whole MOTIF wants a different default.
+    // =========================================================================================
+    {
+      "processor_type": "dungeons2:spawner",
+      // Required -- a spawner with no set is a block that does nothing, and defaulting it would
+      // make that failure silent. Shipped set is the dungeon's own vermin (the rat and giant rat).
+      "mob_set": "dungeons2:classic_vermin",
+      // Defaults to dungeons2:spawner_marker; stated explicitly because it is the authored half
+      // of this contract and a template author has to know what to place.
+      "marker_block": "dungeons2:spawner_marker",
+      // Required, with no default anywhere -- see SpawnerConfig for why. 12 blocks: rooms run
+      // 5-13 across, so this fires as the player comes through the door rather than once they
+      // are well inside.
+      "proximity": 12.0
+    },
+
+    // LAST, always: lines dungeonblocks pattern tiles (the flagstones) up with the world from
+    // their FINAL position, after every rule and sweep above has had its say. See
+    // PatternTileProcessor. Every list carries it, so a tile lines up in any pool.
+    {
+      "processor_type": "dungeons2:pattern_tile"
+    }
+  ]
+}

@@ -18,6 +18,8 @@
 package mod.gottsch.forge.dungeons2.core.world.structure;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mod.gottsch.forge.dungeons2.Dungeons;
 import mod.gottsch.forge.dungeons2.core.config.CorridorConfig;
 import mod.gottsch.forge.dungeons2.core.config.CorridorStyle;
@@ -41,6 +43,7 @@ import mod.gottsch.forge.dungeons2.core.data.FloorLayout;
 import mod.gottsch.forge.dungeons2.core.data.RoomData;
 import mod.gottsch.forge.dungeons2.core.data.TemplateCatalog;
 import mod.gottsch.forge.dungeons2.core.data.TransitionData;
+import mod.gottsch.forge.dungeons2.core.config.Codecs;
 import mod.gottsch.forge.dungeons2.core.enums.DungeonMotif;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Coords2D;
 import mod.gottsch.forge.dungeons2.core.generator.dungeon.Rectangle2D;
@@ -128,7 +131,11 @@ import java.util.Set;
  */
 public class DungeonStructure extends Structure {
 
-    public static final Codec<DungeonStructure> CODEC = simpleCodec(DungeonStructure::new);
+    public static final Codec<DungeonStructure> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            settingsCodec(instance),
+            Codecs.strictOptionalFieldOf(Codec.STRING.flatXmap(DungeonStructure::validMotif, DataResult::success),
+                    "motif", DungeonMotif.CLASSIC.getValue()).forGetter(structure -> structure.motif)
+    ).apply(instance, DungeonStructure::new));
 
     /**
      * Phase 4b entrance assembly parameters. The start pool is the surface
@@ -754,8 +761,23 @@ public class DungeonStructure extends Structure {
      */
     private static final int MAX_SPAN_OVERSHOOT_FACTOR = 2;
 
-    public DungeonStructure(Structure.StructureSettings settings) {
+    /** The motif this structure builds, from its {@code worldgen/structure} file. */
+    private final String motif;
+
+    public DungeonStructure(Structure.StructureSettings settings, String motif) {
         super(settings);
+        this.motif = motif;
+    }
+
+    /**
+     * Reads a motif name. An unknown one is a load error rather than a dungeon that quietly falls
+     * back to classic's pools.
+     */
+    static DataResult<String> validMotif(String value) {
+        DungeonMotif known = DungeonMotif.getByValue(value);
+        return known == null || known == DungeonMotif.UNKNOWN
+                ? DataResult.error(() -> "Unknown motif '" + value + "'")
+                : DataResult.success(value);
     }
 
     /**
@@ -806,13 +828,13 @@ public class DungeonStructure extends Structure {
                 context.heightAccessor(), context.randomState());
 
         long seed = chunkPos.toLong() ^ context.seed();
-        // Motif is fixed for now (CLASSIC is the only authored motif); size and
-        // floor count are rolled deterministically inside the planner from seed.
+        // Motif belongs to the structure: the structure_set's weights choose between motifs. Size
+        // and floor count are rolled deterministically inside the planner from seed.
         // /d2-generate can force any of the three -- see DebugOverrides.
         DebugOverrides overrides = debugOverrides;
         String motifValue = overrides != null && overrides.motif() != null
                 ? overrides.motif()
-                : DungeonMotif.CLASSIC.getValue();
+                : motif;
         StructureTemplateManager templateManager = context.structureTemplateManager();
 
         // Resolved HERE rather than beside the planner knobs it mostly feeds, because the room

@@ -210,6 +210,29 @@ class BasicCorridorGeneratorTest {
         assertTrue(sawAuthoredCeiling, "corridor ceiling should come from CorridorConfig too");
     }
 
+    /** A corridor can be dug from something other than what the rooms are built of. */
+    @Test
+    void aCorridorsOwnWallBlockReplacesTheRooms() {
+        CorridorConfig base = new CorridorConfig("minecraft:granite", "minecraft:granite", "minecraft:andesite",
+                CorridorConfig.DEFAULT_HEIGHT);
+        CorridorConfig ownWall = new CorridorConfig(base.floor(), base.alternateFloor(), base.ceiling(), base.height(),
+                base.profile(), base.archBlock(), base.narrowHeight(), base.styles(), base.courses(), base.pattern(),
+                base.descent(), base.stepBlock(), base.traps(), Optional.of("minecraft:tuff"));
+        MotifConfig motifConfig = new MotifConfig(
+                MotifConfig.DEFAULT.wall(), MotifConfig.DEFAULT.ceiling(), MotifConfig.DEFAULT.door(),
+                ownWall, MotifConfig.DEFAULT.floor(), MotifConfig.DEFAULT.schemes());
+
+        List<BlockPlacement> out = new ArrayList<>();
+        new BasicCorridorGenerator().withMotifConfig(motifConfig)
+                .build(simpleCorridor(), simpleGrid(), 60, DungeonMotif.CLASSIC, RandomSource.create(7L), out);
+
+        String roomWall = BlockStateCodec.placement(0, 0, 0, MotifConfig.DEFAULT.wall().wallState()).getBlockId();
+        assertTrue(out.stream().anyMatch(bp -> "minecraft:tuff".equals(bp.getBlockId())),
+                "the corridor's own wall block should be laid");
+        assertTrue(out.stream().noneMatch(bp -> roomWall.equals(bp.getBlockId())),
+                "the room's wall block should not appear");
+    }
+
     // -------- variable corridor height --------
 
     /**
